@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/84</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/84</span>
             </div>
         
             
@@ -133,154 +133,193 @@
 <a name='L68'></a><a href='#L68'>68</a>
 <a name='L69'></a><a href='#L69'>69</a>
 <a name='L70'></a><a href='#L70'>70</a>
-<a name='L71'></a><a href='#L71'>71</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >/**<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
- * Consolidated location hooks - clear separation of concerns
- * 
- * Architecture:
- * - useLocationCore: Pure GPS coordinates (no tracking/sharing)
- * - useLocationTracking: GPS + server-side recording (no sharing)  
- * - useLocationSharing: GPS + tracking + live sharing with privacy
- * - useLocationDisplay: Coordinate formatting and geocoding
- * - useFriendLocations: Subscribe to friends' live locations
- */
-&nbsp;
-// Core GPS functionality
-export { useLocationCore } from './useLocationCore';
-export type { LocationCoreOptions, LocationCoreState } from './useLocationCore';
-&nbsp;
-// GPS + server tracking
-export { useLocationTracking } from './useLocationTracking';
-export type { LocationTrackingOptions } from './useLocationTracking';
-&nbsp;
-// GPS + tracking + live sharing
-export { useLocationSharing } from './useLocationSharing';
-export type { LocationSharingOptions } from './useLocationSharing';
-&nbsp;
-// Display utilities
-export { useLocationDisplay } from '../useLocationDisplay';
-export { useReverseGeocode } from '../useReverseGeocode';
-&nbsp;
-// PostGIS-powered location functions
-export { usePostGISLocation } from '../usePostGISLocation';
-export { useLocationMetrics } from '../useLocationMetrics';
-&nbsp;
-// Migration helper for transitioning to PostGIS
-export { useLocationMigration } from '../useLocationMigration';
-&nbsp;
-// Friend location subscriptions
-export { useFriendLocations } from '../useFriendLocations';
-&nbsp;
-// Legacy compatibility - gradually migrate these
-export { useGeo, useLatLng, useLocation, useGeoPos } from '../useGeo';
-export { useMyLocation } from '../useMyLocation';
-&nbsp;
-/**
- * MIGRATION GUIDE:
- * 
- * 1. For simple GPS coordinates:
- *    useGeo() → useLocationCore()
- * 
- * 2. For GPS + server recording:
- *    useUserLocation() → useLocationTracking()
- * 
- * 3. For GPS + recording + live sharing:
- *    useUserLocation() → useLocationSharing()
- * 
- * 4. For PostGIS-powered location features:
- *    useLocationMigration() - provides unified interface
- *    usePostGISLocation() - direct PostGIS access
- *    useLocationMetrics() - performance monitoring
- * 
- * 5. For coordinate display:
- *    Continue using useLocationDisplay()
- * 
- * 6. For friend locations:
- *    Continue using useFriendLocations()
- * 
- * PHASE 4 COMPLETE ✅
- * - PostGIS functions deployed
- * - Edge function updated
- * - React hooks created
- * - Migration helper available
- * - Existing code partially migrated
- */</pre></td></tr></table></pre>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >/**</span></span></span>
+<span class="cstat-no" title="statement not covered" > * Consolidated location hooks - clear separation of concerns</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * Architecture:</span>
+<span class="cstat-no" title="statement not covered" > * - useLocationCore: Pure GPS coordinates (no tracking/sharing)</span>
+<span class="cstat-no" title="statement not covered" > * - useLocationTracking: GPS + server-side recording (no sharing)  </span>
+<span class="cstat-no" title="statement not covered" > * - useLocationSharing: GPS + tracking + live sharing with privacy</span>
+<span class="cstat-no" title="statement not covered" > * - useLocationDisplay: Coordinate formatting and geocoding</span>
+<span class="cstat-no" title="statement not covered" > * - useFriendLocations: Subscribe to friends' live locations</span>
+<span class="cstat-no" title="statement not covered" > */</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Core GPS functionality</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationCore } from './useLocationCore';</span>
+<span class="cstat-no" title="statement not covered" >export type { LocationCoreOptions, LocationCoreState } from './useLocationCore';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// GPS + server tracking</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationTracking } from './useLocationTracking';</span>
+<span class="cstat-no" title="statement not covered" >export type { LocationTrackingOptions } from './useLocationTracking';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// GPS + tracking + live sharing</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationSharing } from './useLocationSharing';</span>
+<span class="cstat-no" title="statement not covered" >export type { LocationSharingOptions } from './useLocationSharing';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Display utilities</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationDisplay } from '../useLocationDisplay';</span>
+<span class="cstat-no" title="statement not covered" >export { useReverseGeocode } from '../useReverseGeocode';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// PostGIS-powered location functions</span>
+<span class="cstat-no" title="statement not covered" >export { usePostGISLocation } from '../usePostGISLocation';</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationMetrics } from '../useLocationMetrics';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Migration helper for transitioning to PostGIS</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationMigration } from '../useLocationMigration';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Friend location subscriptions</span>
+<span class="cstat-no" title="statement not covered" >export { useFriendLocations } from '../useFriendLocations';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Modern unified location system</span>
+<span class="cstat-no" title="statement not covered" >export { useUnifiedLocation, useLocationCore, useLocationTracking, useLocationSharing } from './useUnifiedLocation';</span>
+<span class="cstat-no" title="statement not covered" >export { useEnhancedLocationSharing } from './useEnhancedLocationSharing';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Read-only hooks optimized for render-heavy components</span>
+<span class="cstat-no" title="statement not covered" >export { useReadOnlyLocation, useReadOnlyLocationCoords, useReadOnlyMovementContext } from './useReadOnlyLocation';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Export shared types for downstream packages</span>
+<span class="cstat-no" title="statement not covered" >export type { GeoCoords, MovementContext, LocationHealth, SystemMetrics, UnifiedLocationOptions, UnifiedLocationState } from '@/lib/location/types';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Legacy compatibility - gradually migrate these</span>
+<span class="cstat-no" title="statement not covered" >export { useGeo, useLatLng, useLocation, useGeoPos } from '../useGeo';</span>
+<span class="cstat-no" title="statement not covered" >export { useMyLocation } from '../useMyLocation';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Compatibility layer for gradual migration</span>
+<span class="cstat-no" title="statement not covered" >export { useCompatGeo, getMigrationMetrics, getMigrationStatus } from './compatibility';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >/**</span>
+<span class="cstat-no" title="statement not covered" > * MIGRATION GUIDE:</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * 1. For simple GPS coordinates:</span>
+<span class="cstat-no" title="statement not covered" > *    useGeo() → useLocationCore()</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * 2. For GPS + server recording:</span>
+<span class="cstat-no" title="statement not covered" > *    useUserLocation() → useLocationTracking()</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * 3. For GPS + recording + live sharing:</span>
+<span class="cstat-no" title="statement not covered" > *    useUserLocation() → useUnifiedLocation()</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * 4. For PostGIS-powered location features:</span>
+<span class="cstat-no" title="statement not covered" > *    useLocationMigration() - provides unified interface</span>
+<span class="cstat-no" title="statement not covered" > *    usePostGISLocation() - direct PostGIS access</span>
+<span class="cstat-no" title="statement not covered" > *    useLocationMetrics() - performance monitoring</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * 5. For coordinate display:</span>
+<span class="cstat-no" title="statement not covered" > *    Continue using useLocationDisplay()</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * 6. For friend locations:</span>
+<span class="cstat-no" title="statement not covered" > *    Continue using useFriendLocations()</span>
+<span class="cstat-no" title="statement not covered" > * </span>
+<span class="cstat-no" title="statement not covered" > * MIGRATION COMPLETE ✅</span>
+<span class="cstat-no" title="statement not covered" > * - All components migrated to unified location system</span>
+<span class="cstat-no" title="statement not covered" > * - useUserLocation hook removed</span>
+<span class="cstat-no" title="statement not covered" > * - GlobalLocationManager coordinating all GPS requests</span>
+<span class="cstat-no" title="statement not covered" > * - DatabaseCircuitBreaker protecting against overload</span>
+<span class="cstat-no" title="statement not covered" > * - Performance improvements: 85% reduction in GPS conflicts</span>
+<span class="cstat-no" title="statement not covered" > */</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T00:41:48.799Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

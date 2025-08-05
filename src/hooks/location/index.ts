@@ -40,7 +40,7 @@ export { useUnifiedLocation, useLocationCore, useLocationTracking, useLocationSh
 export { useEnhancedLocationSharing } from './useEnhancedLocationSharing';
 
 // Read-only hooks optimized for render-heavy components
-export { useReadOnlyLocation, useLocationCoords, useMovementContext } from './useReadOnlyLocation';
+export { useReadOnlyLocation, useReadOnlyLocationCoords, useReadOnlyMovementContext } from './useReadOnlyLocation';
 
 // Export shared types for downstream packages
 export type { GeoCoords, MovementContext, LocationHealth, SystemMetrics, UnifiedLocationOptions, UnifiedLocationState } from '@/lib/location/types';

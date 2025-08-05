@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/150</span>
+                <span class='fraction'>0/157</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/150</span>
+                <span class='fraction'>0/157</span>
             </div>
         
             
@@ -258,7 +258,18 @@
 <a name='L193'></a><a href='#L193'>193</a>
 <a name='L194'></a><a href='#L194'>194</a>
 <a name='L195'></a><a href='#L195'>195</a>
-<a name='L196'></a><a href='#L196'>196</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -274,6 +285,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -457,20 +479,31 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function LocationDebugInfo() {</span>
 <span class="cstat-no" title="statement not covered" >  const { </span>
-<span class="cstat-no" title="statement not covered" >    location, </span>
+<span class="cstat-no" title="statement not covered" >    coords,</span>
+<span class="cstat-no" title="statement not covered" >    timestamp,</span>
 <span class="cstat-no" title="statement not covered" >    isTracking, </span>
-<span class="cstat-no" title="statement not covered" >    loading, </span>
+<span class="cstat-no" title="statement not covered" >    status, </span>
 <span class="cstat-no" title="statement not covered" >    error, </span>
 <span class="cstat-no" title="statement not covered" >    hasPermission, </span>
-<span class="cstat-no" title="statement not covered" >    checkPermission, </span>
-<span class="cstat-no" title="statement not covered" >    resetLocation,</span>
 <span class="cstat-no" title="statement not covered" >    startTracking,</span>
 <span class="cstat-no" title="statement not covered" >    stopTracking </span>
-<span class="cstat-no" title="statement not covered" >  } = useUserLocation()</span>
+<span class="cstat-no" title="statement not covered" >  } = useUnifiedLocation({</span>
+<span class="cstat-no" title="statement not covered" >    enableTracking: true,</span>
+<span class="cstat-no" title="statement not covered" >    enablePresence: true,</span>
+<span class="cstat-no" title="statement not covered" >    hookId: 'location-debug-info'</span>
+<span class="cstat-no" title="statement not covered" >  })</span>
+  
+  // Compatibility aliases
+<span class="cstat-no" title="statement not covered" >  const location = coords ? { coords: { latitude: coords.lat, longitude: coords.lng, accuracy: coords.accuracy } } : null</span>
+<span class="cstat-no" title="statement not covered" >  const loading = status === 'loading'</span>
+  
+  // Legacy functions - these might need to be implemented differently
+<span class="cstat-no" title="statement not covered" >  const checkPermission = () =&gt; console.log('Permission check not implemented in unified location')</span>
+<span class="cstat-no" title="statement not covered" >  const resetLocation = () =&gt; console.log('Reset location not implemented in unified location')</span>
   
 <span class="cstat-no" title="statement not covered" >  const [browserInfo, setBrowserInfo] = useState&lt;any&gt;(null)</span>
 <span class="cstat-no" title="statement not covered" >  const [permissionState, setPermissionState] = useState&lt;string&gt;('unknown')</span>
@@ -655,7 +688,7 @@ import { useUserLocation } from '@/hooks/useUserLocation'
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T00:41:48.799Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

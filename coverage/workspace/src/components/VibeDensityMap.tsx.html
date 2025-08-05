@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/153</span>
+                <span class='fraction'>0/139</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/153</span>
+                <span class='fraction'>0/139</span>
             </div>
         
             
@@ -301,22 +301,8 @@
 <a name='L236'></a><a href='#L236'>236</a>
 <a name='L237'></a><a href='#L237'>237</a>
 <a name='L238'></a><a href='#L238'>238</a>
-<a name='L239'></a><a href='#L239'>239</a>
-<a name='L240'></a><a href='#L240'>240</a>
-<a name='L241'></a><a href='#L241'>241</a>
-<a name='L242'></a><a href='#L242'>242</a>
-<a name='L243'></a><a href='#L243'>243</a>
-<a name='L244'></a><a href='#L244'>244</a>
-<a name='L245'></a><a href='#L245'>245</a>
-<a name='L246'></a><a href='#L246'>246</a>
-<a name='L247'></a><a href='#L247'>247</a>
-<a name='L248'></a><a href='#L248'>248</a>
-<a name='L249'></a><a href='#L249'>249</a>
-<a name='L250'></a><a href='#L250'>250</a>
-<a name='L251'></a><a href='#L251'>251</a>
-<a name='L252'></a><a href='#L252'>252</a>
-<a name='L253'></a><a href='#L253'>253</a>
-<a name='L254'></a><a href='#L254'>254</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L239'></a><a href='#L239'>239</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -399,13 +385,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -414,20 +397,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -592,6 +562,7 @@ import { myLocationLayer } from '@/components/map/layers/MyLocationLayer';
 &nbsp;
 import { useClusters } from '@/hooks/useClusters';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { getMapInstance } from '@/lib/geo/project';
 &nbsp;
 /* ------------------------------------------------------------------ */
@@ -650,38 +621,22 @@ interface Props {
   /* slide-out panel state ------------------------------------------- */
 <span class="cstat-no" title="statement not covered" >  const [showFilter, setShowFilter] = useState(false);</span>
 &nbsp;
-  /* user location state ---------------------------------------------- */
-<span class="cstat-no" title="statement not covered" >  const [userLocation, setUserLocation] = useState&lt;{</span>
-    lat: number; lng: number;
-<span class="cstat-no" title="statement not covered" >  } | null&gt;(null);</span>
+  /* user location using unified system ------------------------------- */
+<span class="cstat-no" title="statement not covered" >  const userLocationHook = useUnifiedLocation({</span>
+<span class="cstat-no" title="statement not covered" >    enableTracking: false, // Don't need server tracking for this</span>
+<span class="cstat-no" title="statement not covered" >    hookId: 'vibe-density-map'</span>
+<span class="cstat-no" title="statement not covered" >  });</span>
 &nbsp;
-  /* user location tracking ------------------------------------------- */
+  // Start/stop location tracking based on modal open state
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!open) return;</span>
-<span class="cstat-no" title="statement not covered" >    if (!navigator.geolocation) return;</span>
+<span class="cstat-no" title="statement not covered" >    if (open) {</span>
+<span class="cstat-no" title="statement not covered" >      userLocationHook.startTracking();</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      userLocationHook.stopTracking();</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [open, userLocationHook.startTracking, userLocationHook.stopTracking]);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    const watch = navigator.geolocation.watchPosition(</span>
-<span class="cstat-no" title="statement not covered" >      ({ coords }) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        setUserLocation({</span>
-<span class="cstat-no" title="statement not covered" >          lat: coords.latitude,</span>
-<span class="cstat-no" title="statement not covered" >          lng: coords.longitude,</span>
-<span class="cstat-no" title="statement not covered" >        });</span>
-<span class="cstat-no" title="statement not covered" >      },</span>
-<span class="cstat-no" title="statement not covered" >      (error) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        console.warn('Geolocation error:', error.message);</span>
-<span class="cstat-no" title="statement not covered" >      },</span>
-<span class="cstat-no" title="statement not covered" >      { </span>
-<span class="cstat-no" title="statement not covered" >        enableHighAccuracy: true,</span>
-<span class="cstat-no" title="statement not covered" >        maximumAge: 5000,</span>
-<span class="cstat-no" title="statement not covered" >        timeout: 10000,</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >    );</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      navigator.geolocation.clearWatch(watch);</span>
-<span class="cstat-no" title="statement not covered" >      setUserLocation(null);</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [open]);</span>
+<span class="cstat-no" title="statement not covered" >  const userLocation = userLocationHook.coords;</span>
 &nbsp;
   /* convert clusters to VibeData for overlay ------------------------- */
 <span class="cstat-no" title="statement not covered" >  const vibePoints = filteredClusters.map((c) =&gt; ({</span>
@@ -829,7 +784,7 @@ interface Props {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T00:41:48.799Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
