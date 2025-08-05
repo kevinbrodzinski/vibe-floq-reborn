@@ -46,13 +46,14 @@ export function BannerProvider({ children }: { children: ReactNode }) {
     return true;
   }, [dismissedBannerIds, activeBanner]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = React.useMemo(() => ({
     dismissedBannerIds,
     activeBanner,
     dismissBanner,
     setActiveBanner,
     shouldShowBanner,
-  };
+  }), [dismissedBannerIds, activeBanner, dismissBanner, setActiveBanner, shouldShowBanner]);
 
   return (
     <BannerContext.Provider value={value}>

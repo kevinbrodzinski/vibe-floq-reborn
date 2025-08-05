@@ -106,8 +106,14 @@ export const PlanNotificationProvider: React.FC<{ children: React.ReactNode }> =
     });
   };
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({ 
+    badges, 
+    clearPlan 
+  }), [badges, clearPlan]);
+
   return (
-    <PlanNotifCtx.Provider value={{ badges, clearPlan }}>
+    <PlanNotifCtx.Provider value={contextValue}>
       {children}
     </PlanNotifCtx.Provider>
   );

@@ -184,8 +184,18 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
     }
   };
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    unseen, 
+    markAsSeen, 
+    markAllSeen, 
+    getCountByPlan, 
+    getTotalPlanBadges, 
+    clearPlan
+  }), [unseen, markAsSeen, markAllSeen, getCountByPlan, getTotalPlanBadges, clearPlan]);
+
   return (
-    <EventNotificationsContext.Provider value={{ unseen, markAsSeen, markAllSeen, getCountByPlan, getTotalPlanBadges, clearPlan }}>
+    <EventNotificationsContext.Provider value={contextValue}>
       {children}
     </EventNotificationsContext.Provider>
   );
