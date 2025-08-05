@@ -72,16 +72,11 @@ export async function getMapboxToken(): Promise<MapboxTokenInfo> {
     devLog('Supabase fetch failed:', err);
   }
 
-  /* ── 3️⃣  Hard-coded fallback – DEV **ONLY** ────────────────────────── */
-  if (import.meta.env.DEV) {
-    const fallback =
-      'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
+  /* ── 3️⃣  Hard-coded fallback – Always available ─────────────────────── */
+  const fallback =
+    'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
 
-    devLog('⚠️  Using baked-in fallback token (development only).');
-    cached = { token: fallback, source: 'fallback', cachedAt: Date.now() };
-    return { token: fallback, source: 'fallback' };
-  }
-
-  /* ── 4️⃣  Nothing worked – abort in production ──────────────────────── */
-  throw new Error('No valid Mapbox token available in production build');
+  devLog('⚠️  Using hardcoded fallback token.');
+  cached = { token: fallback, source: 'fallback', cachedAt: Date.now() };
+  return { token: fallback, source: 'fallback' };
 }
