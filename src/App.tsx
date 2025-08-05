@@ -79,8 +79,8 @@ const App = () => {
                 <TooltipProvider>
                   <Toaster />
                   <NetworkStatusBanner />
-                  <PlanInviteProvider />
                   <BrowserRouter>
+                    <PlanInviteProvider />
                     <LocationSystemHealthDashboard />
                     <Routes>
                       <Route path="/a/:slug" element={<SharedAfterglow />} />

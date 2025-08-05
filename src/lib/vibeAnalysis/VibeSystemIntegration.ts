@@ -53,11 +53,20 @@ export interface EnhancedSocialContextData {
   hotspots: Array<{
     id: string;
     name: string;
+    dominantVibe: string;
+    intensity: number;
+    momentum: number;
+    stability: number;
+    diversity: number;
     socialMetrics: {
       userCount: number;
+      vibeCoherence: number;
+      averageStayTime: number;
     };
     prediction: {
       confidence: number;
+      trend: 'rising' | 'stable' | 'declining';
+      peakTime: string;
     };
   }>;
 }
@@ -70,8 +79,17 @@ export interface EnhancedPersonalHeroData {
   accuracy: number;
   currentVibe: string;
   predictions: {
-    nextVibeTransition: any;
-    contextualSuggestions: any;
+    nextVibeTransition: {
+      vibe: string;
+      probability: number;
+      timeframe: string;
+      timeEstimate: string;
+    };
+    contextualSuggestions: Array<{
+      vibe: string;
+      reason: string;
+      confidence: number;
+    }>;
   };
   learningProgress: {
     totalCorrections: number;
@@ -169,14 +187,40 @@ export class VibeSystemIntegration {
         {
           id: 'hotspot-1',
           name: 'Coffee District',
-          socialMetrics: { userCount: 12 },
-          prediction: { confidence: 0.85 }
+          dominantVibe: 'social',
+          intensity: 0.8,
+          momentum: 0.6,
+          stability: 0.7,
+          diversity: 0.5,
+          socialMetrics: { 
+            userCount: 12,
+            vibeCoherence: 0.85,
+            averageStayTime: 45
+          },
+          prediction: { 
+            confidence: 0.85,
+            trend: 'rising' as const,
+            peakTime: '2:30 PM'
+          }
         },
         {
           id: 'hotspot-2', 
           name: 'Park Central',
-          socialMetrics: { userCount: 8 },
-          prediction: { confidence: 0.72 }
+          dominantVibe: 'chill',
+          intensity: 0.6,
+          momentum: 0.4,
+          stability: 0.9,
+          diversity: 0.7,
+          socialMetrics: { 
+            userCount: 8,
+            vibeCoherence: 0.72,
+            averageStayTime: 60
+          },
+          prediction: { 
+            confidence: 0.72,
+            trend: 'stable' as const,
+            peakTime: '4:00 PM'
+          }
         }
       ]
     };
@@ -185,7 +229,7 @@ export class VibeSystemIntegration {
   async getEnhancedPersonalHeroData(
     heroData: any,
     sensorData: any,
-    locationData: any
+    locationData?: any
   ): Promise<EnhancedPersonalHeroData> {
     return {
       heroMetrics: { energy: 0.8, focus: 0.6, social: 0.7 },
@@ -195,8 +239,16 @@ export class VibeSystemIntegration {
       accuracy: 0.76,
       currentVibe: 'social',
       predictions: {
-        nextVibeTransition: { vibe: 'chill', probability: 0.65, timeframe: '30min' },
-        contextualSuggestions: ['Try a quieter venue', 'Join a group activity']
+        nextVibeTransition: { 
+          vibe: 'chill', 
+          probability: 0.65, 
+          timeframe: '30min',
+          timeEstimate: '30 minutes'
+        },
+        contextualSuggestions: [
+          { vibe: 'chill', reason: 'Try a quieter venue', confidence: 0.7 },
+          { vibe: 'social', reason: 'Join a group activity', confidence: 0.8 }
+        ]
       },
       learningProgress: {
         totalCorrections: 47,
