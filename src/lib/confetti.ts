@@ -54,7 +54,8 @@ export const celebrationEffects = {
   planFinalized: () => triggerConfetti(2500, { intensity: 'medium', colors: ['#45b7d1', '#4ecdc4'] }),
   planExecuting: () => triggerConfetti(3000, { intensity: 'high', colors: ['#ffa726', '#ff6b6b'] }),
   planCompleted: () => triggerConfetti(4500, { intensity: 'celebration' }),
-  milestone: () => triggerConfetti(2000, { intensity: 'low', colors: ['#66bb6a'] })
+  milestone: () => triggerConfetti(2000, { intensity: 'low', colors: ['#66bb6a'] }),
+  vibeShiftCelebration: () => triggerConfetti(2000, { intensity: 'medium', colors: ['#66bb6a', '#45b7d1'] })
 }
 
 function createConfettiPiece(color: string, shape: 'circle' | 'square' | 'triangle' = 'circle') {

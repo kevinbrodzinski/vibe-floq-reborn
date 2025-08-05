@@ -1,6 +1,12 @@
 import * as Comlink from 'comlink';
 import type { RawTile, Cluster } from '@/workers/clustering.worker';
 
+// Define the clustering API interface
+export interface ClusteringAPI {
+  cluster: (tiles: RawTile[], zoom?: number) => Promise<Cluster[]>;
+  hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
+}
+
 /**
  * Fallback clustering implementation for when Web Workers aren't available
  */
@@ -88,7 +94,7 @@ const isWorkerSupported = (): boolean => {
 /**
  * Singleton / HMR-safe worker wrapper with fallback support
  */
-const createClusterWorker = () => {
+const createClusterWorker = (): ClusteringAPI => {
   if (!isWorkerSupported()) {
     console.warn('[ClusterWorker] Web Workers not supported, using fallback implementation');
     return new ClusteringFallback();
@@ -97,7 +103,7 @@ const createClusterWorker = () => {
   const g = globalThis as any;
   const key = '__clusterWorker';
 
-  if (g[key]) return Comlink.wrap(g[key] as Worker);
+  if (g[key]) return Comlink.wrap<ClusteringAPI>(g[key] as Worker);
 
   try {
     const w = new Worker(
@@ -110,10 +116,7 @@ const createClusterWorker = () => {
     }
 
     g[key] = w;
-    return Comlink.wrap<{
-      cluster: (tiles: RawTile[], zoom?: number) => Promise<Cluster[]>;
-      hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
-    }>(w);
+    return Comlink.wrap<ClusteringAPI>(w);
   } catch (error) {
     console.warn('[ClusterWorker] Failed to create worker, using fallback:', error);
     return new ClusteringFallback();

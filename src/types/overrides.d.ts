@@ -45,4 +45,24 @@ declare module '@/integrations/supabase/types' {
     topVibe: string;
     highlights: string[];
   }
+
+  // Vibe system types
+  interface VibePrediction {
+    vibe: string;
+    probability: number;
+    timeframe: string;
+    reason: string;
+    confidence: number;
+  }
+
+  interface PredictionsData {
+    nextVibeTransition: VibePrediction;
+    contextualSuggestions: VibePrediction[];
+    locationBasedTransitions?: VibePrediction[];
+  }
+
+  interface AlignmentData {
+    friendMatches?: any;
+    [key: string]: any;
+  }
 }

@@ -104,7 +104,7 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
     );
     
     // Update location history for pattern analysis
-    this.updateLocationHistory(enhancedLocationData.location, baseData.currentVibe);
+    this.updateLocationHistory(enhancedLocationData.location, baseData.currentVibe as any);
     
     return {
       ...baseData,
@@ -118,16 +118,16 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
           baseData.currentVibe as any
         ),
         contextualSuggestions: []
-      },
+      } as any,
       
       // Enhanced environmental factors with location data
       environmentalFactors: {
         ...baseData.environmentalFactors,
         locationStability: locationContext.environmentalEnhancement?.locationStability || 0,
-        socialContext: locationContext.proximityContext.socialDensity,
+        socialContext: locationContext.proximityContext?.socialDensity || 0,
         venueInfluence: locationContext.venueContext?.confidence || 0,
         privacyComfort: this.calculatePrivacyComfort(locationContext)
-      }
+      } as any
     };
   }
   
@@ -189,8 +189,8 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
       
       // Enhanced friend alignment with proximity confidence
       alignment: {
-        ...baseData.alignment,
-        friendMatches: (baseData.alignment as any)?.friendMatches?.map((match: any) => ({
+        ...(baseData.alignment as any),
+        friendMatches: ((baseData.alignment as any)?.friendMatches || []).map((match: any) => ({
           ...match,
           proximityConfidence: this.getProximityConfidence(match.friendId, locationContext),
           estimatedArrivalTime: this.estimateArrivalTime(match.friendId, locationContext)
@@ -292,12 +292,12 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
     // Record proximity events if relevant
     if (interactionType === 'social_action' || interactionType === 'proximity_event') {
       await this.proximityRecorder.recordProximityEvents([{
-        profileId: data.profileId,
-        friendId: data.friendId,
-        eventType: data.eventType || 'interaction',
-        location: enhancedLocationData.location,
-        confidence: locationContext.proximityContext.proximityScore,
-        metadata: {
+        profile_id_a: data.profileId,
+        profile_id_b: data.friendId,
+        event_type: data.eventType || 'interaction',
+        distance_meters: 50,
+        confidence: locationContext.proximityContext?.proximityScore || 0,
+        ml_features: {
           vibeContext: data.currentVibe,
           interactionType,
           venueContext: locationContext.venueContext?.venueName
@@ -438,10 +438,7 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
   }
   
   // Additional helper methods would be implemented here...
-  private async predictLocationBasedVibeTransitions(locationContext: any, currentVibe: Vibe): Promise<any> {
-    // Implementation for location-based vibe predictions
-    return [];
-  }
+  // Remove duplicate - use the public method instead
   
   private async enhanceHotspotsWithLocationData(hotspots: any[], locationContext: any): Promise<any[]> {
     // Implementation for enhancing hotspots with location confidence
@@ -508,18 +505,18 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
     return { score: 0.5, direction: 'stable' };
   }
 
-  // Missing methods required by the interface
+  // Missing methods required by the interface  
   async getContextualSuggestions(currentVibe: any, location: any, timeContext: any): Promise<any[]> {
-    // Implementation stub
+    console.warn('[LES] getContextualSuggestions stub called', { currentVibe, location, timeContext });
     return [];
   }
 
   async recordUserInteraction(interactionType: any, data: any): Promise<void> {
-    // Implementation stub
+    console.warn('[LES] recordUserInteraction stub called', { interactionType, data });
   }
 
   async predictLocationBasedVibeTransitions(locationContext: any, currentVibe: any): Promise<any[]> {
-    // Implementation stub
+    console.warn('[LES] predictLocationBasedVibeTransitions stub called', { locationContext, currentVibe });
     return [];
   }
 }

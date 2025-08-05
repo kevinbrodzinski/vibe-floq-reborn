@@ -50,14 +50,14 @@ export const useTodayRecap = () => {
         .select('payload')
         .eq('user_id', user.id)
         .eq('day', yesterday)
-        .maybeSingle();
+        .maybeSingle() as any; // Type cast to avoid deep instantiation
 
       if (error) {
         console.error('[Recap]', error);
         return null;
       }
 
-      const recapData = (data?.payload ?? null) as unknown as RecapData | null;
+      const recapData = (data?.payload ?? null) as any; // Type cast to avoid deep instantiation
 
       if (recapData) {                 // ← only cache valid data
         localStorage.setItem(cacheKey, JSON.stringify(recapData));
