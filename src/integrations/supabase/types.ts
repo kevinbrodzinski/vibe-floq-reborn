@@ -11681,6 +11681,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_group_plan_with_floq: {
+        Args: {
+          p_title: string
+          p_description?: string
+          p_starts_at?: string
+          p_ends_at?: string
+          p_floq_title?: string
+          p_floq_description?: string
+        }
+        Returns: {
+          plan_id: string
+          floq_id: string
+        }[]
+      }
       create_or_replace_cron_job: {
         Args: { job_name: string; schedule: string; command: string }
         Returns: undefined
@@ -12377,6 +12391,23 @@ export type Database = {
         Returns: {
           profile_id: string
           avatar_url: string
+        }[]
+      }
+      get_floq_plans_enhanced: {
+        Args: { p_profile_id: string }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          status: Database["public"]["Enums"]["plan_status_enum"]
+          starts_at: string
+          ends_at: string
+          created_at: string
+          updated_at: string
+          creator_id: string
+          floq_id: string
+          participant_count: number
+          user_rsvp_status: Database["public"]["Enums"]["rsvp_status_enum"]
         }[]
       }
       get_floq_visibility_safe: {
