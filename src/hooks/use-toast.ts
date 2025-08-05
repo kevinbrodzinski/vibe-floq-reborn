@@ -183,7 +183,7 @@ function useToast() {
 
   // Memoize the return value to prevent infinite re-renders
   return React.useMemo(() => ({
-    ...state,
+    toasts: state.toasts,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }), [state.toasts]) // Only recreate when toasts array actually changes

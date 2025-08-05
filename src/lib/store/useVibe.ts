@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { VibeEnum } from '@/constants/vibes';
+import { shallow } from 'zustand/shallow';
 
 type VibeState = {
   vibe: VibeEnum | null;
@@ -20,8 +21,8 @@ type VibeState = {
 };
 
 // Selector helpers to avoid repeating everywhere
-export const useCurrentVibe = () => useVibe((s) => s.vibe);
-export const useCurrentVibeRow = () => useVibe((s) => s.currentRow);
+export const useCurrentVibe = () => useVibe((s) => s.vibe, shallow);
+export const useCurrentVibeRow = () => useVibe((s) => s.currentRow, shallow);
 
 export const useVibe = create<VibeState>()(
   persist(

@@ -1,5 +1,6 @@
 import { useVibe } from '@/lib/store/useVibe';
 import { Eye, EyeOff, Users } from 'lucide-react';
+import { shallow } from 'zustand/shallow';
 
 const cycle: Record<'public' | 'friends' | 'off', 'public' | 'friends' | 'off'> = {
   public: 'friends',
@@ -8,8 +9,8 @@ const cycle: Record<'public' | 'friends' | 'off', 'public' | 'friends' | 'off'> 
 };
 
 export function VisibilityButton() {
-  const visibility = useVibe((s) => s.visibility);
-  const setVisibility = useVibe((s) => s.setVisibility);
+  const visibility = useVibe((s) => s.visibility, shallow);
+  const setVisibility = useVibe((s) => s.setVisibility, shallow);
 
   const Icon = visibility === 'public'
     ? Eye

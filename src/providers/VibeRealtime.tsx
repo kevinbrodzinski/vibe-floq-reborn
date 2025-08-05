@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useVibe } from '@/lib/store/useVibe';
 import { useAuth } from '@/providers/AuthProvider';
+import { shallow } from 'zustand/shallow';
 
 export function VibeRealtime() {
-  const sync = useVibe((s) => s.syncFromRemote);
+  const sync = useVibe((s) => s.syncFromRemote, shallow);
   const { user, loading: authLoading } = useAuth();
   const profileId = user?.id;
 

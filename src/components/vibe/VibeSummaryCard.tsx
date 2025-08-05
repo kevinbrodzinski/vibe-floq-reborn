@@ -5,6 +5,7 @@ import { VIBE_COLORS, type VibeEnum } from '@/constants/vibes';
 import { safeVibe } from '@/types/enums/vibes';
 import type { Vibe } from '@/types';
 import { useVibe } from '@/lib/store/useVibe';       
+import { shallow } from 'zustand/shallow';
 
 
 interface VibeSummaryCardProps {
@@ -28,7 +29,7 @@ export const VibeSummaryCard = memo(
     error = null,
   }: VibeSummaryCardProps) => {
     const [shouldPulse, setShouldPulse] = useState(false);
-    const visibility = useVibe((s) => s.visibility);
+    const visibility = useVibe((s) => s.visibility, shallow);
 
     /* ---- pulse when vibe changes --------------------------------- */
     useEffect(() => {
