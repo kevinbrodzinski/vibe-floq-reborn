@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUserProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,7 +36,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        // Skip duplicate setLoading(false) for initial session
+        if (event !== 'INITIAL_SESSION') {
+          setLoading(false);
+        }
       }
     );
 
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [queryClient]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, session, loading }}>
@@ -61,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 const ProfileErrorHandler = () => {
-  const { data: profile, error } = useCurrentUserProfile();
+  const { error } = useCurrentUserProfile();
   const { toast } = useToast();
 
   useEffect(() => {

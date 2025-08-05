@@ -1,7 +1,6 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -12,17 +11,12 @@ import { EventNotificationsProvider } from "@/providers/EventNotificationsProvid
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
-import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
-import { useAuth } from "@/providers/AuthProvider";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
 
-// Remove development-only debug panel
-// import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
-// import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
@@ -30,11 +24,13 @@ import SharedPlan from "./pages/SharedPlan";
 import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 
-const queryClient = new QueryClient();
-
 const App = () => {
-  // Remove development-only debug panel
-  // const { isDebugPanelOpen, setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
+  // Stable QueryClient instance to prevent recreation on re-renders
+  const queryClientRef = useRef<QueryClient>();
+  if (!queryClientRef.current) {
+    queryClientRef.current = new QueryClient();
+  }
+  const queryClient = queryClientRef.current;
   
   // Auto-join presence channels for all users
   usePresenceChannel();
@@ -57,7 +53,7 @@ const App = () => {
           if (payload.eventType !== 'INSERT') return
           
           queryClient.setQueryData(['floq-msgs', payload.new.floq_id], (d: any) => {
-            if (!d) return d
+            if (!d || !Array.isArray(d.pages)) return d // Guard against missing pages
             // avoid dupes
             if (d.pages[0].some((m: any) => m.id === payload.new.id)) return d
             d.pages[0].unshift(payload.new)
@@ -70,43 +66,38 @@ const App = () => {
     return () => {
       supabase.removeChannel(channel);
     }
-  }, []);
+  }, [queryClient]);
   
   return (
     <QueryClientProvider client={queryClient}>
-        <AuthProvider>
+      <AuthProvider>
         <AppProviders>
-        <EventNotificationsProvider>
-          <PlanNotificationProvider>
-            <VibeRealtime />
-            <BannerProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <NetworkStatusBanner />
-                <BrowserRouter>
-                  <PlanInviteProvider />
-                  <Routes>
-                {/* Public shared routes - no auth required */}
-                <Route path="/a/:slug" element={<SharedAfterglow />} />
-                <Route path="/share/:slug" element={<SharedPlan />} />
-                <Route path="/invite/:slug" element={<PlanInvite />} />
-                <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
-                {/* Settings route */}
-                <Route path="/settings/profile" element={<Settings />} />
-                {/* Main app routes (field, floqs, etc.) are handled inside Index */}
-                    <Route path="/*" element={<Index />} />
-                  </Routes>
-                  
-                  {/* Remove development-only environment debug panel for TestFlight */}
-                  <LocationSystemHealthDashboard />
-                </BrowserRouter>
-              </TooltipProvider>
-            </BannerProvider>
-          </PlanNotificationProvider>
-        </EventNotificationsProvider>
+          <EventNotificationsProvider>
+            <PlanNotificationProvider>
+              <VibeRealtime />
+              <BannerProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <NetworkStatusBanner />
+                  <PlanInviteProvider>
+                    <BrowserRouter>
+                      <LocationSystemHealthDashboard />
+                      <Routes>
+                        <Route path="/a/:slug" element={<SharedAfterglow />} />
+                        <Route path="/share/:slug" element={<SharedPlan />} />
+                        <Route path="/invite/:slug" element={<PlanInvite />} />
+                        <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
+                        <Route path="/settings/profile" element={<Settings />} />
+                        <Route path="/*" element={<Index />} />
+                      </Routes>
+                    </BrowserRouter>
+                  </PlanInviteProvider>
+                </TooltipProvider>
+              </BannerProvider>
+            </PlanNotificationProvider>
+          </EventNotificationsProvider>
         </AppProviders>
-        </AuthProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
