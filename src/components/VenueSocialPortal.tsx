@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useVenueDetails } from "@/hooks/useVenueDetails";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
-import { useGeo } from "@/hooks/useGeo";
+import { useUnifiedLocation } from "@/hooks/location/useUnifiedLocation";
 import { useVenueEnergy } from "@/hooks/useVenueEnergy";
 import { vibeEmoji } from "@/utils/vibe";
 import { VenueEnergyTab } from "@/components/VenueEnergyTab";
@@ -31,7 +31,11 @@ interface VenueSocialPortalProps {
 export function VenueSocialPortal({ open, onOpenChange, venueId }: VenueSocialPortalProps) {
   const { data: venue } = useVenueDetails(venueId);
   const { data: energyData } = useVenueEnergy(venueId);
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'VenueSocialPortal',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const { join, joinPending } = useVenueJoin(venue?.id ?? null, lat, lng);

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { usePersonalizedVenues, type PersonalizedVenue, type PriceTier } from '@/hooks/usePersonalizedVenues';
 import { useVenueInteractions } from '@/hooks/useVenueInteractions';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -35,7 +35,11 @@ export const PersonalizedVenueBrowser: React.FC<PersonalizedVenueBrowserProps> =
   className
 }) => {
   const navigate = useNavigate();
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'PersonalizedVenueBrowser',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
 

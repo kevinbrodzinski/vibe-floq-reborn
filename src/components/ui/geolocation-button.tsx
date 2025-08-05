@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useGeo } from "@/hooks/useGeo";
+import { useUnifiedLocation } from "@/hooks/location/useUnifiedLocation";
 
 interface GeolocationButtonProps {
   className?: string;
@@ -14,7 +14,12 @@ export const GeolocationButton = ({
   variant = "outline", 
   size = "default" 
 }: GeolocationButtonProps) => {
-  const { coords, status, error, hasPermission, requestLocation } = useGeo();
+  const { coords, status, error, hasPermission, getCurrentLocation } = useUnifiedLocation({
+    hookId: 'GeolocationButton',
+    enableTracking: false,
+    enablePresence: false
+  });
+  const requestLocation = getCurrentLocation;
   const lat = coords?.lat;
   const lng = coords?.lng;
   const loading = status === 'loading';

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/41</span>
+                <span class='fraction'>0/42</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/41</span>
+                <span class='fraction'>0/42</span>
             </div>
         
             
@@ -130,7 +130,10 @@
 <a name='L65'></a><a href='#L65'>65</a>
 <a name='L66'></a><a href='#L66'>66</a>
 <a name='L67'></a><a href='#L67'>67</a>
-<a name='L68'></a><a href='#L68'>68</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -161,6 +164,9 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -223,13 +229,16 @@ interface MessagesSheetProps {
 <span class="cstat-no" title="statement not covered" >}: MessagesSheetProps) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const { user } = useAuth();</span>
 <span class="cstat-no" title="statement not covered" >  const [dmSheetOpen, setDmSheetOpen] = useState(false);</span>
-<span class="cstat-no" title="statement not covered" >  const [selectedFriendId, setSelectedFriendId] = useState&lt;string | undefined&gt;(undefined);</span>
+<span class="cstat-no" title="statement not covered" >  const [selectedFriendProfileId, setSelectedFriendProfileId] = useState&lt;string | undefined&gt;(undefined);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  const handleThreadSelect = (threadId: string, friendId: string) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    setSelectedFriendId(friendId);</span>
+<span class="cstat-no" title="statement not covered" >  const handleThreadSelect = (threadId: string, friendProfileId: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setSelectedFriendProfileId(friendProfileId);</span>
 <span class="cstat-no" title="statement not covered" >    setDmSheetOpen(true);</span>
     // Don't close the list immediately - let user navigate back
 <span class="cstat-no" title="statement not covered" >  };</span>
+&nbsp;
+  // user.id is the profile_id (main user identifier)
+<span class="cstat-no" title="statement not covered" >  const currentProfileId = user?.id;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;&gt;</span>
@@ -243,10 +252,10 @@ interface MessagesSheetProps {
 <span class="cstat-no" title="statement not covered" >          &lt;/SheetHeader&gt;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >          &lt;div className="flex-1 overflow-hidden"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            {user?.id ? (</span>
+<span class="cstat-no" title="statement not covered" >            {currentProfileId ? (</span>
 <span class="cstat-no" title="statement not covered" >              &lt;ThreadsList</span>
 <span class="cstat-no" title="statement not covered" >                onThreadSelect={handleThreadSelect}</span>
-<span class="cstat-no" title="statement not covered" >                currentUserId={user.id}</span>
+<span class="cstat-no" title="statement not covered" >                currentProfileId={currentProfileId}</span>
 <span class="cstat-no" title="statement not covered" >              /&gt;</span>
             ) : (
 <span class="cstat-no" title="statement not covered" >              &lt;div className="flex items-center justify-center h-full text-muted-foreground"&gt;</span>
@@ -260,7 +269,7 @@ interface MessagesSheetProps {
 <span class="cstat-no" title="statement not covered" >      &lt;DMQuickSheet</span>
 <span class="cstat-no" title="statement not covered" >        open={dmSheetOpen}</span>
 <span class="cstat-no" title="statement not covered" >        onOpenChange={setDmSheetOpen}</span>
-<span class="cstat-no" title="statement not covered" >        friendId={selectedFriendId}</span>
+<span class="cstat-no" title="statement not covered" >        friendId={selectedFriendProfileId}</span>
 <span class="cstat-no" title="statement not covered" >      /&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/&gt;</span>
   );
@@ -271,7 +280,7 @@ interface MessagesSheetProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T01:15:45.088Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

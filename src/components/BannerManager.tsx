@@ -4,14 +4,18 @@ import { EventBanner } from '@/components/EventBanner';
 import { EventModal } from '@/components/EventModal';
 import { usePlaceBanners } from '@/hooks/usePlaceBanners';
 import { useBannerContext } from '@/providers/BannerProvider';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 /**
  * BannerManager - Orchestrates the place-aware banner system
  * Handles banner display logic, auto-dismiss, and modal integration
  */
 export const BannerManager = () => {
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'BannerManager',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const { banners } = usePlaceBanners(lat || undefined, lng || undefined);

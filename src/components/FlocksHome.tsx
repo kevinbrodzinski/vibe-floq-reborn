@@ -20,7 +20,7 @@ import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
 import { useFloqSearch } from '@/hooks/useFloqSearch';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
@@ -63,15 +63,19 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   const refreshRef = useRef<HTMLDivElement>(null);
   const session = useSession();
 
-  // Use enhanced geolocation hook with better permission handling
+  // Use unified location system for better performance and features
   const {
     coords,
     hasPermission,
     error: geoError,
-    requestLocation
-  } = useGeo({
-    enableHighAccuracy: true
+    getCurrentLocation
+  } = useUnifiedLocation({
+    hookId: 'FlocksHome',
+    enableTracking: false, // Only GPS reading, no database writes
+    enablePresence: false, // No real-time sharing
+    autoStart: true
   });
+  const requestLocation = getCurrentLocation;
   const geo = propGeo || coords;
 
   // Pull-to-refresh gesture handling

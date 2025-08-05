@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { supaFn } from '@/lib/supaFn';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { useGeo } from './useGeo';
+import { useUnifiedLocation } from './location/useUnifiedLocation';
 import type { Vibe, NearbyUser, WalkableFloq } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -32,7 +32,11 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
   
   const { session } = useAuth();
   const { toast } = useToast();
-  const location = useGeo();
+  const location = useUnifiedLocation({
+    hookId: 'useEnhancedPresence',
+    enableTracking: false,
+    enablePresence: false
+  });
   const channelRef = useRef<RealtimeChannel | null>(null);
   const updateIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSentRef = useRef<number>(0);

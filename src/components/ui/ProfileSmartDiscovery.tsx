@@ -21,7 +21,7 @@ import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 interface ProfileSmartDiscoveryProps {
   className?: string;
@@ -49,7 +49,11 @@ export const ProfileSmartDiscovery: React.FC<ProfileSmartDiscoveryProps> = ({
   className
 }) => {
   const navigate = useNavigate();
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'ProfileSmartDiscovery',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const [filters, setFilters] = useState<DiscoveryFilters>({

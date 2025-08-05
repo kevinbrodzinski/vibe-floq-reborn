@@ -119,7 +119,10 @@
 <a name='L54'></a><a href='#L54'>54</a>
 <a name='L55'></a><a href='#L55'>55</a>
 <a name='L56'></a><a href='#L56'>56</a>
-<a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -136,22 +139,9 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -160,9 +150,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -175,7 +163,25 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useEffect, useRef } from 'react';</span></span></span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { useEffect, useRef } from 'react';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 &nbsp;
@@ -192,7 +198,8 @@ import { useQueryClient } from '@tanstack/react-query';
 <span class="cstat-no" title="statement not covered" >    const now = Date.now();</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (document.visibilityState !== 'visible') return;</span>
-<span class="cstat-no" title="statement not covered" >    if (now - lastRunRef.current &lt; 10_000) return;</span>
+    // Increased minimum interval from 10s to 30s to reduce database load
+<span class="cstat-no" title="statement not covered" >    if (now - lastRunRef.current &lt; 30_000) return;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      const { error } = await supabase.functions.invoke('refresh_field_tiles');</span>
@@ -201,7 +208,8 @@ import { useQueryClient } from '@tanstack/react-query';
 <span class="cstat-no" title="statement not covered" >      queryClient.invalidateQueries({ queryKey: ['field-tiles'] });</span>
 <span class="cstat-no" title="statement not covered" >    } catch (e) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('[FieldTileSync] refresh failed:', e);</span>
-<span class="cstat-no" title="statement not covered" >      lastRunRef.current = 0;          // allow immediate retry</span>
+      // On error, wait 60s before allowing retry to prevent spam
+<span class="cstat-no" title="statement not covered" >      lastRunRef.current = now - 30_000 + 60_000;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 &nbsp;
@@ -212,12 +220,13 @@ import { useQueryClient } from '@tanstack/react-query';
 <span class="cstat-no" title="statement not covered" >          { event: '*', schema: 'public', table: 'vibes_now' },</span>
 <span class="cstat-no" title="statement not covered" >          () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >            if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);</span>
-<span class="cstat-no" title="statement not covered" >            debouncedRefresh.current = setTimeout(triggerRefresh, 2_000);</span>
+            // Increased debounce from 2s to 30s to reduce excessive refreshes
+<span class="cstat-no" title="statement not covered" >            debouncedRefresh.current = setTimeout(triggerRefresh, 30_000);</span>
 <span class="cstat-no" title="statement not covered" >          })</span>
 <span class="cstat-no" title="statement not covered" >      .subscribe();</span>
 &nbsp;
-    // first refresh a few seconds after mount
-<span class="cstat-no" title="statement not covered" >    const first = setTimeout(triggerRefresh, 2_000);</span>
+    // first refresh after longer delay to prevent startup spam
+<span class="cstat-no" title="statement not covered" >    const first = setTimeout(triggerRefresh, 10_000);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    const onVis = () =&gt; document.visibilityState === 'visible' &amp;&amp; triggerRefresh();</span>
 <span class="cstat-no" title="statement not covered" >    document.addEventListener('visibilitychange', onVis);</span>
@@ -238,7 +247,7 @@ import { useQueryClient } from '@tanstack/react-query';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T01:15:45.088Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

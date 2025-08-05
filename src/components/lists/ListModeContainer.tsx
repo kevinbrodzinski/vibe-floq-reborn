@@ -1,11 +1,15 @@
 import { useNearbyVenues } from '@/hooks/useNearbyVenues'
-import { useGeo } from '@/hooks/useGeo'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 import { VenueListItem } from '@/components/VenueListItem'
 import { useSelectedVenue } from '@/store/useSelectedVenue'
 import { usePrefetchVenue } from '@/hooks/usePrefetchVenue'
 
 export const ListModeContainer = () => {
-  const { coords } = useGeo()
+  const { coords } = useUnifiedLocation({
+    hookId: 'ListModeContainer',
+    enableTracking: false,
+    enablePresence: false
+  })
   const lat = coords?.lat
   const lng = coords?.lng
   const { data: nearby = [], isLoading } = useNearbyVenues(lat, lng, 0.5)

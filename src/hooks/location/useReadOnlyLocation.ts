@@ -41,7 +41,7 @@ export function useReadOnlyLocation(): ReadOnlyLocationState {
 /**
  * Even more minimal hook - only coordinates for basic map centering
  */
-export function useLocationCoords(): GeoCoords | null {
+export function useReadOnlyLocationCoords(): GeoCoords | null {
   return useLocationStore((state) => 
     state.coords ? {
       lat: state.coords.lat,
@@ -55,6 +55,6 @@ export function useLocationCoords(): GeoCoords | null {
 /**
  * Movement context only - for components that need movement classification
  */
-export function useMovementContext(): MovementContext | null {
+export function useReadOnlyMovementContext(): MovementContext | null {
   return useLocationStore((state) => state.movementContext);
 }

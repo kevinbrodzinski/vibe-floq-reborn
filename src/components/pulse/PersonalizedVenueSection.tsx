@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { usePersonalizedVenues } from '@/hooks/usePersonalizedVenues';
 import { useWeightedScoring } from '@/hooks/useWeightedScoring';
 import { TrendingVenueCard } from '@/components/ui/TrendingVenueCard';
@@ -23,7 +23,11 @@ export const PersonalizedVenueSection = ({
   onConfigureClick
 }: PersonalizedVenueSectionProps) => {
   const { user } = useAuth();
-  const { coords, status: geoStatus } = useGeo();
+  const { coords, status: geoStatus } = useUnifiedLocation({
+    hookId: 'PersonalizedVenueSection',
+    enableTracking: false,
+    enablePresence: false
+  });
   const { calculateScore } = useWeightedScoring();
   
   const { data: personalizedVenues = [], isLoading, error } = usePersonalizedVenues(

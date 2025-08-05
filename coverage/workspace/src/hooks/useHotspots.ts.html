@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/81</span>
+                <span class='fraction'>0/85</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/81</span>
+                <span class='fraction'>0/85</span>
             </div>
         
             
@@ -170,7 +170,11 @@
 <a name='L105'></a><a href='#L105'>105</a>
 <a name='L106'></a><a href='#L106'>106</a>
 <a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -204,6 +208,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -280,7 +288,7 @@
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useEffect, useState } from 'react'</span></span></span>
 import useSWR from 'swr'
 import { supabase } from '@/integrations/supabase/client'
-import { useUserLocation } from './useUserLocation'
+import { useUnifiedLocation } from './location/useUnifiedLocation'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { getEnvironmentConfig } from '@/lib/environment'
 &nbsp;
@@ -312,19 +320,23 @@ export interface Hotspot {
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export const useHotspots = () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  const { location } = useUserLocation()</span>
+<span class="cstat-no" title="statement not covered" >  const { coords } = useUnifiedLocation({</span>
+<span class="cstat-no" title="statement not covered" >    enableTracking: false,</span>
+<span class="cstat-no" title="statement not covered" >    enablePresence: false,</span>
+<span class="cstat-no" title="statement not covered" >    hookId: 'hotspots'</span>
+<span class="cstat-no" title="statement not covered" >  })</span>
 <span class="cstat-no" title="statement not covered" >  const vibe = useCurrentVibe()</span>
 <span class="cstat-no" title="statement not covered" >  const [hotspots, setHotspots] = useState&lt;Hotspot[]&gt;([])</span>
 <span class="cstat-no" title="statement not covered" >  const env = getEnvironmentConfig()</span>
 &nbsp;
   // SWR key for caching and revalidation
-<span class="cstat-no" title="statement not covered" >  const swrKey = !env.hotSpotHalos || !location || !vibe</span>
+<span class="cstat-no" title="statement not covered" >  const swrKey = !env.hotSpotHalos || !coords || !vibe</span>
 <span class="cstat-no" title="statement not covered" >    ? null</span>
-<span class="cstat-no" title="statement not covered" >    : `hotspots:${vibe}:${location.coords.latitude.toFixed(3)}:${location.coords.longitude.toFixed(3)}`</span>
+<span class="cstat-no" title="statement not covered" >    : `hotspots:${vibe}:${coords.lat.toFixed(3)}:${coords.lng.toFixed(3)}`</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const { data, error, mutate } = useSWR(</span>
 <span class="cstat-no" title="statement not covered" >    swrKey,</span>
-<span class="cstat-no" title="statement not covered" >    () =&gt; fetchHotspots(location!.coords.latitude, location!.coords.longitude, vibe!),</span>
+<span class="cstat-no" title="statement not covered" >    () =&gt; fetchHotspots(coords!.lat, coords!.lng, vibe!),</span>
 <span class="cstat-no" title="statement not covered" >    {</span>
 <span class="cstat-no" title="statement not covered" >      refreshInterval: 60000, // Refresh every 60 seconds</span>
 <span class="cstat-no" title="statement not covered" >      revalidateOnFocus: false,</span>
@@ -391,7 +403,7 @@ export interface Hotspot {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T01:15:45.088Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

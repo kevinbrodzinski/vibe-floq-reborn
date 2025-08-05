@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { calculateBounds, type Viewport } from '@/utils/geoConversion';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 export interface MapViewportControls {
   viewport: Viewport;
@@ -21,7 +21,11 @@ export function useMapViewport(
   initialCenter?: [number, number], 
   initialZoom: number = 5
 ): MapViewportControls {
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'useMapViewport',
+    enableTracking: false,
+    enablePresence: false
+  });
   const userLat = coords?.lat;
   const userLng = coords?.lng;
   
