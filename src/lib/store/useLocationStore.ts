@@ -324,18 +324,18 @@ export const useLocationStore = create<LocationState>()(
 );
 
 /** ------------------------------------------------------------------
- *  Typed selector helpers – one export each
+ *  Typed selector helpers – renamed to avoid conflicts
  *  ------------------------------------------------------------------ */
-export const useLocationCoords = () =>
+export const useRawLocationCoords = () =>
   useLocationStore((state) => state.coords);
 
-export const useMovementContext = () =>
+export const useRawMovementContext = () =>
   useLocationStore((state) => state.movementContext);
 
 export const useLocationHealth = () =>
   useLocationStore((state) => state.systemHealth);
 
-export const useLocationMetrics = () =>
+export const useRawLocationMetrics = () =>
   useLocationStore((state) => state.metrics);
 
 export const useLocationStatus = () =>
