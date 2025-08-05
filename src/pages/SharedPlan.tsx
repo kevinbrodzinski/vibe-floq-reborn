@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useResolvePlanSlug } from '@/hooks/useResolvePlanSlug';
 import { useTrackPlanShareClick } from '@/hooks/useTrackPlanShareClick';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

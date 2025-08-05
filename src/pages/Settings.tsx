@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { supabase } from '@/integrations/supabase/client';

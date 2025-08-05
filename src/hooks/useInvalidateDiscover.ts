@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 
 export function useInvalidateDiscover() {
   const qc = useQueryClient()

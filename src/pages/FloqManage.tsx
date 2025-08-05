@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useFloqDetails } from '@/hooks/useFloqDetails';
 import { useNavigation } from '@/hooks/useNavigation';
 import { ManageFloqView } from '@/components/floq/ManageFloqView';

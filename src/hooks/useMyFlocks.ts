@@ -1,7 +1,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from "@/types";
 import { safeVibe } from '@/types/enums/vibes';

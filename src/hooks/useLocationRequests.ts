@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
 interface LocationRequest {

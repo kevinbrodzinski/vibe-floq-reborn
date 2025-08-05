@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 const bucket = (n: number) => Math.round(n * 1e4) / 1e4; // 4 dp ≈ 11 m
 

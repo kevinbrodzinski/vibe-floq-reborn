@@ -1,6 +1,6 @@
 // Analytics hook for tracking onboarding metrics
 import { useEffect, useCallback } from 'react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OnboardingEvent {

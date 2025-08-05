@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import type { Vibe } from '@/types';
 import type { FloqFilters } from '@/contexts/FloqUIContext';

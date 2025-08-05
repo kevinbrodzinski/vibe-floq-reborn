@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { ArrowLeft, Activity, Users, Info, Settings2, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

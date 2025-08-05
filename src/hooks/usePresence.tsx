@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { supaFn } from '@/lib/supaFn';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import type { Vibe, NearbyUser, WalkableFloq } from '@/types';
 

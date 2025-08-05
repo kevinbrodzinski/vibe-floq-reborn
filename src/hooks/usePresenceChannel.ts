@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentVibe } from '@/lib/store/useVibe';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useVibe } from '@/lib/store/useVibe';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import ngeohash from 'ngeohash';
 
 export const usePresenceChannel = () => {

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 interface LivePosition {
   profile_id: string;

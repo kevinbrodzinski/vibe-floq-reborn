@@ -25,7 +25,7 @@ import { ProfileSmartDiscovery } from '@/components/ui/ProfileSmartDiscovery';
 import { ProfileAchievements } from '@/components/ui/ProfileAchievements';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useAvatarManager } from '@/hooks/useAvatarManager';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { supabase } from '@/integrations/supabase/client';
