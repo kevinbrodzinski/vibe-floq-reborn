@@ -323,134 +323,20 @@ export const useLocationStore = create<LocationState>()(
   )
 );
 
-// Selective subscription hooks for performance optimization
-
-/**
- * Subscribe to coordinates only - prevents re-renders on other state changes
- */
-export const useLocationCoords = () => 
+/** ------------------------------------------------------------------
+ *  Typed selector helpers – one export each
+ *  ------------------------------------------------------------------ */
+export const useLocationCoords = () =>
   useLocationStore((state) => state.coords);
 
-/**
- * Subscribe to coordinates with timestamp
- */
-export const useLocationCoordsWithTime = () => 
-  useLocationStore((state) => ({ coords: state.coords, timestamp: state.timestamp }));
-
-/**
- * Subscribe to movement context only
- */
-export const useMovementContext = () => 
+export const useMovementContext = () =>
   useLocationStore((state) => state.movementContext);
 
-/**
- * Subscribe to tracking state only
- */
-export const useTrackingState = () => 
-  useLocationStore((state) => ({ 
-    isTracking: state.isTracking, 
-    trackingStartTime: state.trackingStartTime 
-  }));
-
-/**
- * Subscribe to presence state only
- */
-export const usePresenceState = () => 
-  useLocationStore((state) => ({ 
-    isPresenceEnabled: state.isPresenceEnabled, 
-    presenceStartTime: state.presenceStartTime 
-  }));
-
-/**
- * Subscribe to system health only
- */
-export const useLocationHealth = () => 
+export const useLocationHealth = () =>
   useLocationStore((state) => state.systemHealth);
 
-/**
- * Subscribe to performance metrics only
- */
-export const useLocationMetrics = () => 
+export const useLocationMetrics = () =>
   useLocationStore((state) => state.metrics);
 
-/**
- * Subscribe to status and error only
- */
-export const useLocationStatus = () => 
-  useLocationStore((state) => ({ 
-    status: state.status, 
-    error: state.error, 
-    hasPermission: state.hasPermission 
-  }));
-
-/**
- * Subscribe to computed selectors
- */
-export const useLocationSelectors = () => 
-  useLocationStore((state) => ({
-    getDistance: state.getDistance,
-    isNearby: state.isNearby,
-    getMovementStatus: state.getMovementStatus,
-    getSystemHealthScore: state.getSystemHealthScore
-  }));
-
-/**
- * Subscribe to actions only (stable references)
- */
-export const useLocationActions = () => 
-  useLocationStore((state) => ({
-    updateLocation: state.updateLocation,
-    updateMovementContext: state.updateMovementContext,
-    setStatus: state.setStatus,
-    setPermission: state.setPermission,
-    startTracking: state.startTracking,
-    stopTracking: state.stopTracking,
-    enablePresence: state.enablePresence,
-    disablePresence: state.disablePresence,
-    updateSystemHealth: state.updateSystemHealth,
-    updateMetrics: state.updateMetrics,
-    reset: state.reset
-  }));
-
-/**
- * Hook to track subscription count for performance monitoring
- */
-export const useLocationStoreSubscriptionTracker = () => {
-  const updateMetrics = useLocationStore((state) => state.updateMetrics);
-  
-  useEffect(() => {
-    updateMetrics({ subscriptionCount: useLocationStore.getState().metrics.subscriptionCount + 1 });
-    
-    return () => {
-      updateMetrics({ subscriptionCount: Math.max(0, useLocationStore.getState().metrics.subscriptionCount - 1) });
-    };
-  }, [updateMetrics]);
-};
-
-// Development helpers
-if (process.env.NODE_ENV === 'development') {
-  // Expose store to window for debugging
-  (window as any).locationStore = useLocationStore;
-  
-  // Log state changes in development
-  useLocationStore.subscribe(
-    (state) => state.coords,
-    (coords, prevCoords) => {
-      if (coords && (!prevCoords || 
-          coords.lat !== prevCoords.lat || 
-          coords.lng !== prevCoords.lng)) {
-        console.log('[LocationStore] Coordinates updated:', coords);
-      }
-    }
-  );
-  
-  useLocationStore.subscribe(
-    (state) => state.systemHealth,
-    (health) => {
-      const score = useLocationStore.getState().getSystemHealthScore();
-      if (score < 80) {
-        console.warn('[LocationStore] System health degraded:', score, health);
-      }
-    }
-  );
-}
+export const useLocationStatus = () =>
+  useLocationStore((state) => state.status);
