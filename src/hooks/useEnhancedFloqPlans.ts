@@ -5,31 +5,27 @@ import { useToast } from '@/hooks/use-toast';
 import type { Vibe } from '@/types/vibes';
 
 export interface EnhancedFloqPlan {
-  plan_id: string;
+  id: string;
   title: string;
-  description?: string;
+  description: string;
   status: string;
-  planned_at: string;
-  start_time?: string;
-  end_time?: string;
-  floq_id?: string;
-  floq_title?: string;
-  floq_vibe?: Vibe;
-  participant_count: number;
-  user_is_participant: boolean;
-  user_rsvp_status: string;
+  starts_at: string;
+  ends_at: string;
   created_at: string;
+  updated_at: string;
+  creator_id: string;
+  floq_id: string;
+  participant_count: number;
+  user_rsvp_status: string;
 }
 
 export interface CreateGroupPlanData {
   title: string;
   description?: string;
-  planned_at?: string;
-  start_time?: string;
-  end_time?: string;
-  vibe_tags?: Vibe[];
-  max_participants?: number;
-  location?: any;
+  starts_at?: string;
+  ends_at?: string;
+  floq_title?: string;
+  floq_description?: string;
 }
 
 export function useEnhancedFloqPlans(floqId?: string) {
@@ -42,9 +38,7 @@ export function useEnhancedFloqPlans(floqId?: string) {
     queryKey: ['enhanced-floq-plans', floqId, user?.id],
     queryFn: async (): Promise<EnhancedFloqPlan[]> => {
       const { data, error } = await supabase.rpc('get_floq_plans_enhanced', {
-        p_floq_id: floqId || null,
-        p_user_id: user?.id || null,
-        p_limit: 50
+        p_profile_id: user?.id!
       });
 
       if (error) {
@@ -65,12 +59,10 @@ export function useEnhancedFloqPlans(floqId?: string) {
       const { data, error } = await supabase.rpc('create_group_plan_with_floq', {
         p_title: planData.title,
         p_description: planData.description || null,
-        p_planned_at: planData.planned_at || null,
-        p_start_time: planData.start_time || null,
-        p_end_time: planData.end_time || null,
-        p_vibe_tags: planData.vibe_tags || ['social'],
-        p_max_participants: planData.max_participants || null,
-        p_location: planData.location || null
+        p_starts_at: planData.starts_at || null,
+        p_ends_at: planData.ends_at || null,
+        p_floq_title: planData.floq_title || null,
+        p_floq_description: planData.floq_description || null
       });
 
       if (error) {
@@ -121,7 +113,7 @@ export function useEnhancedFloqPlans(floqId?: string) {
         .upsert({
           plan_id: planId,
           profile_id: user!.id,
-          rsvp_status: 'yes',
+          rsvp_status: 'attending',
           joined_at: new Date().toISOString()
         });
 
@@ -240,11 +232,11 @@ export function useEnhancedFloqPlans(floqId?: string) {
     isLeavingPlan: leavePlanMutation.isPending,
     
     // Computed values
-    userPlans: plans.filter(plan => plan.user_is_participant),
-    availablePlans: plans.filter(plan => !plan.user_is_participant),
+    userPlans: plans.filter(plan => plan.user_rsvp_status === 'attending' || plan.user_rsvp_status === 'maybe'),
+    availablePlans: plans.filter(plan => plan.user_rsvp_status === 'pending' || plan.user_rsvp_status === 'not_attending'),
     upcomingPlans: plans.filter(plan => {
-      const plannedAt = new Date(plan.planned_at);
-      return plannedAt > new Date();
+      const startsAt = new Date(plan.starts_at);
+      return startsAt > new Date();
     }),
     
     // Helper functions
