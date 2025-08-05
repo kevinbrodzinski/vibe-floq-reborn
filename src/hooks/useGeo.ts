@@ -107,14 +107,25 @@ export function useGeo(): GeoState {
       return;
     }
 
-    // Phase 3: For Lovable preview, auto-enable fallback after short delay
+    // Phase 3: For Lovable preview, auto-enable fallback immediately
     if (import.meta.env.DEV && location.hostname.includes('lovable')) {
-      console.log('[useGeo] 🔧 Lovable preview detected - enabling auto-fallback in 2 seconds');
-      setTimeout(() => {
-        console.log('[useGeo] 🔧 Auto-enabling debug location for preview');
-        localStorage.setItem('floq-debug-forceLoc', '37.7749,-122.4194');
-        window.location.reload();
-      }, 2000);
+      console.log('[useGeo] 🔧 Lovable preview detected - setting debug location immediately');
+      localStorage.setItem('floq-debug-forceLoc', '37.7749,-122.4194');
+      
+      const debugCoords = {
+        lat: 37.7749,
+        lng: -122.4194,
+        accuracy: 15
+      };
+
+      (window as any).__FLOQ_DEBUG_LAST_GEO = debugCoords;
+      
+      setValue({
+        coords: debugCoords,
+        timestamp: Date.now(),
+        status: 'ready',
+      });
+      return;
     }
 
     let didTimeout = false;
