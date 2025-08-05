@@ -64,11 +64,10 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
     // TODO: Implement map focus on friend location
   }, []);
 
-  // Region change handler for unified map
-  const handleRegionChange = useCallback((bounds: any) => {
-    console.log('[FieldMapLayer] Region changed:', bounds);
-    // TODO: Implement region change logic if needed
-  }, []);
+  // Region change handler - removed as not currently needed
+  // const handleRegionChange = useCallback((bounds: any) => {
+  //   console.log('[FieldMapLayer] Region changed:', bounds);
+  // }, []);
 
   return (
     <div className="absolute inset-0">
@@ -77,7 +76,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         visible={true} 
         floqs={walkableFloqs} 
         realtime={realtime}
-        onRegionChange={handleRegionChange}
+        onRegionChange={() => {}} // Minimal handler
       />
       
       {/* Venue Loading Overlay */}
@@ -112,7 +111,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         onToggle={() => setIsDebugVisible(!isDebugVisible)}
         tileData={fieldTiles}
         presenceData={actualPeople}
-        clusterData={[]} // TODO: Pass actual cluster data
+        clusterData={walkableFloqs} // Use actual floq data as clusters
         currentTime={new Date()}
         isConstellationMode={isConstellationMode}
         onConstellationToggle={() => setIsConstellationMode(!isConstellationMode)}

@@ -22,9 +22,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { track } from '@/lib/analytics'
 import dayjs from '@/lib/dayjs'
-// Removed analytics dependency - using mock data for now
+// Development-only analytics stubs (replace with real ML output when schema locked)
 
-// Stub types until analytics is restored
 interface EnhancedRecapData {
   day: string;
   totalMins: number;
@@ -51,11 +50,14 @@ interface EnhancedRecapData {
   topVenues: Array<{ id: string; name: string; mins: number; popularity: number }>;
 }
 
-const getRecapInsights = (data: EnhancedRecapData): string[] => [];
+const getRecapInsights = (data: EnhancedRecapData): string[] => {
+  if (!import.meta.env.DEV) return [];
+  return []; // Dev stub
+};
 
 interface EnhancedDailyRecapCardProps {
-  data: EnhancedRecapData
-  showEnhancedMetrics?: boolean
+  data: EnhancedRecapData | null;
+  showEnhancedMetrics?: boolean;
 }
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))']
