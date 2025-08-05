@@ -61,19 +61,22 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   const {
     enableTracking = false,
     enablePresence = false,
-    minDistance = 10,
-    minTime = 5000,
+    minDistance = 50, // Increased for rate limiting
+    minTime = 30000, // Increased for rate limiting  
     hookId,
     priority = 'medium',
     autoStart = false
   } = options;
 
-  // Initialize global location manager with useGeo
+  // Emergency disable flag
+  const EMERGENCY_DISABLE = false;
+
+  // Initialize global location manager with useGeo - rate limited
   const { geoState, manager } = useGlobalLocationManager({
-    watch: true,
-    enableHighAccuracy: true,
+    watch: !EMERGENCY_DISABLE,
+    enableHighAccuracy: false, // Reduced for better battery/performance
     minDistanceM: minDistance,
-    debounceMs: Math.min(minTime, 2000) // Cap debounce at 2s for responsiveness
+    debounceMs: Math.max(minTime, 30000) // Enforce minimum 30s debounce
   });
 
   // Zustand store integration
@@ -179,11 +182,11 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
       acc: locationCoords.accuracy
     });
 
-    // Flush buffer periodically or when it gets large
+    // Enhanced flush logic with better rate limiting
     const now = Date.now();
     const shouldFlush = 
-      locationBufferRef.current.length >= 10 || // Buffer size limit
-      (now - lastFlushRef.current) >= 30000; // 30 second time limit
+      locationBufferRef.current.length >= 15 || // Increased buffer size
+      (now - lastFlushRef.current) >= 120000; // 2 minute time limit (increased)
 
     if (shouldFlush) {
       await flushLocationBuffer();
@@ -233,13 +236,31 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     }
   }, [enablePresence, priority, hookId]);
 
-  // Flush location buffer to server
+  // Flush location buffer to server with enhanced rate limiting
   const flushLocationBuffer = useCallback(async () => {
+    if (EMERGENCY_DISABLE) {
+      console.log('[useUnifiedLocation] Emergency disable - skipping flush');
+      return;
+    }
+
     if (locationBufferRef.current.length === 0) return;
+
+    // Rate limit: minimum 60 seconds between flushes
+    const now = Date.now();
+    if (now - lastFlushRef.current < 60000) {
+      console.log('[useUnifiedLocation] Skipping flush - rate limited');
+      return;
+    }
+
+    // Only flush if we have enough data to justify the API call
+    if (locationBufferRef.current.length < 3) {
+      console.log('[useUnifiedLocation] Skipping small batch:', locationBufferRef.current.length);
+      return;
+    }
 
     const batch = [...locationBufferRef.current];
     locationBufferRef.current = [];
-    lastFlushRef.current = Date.now();
+    lastFlushRef.current = now;
 
     try {
       await executeWithCircuitBreaker(
@@ -257,8 +278,17 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
           batchSize: batch.length
         }
       );
-    } catch (error) {
+      
+      console.log('[useUnifiedLocation] Successfully recorded', batch.length, 'locations');
+    } catch (error: any) {
       console.error('[useUnifiedLocation] Location batch failed:', error);
+      
+      // Enhanced 429 error handling
+      if (error.message?.includes('429') || error.status === 429) {
+        console.warn('[useUnifiedLocation] Rate limited - backing off for 5 minutes');
+        lastFlushRef.current = now + 300000; // 5 minute backoff
+        return; // Don't re-add to buffer if rate limited
+      }
       
       // Re-add failed batch to buffer (with limit to prevent infinite growth)
       if (locationBufferRef.current.length < 50) {

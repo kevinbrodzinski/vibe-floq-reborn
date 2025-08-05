@@ -108,7 +108,7 @@ export interface ProximityUser {
 
 export interface ProximityAnalysis {
   profile_id: string;
-  userId?: string; // alias for compatibility
+  userId: string; // alias for compatibility - now required
   distance: number;
   confidence: number; // now required
 }
@@ -152,7 +152,7 @@ export interface SystemHealthMetrics {
 
 export interface VenueDetectionResult {
   venueId: string; // Keep venueId as the main property
-  name?: string; // now optional
+  name: string; // now required
   confidence: number;
   overallConfidence?: number;
 }
