@@ -64,19 +64,21 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
     // TODO: Implement map focus on friend location
   }, []);
 
-  // Region change handler - removed as not currently needed
-  // const handleRegionChange = useCallback((bounds: any) => {
-  //   console.log('[FieldMapLayer] Region changed:', bounds);
-  // }, []);
+  // Stable region change handler to prevent map re-initialization
+  const handleRegionChange = useCallback((bounds: any) => {
+    // Currently not needed, but keeping stable reference to prevent re-renders
+    // console.log('[FieldMapLayer] Region changed:', bounds);
+  }, []);
 
   return (
     <div className="absolute inset-0">
       {/* Layer 1: Unified Map System (Mapbox + coordinated layers) */}
       <FieldWebMap 
+        key="field-web-map" // Stable key to prevent unnecessary re-mounts
         visible={true} 
         floqs={walkableFloqs} 
         realtime={realtime}
-        onRegionChange={() => {}} // Minimal handler
+        onRegionChange={handleRegionChange} // Stable callback reference
       />
       
       {/* Venue Loading Overlay */}

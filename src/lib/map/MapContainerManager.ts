@@ -20,9 +20,15 @@ export class MapContainerManager {
    */
   prepareContainer(container: HTMLElement): boolean {
     try {
-      // Force release if already tracked (dev hot-reload edge case)
+      // Check if container is already in use - this is normal in dev mode
       if (this.activeContainers.has(container)) {
-        console.warn('[MapContainerManager] Force releasing container for re-use');
+        // Only warn if this happens frequently (potential issue)
+        const now = Date.now();
+        const lastWarn = (container as any).__lastContainerWarn || 0;
+        if (now - lastWarn > 1000) { // Throttle warnings to once per second
+          console.warn('[MapContainerManager] Container reuse detected - this may indicate frequent re-renders');
+          (container as any).__lastContainerWarn = now;
+        }
         this.activeContainers.delete(container);
       }
 
