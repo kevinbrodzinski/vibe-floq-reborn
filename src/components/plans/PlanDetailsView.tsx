@@ -13,7 +13,7 @@ import { PlanTimelinePreview } from './PlanTimelinePreview';
 import { PlanSummaryStats } from './PlanSummaryStats';
 import { PlanParticipantsList } from './PlanParticipantsList';
 import { PlanQuickActions } from './PlanQuickActions';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { PlanStatusTag } from '@/components/PlanStatusTag';
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation';
 import { usePlanStops } from '@/hooks/usePlanStops';

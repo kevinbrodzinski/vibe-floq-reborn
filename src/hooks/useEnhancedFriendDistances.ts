@@ -7,7 +7,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';

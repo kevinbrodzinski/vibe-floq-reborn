@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useUnifiedFriends } from './useUnifiedFriends';
 import { useMemo, useEffect, useRef } from 'react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import type { CrossedPath } from '@/types';

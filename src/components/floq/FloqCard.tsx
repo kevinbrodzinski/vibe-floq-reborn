@@ -13,7 +13,7 @@ import { ActionPill } from '@/components/ui/ActionPill';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useFloqPlanDetection } from '@/hooks/useFloqPlanDetection';
 import { useFloqUnreadMessages } from '@/hooks/useFloqUnreadMessages';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';

@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/providers/AuthProvider";
+import { EnhancedAuthProvider } from "@/components/auth/EnhancedAuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
@@ -70,7 +70,7 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <EnhancedAuthProvider>
         <AppProviders>
           <EventNotificationsProvider>
             <PlanNotificationProvider>
@@ -96,7 +96,7 @@ const App = () => {
             </PlanNotificationProvider>
           </EventNotificationsProvider>
         </AppProviders>
-      </AuthProvider>
+      </EnhancedAuthProvider>
     </QueryClientProvider>
   );
 };

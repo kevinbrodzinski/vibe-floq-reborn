@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { EnhancedOnboardingScreen } from '@/components/onboarding/EnhancedOnboardingScreen';

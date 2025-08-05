@@ -1,5 +1,5 @@
 import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 
 export const AppProviders = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();

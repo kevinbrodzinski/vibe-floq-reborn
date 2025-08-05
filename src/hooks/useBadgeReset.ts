@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { resetBadge } from './usePushNotifications';
 
 export function useBadgeReset() {

@@ -20,7 +20,7 @@ import { FloqHeader } from './FloqHeader';
 import { FloqMapModal } from './FloqMapModal';
 import { FloqSocialModal } from './FloqSocialModal';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 interface JoinedFloqViewProps {
   floqDetails: FloqDetails;

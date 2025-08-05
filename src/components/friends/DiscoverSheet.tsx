@@ -6,7 +6,7 @@ import { SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/compo
 import { UserSearchResults } from '@/components/UserSearchResults'
 import { useFriendDiscovery } from '@/hooks/useFriendDiscovery'
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 import { useToast } from '@/hooks/use-toast'
 import { useInvalidateDiscover } from '@/hooks/useInvalidateDiscover'
 import { supabase } from '@/integrations/supabase/client'

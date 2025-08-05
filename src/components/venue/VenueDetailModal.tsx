@@ -9,7 +9,7 @@ import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useVenueActions } from '@/hooks/useVenueActions';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useEnhancedVenueDetails } from '@/hooks/useEnhancedVenueDetails';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';

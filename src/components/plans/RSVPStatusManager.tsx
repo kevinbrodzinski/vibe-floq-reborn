@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, Clock, HelpCircle, X, MessageSquare, Users } from 'lucide-react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { cn } from '@/lib/utils';
 import { usePlanRSVP } from '@/hooks/usePlanRSVP';
 import { RSVPStatus } from '@/types/enums/rsvpStatus';

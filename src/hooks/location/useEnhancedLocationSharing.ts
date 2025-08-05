@@ -6,7 +6,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { geofencingService, type GeofenceMatch } from '@/lib/location/geofencing';

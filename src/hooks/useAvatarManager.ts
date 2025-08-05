@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { uploadAvatar, deleteAvatar } from '@/lib/avatar';
 import { clearAvatarUrlCache } from '@/hooks/useAvatarUrl';

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFavorites } from '@/hooks/useFavorites';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { BaseVenueCard, VenueStatGrid, VenueHighlight, VenueWarning } from '@/components/ui/BaseVenueCard';
 import type { VenueRecommendation } from '@/hooks/useVenueRecommendations';
 

@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { LazyAvatar } from '@/components/ui/lazy-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useCrossedPathsToday } from '@/hooks/useCrossedPathsToday';
 

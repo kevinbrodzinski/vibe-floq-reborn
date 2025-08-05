@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useUnifiedFriends } from './useUnifiedFriends';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 type StatusMap = Record<string, { status: 'online' | 'away'; visible?: boolean }>;
 

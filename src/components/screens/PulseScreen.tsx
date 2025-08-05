@@ -11,7 +11,7 @@ import { useTrendingVenues } from '@/hooks/useTrendingVenues';
 import { useLiveActivity } from '@/hooks/useLiveActivity';
 import { useWeather } from '@/hooks/useWeather';
 import { usePulseBadges } from '@/hooks/usePulseBadges';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { TrendingVenueCard } from '@/components/ui/TrendingVenueCard';
 import { LiveActivityFeed } from '@/components/ui/LiveActivityFeed';
 import { VoiceSearchButton } from '@/components/ui/VoiceSearchButton';

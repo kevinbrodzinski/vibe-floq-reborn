@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 interface ETAShare {
   friendId: string;

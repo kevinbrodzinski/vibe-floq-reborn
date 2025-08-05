@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { usePlanMeta } from '@/hooks/usePlanMeta';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { formatCurrency, formatDuration } from '@/lib/format';
 import { planStatusColor } from '@/lib/planStatusColor';
 import { VibePill } from '@/components/floq/VibePill';

@@ -5,7 +5,7 @@ import { useDebug } from '@/lib/useDebug';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useAvatarManager } from '@/hooks/useAvatarManager';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { supabase } from '@/integrations/supabase/client';

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 import { debounce } from "@/utils/timing";
 
 /**

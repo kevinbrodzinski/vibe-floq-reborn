@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useGeo } from '@/hooks/useGeo';
 import { usePersonalizedVenues } from '@/hooks/usePersonalizedVenues';
 import { useWeightedScoring } from '@/hooks/useWeightedScoring';

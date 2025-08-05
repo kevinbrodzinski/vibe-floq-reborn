@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useFloqDetails } from '@/hooks/useFloqDetails';
 import { useParams } from 'react-router-dom';
 

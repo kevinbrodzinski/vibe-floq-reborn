@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, MapPin, MessageCircle, UserPlus, UserMinus, CheckCircle, Wifi, WifiOff } from 'lucide-react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';

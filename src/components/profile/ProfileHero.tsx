@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SimpleDateTimePicker } from '@/components/inputs/simple-date-time-picker';
 import { Clock, MapPin, Edit3, Check, X } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { getVibeColor } from '@/utils/getVibeColor';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';

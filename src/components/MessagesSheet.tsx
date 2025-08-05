@@ -6,7 +6,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { ThreadsList } from '@/components/messaging/ThreadsList';
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";

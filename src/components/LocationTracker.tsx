@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { Badge } from '@/components/ui/badge';
 
 export function LocationTracker() {
