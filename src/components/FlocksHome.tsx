@@ -69,9 +69,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     hasPermission,
     error: geoError,
     requestLocation
-  } = useGeo({
-    enableHighAccuracy: true
-  });
+  } = useGeo();
   const geo = propGeo || coords;
 
   // Pull-to-refresh gesture handling

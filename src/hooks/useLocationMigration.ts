@@ -8,7 +8,7 @@ import { useGeo } from './useGeo';
  * This helps transition existing code gradually to the new PostGIS system
  */
 export function useLocationMigration() {
-  const { coords, status } = useGeo({ watch: true });
+  const { coords, status } = useGeo();
   const { updateLivePosition, getNearbyPositions } = usePostGISLocation();
   const { recordMetric } = useLocationMetrics();
 

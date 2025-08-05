@@ -291,18 +291,20 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
     
     // Record proximity events if relevant
     if (interactionType === 'social_action' || interactionType === 'proximity_event') {
-      await this.proximityRecorder.recordProximityEvents([{
-        profile_id_a: data.profileId,
-        profile_id_b: data.friendId,
-        event_type: data.eventType || 'interaction',
-        distance_meters: 50,
-        confidence: locationContext.proximityContext?.proximityScore || 0,
-        ml_features: {
-          vibeContext: data.currentVibe,
-          interactionType,
-          venueContext: locationContext.venueContext?.venueName
+      await this.proximityRecorder.recordProximityEvents(
+        data.profileId,
+        [data.eventType || 'interaction'],
+        [{
+          profileId: data.friendId,
+          confidence: locationContext.proximityContext?.proximityScore || 0,
+          distance: 50
+        }],
+        {
+          lat: locationContext.enhancedLocation?.coordinates?.lat || 0,
+          lng: locationContext.enhancedLocation?.coordinates?.lng || 0,
+          accuracy: locationContext.enhancedLocation?.accuracy || 50
         }
-      }]);
+      );
     }
   }
   

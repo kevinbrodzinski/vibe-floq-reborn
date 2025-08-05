@@ -60,7 +60,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
     sortBy: 'distance'
   });
   
-  const { data: streak } = useUserStreak(profileId);
+  const { data: streak } = useUserStreak();
   const { data: achievements } = useUserAchievements(profileId);
   const { data: realStats, isLoading: statsLoading } = useRealProfileStats(profileId);
   const { isFriend, rows: friendsData } = useUnifiedFriends();

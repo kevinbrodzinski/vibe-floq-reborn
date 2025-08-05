@@ -40,29 +40,36 @@ export const useTodayRecap = () => {
     queryKey: QK.Recap(user?.id ?? 'anonymous', yesterday),
     enabled: Boolean(user),
 
-    queryFn: async (): Promise<RecapData | null> => {
+    queryFn: async () => {
       if (!user) return null;
 
       const cacheKey = RECAP_CACHE_KEY(user.id, yesterday);
 
-      const { data, error } = await supabase
-        .from('daily_recap_cache')
-        .select('payload')
-        .eq('user_id', user.id)
-        .eq('day', yesterday)
-        .maybeSingle() as any; // Type cast to avoid deep instantiation
+      try {
+        // Completely bypass TypeScript inference to avoid depth issues
+        const client: any = supabase;
+        const result = await client
+          .from('daily_recap_cache')
+          .select('payload')
+          .eq('user_id', user.id)
+          .eq('day', yesterday)
+          .maybeSingle();
+        
+        if (result.error) {
+          console.error('[Recap]', result.error);
+          return null;
+        }
 
-      if (error) {
-        console.error('[Recap]', error);
+        const recapData = result.data?.payload || null;
+
+        if (recapData) {
+          localStorage.setItem(cacheKey, JSON.stringify(recapData));
+        }
+        return recapData;
+      } catch (error) {
+        console.error('[Recap] Query failed:', error);
         return null;
       }
-
-      const recapData = (data?.payload ?? null) as any; // Type cast to avoid deep instantiation
-
-      if (recapData) {                 // ← only cache valid data
-        localStorage.setItem(cacheKey, JSON.stringify(recapData));
-      }
-      return recapData;
     },
 
     initialData: () => {
