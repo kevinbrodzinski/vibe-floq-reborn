@@ -279,7 +279,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
             await proximityEventRecorder.recordProximityEvents(
               user.id,
               proximityEvents.map(event => `${event.eventType}:${event.targetProfileId}:${event.distance.toFixed(0)}m`),
-              nearbyUsers.map(user => ({ profileId: user.userId || user.profile_id || 'unknown', confidence: 0.8, distance: user.distance || 0 })),
+              nearbyUsers.map(user => ({ profileId: user.profile_id ?? user.userId ?? 'unknown', confidence: 0.8, distance: user.distance || 0 })),
               { lat: location.lat, lng: location.lng, accuracy }
             );
           } catch (recordError) {

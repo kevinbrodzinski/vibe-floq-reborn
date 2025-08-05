@@ -31,7 +31,10 @@ export function useReadOnlyLocation(): ReadOnlyLocationState {
 
   return {
     coords,
-    movementContext: movementContext ? { ...movementContext, lastUpdated: Date.now(), heading: movementContext.heading || null } : null,
+    movementContext: movementContext ? {
+      ...movementContext,
+      lastUpdated: movementContext.lastUpdated || Date.now()
+    } : null,
     timestamp,
     hasPermission,
     status
@@ -56,7 +59,11 @@ export function useLocationCoords(): GeoCoords | null {
  * Movement context only - for components that need movement classification
  */
 export function useMovementContext(): MovementContext | null {
-  return useLocationStore((state) => state.movementContext || {
+  return useLocationStore((state) => state.movementContext ? {
+    ...state.movementContext,
+    heading: state.movementContext.heading || null,
+    lastUpdated: state.movementContext.lastUpdated || Date.now()
+  } : {
     speed: 0,
     heading: null,
     isStationary: true,

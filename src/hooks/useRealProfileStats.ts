@@ -74,10 +74,10 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           }
         }
 
-        // 3. Get floq/plan participation
+        // 3. Get floq/plan participation (fix table name)
         const { data: floqParticipation } = await supabase
-          .from('flock_participants')
-          .select('flock_id, role')
+          .from('floq_participants' as any)
+          .select('floq_id, role')
           .eq('profile_id', profileId);
 
         totalFloqs = floqParticipation?.length || 0;
@@ -85,13 +85,13 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         // Count shared floqs with current user
         if (currentUserId && currentUserId !== profileId && floqParticipation) {
           const { data: myFloqs } = await supabase
-            .from('flock_participants')
-            .select('flock_id')
+            .from('floq_participants' as any)
+            .select('floq_id')
             .eq('profile_id', currentUserId);
 
           if (myFloqs) {
-            const myFlockIds = new Set(myFloqs.map(f => f.flock_id));
-            sharedFloqs = floqParticipation.filter(f => myFlockIds.has(f.flock_id)).length;
+            const myFlockIds = new Set(myFloqs.map((f: any) => f.floq_id));
+            sharedFloqs = floqParticipation.filter((f: any) => myFlockIds.has(f.floq_id)).length;
           }
         }
 
@@ -123,18 +123,25 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         // 7. Calculate average vibe score from recent presence
         const { data: recentVibes } = await supabase
-          .from('presence')
-          .select('vibe_score')
+          .from('vibes_now' as any)
+          .select('vibe')
           .eq('profile_id', profileId)
-          .not('vibe_score', 'is', null)
           .order('updated_at', { ascending: false })
           .limit(10);
 
         if (recentVibes && recentVibes.length > 0) {
-          const validScores = recentVibes.filter(v => v.vibe_score !== null);
-          if (validScores.length > 0) {
-            averageVibeScore = validScores.reduce((sum, v) => sum + (v.vibe_score || 0), 0) / validScores.length;
-          }
+          // Basic vibe score mapping since vibe_score field doesn't exist
+          const vibeScores = recentVibes.map((v: any) => {
+            switch (v.vibe) {
+              case 'hype': case 'energetic': case 'excited': return 80;
+              case 'social': case 'open': return 70;
+              case 'chill': case 'flowing': return 60;
+              case 'solo': case 'focused': return 50;
+              case 'down': case 'weird': return 40;
+              default: return 50;
+            }
+          });
+          averageVibeScore = vibeScores.reduce((sum, score) => sum + score, 0) / vibeScores.length;
         }
 
         // 8. Calculate resonance score based on interactions

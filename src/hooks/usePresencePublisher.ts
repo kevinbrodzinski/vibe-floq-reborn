@@ -88,8 +88,7 @@ export const usePresencePublisher = (isActive: boolean) => {
           p_vibe: vibe,
           p_visibility: 'public'
         } as any),
-        `presence-${user.id}`,
-        'medium'
+        'presence-upsert'
       )
 
       console.log('[PRESENCE_PUBLISHER] Presence upserted successfully')
@@ -129,14 +128,8 @@ export const usePresencePublisher = (isActive: boolean) => {
     // Use global location manager instead of direct watchPosition
     unsubscribeRef.current = globalLocationManager.subscribe(
       `presence-publisher-${user.id}`,
-      publishPresence,
-      handleError,
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 30000
-      }
-    )
+      publishPresence
+    );
 
     return () => {
       if (unsubscribeRef.current) {

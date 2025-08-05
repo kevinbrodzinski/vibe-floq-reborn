@@ -17,7 +17,7 @@ export interface MovementContext {
   isWalking: boolean;
   isDriving: boolean;
   confidence: number; // 0-1 confidence in classification
-  lastUpdated: number; // timestamp
+  lastUpdated?: number; // timestamp - made optional for compatibility
 }
 
 export interface LocationHealth {
@@ -106,6 +106,13 @@ export interface ProximityUser {
   vibe?: string;
 }
 
+export interface ProximityAnalysis {
+  profile_id: string;
+  userId?: string; // alias for compatibility
+  distance: number;
+  confidence?: number;
+}
+
 export interface ProximityEvent {
   profileId: string; // Changed from userId
   targetProfileId: string; // Changed from targetUserId
@@ -141,6 +148,13 @@ export interface SystemHealthMetrics {
   responseTime: number;
   learningProgress: number;
   detailedMetrics?: any;
+}
+
+export interface VenueDetectionResult {
+  venueId: string;
+  name?: string;
+  confidence: number;
+  overallConfidence?: number;
 }
 
 export interface UnifiedLocationState {

@@ -183,39 +183,44 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
         // Filter to only include friends who are sharing with us
         const friendData: FriendLocation[] = [];
         
-        for (const presence of data || []) {
-          if (liveShareFriends.includes(presence.profile_id)) {
-            // Extract location from PostGIS geometry
-            let location: GPSCoords | null = null;
-            
-            try {
-              if (presence.location) {
-                // Handle different location formats
-                if (presence.location.coordinates) {
-                  const [lng, lat] = presence.location.coordinates;
-                  location = { lat, lng };
-                } else if (presence.geo && presence.geo.coordinates) {
-                  const [lng, lat] = presence.geo.coordinates;
-                  location = { lat, lng };
-                }
-              }
+        // Define interface for the flattened DB result
+        interface FriendPresenceLite {
+          profile_id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          lat: number;
+          lng: number;
+          vibe: string;
+          updated_at: string;
+          location?: any;
+          geo?: any;
+          visibility?: string;
+          venue_id?: string | null;
+          accuracy?: number;
+          created_at?: string;
+        }
 
-              if (location) {
-                friendData.push({
-                  profileId: presence.profile_id,
-                  displayName: presence.display_name || null,
-                  avatarUrl: presence.avatar_url || null,
-                  location,
-                  accuracy: presence.accuracy || 50,
-                  timestamp: new Date(presence.updated_at || presence.created_at).getTime(),
-                  vibe: presence.vibe || null,
-                  venueId: presence.venue_id || null,
-                  visibility: presence.visibility || 'friends'
-                });
-              }
-            } catch (locationError) {
-              console.warn(`[FriendDistances] Error processing location for ${presence.profile_id}:`, locationError);
-            }
+        const presences = data as FriendPresenceLite[];
+        
+        for (const presence of presences || []) {
+          if (liveShareFriends.includes(presence.profile_id)) {
+            // Use direct lat/lng from flattened query
+            const location: GPSCoords = {
+              lat: presence.lat,
+              lng: presence.lng
+            };
+
+            friendData.push({
+              profileId: presence.profile_id,
+              displayName: presence.display_name || null,
+              avatarUrl: presence.avatar_url || null,
+              location,
+              accuracy: presence.accuracy || 50,
+              timestamp: new Date(presence.updated_at || presence.created_at || Date.now()).getTime(),
+              vibe: presence.vibe || null,
+              venueId: presence.venue_id || null,
+              visibility: (presence.visibility as 'friends' | 'public' | 'private') || 'friends'
+            });
           }
         }
 
