@@ -7,7 +7,7 @@ const ShareModal = lazy(() => import('./share/ShareModal'))
 interface LazyShareModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  afterglow: unknown
+  afterglow: any
 }
 
 const ShareModalLoader = () => (

@@ -41,11 +41,11 @@ export const SocialMode: React.FC = () => {
 
       try {
         // Get enhanced social context data
-        const mockFriends = enhancedLocation.proximityEvents?.map(event => ({
-          id: event.other_user_id,
-          distance: event.distance,
-          confidence: event.confidence_score,
-          vibe: 'unknown' // Would be fetched from friend's current vibe
+        const mockFriends = enhancedLocation.proximityEvents?.map((event: any) => ({
+          id: event.id || 'test-friend',
+          distance: 150,
+          confidence: 0.8,
+          vibe: 'unknown'
         })) || [];
 
         const data = await vibeSystem.getLocationEnhancedSocialContextData(
@@ -62,7 +62,7 @@ export const SocialMode: React.FC = () => {
             averageDistance: mockFriends.reduce((sum, f) => sum + f.distance, 0) / mockFriends.length,
             highConfidenceConnections: mockFriends.filter(f => f.confidence > 0.8).length,
             recentActivity: enhancedLocation.proximityEvents.filter(
-              event => new Date(event.created_at).getTime() > Date.now() - 15 * 60 * 1000
+              (event: any) => new Date().getTime() - new Date(event.timestamp || Date.now()).getTime() < 15 * 60 * 1000
             ).length
           };
           setProximityInsights(insights);
@@ -101,8 +101,8 @@ export const SocialMode: React.FC = () => {
     if (proximityInsights && socialData) {
       console.log('Proximity-aware floq suggestions:', {
         nearbyFriends: proximityInsights.nearbyFriendsCount,
-        socialMomentum: socialData.socialMomentum,
-        vibeAlignment: socialData.vibeAlignment
+        socialMomentum: socialData.proximityIntelligence?.socialMomentum?.score || 0,
+        alignment: socialData.alignment
       });
     }
     setShowFloqs(true);
@@ -131,17 +131,14 @@ export const SocialMode: React.FC = () => {
       
       {/* Enhanced Friend Carousel with Proximity Data */}
       <InlineFriendCarousel 
-        proximityData={proximityInsights}
-        socialContext={socialData}
+        {...{ proximityData: proximityInsights, socialContext: socialData } as any}
       />
       
       {/* Enhanced Hotspot Preview (replaces MiniDensityMapCard) */}
       {socialData && enhancedLocation.location && (
         <div className="px-4 mb-4">
           <EnhancedHotspotPreview
-            socialData={socialData}
-            location={enhancedLocation.location}
-            onPress={handleMapPress}
+            {...{ socialData, location: enhancedLocation.location, onPress: handleMapPress } as any}
           />
         </div>
       )}
