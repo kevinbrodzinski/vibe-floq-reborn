@@ -50,12 +50,46 @@ export interface EnhancedSocialContextData {
   nearbyFriends: any[];
   socialRecommendations: string[];
   groupDynamics: any;
+  hotspots: Array<{
+    id: string;
+    name: string;
+    socialMetrics: {
+      userCount: number;
+    };
+    prediction: {
+      confidence: number;
+    };
+  }>;
 }
 
 export interface EnhancedPersonalHeroData {
   heroMetrics: any;
   personalInsights: any;
   adaptiveContent: any;
+  confidence: number;
+  accuracy: number;
+  currentVibe: string;
+  predictions: {
+    nextVibeTransition: any;
+    contextualSuggestions: any;
+  };
+  learningProgress: {
+    totalCorrections: number;
+    streakDays: number;
+  };
+  sensorQuality: {
+    overall: number;
+    audio: number;
+    motion: number;
+    light: number;
+    location: number;
+  };
+  environmentalFactors: {
+    isOptimalTime: boolean;
+    socialDensity: number;
+    temporalMomentum: number;
+    vibeCoherence: number;
+  };
 }
 
 export class VibeSystemIntegration {
@@ -130,7 +164,21 @@ export class VibeSystemIntegration {
       socialScore: Math.random() * 0.4 + 0.6,
       nearbyFriends: proximityData?.nearbyFriends || [],
       socialRecommendations: ['Connect with nearby friends', 'Join local events'],
-      groupDynamics: { cohesion: 0.8, energy: 0.7 }
+      groupDynamics: { cohesion: 0.8, energy: 0.7 },
+      hotspots: [
+        {
+          id: 'hotspot-1',
+          name: 'Coffee District',
+          socialMetrics: { userCount: 12 },
+          prediction: { confidence: 0.85 }
+        },
+        {
+          id: 'hotspot-2', 
+          name: 'Park Central',
+          socialMetrics: { userCount: 8 },
+          prediction: { confidence: 0.72 }
+        }
+      ]
     };
   }
 
@@ -142,7 +190,31 @@ export class VibeSystemIntegration {
     return {
       heroMetrics: { energy: 0.8, focus: 0.6, social: 0.7 },
       personalInsights: { mood: 'positive', trend: 'improving' },
-      adaptiveContent: { suggestions: ['Take a break', 'Connect with friends'] }
+      adaptiveContent: { suggestions: ['Take a break', 'Connect with friends'] },
+      confidence: 0.82,
+      accuracy: 0.76,
+      currentVibe: 'social',
+      predictions: {
+        nextVibeTransition: { vibe: 'chill', probability: 0.65, timeframe: '30min' },
+        contextualSuggestions: ['Try a quieter venue', 'Join a group activity']
+      },
+      learningProgress: {
+        totalCorrections: 47,
+        streakDays: 12
+      },
+      sensorQuality: {
+        overall: 0.78,
+        audio: 0.85,
+        motion: 0.72,
+        light: 0.81,
+        location: 0.79
+      },
+      environmentalFactors: {
+        isOptimalTime: true,
+        socialDensity: 0.67,
+        temporalMomentum: 0.73,
+        vibeCoherence: 0.89
+      }
     };
   }
 }
