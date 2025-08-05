@@ -13074,6 +13074,10 @@ export type Database = {
           overlap_duration_minutes: number
         }[]
       }
+      pg_get_tabledef: {
+        Args: { "": unknown }
+        Returns: string
+      }
       pgis_asflatgeobuf_finalfn: {
         Args: { "": unknown }
         Returns: string
