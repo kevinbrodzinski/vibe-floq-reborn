@@ -59,7 +59,7 @@ export interface EnvFactors {
 }
 
 export interface MovementContext {
-  speed: number;
+  speed?: number;
   direction: number;
   stability: number;
 }

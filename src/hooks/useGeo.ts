@@ -13,7 +13,7 @@ import { calculateDistance }     from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
 import { geoTelemetry } from '@/lib/monitoring/telemetry';
 import { loadPersistedCoords, savePersistedCoords, isStale } from '@/lib/location/geoCache';
-import { getEnhancedGeolocation, webLocationHelpers } from '@/lib/location/webCompatibility';
+import { getEnhancedGeolocation } from '@/lib/location/webCompatibility';
 import { isLovablePreview, platformLog } from '@/lib/platform';
 
 /* ────────────────────────────────────────────────────────── */

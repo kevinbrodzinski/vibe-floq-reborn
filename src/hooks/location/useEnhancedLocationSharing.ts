@@ -18,6 +18,8 @@ export interface EnhancedLocationState {
   hasNearbyUsers: boolean;
   currentVenueConfidence: number;
   isLocationHidden: boolean;
+  location?: any;
+  proximityEvents?: any[];
 }
 
 interface LocationData {
@@ -96,8 +98,8 @@ export function useEnhancedLocationSharing() {
     updateVenueDetections,
     // Additional compatibility properties
     isTracking: isSharing,
-    startSharing: () => setIsSharing(true),
-    stopSharing: () => setIsSharing(false),
+    startSharing: () => { setIsSharing(true); return Promise.resolve(); },
+    stopSharing: () => { setIsSharing(false); return Promise.resolve(); },
     accuracy: location?.accuracy || 0,
     geofenceMatches: [],
     privacyFiltered: false,
@@ -109,6 +111,7 @@ export function useEnhancedLocationSharing() {
     hasActiveGeofences: false,
     hasNearbyUsers: proximityData.length > 0,
     currentVenueConfidence: venueDetections[0]?.confidence || 0,
-    isLocationHidden: false
+    isLocationHidden: false,
+    // Remove duplicate venueDetections key
   };
 }

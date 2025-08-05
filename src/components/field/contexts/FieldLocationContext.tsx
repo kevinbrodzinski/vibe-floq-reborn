@@ -73,13 +73,7 @@ const FieldLocationProviderInner = ({
   const pos = coords;
   
   // Enhanced location sharing with all features enabled
-  const enhancedLocationSharing = useEnhancedLocationSharing({
-    enableGeofencing,
-    enableVenueDetection,
-    enableProximityTracking,
-    updateInterval: 30000, // 30 seconds
-    debugMode: debugMode || process.env.NODE_ENV === 'development'
-  });
+  const enhancedLocationSharing = useEnhancedLocationSharing();
 
   const [enhancedSharingActive, setEnhancedSharingActive] = useState(false);
 
@@ -101,14 +95,11 @@ const FieldLocationProviderInner = ({
   /* auto-start enhanced location sharing when location is ready */
   useEffect(() => {
     if (isLocationReady && !enhancedSharingActive && !enhancedLocationSharing.isTracking) {
-      enhancedLocationSharing.startSharing().then(() => {
-        setEnhancedSharingActive(true);
-        if (debugMode) {
-          console.log('[FieldLocationContext] Enhanced location sharing activated');
-        }
-      }).catch((error) => {
-        console.error('[FieldLocationContext] Failed to start enhanced sharing:', error);
-      });
+      enhancedLocationSharing.startSharing();
+      setEnhancedSharingActive(true);
+      if (debugMode) {
+        console.log('[FieldLocationContext] Enhanced location sharing activated');
+      }
     }
   }, [isLocationReady, enhancedSharingActive, enhancedLocationSharing.isTracking, enhancedLocationSharing.startSharing, debugMode]);
 
@@ -137,23 +128,13 @@ const FieldLocationProviderInner = ({
 
   // Enhanced sharing control functions
   const startEnhancedSharing = async () => {
-    try {
-      await enhancedLocationSharing.startSharing();
-      setEnhancedSharingActive(true);
-    } catch (error) {
-      console.error('[FieldLocationContext] Failed to start enhanced sharing:', error);
-      throw error;
-    }
+    enhancedLocationSharing.startSharing();
+    setEnhancedSharingActive(true);
   };
 
   const stopEnhancedSharing = async () => {
-    try {
-      await enhancedLocationSharing.stopSharing();
-      setEnhancedSharingActive(false);
-    } catch (error) {
-      console.error('[FieldLocationContext] Failed to stop enhanced sharing:', error);
-      throw error;
-    }
+    enhancedLocationSharing.stopSharing();
+    setEnhancedSharingActive(false);
   };
 
   const value: FieldLocationContextValue = {
@@ -164,20 +145,7 @@ const FieldLocationProviderInner = ({
     lastHeartbeat,
     
     // Enhanced features
-    enhancedLocation: {
-      location: enhancedLocationSharing.location,
-      accuracy: enhancedLocationSharing.accuracy,
-      isTracking: enhancedLocationSharing.isTracking,
-      geofenceMatches: enhancedLocationSharing.geofenceMatches,
-      privacyFiltered: enhancedLocationSharing.privacyFiltered,
-      privacyLevel: enhancedLocationSharing.privacyLevel,
-      venueDetections: enhancedLocationSharing.venueDetections,
-      currentVenue: enhancedLocationSharing.currentVenue,
-      nearbyUsers: enhancedLocationSharing.nearbyUsers,
-      proximityEvents: enhancedLocationSharing.proximityEvents,
-      lastUpdate: enhancedLocationSharing.lastUpdate,
-      error: enhancedLocationSharing.error
-    },
+    enhancedLocation: enhancedLocationSharing,
     startEnhancedSharing,
     stopEnhancedSharing,
     

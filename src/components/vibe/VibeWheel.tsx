@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { useVibe } from '@/lib/store/useVibe';
-import { VIBE_ORDER, VIBE_RGB, VibeEnum } from '@/constants/vibes';
+import { VIBE_ORDER, VIBE_RGB, VibeEnum, type Vibe } from '@/constants/vibes';
 import { VIBE_DESCRIPTIONS } from '@/constants/vibeDescriptions';
 import { RingGradient } from './ConicGradientRing';
 import { useCompatGlow } from '@/hooks/useCompatGlow';
@@ -77,7 +77,7 @@ export const VibeWheel = memo<VibeWheelProps>(({
   }, [vibeMatch, current]);
 
   /* ---------- motion values ---------- */
-  const orbAngle = useMotionValue(VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT);
+  const orbAngle = useMotionValue(VIBE_ORDER.indexOf(current as Vibe ?? 'chill') * SEGMENT);
   
   /* ---------- derived orb position ---------- */
   const orbX = useTransform(orbAngle, (angle) => {
@@ -91,15 +91,15 @@ export const VibeWheel = memo<VibeWheelProps>(({
   });
 
   /* ---------- commit vibe change ---------- */
-  const commitVibe = useCallback((v: VibeEnum) => {
+  const commitVibe = useCallback((v: Vibe) => {
     if (v === current) return;
     triggerHaptic();
-    setVibe(v);
+    setVibe(v as VibeEnum);
   }, [current, setVibe]);
 
   /* ---------- sync orb position when vibe changes externally ---------- */
   React.useEffect(() => {
-    const targetAngle = VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT;
+    const targetAngle = VIBE_ORDER.indexOf(current as Vibe ?? 'chill') * SEGMENT;
     if (Math.abs(orbAngle.get() - targetAngle) > 1) {
       orbAngle.set(targetAngle);
     }

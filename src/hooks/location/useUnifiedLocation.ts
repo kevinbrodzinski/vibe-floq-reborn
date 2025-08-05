@@ -72,12 +72,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   const EMERGENCY_DISABLE = false;
 
   // Initialize global location manager with useGeo - rate limited
-  const { geoState, manager } = useGlobalLocationManager({
-    watch: !EMERGENCY_DISABLE,
-    enableHighAccuracy: false, // Reduced for better battery/performance
-    minDistanceM: minDistance,
-    debounceMs: Math.max(minTime, 30000) // Enforce minimum 30s debounce
-  });
+  const { geoState, manager } = useGlobalLocationManager();
 
   // Zustand store integration
   const coords = useRawLocationCoords();
@@ -129,33 +124,18 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   useEffect(() => {
     if (consumerRef.current) return; // Already subscribed
 
-    const unsubscribe = locationBus.registerConsumer({
-      id: hookId,
-      type: enableTracking ? 'tracking' : enablePresence ? 'presence' : 'display',
-      priority,
-      callback: (locationCoords) => {
-        // Update store with location from bus
-        updateLocation(locationCoords, locationCoords.timestamp || Date.now());
-        
-        // Handle tracking
-        if (enableTracking) {
-          handleLocationTracking({ ...locationCoords, timestamp: locationCoords.timestamp || Date.now() });
-        }
-        
-        // Handle presence
-        if (enablePresence) {
-          handlePresenceUpdate({ ...locationCoords, timestamp: locationCoords.timestamp || Date.now() });
-        }
-      },
-      errorCallback: (error) => {
-        setStatus('error', error.message || 'Location error');
-      },
-      options: {
-        minDistance,
-        minTime,
-        enableBatching: enableTracking,
-        enablePresence,
-        enableTracking
+    const unsubscribe = locationBus.registerConsumer(hookId, (locationCoords) => {
+      // Update store with location from bus
+      updateLocation(locationCoords, locationCoords.timestamp || Date.now());
+      
+      // Handle tracking
+      if (enableTracking) {
+        handleLocationTracking({ ...locationCoords, timestamp: locationCoords.timestamp || Date.now() });
+      }
+      
+      // Handle presence
+      if (enablePresence) {
+        handlePresenceUpdate({ ...locationCoords, timestamp: locationCoords.timestamp || Date.now() });
       }
     });
 

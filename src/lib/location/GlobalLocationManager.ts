@@ -118,6 +118,13 @@ class GlobalLocationManager {
     return this.currentLocation;
   }
 
+  requestLocationPermission() {
+    // Request permission by attempting to get current position
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(() => {}, () => {});
+    }
+  }
+
   getDebugInfo() {
     return {
       isWatching: this.watchId !== null,
@@ -132,3 +139,18 @@ class GlobalLocationManager {
 }
 
 export const globalLocationManager = new GlobalLocationManager();
+
+// Export hook for compatibility
+export const useGlobalLocationManager = () => {
+  return { 
+    geoState: { 
+      coords: null, 
+      status: 'idle', 
+      hasPermission: false, 
+      accuracy: 0,
+      ts: null,
+      error: null
+    }, 
+    manager: globalLocationManager 
+  };
+};

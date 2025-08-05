@@ -46,6 +46,13 @@ export function createCompatiblePosition(
   };
 }
 
+export function getEnhancedGeolocation() {
+  if (!navigator.geolocation) {
+    throw new Error('Geolocation not supported');
+  }
+  return navigator.geolocation;
+}
+
 export function getLocationWithTimeout(
   timeout = 10000
 ): Promise<CompatibilityGeolocationPosition> {

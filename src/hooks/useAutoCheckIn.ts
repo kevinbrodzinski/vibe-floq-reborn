@@ -12,15 +12,15 @@ export function useAutoCheckIn() {
     
     setIsDetecting(true);
     try {
-      const { data, error } = await supabase.rpc('detect_nearby_venues', {
-        lat,
-        lng,
-        radius: 100
+      const { data, error } = await supabase.rpc('venues_near_me', {
+        user_lat: lat,
+        user_lng: lng,
+        radius_km: 0.1
       });
 
       if (error) throw error;
 
-      const venues: VenueDetectionResult[] = (data || []).map((venue: any) => ({
+      const venues: VenueDetectionResult[] = Array.isArray(data) ? data.map((venue: any) => ({
         id: venue.id,
         name: venue.name || venue.venue_name || 'Unknown Venue',
         venue_id: venue.venue_id || venue.id,
@@ -30,7 +30,7 @@ export function useAutoCheckIn() {
           lng: venue.lng || lng,
         },
         distance: venue.distance || 0,
-      }));
+      })) : [];
 
       setDetectedVenues(venues);
 
@@ -40,10 +40,8 @@ export function useAutoCheckIn() {
         console.log(`Auto-checking into ${topVenue.name} with confidence ${topVenue.confidence}`);
         
         // Perform check-in logic here
-        await supabase.rpc('auto_checkin', {
-          venue_id: topVenue.venue_id,
-          confidence: topVenue.confidence
-        });
+        // Mock auto check-in - function doesn't exist yet
+        console.log('Would auto check-in to venue:', topVenue.venue_id);
       }
     } catch (error) {
       console.error('Error in auto check-in:', error);

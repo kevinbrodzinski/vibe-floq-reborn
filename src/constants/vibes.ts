@@ -39,3 +39,5 @@ export const VIBE_RGB: Record<VibeEnum, [number, number, number]> = {
 };
 
 export const VIBE_OPTIONS: VibeEnum[] = [...VIBE_ORDER];
+
+export type Vibe = VibeEnum;
