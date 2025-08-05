@@ -39,7 +39,7 @@ export const BannerManager = () => {
         autoDismissTimer.current = timer;
       }
     }
-  }, [banners, activeBanner, shouldShowBanner, setActiveBanner, dismissBanner]);
+  }, [banners, activeBanner]); // Removed callbacks from dependencies to prevent infinite loop
 
   // Clear timer on cleanup
   useEffect(() => {
