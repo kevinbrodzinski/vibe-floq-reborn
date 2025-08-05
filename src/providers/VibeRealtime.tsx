@@ -5,7 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { shallow } from 'zustand/shallow';
 
 export function VibeRealtime() {
-  const sync = useVibe((s) => s.syncFromRemote, shallow);
+  // Remove syncFromRemote dependency - handle sync directly
+  const { setVibe } = useVibe();
   const { user, loading: authLoading } = useAuth();
   const profileId = user?.id;
 
@@ -22,7 +23,7 @@ export function VibeRealtime() {
           .maybeSingle();
         
         if (data && !error) {
-          sync(data.vibe, data.updated_at);
+          setVibe(data.vibe);
         } else if (data === null && !error) {
           // Row doesn't exist yet - user hasn't set vibe
           if (process.env.NODE_ENV === 'development') {
@@ -38,7 +39,7 @@ export function VibeRealtime() {
     };
     
     fetchInitialVibe();
-  }, [authLoading, profileId, sync]);
+  }, [authLoading, profileId, setVibe]);
 
   // Realtime subscription management
   useEffect(() => {
@@ -68,7 +69,7 @@ export function VibeRealtime() {
             },
             (payload) => {
               try {
-                sync(payload.new.vibe as string, payload.new.updated_at as string);
+                setVibe(payload.new.vibe as string);
               } catch (syncError) {
                 console.warn('Failed to sync vibe update:', syncError);
               }
@@ -93,7 +94,7 @@ export function VibeRealtime() {
     } catch (channelError) {
       console.error('Failed to create vibe channel:', channelError);
     }
-  }, [authLoading, profileId, sync]);
+  }, [authLoading, profileId, setVibe]);
 
   // Clean up channels and store on auth state change
   useEffect(() => {
@@ -108,7 +109,7 @@ export function VibeRealtime() {
         
         // Clear persisted store and reset state for fresh start
         useVibe.persist.clearStorage();
-        useVibe.setState({ vibe: null, updatedAt: null });
+        useVibe.setState({ currentVibe: 'chill', visibility: 'public' });
       }
     });
 

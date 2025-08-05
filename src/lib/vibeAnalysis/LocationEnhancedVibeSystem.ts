@@ -1,5 +1,5 @@
 import { VibeSystemIntegration, type EnhancedPersonalHeroData, type EnhancedSocialContextData } from './VibeSystemIntegration';
-import { useEnhancedLocationSharing } from '@/hooks/useEnhancedLocationSharing';
+import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
 import { ProximityEventRecorder } from '@/lib/location/proximityEventRecorder';
 import type { Vibe } from '@/lib/vibes';
 

@@ -2,11 +2,15 @@
 export function useToast() {
   return {
     toasts: [],
-    toast: () => ({ id: 'stub', dismiss: () => {}, update: () => {} }),
+    toast: (props?: any) => {
+      console.log('Toast:', props?.title || props?.description || 'Toast triggered');
+      return { id: 'stub', dismiss: () => {}, update: () => {} };
+    },
     dismiss: () => {},
   }
 }
 
-export function toast() {
-  return { id: 'stub', dismiss: () => {}, update: () => {} }
+export function toast(props?: any) {
+  console.log('Toast:', props?.title || props?.description || 'Toast triggered');
+  return { id: 'stub', dismiss: () => {}, update: () => {} };
 }

@@ -39,9 +39,8 @@ export function useEnhancedLocationSharing() {
   const analyzeProximity = (data: ProximityAnalysis[]): ProximityAnalysis[] => {
     return data.map(item => ({
       ...item,
-      // Normalize user identifiers
-      userId: item.profile_id || item.userId || 'unknown',
-      profile_id: item.profile_id || item.userId || 'unknown'
+      // Normalize user identifiers - remove userId references
+      profile_id: item.profile_id || 'unknown'
     }));
   };
 
