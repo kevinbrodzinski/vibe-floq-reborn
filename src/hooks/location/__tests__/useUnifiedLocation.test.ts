@@ -88,6 +88,20 @@ vi.mock('@/lib/store/useLocationStore', () => ({
   useTrackingState: vi.fn(() => ({
     isTracking: false,
     trackingStartTime: null
+  })),
+  useMovementContext: vi.fn(() => null),
+  useLocationHealth: vi.fn(() => ({
+    gpsManager: { isHealthy: true, subscriberCount: 0, failureCount: 0, lastUpdate: Date.now() },
+    locationBus: { isHealthy: true, consumerCount: 0, batchSize: 0, averageLatency: 0 },
+    circuitBreaker: { state: 'CLOSED', isHealthy: true, queueSize: 0, writeRate: 0 }
+  })),
+  useLocationMetrics: vi.fn(() => ({
+    totalUpdates: 0,
+    averageAccuracy: 10,
+    updateFrequency: 0,
+    lastUpdateTime: Date.now(),
+    renderCount: 0,
+    subscriptionCount: 0
   }))
 }));
 
@@ -220,9 +234,9 @@ describe('useUnifiedLocation', () => {
 
   describe('Error handling', () => {
     it('should handle location errors gracefully', async () => {
-      // Mock error state
-      const { useLocationStatus } = await import('@/lib/store/useLocationStore');
-      vi.mocked(useLocationStatus).mockReturnValue({
+      // Mock error state by re-importing and mocking
+      const locationStore = await import('@/lib/store/useLocationStore');
+      vi.mocked(locationStore.useLocationStatus).mockReturnValue({
         status: 'error',
         error: 'GPS timeout',
         hasPermission: false
@@ -324,7 +338,7 @@ describe('useUnifiedLocation', () => {
 
   describe('Integration with GlobalLocationManager', () => {
     it('should subscribe to location manager', async () => {
-      const { useGlobalLocationManager } = await import('@/lib/location/GlobalLocationManager');
+      const globalLocationManager = await import('@/lib/location/GlobalLocationManager');
       
       renderHook(() =>
         useUnifiedLocation({
@@ -334,7 +348,7 @@ describe('useUnifiedLocation', () => {
         })
       );
 
-      expect(useGlobalLocationManager).toHaveBeenCalledWith({
+      expect(globalLocationManager.useGlobalLocationManager).toHaveBeenCalledWith({
         watch: true,
         enableHighAccuracy: true,
         minDistanceM: 10,
@@ -345,7 +359,7 @@ describe('useUnifiedLocation', () => {
 
   describe('Integration with LocationBus', () => {
     it('should register consumer with location bus', async () => {
-      const { locationBus } = await import('@/lib/location/LocationBus');
+      const locationBusModule = await import('@/lib/location/LocationBus');
       
       renderHook(() =>
         useUnifiedLocation({
@@ -355,13 +369,13 @@ describe('useUnifiedLocation', () => {
         })
       );
 
-      expect(locationBus.registerConsumer).toHaveBeenCalled();
+      expect(locationBusModule.locationBus.registerConsumer).toHaveBeenCalled();
     });
   });
 
   describe('Circuit breaker integration', () => {
     it('should be available for database operations', async () => {
-      const { executeWithCircuitBreaker } = await import('@/lib/database/CircuitBreaker');
+      const circuitBreakerModule = await import('@/lib/database/CircuitBreaker');
       
       const { result } = renderHook(() =>
         useUnifiedLocation({
@@ -372,8 +386,8 @@ describe('useUnifiedLocation', () => {
       );
 
       // Circuit breaker should be available (but not necessarily called in basic test)
-      expect(executeWithCircuitBreaker).toBeDefined();
-      expect(typeof executeWithCircuitBreaker).toBe('function');
+      expect(circuitBreakerModule.executeWithCircuitBreaker).toBeDefined();
+      expect(typeof circuitBreakerModule.executeWithCircuitBreaker).toBe('function');
     });
   });
 });
