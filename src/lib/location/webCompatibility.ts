@@ -103,3 +103,14 @@ export function getLocationWithTimeout(
     );
   });
 }
+
+export const webLocationHelpers = {
+  isSupported: () => 'geolocation' in navigator,
+  checkPermission: async () => {
+    if ('permissions' in navigator) {
+      const result = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+      return result.state;
+    }
+    return 'prompt';
+  }
+};
