@@ -340,3 +340,22 @@ export const useLocationMetrics = () =>
 
 export const useLocationStatus = () =>
   useLocationStore((state) => state.status);
+
+/**
+ * Hook to grab only the store actions (start/stop tracking, etc.).
+ * Keeps React components from re-rendering when coords/status change.
+ */
+export const useLocationActions = () =>
+  useLocationStore((state) => ({
+    startTracking: state.startTracking,
+    stopTracking: state.stopTracking,
+    setStatus: state.setStatus,
+    setPermission: state.setPermission,
+    enablePresence: state.enablePresence,
+    disablePresence: state.disablePresence,
+    updateLocation: state.updateLocation,
+    updateMovementContext: state.updateMovementContext,
+    updateSystemHealth: state.updateSystemHealth,
+    updateMetrics: state.updateMetrics,
+    reset: state.reset,
+  }));
