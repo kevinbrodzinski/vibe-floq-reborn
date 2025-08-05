@@ -61,14 +61,17 @@ export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonF
   if (requested) {
     return (
       <div className="flex gap-3">
-        <Badge variant="outline" className="flex-1 justify-center px-4 py-2 text-sm border-primary text-primary">
+        <Badge 
+          variant="outline" 
+          className="flex-1 justify-center px-4 py-3 text-sm border-primary text-primary min-h-[44px] flex items-center"
+        >
           Requested
         </Badge>
         <Button
           variant="ghost"
           size="icon"
           onClick={handleWave}
-          className="border border-white/20 text-white hover:bg-white/10"
+          className="border border-white/20 text-white hover:bg-white/10 min-h-[44px] min-w-[44px] touch-manipulation"
         >
           <Zap className="h-4 w-4" />
         </Button>
@@ -81,7 +84,7 @@ export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonF
       <Button
         onClick={handleAddFriend}
         disabled={isAddingFriend}
-        className="flex-1 bg-gradient-primary text-white font-medium border-0"
+        className="flex-1 bg-gradient-primary text-white font-medium border-0 min-h-[44px] touch-manipulation"
       >
         <UserPlus className="h-4 w-4 mr-2" />
         {isAddingFriend ? 'Sending...' : 'Add Friend'}
@@ -90,7 +93,7 @@ export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonF
         variant="ghost"
         size="icon"
         onClick={handleWave}
-        className="border border-white/20 text-white hover:bg-white/10"
+        className="border border-white/20 text-white hover:bg-white/10 min-h-[44px] min-w-[44px] touch-manipulation"
       >
         <Zap className="h-4 w-4" />
       </Button>
