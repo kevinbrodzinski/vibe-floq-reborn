@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { databaseCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { locationBus } from '@/lib/location/LocationBus';
-import { useLocationHealth, useLocationMetrics, useLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
+import { useLocationHealth, useRawLocationMetrics, useRawLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
 
 interface HealthMetrics {
   locationManager: ReturnType<typeof globalLocationManager.getDebugInfo>;
@@ -23,8 +23,8 @@ export const LocationSystemHealthDashboard: React.FC = () => {
   
   // Zustand store data
   const systemHealth = useLocationHealth();
-  const storeMetrics = useLocationMetrics();
-  const coords = useLocationCoords();
+  const storeMetrics = useRawLocationMetrics();
+  const coords = useRawLocationCoords();
   const status = useLocationStatus();
 
   useEffect(() => {
