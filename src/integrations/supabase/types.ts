@@ -12959,6 +12959,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      make_hexagon: {
+        Args: { ctr: unknown; sz: number }
+        Returns: unknown
+      }
       mark_afterglow_stale: {
         Args: { p_profile_id: string }
         Returns: undefined
@@ -14061,7 +14065,9 @@ export type Database = {
         Returns: number
       }
       st_hexagon: {
-        Args: { size: number; cell_i: number; cell_j: number; origin?: unknown }
+        Args:
+          | { center: unknown; size: number }
+          | { size: number; cell_i: number; cell_j: number; origin?: unknown }
         Returns: unknown
       }
       st_hexagongrid: {
