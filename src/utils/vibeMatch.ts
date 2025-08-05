@@ -1,6 +1,6 @@
 import { weightedHue, blendHue } from './color';
 import { VIBE_RGB } from '@/constants/vibes';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 export interface VibeMatchResult {
   matchPercentage: number;

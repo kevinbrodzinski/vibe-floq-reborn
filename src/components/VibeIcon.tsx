@@ -13,7 +13,7 @@ import {
   Eye 
 } from 'lucide-react';
 import { vibeColor } from '@/utils/vibe';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 const vibeIconMap = {
   chill: Armchair,

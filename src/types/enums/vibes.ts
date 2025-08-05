@@ -1,19 +1,9 @@
 import { z } from 'zod'
+import { VIBES, type Vibe } from '@/lib/vibes'
 
-export const VibeEnum = z.enum([
-  'chill',
-  'hype',
-  'curious',
-  'social',
-  'solo',
-  'romantic',
-  'weird',
-  'down',
-  'flowing',
-  'open',
-])
+export const VibeEnum = z.enum(VIBES)
 
-export type Vibe = z.infer<typeof VibeEnum>
+export type { Vibe } from '@/lib/vibes'
 
 // For VibeState compatibility with existing code (removes 'curious')
 export const VibeStateEnum = z.enum([

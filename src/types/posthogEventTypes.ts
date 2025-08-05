@@ -1,4 +1,4 @@
-import type { Vibe } from '@/types/vibes'
+import type { Vibe } from '@/lib/vibes'
 
 // Floq-specific analytics event types
 export type PosthogEvent =

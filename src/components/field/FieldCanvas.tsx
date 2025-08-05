@@ -16,7 +16,7 @@ import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 import { zIndex } from '@/constants/z.ts';
 import { vibeToColor } from '@/utils/vibeToHSL';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 import { safeVibe } from '@/types/enums/vibes';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';

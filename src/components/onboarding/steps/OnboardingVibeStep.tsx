@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { MobileOptimizedButton } from '@/components/mobile/MobileOptimizedButton';
-import { VibeEnum } from '@/lib/vibeEnum';
-import { type Vibe } from '@/lib/vibeHelpers';
+import { VIBES, type Vibe } from '@/lib/vibes';
 import { toast } from '@/hooks/use-toast';
 import { vibeOptions, getVibeMeta } from '@/lib/vibeConstants';
 
@@ -19,7 +18,7 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
       toast({ title: 'Pick a vibe first', variant: 'destructive' });
       return;
     }
-    if (!VibeEnum.includes(selectedVibe as Vibe)) {
+    if (!VIBES.includes(selectedVibe as Vibe)) {
       toast({
         title: 'Invalid vibe selected',
         description: 'Please pick one of the listed vibe options.',

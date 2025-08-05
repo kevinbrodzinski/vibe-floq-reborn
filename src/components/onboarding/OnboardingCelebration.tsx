@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Heart, Users, MapPin } from 'lucide-react';
-import { type Vibe } from '@/types/vibes';
+import { type Vibe } from '@/lib/vibes';
 import { getVibeMeta } from '@/lib/vibeConstants';
 
 interface OnboardingCelebrationProps {

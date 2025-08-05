@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { type Vibe } from '@/types/vibes';
+import { type Vibe } from '@/lib/vibes';
 
 export const ONBOARDING_VERSION = 'v2' as const;
 export const FINAL_STEP = 6 as const;

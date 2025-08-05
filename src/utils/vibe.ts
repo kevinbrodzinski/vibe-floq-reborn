@@ -1,4 +1,4 @@
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 // keep this tiny file tree-shakable
 export const vibeEmoji = (() => {

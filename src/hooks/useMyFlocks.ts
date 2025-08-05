@@ -6,7 +6,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from "@/types";
 import { safeVibe } from '@/types/enums/vibes';
 import { z } from 'zod';
-import { VibeEnum } from '@/types/vibes';
+import { VibeEnum } from '@/types/enums/vibes';
 import { MyFloqSchema, ParticipantRowSchema, type MyFloq } from '@/types/schemas/MyFloqSchema';
 
 export type { MyFloq };

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VibeEnum, type Vibe } from '@/types/vibes';
+import { VibeEnum, type Vibe } from '@/types/enums/vibes';
 
 const BaseFloqSchema = z.object({
   id: z.string(),

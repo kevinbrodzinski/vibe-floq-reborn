@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 // Emoji fallbacks (current implementation)
 const emojiMap: Record<Vibe, string> = {

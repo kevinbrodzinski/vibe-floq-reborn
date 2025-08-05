@@ -1,8 +1,8 @@
 // Core type definitions for floq app (aligned with Supabase types)
 import { Database } from '@/integrations/supabase/Database';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
-export type { Vibe } from '@/types/vibes';
+export type { Vibe } from '@/lib/vibes';
 export type ClusterType = Database['public']['Enums']['cluster_type_enum'];
 export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
 

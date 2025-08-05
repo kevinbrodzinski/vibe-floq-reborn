@@ -10,7 +10,7 @@ import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/const
 import { useOnboardingToasts } from '@/lib/toastHelpers';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { getDefaultAvatar } from '@/lib/avatarGenerator';
-import { type Vibe } from '@/types/vibes';
+import { type Vibe } from '@/lib/vibes';
 
 interface OnboardingCompletionStepProps {
   onDone: () => void;

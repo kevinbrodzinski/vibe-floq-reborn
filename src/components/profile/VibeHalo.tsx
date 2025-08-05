@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { vibeToBorder } from '@/utils/vibeColors';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 interface VibeHaloProps {
   vibe?: Vibe | string;

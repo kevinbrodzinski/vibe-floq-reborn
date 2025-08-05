@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { vibeOptions, getVibeMeta } from '@/lib/vibeConstants';
-import { type Vibe } from '@/types/vibes';
+import { type Vibe } from '@/lib/vibes';
 
 interface VibeSelectionStepProps {
   onNext: (vibe: Vibe) => void;

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSmartPlanOptimization, type PlanOptimizationSuggestion } from '@/hooks/useSmartPlanOptimization';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 interface PlanOptimizationPanelProps {
   planId: string;

@@ -1,5 +1,5 @@
 
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 const palette: Record<Vibe, [number, number, number]> = {
   hype:     [340,  90, 60],  // hot pink

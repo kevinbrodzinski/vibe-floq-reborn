@@ -1,5 +1,5 @@
 // src/lib/vibeConstants.ts
-import { VibeEnum, type Vibe } from '@/types/vibes';
+import { VIBES, type Vibe } from '@/lib/vibes';
 
 export type VibeMeta = {
   id: Vibe;
@@ -11,7 +11,7 @@ export type VibeMeta = {
   timeOfDay: 'day' | 'night' | 'any';
 };
 
-export const vibeOptions: VibeMeta[] = VibeEnum.options.map((vibe) => {
+export const vibeOptions: VibeMeta[] = VIBES.map((vibe) => {
   const map: Record<Vibe, Omit<VibeMeta, 'id'>> = {
     chill:     { label: 'Chill',     emoji: '🛋️', color: 'blue',   energy: 'low',    social: 'any',  timeOfDay: 'night' },
     hype:      { label: 'Hype',      emoji: '⚡️', color: 'orange', energy: 'high',   social: 'group', timeOfDay: 'night' },
