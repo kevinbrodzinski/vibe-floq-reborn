@@ -58,7 +58,7 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
       await executeWithCircuitBreaker(
         () => callFn('record_locations', { batch }),
         'medium',
-        'location-tracking-batch'
+        { component: 'location-tracking-batch' }
       );
 
     } catch (error: any) {

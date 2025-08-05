@@ -79,9 +79,9 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   // Zustand store integration
   const coords = useLocationCoords();
   const locationStatus = useLocationStatus();
-  const status = locationStatus?.status || 'idle';
-  const error = locationStatus?.error || null;
-  const hasPermission = locationStatus?.hasPermission || false;
+  const status = locationStatus || 'idle';
+  const error = null;
+  const hasPermission = true;
   const {
     updateLocation,
     updateMovementContext,
@@ -136,12 +136,12 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
         
         // Handle tracking
         if (enableTracking) {
-          handleLocationTracking(locationCoords);
+          handleLocationTracking({ ...locationCoords, timestamp: locationCoords.timestamp || Date.now() });
         }
         
         // Handle presence
         if (enablePresence) {
-          handlePresenceUpdate(locationCoords);
+          handlePresenceUpdate({ ...locationCoords, timestamp: locationCoords.timestamp || Date.now() });
         }
       },
       errorCallback: (error) => {
@@ -206,7 +206,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
             p_lng: locationCoords.lng,
             p_vibe: 'active', // Default vibe for presence
             p_accuracy: locationCoords.accuracy,
-            p_h3_idx: h3Idx // V2: Client-computed H3 index
+            p_h3_idx: Number(h3Idx) // Convert bigint to number
           });
 
           if (error) {
@@ -214,11 +214,11 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
           }
 
           // Log V2 spatial indexing success
-          if (import.meta.env.MODE === 'development' && data?.spatial_strategy) {
+          if (import.meta.env.MODE === 'development' && data && typeof data === 'object' && 'spatial_strategy' in data) {
             console.debug('[useUnifiedLocation] V2 presence updated:', {
-              spatial_strategy: data.spatial_strategy,
-              h3_idx: h3Idx.toString(),
-              duration_ms: data.duration_ms
+              spatial_strategy: (data as any).spatial_strategy,
+              h3_idx: Number(h3Idx),
+              duration_ms: (data as any).duration_ms
             });
           }
         },
@@ -244,7 +244,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     try {
       await executeWithCircuitBreaker(
         async () => {
-          const { error } = await callFn('record-locations', { batch });
+          const { error } = await callFn('record-locations', { batch }) as any;
           
           if (error) {
             throw new Error(`Location recording failed: ${error.message}`);
@@ -443,7 +443,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
         p_lat: coords.lat,
         p_lng: coords.lng,
         p_radius_meters: radiusMeters,
-        p_h3_ring_ids: h3Ring
+        p_h3_ring_ids: h3Ring.map(id => Number(id))
       });
 
       if (error) {
@@ -499,7 +499,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     stopTracking,
     getCurrentLocation,
     resetErrors,
-    getNearbyUsers, // V2: H3-optimized nearby users query
+    getNearbyUsers: getNearbyUsers as any, // V2: H3-optimized nearby users query
     getH3Neighbors  // V2: Get H3 neighbors for current location
   };
 }

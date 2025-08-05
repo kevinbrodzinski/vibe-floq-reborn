@@ -51,7 +51,7 @@ export const FieldUIProvider = ({ children }: FieldUIProviderProps) => {
   const [showBanner, setShowBanner] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
-  const currentVibe = useCurrentVibe() || 'social';
+  const currentVibe = (useCurrentVibe() || 'social') as any;
   const { setVibe: setCurrentVibe } = useVibe();
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   

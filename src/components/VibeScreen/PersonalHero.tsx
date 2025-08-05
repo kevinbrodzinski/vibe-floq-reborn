@@ -33,13 +33,13 @@ export const PersonalHero: React.FC = () => {
         <motion.div 
           className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
           style={{
-            borderColor: getVibeColor(vibe || 'chill'),
+            borderColor: getVibeColor((vibe as string) || 'chill'),
             scale: pulseScale,
           }}
         >
           <div 
             className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: getVibeColor(vibe || 'chill') }}
+            style={{ backgroundColor: getVibeColor((vibe as string) || 'chill') }}
           />
         </motion.div>
         

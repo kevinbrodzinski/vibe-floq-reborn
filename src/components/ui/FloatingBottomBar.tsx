@@ -19,8 +19,8 @@ export const FloatingBottomBar: React.FC<FloatingBottomBarProps> = ({
   badge
 }) => {
   const navigate = useNavigate();
-  const currentVibe = useCurrentVibe();
-  const presenceCount = usePresenceCount(currentVibe);
+  const currentVibe = useCurrentVibe() as string;
+  const presenceCount = usePresenceCount(currentVibe as any);
   
   // Use badge prop if provided, otherwise use presence count
   const displayBadge = badge ?? presenceCount;
