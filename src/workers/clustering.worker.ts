@@ -4,7 +4,7 @@ import * as Comlink from 'comlink';
 /* ────────────── types ────────────── */
 export interface RawTile {
   id:   string;                       // tile_id (kept for provenance / hit-test)
-  x:    number;                       // screen-space px  (projectLatLng)
+  x:    number;                       // screen-space px  (projectToScreen)
   y:    number;
   r:    number;                       // radius  (crowdCountToRadius)
   vibe: { h: number; s: number; l: number };

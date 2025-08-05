@@ -6,7 +6,7 @@ import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
 import { SpritePool } from '@/lib/pixi/SpritePool';
-import { projectLatLng, getMapInstance, metersToPixelsAtLat } from '@/lib/geo/project';
+import { projectToScreen, getMapInstance, metersToPixelsAtLat } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { clusterWorker } from '@/lib/clusterWorker';
 import { throttle } from '@/utils/timing';
@@ -169,7 +169,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         // Function to update user dot position
         const updateUserDot = (lat: number, lng: number) => {
-          const projection = projectLatLng(lng, lat);
+          const projection = projectToScreen(lat, lng);
           if (!projection || !userDot) return; // Map not ready yet
           
           const { x, y } = projection;
@@ -419,7 +419,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Build raw tiles for worker with constellation mode support
         const rawTiles = visibleTiles.map(tile => {
           const [lat, lng] = geohashToCenter(tile.tile_id);
-          const projection = projectLatLng(lng, lat);
+          const projection = projectToScreen(lat, lng);
           if (!projection) return null; // Skip if map not ready
           const { x, y } = projection;
           const radius = crowdCountToRadius(tile.crowd_count);

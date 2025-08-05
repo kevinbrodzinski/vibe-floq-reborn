@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Graphics, Container, Application } from 'pixi.js';
-import { projectLatLng, getMapInstance } from '@/lib/geo/project';
+import { projectToScreen, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter } from '@/lib/geo';
 import { throttle } from 'lodash-es';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
@@ -67,7 +67,7 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     // Cache field tile projections - re-project each time the map moves
     fieldTiles.filter(t => t.crowd_count >= 3).forEach(tile => {
       const [lat, lng] = geohashToCenter(tile.tile_id);
-      const projection = projectLatLng(lng, lat);
+      const projection = projectToScreen(lat, lng);
       if (projection) {
         cache.push({
           id: `tile_${tile.tile_id}`,

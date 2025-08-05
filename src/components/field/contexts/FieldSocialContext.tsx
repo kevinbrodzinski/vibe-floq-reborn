@@ -1,8 +1,8 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { getVibeColor } from '@/utils/getVibeColor';
 import { useFieldLocation } from './FieldLocationContext';
 import { useSelectedFloq } from '@/components/maps/FieldWebMap';
-import { projectLatLng } from '@/lib/geo/project';
+import { projectToScreen, onMapReady } from '@/lib/geo/project';
 
 export interface ProfileRow {
   id: string;
@@ -37,6 +37,13 @@ interface FieldSocialProviderProps {
 
 export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderProps) => {
   console.log('[FieldSocialProvider] Rendering with profiles:', profiles);
+  
+  // Track map ready state for reactivity
+  const [mapReadyFlag, setMapReadyFlag] = useState(0);
+  
+  useEffect(() => {
+    onMapReady(() => setMapReadyFlag(v => v + 1));
+  }, []);
   
   // Safely try to get field location context
   let location, presenceData;
@@ -100,55 +107,26 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         return null;
       }
       
-      // Enhanced geographic coordinate conversion with proper map projection
-      try {
-        // Use proper map projection if available
-        const projection = projectLatLng(presenceLng, presenceLat);
-        if (!projection) {
-          // Skip this person if map not ready
-          return null;
-        }
-        const { x, y } = projection;
-        
-        return {
-          id: profileId,
-          name: profile?.display_name || `User ${profileId?.slice(-4) || 'unknown'}`,
-          x,
-          y,
-          color: getVibeColor(presence.vibe || 'social'),
-          vibe: presence.vibe || 'social',
-          isFriend: presence.isFriend || false,
-        };
-      } catch (projectionError) {
-        // Fallback to manual coordinate conversion if map projection fails
-        // Note: At high latitudes (>60°) this approximation can have tens of meters error
-        console.warn('[FieldSocialContext] Map projection failed, using geographic fallback:', projectionError);
-        
-        // Convert lat/lng to screen coordinates using simple geographic conversion
-        const latDiff = presenceLat - location.coords!.lat;
-        const lngDiff = presenceLng - location.coords!.lng;
-        
-        // Convert to screen coordinates (assuming 1000px screen width/height)
-        const xMeters = lngDiff * 111320 * Math.cos((location.coords!.lat * Math.PI) / 180);
-        const yMeters = latDiff * 111320;
-        
-        // Scale to screen coordinates (field is viewport sized, 2km radius)
-        const scale = 200; // pixels per km 
-        const x = 500 + (xMeters / 1000) * scale; // Center at 500px + offset
-        const y = 500 - (yMeters / 1000) * scale; // Center at 500px + offset (inverted Y)
-        
-        return {
-          id: profileId,
-          name: profile?.display_name || `User ${profileId?.slice(-4) || 'unknown'}`,
-          x,
-          y,
-          color: getVibeColor(presence.vibe || 'social'),
-          vibe: presence.vibe || 'social',
-          isFriend: presence.isFriend || false,
-        };
+      // Use safe map projection
+      const projection = projectToScreen(presenceLat, presenceLng);
+      if (!projection) {
+        // Map not ready → skip this person (will recompute when map loads)
+        return null;
       }
+      
+      const { x, y } = projection;
+      
+      return {
+        id: profileId,
+        name: profile?.display_name || `User ${profileId?.slice(-4) || 'unknown'}`,
+        x,
+        y,
+        color: getVibeColor(presence.vibe || 'social'),
+        vibe: presence.vibe || 'social',
+        isFriend: presence.isFriend || false,
+      };
     }).filter(Boolean); // Remove null entries
-  }, [presenceData, profilesMap, location?.coords?.lat, location?.coords?.lng, selectedFloqMembers]);
+  }, [presenceData, profilesMap, location?.coords?.lat, location?.coords?.lng, selectedFloqMembers, mapReadyFlag]);
 
   const value = {
     people,
@@ -164,11 +142,8 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
 };
 
 export const useFieldSocial = () => {
-  console.log('[FieldSocialContext] Hook called, context value:', FieldSocialContext);
   const context = useContext(FieldSocialContext);
-  console.log('[FieldSocialContext] Context result:', context);
   if (!context) {
-    console.error('[FieldSocialContext] No context found! Provider not working?');
     throw new Error('useFieldSocial must be used within a FieldSocialProvider');
   }
   return context;

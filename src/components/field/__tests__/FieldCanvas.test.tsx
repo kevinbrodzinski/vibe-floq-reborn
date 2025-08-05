@@ -82,7 +82,7 @@ vi.mock('@/lib/pixi/SpritePool', () => ({
 }));
 
 vi.mock('@/lib/geo/project', () => ({
-  projectLatLng: vi.fn(),
+  projectToScreen: vi.fn(),
   getMapInstance: vi.fn(() => ({
     getZoom: () => 11,
     on: vi.fn(),

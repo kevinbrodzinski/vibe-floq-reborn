@@ -40,7 +40,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
   
-  // Check if map is ready to prevent projectLatLng errors
+  // Check if map is ready to prevent projection errors
   const isMapReady = Boolean(getMapInstance());
   
   // Auto-enable constellation mode for night hours

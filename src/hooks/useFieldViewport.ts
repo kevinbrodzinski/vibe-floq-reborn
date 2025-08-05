@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { ViewportBounds } from '../../packages/ui/src/maps/types';
+import type { Bounds as ViewportBounds } from '@/types/maps';
 
 export const useFieldViewport = () => {
   const [bounds, setBounds] = useState<ViewportBounds | null>(null);

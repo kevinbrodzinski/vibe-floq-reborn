@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/sheet';
 
 import type { Cluster }          from '@/hooks/useClusters';
-import type { ViewportBounds }   from 'packages/ui/src/maps/types';
+import type { Bounds as ViewportBounds } from '@/types/maps';
 
 export const VibeDensityMap: React.FC = () => {
   const { bounds, onRegionChange } = useFieldViewport();
