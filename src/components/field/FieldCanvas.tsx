@@ -119,146 +119,164 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     let onPointerMove: ((e: any) => void) | undefined;
 
     const initAndRegister = async () => {
-      if (cancelled) return; // Check cancellation before async work
-      
-      await app.init({
-        canvas: actualRef.current!,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        backgroundColor: undefined, // Force transparent background
-        antialias: true,
-        resolution: window.devicePixelRatio || 1, // Better quality on high-DPI displays
-        autoDensity: true, // Handle high-DPI displays properly
-        backgroundAlpha: 0, // Ensure background is transparent
-      });
-      
-      if (cancelled) return; // Check cancellation after async work
-      
-      // Register app with lifecycle manager
-      const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
-      const lifecycleManager = PixiLifecycleManager.getInstance();
-      lifecycleManager.registerApp(app);
-      // Create containers in proper z-order
-      const heatContainer = new Container();
-      const constellationContainer = new Container(); // For constellation effects
-      const peopleContainer = new Container();
-      const userContainer = new Container(); // For user location dot
-      
-      // Add containers in proper order (last = top layer)
-      app.stage.addChild(heatContainer);
-      app.stage.addChild(constellationContainer); // Constellation effects between heat and people
-      app.stage.addChild(peopleContainer);
-      app.stage.addChild(userContainer); // User dot on top
-      
-      heatContainerRef.current = heatContainer;
-      peopleContainerRef.current = peopleContainer;
-      constellationContainerRef.current = constellationContainer;
-      
-      // Create user location dot
-      const userDot = new Graphics();
-      userContainer.addChild(userDot);
-      userDotRef.current = userDot;
-      
-      // Function to update user dot position
-      const updateUserDot = (lat: number, lng: number) => {
-        const projection = projectLatLng(lng, lat);
-        if (!projection || !userDot) return; // Map not ready yet
+      try {
+        if (cancelled) return; // Check cancellation before async work
         
-        const { x, y } = projection;
+        await app.init({
+          canvas: actualRef.current!,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: undefined, // Force transparent background
+          antialias: true,
+          resolution: window.devicePixelRatio || 1, // Better quality on high-DPI displays
+          autoDensity: true, // Handle high-DPI displays properly
+          backgroundAlpha: 0, // Ensure background is transparent
+        });
         
-        // Clear and redraw the user dot with proper styling
-        userDot.clear();
-        
-        // Accuracy halo (if available)
-        if (userLocation.coords?.accuracy) {
-          const mapZoom = getMapInstance()?.getZoom() ?? 11;
-          const haloRadius = metersToPixelsAtLat(userLocation.coords.accuracy, lat, mapZoom);
-          userDot.beginFill(0x0066cc, 0.1);
-          userDot.drawCircle(0, 0, haloRadius);
-          userDot.endFill();
+        if (cancelled) {
+          // Unmounted while awaiting - clean up immediately
+          const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
+          const lifecycleManager = PixiLifecycleManager.getInstance();
+          lifecycleManager.destroyApp(app);
+          return;
         }
         
-        // Outer ring (14px semi-transparent blue)
-        userDot.beginFill(0x0066cc, 0.3);
-        userDot.drawCircle(0, 0, 14);
-        userDot.endFill();
-        
-        // Inner dot (8px solid blue)
-        userDot.beginFill(0x0066cc, 1.0);
-        userDot.drawCircle(0, 0, 8);
-        userDot.endFill();
-        
-        // White border for contrast
-        userDot.lineStyle(2, 0xffffff, 0.8);
-        userDot.drawCircle(0, 0, 8);
-        
-        userDot.position.set(x, y);
-        userDot.visible = true;
-      };
-      
-      // Store updateUserDot function for use in effects
-      (userDot as any)._updatePosition = updateUserDot;
-      
-      // Initialize pools and reusable objects
-      tilePoolRef.current = new TileSpritePool();
-      graphicsPoolRef.current = new GraphicsPool();
-      spritePoolRef.current = new SpritePool(() => new Graphics());
-      spritePoolRef.current.preAllocate(512); // Pre-allocate 512 Graphics objects
-      
-      // Pre-create reusable debug graphics
-      debugGraphicsRef.current = new Graphics();
+        // Register app with lifecycle manager
+        const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
+        const lifecycleManager = PixiLifecycleManager.getInstance();
+        lifecycleManager.registerApp(app);
 
-      /* ------------------------------------------------- hit-testing + ripple */
-      onPointerMove = (e: any) => {
-        const { clientX, clientY } = e.data?.originalEvent || { clientX: e.globalX, clientY: e.globalY };
-        hitTest(clientX, clientY).then(ids => {
-          if (!ids.length) {
-            setTooltip(null);
-            return;
+        // Create containers in proper z-order
+        const heatContainer = new Container();
+        const constellationContainer = new Container(); // For constellation effects
+        const peopleContainer = new Container();
+        const userContainer = new Container(); // For user location dot
+        
+        // Add containers in proper order (last = top layer)
+        app.stage.addChild(heatContainer);
+        app.stage.addChild(constellationContainer); // Constellation effects between heat and people
+        app.stage.addChild(peopleContainer);
+        app.stage.addChild(userContainer); // User dot on top
+        
+        heatContainerRef.current = heatContainer;
+        peopleContainerRef.current = peopleContainer;
+        constellationContainerRef.current = constellationContainer;
+        
+        // Create user location dot
+        const userDot = new Graphics();
+        userContainer.addChild(userDot);
+        userDotRef.current = userDot;
+        
+        // Function to update user dot position
+        const updateUserDot = (lat: number, lng: number) => {
+          const projection = projectLatLng(lng, lat);
+          if (!projection || !userDot) return; // Map not ready yet
+          
+          const { x, y } = projection;
+          
+          // Clear and redraw the user dot with proper styling
+          userDot.clear();
+          
+          // Accuracy halo (if available)
+          if (userLocation.coords?.accuracy) {
+            const mapZoom = getMapInstance()?.getZoom() ?? 11;
+            const haloRadius = metersToPixelsAtLat(userLocation.coords.accuracy, lat, mapZoom);
+            userDot.beginFill(0x0066cc, 0.1);
+            userDot.drawCircle(0, 0, haloRadius);
+            userDot.endFill();
           }
+          
+          // Outer ring (14px semi-transparent blue)
+          userDot.beginFill(0x0066cc, 0.3);
+          userDot.drawCircle(0, 0, 14);
+          userDot.endFill();
+          
+          // Inner dot (8px solid blue)
+          userDot.beginFill(0x0066cc, 1.0);
+          userDot.drawCircle(0, 0, 8);
+          userDot.endFill();
+          
+          // White border for contrast
+          userDot.lineStyle(2, 0xffffff, 0.8);
+          userDot.drawCircle(0, 0, 8);
+          
+          userDot.position.set(x, y);
+          userDot.visible = true;
+        };
+        
+        // Store updateUserDot function for use in effects
+        (userDot as any)._updatePosition = updateUserDot;
+        
+        // Initialize pools and reusable objects
+        tilePoolRef.current = new TileSpritePool();
+        graphicsPoolRef.current = new GraphicsPool();
+        spritePoolRef.current = new SpritePool(() => new Graphics());
+        spritePoolRef.current.preAllocate(512); // Pre-allocate 512 Graphics objects
+        
+        // Pre-create reusable debug graphics
+        debugGraphicsRef.current = new Graphics();
 
-          // Use ref to avoid stale closure
-          const currentTiles = fieldTilesRef.current;
-          const tile = currentTiles.find(t => t.tile_id === ids[0]);
-          if (!tile) return;
+        /* ------------------------------------------------- hit-testing + ripple */
+        onPointerMove = (e: any) => {
+          const { clientX, clientY } = e.data?.originalEvent || { clientX: e.globalX, clientY: e.globalY };
+          hitTest(clientX, clientY).then(ids => {
+            if (!ids.length) {
+              setTooltip(null);
+              return;
+            }
 
-          /* tooltip */
-          setTooltip({
-            x: clientX,
-            y: clientY,
-            count: tile.crowd_count,
-            vibeTag: 'energetic', // TODO: derive from tile.avg_vibe HSL values
+            // Use ref to avoid stale closure
+            const currentTiles = fieldTilesRef.current;
+            const tile = currentTiles.find(t => t.tile_id === ids[0]);
+            if (!tile) return;
+
+            /* tooltip */
+            setTooltip({
+              x: clientX,
+              y: clientY,
+              count: tile.crowd_count,
+              vibeTag: 'energetic', // TODO: derive from tile.avg_vibe HSL values
+            });
+
+            /* GPU ripple with enhanced feedback */
+            addRipple(clientX, clientY);
+
+            /* Enhanced haptic feedback for mobile - only in user gesture context */
+            if (window.isSecureContext && document.hasFocus() && window.top === window.self) {
+              light();    // from useAdvancedHaptics()
+            }
           });
+        };
 
-          /* GPU ripple with enhanced feedback */
+        // Enhanced pointer events for better interaction
+        app.stage.eventMode = 'static';
+        app.stage.interactive = true;
+        app.stage.on('pointermove', onPointerMove);
+        
+        // Enhanced click handler with ripple effects and haptic feedback
+        app.stage.on('pointerdown', (e: any) => {
+          const { clientX, clientY } = e.data?.originalEvent || { clientX: e.globalX, clientY: e.globalY };
+          
+          // Add multiple ripples for enhanced visual feedback
           addRipple(clientX, clientY);
-
-          /* Enhanced haptic feedback for mobile - only in user gesture context */
+          setTimeout(() => addRipple(clientX, clientY), 100); // Secondary ripple
+          
+          // Enhanced haptic feedback pattern - only in secure context with user gesture
           if (window.isSecureContext && document.hasFocus() && window.top === window.self) {
-            light();    // from useAdvancedHaptics()
+            light();
+            setTimeout(() => light(), 50); // Double tap haptic
           }
         });
-      };
 
-      // Enhanced pointer events for better interaction
-      app.stage.eventMode = 'static';
-      app.stage.interactive = true;
-      app.stage.on('pointermove', onPointerMove);
-      
-      // Enhanced click handler with ripple effects and haptic feedback
-      app.stage.on('pointerdown', (e: any) => {
-        const { clientX, clientY } = e.data?.originalEvent || { clientX: e.globalX, clientY: e.globalY };
-        
-        // Add multiple ripples for enhanced visual feedback
-        addRipple(clientX, clientY);
-        setTimeout(() => addRipple(clientX, clientY), 100); // Secondary ripple
-        
-        // Enhanced haptic feedback pattern - only in secure context with user gesture
-        if (window.isSecureContext && document.hasFocus() && window.top === window.self) {
-          light();
-          setTimeout(() => light(), 50); // Double tap haptic
+      } catch (error) {
+        console.error('[FieldCanvas] PIXI init failed:', error);
+        if (!cancelled) {
+          // Clean up on error only if component still mounted
+          const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
+          const lifecycleManager = PixiLifecycleManager.getInstance();
+          lifecycleManager.destroyApp(app);
         }
-      });
+      }
     };
     
     initAndRegister();

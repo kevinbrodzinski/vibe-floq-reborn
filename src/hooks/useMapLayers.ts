@@ -33,9 +33,16 @@ export function useMapLayers({
   useEffect(() => {
     if (!map || !map.isStyleLoaded()) return;
 
-    // Reset initialization flag on style changes
+    // Reset initialization flag on style changes and re-add sources
     const handleStyleData = () => {
       layersInitialized.current = false;
+      // Re-add people source after style reload to prevent source not found
+      if (!map.getSource('people')) {
+        map.addSource('people', {
+          type: 'geojson', 
+          data: { type: 'FeatureCollection', features: [] }
+        });
+      }
     };
 
     map.on('styledata', handleStyleData);
@@ -45,6 +52,14 @@ export function useMapLayers({
     console.log('[useMapLayers] Initializing unified layers');
 
     try {
+      // Ensure people source exists before adding selfLayer (fix source not found error)
+      if (!map.getSource('people')) {
+        map.addSource('people', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+      }
+
       // Add floqs source with clustering (preserve existing functionality)
       if (!map.getSource('floqs')) {
         map.addSource('floqs', {

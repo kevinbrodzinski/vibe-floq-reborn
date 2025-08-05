@@ -35,14 +35,16 @@ export class PixiLifecycleManager {
    * Safely destroys a PIXI application with proper cleanup order
    */
   destroyApp(app: Application | null): void {
-    if (!app) {
-      console.log('[PixiLifecycleManager] No app to destroy');
+    if (!app || this.isDestroyed(app)) {
+      console.log('[PixiLifecycleManager] No app to destroy or already destroyed');
       return;
     }
 
-    // Check if already destroyed
-    if (this.activeApps.get(app) === true || (app as any)._destroyed) {
-      console.log('[PixiLifecycleManager] App already destroyed');
+    // Bail early if GL context already nuked (prevents WebGL errors during hot-reload)
+    const gl = (app.renderer as any)?.gl;
+    if (!gl || gl.isContextLost?.()) {
+      console.warn('[PixiLifecycleManager] GL context already lost – skipping destroy');
+      this.activeApps.delete(app);
       return;
     }
 
