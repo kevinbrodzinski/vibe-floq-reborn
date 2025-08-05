@@ -4,7 +4,7 @@ import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useNearbyFloqs } from '@/hooks/useNearbyFloqs';
 import { VibeAnalysisEngine, type VibeAnalysisResult, type SensorData } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
 import type { WalkableFloq } from '@/types/schemas/WalkableFloqSchema';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 export interface SmartFloqMatch {
   floq: WalkableFloq;

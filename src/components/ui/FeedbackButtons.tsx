@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, X, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Vibe } from "@/types/vibes";
+import { VIBES, type Vibe } from "@/lib/vibes";
 
 interface FeedbackButtonsProps {
   suggestedVibe: Vibe;
@@ -28,10 +28,7 @@ export const FeedbackButtons = ({
 }: FeedbackButtonsProps) => {
   const [showCorrection, setShowCorrection] = useState(false);
 
-  const vibeOptions: Vibe[] = [
-    "chill", "hype", "social", "romantic", "weird", 
-    "open", "flowing", "down", "solo"
-  ];
+  const vibeOptions = [...VIBES];
 
   const handleAccept = () => {
     if (navigator.vibrate) {

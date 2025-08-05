@@ -1,5 +1,5 @@
 import { Brain, Clock, MapPin, TrendingUp } from "lucide-react";
-import type { Vibe } from "@/types/vibes";
+import type { Vibe } from "@/lib/vibes";
 
 interface LearningPattern {
   context: string;

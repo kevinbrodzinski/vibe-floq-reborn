@@ -5,7 +5,7 @@ import { usePlanParticipants } from '@/hooks/usePlanParticipants';
 import { VibeAnalysisEngine, type VibeAnalysisResult, type SensorData } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
 import { useVenueRecommendations } from '@/hooks/useVenueRecommendations';
 import type { PlanStop } from '@/types/planStop';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 export interface OptimizedStop {
   originalStop?: PlanStop;

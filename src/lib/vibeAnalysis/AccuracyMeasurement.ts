@@ -1,4 +1,4 @@
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 import type { VibeAnalysisResult } from './VibeAnalysisEngine';
 
 export interface AccuracyMetrics {

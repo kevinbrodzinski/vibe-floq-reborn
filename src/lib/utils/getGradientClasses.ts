@@ -1,6 +1,6 @@
 
 import { KIND_COLOUR, VIBE_COLOUR, StopKind, VibeTag } from '@/lib/theme/stopColours';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 export function getGradientClasses(kind: StopKind, vibe?: VibeTag) {
   // vibe overrides kind when present, with safe fallback for unknown vibes
