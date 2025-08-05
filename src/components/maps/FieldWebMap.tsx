@@ -382,15 +382,17 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
         detachUserLocationSourceRef.current = attachUserLocationSource(map);
         
-        // Call setUserLocation immediately after attachUserLocationSource with current coords
-        // so first dot appears even if style isn't fully loaded yet
+        // Call setUserLocation with a small delay to let the source initialize
+        // This reduces the chance of retry failures
         if (location.coords?.lat && location.coords?.lng) {
-          setUserLocation(
-            map,
-            location.coords.lat,
-            location.coords.lng,
-            location.coords.accuracy || 50
-          );
+          setTimeout(() => {
+            setUserLocation(
+              map,
+              location.coords.lat,
+              location.coords.lng,
+              location.coords.accuracy || 50
+            );
+          }, 50); // Small delay to let source initialize
         }
         
         // Wait for style to fully load before continuing
