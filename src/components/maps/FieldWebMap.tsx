@@ -859,12 +859,18 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
-      <div className="absolute inset-0">
-        {/* Map container that's always present with debug attribute */}
+      <div className="absolute inset-0" style={{ height: '100%', width: '100%' }}>
+        {/* Map container with explicit height to ensure proper rendering */}
         <div 
           ref={mapContainerRef} 
           data-map-container
           className="absolute inset-0"
+          style={{ 
+            width: '100%',
+            height: '100%',
+            minHeight: '100vh',
+            border: '2px solid red' // DEBUG: Verify container visibility
+          }}
         />
         
         {/* Vibe Filter Dropdown */}
