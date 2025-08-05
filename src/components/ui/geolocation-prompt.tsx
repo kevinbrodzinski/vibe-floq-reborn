@@ -78,14 +78,16 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
             {loading ? 'Getting Location...' : hasRequested ? 'Allow Location Access' : 'Enable Location'}
           </Button>
 
-          {/* Always show demo location option prominently */}
-          <Button
-            variant="outline"
-            onClick={setDebugLocation}
-            className="w-full"
-          >
-            Continue with Demo Location
-          </Button>
+          {/* Demo location option - always visible in dev, hidden in production */}
+          {import.meta.env.DEV && (
+            <Button
+              variant="outline"
+              onClick={setDebugLocation}
+              className="w-full"
+            >
+              Continue with Demo Location
+            </Button>
+          )}
           
           {import.meta.env.DEV && (
             <div className="text-xs text-muted-foreground text-center">

@@ -1,3 +1,4 @@
+import React, { Suspense, useCallback, useMemo } from "react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
 import { MotionPermissionBanner } from "@/components/ui/MotionPermissionBanner";
@@ -16,6 +17,7 @@ import { useRef } from "react";
 import { useFieldData } from "./FieldDataProvider";
 import { BottomHud } from "@/components/layout/BottomHud";
 import type { LocationError } from "@/types/overrides";
+import { useGeo } from "@/hooks/useGeo";
 
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
@@ -39,6 +41,9 @@ export const FieldLayout = () => {
   } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
   const { people } = useFieldSocial();
+  
+  // Use useGeo for location gate logic (more reliable than unified location context)
+  const geo = useGeo();
   
   // Enhanced friend distance system status
   const enhancedFriends = useEnhancedFriendDistances({
@@ -87,27 +92,29 @@ export const FieldLayout = () => {
     window.location.reload();
   };
 
-  // ---- helper flags with improved logic ---------------------------------------------
-  const hasCoords = location?.coords?.lat != null && location?.coords?.lng != null;
-  const geoReady = isLocationReady && hasCoords;
-  const geoLoading = ['idle', 'loading', 'fetching'].includes(location?.status ?? '');
-  const geoError = location?.error && !['unavailable', 'timeout'].includes(location.error as LocationError);
+  // ---- helper flags with improved logic using useGeo for gate ---------------------------------------------
+  const hasCoords = geo.coords?.lat != null && geo.coords?.lng != null;
+  const geoReady = geo.isLocationReady && hasCoords;
+  const geoLoading = ['idle', 'loading', 'fetching'].includes(geo.status);
+  const geoError = geo.error && !['unavailable', 'timeout'].includes(geo.error as LocationError);
   
-  // Enhanced debugging
+  // Enhanced debugging with both geo and location context state
   console.log('[FieldLayout] Location gate state:', {
     geoReady,
-    geoLoading, 
+    geoLoading,
     geoError,
     hasCoords,
-    isLocationReady,
-    locationStatus: location?.status,
-    locationError: location?.error,
-    coords: location?.coords
+    geoStatus: geo.status,
+    geoCoords: geo.coords,
+    geoIsLocationReady: geo.isLocationReady,
+    unifiedLocationReady: isLocationReady,
+    unifiedLocationStatus: location?.status,
+    unifiedLocationCoords: location?.coords
   });
 
   // ---- UI --------------------------------------------------------
   // Only show prompt if there's a permission error or persistent failure
-  if (geoError && location.error === 'denied') {
+  if (geoError && geo.error === 'denied') {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
@@ -133,15 +140,20 @@ export const FieldLayout = () => {
             <GeolocationPrompt
               onRequestLocation={() => {
                 console.log('[FieldLayout] User requested location');
-                if (location?.startTracking && typeof location.startTracking === 'function') {
+                // Try useGeo's request method first, fallback to unified location
+                if (geo.requestLocation) {
+                  geo.requestLocation();
+                } else if (location?.startTracking && typeof location.startTracking === 'function') {
                   location.startTracking();
                 } else {
-                  console.log('[FieldLayout] startTracking not available, using fallback');
-                  // Fallback: trigger browser permission request
-                  navigator.geolocation?.getCurrentPosition(() => {}, () => {});
+                  console.log('[FieldLayout] Using fallback geolocation request');
+                  navigator.geolocation?.getCurrentPosition(
+                    () => {},
+                    (e) => console.warn('[FieldLayout] fallback geolocation error', e)
+                  );
                 }
               }}
-              error={location?.error || null}
+              error={geo.error || null}
               loading={geoLoading}
               onSetDebugLocation={handleDebugLocation}
             />

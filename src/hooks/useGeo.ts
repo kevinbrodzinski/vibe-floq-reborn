@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { getEnhancedGeolocation, type EnhancedGeoResult } from '@/lib/location/webCompatibility';
 import type { LocationStatus } from '@/types/overrides';
 
-const GEO_TIMEOUT_MS = 5_000;
+const TIMEOUT_MS = import.meta.env.DEV || import.meta.env.VITE_FORCE_GEO_DEBUG === 'true' ? 3000 : 8000;
 
 const DEMO_COORDS: GeolocationCoordinates = {
   latitude: 37.7749,
@@ -76,7 +76,7 @@ export function useGeo(): GeoState {
         setValue((old) =>
           old.coords ? old : timeoutResult
         );
-    }, 3000); // Reduced from GEO_TIMEOUT_MS to 3 seconds
+    }, TIMEOUT_MS); // Dynamic timeout based on environment
 
     // ② call the browser
     console.log('[useGeo] Requesting geolocation...');
@@ -128,8 +128,8 @@ export function useGeo(): GeoState {
       lat: value.coords.latitude,
       lng: value.coords.longitude
     } : null,
-    accuracy: value.coords?.accuracy || null,
-    status: value.status === 'fetching' ? 'loading' : value.status,
+    accuracy: value.coords?.accuracy ?? null,
+    status: value.status,
     error: value.status === 'error' ? 'Location unavailable' : undefined,
     hasLocation,
     isLocationReady,
@@ -148,7 +148,7 @@ export const useGeoPos = () => {
   const geo = useGeo();
   return {
     pos: geo.coords ? { lat: geo.coords.lat, lng: geo.coords.lng, accuracy: geo.accuracy || 0 } : null,
-    loading: geo.status === 'loading' || geo.status === 'fetching',
+    loading: ['loading', 'fetching', 'idle'].includes(geo.status),
     error: geo.error,
   };
 };
