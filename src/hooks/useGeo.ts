@@ -58,123 +58,130 @@ export function useGeo(): GeoState {
     status: 'idle',
   });
 
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   useEffect(() => {
-    // Check for debug flag FIRST, before any real geolocation calls
+    if (hasInitialized) return;
+    setHasInitialized(true);
+
+    console.log('[useGeo] 🔧 Starting location initialization...');
+
+    // Phase 1: Check for debug flag FIRST
     const force = localStorage.getItem('floq-debug-forceLoc');
     if (force) {
       console.log('[useGeo] 🔧 Debug location found:', force);
       const [latStr, lngStr] = force.split(',');
       const debugResult = {
-        coords: createCoords(+latStr, +lngStr, 50), // 🔧 FIX: Use helper to create proper coords
-        timestamp: Date.now(),
-        status: 'ready' as const  // ★ normalize to 'ready' for UI consumption
-      };
-      
-      console.log('[useGeo] 🔧 Setting debug coordinates:', debugResult.coords);
-      
-      // 🔧 DEBUG: Add window watcher for setValue calls
-      (window as any).__watch = debugResult;
-      
-      if (import.meta.env.DEV) {
-        (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
-      }
-      
-      setValue(debugResult);
-      return; // <-- bail out, don't start real watch
-    }
-
-    // Skip if we're in debug mode with forced debug location
-    if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
-      console.log('[useGeo] Debug mode enabled - using demo coordinates');
-      const debugResult = {
-        coords: DEMO_COORDS, // Use original DEMO_COORDS structure
+        coords: createCoords(+latStr, +lngStr, 50),
         timestamp: Date.now(),
         status: 'ready' as const
       };
       
-      if (import.meta.env.DEV) {
-        (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
-      }
+      console.log('[useGeo] 🔧 Setting debug coordinates:', debugResult.coords);
       
-      // 🔧 DEBUG: Add window watcher for setValue calls
+      // Enhanced debug tracking
+      (window as any).__watch = debugResult;
+      (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
+      
+      setValue(debugResult);
+      return;
+    }
+
+    // Phase 2: Check environment debug mode
+    if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
+      console.log('[useGeo] Environment debug mode - using demo coordinates');
+      const debugResult = {
+        coords: DEMO_COORDS,
+        timestamp: Date.now(),
+        status: 'ready' as const
+      };
+      
+      (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
       (window as any).__watch = debugResult;
       
       setValue(debugResult);
       return;
     }
 
+    // Phase 3: For Lovable preview, auto-enable fallback after short delay
+    if (import.meta.env.DEV && location.hostname.includes('lovable')) {
+      console.log('[useGeo] 🔧 Lovable preview detected - enabling auto-fallback in 2 seconds');
+      setTimeout(() => {
+        console.log('[useGeo] 🔧 Auto-enabling debug location for preview');
+        localStorage.setItem('floq-debug-forceLoc', '37.7749,-122.4194');
+        window.location.reload();
+      }, 2000);
+    }
+
     let didTimeout = false;
 
-    // ① start timeout - reduced to 3 seconds for faster fallback
-    const t = setTimeout(() => {
-      console.log('[useGeo] Timeout reached - falling back to demo coordinates');
-      didTimeout = true;
-        const timeoutResult = { 
-          coords: DEMO_COORDS, // Use original DEMO_COORDS structure
+    // Phase 4: Set up fallback timer (reduced for faster development)
+    const fallbackTimer = setTimeout(() => {
+      if (!didTimeout) {
+        console.log('[useGeo] ⏰ Timeout reached - using fallback coordinates');
+        didTimeout = true;
+        
+        const fallbackResult = { 
+          coords: DEMO_COORDS,
           timestamp: Date.now(), 
           status: 'ready' as const 
         };
         
-        if (import.meta.env.DEV) {
-          (window as any).__FLOQ_DEBUG_LAST_GEO = timeoutResult;
-        }
+        (window as any).__FLOQ_DEBUG_LAST_GEO = fallbackResult;
+        (window as any).__watch = fallbackResult;
         
-        setValue((old) =>
-          old.coords ? old : timeoutResult
-        );
-    }, TIMEOUT_MS); // Dynamic timeout based on environment
+        setValue((prev) => prev.coords ? prev : fallbackResult);
+      }
+    }, TIMEOUT_MS);
 
-    // ② call the browser
-    console.log('[useGeo] Requesting geolocation...');
+    // Phase 5: Attempt real geolocation
+    console.log('[useGeo] 📍 Requesting browser geolocation...');
     setValue({ coords: null, timestamp: null, status: 'fetching' });
-    getEnhancedGeolocation().then((res) => {
+    
+    getEnhancedGeolocation({
+      enableHighAccuracy: true,
+      timeout: TIMEOUT_MS - 500, // Leave 500ms buffer for cleanup
+      maximumAge: 30000
+    }).then((res) => {
       if (!didTimeout) {
-        console.log('[useGeo] Got location:', res.status, res.coords ? 'with coords' : 'no coords');
-        clearTimeout(t);
+        console.log('[useGeo] ✅ Real location received:', res.status, res.coords ? 'with coords' : 'no coords');
+        clearTimeout(fallbackTimer);
         
-        // Debug window object for console inspection
-        if (import.meta.env.DEV) {
-          (window as any).__FLOQ_DEBUG_LAST_GEO = res;
-        }
+        (window as any).__FLOQ_DEBUG_LAST_GEO = res;
         
-        // Normalize status for UI consumption
-        const normalised: ExtendedGeoResult = {
+        const normalizedResult: ExtendedGeoResult = {
           ...res,
           status: res.status === 'fetching' ? 'loading' :
                   res.status === 'debug' ? 'ready' :
                   res.status as LocationStatus
         };
         
-        // 🔧 DEBUG: Add window watcher for setValue calls
-        (window as any).__watch = normalised;
-        
-        setValue(normalised);
+        (window as any).__watch = normalizedResult;
+        setValue(normalizedResult);
       } else {
-        console.log('[useGeo] Location response arrived after timeout, ignoring');
+        console.log('[useGeo] ⚠️ Real location arrived after timeout, using fallback');
       }
     }).catch((error) => {
-      console.error('[useGeo] Geolocation failed:', error);
+      console.error('[useGeo] ❌ Geolocation failed:', error);
       if (!didTimeout) {
-        clearTimeout(t);
-        const debugResult = { 
-          coords: DEMO_COORDS, // Use original DEMO_COORDS structure
+        clearTimeout(fallbackTimer);
+        const errorFallback = { 
+          coords: DEMO_COORDS,
           timestamp: Date.now(), 
           status: 'ready' as const 
         };
         
-        if (import.meta.env.DEV) {
-          (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
-        }
+        (window as any).__FLOQ_DEBUG_LAST_GEO = errorFallback;
+        (window as any).__watch = errorFallback;
         
-        // 🔧 DEBUG: Add window watcher for setValue calls
-        (window as any).__watch = debugResult;
-        
-        setValue(debugResult);
+        setValue(errorFallback);
       }
     });
 
-    return () => clearTimeout(t);
-  }, []);
+    return () => {
+      clearTimeout(fallbackTimer);
+    };
+  }, [hasInitialized]);
 
   // Expose the booleans the UI looks for
   const hasLocation = !!value.coords;

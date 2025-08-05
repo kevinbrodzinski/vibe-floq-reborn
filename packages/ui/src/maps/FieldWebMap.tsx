@@ -33,24 +33,41 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
 
   /* Mount map ONCE -------------------------------------------------- */
   useEffect(() => {
-    if (!container.current || mapRef.current) return;              // guard
+    if (!container.current || mapRef.current) return;
+
+    let isMounted = true;
+    let map: mapboxgl.Map | null = null;
 
     const mount = async () => {
       try {
+        console.log('[FieldWebMap] 🗺️ Starting map initialization...');
+        
         const { token, source } = await getMapboxToken();
+        if (!isMounted) return;
+
         setTokenSource(source);
         mapboxgl.accessToken = token;
 
-        if (import.meta.env.DEV) {
-          console.log('[FieldWebMap] Initializing map with token from:', source);
+        console.log('[FieldWebMap] 🔑 Mapbox token acquired from:', source);
+
+        // Ensure container still exists
+        if (!container.current || !isMounted) {
+          console.warn('[FieldWebMap] Container missing during init');
+          return;
         }
 
-        const map = new mapboxgl.Map({
+        map = new mapboxgl.Map({
           container: container.current,
           style: 'mapbox://styles/mapbox/dark-v11',
           center: [-118.24, 34.05],
-          zoom: 11
+          zoom: 11,
+          attributionControl: false // Reduce clutter
         });
+
+        if (!isMounted) {
+          map.remove();
+          return;
+        }
 
         mapRef.current = map;
 
@@ -58,53 +75,82 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         const handleMoveEnd = () => {
-          const b = map.getBounds();
-          onRegionChange({
-            minLat: b.getSouth(),
-            minLng: b.getWest(),
-            maxLat: b.getNorth(),
-            maxLng: b.getEast(),
-            zoom: map.getZoom()
-          });
+          if (!map || !isMounted) return;
+          try {
+            const bounds = map.getBounds();
+            onRegionChange({
+              minLat: bounds.getSouth(),
+              minLng: bounds.getWest(),
+              maxLat: bounds.getNorth(),
+              maxLng: bounds.getEast(),
+              zoom: map.getZoom()
+            });
+          } catch (e) {
+            console.warn('[FieldWebMap] moveend error:', e);
+          }
         };
 
-        /* style & tiles ready ---- */
+        /* Enhanced map load handling with proper error catching */
         map.once('load', () => {
-          if (import.meta.env.DEV) {
-            console.log('[FieldWebMap] Map loaded successfully');
-          }
+          if (!isMounted || !map) return;
+          
+          console.log('[FieldWebMap] 🗺️ Map loaded successfully');
+          console.log('[FieldWebMap] 🗺️ Map ready for sources. Style loaded:', map.isStyleLoaded());
+          
           setMapInstance(map);
           setTokenStatus('ready');
           
-          // Fire once immediately after load
+          // Fire initial region change
           handleMoveEnd();
         });
 
+        map.on('error', (e) => {
+          console.error('[FieldWebMap] Map error:', e);
+          if (isMounted) {
+            setTokenStatus('error');
+          }
+        });
+
         map.on('moveend', handleMoveEnd);
+
+        // Enhanced debugging for Lovable preview
+        if (import.meta.env.DEV) {
+          (window as any).__FLOQ_MAP = map;
+          console.log('[FieldWebMap] 🔧 Map instance available as window.__FLOQ_MAP');
+        }
+
       } catch (err) {
-        console.error('[FieldWebMap] init failed', err);
-        setTokenStatus('error');
+        console.error('[FieldWebMap] 💥 Map initialization failed:', err);
+        if (isMounted) {
+          setTokenStatus('error');
+        }
       }
     };
 
     mount();
 
     return () => {
-      if (mapRef.current) {
+      isMounted = false;
+      if (map) {
         try {
-          // Remove moveend listener if it exists
-          const map = mapRef.current;
-          map.off('moveend', () => {});
-          
+          console.log('[FieldWebMap] 🧹 Cleaning up map...');
+          map.off('moveend');
+          map.off('load');
+          map.off('error');
           setMapInstance(null);
           map.remove();
+        } catch (e) {
+          console.warn('[FieldWebMap] Cleanup error:', e);
         } finally {
           mapRef.current = null;
           setTokenStatus('loading');
+          if (import.meta.env.DEV) {
+            (window as any).__FLOQ_MAP = null;
+          }
         }
       }
     };
-  }, []); // <- NO deps – runs once
+  }, []);
 
   /* ---------------------------------------------------------------- */
   /* RENDER                                                           */
