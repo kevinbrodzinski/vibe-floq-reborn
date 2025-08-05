@@ -5,5 +5,8 @@ export function useInvalidateDiscover() {
   const qc = useQueryClient()
   const { user } = useAuth()
 
-  return () => qc.invalidateQueries({ queryKey: ['discover', user?.id] })
+  return () => {
+    qc.invalidateQueries({ queryKey: ['discover', user?.id] })
+    qc.invalidateQueries({ queryKey: ['friends', user?.id] })
+  }
 }

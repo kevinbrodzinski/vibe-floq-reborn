@@ -30,12 +30,9 @@ export const UserSearchResults = ({
     try {
       await sendFriendRequest(targetId);
       
-      // Optimistic cache update
-      queryClient.setQueryData(['discover', searchQuery], (old: DiscoverUser[] | undefined) =>
-        old?.map((p) =>
-          p.id === targetId ? { ...p, req_status: 'pending_out' as const } : p
-        )
-      );
+      // Optimistic cache update - invalidate both discover and friends
+      queryClient.invalidateQueries({ queryKey: ['discover'] });
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
 
       toast({
         title: "Friend request sent",

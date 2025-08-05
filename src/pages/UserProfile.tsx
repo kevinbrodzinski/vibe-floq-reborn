@@ -5,6 +5,7 @@ import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass, Sparkles
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
@@ -63,7 +64,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const { data: streak } = useUserStreak();
   const { data: achievements } = useUserAchievements(profileId);
   const { data: realStats, isLoading: statsLoading } = useRealProfileStats(profileId);
-  const { isFriend, rows: friendsData, isPending } = useUnifiedFriends();
+  const { isFriend, rows: friendsData, isPending, accept, block } = useUnifiedFriends();
 
   // Get real distance data for this friend
   const friendDistance = profileId ? getFriendDistance(profileId) : null;
@@ -104,7 +105,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const isCurrentlyFriend = profile.id ? isFriend(profile.id) : false;
   
   // Get actual friendship data from friendsData
-  const friendRow = friendsData.find(f => f.id === profile.id);
+  const friendRow = friendsData?.find(f => f.id === profile.id);
   const pendingFromMe = friendRow?.friend_state === 'pending' && friendRow.is_outgoing_request;
   const pendingToMe = friendRow?.friend_state === 'pending' && friendRow.is_incoming_request;
 
@@ -342,9 +343,25 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
         {!isMe && pendingToMe && (
           <GlassCard>
-            <div className="flex gap-3">
-              {/* TODO: Add Accept and Decline buttons */}
-              <span className="text-blue-300">Friend request received</span>
+            <div className="space-y-3">
+              <div className="text-center">
+                <span className="text-blue-300">Friend request received</span>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => accept(profile.id)}
+                  className="flex-1 bg-gradient-primary text-white font-medium border-0"
+                >
+                  Accept
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => block(profile.id)}
+                  className="flex-1"
+                >
+                  Decline
+                </Button>
+              </div>
             </div>
           </GlassCard>
         )}
