@@ -151,11 +151,8 @@ export interface SystemHealthMetrics {
 }
 
 export interface VenueDetectionResult {
-  id: string; // Changed from venueId
-  name: string; // now required
-  lat: number; // add location
-  lng: number; // add location
-  accuracy: number; // add accuracy
+  venueId: string; // Keep venueId as the main property
+  name?: string; // now optional
   confidence: number;
   overallConfidence?: number;
 }

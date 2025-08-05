@@ -32,8 +32,13 @@ export function useReadOnlyLocation(): ReadOnlyLocationState {
   return {
     coords,
     movementContext: movementContext ? {
-      ...movementContext,
-      lastUpdated: movementContext.lastUpdated || Date.now()
+      speed: movementContext.speed,
+      heading: movementContext.heading,
+      isStationary: movementContext.isStationary,
+      isWalking: movementContext.isWalking,
+      isDriving: movementContext.isDriving,
+      confidence: movementContext.confidence,
+      lastUpdated: Date.now() // Always use current time since store doesn't have this
     } : null,
     timestamp,
     hasPermission,
@@ -60,9 +65,13 @@ export function useLocationCoords(): GeoCoords | null {
  */
 export function useMovementContext(): MovementContext | null {
   return useLocationStore((state) => state.movementContext ? {
-    ...state.movementContext,
-    heading: state.movementContext.heading || null,
-    lastUpdated: state.movementContext.lastUpdated || Date.now()
+    speed: state.movementContext.speed,
+    heading: state.movementContext.heading,
+    isStationary: state.movementContext.isStationary,
+    isWalking: state.movementContext.isWalking,
+    isDriving: state.movementContext.isDriving,
+    confidence: state.movementContext.confidence,
+    lastUpdated: Date.now() // Always use current time since store doesn't have this
   } : {
     speed: 0,
     heading: null,

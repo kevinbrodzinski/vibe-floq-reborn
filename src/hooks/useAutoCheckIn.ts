@@ -133,10 +133,10 @@ export const useAutoCheckIn = () => {
           // Started being near a new venue
           currentCheckInRef.current = {
             venueId: eligibleVenue.venueId,
-            name: eligibleVenue.name || eligibleVenue.venueId || `Venue ${eligibleVenue.venueId}`,
+            name: eligibleVenue.name || `Venue ${eligibleVenue.venueId}`,
             checkedInAt: now,
             lastSeen: now,
-            confidence: eligibleVenue.overallConfidence,
+            confidence: eligibleVenue.overallConfidence || eligibleVenue.confidence,
             detectionMethod
           };
           console.log(`[AutoCheckIn] Started tracking venue: ${currentCheckInRef.current.name} (${detectionMethod}, confidence: ${eligibleVenue.overallConfidence})`);
