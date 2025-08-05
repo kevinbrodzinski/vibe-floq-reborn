@@ -9,16 +9,7 @@ import '@/lib/debug/geoWatcher'; // Setup debug watcher
 
 const TIMEOUT_MS = import.meta.env.DEV || import.meta.env.VITE_FORCE_GEO_DEBUG === 'true' ? 3000 : 8000;
 
-const DEMO_COORDS: GeolocationCoordinates = {
-  latitude: 37.7749,
-  longitude: -122.4194,
-  altitude: null,
-  altitudeAccuracy: null,
-  accuracy: 20,
-  heading: null,
-  speed: null,
-  toJSON() { return this; }
-};
+const DEMO_COORDS = { lat: 37.7749, lng: -122.4194 };   // ✅ keep
 
 // Helper function to create GeolocationCoordinates from lat/lng
 function createCoords(lat: number, lng: number, accuracy: number = 50): GeolocationCoordinates {
@@ -34,8 +25,21 @@ function createCoords(lat: number, lng: number, accuracy: number = 50): Geolocat
   };
 }
 
+// Normalize browser coords to our format
+const normaliseBrowserCoords = (g: GeolocationCoordinates): GeoCoords => ({
+  lat: g.latitude,
+  lng: g.longitude,
+  accuracy: g.accuracy ?? 50,
+});
+
+export interface GeoCoords {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+}
+
 export interface GeoState {
-  coords: { lat: number; lng: number } | null;
+  coords: GeoCoords | null;
   accuracy: number | null;
   status: LocationStatus;
   error?: string;
@@ -47,7 +51,9 @@ export interface GeoState {
   clearWatch: () => void;
 }
 
-interface ExtendedGeoResult extends Omit<EnhancedGeoResult, 'status'> {
+interface ExtendedGeoResult {
+  coords: GeoCoords | null;
+  timestamp: number | null;
   status: LocationStatus;
 }
 
@@ -64,29 +70,29 @@ export function useGeo(): GeoState {
     if (hasInitialized) return;
     setHasInitialized(true);
 
-    console.log('[useGeo] 🔧 Starting location initialization...');
-
-    // Phase 1: Check for debug flag FIRST
+    /* ---------- 1. DEBUG-COORD SHORT-CIRCUIT ---------- */
     const force = localStorage.getItem('floq-debug-forceLoc');
     if (force) {
-      console.log('[useGeo] 🔧 Debug location found:', force);
       const [latStr, lngStr] = force.split(',');
-      const debugResult = {
-        coords: createCoords(+latStr, +lngStr, 50),
-        timestamp: Date.now(),
-        status: 'ready' as const
+      const debugCoords = {
+        lat: +latStr || DEMO_COORDS.lat,
+        lng: +lngStr || DEMO_COORDS.lng,
+        accuracy: 15
       };
-      
-      console.log('[useGeo] 🔧 Setting debug coordinates:', debugResult.coords);
-      
-      // Enhanced debug tracking
-      (window as any).__watch = debugResult;
-      (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
-      
-      setValue(debugResult);
-      return;
+
+      /** 🔧 expose for console inspection */
+      (window as any).__FLOQ_DEBUG_LAST_GEO = debugCoords;
+
+      /*  ⬇️  PUSH IT FORWARD  */
+      setValue({
+        coords: debugCoords,        // ← this is what FieldLocationProvider consumes
+        timestamp: Date.now(),
+        status: 'ready',
+      });
+      return;                       // 💡 VERY IMPORTANT – do *not* start watchPosition
     }
 
+    /* ---------- 2. NORMAL GEOLOCATION WATCH ---------- */
     // Phase 2: Check environment debug mode
     if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
       console.log('[useGeo] Environment debug mode - using demo coordinates');
@@ -97,8 +103,6 @@ export function useGeo(): GeoState {
       };
       
       (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
-      (window as any).__watch = debugResult;
-      
       setValue(debugResult);
       return;
     }
@@ -150,7 +154,8 @@ export function useGeo(): GeoState {
         (window as any).__FLOQ_DEBUG_LAST_GEO = res;
         
         const normalizedResult: ExtendedGeoResult = {
-          ...res,
+          coords: res.coords ? normaliseBrowserCoords(res.coords) : null,
+          timestamp: res.timestamp,
           status: res.status === 'fetching' ? 'loading' :
                   res.status === 'debug' ? 'ready' :
                   res.status as LocationStatus
@@ -188,10 +193,7 @@ export function useGeo(): GeoState {
   const isLocationReady = hasLocation && !['fetching', 'loading', 'idle'].includes(value.status);
 
   return {
-    coords: value.coords ? {
-      lat: value.coords.latitude,  // 🔧 FIX: Convert from latitude/longitude to lat/lng
-      lng: value.coords.longitude
-    } : null,
+    coords: value.coords,
     accuracy: value.coords?.accuracy ?? null,
     status: value.status,
     error: value.status === 'error' ? 'Location unavailable' : undefined,

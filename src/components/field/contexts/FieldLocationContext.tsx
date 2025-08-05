@@ -95,6 +95,10 @@ const FieldLocationProviderInner = ({
   
   // 🔧 DEBUG: Track incoming geo data
   useEffect(() => {
+    console.log('[FLP] incoming geo', location);
+  }, [location]);
+  
+  useEffect(() => {
     console.log('[FieldLocationProvider] 🔧 Incoming geo data:', {
       coords: location.coords,
       status: location.status,
@@ -178,6 +182,10 @@ const FieldLocationProviderInner = ({
   };
 
   // 🔧 DEBUG: Track outgoing context value
+  useEffect(() => {
+    console.log('[FLP] outgoing ctx', value.location.coords, value.location.status);
+  }, [value.location.coords, value.location.status]);
+
   useEffect(() => {
     console.log('[FieldLocationProvider] 🔧 Outgoing context value:', {
       locationCoords: value.location.coords,
