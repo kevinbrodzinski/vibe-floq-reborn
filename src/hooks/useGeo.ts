@@ -12,7 +12,7 @@ import type { LocationStatus } from '@/types/overrides';
 
 /* ────────────────────────────────────────────────────────────── constants ── */
 const DEMO       = { lat: 37.7749, lng: -122.4194 } as const; // San Francisco
-const TIMEOUT_MS = import.meta.env.DEV ? 3_000 : 8_000;
+const TIMEOUT_MS = 7_000;            // tolerate slow first fix
 
 /* ──────────────────────────────────────────────────────────────── types ─── */
 export interface GeoCoords { lat: number; lng: number; accuracy?: number }
@@ -68,12 +68,30 @@ export function useGeo(): GeoState {
       .catch(() => {/* Permission API not supported – silent */});
 
     /* 3️⃣ Fallback timer -------------------------------------------------- */
-    const fallback = setTimeout(() => {
-      if (completed) return;
-      completed = true;
-      devLog('⏰ timeout – falling back to demo coordinates');
-      publish(DEMO, 'ready', undefined);
-    }, TIMEOUT_MS);
+    let fallback: ReturnType<typeof setTimeout> | null = null;
+    
+    // only arm fallback *after* we know the user didn't click 'Allow'
+    navigator.permissions
+      ?.query({ name: 'geolocation' })
+      .then((p) => {
+        if (p.state !== 'prompt') {
+          fallback = setTimeout(() => {
+            if (completed) return;
+            completed = true;
+            devLog('⏰ timeout – falling back to demo coordinates');
+            publish(DEMO, 'ready', undefined);
+          }, TIMEOUT_MS);
+        }
+      })
+      .catch(() => {
+        // Permissions API not supported, arm fallback anyway
+        fallback = setTimeout(() => {
+          if (completed) return;
+          completed = true;
+          devLog('⏰ timeout – falling back to demo coordinates');
+          publish(DEMO, 'ready', undefined);
+        }, TIMEOUT_MS);
+      });
 
     /* 4️⃣ Request real GPS ---------------------------------------------- */
     devLog('📡 requesting real geolocation …');
@@ -86,7 +104,7 @@ export function useGeo(): GeoState {
       .then(res => {
         if (completed) return;
         completed = true;
-        clearTimeout(fallback);
+        if (fallback) clearTimeout(fallback);
 
         if (res.coords) {
           const coords: GeoCoords = {
@@ -104,12 +122,12 @@ export function useGeo(): GeoState {
       .catch(err => {
         if (completed) return;
         completed = true;
-        clearTimeout(fallback);
+        if (fallback) clearTimeout(fallback);
         devLog('❌ geolocation failed', err);
         setState({ coords: null, status: 'error', error: err.message ?? 'unknown-geo-error' });
       });
 
-    return () => clearTimeout(fallback);
+    return () => { if (fallback) clearTimeout(fallback); };
   }, []);
 
   /* ------------------------------------------------------------ utilities */

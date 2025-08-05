@@ -356,7 +356,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         mapboxgl.accessToken=token;
 
         // Only create map if we have user location
-        if (!location.coords?.lat || !location.coords?.lng) {
+        if (!isLocationReady) {
           console.warn('[FieldWebMap] No user location available - waiting for permission');
           setStatus('loading');
           setErr('Waiting for location permission...');

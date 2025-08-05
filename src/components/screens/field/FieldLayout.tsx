@@ -100,7 +100,7 @@ export const FieldLayout = () => {
   const geoError = geo.error && !['unavailable','timeout'].includes(geo.error) && !deniedList.includes(geo.error);
   
   // 🔧 REQUIRE LOCATION FOR MAP - Disable fallback to force permission request
-  const allowMapWithFallback = false; // Must have location permission to show map
+  const allowMapWithFallback = import.meta.env.DEV;
   const shouldShowMap = allowMapWithFallback || geoReady;
   
   // Enhanced debugging with both geo and location context state
