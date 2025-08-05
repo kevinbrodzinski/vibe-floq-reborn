@@ -413,11 +413,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           
           // 🔧 CRITICAL: Add layers BEFORE any handlers to prevent flash/rebuild cycle
           try {
-            // Add user location source first
-            map.addSource('user-location', {
-              type: 'geojson',
-              data: { type: 'FeatureCollection', features: [] }
-            });
+            // 🔧 User location source is now handled by attachUserLocationSource helper
 
             // Add floqs source with clustering
             map.addSource('floqs', {

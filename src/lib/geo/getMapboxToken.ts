@@ -1,122 +1,61 @@
 /**
- * ## Mapbox Integration
- * – Access token managed **only** here; never inline the string anywhere else.  
- * – Map instance stored in singleton pattern via `src/lib/geo/project.ts` (already exists).  
- * – Prefer lazy loading for map components.  
+ * Mapbox token resolver (single authoritative source).
  *
- * NOTE: keep this file lightweight; NO React or browser-only code allowed.
+ * – Checks ENV   → Supabase Edge   → local fallback.
+ * – Caches the first successful token for the session.
+ * – NO secret tokens are ever printed in full – only a 10-char prefix.
  */
 
-let cached: { token: string; source: 'env' | 'fallback' | 'supabase' } | null = null;
+let cached: { token: string; source: 'env' | 'supabase' | 'fallback' } | null = null;
 
-/** Clear cache (used by FieldWebMap dev hot-reload) */
 export const clearMapboxTokenCache = () => {
   cached = null;
 };
 
-/**
- * Returns a **public** Mapbox access token with robust error handling.
- * Comprehensive logging and validation for debugging map issues.
- */
 export async function getMapboxToken(): Promise<{ token: string; source: string }> {
-  if (cached) {
-    console.log('[getMapboxToken] Using cached token:', { source: cached.source, hasToken: !!cached.token });
-    return cached;
-  }
+  if (cached) return cached;
 
-  console.log('[getMapboxToken] Retrieving fresh token...');
-  
-  // Debug: Log ALL environment variables for debugging
-  console.log('[getMapboxToken] 🔍 DEBUG - All import.meta.env:', import.meta.env);
+  /* ------------------------------------------------------------------ */
+  /* 1️⃣ ENV                                                            */
+  /* ------------------------------------------------------------------ */
+  const envToken = (import.meta.env.VITE_MAPBOX_TOKEN as string | undefined) ?? '';
+  const isValidEnvToken = envToken.startsWith('pk.') && envToken.length > 20 && !/your_mapbox_token/i.test(envToken);
 
-  /* 1️⃣  primary – .env.* variable injected by Vite/Next/Remix/etc. */
-  const envToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
-  console.log('[getMapboxToken] Environment check:', { 
-    hasEnvToken: !!envToken, 
-    envTokenLength: envToken?.length,
-    envTokenValue: envToken, // Show full value for debugging
-    envTokenPrefix: envToken?.substring(0, 10)
-  });
-  
-  // Validate token - must start with 'pk.' and not be a placeholder
-  const isValidToken = envToken && 
-    envToken.startsWith('pk.') && 
-    !envToken.includes('your_mapbox_token_here') &&
-    !envToken.includes('YOUR_MAPBOX_TOKEN') &&
-    envToken.length > 20;
-  
-  console.log('[getMapboxToken] Token validation:', {
-    isValidToken,
-    startsWith_pk: envToken?.startsWith('pk.'),
-    isNotPlaceholder: !envToken?.includes('your_mapbox_token_here'),
-    hasCorrectLength: envToken && envToken.length > 20
-  });
-  
-  if (isValidToken) {
+  if (isValidEnvToken) {
     cached = { token: envToken, source: 'env' };
-    console.log('[getMapboxToken] ✅ Using environment token');
-    
-    // Runtime validation - ensure this is actually YOUR token, not fallback
-    if (envToken.includes('pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtZGR6b2VhZzBhazMyaW9vbG9lc3B6d3cifQ')) {
-      console.log('[getMapboxToken] 🎯 Confirmed: Using your actual Mapbox token');
-    } else {
-      console.log('[getMapboxToken] ⚠️ Using valid token but not the expected one');
-    }
-    
+    console.info('[getMapboxToken] ✅  Loaded token from ENV (prefix %s…) ', envToken.slice(0, 10));
     return cached;
-  } else if (envToken) {
-    console.log('[getMapboxToken] ⚠️ Environment token invalid/placeholder, falling back');
   }
 
-  /* 2️⃣  Try Supabase Edge Function for production deployment */
+  /* ------------------------------------------------------------------ */
+  /* 2️⃣ Supabase Edge Function (prod)                                   */
+  /* ------------------------------------------------------------------ */
   try {
-    console.log('[getMapboxToken] Trying Supabase edge function...');
-    const response = await fetch('/functions/v1/mapbox-token', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const res = await fetch('/functions/v1/mapbox-token');
 
-    console.log('[getMapboxToken] Supabase response status:', response.status);
-    console.log('[getMapboxToken] Supabase response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (response.ok) {
-      const responseText = await response.text();
-      console.log('[getMapboxToken] Raw response:', responseText.substring(0, 200));
-      
-      // Check if response is HTML (edge function failed)
-      if (responseText.trim().startsWith('<!DOCTYPE html')) {
-        console.log('[getMapboxToken] ⚠️ Edge function returned HTML, falling back');
-        throw new Error('Edge function returned HTML instead of JSON');
-      }
-      
-      const data = JSON.parse(responseText);
-      if (data.token && data.token.startsWith('pk.')) {
-        cached = { token: data.token, source: 'supabase' };
-        console.log('[getMapboxToken] ✅ Using Supabase token');
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.token?.startsWith('pk.')) {
+        cached = { token: json.token, source: 'supabase' };
+        console.info('[getMapboxToken] ✅  Loaded token from Supabase (prefix %s…)', json.token.slice(0, 10));
         return cached;
       }
     }
-    console.log('[getMapboxToken] Supabase token unavailable, status:', response.status);
-  } catch (error) {
-    console.log('[getMapboxToken] Supabase token failed:', error);
+    console.warn('[getMapboxToken] Supabase edge function responded with status %s', res.status);
+  } catch (err) {
+    console.warn('[getMapboxToken] Supabase edge call failed – continuing to fallback', err);
   }
 
-  /* 3️⃣  fallback – ADMIN_MAP_TOKEN baked into the repo (only for local mock) */
+  /* ------------------------------------------------------------------ */
+  /* 3️⃣ Fallback (dev-only)                                             */
+  /* ------------------------------------------------------------------ */
   const fallbackToken = 'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
-  
-  if (!fallbackToken || !fallbackToken.startsWith('pk.')) {
-    const error = 'No valid Mapbox token available - all sources failed';
-    console.error('[getMapboxToken] ❌', error);
-    throw new Error(error);
+
+  if (!fallbackToken.startsWith('pk.')) {
+    throw new Error('[getMapboxToken] ❌  No valid Mapbox token available');
   }
 
-  cached = {
-    token: fallbackToken,
-    source: 'fallback'
-  };
-  
-  console.log('[getMapboxToken] ⚠️ Using fallback token (development only)');
+  cached = { token: fallbackToken, source: 'fallback' };
+  console.info('[getMapboxToken] ⚠️  Using fallback token (dev-only)');
   return cached;
 }
