@@ -8,50 +8,41 @@ import { getEnvironmentConfig } from '@/lib/environment';
 
 export const ProductionModeGuard = ({ children }: { children: React.ReactNode }) => {
   const env = getEnvironmentConfig();
-  const isProduction = typeof window !== 'undefined' && 
-    (window.location.hostname === 'app.floq.com' || window.location.hostname.includes('floq.app'));
+  const isProduction = import.meta.env.PROD || 
+    (typeof window !== 'undefined' && 
+     (window.location.hostname === 'app.floq.com' || 
+      window.location.hostname.includes('floq.app') ||
+      window.location.hostname.includes('lovableproject.com')));
   
   useEffect(() => {
-    // Only redirect in production if user is trying to use debug modes
-    if (isProduction && env.presenceMode !== 'live') {
-      const url = new URL(window.location.href);
+    // Clear all debug settings in production
+    if (isProduction) {
+      // Clear localStorage debug settings
+      localStorage.removeItem('floq_presence_mode');
+      localStorage.removeItem('floq_env_config');
+      localStorage.removeItem('floq_rollout');
+      localStorage.removeItem('floq_rollout_user');
+      localStorage.removeItem('floq-debug-forceLoc');
+      localStorage.removeItem('floq-env-override');
+      localStorage.removeItem('showDebug');
       
-      // Check if user explicitly set debug modes
-      const hasDebugParams = url.searchParams.has('presence') || 
-                            localStorage.getItem('floq_presence_mode') ||
-                            localStorage.getItem('floq_env_config');
+      // Clean URL parameters
+      const url = new URL(window.location.href);
+      const debugParams = ['presence', 'rollout', 'debug_presence', 'debug_geohash', 'debug_network'];
+      let hasDebugParams = false;
+      
+      debugParams.forEach(param => {
+        if (url.searchParams.has(param)) {
+          hasDebugParams = true;
+          url.searchParams.delete(param);
+        }
+      });
       
       if (hasDebugParams) {
-        // Clear debug settings and redirect to clean URL
-        localStorage.removeItem('floq_presence_mode');
-        localStorage.removeItem('floq_env_config');
-        
-        // Remove debug params
-        url.searchParams.delete('presence');
-        url.searchParams.delete('rollout');
-        url.searchParams.delete('debug_presence');
-        url.searchParams.delete('debug_geohash');
-        url.searchParams.delete('debug_network');
-        
-        // Show warning and redirect
-        console.warn('Debug modes are disabled in production. Redirecting to live mode...');
-        window.location.href = url.toString();
+        window.history.replaceState({}, '', url.toString());
       }
     }
-  }, [isProduction, env.presenceMode]);
-  
-  // Don't render anything while checking in production
-  if (isProduction && env.presenceMode !== 'live') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Debug Mode Disabled</h1>
-          <p className="text-muted-foreground">Debug modes are not available in production.</p>
-          <p className="text-muted-foreground">Redirecting to live mode...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [isProduction]);
   
   return <>{children}</>;
 };

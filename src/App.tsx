@@ -1,13 +1,16 @@
 
 import { useEffect, useRef, useMemo } from "react";
 
-// Import debug helpers in development
+// Import debug helpers in development only
 if (import.meta.env.DEV) {
   import('@/lib/debug/environmentHelper');
   import('@/lib/debug/immediateLocationFix');
   import('@/lib/debug/mapDiagnostics');
   import('@/lib/debug/quickMapFixes');
   import('@/lib/debug/mockGeolocation');
+} else {
+  // Initialize production optimizations
+  import('@/lib/productionOptimizations');
 }
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +23,7 @@ import { EventNotificationsProvider } from "@/providers/EventNotificationsProvid
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
+import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
@@ -82,35 +86,37 @@ const App = () => {
   }, [queryClient]);
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <EnhancedAuthProvider>
-        <AppProviders>
-          <EventNotificationsProvider>
-            <PlanNotificationProvider>
-              <VibeRealtime />
-              <BannerProvider>
-                <TooltipProvider>
-                  {/* Toaster removed to prevent infinite loops */}
-                  <NetworkStatusBanner />
-                  <BrowserRouter>
-                    <PlanInviteProvider />
-                    <LocationSystemHealthDashboard />
-                    <Routes>
-                      <Route path="/a/:slug" element={<SharedAfterglow />} />
-                      <Route path="/share/:slug" element={<SharedPlan />} />
-                      <Route path="/invite/:slug" element={<PlanInvite />} />
-                      <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
-                      <Route path="/settings/profile" element={<Settings />} />
-                      <Route path="/*" element={<Index />} />
-                    </Routes>
-                  </BrowserRouter>
-                </TooltipProvider>
-              </BannerProvider>
-            </PlanNotificationProvider>
-          </EventNotificationsProvider>
-        </AppProviders>
-      </EnhancedAuthProvider>
-    </QueryClientProvider>
+    <ProductionModeGuard>
+      <QueryClientProvider client={queryClient}>
+        <EnhancedAuthProvider>
+          <AppProviders>
+            <EventNotificationsProvider>
+              <PlanNotificationProvider>
+                <VibeRealtime />
+                <BannerProvider>
+                  <TooltipProvider>
+                    {/* Toaster removed to prevent infinite loops */}
+                    <NetworkStatusBanner />
+                    <BrowserRouter>
+                      <PlanInviteProvider />
+                      {import.meta.env.DEV && <LocationSystemHealthDashboard />}
+                      <Routes>
+                        <Route path="/a/:slug" element={<SharedAfterglow />} />
+                        <Route path="/share/:slug" element={<SharedPlan />} />
+                        <Route path="/invite/:slug" element={<PlanInvite />} />
+                        <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
+                        <Route path="/settings/profile" element={<Settings />} />
+                        <Route path="/*" element={<Index />} />
+                      </Routes>
+                    </BrowserRouter>
+                  </TooltipProvider>
+                </BannerProvider>
+              </PlanNotificationProvider>
+            </EventNotificationsProvider>
+          </AppProviders>
+        </EnhancedAuthProvider>
+      </QueryClientProvider>
+    </ProductionModeGuard>
   );
 };
 

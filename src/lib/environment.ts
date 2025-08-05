@@ -236,7 +236,7 @@ if (import.meta.env.DEV) {
 }
 
 /**
- * Production configuration - optimized for TestFlight
+ * Production configuration - optimized for live deployment
  */
 export function getProductionConfig(): EnvironmentConfig {
   return {
@@ -244,18 +244,21 @@ export function getProductionConfig(): EnvironmentConfig {
     enableRealtime: true,
     enableGeolocation: true,
     enablePresenceUpdates: true,
-    hotSpotHalos: true, // Enable in production
+    hotSpotHalos: true,
     
-    // Smart Social Suggestions - 10% rollout in production
-    smartSocialSuggestions: false, // Controlled by rollout
-    socialPingFlow: false, // Controlled by rollout  
+    // Smart Social Suggestions - enabled in production
+    smartSocialSuggestions: true,
+    socialPingFlow: true,
     defaultPrivacyMode: 'recs-only',
     
+    // Debug flags - all disabled in production
     debugPresence: false,
     debugGeohash: false,
     debugNetwork: false,
+    
+    // Production performance settings
     presenceUpdateInterval: 15000, // 15 seconds for production
     presenceRetryDelay: 5000,
-    rolloutPercentage: 10, // 10% rollout for social features
+    rolloutPercentage: 100, // Full rollout in production
   };
 }
