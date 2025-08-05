@@ -7,7 +7,7 @@ import { MapContainerManager } from '@/lib/map/MapContainerManager';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
 import { setMapInstance } from '@/lib/geo/project';
 import { createMapSafely, cleanupMapSingleton } from '@/lib/geo/mapSingleton';
-import { withUserLocationSource as ensureUserLocationSource } from '@/lib/geo/withUserLocationSource';
+import { attachUserLocationSource, setUserLocation, USER_LOC_SRC, USER_LOC_LAYER } from '@/lib/geo/withUserLocationSource';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
@@ -54,6 +54,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const userMarkerRef = useRef<mapboxgl.Marker|null>(null);
+  const detachUserLocationSourceRef = useRef<(() => void) | null>(null);
   const firstPosRef = useRef(true); // 🔧 FIX: Track first position for jumpTo vs flyTo
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -383,7 +384,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         mapRef.current = map;
 
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
-        ensureUserLocationSource(map);
+        detachUserLocationSourceRef.current = attachUserLocationSource(map);
 
         // Add user location marker
         const userMarker = new mapboxgl.Marker({
@@ -896,6 +897,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           cancelAnimationFrame(resizeRef.current);
         }
         
+        // FIX: Cleanup user location source listeners
+        if (detachUserLocationSourceRef.current) {
+          detachUserLocationSourceRef.current();
+          detachUserLocationSourceRef.current = null;
+        }
+        
         try {
           mapRef.current.remove(); // This frees WebGL context
           mapRef.current = null;
@@ -913,69 +920,40 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   },[onRegionChange]);
 
   // Helper to safely access map source
-  const withUserLocationSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
-    if (!mapRef.current) return;
-    
-    const tryOnce = () => {
-      const src = mapRef.current?.getSource('user-location') as mapboxgl.GeoJSONSource | undefined;
-      if (src && 'setData' in src) { 
-        cb(src); 
-        return; 
-      }
-      // FIX: Wait for style reload and retry
-      mapRef.current?.once('sourcedata', tryOnce);
-    };
-    tryOnce();
-  }, []);
 
-  // Update user location when it changes - Use callback to handle source guard
+  // Update user location when it changes - Use safe utility function
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
     
     const map = mapRef.current;
     
-    // Use the guarded callback instead of direct source access
-    withUserLocationSource((src) => {
-      src.setData({
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [location.coords.lng, location.coords.lat]
-          },
-          properties: {
-            accuracy: location.coords?.accuracy || 10
-          }
-        }]
+    // Use the safe setUserLocation utility
+    setUserLocation(
+      map,
+      location.coords.lat,
+      location.coords.lng,
+      location.coords.accuracy
+    );
+    
+    // 🔧 FIX: Use jumpTo for first position, flyTo for subsequent updates
+    if (firstPosRef.current) {
+      firstPosRef.current = false;
+      console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
+      map.jumpTo({ 
+        center: [location.coords.lng, location.coords.lat], 
+        zoom: 14 
       });
-      
-      console.log('[FieldWebMap] ✅ User location updated:', {
-        lat: location.coords.lat,
-        lng: location.coords.lng,
-        accuracy: location.coords.accuracy
+    } else if (!map.isMoving()) {
+      console.log('[FieldWebMap] 🔧 Subsequent position update - using flyTo');
+      map.flyTo({
+        center: [location.coords.lng, location.coords.lat],
+        zoom: 14,
+        duration: 2000
       });
-      
-      // 🔧 FIX: Use jumpTo for first position, flyTo for subsequent updates
-      if (firstPosRef.current) {
-        firstPosRef.current = false; // 🔧 CRITICAL: Reset flag immediately to prevent stuck state
-        console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
-        map.jumpTo({ 
-          center: [location.coords.lng, location.coords.lat], 
-          zoom: 14 
-        });
-      } else if (!map.isMoving()) {
-        console.log('[FieldWebMap] 🔧 Subsequent position update - using flyTo');
-        map.flyTo({
-          center: [location.coords.lng, location.coords.lat],
-          zoom: 14,
-          duration: 2000
-        });
-      } else {
-        console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
-      }
-    });
-  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady, withUserLocationSource]);
+    } else {
+      console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
+    }
+  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady]);
 
   // Helper to safely access floqs source
   const withFloqsSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
