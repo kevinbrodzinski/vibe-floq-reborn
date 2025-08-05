@@ -322,7 +322,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Create presence channel
+        // Create presence channel (user.id is the profile_id in database)
         const channel = supabase.channel(`presence:${user.id}`, {
           config: { presence: { key: user.id } }
         });
