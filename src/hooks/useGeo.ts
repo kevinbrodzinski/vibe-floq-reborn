@@ -1,170 +1,152 @@
-Why the blue-dot never leaves useGeo
-
-useGeo() only calls navigator.geolocation.getCurrentPosition once.
-If that single call…
-	•	never resolves (quite common on desktop Chrome behind some VPN/Wi-Fi setups),
-	•	or returns a cached result whose coords have undefined accuracy (spec-legal in Safari),
-	•	or the user clicks “Allow” after the timeout fires,
-
-…the hook bails out without writing any coords, so everything downstream stays empty.
-
-Below is a drop-in replacement that is much more forgiving:
-
-Change	Why it helps
-Uses watchPosition with the same options – we get the first reading that arrives instead of relying on a single GC call.	
-Keeps the short dev-fallback (San Francisco) but only after the timeout and when import.meta.env.DEV.	
-Exposes a requestLocation helper that retries the whole workflow (handy for “Tap to retry” buttons).	
-Distinguishes permission denied (status: 'denied') from generic errors.	
-
-
-⸻
-
-src/hooks/useGeo.ts – full file
-
 /**
  * Thin wrapper around `navigator.geolocation` that
- *  1. gives the first GPS reading that shows up (watchPosition → clearWatch)
- *  2. falls back to SF coords after a short timeout in DEV
- *  3. never overrides real GPS with demo once a reading arrived
+ *  • provides a 3 s fallback to SF (dev) or 8 s timeout (prod)
+ *  • honours localStorage['floq-debug-forceLoc'] for easy testing
+ *  • never overwrites real GPS with demo data in production
  */
-
-import { useEffect, useState, useCallback } from 'react';
-import type { LocationStatus } from '@/types/overrides';
+import { useEffect, useState } from 'react';
 import { getEnhancedGeolocation } from '@/lib/location/webCompatibility';
+import type { LocationStatus } from '@/types/overrides';
 
-const DEMO = { lat: 37.7749, lng: -122.4194, accuracy: 30 } as const;
-const TIMEOUT = import.meta.env.DEV ? 3_000 : 10_000;
+//
+// ──────────────────────────────────────────────────────────────────────────────
+//  Types
+// ──────────────────────────────────────────────────────────────────────────────
+//
+export interface GeoCoords {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+}
 
-export interface GeoCoords { lat: number; lng: number; accuracy: number }
 export interface GeoState {
   coords: GeoCoords | null;
   accuracy: number | null;
-  status: LocationStatus;          // 'idle' | 'fetching' | 'ready' | 'error' | 'denied'
+  status: LocationStatus;
   hasLocation: boolean;
   isLocationReady: boolean;
-  /* extras */
+  // legacy shims
+  hasPermission?: boolean;
   requestLocation: () => void;
+  clearWatch: () => void;
 }
 
+//
+// ──────────────────────────────────────────────────────────────────────────────
+//  Constants
+// ──────────────────────────────────────────────────────────────────────────────
+//
+const DEMO_COORDS = { lat: 37.7749, lng: -122.4194 } as const;
+const TIMEOUT_MS  = import.meta.env.DEV ? 3_000 : 8_000;
+
+//
+// ──────────────────────────────────────────────────────────────────────────────
+//  Hook
+// ──────────────────────────────────────────────────────────────────────────────
+//
 export function useGeo(): GeoState {
-  const [state, setState] = useState<Pick<GeoState, 'coords' | 'status'>>({
-    coords: null,
-    status: 'idle'
-  });
+  const [state, setState] = useState<{
+    coords: GeoCoords | null;
+    status: LocationStatus;
+  }>({ coords: null, status: 'idle' });
 
-  /** central place to push a GPS reading into the hook */
-  const commit = (coords: GeolocationCoordinates) =>
-    setState({ coords: {
-      lat: coords.latitude,
-      lng: coords.longitude,
-      accuracy: coords.accuracy ?? 50
-    }, status: 'ready' });
+  useEffect(() => {
+    let done = false;
 
-  /** one-shot logic wrapped so we can trigger it again from `requestLocation` */
-  const acquireLocation = useCallback(() => {
-    if (state.status === 'fetching' || state.status === 'ready') return;
-
-    setState({ coords: null, status: 'fetching' });
-
-    let done   = false;
-    let watch  = -1;
-    const kill = (fn?: () => void) => {
+    /** Helper to push a result into state only once */
+    const push = (coords: GeoCoords | null, status: LocationStatus) => {
       if (done) return;
       done = true;
-      watch !== -1 && navigator.geolocation.clearWatch(watch);
-      fn?.();
+      setState({ coords, status });
     };
 
-    // DEV fallback timer ───────────────────────────────────────────────
-    const timer = setTimeout(() => {
-      if (!import.meta.env.DEV) return;    // prod: wait forever
-      kill(() => {
-        console.warn('[useGeo] fallback → demo coords (dev only)');
-        commit(createDemoCoords());
-      });
-    }, TIMEOUT);
-
-    // primary path – first reading from watchPosition ──────────────────
-    if (!('geolocation' in navigator)) {
-      kill(() => setState({ coords: null, status: 'error' }));
-      return;
+    /* ─ 1. Debug override via localStorage ───────────────────────────── */
+    const debug = localStorage.getItem('floq-debug-forceLoc');
+    if (debug) {
+      const [lat, lng] = debug.split(',').map(Number);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        push({ lat, lng, accuracy: 15 }, 'ready');
+        return;
+      }
     }
 
-    watch = navigator.geolocation.watchPosition(
-      p => kill(() => commit(p.coords)),
-      err => {
-        kill(() => {
-          console.error('[useGeo] geolocation error', err);
-          setState({ coords: null, status: err.code === 1 ? 'denied' : 'error' });
-        });
-      },
-      { enableHighAccuracy: true, maximumAge: 30_000, timeout: TIMEOUT - 500 }
-    );
+    /* ─ 2. Fallback timer ────────────────────────────────────────────── */
+    const fallback = setTimeout(() => {
+      if (import.meta.env.DEV) {
+        console.warn('[useGeo] timeout → using demo coords');
+        push({ ...DEMO_COORDS, accuracy: 50 }, 'ready');
+      } else {
+        console.warn('[useGeo] timeout → no coords');
+        push(null, 'error');
+      }
+    }, TIMEOUT_MS);
 
-    return () => {
-      clearTimeout(timer);
-      kill();
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.status]);
+    /* ─ 3. Real geolocation request ──────────────────────────────────── */
+    getEnhancedGeolocation({
+      enableHighAccuracy: true,
+      timeout: TIMEOUT_MS - 500,
+      maximumAge: 60_000,
+    })
+      .then((res) => {
+        clearTimeout(fallback);
+        if (res.coords) {
+          push(
+            {
+              lat: res.coords.latitude,
+              lng: res.coords.longitude,
+              accuracy: res.coords.accuracy ?? 50,
+            },
+            'ready'
+          );
+        } else {
+          // extremely rare: promise resolved but no coords
+          push(null, 'error');
+        }
+      })
+      .catch((err) => {
+        clearTimeout(fallback);
+        console.error('[useGeo] geolocation failed:', err);
+        push(null, 'error');
+      });
 
-  // run once on mount
-  useEffect(() => acquireLocation(), []);
+    return () => clearTimeout(fallback);
+  }, []);
 
-  // helper the UI can call (e.g. “Retry” button)
-  const requestLocation = useCallback(() => {
-    setState({ coords: null, status: 'idle' });
-    acquireLocation();
-  }, [acquireLocation]);
-
-  const hasLocation   = !!state.coords;
-  const isReady       = hasLocation && state.status === 'ready';
+  const has    = !!state.coords;
+  const ready  = has && state.status === 'ready';
 
   return {
-    coords:   state.coords,
+    coords: state.coords,
     accuracy: state.coords?.accuracy ?? null,
-    status:   state.status,
-    hasLocation,
-    isLocationReady: isReady,
-    requestLocation
+    status: state.status,
+    hasLocation: has,
+    isLocationReady: ready,
+    // legacy no-ops
+    hasPermission: has,
+    requestLocation: () => {
+      navigator.geolocation?.getCurrentPosition(() => {}, () => {}, {
+        enableHighAccuracy: true,
+      });
+    },
+    clearWatch: () => {},
   };
 }
 
-/* ------------------------------------------------------------------ */
+//
+// ──────────────────────────────────────────────────────────────────────────────
+//  Legacy re-exports (keep older code working)
+// ──────────────────────────────────────────────────────────────────────────────
+//
+export const useLatLng   = () => useGeo().coords;
+export const useLocation = useGeo;
 
-function createDemoCoords(): GeolocationCoordinates {
-  return {
-    latitude:        DEMO.lat,
-    longitude:       DEMO.lng,
-    accuracy:        DEMO.accuracy,
-    altitude:        null,
-    altitudeAccuracy:null,
-    heading:         null,
-    speed:           null,
-    toJSON() { return this; }
-  };
-}
-
-/* Legacy re-exports for older code paths */
-export const useLatLng  = () => useGeo().coords;
-export const useLocation= useGeo;
-export const useGeoPos  = () => {
+export const useGeoPos = () => {
   const g = useGeo();
-  return { pos: g.coords, loading: g.status !== 'ready', error: g.status === 'error' ? 'GPS error' : undefined };
+  return {
+    pos: g.coords
+      ? { lat: g.coords.lat, lng: g.coords.lng, accuracy: g.accuracy || 0 }
+      : null,
+    loading: !g.isLocationReady,
+    error: g.status === 'error' ? 'Location unavailable' : undefined,
+  };
 };
-
-How to test quickly
-	1.	Hot-reload with this file in place.
-	2.	Watch DevTools > Console – you should see either
-	•	geolocation error … PERMISSION_DENIED → grant location, then click your “Retry” button (if you wire one to requestLocation()), or
-	•	fallback → demo coords in development only if no GPS arrives in 3 s.
-	3.	Run:
-
-window.__FLOQ_DEBUG_LAST_GEO   // should now show coords object
-__FLOQ_MAP?.getSource('user-location')._data.features
-
-– you should see your feature with the same lat/lng.
-
-If the feature appears in the source but the circle is still missing, the issue is in layer styling or Zoom; otherwise useGeo is now confirmed to “pass it”.
-
-Let me know the result of the console checks and we’ll finish tightening the last link, if any!
