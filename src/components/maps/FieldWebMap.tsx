@@ -378,74 +378,108 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           if (dead) return;
           
           console.log('🗺️ Map loaded successfully');
-          console.log('🗺️ WebGL contexts:', performance.getEntriesByType('frame').filter(e => e.name?.includes('WebGL')).length);
-          console.log('🗺️ Canvas elements:', document.querySelectorAll('.mapboxgl-canvas').length);
           
-          // Add automatic resize handling for zero-dimension containers
-          const handleResize = () => {
-            const rect = mapContainerRef.current?.getBoundingClientRect();
-            if (rect && (rect.width === 0 || rect.height === 0)) {
-              console.warn('[FieldWebMap] Detected zero dimensions, triggering resize...');
-              setTimeout(() => map.resize(), 100);
-            } else {
-              map.resize();
-            }
-          };
-          
-          // Initial resize after load
-          setTimeout(handleResize, 100);
+          // 🔧 CRITICAL: Add layers BEFORE any handlers to prevent flash/rebuild cycle
+          try {
+            // Add user location source first
+            map.addSource('user-location', {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] }
+            });
+
+            // Add floqs source with clustering
+            map.addSource('floqs', {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] },
+              cluster: true,
+              clusterRadius: 80,
+              clusterProperties: {
+                'social': ['+', ['case', ['==', ['get', 'vibe'], 'social'], 1, 0]],
+                'hype': ['+', ['case', ['==', ['get', 'vibe'], 'hype'], 1, 0]],
+                'curious': ['+', ['case', ['==', ['get', 'vibe'], 'curious'], 1, 0]],
+                'chill': ['+', ['case', ['==', ['get', 'vibe'], 'chill'], 1, 0]],
+                'solo': ['+', ['case', ['==', ['get', 'vibe'], 'solo'], 1, 0]],
+                'romantic': ['+', ['case', ['==', ['get', 'vibe'], 'romantic'], 1, 0]],
+                'weird': ['+', ['case', ['==', ['get', 'vibe'], 'weird'], 1, 0]],
+                'down': ['+', ['case', ['==', ['get', 'vibe'], 'down'], 1, 0]],
+                'flowing': ['+', ['case', ['==', ['get', 'vibe'], 'flowing'], 1, 0]],
+                'open': ['+', ['case', ['==', ['get', 'vibe'], 'open'], 1, 0]]
+              }
+            });
+
+            // Add ALL layers before ANY handlers
+            map.addLayer({
+              id: 'floq-clusters',
+              type: 'circle',
+              source: 'floqs',
+              filter: ['has', 'point_count'],
+              paint: {
+                'circle-color': [
+                  'case',
+                  ['>', ['get', 'social'], 0], '#059669',
+                  ['>', ['get', 'hype'], 0], '#DC2626',
+                  ['>', ['get', 'curious'], 0], '#7C3AED',
+                  ['>', ['get', 'chill'], 0], '#2563EB',
+                  ['>', ['get', 'solo'], 0], '#0891B2',
+                  ['>', ['get', 'romantic'], 0], '#EC4899',
+                  ['>', ['get', 'weird'], 0], '#F59E0B',
+                  ['>', ['get', 'down'], 0], '#6B7280',
+                  ['>', ['get', 'flowing'], 0], '#10B981',
+                  ['>', ['get', 'open'], 0], '#84CC16',
+                  '#4B5563'
+                ],
+                'circle-radius': ['step', ['get', 'point_count'], 20, 2, 30, 5, 40, 10, 50],
+                'circle-opacity': 0.9,
+                'circle-stroke-width': 3,
+                'circle-stroke-color': '#FFFFFF'
+              }
+            });
+
+            map.addLayer({
+              id: 'floq-cluster-count',
+              type: 'symbol',
+              source: 'floqs',
+              filter: ['has', 'point_count'],
+              layout: {
+                'text-field': ['get', 'point_count'],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 16
+              },
+              paint: { 'text-color': '#FFFFFF' }
+            });
+
+            map.addLayer({
+              id: 'floq-points',
+              type: 'circle',
+              source: 'floqs',
+              filter: ['!', ['has', 'point_count']],
+              paint: {
+                'circle-color': [
+                  'case',
+                  ['==', ['get', 'vibe'], 'social'], '#059669',
+                  ['==', ['get', 'vibe'], 'hype'], '#DC2626',
+                  ['==', ['get', 'vibe'], 'curious'], '#7C3AED',
+                  ['==', ['get', 'vibe'], 'chill'], '#2563EB',
+                  '#4B5563'
+                ],
+                'circle-radius': 12,
+                'circle-opacity': 0.95,
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF'
+              }
+            });
+
+            console.log('🎯 All layers added successfully BEFORE handlers');
+          } catch (error) {
+            console.error('❌ Layer setup failed:', error);
+            return;
+          }
           
           setStatus('ready');
-          
-          // 🔧 DEBUG: Set global map instance for console debugging
           (window as any).__FLOQ_MAP = map;
           setMapInstance(map);
           
-          // 🔧 DEBUG: Verify map is ready for source operations
-          console.log('🗺️ Map ready for sources. Style loaded:', map.isStyleLoaded());
-          
-          // 🔧 FIX: Add missing user-location source that withUserLocationSource expects
-          map.addSource('user-location', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-          });
-
-          // Add user location layers
-          map.addLayer({
-            id: 'user-location-accuracy',
-            type: 'circle',
-            source: 'user-location',
-            paint: {
-              'circle-color': '#3B82F6',
-              'circle-opacity': 0.1,
-              'circle-radius': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                10, 20,  // At zoom 10, radius = 20px
-                18, 50,  // At zoom 18, radius = 50px  
-                20, 30   // At zoom 20+, cap at 30px (prevent balloon)
-              ],
-              'circle-stroke-color': '#3B82F6',
-              'circle-stroke-width': 1,
-              'circle-stroke-opacity': 0.3
-            }
-          });
-
-          map.addLayer({
-            id: 'user-location-dot',
-            type: 'circle',
-            source: 'user-location',
-            paint: {
-              'circle-color': '#3B82F6',
-              'circle-radius': 8,
-              'circle-stroke-color': '#FFF',
-              'circle-stroke-width': 2
-            }
-          });
-          
-          // Note: 'people' source is now managed by usePeopleSource hook
-          // to prevent race conditions with style loading
+          console.log('🗺️ Map ready - layers exist, handlers safe to register');
         });
 
         // Add cluster click handler - GUARDED
