@@ -55,6 +55,14 @@ export async function getMapboxToken(): Promise<{ token: string; source: string 
   if (isValidToken) {
     cached = { token: envToken, source: 'env' };
     console.log('[getMapboxToken] ✅ Using environment token');
+    
+    // Runtime validation - ensure this is actually YOUR token, not fallback
+    if (envToken.includes('pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtZGR6b2VhZzBhazMyaW9vbG9lc3B6d3cifQ')) {
+      console.log('[getMapboxToken] 🎯 Confirmed: Using your actual Mapbox token');
+    } else {
+      console.log('[getMapboxToken] ⚠️ Using valid token but not the expected one');
+    }
+    
     return cached;
   } else if (envToken) {
     console.log('[getMapboxToken] ⚠️ Environment token invalid/placeholder, falling back');

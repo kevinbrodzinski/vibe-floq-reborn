@@ -327,7 +327,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           throw new Error(`Invalid Mapbox token received: ${token?.substring(0, 10)}...`);
         }
         
-        console.log('[FieldWebMap] ✅ Token acquired:', { source, tokenLength: token.length });
+        // Enhanced token debugging
+        console.log('[FieldWebMap] ✅ Token acquired:', { 
+          source, 
+          tokenLength: token.length,
+          envToken: import.meta.env.VITE_MAPBOX_TOKEN ? `${import.meta.env.VITE_MAPBOX_TOKEN.substring(0, 10)}...` : 'NOT_SET',
+          isYourToken: token.includes('pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtZGR6b2VhZzBhazMyaW9vbG9lc3B6d3cifQ')
+        });
         mapboxgl.accessToken=token;
 
         // Only create map if we have user location
