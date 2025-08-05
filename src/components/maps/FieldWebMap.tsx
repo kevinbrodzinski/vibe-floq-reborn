@@ -48,6 +48,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const userMarkerRef = useRef<mapboxgl.Marker|null>(null);
+  const firstPosRef = useRef(true); // 🔧 FIX: Track first position for jumpTo vs flyTo
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedVibe, setSelectedVibe] = useState<string>('all');
@@ -111,7 +112,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         }))
       : [];
     
-    return [...currentUserPerson, ...floqMembers];
+    const result = [...currentUserPerson, ...floqMembers];
+    
+    // 🔧 DEBUG: Log filteredPeople table for easy debugging
+    console.log('[FieldWebMap] 🔧 filteredPeople result:');
+    console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you })));
+    
+    return result;
   }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
 
   // Prepare context value for selected floq
@@ -312,6 +319,39 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           
           // 🔧 DEBUG: Verify map is ready for source operations
           console.log('🗺️ Map ready for sources. Style loaded:', map.isStyleLoaded());
+          
+          // 🔧 FIX: Add missing user-location source that withUserLocationSource expects
+          map.addSource('user-location', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
+
+          // Add user location layers
+          map.addLayer({
+            id: 'user-location-accuracy',
+            type: 'circle',
+            source: 'user-location',
+            paint: {
+              'circle-color': '#3B82F6',
+              'circle-opacity': 0.1,
+              'circle-radius': 50, // Will be updated based on accuracy
+              'circle-stroke-color': '#3B82F6',
+              'circle-stroke-width': 1,
+              'circle-stroke-opacity': 0.3
+            }
+          });
+
+          map.addLayer({
+            id: 'user-location-dot',
+            type: 'circle',
+            source: 'user-location',
+            paint: {
+              'circle-color': '#3B82F6',
+              'circle-radius': 8,
+              'circle-stroke-color': '#FFF',
+              'circle-stroke-width': 2
+            }
+          });
           
           // Note: 'people' source is now managed by usePeopleSource hook
           // to prevent race conditions with style loading
@@ -715,13 +755,23 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         ]
       });
       
-      // Center map on user location if it's the first time
-      if (!map.isMoving()) {
+      // 🔧 FIX: Use jumpTo for first position, flyTo for subsequent updates
+      if (firstPosRef.current) {
+        firstPosRef.current = false;
+        console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
+        map.jumpTo({ 
+          center: [location.coords.lng, location.coords.lat], 
+          zoom: 14 
+        });
+      } else if (!map.isMoving()) {
+        console.log('[FieldWebMap] 🔧 Subsequent position update - using flyTo');
         map.flyTo({
           center: [location.coords.lng, location.coords.lat],
           zoom: 14,
           duration: 2000
         });
+      } else {
+        console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
       }
     });
   }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady, withUserLocationSource]);

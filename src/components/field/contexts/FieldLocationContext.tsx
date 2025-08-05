@@ -184,6 +184,9 @@ const FieldLocationProviderInner = ({
       isLocationReady: value.isLocationReady,
       locationStatus: value.location.status
     });
+    
+    // 🔧 Additional debug as requested in audit
+    console.log('FLP outgoing', value.location.status, value.location.coords);
   }, [value.location.coords, value.isLocationReady, value.location.status]);
 
   return (
