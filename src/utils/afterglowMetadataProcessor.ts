@@ -1,6 +1,33 @@
 import { calculateDistance, formatDistance } from './locationHelpers'
 
 // Types for afterglow metadata processing
+interface VenueIntelligenceData {
+  vibe_match: {
+    score: number;
+    explanation: string;
+    user_vibes: string[];
+    venue_vibes: string[];
+  };
+  social_proof: {
+    friend_visits: number;
+    recent_visitors: string[];
+    network_rating: number;
+    popular_with: string;
+  };
+  crowd_intelligence: {
+    current_capacity: number;
+    predicted_peak: string;
+    typical_crowd: string;
+    best_time_to_visit: string;
+  };
+}
+
+interface SocialIntelligenceData {
+  friend_network_strength: number;
+  mutual_connections: number;
+  social_energy_level: 'low' | 'medium' | 'high';
+}
+
 export interface ProcessedMomentMetadata {
   location?: {
     coordinates?: [number, number]
@@ -8,6 +35,7 @@ export interface ProcessedMomentMetadata {
     venue_id?: string
     address?: string
     distance_from_previous?: number
+    venue_intelligence?: VenueIntelligenceData
   }
   people?: {
     encountered_users: Array<{
@@ -17,6 +45,7 @@ export interface ProcessedMomentMetadata {
       interaction_type: string
     }>
     total_people_count: number
+    social_intelligence?: SocialIntelligenceData
   }
   social_context?: {
     floq_id?: string
@@ -25,6 +54,12 @@ export interface ProcessedMomentMetadata {
   }
   vibe?: string
   intensity?: number
+}
+
+export interface EnhancedProcessedMomentMetadata extends ProcessedMomentMetadata {
+  venue_intelligence_score?: number;
+  social_intelligence_score?: number;
+  overall_intelligence_score?: number;
 }
 
 export interface RawMomentData {
@@ -228,11 +263,172 @@ function categorizeVenue(venueName: string): string {
 }
 
 /**
+ * Enhance metadata with venue intelligence data
+ */
+export function enhanceMetadataWithVenueIntelligence(
+  metadata: ProcessedMomentMetadata,
+  venueIntelligence: VenueIntelligenceData
+): EnhancedProcessedMomentMetadata {
+  const venueIntelligenceScore = calculateVenueIntelligenceScore(venueIntelligence);
+  const socialIntelligenceScore = metadata.people?.social_intelligence 
+    ? calculateSocialIntelligenceScore(metadata.people.social_intelligence)
+    : 0;
+
+  return {
+    ...metadata,
+    location: {
+      ...metadata.location,
+      venue_intelligence: venueIntelligence
+    },
+    venue_intelligence_score: venueIntelligenceScore,
+    social_intelligence_score: socialIntelligenceScore,
+    overall_intelligence_score: (venueIntelligenceScore + socialIntelligenceScore) / 2
+  };
+}
+
+/**
+ * Enhance metadata with social intelligence data
+ */
+export function enhanceMetadataWithSocialIntelligence(
+  metadata: ProcessedMomentMetadata,
+  socialIntelligence: SocialIntelligenceData
+): EnhancedProcessedMomentMetadata {
+  const socialIntelligenceScore = calculateSocialIntelligenceScore(socialIntelligence);
+  const venueIntelligenceScore = metadata.location?.venue_intelligence
+    ? calculateVenueIntelligenceScore(metadata.location.venue_intelligence)
+    : 0;
+
+  return {
+    ...metadata,
+    people: {
+      ...metadata.people!,
+      social_intelligence: socialIntelligence
+    },
+    venue_intelligence_score: venueIntelligenceScore,
+    social_intelligence_score: socialIntelligenceScore,
+    overall_intelligence_score: (venueIntelligenceScore + socialIntelligenceScore) / 2
+  };
+}
+
+/**
+ * Calculate venue intelligence score from 0-100
+ */
+function calculateVenueIntelligenceScore(venueIntelligence: VenueIntelligenceData): number {
+  const vibeScore = venueIntelligence.vibe_match.score * 100;
+  const socialScore = Math.min(100, venueIntelligence.social_proof.friend_visits * 20);
+  const crowdScore = Math.min(100, venueIntelligence.crowd_intelligence.current_capacity);
+  
+  return Math.round((vibeScore + socialScore + crowdScore) / 3);
+}
+
+/**
+ * Calculate social intelligence score from 0-100
+ */
+function calculateSocialIntelligenceScore(socialIntelligence: SocialIntelligenceData): number {
+  const networkScore = socialIntelligence.friend_network_strength * 100;
+  const connectionScore = Math.min(100, socialIntelligence.mutual_connections * 10);
+  const energyScore = socialIntelligence.social_energy_level === 'high' ? 100 : 
+                     socialIntelligence.social_energy_level === 'medium' ? 60 : 30;
+  
+  return Math.round((networkScore + connectionScore + energyScore) / 3);
+}
+
+/**
+ * Analyze venue intelligence patterns across moments
+ */
+export function analyzeVenueIntelligencePatterns(moments: Array<{ metadata: EnhancedProcessedMomentMetadata }>) {
+  const momentsWithVenueIntelligence = moments.filter(m => m.metadata.location?.venue_intelligence);
+  
+  if (momentsWithVenueIntelligence.length === 0) {
+    return {
+      avg_vibe_match_score: 0,
+      social_proof_strength: 0,
+      crowd_intelligence_summary: 'No venue intelligence data',
+      venue_recommendations: [],
+      intelligence_trend: 'stable' as const
+    };
+  }
+
+  const vibeScores = momentsWithVenueIntelligence.map(m => 
+    m.metadata.location!.venue_intelligence!.vibe_match.score
+  );
+  const avgVibeScore = vibeScores.reduce((sum, score) => sum + score, 0) / vibeScores.length;
+
+  const friendVisits = momentsWithVenueIntelligence.map(m => 
+    m.metadata.location!.venue_intelligence!.social_proof.friend_visits
+  );
+  const totalFriendVisits = friendVisits.reduce((sum, visits) => sum + visits, 0);
+
+  const crowdLevels = momentsWithVenueIntelligence.map(m => 
+    m.metadata.location!.venue_intelligence!.crowd_intelligence.current_capacity
+  );
+  const avgCrowdLevel = crowdLevels.reduce((sum, level) => sum + level, 0) / crowdLevels.length;
+
+  // Generate venue recommendations based on patterns
+  const venueRecommendations = generateVenueRecommendations(momentsWithVenueIntelligence);
+
+  return {
+    avg_vibe_match_score: Math.round(avgVibeScore * 100) / 100,
+    social_proof_strength: totalFriendVisits,
+    crowd_intelligence_summary: avgCrowdLevel > 70 ? 'High energy venues' : 
+                               avgCrowdLevel > 40 ? 'Moderate energy venues' : 'Quiet, intimate venues',
+    venue_recommendations: venueRecommendations,
+    intelligence_trend: avgVibeScore > 0.7 ? 'improving' as const : 
+                       avgVibeScore > 0.4 ? 'stable' as const : 'declining' as const
+  };
+}
+
+/**
+ * Generate venue recommendations based on venue intelligence patterns
+ */
+function generateVenueRecommendations(moments: Array<{ metadata: EnhancedProcessedMomentMetadata }>): string[] {
+  const recommendations: string[] = [];
+  
+  const highVibeVenues = moments.filter(m => 
+    m.metadata.location?.venue_intelligence?.vibe_match.score && 
+    m.metadata.location.venue_intelligence.vibe_match.score > 0.7
+  );
+  
+  if (highVibeVenues.length > 0) {
+    recommendations.push('Continue exploring venues with high vibe matches');
+  }
+
+  const socialVenues = moments.filter(m => 
+    m.metadata.location?.venue_intelligence?.social_proof.friend_visits && 
+    m.metadata.location.venue_intelligence.social_proof.friend_visits > 0
+  );
+  
+  if (socialVenues.length > 0) {
+    recommendations.push('Check out venues where your friends have been');
+  }
+
+  const crowdVenues = moments.filter(m => 
+    m.metadata.location?.venue_intelligence?.crowd_intelligence.current_capacity && 
+    m.metadata.location.venue_intelligence.crowd_intelligence.current_capacity > 50
+  );
+  
+  if (crowdVenues.length > 0) {
+    recommendations.push('Try visiting during peak times for more energy');
+  }
+
+  return recommendations.length > 0 ? recommendations : ['Explore new venues to build your intelligence profile'];
+}
+
+/**
  * Generate summary insights from processed moment data
  */
-export function generateMomentInsights(moments: Array<{ metadata: ProcessedMomentMetadata }>) {
+export function generateMomentInsights(moments: Array<{ metadata: ProcessedMomentMetadata | EnhancedProcessedMomentMetadata }>) {
   const peopleAnalysis = analyzePeopleEncounters(moments)
   const locationAnalysis = analyzeLocationPatterns(moments)
+  
+  // Check if we have enhanced moments with venue intelligence
+  const enhancedMoments = moments.filter(m => 
+    'venue_intelligence_score' in m.metadata
+  ) as Array<{ metadata: EnhancedProcessedMomentMetadata }>;
+  
+  const venueIntelligenceAnalysis = enhancedMoments.length > 0 
+    ? analyzeVenueIntelligencePatterns(enhancedMoments)
+    : null;
   
   const vibes = moments
     .map(m => m.metadata.vibe)
@@ -248,14 +444,29 @@ export function generateMomentInsights(moments: Array<{ metadata: ProcessedMomen
   const topVibe = Object.entries(dominantVibe)
     .sort(([,a], [,b]) => b - a)[0]
 
+  // Enhanced social score with venue intelligence
+  const baseSocialScore = peopleAnalysis.unique_connections * 10 + 
+                         (peopleAnalysis.total_people_encountered * 2);
+  const socialIntelligenceBonus = enhancedMoments.reduce((sum, m) => 
+    sum + (m.metadata.social_intelligence_score || 0), 0) / Math.max(enhancedMoments.length, 1) * 0.5;
+  
+  // Enhanced exploration score with venue intelligence
+  const baseExplorationScore = Math.min(100, locationAnalysis.unique_venues * 15 + 
+                                            (locationAnalysis.total_distance / 1000) * 5);
+  const venueIntelligenceBonus = enhancedMoments.reduce((sum, m) => 
+    sum + (m.metadata.venue_intelligence_score || 0), 0) / Math.max(enhancedMoments.length, 1) * 0.3;
+
   return {
     moment_count: moments.length,
     dominant_vibe: topVibe?.[0] || 'neutral',
     people_insights: peopleAnalysis,
     location_insights: locationAnalysis,
-    social_score: peopleAnalysis.unique_connections * 10 + 
-                  (peopleAnalysis.total_people_encountered * 2),
-    exploration_score: Math.min(100, locationAnalysis.unique_venues * 15 + 
-                                     (locationAnalysis.total_distance / 1000) * 5)
+    // Enhanced scores with venue intelligence
+    social_score: Math.round(baseSocialScore + socialIntelligenceBonus),
+    exploration_score: Math.round(baseExplorationScore + venueIntelligenceBonus),
+    // New venue intelligence insights
+    venue_intelligence_insights: venueIntelligenceAnalysis,
+    has_venue_intelligence: enhancedMoments.length > 0,
+    intelligence_coverage: enhancedMoments.length / moments.length
   }
 }

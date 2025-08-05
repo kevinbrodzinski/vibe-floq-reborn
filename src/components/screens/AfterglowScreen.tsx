@@ -55,7 +55,15 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const [insightsOpen, setInsightsOpen] = useState(false);
   const [showCrowdPulse, setShowCrowdPulse] = useState(false);
   
-  const { afterglow, isLoading: afterglowLoading, generate } = useRealtimeAfterglowData(currentDate);
+  const { 
+    afterglow, 
+    isLoading: afterglowLoading, 
+    generate,
+    enhanceWithVenueIntelligence,
+    autoEnhanceRecent,
+    venueIntelligenceStatus,
+    isVenueIntelligenceLoading
+  } = useRealtimeAfterglowData(currentDate);
   const refresh = generate;
   
   const formattedDate = useMemo(
@@ -66,6 +74,21 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   
   // Get current moment for ambient background - disable for now due to type issues
   useAmbientBackground(undefined);
+
+  // Auto-enhance afterglow with venue intelligence when available
+  useEffect(() => {
+    if (afterglow?.id && venueIntelligenceStatus === 'ready' && !isVenueIntelligenceLoading) {
+      // Auto-enhance today's afterglow if it's from today
+      const today = new Date().toISOString().split('T')[0];
+      if (currentDate === today) {
+        const timer = setTimeout(() => {
+          autoEnhanceRecent(1);
+        }, 2000); // Wait 2 seconds after afterglow loads
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [afterglow?.id, venueIntelligenceStatus, isVenueIntelligenceLoading, currentDate, autoEnhanceRecent]);
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -219,15 +242,29 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
           >
             <Calendar className="h-6 w-6 text-white/90" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="w-12 h-12 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 hover:from-primary/30 hover:to-secondary/30 border border-primary/30 transition-all duration-300 hover:scale-110 shadow-lg"
-            onClick={() => setInsightsOpen(true)}
-            aria-label="Open insights and analytics"
-          >
-            <Brain className="h-6 w-6 text-white/90" />
-          </Button>
+          <div className="relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="w-12 h-12 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 hover:from-primary/30 hover:to-secondary/30 border border-primary/30 transition-all duration-300 hover:scale-110 shadow-lg"
+              onClick={() => setInsightsOpen(true)}
+              aria-label="Open insights and analytics"
+            >
+              <Brain className="h-6 w-6 text-white/90" />
+            </Button>
+            
+            {/* Venue Intelligence Status Indicator */}
+            {venueIntelligenceStatus === 'enhanced' && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background animate-pulse">
+                <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75"></div>
+              </div>
+            )}
+            {venueIntelligenceStatus === 'enhancing' && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-background">
+                <div className="absolute inset-0 bg-blue-400 rounded-full animate-spin opacity-75"></div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -490,6 +527,20 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Generate Timeline
               </Button>
+              
+              {/* Venue Intelligence Enhancement Button */}
+              {venueIntelligenceStatus === 'ready' && (
+                <Button 
+                  variant="outline" 
+                  onClick={enhanceWithVenueIntelligence}
+                  disabled={isVenueIntelligenceLoading}
+                  className="hover:glow-primary border-primary/30 text-primary hover:bg-primary/10"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  Enhance with Intelligence
+                </Button>
+              )}
+              
               <Button 
                 variant="default"
                 onClick={() => window.location.href = '/'}

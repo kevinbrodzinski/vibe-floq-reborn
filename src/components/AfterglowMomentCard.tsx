@@ -170,6 +170,7 @@ export function AfterglowMomentCard({
                         encounteredUsers={peopleData.encountered_users}
                         totalPeopleCount={peopleData.total_people_count}
                         momentTitle={moment.title}
+                        socialIntelligence={moment.metadata?.people?.social_intelligence}
                       />
                     </>
                   )

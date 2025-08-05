@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { debounce } from 'lodash-es';
+import { useAfterglowVenueIntelligence } from '@/hooks/useAfterglowVenueIntelligence';
 
 type DailyAfterglow = {
   id: string;
@@ -52,6 +53,13 @@ const EMPTY_STATE: DailyAfterglow = {
 // -----------------------------------
 export function useRealtimeAfterglowData(dateISO: string | null) {
   const qc = useQueryClient();
+  const [venueIntelligenceStatus, setVenueIntelligenceStatus] = useState<'ready' | 'enhancing' | 'enhanced'>('ready');
+  const { 
+    enhanceAfterglowMoment, 
+    getVenueRecommendationsFromHistory,
+    autoEnhanceRecentMoments,
+    isLoading: isVenueIntelligenceLoading
+  } = useAfterglowVenueIntelligence();
 
   // 1️⃣ – plain fetch (no generation side-effects)
   const { data, isFetching, error, refetch } = useQuery<DailyAfterglow | null>({
@@ -77,11 +85,17 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
   // Debounced invalidation to prevent excessive refetches
   const invalidateAfterglow = useMemo(
     () => debounce(
-      () => qc.invalidateQueries({ queryKey: ['afterglow', dateISO] }),
+      () => {
+        qc.invalidateQueries({ queryKey: ['afterglow', dateISO] });
+        // Also invalidate venue intelligence when afterglow changes
+        if (venueIntelligenceStatus === 'enhanced') {
+          setVenueIntelligenceStatus('ready'); // Reset status for re-enhancement
+        }
+      },
       2500,
       { leading: true, trailing: true }
     ),
-    [dateISO, qc]
+    [dateISO, qc, venueIntelligenceStatus]
   );
 
   // 🔄 Real-time subscription for afterglow changes with proper cleanup
@@ -144,11 +158,83 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
     poll();
   };
 
+  // 3️⃣ – enhance afterglow with venue intelligence
+  const enhanceWithVenueIntelligence = async () => {
+    if (!data?.id || venueIntelligenceStatus === 'enhancing') return;
+
+    setVenueIntelligenceStatus('enhancing');
+    
+    try {
+      // Get moments for this afterglow
+      const { data: moments, error: momentsError } = await supabase
+        .from('afterglow_moments')
+        .select('id')
+        .eq('daily_afterglow_id', data.id);
+
+      if (momentsError) throw momentsError;
+
+      if (moments?.length) {
+        const momentIds = moments.map(m => m.id);
+        const result = await enhanceAfterglowMoment(momentIds[0]); // Start with first moment
+        
+        if (result.success) {
+          setVenueIntelligenceStatus('enhanced');
+          // Invalidate afterglow data to refresh with enhanced metadata
+          await qc.invalidateQueries({ queryKey: ['afterglow', dateISO] });
+        } else {
+          setVenueIntelligenceStatus('ready');
+        }
+      }
+    } catch (error) {
+      console.error('Error enhancing afterglow with venue intelligence:', error);
+      setVenueIntelligenceStatus('ready');
+    }
+  };
+
+  // 4️⃣ – get venue recommendations based on afterglow history
+  const getVenueRecommendations = async (lat: number, lng: number) => {
+    try {
+      return await getVenueRecommendationsFromHistory(lat, lng, 10);
+    } catch (error) {
+      console.error('Error getting venue recommendations:', error);
+      return [];
+    }
+  };
+
+  // 5️⃣ – auto-enhance recent moments
+  const autoEnhanceRecent = async (daysBack: number = 1) => {
+    try {
+      setVenueIntelligenceStatus('enhancing');
+      const result = await autoEnhanceRecentMoments(daysBack);
+      
+      if (result.success && result.enhanced_count > 0) {
+        setVenueIntelligenceStatus('enhanced');
+        // Refresh afterglow data
+        await qc.invalidateQueries({ queryKey: ['afterglow', dateISO] });
+      } else {
+        setVenueIntelligenceStatus('ready');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error auto-enhancing recent moments:', error);
+      setVenueIntelligenceStatus('ready');
+      return { success: false, enhanced_count: 0 };
+    }
+  };
+
   return {
     afterglow: data ?? EMPTY_STATE,
     isLoading: isFetching,
     error,
     generate,    // call this from your "Generate Ripple" button
-    data: data ?? EMPTY_STATE  // alias for compatibility
+    data: data ?? EMPTY_STATE,  // alias for compatibility
+    
+    // NEW: Venue intelligence methods
+    enhanceWithVenueIntelligence,
+    getVenueRecommendations,
+    autoEnhanceRecent,
+    venueIntelligenceStatus,
+    isVenueIntelligenceLoading
   };
 }

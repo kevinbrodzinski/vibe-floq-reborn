@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DailyInsightsTab from '@/components/afterglow/DailyInsightsTab';
 import WeeklyTrendsTab from '@/components/afterglow/WeeklyTrendsTab';
+import VenueIntelligenceTab from '@/components/afterglow/VenueIntelligenceTab';
 import WeeklyAITest from '@/components/debug/WeeklyAITest';
 
 interface AfterglowInsightsModalProps {
@@ -40,9 +41,10 @@ export default function AfterglowInsightsModal({
         </DialogDescription>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="weekly">7-day Trends</TabsTrigger>
             <TabsTrigger value="daily" disabled={!afterglowId}>Daily AI</TabsTrigger>
+            <TabsTrigger value="venue-intelligence" disabled={!afterglowId}>🧠 Venue Intel</TabsTrigger>
             <TabsTrigger value="debug">🧪 Test</TabsTrigger>
           </TabsList>
 
@@ -56,6 +58,16 @@ export default function AfterglowInsightsModal({
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No afterglow data available for AI insights.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="venue-intelligence">
+            {afterglowId ? (
+              <VenueIntelligenceTab afterglowId={afterglowId} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No afterglow data available for venue intelligence.</p>
               </div>
             )}
           </TabsContent>
