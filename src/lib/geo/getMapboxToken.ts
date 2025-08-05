@@ -34,10 +34,19 @@ export async function getMapboxToken(): Promise<{ token: string; source: string 
     envTokenPrefix: envToken?.substring(0, 10)
   });
   
-  if (envToken && envToken.startsWith('pk.')) {
+  // Validate token - must start with 'pk.' and not be a placeholder
+  const isValidToken = envToken && 
+    envToken.startsWith('pk.') && 
+    !envToken.includes('your_mapbox_token_here') &&
+    !envToken.includes('YOUR_MAPBOX_TOKEN') &&
+    envToken.length > 20;
+  
+  if (isValidToken) {
     cached = { token: envToken, source: 'env' };
     console.log('[getMapboxToken] ✅ Using environment token');
     return cached;
+  } else if (envToken) {
+    console.log('[getMapboxToken] ⚠️ Environment token invalid/placeholder, falling back');
   }
 
   /* 2️⃣  Try Supabase Edge Function for production deployment */
