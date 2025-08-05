@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { databaseCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { locationBus } from '@/lib/location/LocationBus';
-import { useLocationHealth, useLocationMetrics, useLocationCoords, useLocationStatus, useLocationSelectors } from '@/lib/store/useLocationStore';
+import { useLocationHealth, useLocationMetrics, useLocationCoords, useMovementContext } from '@/lib/store/useLocationStore';
 
 interface HealthMetrics {
   locationManager: ReturnType<typeof globalLocationManager.getDebugInfo>;
@@ -25,8 +25,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
   const systemHealth = useLocationHealth();
   const storeMetrics = useLocationMetrics();
   const coords = useLocationCoords();
-  const { status, error, hasPermission } = useLocationStatus();
-  const { getSystemHealthScore } = useLocationSelectors();
+  const movementContext = useMovementContext();
 
   useEffect(() => {
     if (!isVisible) return;
