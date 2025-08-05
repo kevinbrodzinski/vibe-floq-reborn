@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/84</span>
+                <span class='fraction'>0/96</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/84</span>
+                <span class='fraction'>0/96</span>
             </div>
         
             
@@ -146,7 +146,31 @@
 <a name='L81'></a><a href='#L81'>81</a>
 <a name='L82'></a><a href='#L82'>82</a>
 <a name='L83'></a><a href='#L83'>83</a>
-<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -258,7 +282,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >// PostGIS-powered location functions</span>
 <span class="cstat-no" title="statement not covered" >export { usePostGISLocation } from '../usePostGISLocation';</span>
-<span class="cstat-no" title="statement not covered" >export { useLocationMetrics } from '../useLocationMetrics';</span>
+<span class="cstat-no" title="statement not covered" >export { useLocationMetrics as useLocationMetricsDB } from '../useLocationMetrics';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >// Migration helper for transitioning to PostGIS</span>
 <span class="cstat-no" title="statement not covered" >export { useLocationMigration } from '../useLocationMigration';</span>
@@ -272,6 +296,17 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >// Read-only hooks optimized for render-heavy components</span>
 <span class="cstat-no" title="statement not covered" >export { useReadOnlyLocation, useReadOnlyLocationCoords, useReadOnlyMovementContext } from './useReadOnlyLocation';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >// Store-based location state hooks</span>
+<span class="cstat-no" title="statement not covered" >export { </span>
+<span class="cstat-no" title="statement not covered" >  useLocationCoords, </span>
+<span class="cstat-no" title="statement not covered" >  useLocationCoordsWithTime, </span>
+<span class="cstat-no" title="statement not covered" >  useMovementContext, </span>
+<span class="cstat-no" title="statement not covered" >  useLocationHealth, </span>
+<span class="cstat-no" title="statement not covered" >  useLocationMetrics, </span>
+<span class="cstat-no" title="statement not covered" >  useLocationStatus, </span>
+<span class="cstat-no" title="statement not covered" >  useLocationActions </span>
+<span class="cstat-no" title="statement not covered" >} from '@/lib/store/useLocationStore';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >// Export shared types for downstream packages</span>
 <span class="cstat-no" title="statement not covered" >export type { GeoCoords, MovementContext, LocationHealth, SystemMetrics, UnifiedLocationOptions, UnifiedLocationState } from '@/lib/location/types';</span>
@@ -298,7 +333,8 @@
 <span class="cstat-no" title="statement not covered" > * 4. For PostGIS-powered location features:</span>
 <span class="cstat-no" title="statement not covered" > *    useLocationMigration() - provides unified interface</span>
 <span class="cstat-no" title="statement not covered" > *    usePostGISLocation() - direct PostGIS access</span>
-<span class="cstat-no" title="statement not covered" > *    useLocationMetrics() - performance monitoring</span>
+<span class="cstat-no" title="statement not covered" > *    useLocationMetricsDB() - database metrics operations</span>
+<span class="cstat-no" title="statement not covered" > *    useLocationMetrics() - store metrics state (from store)</span>
 <span class="cstat-no" title="statement not covered" > * </span>
 <span class="cstat-no" title="statement not covered" > * 5. For coordinate display:</span>
 <span class="cstat-no" title="statement not covered" > *    Continue using useLocationDisplay()</span>
@@ -319,7 +355,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-05T00:47:54.821Z
+                at 2025-08-05T00:54:35.489Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
