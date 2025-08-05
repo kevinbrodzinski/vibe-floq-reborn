@@ -278,11 +278,35 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     (async ()=>{
       try{
         console.log('[FieldWebMap] 🗺️ Starting map initialization...');
-        console.log('[FieldWebMap] Container state:', {
+        
+        // Check container dimensions before initialization
+        const containerRect = mapContainerRef.current!.getBoundingClientRect();
+        console.log('[FieldWebMap] Container dimensions:', {
           hasContainer: !!mapContainerRef.current,
           hasExistingMap: !!mapRef.current,
-          containerInDOM: !!document.querySelector('[data-map-container]')
+          containerInDOM: !!document.querySelector('[data-map-container]'),
+          width: containerRect.width,
+          height: containerRect.height,
+          rect: containerRect
         });
+
+        // Prevent initialization with zero-dimension containers
+        if (containerRect.width === 0 || containerRect.height === 0) {
+          console.warn('[FieldWebMap] Container has zero dimensions, forcing resize...');
+          // Force container height if needed
+          mapContainerRef.current!.style.height = '400px';
+          mapContainerRef.current!.style.minHeight = '400px';
+          
+          // Wait a frame for the DOM to update
+          await new Promise(resolve => requestAnimationFrame(resolve));
+          
+          const newRect = mapContainerRef.current!.getBoundingClientRect();
+          console.log('[FieldWebMap] After resize:', newRect);
+          
+          if (newRect.width === 0 || newRect.height === 0) {
+            throw new Error('Container still has zero dimensions after resize attempt');
+          }
+        }
 
         // CRITICAL: Prepare container to prevent pollution error (sync import)
         const containerManager = MapContainerManager.getInstance();
@@ -343,6 +367,20 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           console.log('🗺️ Map loaded successfully');
           console.log('🗺️ WebGL contexts:', performance.getEntriesByType('frame').filter(e => e.name?.includes('WebGL')).length);
           console.log('🗺️ Canvas elements:', document.querySelectorAll('.mapboxgl-canvas').length);
+          
+          // Add automatic resize handling for zero-dimension containers
+          const handleResize = () => {
+            const rect = mapContainerRef.current?.getBoundingClientRect();
+            if (rect && (rect.width === 0 || rect.height === 0)) {
+              console.warn('[FieldWebMap] Detected zero dimensions, triggering resize...');
+              setTimeout(() => map.resize(), 100);
+            } else {
+              map.resize();
+            }
+          };
+          
+          // Initial resize after load
+          setTimeout(handleResize, 100);
           
           setStatus('ready');
           
@@ -859,8 +897,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
-      <div className="absolute inset-0" style={{ height: '100%', width: '100%' }}>
-        {/* Map container with explicit height to ensure proper rendering */}
+      <div className="absolute inset-0" style={{ height: '100vh', width: '100%', minHeight: '400px' }}>
+        {/* Map container with explicit height to prevent zero-height issues */}
         <div 
           ref={mapContainerRef} 
           data-map-container
@@ -868,8 +906,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           style={{ 
             width: '100%',
             height: '100%',
-            minHeight: '100vh',
-            border: '2px solid red' // DEBUG: Verify container visibility
+            minHeight: '400px', // Prevent zero-height containers
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
           }}
         />
         

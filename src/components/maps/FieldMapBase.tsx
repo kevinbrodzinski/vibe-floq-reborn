@@ -16,7 +16,7 @@ export const FieldMapBase: React.FC<FieldMapBaseProps> = ({
   const { onRegionChange } = useFieldViewport();
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0" style={{ height: '100vh', width: '100%', minHeight: '400px' }}>
       <FieldWebMap 
         visible={visible} 
         onRegionChange={onRegionChange} 
