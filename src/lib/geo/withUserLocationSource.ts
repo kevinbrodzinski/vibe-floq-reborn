@@ -45,11 +45,19 @@ export function attachUserLocationSource(map: mapboxgl.Map) {
   };
 }
 
-export function setUserLocation(map: mapboxgl.Map, lat: number, lng: number, accuracy = 15) {
+export function setUserLocation(
+  map: mapboxgl.Map,
+  lat: number,
+  lng: number,
+  accuracy = 15,
+  attempt = 0                // ← new
+) {
+  const MAX_RETRY = 5;       // ≈ 1 ½ s total
+
   const push = () => {
-    if (!map.isStyleLoaded()) return false;
+    if (!map.isStyleLoaded()) return false;   // style not ready
     const src = map.getSource(USER_LOC_SRC) as mapboxgl.GeoJSONSource | undefined;
-    if (!src?.setData) return false;
+    if (!src?.setData) return false;          // source missing
 
     src.setData({
       type: 'FeatureCollection',
@@ -62,5 +70,15 @@ export function setUserLocation(map: mapboxgl.Map, lat: number, lng: number, acc
     return true;
   };
 
-  if (!push()) map.once('style.load', push);
+  // success on first try?
+  if (push()) return;
+
+  // retry logic ────────────────────────────────────────────────
+  if (attempt >= MAX_RETRY) {
+    console.warn('[setUserLocation] gave up after %d attempts', MAX_RETRY);
+    return;
+  }
+
+  // wait 100 ms, then try again (after style or source arrives)
+  setTimeout(() => setUserLocation(map, lat, lng, accuracy, attempt + 1), 100);
 }
