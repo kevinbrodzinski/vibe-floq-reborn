@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 export const useWeather = () => {
-  const { coords, error: geoError, status } = useGeo();
+  const { coords, error: geoError, status } = useUnifiedLocation({
+    hookId: 'useWeather',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const geoLoading = status === 'loading';

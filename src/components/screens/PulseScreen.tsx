@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, MapPin, Users, Clock, Star, TrendingUp, Sparkles, Flame, Activity, Coffee, Zap } from 'lucide-react';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useActiveFloqs } from '@/hooks/useActiveFloqs';
 import { useNearbyVenues } from '@/hooks/useNearbyVenues';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
@@ -164,7 +164,11 @@ export const PulseScreen: React.FC = () => {
   };
 
   // Data fetching hooks
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'PulseScreen',
+    enableTracking: false,
+    enablePresence: false
+  });
   const { data: activeFloqsPages } = useActiveFloqs();
   const activeFloqs = activeFloqsPages?.pages?.flatMap(page => page.data) ?? [];
   const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.3);

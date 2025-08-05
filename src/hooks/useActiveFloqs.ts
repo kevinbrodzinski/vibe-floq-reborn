@@ -1,9 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 export const useActiveFloqs = () => {
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'useActiveFloqs',
+    enableTracking: false,
+    enablePresence: false
+  });
 
   return useInfiniteQuery({
     queryKey: ['active-floqs', coords?.lat, coords?.lng],

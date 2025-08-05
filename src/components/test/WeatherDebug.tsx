@@ -1,9 +1,13 @@
 import React from 'react';
 import { useWeather } from '@/hooks/useWeather';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 export const WeatherDebug: React.FC = () => {
-  const { coords, error: geoError, status } = useGeo();
+  const { coords, error: geoError, status } = useUnifiedLocation({
+    hookId: 'WeatherDebug',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const geoLoading = status === 'loading';

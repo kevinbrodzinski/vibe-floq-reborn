@@ -1,10 +1,14 @@
 import React from 'react';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useWeather } from '@/hooks/useWeather';
 import { WeatherBanner } from '@/components/ui/WeatherBanner';
 
 export const WeatherTest: React.FC = () => {
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'WeatherTest',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const { data: weather, isLoading, error } = useWeather();

@@ -49,6 +49,9 @@ export type { GeoCoords, MovementContext, LocationHealth, SystemMetrics, Unified
 export { useGeo, useLatLng, useLocation, useGeoPos } from '../useGeo';
 export { useMyLocation } from '../useMyLocation';
 
+// Compatibility layer for gradual migration
+export { useCompatGeo, getMigrationMetrics, getMigrationStatus } from './compatibility';
+
 /**
  * MIGRATION GUIDE:
  * 

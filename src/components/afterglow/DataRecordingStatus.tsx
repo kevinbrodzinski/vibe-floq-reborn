@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { CheckCircle, AlertCircle, Zap, Building2, Loader2 } from 'lucide-react';
 import { debounce } from 'lodash-es';
 import { useVenueSync } from '@/hooks/useVenueSync';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 interface DataStats {
   venuePresence: number;
@@ -29,7 +29,11 @@ export const DataRecordingStatus = () => {
   const [connectionStatus, setConnectionStatus] = useState<string>('disconnected');
   
   // Location and venue sync
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'DataRecordingStatus',
+    enableTracking: false,
+    enablePresence: false
+  });
   const venueSync = useVenueSync({ showToasts: true });
 
   // Debounced stats fetching to prevent excessive API calls

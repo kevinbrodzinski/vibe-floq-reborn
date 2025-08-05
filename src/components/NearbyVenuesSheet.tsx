@@ -5,7 +5,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VenueListItem } from './VenueListItem';
 import { useVenuesNearMe } from '@/hooks/useVenuesNearMe';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
 
 interface NearbyVenuesSheetProps {
@@ -15,12 +15,15 @@ interface NearbyVenuesSheetProps {
 }
 
 export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesSheetProps) {
-  const { coords, status, error } = useGeo();
+  const { coords, status, error, hasPermission, getCurrentLocation } = useUnifiedLocation({
+    hookId: 'NearbyVenuesSheet',
+    enableTracking: false,
+    enablePresence: false
+  });
   const lat = coords?.lat;
   const lng = coords?.lng;
   const locationLoading = status === 'loading';
-  const hasPermission = !!(lat && lng);
-  const requestLocation = () => window.location.reload();
+  const requestLocation = getCurrentLocation;
   const { 
     data, 
     isLoading, 

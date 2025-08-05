@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrendingVenues, autoSyncVenues } from '@/lib/api/venues';
-import { useGeo } from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useAuth } from '@/providers/AuthProvider';
 
 export const useTrendingVenues = (
@@ -8,7 +8,11 @@ export const useTrendingVenues = (
   limit = 15,
   options: { autoSync?: boolean } = {}
 ) => {
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'useTrendingVenues',
+    enableTracking: false,
+    enablePresence: false
+  });
   const { user } = useAuth();
   const { autoSync = true } = options;
 

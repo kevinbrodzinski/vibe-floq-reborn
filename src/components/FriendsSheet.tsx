@@ -17,7 +17,7 @@ import { useNearbyFriends }   from '@/hooks/useNearbyFriends';
 import { useEnhancedFriendDistances } from '@/hooks/useEnhancedFriendDistances';
 import { useProfileCache }    from '@/hooks/useProfileCache';
 import { useRealtimeFriends } from '@/hooks/useRealtimeFriends';
-import { useGeo }             from '@/hooks/useGeo';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useQuery }           from '@tanstack/react-query';
 import { supabase }           from '@/integrations/supabase/client';
 import { getAvatarUrl }       from '@/lib/avatar';
@@ -45,7 +45,11 @@ export const FriendsSheet = ({
     updating,
   } = useUnifiedFriends();
 
-  const { coords } = useGeo();
+  const { coords } = useUnifiedLocation({
+    hookId: 'FriendsSheet',
+    enableTracking: false,
+    enablePresence: false
+  });
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } =
     useNearbyFriends(coords?.lat, coords?.lng, { km: 0.5 });
 
