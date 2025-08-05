@@ -109,18 +109,22 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     gcTime: 60000, // 1 minute
   });
 
-  // Debug logging with more detail
-  console.log('[AppAccessGuard Debug]', {
-    user: !!user,
-    profileId: user?.id,
-    preferences: !!preferences,
-    preferencesVersion: preferences?.onboarding_version,
-    onboardingVersion: ONBOARDING_VERSION,
-    onboardingComplete,
-    isSharedRoute: isSharedPlanRoute,
-    isDirectRoute: isDirectPlanRoute,
-    currentPath: location.pathname
-  });
+  // Debug logging optimized to prevent infinite loops
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AppAccessGuard Debug]', {
+        user: !!user,
+        profileId: user?.id,
+        preferences: !!preferences,
+        preferencesVersion: preferences?.onboarding_version,
+        onboardingVersion: ONBOARDING_VERSION,
+        onboardingComplete,
+        isSharedRoute: isSharedPlanRoute,
+        isDirectRoute: isDirectPlanRoute,
+        currentPath: location.pathname
+      });
+    }
+  }, [user?.id, preferences?.onboarding_version, onboardingComplete, isSharedPlanRoute, isDirectPlanRoute, location.pathname]);
 
   if (loading || (user && loadingPrefs) || onboardingLoading || showSplash === null) {
     return (
