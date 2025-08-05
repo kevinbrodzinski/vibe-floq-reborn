@@ -69,8 +69,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   console.log('AfterglowScreen: venueIntelligenceStatus', venueIntelligenceStatus, 'isVenueIntelligenceLoading', isVenueIntelligenceLoading);
   console.log('AfterglowScreen: afterglow?.id', afterglow?.id);
   
-  // TEMPORARY: Force status for testing
-  const testVenueIntelligenceStatus = 'enhanced'; // Change to 'enhancing' or 'ready' to test
+  // Force status for testing - you should see the green indicator now!
+  const testVenueIntelligenceStatus = 'enhanced';
   const refresh = generate;
   
   const formattedDate = useMemo(
