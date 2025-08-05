@@ -133,7 +133,7 @@ export const useAutoCheckIn = () => {
           // Started being near a new venue
           currentCheckInRef.current = {
             venueId: eligibleVenue.venueId,
-            name: eligibleVenue.name || `Venue ${eligibleVenue.venueId}`,
+            name: eligibleVenue.name || 'Unknown Venue',
             checkedInAt: now,
             lastSeen: now,
             confidence: eligibleVenue.overallConfidence || eligibleVenue.confidence,

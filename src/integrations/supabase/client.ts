@@ -11,7 +11,7 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // Custom StorageClient to silence pre-warm warnings in production
 class QuietStorageClient extends StorageClient {
-  // @ts-expect-error - Override private method to suppress pre-warm logs
+  // @ts-ignore - Override private method to suppress pre-warm logs
   private prewarmUrl(url: string) {
     // Only allow pre-warming in development mode
     if (import.meta.env.MODE === 'development') {

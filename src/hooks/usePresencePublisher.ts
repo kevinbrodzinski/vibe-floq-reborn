@@ -82,13 +82,22 @@ export const usePresencePublisher = (isActive: boolean) => {
     try {
       // Use circuit breaker to protect database from overload
       await executeWithCircuitBreaker(
-        () => supabase.rpc('upsert_presence', {
-          p_lat: latitude,
-          p_lng: longitude,
-          p_vibe: vibe,
-          p_visibility: 'public'
-        } as any),
-        'presence-upsert'
+        async () => {
+          const { data, error } = await supabase.rpc('upsert_presence', {
+            p_lat: latitude,
+            p_lng: longitude,
+            p_vibe: vibe,
+            p_visibility: 'public'
+          } as any);
+          
+          if (error) throw error;
+          return data;
+        },
+        'medium',
+        {
+          component: 'presence-publisher',
+          operationType: 'presence-upsert'
+        }
       )
 
       console.log('[PRESENCE_PUBLISHER] Presence upserted successfully')
@@ -128,7 +137,24 @@ export const usePresencePublisher = (isActive: boolean) => {
     // Use global location manager instead of direct watchPosition
     unsubscribeRef.current = globalLocationManager.subscribe(
       `presence-publisher-${user.id}`,
-      publishPresence
+      (coords) => {
+        // Create mock GeolocationPosition from coords
+        const position: GeolocationPosition = {
+          coords: {
+            latitude: coords.lat,
+            longitude: coords.lng,
+            accuracy: coords.accuracy || 50,
+            altitude: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null,
+            toJSON: function() { return this; }
+          },
+          timestamp: Date.now(),
+          toJSON: function() { return this; }
+        };
+        publishPresence(position);
+      }
     );
 
     return () => {

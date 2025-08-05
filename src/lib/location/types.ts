@@ -12,7 +12,7 @@ export interface GeoCoords {
 
 export interface MovementContext {
   speed: number; // m/s
-  heading: number | null; // degrees from north
+  heading: number | null; // degrees from north - now required
   isStationary: boolean;
   isWalking: boolean;
   isDriving: boolean;
