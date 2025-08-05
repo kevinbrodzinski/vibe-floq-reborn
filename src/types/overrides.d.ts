@@ -66,3 +66,32 @@ declare module '@/integrations/supabase/types' {
     [key: string]: any;
   }
 }
+
+/* Location system type extensions */
+export type LocationError = 'denied' | 'unavailable' | 'timeout' | 'permission_denied' | 'position_unavailable';
+
+/* Enhanced ML types for vibe prediction */
+export interface MLFeatureVector {
+  accelMean: number;
+  accelStd: number;
+  micDb: number;
+  stepRate: number;
+  anomaly?: number;
+}
+
+export interface RawMLPrediction {
+  featureVector: MLFeatureVector;
+  ensembleScores: Record<string, number>;
+  uncertainty: number;
+  predictionInterval: [number, number];
+}
+
+export interface VibePredictionEnhanced {
+  vibe: string;
+  score: number;
+  probability: number;
+  timeframe: string;
+  reason: string;
+}
+
+export function toVibePredictions(model: RawMLPrediction): VibePredictionEnhanced[];

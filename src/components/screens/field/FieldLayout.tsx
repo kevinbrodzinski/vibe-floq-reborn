@@ -15,6 +15,7 @@ import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
 import { useFieldData } from "./FieldDataProvider";
 import { BottomHud } from "@/components/layout/BottomHud";
+import type { LocationError } from "@/types/overrides";
 
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
@@ -90,7 +91,7 @@ export const FieldLayout = () => {
   const hasCoords = location?.coords?.lat != null && location?.coords?.lng != null;
   const geoReady = isLocationReady && hasCoords;
   const geoLoading = location?.status === 'loading' || location?.status === 'idle';
-  const geoError = location?.error && !['unavailable', 'timeout'].includes(location.error);
+  const geoError = location?.error && !['unavailable', 'timeout'].includes(location.error as LocationError);
   
   // Enhanced debugging
   console.log('[FieldLayout] Location gate state:', {
@@ -132,7 +133,11 @@ export const FieldLayout = () => {
             <GeolocationPrompt
               onRequestLocation={() => {
                 console.log('[FieldLayout] User requested location');
-                location.startTracking();
+                if (location?.startTracking) {
+                  location.startTracking();
+                } else {
+                  console.error('[FieldLayout] startTracking not available in location context');
+                }
               }}
               error={location?.error || null}
               loading={geoLoading}
