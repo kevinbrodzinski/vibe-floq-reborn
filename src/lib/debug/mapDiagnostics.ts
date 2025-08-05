@@ -3,7 +3,7 @@
  * Run this when map appears black/empty to identify the root cause
  */
 
-export function runMapDiagnostics() {
+export async function runMapDiagnostics() {
   console.log('🔍 === MAPBOX DIAGNOSTICS STARTING ===\n');
   
   const map = (window as any).__FLOQ_MAP;
@@ -11,11 +11,49 @@ export function runMapDiagnostics() {
   
   if (!map) {
     console.log('❌ __FLOQ_MAP not found - map not initialized yet');
-    return { error: 'Map not initialized' };
+    
+    // Check if getMapInstance works
+    try {
+      const { getMapInstance } = await import('@/lib/geo/project');
+      const projectMap = getMapInstance();
+      if (projectMap) {
+        console.log('✅ getMapInstance() returns map, but __FLOQ_MAP not set');
+        results.mapInstance = '⚠️ Found via getMapInstance but not __FLOQ_MAP';
+      } else {
+        console.log('❌ getMapInstance() also returns null');
+        results.mapInstance = '❌ Both sources null';
+      }
+    } catch (e) {
+      console.log('❌ Error checking getMapInstance:', e);
+      results.mapInstance = '❌ Error accessing project map';
+    }
+    
+    return { error: 'Map not initialized', ...results };
   }
   
-  // ✔︎ 1. Style actually loaded?
-  console.log('1. 🎨 Checking if style loaded...');
+  // ✔︎ 1. Check Mapbox access token
+  console.log('1. 🔑 Checking access token...');
+  try {
+    // @ts-ignore - accessing internal Mapbox property
+    const token = map._requestManager?._accessToken;
+    if (token) {
+      const tokenPrefix = token.substring(0, 8);
+      results.accessToken = `✅ Token found: ${tokenPrefix}...`;
+      console.log(`   ✅ Access token found: ${tokenPrefix}...`);
+      
+      // Check for network errors
+      console.log('   💡 Check Network tab for 401/403 errors on tile requests');
+    } else {
+      results.accessToken = '❌ No access token found';
+      console.log('   ❌ No access token found in map._requestManager._accessToken');
+    }
+  } catch (e) {
+    results.accessToken = '❌ Error accessing token';
+    console.log('   ❌ Error accessing access token:', e);
+  }
+  
+  // ✔︎ 2. Style actually loaded?
+  console.log('\n2. 🎨 Checking if style loaded...');
   const styleLoaded = map.isStyleLoaded();
   results.styleLoaded = styleLoaded ? '✅ Style loaded' : '❌ Style not loaded';
   console.log(`   ${results.styleLoaded}`);
@@ -25,11 +63,24 @@ export function runMapDiagnostics() {
     console.log('   💡 Verify Mapbox token is valid');
   }
   
-  // ✔︎ 2. Canvas present & sized?
-  console.log('\n2. 📐 Checking canvas size...');
+  // ✔︎ 3. Canvas present & sized?
+  console.log('\n3. 📐 Checking canvas size...');
   const canvas = map.getCanvas();
   const rect = canvas.getBoundingClientRect();
   results.canvasSize = `${rect.width}x${rect.height}`;
+  
+  // Check for multiple canvas elements
+  const canvasElements = document.querySelectorAll('.mapboxgl-canvas');
+  results.canvasCount = `${canvasElements.length} canvas elements`;
+  console.log(`   Canvas count: ${results.canvasCount}`);
+  
+  if (canvasElements.length > 1) {
+    console.log('   ❌ Multiple Mapbox canvases detected - this causes conflicts!');
+    console.log('   💡 Check for duplicate <FieldWebMap> components');
+    results.canvasCountStatus = '❌ Multiple canvases';
+  } else {
+    results.canvasCountStatus = '✅ Single canvas';
+  }
   
   if (rect.width === 0 || rect.height === 0) {
     console.log(`   ❌ Canvas size: ${rect.width}x${rect.height} (ZERO SIZE!)`);
@@ -41,8 +92,30 @@ export function runMapDiagnostics() {
     results.canvasSizeStatus = '✅ Good size';
   }
   
-  // ✔︎ 3. Center position check
-  console.log('\n3. 🌍 Checking map center...');
+  // ✔︎ 4. setMapInstance check
+  console.log('\n4. 🔗 Checking setMapInstance registration...');
+  try {
+    const { getMapInstance } = await import('@/lib/geo/project');
+    const projectMap = getMapInstance();
+    
+    if (projectMap === map) {
+      console.log('   ✅ setMapInstance() was called correctly');
+      results.mapInstanceStatus = '✅ Properly registered';
+    } else if (projectMap) {
+      console.log('   ⚠️  getMapInstance() returns different map object');
+      results.mapInstanceStatus = '⚠️ Different map object';
+    } else {
+      console.log('   ❌ getMapInstance() returns null - setMapInstance() never called');
+      results.mapInstanceStatus = '❌ Not registered';
+      console.log('   💡 Check that map.once("load", ...) calls setMapInstance(map)');
+    }
+  } catch (e) {
+    console.log('   ❌ Error checking setMapInstance:', e);
+    results.mapInstanceStatus = '❌ Error checking registration';
+  }
+  
+  // ✔︎ 5. Center position check
+  console.log('\n5. 🌍 Checking map center...');
   const center = map.getCenter();
   const zoom = map.getZoom();
   results.center = `[${center.lng.toFixed(4)}, ${center.lat.toFixed(4)}] zoom: ${zoom.toFixed(1)}`;
@@ -144,5 +217,6 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   setTimeout(() => {
     (window as any).runMapDiagnostics = runMapDiagnostics;
     console.log('🔍 Map diagnostics available: window.runMapDiagnostics()');
+    console.log('💡 Note: This is now an async function, use: await window.runMapDiagnostics()');
   }, 1000);
 }

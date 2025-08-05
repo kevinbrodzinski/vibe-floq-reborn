@@ -7,6 +7,7 @@ if (import.meta.env.DEV) {
   import('@/lib/debug/immediateLocationFix');
   import('@/lib/debug/mapDiagnostics');
   import('@/lib/debug/quickMapFixes');
+  import('@/lib/debug/mockGeolocation');
 }
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
