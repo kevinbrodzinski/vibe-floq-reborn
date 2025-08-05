@@ -24,6 +24,7 @@ import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
+import '@/lib/debug/canvasMonitor';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -241,11 +242,11 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     });
   }, [location.coords?.lat, location.coords?.lng]);
 
-  // Handle resize events with debouncing to prevent RAF flooding + loop detection
+  // Handle resize events with debouncing + idle callback for performance
   const resizeRef = useRef<number>();
   const resizeCountRef = useRef(0);
 
-  // Set up resize listener with debouncing + loop detection
+  // Set up resize listener with debouncing + loop detection + performance optimization
   useEffect(() => {
     const onResize = () => {
       if (mapRef.current) {
@@ -254,8 +255,6 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         // 🔍 DETECT RESIZE LOOPS: Warn if too many resizes in short time
         if (resizeCountRef.current > 10) {
           console.warn('🚨 Resize loop detected! Count:', resizeCountRef.current);
-        } else {
-          console.log('📐 Map resize triggered', resizeCountRef.current);
         }
         
         cancelAnimationFrame(resizeRef.current!);
@@ -291,7 +290,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   }, []);
 
   useEffect(()=>{
-    if(!mapContainerRef.current||mapRef.current) return;
+    // 🔧 CRITICAL: Prevent double-mount flicker in React 18 Strict Mode
+    if (mapRef.current) {
+      console.log('[FieldWebMap] 🔄 Map already exists, skipping double-mount');
+      return;
+    }
+    
+    if(!mapContainerRef.current) return;
     let dead=false;
 
     (async ()=>{
