@@ -42,7 +42,7 @@ export const SmartFloqCard = React.memo<SmartFloqCardProps>(({
         floq={{
           id: floq.id,
           title: floq.title || 'Untitled Floq',
-          primary_vibe: floq.primary_vibe,
+          primary_vibe: (floq.primary_vibe as any) || 'social',
           participant_count: floq.participant_count || 0,
           distance_meters: floq.distance_meters || 0,
           starts_at: floq.starts_at,

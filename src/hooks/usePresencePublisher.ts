@@ -1,167 +1,141 @@
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
+import { publishPresence } from '@/lib/presence/publishPresence';
+import { trackError } from '@/lib/trackError';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
-import { useEffect, useRef } from 'react'
-import { supabase } from '@/integrations/supabase/client'
-import { useAuth } from '@/components/auth/EnhancedAuthProvider'
-import { useCurrentVibe } from '@/lib/store/useVibe'
-import { storage } from '@/lib/storage'
-import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker'
-import { globalLocationManager } from '@/lib/location/GlobalLocationManager'
-import ngeohash from 'ngeohash'
+type Vibe = 'social' | 'chill' | 'focused' | 'energetic' | 'open' | 'curious';
 
-interface CachedCoords {
-  latitude: number
-  longitude: number
-  timestamp: number
+interface UsePresencePublisherOptions {
+  interval?: number;
+  accuracy?: 'high' | 'medium' | 'low';
+  enableBackground?: boolean;
 }
 
-export const usePresencePublisher = (isActive: boolean) => {
-  const { user } = useAuth()
-  const vibe = useCurrentVibe()
-  const unsubscribeRef = useRef<(() => void) | null>(null)
-  const lastPublishRef = useRef<number>(0)
+export function usePresencePublisher(
+  vibe: Vibe,
+  isActive: boolean = true,
+  options: UsePresencePublisherOptions = {}
+) {
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const { data: user } = useCurrentUser();
 
-  // Cache coordinates for fallback
-  const cacheCoordinates = (coords: GeolocationCoordinates) => {
-    const cached: CachedCoords = {
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      timestamp: Date.now()
-    }
-    storage.setJSON('lastCoords', cached).catch(console.error);
-  }
+  const updatePosition = useCallback(async (position: GeolocationPosition) => {
+    if (!user || !isActive) return;
 
-  const getCachedCoordinates = async (): Promise<CachedCoords | null> => {
     try {
-      const coords = await storage.getJSON<CachedCoords>('lastCoords');
-      if (!coords) return null;
+      setIsPublishing(true);
+      setError(null);
+
+      // Simple presence update to prevent infinite loops
+      await publishPresence(position);
+      setLastUpdate(new Date());
       
-      // Use cached coordinates if they're less than 10 minutes old
-      if (Date.now() - coords.timestamp < 10 * 60 * 1000) {
-        return coords;
-      }
-    } catch (error) {
-      console.warn('[PRESENCE_PUBLISHER] Failed to parse cached coordinates:', error);
+    } catch (err: any) {
+      console.error('Error publishing presence:', err);
+      setError(err.message);
+      trackError(err, { context: 'presence_publisher' });
+    } finally {
+      setIsPublishing(false);
     }
-    return null;
-  }
+  }, [user, isActive]);
 
   useEffect(() => {
-    if (!isActive || !user || !vibe) {
+    if (!user || !isActive) {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-        unsubscribeRef.current = null
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
-      return
+      return;
     }
-
-    console.log('[PRESENCE_PUBLISHER] Starting location watch with vibe:', vibe)
-
-      const publishPresence = async (position: GeolocationPosition) => {
-    const now = Date.now()
-    
-    // Throttle to max once per 30 seconds
-    if (now - lastPublishRef.current < 30000) {
-      return
-    }
-
-    const { latitude, longitude } = position.coords
-    
-    // Cache coordinates for fallback
-    cacheCoordinates(position.coords)
-    
-    const gh5 = ngeohash.encode(latitude, longitude, 5)
-    
-    console.log('[PRESENCE_PUBLISHER] Publishing presence:', {
-      lat: latitude,
-      lng: longitude,
-      vibe,
-      gh5,
-      profile_id: user.id
-    })
 
     try {
-      // Use circuit breaker to protect database from overload
-      await executeWithCircuitBreaker(
-        async () => {
-          const { data, error } = await supabase.rpc('upsert_presence', {
-            p_lat: latitude,
-            p_lng: longitude,
-            p_vibe: vibe,
-            p_visibility: 'public'
-          } as any);
-          
-          if (error) throw error;
-          return data;
-        },
-        'medium',
-        {
-          component: 'presence-publisher',
-          operationType: 'presence-upsert'
-        }
-      )
-
-      console.log('[PRESENCE_PUBLISHER] Presence upserted successfully')
-      lastPublishRef.current = now
-    } catch (err) {
-      console.error('[PRESENCE_PUBLISHER] Exception upserting presence:', err)
-    }
-  }
-
-    const handleError = (error: GeolocationPositionError) => {
-      console.error('[PRESENCE_PUBLISHER] Geolocation error:', {
-        code: error.code,
-        message: error.message
-      })
-      
-      // Try to use cached coordinates as fallback
-      getCachedCoordinates().then(cached => {
-        if (cached) {
-        console.log('[PRESENCE_PUBLISHER] Using cached coordinates as fallback')
-        const fallbackPosition = {
-          coords: {
-            latitude: cached.latitude,
-            longitude: cached.longitude,
-            accuracy: 1000, // Lower accuracy for cached data
-            altitude: null,
-            altitudeAccuracy: null,
-            heading: null,
-            speed: null
-          },
-          timestamp: cached.timestamp
-        } as GeolocationPosition
-        publishPresence(fallbackPosition);
-        }
-      }).catch(console.error);
-    }
-
-    // Use global location manager instead of direct watchPosition
-    unsubscribeRef.current = globalLocationManager.subscribe(
-      `presence-publisher-${user.id}`,
-      (coords) => {
-        // Create mock GeolocationPosition from coords
-        const position: GeolocationPosition = {
-          coords: {
-            latitude: coords.lat,
-            longitude: coords.lng,
-            accuracy: coords.accuracy || 50,
-            altitude: null,
-            altitudeAccuracy: null,
-            heading: null,
-            speed: null,
+      // Use global location manager to prevent infinite loops
+      unsubscribeRef.current = globalLocationManager.subscribe(
+        `presence-publisher-${user.id}`,
+        (coords) => {
+          // Create valid GeolocationPosition object
+          const position: GeolocationPosition = {
+            coords: {
+              latitude: coords.lat,
+              longitude: coords.lng,
+              accuracy: coords.accuracy || 50,
+              altitude: null,
+              altitudeAccuracy: null,
+              heading: null,
+              speed: null,
+              toJSON: function() { return this; }
+            },
+            timestamp: Date.now(),
             toJSON: function() { return this; }
-          },
-          timestamp: Date.now(),
-          toJSON: function() { return this; }
-        };
-        publishPresence(position);
-      }
-    );
+          };
+          
+          // Defer execution to prevent infinite loops
+          requestAnimationFrame(() => {
+            updatePosition(position);
+          });
+        },
+        (error) => {
+          console.error('Location error:', error);
+          setError(error.message);
+        }
+      );
+
+    } catch (err: any) {
+      console.error('Error setting up location subscription:', err);
+      setError(err.message);
+    }
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-        unsubscribeRef.current = null
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
-    }
-  }, [isActive, user, vibe])
+    };
+  }, [isActive, user?.id, updatePosition]);
+
+  // Set user vibe state
+  useEffect(() => {
+    if (!user || !vibe) return;
+
+    const setUserVibe = async () => {
+      try {
+        const { error: vibeError } = await supabase.rpc('set_user_vibe', {
+          p_vibe: vibe
+        });
+        
+        if (vibeError) {
+          console.error('Error setting user vibe:', vibeError);
+        }
+      } catch (err) {
+        console.error('Error calling set_user_vibe:', err);
+      }
+    };
+
+    setUserVibe();
+  }, [user?.id, vibe]);
+
+  const forceUpdate = useCallback(() => {
+    if (!user) return;
+    
+    globalLocationManager.getCurrentLocation()
+      .then(updatePosition)
+      .catch((err) => {
+        console.error('Error getting current location:', err);
+        setError(err.message);
+      });
+  }, [updatePosition, user]);
+
+  return {
+    isPublishing,
+    lastUpdate,
+    error,
+    forceUpdate,
+    isActive
+  };
 }

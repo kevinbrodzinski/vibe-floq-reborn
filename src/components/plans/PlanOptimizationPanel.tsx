@@ -24,10 +24,7 @@ export function PlanOptimizationPanel({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   
-  const { optimization, loading, error } = useSmartPlanOptimization(planId, {
-    groupVibes,
-    optimizeFor: 'experience'
-  });
+  const { optimization, loading, error } = useSmartPlanOptimization();
 
   if (loading) {
     return (
