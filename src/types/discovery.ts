@@ -52,3 +52,33 @@ export interface SmartRecommendation {
   live_count?: number;
   score?: number; // For weighted scoring
 }
+
+// People Discovery Stack interfaces
+export interface VibeBreakdown {
+  overall: number;          // 0-100
+  venueDNA: number;         // 0-100  
+  timeRhythm: number;       // 0-100
+  socialPattern: number;    // 0-100
+}
+
+export interface CrossStat {
+  countWeek: number;
+  lastVenue: string;
+  lastAt: string;
+  distance?: number; // meters from current location
+}
+
+export interface CommonVenue {
+  venue_id: string;
+  name: string;
+  category: string;
+  overlap_visits: number;
+}
+
+export interface PlanSuggestion {
+  id: string;
+  title: string;
+  vibe: string;
+  venue_type?: string;
+  estimated_duration: string;
+}
