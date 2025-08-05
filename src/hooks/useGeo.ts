@@ -107,26 +107,9 @@ export function useGeo(): GeoState {
       return;
     }
 
-    // Phase 3: For Lovable preview, auto-enable fallback immediately
-    if (import.meta.env.DEV && location.hostname.includes('lovable')) {
-      console.log('[useGeo] 🔧 Lovable preview detected - setting debug location immediately');
-      localStorage.setItem('floq-debug-forceLoc', '37.7749,-122.4194');
-      
-      const debugCoords = {
-        lat: 37.7749,
-        lng: -122.4194,
-        accuracy: 15
-      };
-
-      (window as any).__FLOQ_DEBUG_LAST_GEO = debugCoords;
-      
-      setValue({
-        coords: debugCoords,
-        timestamp: Date.now(),
-        status: 'ready',
-      });
-      return;
-    }
+    // Phase 3: Auto-debug removed - let user control location settings
+    // Clear any existing debug location to use real GPS
+    localStorage.removeItem('floq-debug-forceLoc');
 
     let didTimeout = false;
 

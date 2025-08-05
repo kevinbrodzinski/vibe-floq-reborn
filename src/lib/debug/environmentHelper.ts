@@ -88,9 +88,15 @@ export function showCurrentEnvironment() {
   return { override, debugLocation, env: import.meta.env };
 }
 
-// Auto-setup in development
+// Auto-setup in development - clear debug location unless explicitly set
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   setTimeout(() => {
+    // Clear any auto-set debug location to use real GPS by default
+    const hasExplicitDebugLocation = localStorage.getItem('floq-debug-forceLoc');
+    if (!hasExplicitDebugLocation) {
+      console.log('🌍 [Environment] No explicit debug location set - will use real GPS');
+    }
+    
     (window as any).enableLiveMode = enableLiveMode;
     (window as any).enableMockMode = enableMockMode; 
     (window as any).clearEnvironmentOverride = clearEnvironmentOverride;
@@ -103,7 +109,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     console.log('  - window.enableMockMode()'); 
     console.log('  - window.clearEnvironmentOverride()');
     console.log('  - window.showCurrentEnvironment()');
-    console.log('  - window.enableDebugLocation() ← 🎯 Try this to fix map loading!');
-    console.log('  - window.clearDebugLocation()');
+    console.log('  - window.enableDebugLocation() ← Forces San Francisco location');
+    console.log('  - window.clearDebugLocation() ← Clears debug location to use real GPS');
   }, 1000);
 }
