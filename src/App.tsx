@@ -79,19 +79,18 @@ const App = () => {
                 <TooltipProvider>
                   <Toaster />
                   <NetworkStatusBanner />
-                  <PlanInviteProvider>
-                    <BrowserRouter>
-                      <LocationSystemHealthDashboard />
-                      <Routes>
-                        <Route path="/a/:slug" element={<SharedAfterglow />} />
-                        <Route path="/share/:slug" element={<SharedPlan />} />
-                        <Route path="/invite/:slug" element={<PlanInvite />} />
-                        <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
-                        <Route path="/settings/profile" element={<Settings />} />
-                        <Route path="/*" element={<Index />} />
-                      </Routes>
-                    </BrowserRouter>
-                  </PlanInviteProvider>
+                  <PlanInviteProvider />
+                  <BrowserRouter>
+                    <LocationSystemHealthDashboard />
+                    <Routes>
+                      <Route path="/a/:slug" element={<SharedAfterglow />} />
+                      <Route path="/share/:slug" element={<SharedPlan />} />
+                      <Route path="/invite/:slug" element={<PlanInvite />} />
+                      <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
+                      <Route path="/settings/profile" element={<Settings />} />
+                      <Route path="/*" element={<Index />} />
+                    </Routes>
+                  </BrowserRouter>
                 </TooltipProvider>
               </BannerProvider>
             </PlanNotificationProvider>
