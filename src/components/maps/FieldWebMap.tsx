@@ -26,6 +26,7 @@ import { useMapLayers } from '@/hooks/useMapLayers';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
+import '@/lib/debug/friendsDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
 
 // Create context for selected floq
@@ -120,11 +121,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         }))
       : [];
     
-    const result = [...currentUserPerson, ...floqMembers];
+    // Add mock friends in dev mode for testing
+    const mockFriends = import.meta.env.DEV 
+      ? (typeof window !== 'undefined' && (window as any).getMockFriends?.() || [])
+      : [];
+    
+    const result = [...currentUserPerson, ...floqMembers, ...mockFriends];
     
     // 🔧 DEBUG: Log filteredPeople table for easy debugging
     console.log('[FieldWebMap] 🔧 filteredPeople result:');
-    console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you })));
+    console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you, friend: p.isFriend, vibe: p.vibe })));
     
     return result;
   }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
