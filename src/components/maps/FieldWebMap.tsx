@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
+import '@/lib/debug/locationDebugger';
+import '@/lib/debug/mapDiagnostics';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -446,8 +448,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           // to prevent race conditions with style loading
         });
 
-        // Add cluster click handler
+        // Add cluster click handler - GUARDED
         map.on('click', 'floq-clusters', (e) => {
+          // Guard: Only query if layer exists
+          if (!map.getLayer('floq-clusters')) {
+            console.log('[FieldWebMap] 🛡️ Cluster click blocked - layer not ready');
+            return;
+          }
+          
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['floq-clusters']
           });
@@ -480,17 +488,20 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           }
         });
         
-        // Change cursor on cluster hover
+        // Change cursor on cluster hover - GUARDED
         map.on('mouseenter', 'floq-clusters', () => {
+          if (!map.getLayer('floq-clusters')) return;
           map.getCanvas().style.cursor = 'pointer';
         });
         
         map.on('mouseleave', 'floq-clusters', () => {
+          if (!map.getLayer('floq-clusters')) return;
           map.getCanvas().style.cursor = '';
         });
 
-        // Add hover effects for individual floq points
+        // Add hover effects for individual floq points - GUARDED
         map.on('mouseenter', 'floq-points', () => {
+          if (!map.getLayer('floq-points')) return;
           map.getCanvas().style.cursor = 'pointer';
           // Add hover effect by temporarily changing the layer paint
           map.setPaintProperty('floq-points', 'circle-radius', 16);
@@ -499,6 +510,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         });
 
         map.on('mouseleave', 'floq-points', () => {
+          if (!map.getLayer('floq-points')) return;
           map.getCanvas().style.cursor = '';
           // Restore original paint properties
           map.setPaintProperty('floq-points', 'circle-radius', 12);
@@ -506,8 +518,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           map.setPaintProperty('floq-points', 'circle-stroke-width', 2);
         });
 
-        // Add hover effects for clusters
+        // Add hover effects for clusters - GUARDED
         map.on('mouseenter', 'floq-clusters', () => {
+          if (!map.getLayer('floq-clusters')) return;
           map.getCanvas().style.cursor = 'pointer';
           // Add hover effect by temporarily changing the layer paint
           map.setPaintProperty('floq-clusters', 'circle-opacity', 1);
@@ -516,6 +529,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         });
 
         map.on('mouseleave', 'floq-clusters', () => {
+          if (!map.getLayer('floq-clusters')) return;
           map.getCanvas().style.cursor = '';
           // Restore original paint properties
           map.setPaintProperty('floq-clusters', 'circle-opacity', 0.9);
@@ -523,8 +537,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           map.setPaintProperty('floq-clusters', 'circle-stroke-opacity', 1);
         });
 
-        // Add click handler for individual floq points
+        // Add click handler for individual floq points - GUARDED
         map.on('click', 'floq-points', (e) => {
+          if (!map.getLayer('floq-points')) return;
+          
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['floq-points']
           });
@@ -612,8 +628,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           anchor: 'bottom'
         });
 
-        // Show tooltip on cluster hover
+        // Show tooltip on cluster hover - GUARDED
         map.on('mouseenter', 'floq-clusters', (e) => {
+          if (!map.getLayer('floq-clusters')) return;
+          
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['floq-clusters']
           });
@@ -655,8 +673,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           popup.remove();
         });
 
-        // Show tooltip on individual floq hover
+        // Show tooltip on individual floq hover - GUARDED  
         map.on('mouseenter', 'floq-points', (e) => {
+          if (!map.getLayer('floq-points')) return;
+          
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['floq-points']
           });
@@ -702,18 +722,23 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           popup.remove();
         });
 
-        // Close popups when clicking on the map background
+        // Close popups when clicking on the map background - GUARDED
         map.on('click', (e) => {
-          const features = map.queryRenderedFeatures(e.point, {
-            layers: ['floq-clusters', 'floq-points']
-          });
+          // Only query if layers exist
+          const layers = [];
+          if (map.getLayer('floq-clusters')) layers.push('floq-clusters');
+          if (map.getLayer('floq-points')) layers.push('floq-points');
           
-          // If we didn't click on a floq or cluster, close any open popups
-          if (features.length === 0) {
-            popup.remove();
-            // Also close any detailed popups
-            const popups = document.querySelectorAll('.mapboxgl-popup');
-            popups.forEach(p => p.remove());
+          if (layers.length > 0) {
+            const features = map.queryRenderedFeatures(e.point, { layers });
+            
+            // If we didn't click on a floq or cluster, close any open popups
+            if (features.length === 0) {
+              popup.remove();
+              // Also close any detailed popups
+              const popups = document.querySelectorAll('.mapboxgl-popup');
+              popups.forEach(p => p.remove());
+            }
           }
         });
 

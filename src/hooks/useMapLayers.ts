@@ -181,9 +181,9 @@ export function useMapLayers({
     };
   }, [map]);
 
-  // Cluster click handler (preserve exact existing zoom functionality)
+  // Cluster click handler (preserve exact existing zoom functionality) - GUARDED
   const handleClusterClick = useCallback((e: mapboxgl.MapMouseEvent) => {
-    if (!map) return;
+    if (!map || !map.getLayer('floq-clusters')) return;
 
     const features = map.queryRenderedFeatures(e.point, {
       layers: ['floq-clusters']
@@ -222,23 +222,29 @@ export function useMapLayers({
     }
   }, [map, onClusterClick]);
 
-  // Add event listeners (preserve existing functionality)
+  // Add event listeners (preserve existing functionality) - GUARDED
   useEffect(() => {
     if (!map || !layersInitialized.current) return;
 
-    // Cluster click events
-    map.on('click', 'floq-clusters', handleClusterClick);
+    // Cluster click events - GUARDED
+    const handleClusterClickGuarded = (e: mapboxgl.MapMouseEvent) => {
+      if (!map.getLayer('floq-clusters')) return;
+      handleClusterClick(e);
+    };
 
-    // Cursor effects - use any type for event handlers to avoid TS mapbox issues
+    // Cursor effects - use any type for event handlers to avoid TS mapbox issues - GUARDED
     const handleClusterEnter = () => {
+      if (!map.getLayer('floq-clusters')) return;
       map.getCanvas().style.cursor = 'pointer';
     };
 
     const handleClusterLeave = () => {
+      if (!map.getLayer('floq-clusters')) return;
       map.getCanvas().style.cursor = '';
     };
 
     const handleFloqEnter = () => {
+      if (!map.getLayer('floq-points')) return;
       map.getCanvas().style.cursor = 'pointer';
       map.setPaintProperty('floq-points', 'circle-radius', 16);
       map.setPaintProperty('floq-points', 'circle-opacity', 1);
@@ -246,19 +252,21 @@ export function useMapLayers({
     };
 
     const handleFloqLeave = () => {
+      if (!map.getLayer('floq-points')) return;
       map.getCanvas().style.cursor = '';
       map.setPaintProperty('floq-points', 'circle-radius', 12);
       map.setPaintProperty('floq-points', 'circle-opacity', 0.95);
       map.setPaintProperty('floq-points', 'circle-stroke-width', 2);
     };
 
+    map.on('click', 'floq-clusters', handleClusterClickGuarded);
     map.on('mouseenter' as any, 'floq-clusters', handleClusterEnter);
     map.on('mouseleave' as any, 'floq-clusters', handleClusterLeave);
     map.on('mouseenter' as any, 'floq-points', handleFloqEnter);
     map.on('mouseleave' as any, 'floq-points', handleFloqLeave);
 
     return () => {
-      map.off('click', 'floq-clusters', handleClusterClick);
+      map.off('click', 'floq-clusters', handleClusterClickGuarded);
       map.off('mouseenter' as any, 'floq-clusters', handleClusterEnter);
       map.off('mouseleave' as any, 'floq-clusters', handleClusterLeave);
       map.off('mouseenter' as any, 'floq-points', handleFloqEnter);
