@@ -12663,6 +12663,19 @@ export type Database = {
         Args: { "": number }
         Returns: string
       }
+      get_social_suggestions: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_km?: number
+          p_limit?: number
+          p_vibe?: string
+          p_activity?: string
+          p_group_size?: number
+          p_profile_id?: string
+        }
+        Returns: Json
+      }
       get_social_suggestions_by_loc: {
         Args: {
           p_lat: number
