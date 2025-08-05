@@ -113,22 +113,12 @@ export function useGeo(): GeoState {
 
     let didTimeout = false;
 
-    // Phase 4: Set up fallback timer (reduced for faster development)
+    // Phase 4: No automatic fallback - let real GPS work or fail cleanly
     const fallbackTimer = setTimeout(() => {
       if (!didTimeout) {
-        console.log('[useGeo] ⏰ Timeout reached - using fallback coordinates');
+        console.log('[useGeo] ⏰ Timeout reached - no location available');
         didTimeout = true;
-        
-        const fallbackResult = { 
-          coords: DEMO_COORDS,
-          timestamp: Date.now(), 
-          status: 'ready' as const 
-        };
-        
-        (window as any).__FLOQ_DEBUG_LAST_GEO = fallbackResult;
-        (window as any).__watch = fallbackResult;
-        
-        setValue((prev) => prev.coords ? prev : fallbackResult);
+        setValue({ coords: null, timestamp: null, status: 'error' });
       }
     }, TIMEOUT_MS);
 
@@ -164,16 +154,7 @@ export function useGeo(): GeoState {
       console.error('[useGeo] ❌ Geolocation failed:', error);
       if (!didTimeout) {
         clearTimeout(fallbackTimer);
-        const errorFallback = { 
-          coords: DEMO_COORDS,
-          timestamp: Date.now(), 
-          status: 'ready' as const 
-        };
-        
-        (window as any).__FLOQ_DEBUG_LAST_GEO = errorFallback;
-        (window as any).__watch = errorFallback;
-        
-        setValue(errorFallback);
+        setValue({ coords: null, timestamp: null, status: 'error' });
       }
     });
 
@@ -195,8 +176,10 @@ export function useGeo(): GeoState {
     isLocationReady,
     // Legacy compatibility
     hasPermission: hasLocation,
-    requestLocation: () => {}, // No-op for now
-    clearWatch: () => {}, // No-op for now
+    requestLocation: () => {
+      navigator.geolocation?.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: true });
+    },
+    clearWatch: () => {}
   };
 }
 
