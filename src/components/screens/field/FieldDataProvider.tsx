@@ -267,7 +267,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
 
   // Debug logging for location and viewport
   console.log('[FIELD_DEBUG] Location and viewport:', {
-    location: location?.pos ? { lat: location.pos.lat, lng: location.pos.lng } : null,
+    location: location?.coords ? { lat: location.coords.lat, lng: location.coords.lng } : null,
     viewport,
     activeFloqsCount: Array.isArray(activeFloqs) ? activeFloqs.length : 'pages' in activeFloqs ? activeFloqs.pages.flat().length : 0
   });
