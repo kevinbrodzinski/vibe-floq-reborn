@@ -211,7 +211,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
                   <Navigation className="h-4 w-4" />
                   <span>{friendDistance.formattedDistance}</span>
                   {friendDistance.privacyFiltered && (
-                    <Shield className="h-3 w-3 text-blue-400" title="Privacy filtered distance" />
+                    <Shield className="h-3 w-3 text-blue-400" aria-label="Privacy filtered distance" />
                   )}
                 </div>
                 {friendDistance.isNearby && (

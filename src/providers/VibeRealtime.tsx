@@ -69,7 +69,7 @@ export function VibeRealtime() {
             },
             (payload) => {
               try {
-                setVibe(payload.new.vibe as string);
+                setVibe(payload.new.vibe as any); // Type assertion for database vibe
               } catch (syncError) {
                 console.warn('Failed to sync vibe update:', syncError);
               }
