@@ -1,5 +1,5 @@
 import React from 'react';
-import { FieldWebMap } from './FieldWebMap';
+import { FieldWebMap } from '@/components/maps/FieldWebMap';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 
 interface FieldMapBaseProps {

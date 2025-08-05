@@ -112,19 +112,36 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   const lastFlushRef = useRef<number>(0);
   const isInitializedRef = useRef(false);
 
-  // 🔧 SYNC: Update store when useGeo provides new coordinates
+  // 🔧 SYNC: Update store when useGeo provides new coordinates (fixed infinite loop)
   useEffect(() => {
-    if (normalizedCoords && baseGeo.status === 'ready') {
-      updateLocation(normalizedCoords, Date.now());
-      setStatus('success');
-    } else if (baseGeo.status === 'error') {
-      setStatus('error', baseGeo.error);
-    } else if (baseGeo.status === 'fetching') {
-      setStatus('loading');
-    }
+    if (!normalizedCoords) return;
 
-    setPermission(baseGeo.hasPermission || false);
-  }, [normalizedCoords, baseGeo.status, baseGeo.error, baseGeo.hasPermission, updateLocation, setStatus, setPermission]);
+    // ❶ Short-circuit if coords didn't actually move
+    const { getState, setState } = useLocationStore;
+    const currentState = getState();
+    
+    const same = 
+      currentState.coords?.lat === normalizedCoords.lat &&
+      currentState.coords?.lng === normalizedCoords.lng &&
+      currentState.coords?.accuracy === normalizedCoords.accuracy;
+      
+    if (same) return; // No change → no re-render
+
+    // Only update when coordinates actually changed
+    setState((prev) => ({
+      ...prev,
+      coords: normalizedCoords,
+      timestamp: Date.now(),
+      status: 'success' as const,
+      error: null
+    }));
+
+    setStatus('success');
+  }, [
+    normalizedCoords?.lat,      // ← primitive deps, stable across renders
+    normalizedCoords?.lng,
+    normalizedCoords?.accuracy
+  ]);
 
   // Register with LocationBus for coordinated updates
   useEffect(() => {

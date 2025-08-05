@@ -151,6 +151,15 @@ export const useLocationStore = create<LocationState>()(
         
         updateLocation: (coords: LocationCoords, timestamp: number) => {
           set((state) => {
+            // 🔧 EXTRA PROTECTION: Prevent cascading updates for identical coordinates
+            if (
+              state.coords?.lat === coords.lat &&
+              state.coords?.lng === coords.lng &&
+              state.coords?.accuracy === coords.accuracy
+            ) {
+              return; // Nothing to do → avoid state-change cascade
+            }
+
             const previousCoords = state.coords;
             state.coords = coords;
             state.timestamp = timestamp;
