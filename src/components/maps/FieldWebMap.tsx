@@ -346,7 +346,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         }
 
         // Early-abort when token missing before map init
-        if (import.meta.env.DEV) clearMapboxTokenCache();
+        // Guard clearMapboxTokenCache with DEV check
+        if (import.meta.env.DEV) {
+          clearMapboxTokenCache();
+        }
         const { token, source } = await getMapboxToken().catch((e) => {
           console.error('[FieldWebMap] Token fetch failed', e);
           setErr('Mapbox token unavailable');     // shows nice error overlay
@@ -378,6 +381,17 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
         detachUserLocationSourceRef.current = attachUserLocationSource(map);
+        
+        // Call setUserLocation immediately after attachUserLocationSource with current coords
+        // so first dot appears even if style isn't fully loaded yet
+        if (location.coords?.lat && location.coords?.lng) {
+          setUserLocation(
+            map,
+            location.coords.lat,
+            location.coords.lng,
+            location.coords.accuracy || 50
+          );
+        }
         
         // Wait for style to fully load before continuing
         if (!map.isStyleLoaded()) {
