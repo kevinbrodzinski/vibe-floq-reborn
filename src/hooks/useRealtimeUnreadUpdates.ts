@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 // Debug logger that works in dev but stays quiet in tests and production
 const debug = (...args: any[]) => {

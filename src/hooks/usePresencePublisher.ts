@@ -1,7 +1,7 @@
 
 import { useEffect, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { storage } from '@/lib/storage'
 import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker'

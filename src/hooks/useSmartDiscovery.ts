@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useDebounce } from 'use-debounce';
 import { DISCOVERY_CONFIG } from '@/config/discovery';
 import { VenueSchema, FloqSchema, AiSuggestionSchema } from '@/schemas/discovery';
