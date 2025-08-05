@@ -8,6 +8,7 @@ export interface SystemHealthMetrics {
   accuracy: number;
   responseTime: number;
   learningProgress: number;
+  recommendations?: string[];
   detailedMetrics?: {
     sensorQuality?: Record<string, number>;
     mlConfidence?: number;
@@ -44,6 +45,19 @@ export interface EnhancedFeedbackData {
   };
 }
 
+export interface EnhancedSocialContextData {
+  socialScore: number;
+  nearbyFriends: any[];
+  socialRecommendations: string[];
+  groupDynamics: any;
+}
+
+export interface EnhancedPersonalHeroData {
+  heroMetrics: any;
+  personalInsights: any;
+  adaptiveContent: any;
+}
+
 export class VibeSystemIntegration {
   async getSystemHealthMetrics(): Promise<SystemHealthMetrics> {
     // Mock implementation for now
@@ -74,7 +88,7 @@ export class VibeSystemIntegration {
   async getEnhancedFeedbackData(
     sensorData: any,
     context: any,
-    analysis: any
+    analysis?: any
   ): Promise<EnhancedFeedbackData> {
     // Mock implementation with adaptive interface
     const userConsistency = Math.random() * 0.4 + 0.6; // 0.6-1.0 range
@@ -105,6 +119,30 @@ export class VibeSystemIntegration {
         suggestExploration: Math.random() > 0.5,
         userConsistency
       }
+    };
+  }
+
+  async getEnhancedSocialContextData(
+    locationData: any,
+    proximityData: any
+  ): Promise<EnhancedSocialContextData> {
+    return {
+      socialScore: Math.random() * 0.4 + 0.6,
+      nearbyFriends: proximityData?.nearbyFriends || [],
+      socialRecommendations: ['Connect with nearby friends', 'Join local events'],
+      groupDynamics: { cohesion: 0.8, energy: 0.7 }
+    };
+  }
+
+  async getEnhancedPersonalHeroData(
+    heroData: any,
+    sensorData: any,
+    locationData: any
+  ): Promise<EnhancedPersonalHeroData> {
+    return {
+      heroMetrics: { energy: 0.8, focus: 0.6, social: 0.7 },
+      personalInsights: { mood: 'positive', trend: 'improving' },
+      adaptiveContent: { suggestions: ['Take a break', 'Connect with friends'] }
     };
   }
 }

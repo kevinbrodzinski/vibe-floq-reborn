@@ -48,7 +48,8 @@ export const EnhancedFeedbackButtons: React.FC<EnhancedFeedbackButtonsProps> = (
 
         const data = await vibeSystem.getEnhancedFeedbackData(
           mockSensorData,
-          mockContext
+          mockContext,
+          analysis
         );
         setFeedbackData(data);
       } catch (error) {
