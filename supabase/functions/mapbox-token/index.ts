@@ -16,11 +16,11 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log("[mapbox-token] Checking for FLOQ_PROD_2025 secret...");
-    const mapboxToken = Deno.env.get('FLOQ_PROD_2025');
+    console.log("[mapbox-token] Checking for ADMIN_MAP_TOKEN secret...");
+    const mapboxToken = Deno.env.get('ADMIN_MAP_TOKEN');
     
     if (!mapboxToken) {
-      console.error("[mapbox-token] Secret FLOQ_PROD_2025 not found");
+      console.error("[mapbox-token] Secret ADMIN_MAP_TOKEN not found");
       return new Response(
         JSON.stringify({ error: 'Mapbox access token not configured' }), 
         { 
