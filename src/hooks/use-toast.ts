@@ -181,12 +181,17 @@ function useToast() {
     }
   }, []) // Empty dependency array - only register/unregister once
 
+  // Memoize the dismiss function to prevent recreating on every render
+  const dismiss = React.useCallback((toastId?: string) => {
+    dispatch({ type: "DISMISS_TOAST", toastId })
+  }, [])
+
   // Memoize the return value to prevent infinite re-renders
   return React.useMemo(() => ({
     toasts: state.toasts,
-    toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  }), [state.toasts]) // Only recreate when toasts array actually changes
+    toast, // toast function is already stable (module-level)
+    dismiss,
+  }), [state.toasts, dismiss])
 }
 
 export { useToast, toast }
