@@ -93,6 +93,16 @@ const FieldLocationProviderInner = ({
   // Enhanced location readiness check with debugging
   const isLocationReady = lat !== null && lng !== null;
   
+  // 🔧 DEBUG: Track incoming geo data
+  useEffect(() => {
+    console.log('[FieldLocationProvider] 🔧 Incoming geo data:', {
+      coords: location.coords,
+      status: location.status,
+      isTracking: location.isTracking,
+      error: location.error
+    });
+  }, [location.coords, location.status, location.isTracking, location.error]);
+  
   // Debug location state
   console.log('[FieldLocationContext] Location state:', {
     lat, lng, 
@@ -166,6 +176,15 @@ const FieldLocationProviderInner = ({
     currentVenueConfidence: enhancedLocationSharing.currentVenueConfidence,
     isLocationHidden: enhancedLocationSharing.isLocationHidden,
   };
+
+  // 🔧 DEBUG: Track outgoing context value
+  useEffect(() => {
+    console.log('[FieldLocationProvider] 🔧 Outgoing context value:', {
+      locationCoords: value.location.coords,
+      isLocationReady: value.isLocationReady,
+      locationStatus: value.location.status
+    });
+  }, [value.location.coords, value.isLocationReady, value.location.status]);
 
   return (
     <FieldLocationContext.Provider value={value}>

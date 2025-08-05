@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { getEnhancedGeolocation, type EnhancedGeoResult } from '@/lib/location/webCompatibility';
 import type { LocationStatus } from '@/types/overrides';
+import '@/lib/debug/geoWatcher'; // Setup debug watcher
 
 const TIMEOUT_MS = import.meta.env.DEV || import.meta.env.VITE_FORCE_GEO_DEBUG === 'true' ? 3000 : 8000;
 
@@ -61,6 +62,9 @@ export function useGeo(): GeoState {
       
       console.log('[useGeo] 🔧 Setting debug coordinates:', debugResult.coords);
       
+      // 🔧 DEBUG: Add window watcher for setValue calls
+      (window as any).__watch = debugResult;
+      
       if (import.meta.env.DEV) {
         (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
       }
@@ -81,6 +85,9 @@ export function useGeo(): GeoState {
       if (import.meta.env.DEV) {
         (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
       }
+      
+      // 🔧 DEBUG: Add window watcher for setValue calls
+      (window as any).__watch = debugResult;
       
       setValue(debugResult);
       return;
@@ -123,6 +130,10 @@ export function useGeo(): GeoState {
                   res.status === 'debug' ? 'ready' :
                   res.status as LocationStatus
         };
+        
+        // 🔧 DEBUG: Add window watcher for setValue calls
+        (window as any).__watch = normalised;
+        
         setValue(normalised);
       } else {
         console.log('[useGeo] Location response arrived after timeout, ignoring');
@@ -136,6 +147,9 @@ export function useGeo(): GeoState {
         if (import.meta.env.DEV) {
           (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
         }
+        
+        // 🔧 DEBUG: Add window watcher for setValue calls
+        (window as any).__watch = debugResult;
         
         setValue(debugResult);
       }

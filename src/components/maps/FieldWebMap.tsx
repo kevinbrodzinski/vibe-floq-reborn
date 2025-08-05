@@ -81,16 +81,24 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       return []; // Return empty array when no floq is selected or no members
     }
     
-    // For now, we'll return the selected floq members as people with proper Person interface
+    // 🔧 DEBUG: Log location context state
+    console.log('[FieldWebMap] 🔧 Building filteredPeople with location:', {
+      hasLocationCoords: !!location?.coords,
+      locationCoords: location?.coords,
+      isLocationReady
+    });
+    
+    // Build people array with actual coordinates when available
     return selectedFloqMembers.map(member => ({
       id: member.profile_id,
-      lng: 0, // These would be actual coordinates in a real implementation
-      lat: 0,
+      lng: location?.coords?.lng || 0, // Use actual coordinates from location context
+      lat: location?.coords?.lat || 0,
       x: 0,
       y: 0,
+      you: true, // 🔧 CRITICAL: Mark as current user so usePeopleSource picks it up
       isFriend: false
     }));
-  }, [selectedMyFloq, selectedFloqMembers]);
+  }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
 
   // Prepare context value for selected floq
   const selectedFloqContextValue = useMemo(() => ({
@@ -283,6 +291,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           
           console.log('🗺️ Map loaded successfully');
           setStatus('ready');
+          
+          // 🔧 DEBUG: Set global map instance for console debugging
+          (window as any).__FLOQ_MAP = map;
+          setMapInstance(map);
           
           // 🔧 DEBUG: Verify map is ready for source operations
           console.log('🗺️ Map ready for sources. Style loaded:', map.isStyleLoaded());

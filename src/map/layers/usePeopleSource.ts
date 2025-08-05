@@ -10,6 +10,7 @@ export interface Person {
   lat: number;
   isFriend?: boolean;
   vibe?: string;
+  you?: boolean; // 🔧 Add property to mark current user
 }
 
 /** Keeps the "people" GeoJSON in sync with props + GPS */
@@ -51,7 +52,8 @@ export function usePeopleSource(
       features.push(selfFeature);
       console.log('[usePeopleSource] Added self feature:', selfFeature);
     } else {
-      console.log('[usePeopleSource] NOT adding self feature - userPos:', userPos, 'user?.id:', user?.id);
+      console.log('[usePeopleSource] 🔧 NOT adding self feature - userPos:', userPos, 'user?.id:', user?.id);
+      console.log('[usePeopleSource] 🔧 Available people for self detection:', people.map(p => ({ id: p.id, you: p.you, lat: p.lat, lng: p.lng })));
     }
 
     console.log('[usePeopleSource] Final GeoJSON features count:', features.length);
