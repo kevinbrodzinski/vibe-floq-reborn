@@ -25,12 +25,16 @@ export async function getMapboxToken(): Promise<{ token: string; source: string 
   }
 
   console.log('[getMapboxToken] Retrieving fresh token...');
+  
+  // Debug: Log ALL environment variables for debugging
+  console.log('[getMapboxToken] 🔍 DEBUG - All import.meta.env:', import.meta.env);
 
   /* 1️⃣  primary – .env.* variable injected by Vite/Next/Remix/etc. */
   const envToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
   console.log('[getMapboxToken] Environment check:', { 
     hasEnvToken: !!envToken, 
     envTokenLength: envToken?.length,
+    envTokenValue: envToken, // Show full value for debugging
     envTokenPrefix: envToken?.substring(0, 10)
   });
   
@@ -40,6 +44,13 @@ export async function getMapboxToken(): Promise<{ token: string; source: string 
     !envToken.includes('your_mapbox_token_here') &&
     !envToken.includes('YOUR_MAPBOX_TOKEN') &&
     envToken.length > 20;
+  
+  console.log('[getMapboxToken] Token validation:', {
+    isValidToken,
+    startsWith_pk: envToken?.startsWith('pk.'),
+    isNotPlaceholder: !envToken?.includes('your_mapbox_token_here'),
+    hasCorrectLength: envToken && envToken.length > 20
+  });
   
   if (isValidToken) {
     cached = { token: envToken, source: 'env' };
