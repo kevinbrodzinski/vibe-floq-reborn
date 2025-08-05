@@ -63,7 +63,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const { data: streak } = useUserStreak();
   const { data: achievements } = useUserAchievements(profileId);
   const { data: realStats, isLoading: statsLoading } = useRealProfileStats(profileId);
-  const { isFriend, rows: friendsData } = useUnifiedFriends();
+  const { isFriend, rows: friendsData, isPending } = useUnifiedFriends();
 
   // Get real distance data for this friend
   const friendDistance = profileId ? getFriendDistance(profileId) : null;
@@ -104,9 +104,9 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const isCurrentlyFriend = profile.id ? isFriend(profile.id) : false;
   
   // Get actual friendship data from friendsData
-  const friendship = friendsData.find(f => f.id === profile.id);
-  const pendingFromMe = friendship?.friend_state === 'pending' && friendship.is_outgoing_request;
-  const pendingToMe = friendship?.friend_state === 'pending' && friendship.is_incoming_request;
+  const friendRow = friendsData.find(f => f.id === profile.id);
+  const pendingFromMe = friendRow?.friend_state === 'pending' && friendRow.is_outgoing_request;
+  const pendingToMe = friendRow?.friend_state === 'pending' && friendRow.is_incoming_request;
 
   // Use real stats or fallback to defaults
   const stats = realStats || {

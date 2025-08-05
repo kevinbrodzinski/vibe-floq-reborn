@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------
    useUnifiedFriends  –  one hook for friends, requests & presence
    ------------------------------------------------------------------ */
-import { useEffect }           from 'react';
+import { useEffect, useMemo }  from 'react';
 import { useQueryClient,
          useQuery,
          useMutation }         from '@tanstack/react-query';
@@ -106,7 +106,7 @@ export function useUnifiedFriends() {
 
   /* ── 1. main list (view) ────────────────────────────────────────── */
   const { data = [], isLoading } = useQuery({
-    queryKey : ['friends-unified', uid],
+    queryKey : ['friends', uid],
     enabled  : !!uid,
     staleTime: 15_000,
     queryFn  : async (): Promise<UnifiedRow[]> => {
@@ -140,7 +140,7 @@ export function useUnifiedFriends() {
     if (!uid) return;
 
     const invalidate = () =>
-      qc.invalidateQueries({ queryKey: ['friends-unified', uid] });
+      qc.invalidateQueries({ queryKey: ['friends', uid] });
 
     const ch = supabase.channel(`friends+presence:${uid}`)
       .on(
@@ -181,7 +181,7 @@ export function useUnifiedFriends() {
     },
 
     onSuccess  : (_, vars) => {
-      qc.invalidateQueries({ queryKey:['friends-unified', uid] });
+      qc.invalidateQueries({ queryKey:['friends', uid] });
       invalidateDiscover(); // Invalidate discovery cache
       toast({ title:
         vars.state==='pending'  ? 'Request sent 🎉' :
@@ -205,6 +205,17 @@ export function useUnifiedFriends() {
   const pendingOut = data
     .filter(r => r.friend_state === 'pending' && r.is_outgoing_request);
 
+  // Memoized helper functions
+  const isFriend = useMemo(() => 
+    (id: string): boolean => acceptedIds.includes(id), 
+    [acceptedIds]
+  );
+  
+  const isPending = useMemo(() => 
+    (id: string): boolean => data.some(r => r.id === id && r.friend_state === 'pending'),
+    [data]
+  );
+
   /* ── 5. public API --------------------------------------------------- */
   return {
     isLoading,
@@ -219,8 +230,8 @@ export function useUnifiedFriends() {
     accept      : (id:string) => mutation.mutate({ other:id, state:'accepted' }),
     block       : (id:string) => mutation.mutate({ other:id, state:'blocked' }),
 
-    isFriend    : (id:string) => acceptedIds.includes(id),
-    isPending   : (id:string) => data.some(r => r.id === id && r.friend_state === 'pending'),
+    isFriend,
+    isPending,
     updating    : mutation.isPending,
   };
 }

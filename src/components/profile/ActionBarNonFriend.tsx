@@ -58,22 +58,34 @@ export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonF
     });
   };
 
-  return (
-    <div className="flex gap-3">
-      {requested ? (
+  if (requested) {
+    return (
+      <div className="flex gap-3">
         <Badge variant="outline" className="flex-1 justify-center px-4 py-2 text-sm border-primary text-primary">
           Requested
         </Badge>
-      ) : (
         <Button
-          onClick={handleAddFriend}
-          disabled={isAddingFriend}
-          className="flex-1 bg-gradient-primary text-white font-medium border-0"
+          variant="ghost"
+          size="icon"
+          onClick={handleWave}
+          className="border border-white/20 text-white hover:bg-white/10"
         >
-          <UserPlus className="h-4 w-4 mr-2" />
-          {isAddingFriend ? 'Sending...' : 'Add Friend'}
+          <Zap className="h-4 w-4" />
         </Button>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-3">
+      <Button
+        onClick={handleAddFriend}
+        disabled={isAddingFriend}
+        className="flex-1 bg-gradient-primary text-white font-medium border-0"
+      >
+        <UserPlus className="h-4 w-4 mr-2" />
+        {isAddingFriend ? 'Sending...' : 'Add Friend'}
+      </Button>
       <Button
         variant="ghost"
         size="icon"
