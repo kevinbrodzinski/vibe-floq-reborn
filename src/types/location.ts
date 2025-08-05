@@ -37,6 +37,7 @@ export interface ProximityEventRecord {
   proximity_data: any;
   created_at: string;
   metadata?: any;
+  ml_features?: any;
   // Additional properties for compatibility
   timestamp?: string;
   targetProfileId?: string;

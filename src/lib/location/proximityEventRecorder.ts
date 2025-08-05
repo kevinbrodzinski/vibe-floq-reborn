@@ -72,7 +72,7 @@ export class ProximityEventRecorder {
       duration: analysis.eventType === 'sustain' ? analysis.sustainedDuration : undefined,
       location_accuracy_meters: location?.accuracy,
       venue_id: undefined, // No venue_id in current schema
-      metadata: {
+      ml_features: {
         reliability: analysis.reliability,
         was_near: analysis.wasNear,
         is_near: analysis.isNear
@@ -131,7 +131,7 @@ export class ProximityEventRecorder {
           duration,
           location_accuracy_meters: location?.accuracy,
           venue_id: undefined, // No venue_id in current schema
-          metadata: {
+          ml_features: {
             source: 'enhanced_location_sharing',
             event_string: eventString
           }
