@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useVibe } from '@/lib/store/useVibe';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { shallow } from 'zustand/shallow';
 
 export function VibeRealtime() {

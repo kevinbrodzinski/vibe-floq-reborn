@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { buildSelfFeature } from '@/map/geojson/selfFeature';
 import mapboxgl from 'mapbox-gl';
 

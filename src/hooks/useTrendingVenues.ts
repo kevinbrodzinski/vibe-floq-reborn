@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrendingVenues, autoSyncVenues } from '@/lib/api/venues';
 import { useGeo } from '@/hooks/useGeo';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 export const useTrendingVenues = (
   radiusM = 2_000,

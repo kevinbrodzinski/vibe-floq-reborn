@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FeedbackButtons } from "@/components/ui/FeedbackButtons";
 import { LearningPatterns } from "@/components/ui/LearningPatterns";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
 import { VibeDensityModal } from "@/components/screens/VibeDensityModal";

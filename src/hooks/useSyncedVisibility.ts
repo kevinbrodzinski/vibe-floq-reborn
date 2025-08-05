@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useVibe } from '@/lib/store/useVibe';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 export function useSyncedVisibility() {
   const query = useAuth();

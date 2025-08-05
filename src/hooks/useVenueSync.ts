@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { autoSyncVenues } from '@/lib/api/venues';
 import { calculateDistance } from '@/lib/location/standardGeo';
 import { toast } from 'sonner';

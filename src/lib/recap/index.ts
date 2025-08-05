@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import dayjs from '@/lib/dayjs'
-import { useAuth } from '@/providers/AuthProvider'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 
 export const QK = {
   Recap: (profileId: string, date: string) => ['daily-recap', profileId, date] as const,
