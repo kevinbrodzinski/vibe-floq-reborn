@@ -43,6 +43,8 @@ declare module '@/components/VibeScreen/PreviewButtonsRow' {
     proximityInsights?: any;
     [key: string]: any;
   }
+  const PreviewButtonsRow: React.FC<PreviewButtonsRowProps>;
+  export = PreviewButtonsRow;
 }
 
 declare module '@/components/VibeScreen/SuggestedAlignmentActions' {
@@ -52,6 +54,8 @@ declare module '@/components/VibeScreen/SuggestedAlignmentActions' {
     proximityInsights?: any;
     [key: string]: any;
   }
+  const SuggestedAlignmentActions: React.FC<Props>;
+  export = SuggestedAlignmentActions;
 }
 
 declare module '@/components/screens/VibeDensityModal' {
@@ -61,6 +65,8 @@ declare module '@/components/screens/VibeDensityModal' {
     enhancedData?: any;
     [key: string]: any;
   }
+  const VibeDensityModal: React.FC<Props>;
+  export = VibeDensityModal;
 }
 
 declare module '@/components/social/VenueRecommendationsModal' {
@@ -71,6 +77,8 @@ declare module '@/components/social/VenueRecommendationsModal' {
     proximityData?: any;
     [key: string]: any;
   }
+  const VenueRecommendationsModal: React.FC<VenueRecommendationsModalProps>;
+  export = VenueRecommendationsModal;
 }
 
 declare module '@/components/social/NearbyFloqsModal' {
@@ -80,6 +88,8 @@ declare module '@/components/social/NearbyFloqsModal' {
     proximityInsights?: any;
     [key: string]: any;
   }
+  const NearbyFloqsModal: React.FC<NearbyFloqsModalProps>;
+  export = NearbyFloqsModal;
 }
 
 declare module '@/components/social/NearbyPeopleModal' {
@@ -90,6 +100,8 @@ declare module '@/components/social/NearbyPeopleModal' {
     locationData?: any;
     [key: string]: any;
   }
+  const NearbyPeopleModal: React.FC<NearbyPeopleModalProps>;
+  export = NearbyPeopleModal;
 }
 
 declare module '@/components/VibeScreen/EnhancedPersonalHero' {

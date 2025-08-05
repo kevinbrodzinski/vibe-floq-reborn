@@ -34,23 +34,28 @@ export const ProximityNotifications: React.FC = () => {
 
     const recentEvents = enhancedLocation.proximityEvents
       .filter(event => {
+        if (typeof event === 'string') return false;
         const eventTime = new Date(event.created_at).getTime();
         const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
         return eventTime > fiveMinutesAgo;
       })
-      .map(event => ({
-        id: `${event.other_user_id}_${event.created_at}`,
-        profileId: event.other_user_id,
-        friendName: `Friend ${event.other_user_id.slice(0, 8)}`, // Would be fetched from profiles
-        eventType: event.event_type as 'enter' | 'exit' | 'sustain',
-        distance: event.distance,
-        confidence: event.confidence_score,
-        timestamp: new Date(event.created_at),
-        location: {
-          latitude: event.latitude,
-          longitude: event.longitude
-        }
-      }));
+      .map(event => {
+        if (typeof event === 'string') return null;
+        return {
+          id: `${event.other_user_id}_${event.created_at}`,
+          profileId: event.other_user_id,
+          friendName: `Friend ${event.other_user_id.slice(0, 8)}`, // Would be fetched from profiles
+          eventType: event.event_type as 'enter' | 'exit' | 'sustain',
+          distance: event.distance,
+          confidence: event.confidence_score,
+          timestamp: new Date(event.created_at),
+          location: {
+            latitude: event.latitude,
+            longitude: event.longitude
+          }
+        };
+      })
+      .filter(Boolean);
 
     setNotifications(recentEvents);
     setIsVisible(recentEvents.length > 0);

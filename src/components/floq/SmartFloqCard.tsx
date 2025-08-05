@@ -39,7 +39,13 @@ export const SmartFloqCard = React.memo<SmartFloqCardProps>(({
 
       {/* Main Floq Card */}
       <FloqCard
-        floq={floq}
+        floq={{
+          ...floq,
+          boost_count: floq.boost_count || 0,
+          starts_in_min: floq.starts_in_min || 0,
+          members: floq.members || [],
+          is_joined: floq.is_joined || false
+        }}
         onBoost={onBoost}
         onLeave={onLeave}
         hasUserBoosted={hasUserBoosted}

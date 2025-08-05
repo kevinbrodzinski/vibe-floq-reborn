@@ -85,7 +85,7 @@ export const SocialMode: React.FC = () => {
       try {
         const suggestions = await vibeSystem.getLocationAwareContextualSuggestions(
           enhancedLocation.location,
-          currentVibe as any,
+          currentVibe,
           { type: 'venues', socialContext: socialData }
         );
         console.log('Enhanced venue suggestions:', suggestions);
@@ -114,7 +114,7 @@ export const SocialMode: React.FC = () => {
       try {
         const suggestions = await vibeSystem.getLocationAwareContextualSuggestions(
           enhancedLocation.location,
-          currentVibe as any,
+          currentVibe,
           { type: 'people', socialContext: socialData }
         );
         console.log('Proximity-enhanced people suggestions:', suggestions);
