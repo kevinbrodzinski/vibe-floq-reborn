@@ -1,7 +1,7 @@
 
 export interface ProximityAnalysis {
   profile_id: string;
-  userId?: string; // Deprecated, use profile_id
+  userId: string; // Keep for backward compatibility
   distance: number;
   timestamp: string;
   location: {
@@ -29,7 +29,7 @@ export interface ProximityEventRecord {
   event_type: string;
   proximity_data: any;
   created_at: string;
-  metadata?: any;
+  metadata?: any; // Add optional metadata property
 }
 
 export interface GeofencingService {
@@ -42,7 +42,7 @@ export interface EnvFactors {
   timeOfDay: string;
   weatherConditions: string;
   crowdDensity: number;
-  locationStability?: number;
+  locationStability?: number; // Add optional locationStability
 }
 
 export interface MovementContext {

@@ -1,103 +1,74 @@
-/**
- * Location privacy utilities for coordinate snapping
- */
+import { haversine } from 'haversine-distance';
 
-export interface SnappedCoords {
-  lat: number;
-  lng: number;
-  accuracy: number;
+export function applyPrivacySettings(
+  lat: number,
+  lng: number,
+  privacyLevel: 'hide' | 'street' | 'area'
+): { lat: number; lng: number } {
+  switch (privacyLevel) {
+    case 'hide':
+      return { lat: 0, lng: 0 }; // or null, depending on your needs
+    case 'street':
+      // Simple street-level fuzzing (adjust as needed)
+      const latFuzz = (Math.random() - 0.5) * 0.001;
+      const lngFuzz = (Math.random() - 0.5) * 0.001;
+      return { lat: lat + latFuzz, lng: lng + lngFuzz };
+    case 'area':
+      // Area-level fuzzing (adjust as needed)
+      const latAreaFuzz = (Math.random() - 0.5) * 0.01;
+      const lngAreaFuzz = (Math.random() - 0.5) * 0.01;
+      return { lat: lat + latAreaFuzz, lng: lng + lngAreaFuzz };
+    default:
+      return { lat, lng };
+  }
 }
 
-/**
- * Snap coordinates to a grid based on accuracy level
- * @param lat - Original latitude
- * @param lng - Original longitude  
- * @param accuracyLevel - 'exact', 'street', or 'area'
- * @param originalAccuracy - Original GPS accuracy in meters
- */
-export const snapToGrid = (
-  lat: number, 
-  lng: number, 
-  accuracyLevel: 'exact' | 'street' | 'area',
-  originalAccuracy: number
-): SnappedCoords => {
-  if (accuracyLevel === 'exact') {
-    return { lat, lng, accuracy: originalAccuracy };
+interface GeofencingService {
+  addGeofence: (id: string, lat: number, lng: number, radius: number) => void;
+  removeGeofence: (id: string) => void;
+  checkLocation: (lat: number, lng: number) => boolean;
+}
+
+class BasicGeofencingService implements GeofencingService {
+  private geofences = new Map<string, { lat: number; lng: number; radius: number }>();
+
+  addGeofence(id: string, lat: number, lng: number, radius: number) {
+    this.geofences.set(id, { lat, lng, radius });
   }
 
-  let gridSize: number;
-  let minAccuracy: number;
-
-  if (accuracyLevel === 'street') {
-    gridSize = 100; // 100m grid
-    minAccuracy = 100;
-  } else { // area
-    gridSize = 1000; // 1km grid  
-    minAccuracy = 1000;
+  removeGeofence(id: string) {
+    this.geofences.delete(id);
   }
 
-  // Convert meters to degrees (approximate)
-  const deltaLat = gridSize / 111320; // ~111320 meters per degree latitude
-  const deltaLng = gridSize / (111320 * Math.cos(lat * Math.PI / 180)); // longitude varies by latitude
-
-  // Snap to grid
-  const snappedLat = Math.round(lat / deltaLat) * deltaLat;
-  const snappedLng = Math.round(lng / deltaLng) * deltaLng;
-
-  return {
-    lat: snappedLat,
-    lng: snappedLng,
-    accuracy: Math.max(originalAccuracy, minAccuracy)
-  };
-};
-
-/**
- * Apply privacy filtering to coordinates based on user settings
- */
-export const applyPrivacyFilter = (
-  lat: number,
-  lng: number, 
-  accuracy: number,
-  liveSettings: any
-): SnappedCoords => {
-  const accuracyLevel = liveSettings?.live_accuracy ?? 'exact';
-  return snapToGrid(lat, lng, accuracyLevel, accuracy);
-};
-
-/**
- * Enhanced privacy filtering with geofencing support
- * This extends your existing privacy system with zone-based controls
- */
-export const applyEnhancedPrivacyFilter = async (
-  lat: number,
-  lng: number, 
-  accuracy: number,
-  liveSettings: any
-): Promise<SnappedCoords | null> => {
-  try {
-    // Import geofencing service dynamically to avoid circular dependencies
-    const { geofencingService } = await import('./geofencing');
-    
-    // Check if location is in any privacy zones
-    const geofenceMatches = await geofencingService.checkLocation({ lat, lng });
-    
-    // Apply the most restrictive privacy level found
-    let privacyLevel = liveSettings?.live_accuracy ?? 'exact';
-    
-    for (const match of geofenceMatches) {
-      if (match.geofence.privacy_level === 'hide') {
-        return null; // Hide location completely
-      } else if (match.geofence.privacy_level === 'area' && privacyLevel !== 'area') {
-        privacyLevel = 'area';
-      } else if (match.geofence.privacy_level === 'street' && privacyLevel === 'exact') {
-        privacyLevel = 'street';
+  checkLocation(lat: number, lng: number): boolean {
+    for (const [_, fence] of this.geofences) {
+      const distance = haversine(
+        { lat, lng },
+        { lat: fence.lat, lng: fence.lng }
+      );
+      if (distance <= fence.radius) {
+        return true;
       }
     }
-    
-    return snapToGrid(lat, lng, privacyLevel, accuracy);
-  } catch (error) {
-    console.warn('Enhanced privacy filtering failed, falling back to basic privacy:', error);
-    // Fallback to existing privacy system
-    return applyPrivacyFilter(lat, lng, accuracy, liveSettings);
+    return false;
   }
-};
+}
+
+export function createGeofencingService(): GeofencingService {
+  return new BasicGeofencingService();
+}
+
+export function smartLocationPrivacy(
+  lat: number, 
+  lng: number, 
+  privacyLevel: 'hide' | 'street' | 'area',
+  geofenceService: GeofencingService
+): { lat: number; lng: number } {
+  // Check if location is within any geofence
+  if (geofenceService.checkLocation(lat, lng)) {
+    // Apply maximum privacy in geofenced areas
+    return applyPrivacySettings(lat, lng, 'area');
+  }
+  
+  return applyPrivacySettings(lat, lng, privacyLevel);
+}

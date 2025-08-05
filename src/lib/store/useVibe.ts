@@ -6,6 +6,7 @@ import type { Vibe } from '@/lib/vibes';
 
 interface VibeState {
   currentVibe: Vibe;
+  vibe: Vibe; // Add alias for backward compatibility
   visibility: 'public' | 'friends' | 'off';
   setVibe: (vibe: Vibe) => void;
   setVisibility: (visibility: 'public' | 'friends' | 'off') => void;
@@ -15,6 +16,7 @@ export const useVibe = create<VibeState>()(
   persist(
     (set, get) => ({
       currentVibe: 'chill',
+      get vibe() { return get().currentVibe; }, // Getter for backward compatibility
       visibility: 'public',
       
       setVibe: async (vibe: Vibe) => {
@@ -58,3 +60,9 @@ export const useVibe = create<VibeState>()(
     }
   )
 );
+
+// Export backward compatibility hook
+export const useCurrentVibe = () => {
+  const { currentVibe } = useVibe();
+  return currentVibe;
+};
