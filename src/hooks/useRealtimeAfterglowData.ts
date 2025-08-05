@@ -61,6 +61,14 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
     isLoading: isVenueIntelligenceLoading
   } = useAfterglowVenueIntelligence();
 
+  // Debug logging
+  console.log('useRealtimeAfterglowData: venue intelligence methods', {
+    enhanceAfterglowMoment: !!enhanceAfterglowMoment,
+    getVenueRecommendationsFromHistory: !!getVenueRecommendationsFromHistory,
+    autoEnhanceRecentMoments: !!autoEnhanceRecentMoments,
+    isVenueIntelligenceLoading
+  });
+
   // 1️⃣ – plain fetch (no generation side-effects)
   const { data, isFetching, error, refetch } = useQuery<DailyAfterglow | null>({
     queryKey: ['afterglow', dateISO],

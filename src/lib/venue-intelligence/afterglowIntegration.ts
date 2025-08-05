@@ -3,7 +3,8 @@
  * Enhances Phase 4 afterglow moments with venue intelligence data
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface VenueIntelligenceData {
   vibe_match: {
@@ -64,10 +65,10 @@ interface EnhancedAfterglowMetadata {
 }
 
 export class AfterglowVenueIntelligence {
-  private supabase: ReturnType<typeof createClient>;
-  
-  constructor(supabase: ReturnType<typeof createClient>) {
-    this.supabase = supabase;
+  private supabase: SupabaseClient;
+
+  constructor(supabaseClient: SupabaseClient) {
+    this.supabase = supabaseClient;
   }
 
   /**

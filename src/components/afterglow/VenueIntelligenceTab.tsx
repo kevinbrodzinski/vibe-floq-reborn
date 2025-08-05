@@ -16,6 +16,9 @@ export default function VenueIntelligenceTab({ afterglowId }: VenueIntelligenceT
   const [moments, setMoments] = useState<any[]>([]);
   const [insights, setInsights] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Debug logging
+  console.log('VenueIntelligenceTab rendered with afterglowId:', afterglowId);
   const { 
     enhanceAfterglowMoment, 
     getVenueRecommendationsFromHistory,
@@ -61,9 +64,27 @@ export default function VenueIntelligenceTab({ afterglowId }: VenueIntelligenceT
 
   const handleEnhanceMoment = async (momentId: string) => {
     try {
-      await enhanceAfterglowMoment(momentId);
-      // Refresh insights after enhancement
-      window.location.reload();
+      console.log('Enhancing moment:', momentId);
+      const result = await enhanceAfterglowMoment(momentId);
+      console.log('Enhancement result:', result);
+      // Refresh the data instead of reloading the page
+      if (afterglowId) {
+        // Re-fetch moments and insights
+        const { data: momentsData } = await supabase
+          .from('afterglow_moments')
+          .select('*')
+          .eq('daily_afterglow_id', afterglowId)
+          .order('timestamp', { ascending: true });
+        
+        if (momentsData?.length) {
+          setMoments(momentsData);
+          const processedMoments = momentsData.map(moment => ({
+            metadata: moment.metadata || {}
+          }));
+          const generatedInsights = generateMomentInsights(processedMoments);
+          setInsights(generatedInsights);
+        }
+      }
     } catch (error) {
       console.error('Error enhancing moment:', error);
     }
@@ -111,6 +132,25 @@ export default function VenueIntelligenceTab({ afterglowId }: VenueIntelligenceT
         <p className="text-sm text-muted-foreground">
           AI-powered insights about your venue experiences and social connections
         </p>
+        
+        {/* Debug Info */}
+        <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs">
+          <p>Debug: afterglowId = {afterglowId}</p>
+          <p>Debug: moments count = {moments.length}</p>
+          <p>Debug: isLoading = {isLoading.toString()}</p>
+          <p>Debug: isEnhancing = {isEnhancing.toString()}</p>
+          <Button 
+            size="sm" 
+            className="mt-2"
+            onClick={() => {
+              console.log('Test button clicked');
+              console.log('Moments:', moments);
+              console.log('Insights:', insights);
+            }}
+          >
+            Test Log Data
+          </Button>
+        </div>
       </div>
 
       {/* Intelligence Coverage */}

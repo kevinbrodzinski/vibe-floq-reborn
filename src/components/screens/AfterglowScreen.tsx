@@ -64,6 +64,13 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
     venueIntelligenceStatus,
     isVenueIntelligenceLoading
   } = useRealtimeAfterglowData(currentDate);
+
+  // Debug logging
+  console.log('AfterglowScreen: venueIntelligenceStatus', venueIntelligenceStatus, 'isVenueIntelligenceLoading', isVenueIntelligenceLoading);
+  console.log('AfterglowScreen: afterglow?.id', afterglow?.id);
+  
+  // TEMPORARY: Force status for testing
+  const testVenueIntelligenceStatus = 'enhanced'; // Change to 'enhancing' or 'ready' to test
   const refresh = generate;
   
   const formattedDate = useMemo(
@@ -253,17 +260,17 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               <Brain className="h-6 w-6 text-white/90" />
             </Button>
             
-            {/* Venue Intelligence Status Indicator */}
-            {venueIntelligenceStatus === 'enhanced' && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background animate-pulse">
-                <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75"></div>
-              </div>
-            )}
-            {venueIntelligenceStatus === 'enhancing' && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-background">
-                <div className="absolute inset-0 bg-blue-400 rounded-full animate-spin opacity-75"></div>
-              </div>
-            )}
+                         {/* Venue Intelligence Status Indicator */}
+             {testVenueIntelligenceStatus === 'enhanced' && (
+               <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background animate-pulse">
+                 <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75"></div>
+               </div>
+             )}
+             {testVenueIntelligenceStatus === 'enhancing' && (
+               <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-background">
+                 <div className="absolute inset-0 bg-blue-400 rounded-full animate-spin opacity-75"></div>
+               </div>
+             )}
           </div>
         </div>
       </div>
@@ -529,17 +536,22 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               </Button>
               
               {/* Venue Intelligence Enhancement Button */}
-              {venueIntelligenceStatus === 'ready' && (
-                <Button 
-                  variant="outline" 
-                  onClick={enhanceWithVenueIntelligence}
-                  disabled={isVenueIntelligenceLoading}
-                  className="hover:glow-primary border-primary/30 text-primary hover:bg-primary/10"
-                >
-                  <Brain className="w-4 h-4 mr-2" />
-                  Enhance with Intelligence
-                </Button>
-              )}
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  console.log('Manual enhance clicked');
+                  if (enhanceWithVenueIntelligence) {
+                    enhanceWithVenueIntelligence();
+                  } else {
+                    console.log('enhanceWithVenueIntelligence is not available');
+                  }
+                }}
+                disabled={isVenueIntelligenceLoading}
+                className="hover:glow-primary border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Test Venue Intelligence
+              </Button>
               
               <Button 
                 variant="default"

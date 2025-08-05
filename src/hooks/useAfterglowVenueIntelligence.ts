@@ -71,6 +71,9 @@ export function useAfterglowVenueIntelligence() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('useAfterglowVenueIntelligence: user', user?.id, 'isLoading', isLoading, 'error', error);
+
   // Initialize the venue intelligence service
   const venueIntelligence = useMemo(() => 
     new AfterglowVenueIntelligence(supabase), 
