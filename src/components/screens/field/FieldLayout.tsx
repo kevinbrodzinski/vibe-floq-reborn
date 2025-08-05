@@ -98,8 +98,8 @@ export const FieldLayout = () => {
   const geoLoading = ['idle', 'loading', 'fetching'].includes(geo.status);
   const geoError = geo.error && !['unavailable', 'timeout'].includes(geo.error as LocationError);
   
-  // 🔧 BYPASS LOCATION GATE FOR MAP TESTING - Allow map to render with fallback coordinates
-  const allowMapWithFallback = true; // Set to false to restore strict location gate
+  // 🔧 REQUIRE LOCATION FOR MAP - Disable fallback to force permission request
+  const allowMapWithFallback = false; // Must have location permission to show map
   const shouldShowMap = allowMapWithFallback || geoReady;
   
   // Enhanced debugging with both geo and location context state
@@ -124,7 +124,11 @@ export const FieldLayout = () => {
         <div className="relative h-svh w-full bg-background">
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
-              onRequestLocation={() => location.startTracking()}
+              onRequestLocation={() => {
+                console.log('[FieldLayout] Permission denied - trying again');
+                geo.requestLocation?.();
+                location?.startTracking?.();
+              }}
               error="denied"
               loading={false}
               onSetDebugLocation={handleDebugLocation}
@@ -145,18 +149,25 @@ export const FieldLayout = () => {
             <GeolocationPrompt
               onRequestLocation={() => {
                 console.log('[FieldLayout] User requested location');
-                // Try useGeo's request method first, fallback to unified location
-                if (geo.requestLocation) {
-                  geo.requestLocation();
-                } else if (location?.startTracking && typeof location.startTracking === 'function') {
-                  location.startTracking();
-                } else {
-                  console.log('[FieldLayout] Using fallback geolocation request');
+                // Trigger both geo and location context to ensure proper permission flow
+                Promise.all([
+                  geo.requestLocation ? Promise.resolve(geo.requestLocation()) : Promise.resolve(),
+                  location?.startTracking && typeof location.startTracking === 'function' 
+                    ? Promise.resolve(location.startTracking()) 
+                    : Promise.resolve()
+                ]).catch(err => {
+                  console.warn('[FieldLayout] Location request failed:', err);
+                  // Fallback to direct geolocation API
                   navigator.geolocation?.getCurrentPosition(
-                    () => {},
-                    (e) => console.warn('[FieldLayout] fallback geolocation error', e)
+                    (pos) => {
+                      console.log('[FieldLayout] Fallback geolocation success');
+                      // Force a refresh to pick up the new location
+                      window.location.reload();
+                    },
+                    (e) => console.warn('[FieldLayout] Fallback geolocation error', e),
+                    { enableHighAccuracy: true, timeout: 10000 }
                   );
-                }
+                });
               }}
               error={geo.error || null}
               loading={geoLoading}

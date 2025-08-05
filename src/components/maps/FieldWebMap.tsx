@@ -332,9 +332,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
         // Only create map if we have user location
         if (!location.coords?.lat || !location.coords?.lng) {
-          console.warn('[FieldWebMap] No user location available, cannot create map');
-          setStatus('error');
-          setErr('Location required for map');
+          console.warn('[FieldWebMap] No user location available - waiting for permission');
+          setStatus('loading');
+          setErr('Waiting for location permission...');
           return;
         }
 
