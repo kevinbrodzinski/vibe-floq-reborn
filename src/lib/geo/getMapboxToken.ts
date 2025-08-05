@@ -6,18 +6,24 @@
  * – Keep this file browser-only; no React / DOM imports here.
  */
 
-type Source = 'env' | 'supabase' | 'fallback';
+type TokenSource = 'env' | 'supabase' | 'fallback';
+interface CachedToken {
+  token: string;
+  source: TokenSource;
+  cachedAt: number;
+}
+
 export interface MapboxTokenInfo {
   token : string;
-  source: Source;
+  source: TokenSource;
 }
 
 /*───────────────────────────────────────────────────────────────────────────✦*/
 /*  In-memory cache with TTL                                                 */
 /*───────────────────────────────────────────────────────────────────────────✦*/
 
-const TTL              = 6 * 60 * 60 * 1_000;          // 6 h
-let   cached: (MapboxTokenInfo & { cachedAt: number }) | null = null;
+const TTL = 1000 * 60 * 60 * 6;          // 6 h
+let cached: CachedToken | null = null;
 
 export const clearMapboxTokenCache = () => { 
   cached = null; 
@@ -37,14 +43,9 @@ const devLog = (...args: unknown[]) =>
 /*  Main util                                                                */
 /*───────────────────────────────────────────────────────────────────────────✦*/
 
-export async function getMapboxToken(): Promise<MapboxTokenInfo> {
-  /* SSR guard – this util must run in the browser only */
-  if (typeof window === 'undefined') {
-    throw new Error('getMapboxToken() should only be invoked client-side');
-  }
-
-  /* Serve from cache if still fresh */
-  if (isFresh()) return { token: cached!.token, source: cached!.source };
+export async function getMapboxToken(): Promise<Omit<CachedToken, 'cachedAt'>> {
+  if (typeof window === 'undefined') throw new Error('Browser-only util');
+  if (isFresh()) return cached!;
 
   devLog('Fetching new access token…');
 
@@ -55,7 +56,7 @@ export async function getMapboxToken(): Promise<MapboxTokenInfo> {
   if (validEnv) {
     devLog('✓ Using token from VITE_MAPBOX_TOKEN');
     cached = { token: envToken, source: 'env', cachedAt: Date.now() };
-    return { token: envToken, source: 'env' };
+    return { token: cached.token, source: cached.source };
   }
   if (envToken) devLog('⚠️  Env token present but invalid / placeholder – ignoring.');
 
@@ -68,7 +69,7 @@ export async function getMapboxToken(): Promise<MapboxTokenInfo> {
     if (res.ok && json?.token?.startsWith('pk.')) {
       devLog('✓ Received token from Supabase');
       cached = { token: json.token, source: 'supabase', cachedAt: Date.now() };
-      return { token: json.token, source: 'supabase' };
+      return { token: cached.token, source: cached.source };
     }
     devLog(`Supabase responded ${res.status}. Falling back.`);
   } catch (err) {
@@ -82,5 +83,5 @@ export async function getMapboxToken(): Promise<MapboxTokenInfo> {
 
   devLog('⚠️  Using hardcoded fallback token.');
   cached = { token: fallback, source: 'fallback', cachedAt: Date.now() };
-  return { token: fallback, source: 'fallback' };
+  return { token: cached.token, source: cached.source };
 }

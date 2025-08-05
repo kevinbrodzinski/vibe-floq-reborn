@@ -140,15 +140,9 @@ export function useGeo(): GeoState {
 
 /* ──────────────────────────────────────────────── legacy re-exports ────── */
 // Older parts of the app import these helpers. Keep them pointing at the new hook.
-export const useLatLng   = useGeo;
+export const useLatLng  = () => useGeo().coords;
 export const useLocation = useGeo;
-export const useGeoPos   = () => {
+export const useGeoPos  = () => {
   const g = useGeo();
-  return {
-    pos: g.coords
-      ? { lat: g.coords.lat, lng: g.coords.lng, accuracy: g.accuracy ?? 0 }
-      : null,
-    loading: g.status === 'idle' || g.status === 'loading',
-    error:   g.error
-  };
+  return { pos: g.coords, loading: !g.isLocationReady, error: g.error };
 };

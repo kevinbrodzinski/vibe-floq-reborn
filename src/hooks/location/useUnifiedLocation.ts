@@ -206,8 +206,8 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     try {
       await executeWithCircuitBreaker(
         async () => {
-          // V2: Compute H3 index client-side for presence - FIX: latLngToCell returns string
-          const h3Idx = latLngToCell(locationCoords.lat, locationCoords.lng, 8);
+          // V2: Compute H3 index client-side for presence
+          const h3Idx = BigInt('0x' + latLngToCell(locationCoords.lat, locationCoords.lng, 8));   // ▶️ BigInt always
 
           // Use V2 presence function with spatial indexing
           const { data, error } = await supabase.rpc('upsert_presence_realtime_v2', {
@@ -215,7 +215,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
             p_lng: locationCoords.lng,
             p_vibe: 'active', // Default vibe for presence
             p_accuracy: locationCoords.accuracy,
-            p_h3_idx: parseInt(h3Idx, 16) || 0 // Convert hex string to number safely
+            p_h3_idx: Number(h3Idx)
           });
 
           if (error) {

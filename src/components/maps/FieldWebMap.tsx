@@ -344,23 +344,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           return;
         }
 
-        // Clear cache to force fresh token retrieval with comprehensive logging
-        clearMapboxTokenCache();
-        console.log('[FieldWebMap] PRODUCTION FIX: Fetching Mapbox token...');
-        const{token, source}=await getMapboxToken();
-        console.log('[FieldWebMap] PRODUCTION FIX: Token received:', { source, length: token?.length });
-        
-        if (!token || !token.startsWith('pk.')) {
-          console.error('[FieldWebMap] PRODUCTION FIX: Invalid token:', token);
-          throw new Error(`Invalid Mapbox token received: ${token?.substring(0, 10)}...`);
-        }
-        
-        // Enhanced token debugging
-        console.log('[FieldWebMap] ✅ Token acquired:', { 
-          source, 
-          tokenLength: token.length,
-          envToken: import.meta.env.VITE_MAPBOX_TOKEN ? `${import.meta.env.VITE_MAPBOX_TOKEN.substring(0, 10)}...` : 'NOT_SET',
-          isYourToken: token.includes('pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtZGR6b2VhZzBhazMyaW9vbG9lc3B6d3cifQ')
+        // Early-abort when token missing before map init
+        const { token, source } = await getMapboxToken().catch((e) => {
+          console.error('[FieldWebMap] Token fetch failed', e);
+          setErr('Mapbox token unavailable');     // shows nice error overlay
+          setStatus('error');
+          throw e;                                // keeps execution path simple
         });
         mapboxgl.accessToken=token;
 
@@ -938,8 +927,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       location.coords.accuracy
     );
     
-    // 🔧 FIX: Use jumpTo for first position, flyTo for subsequent updates
-    if (firstPosRef.current) {
+    // Don't jumpTo if coords are still the SF demo
+    const isDemo = location.coords?.lat === 37.7749 && location.coords?.lng === -122.4194;
+    if (!isDemo && firstPosRef.current) {
       firstPosRef.current = false;
       console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
       map.jumpTo({ 
