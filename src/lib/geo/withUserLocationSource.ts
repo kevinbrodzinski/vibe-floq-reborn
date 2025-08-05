@@ -7,6 +7,12 @@ export const USER_LOC_SRC   = 'user-location';
 export const USER_LOC_LAYER = 'user-location-dot';
 
 export function attachUserLocationSource(map: mapboxgl.Map): () => void {
+  // Guard against invalid map reference
+  if (!map || typeof map.isStyleLoaded !== 'function') {
+    console.error('[attachUserLocationSource] Invalid map reference:', map);
+    return () => {}; // Return no-op cleanup function
+  }
+  
   let isSourceReady = false;
   
   const ensure = () => {
@@ -68,6 +74,12 @@ export function setUserLocation(
   const MAX_RETRY = 10;      // Increased retries for better reliability
 
   const push = () => {
+    // Guard against invalid map reference
+    if (!map || typeof map.isStyleLoaded !== 'function') {
+      console.error('[setUserLocation] Invalid map reference:', map);
+      return false;
+    }
+    
     // Enhanced debugging
     const styleLoaded = map.isStyleLoaded();
     const src = map.getSource(USER_LOC_SRC) as mapboxgl.GeoJSONSource | undefined;

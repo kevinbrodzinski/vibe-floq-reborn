@@ -390,19 +390,6 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
         detachUserLocationSourceRef.current = attachUserLocationSource(map);
         
-        // Call setUserLocation with a small delay to let the source initialize
-        // This reduces the chance of retry failures
-        if (location.coords?.lat && location.coords?.lng) {
-          setTimeout(() => {
-            setUserLocation(
-              map,
-              location.coords.lat,
-              location.coords.lng,
-              location.coords.accuracy || 50
-            );
-          }, 50); // Small delay to let source initialize
-        }
-        
         // Wait for style to fully load before continuing
         if (!map.isStyleLoaded()) {
           await new Promise(resolve => map.once('style.load', resolve));
@@ -523,6 +510,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           setStatus('ready');
           (window as any).__FLOQ_MAP = map;
           setMapInstance(map);
+          
+          // Now that map is fully ready, set initial user location if available
+          if (location.coords?.lat && location.coords?.lng) {
+            setUserLocation(
+              map,
+              location.coords.lat,
+              location.coords.lng,
+              location.coords.accuracy || 50
+            );
+          }
           
           console.log('🗺️ Map ready - layers exist, handlers safe to register');
         });
@@ -944,6 +941,12 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
     
     const map = mapRef.current;
+    
+    // Additional safety check before calling setUserLocation
+    if (!map || typeof map.isStyleLoaded !== 'function') {
+      console.warn('[FieldWebMap] Map reference invalid in location update effect');
+      return;
+    }
     
     // Use the safe setUserLocation utility
     setUserLocation(
