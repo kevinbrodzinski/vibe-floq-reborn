@@ -19,7 +19,14 @@
     "eas:submit": "eas submit",
     "eas:submit:ios": "eas submit --platform ios",
     "eas:submit:android": "eas submit --platform android",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "deno:check": "deno check --allow-all **/*.ts **/*.tsx",
+    "deno:lint": "deno lint",
+    "deno:fmt": "deno fmt",
+    "deno:test": "deno test --allow-all",
+    "lovable:dev": "npm run dev",
+    "lovable:build": "npm run build",
+    "lovable:preview": "npm run preview"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
