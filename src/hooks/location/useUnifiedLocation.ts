@@ -482,9 +482,9 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     };
   }, [flushLocationBuffer]);
 
-  // Cache store selectors to prevent infinite re-renders
-  const timestamp = useLocationStore.getState().timestamp;
-  const isTracking = useLocationStore.getState().isTracking;
+  // Use Zustand selectors properly (cached by Zustand internally)
+  const timestamp = useLocationStore((state) => state.timestamp);
+  const isTracking = useLocationStore((state) => state.isTracking);
 
   return {
     coords,
