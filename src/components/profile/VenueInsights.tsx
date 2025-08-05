@@ -21,76 +21,85 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
   const { data: venueInsights, isLoading } = useQuery({
     queryKey: ['venue-insights', profileId],
     queryFn: async (): Promise<VenueInsight[]> => {
-      // Get venue check-ins with venue details
-      const { data: venueData } = await supabase
-        .from('venue_live_presence')
-        .select(`
-          venue_id,
-          checked_in_at,
-          checked_out_at,
-          venues!inner(name)
-        `)
-        .eq('profile_id', profileId)
-        .order('checked_in_at', { ascending: false });
+      try {
+        // Get venue check-ins with venue details
+        const { data: venueData, error } = await supabase
+          .from('venue_live_presence')
+          .select(`
+            venue_id,
+            checked_in_at,
+            venues!inner(name)
+          `)
+          .eq('profile_id', profileId)
+          .order('checked_in_at', { ascending: false });
 
-      if (!venueData || venueData.length === 0) return [];
-
-      // Group by venue and calculate insights
-      const venueMap = new Map<string, {
-        name: string;
-        visits: { checkedIn: string; checkedOut: string | null }[];
-      }>();
-
-      venueData.forEach(visit => {
-        const venueId = visit.venue_id;
-        const venueName = (visit.venues as any)?.name || 'Unknown Venue';
-        
-        if (!venueMap.has(venueId)) {
-          venueMap.set(venueId, { name: venueName, visits: [] });
+        if (error) {
+          console.error('Error fetching venue data:', error);
+          return [];
         }
-        
-        venueMap.get(venueId)!.visits.push({
-          checkedIn: visit.checked_in_at,
-          checkedOut: visit.checked_out_at
-        });
-      });
 
-      // Calculate insights for each venue
-      const insights: VenueInsight[] = [];
+        if (!venueData || venueData.length === 0) return [];
 
-      for (const [venueId, venueInfo] of venueMap) {
-        const visits = venueInfo.visits;
-        const visitCount = visits.length;
-        
-        // Calculate average stay duration
-        const durations = visits
-          .filter(v => v.checkedOut)
-          .map(v => {
-            const checkIn = new Date(v.checkedIn);
-            const checkOut = new Date(v.checkedOut!);
-            return checkOut.getTime() - checkIn.getTime();
+        // Group by venue and calculate insights
+        const venueMap = new Map<string, {
+          name: string;
+          visits: { checkedIn: string; checkedOut: string | null }[];
+        }>();
+
+        venueData.forEach(visit => {
+          const venueId = visit.venue_id;
+          const venueName = (visit.venues as any)?.name || 'Unknown Venue';
+          
+          if (!venueMap.has(venueId)) {
+            venueMap.set(venueId, { name: venueName, visits: [] });
+          }
+          
+          venueMap.get(venueId)!.visits.push({
+            checkedIn: visit.checked_in_at,
+            checkedOut: null // Set to null since checked_out_at column doesn't exist
           });
-        
-        const averageStayDuration = durations.length > 0 
-          ? durations.reduce((sum, d) => sum + d, 0) / durations.length / (1000 * 60) // minutes
-          : 0;
-
-        const lastVisit = visits[0].checkedIn; // Already sorted by most recent
-
-        insights.push({
-          venueId,
-          venueName: venueInfo.name,
-          visitCount,
-          lastVisit,
-          averageStayDuration,
-          dominantVibe: 'social' // TODO: Calculate from actual vibe data
         });
-      }
 
-      // Sort by visit count and return top 5
-      return insights
-        .sort((a, b) => b.visitCount - a.visitCount)
-        .slice(0, 5);
+        // Calculate insights for each venue
+        const insights: VenueInsight[] = [];
+
+        for (const [venueId, venueInfo] of venueMap) {
+          const visits = venueInfo.visits;
+          const visitCount = visits.length;
+          
+          // Calculate average stay duration
+          const durations = visits
+            .filter(v => v.checkedOut)
+            .map(v => {
+              const checkIn = new Date(v.checkedIn);
+              const checkOut = new Date(v.checkedOut!);
+              return checkOut.getTime() - checkIn.getTime();
+            });
+          
+          const averageStayDuration = durations.length > 0 
+            ? durations.reduce((sum, d) => sum + d, 0) / durations.length / (1000 * 60) // minutes
+            : 0;
+
+          const lastVisit = visits[0].checkedIn; // Already sorted by most recent
+
+          insights.push({
+            venueId,
+            venueName: venueInfo.name,
+            visitCount,
+            lastVisit,
+            averageStayDuration,
+            dominantVibe: 'social' // TODO: Calculate from actual vibe data
+          });
+        }
+
+        // Sort by visit count and return top 5
+        return insights
+          .sort((a, b) => b.visitCount - a.visitCount)
+          .slice(0, 5);
+      } catch (error) {
+        console.error('Error fetching venue insights:', error);
+        return [];
+      }
     },
     enabled: !!profileId,
     staleTime: 10 * 60 * 1000, // 10 minutes

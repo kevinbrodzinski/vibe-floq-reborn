@@ -171,11 +171,17 @@ export function usePlanTemplates() {
     return template
   }, [])
 
-  const loadTemplate = useCallback((template: PlanTemplate): Omit<PlanStop, 'id'>[] => {
-    return template.stops.map(stop => ({
-      ...stop,
-      // Generate new IDs when loading
-      created_by: 'current-user'
+  const loadTemplate = useCallback((template: PlanTemplate): Array<{ id: string; title: string; description?: string; location: { lat: number; lng: number; name?: string }; stop_order: number }> => {
+    return template.stops.map((stop, index) => ({
+      id: `stop-${Date.now()}-${index}`,
+      title: stop.title,
+      description: stop.description,
+      location: {
+        lat: 0, // Would be extracted from stop.location or venue
+        lng: 0,
+        name: stop.venue || stop.location
+      },
+      stop_order: stop.stop_order
     }))
   }, [])
 

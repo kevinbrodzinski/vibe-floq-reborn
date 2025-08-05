@@ -84,8 +84,8 @@ export const SocialMode: React.FC = () => {
     if (socialData && enhancedLocation.location) {
       try {
         const suggestions = await vibeSystem.getLocationAwareContextualSuggestions(
-          enhancedLocation.location,
           currentVibe,
+          enhancedLocation,
           { type: 'venues', socialContext: socialData }
         );
         console.log('Enhanced venue suggestions:', suggestions);
@@ -113,8 +113,8 @@ export const SocialMode: React.FC = () => {
     if (socialData && enhancedLocation.location) {
       try {
         const suggestions = await vibeSystem.getLocationAwareContextualSuggestions(
-          enhancedLocation.location,
           currentVibe,
+          enhancedLocation,
           { type: 'people', socialContext: socialData }
         );
         console.log('Proximity-enhanced people suggestions:', suggestions);
@@ -149,14 +149,11 @@ export const SocialMode: React.FC = () => {
         onVenuesPress={handleVenuesPress}
         onFloqsPress={handleFloqsPress}
         onPeoplePress={handlePeoplePress}
-        proximityInsights={proximityInsights}
       />
       
       {/* Enhanced Suggested Alignment Actions with Proximity Intelligence */}
       <SuggestedAlignmentActions 
         className="mt-6" 
-        socialData={socialData}
-        proximityInsights={proximityInsights}
       />
       
       {/* Proximity Intelligence Summary */}
@@ -192,27 +189,21 @@ export const SocialMode: React.FC = () => {
       <VibeDensityModal 
         open={showDensityMap}
         onOpenChange={setShowDensityMap}
-        enhancedData={socialData}
       />
       
       <VenueRecommendationsModal 
         open={showVenues}
         onOpenChange={setShowVenues}
-        socialContext={socialData}
-        proximityData={proximityInsights}
       />
       
       <NearbyFloqsModal 
         open={showFloqs} 
         onOpenChange={setShowFloqs}
-        proximityInsights={proximityInsights}
       />
 
       <NearbyPeopleModal 
         open={showPeople} 
         onOpenChange={setShowPeople}
-        socialContext={socialData}
-        locationData={enhancedLocation}
       />
     </div>
   );
