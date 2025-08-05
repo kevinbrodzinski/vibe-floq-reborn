@@ -7,14 +7,20 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Lock } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/avatar';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
+import { uniqBy } from 'lodash-es';
 
 export const FriendOverrideList = () => {
     const { rows: friendsWithPresence, isLoading: friendsLoading } = useUnifiedFriends();
     const { data: liveSettings } = useLiveSettings();
     const queryClient = useQueryClient();
     const [optimisticState, setOptimisticState] = useState<Record<string, boolean>>({});
+
+    // 🔑 De-duplicate friends list to prevent duplicate key warnings
+    const uniqueFriends = useMemo(() => {
+        return uniqBy(friendsWithPresence, f => f.id);
+    }, [friendsWithPresence]);
 
     // Get all sharing preferences
     const { data: sharePrefs = {}, isLoading: prefsLoading } = useQuery({
@@ -34,13 +40,13 @@ export const FriendOverrideList = () => {
     useEffect(() => {
         if (liveSettings?.live_scope === 'friends' && 
             liveSettings.live_auto_when.includes('always') &&
-            friendsWithPresence.length > 0 &&
+            uniqueFriends.length > 0 &&
             Object.keys(sharePrefs).length === 0) {
             
             // If no preferences exist yet and user selected friends + always, 
             // automatically enable sharing for all friends
             const enableAllFriends = async () => {
-                const friendIds = friendsWithPresence.map(f => f.id);
+                const friendIds = uniqueFriends.map(f => f.id);
                 
                 try {
                     const { error } = await supabase.rpc('set_live_share_bulk', {
@@ -59,7 +65,7 @@ export const FriendOverrideList = () => {
             
             enableAllFriends();
         }
-    }, [liveSettings, friendsWithPresence, sharePrefs, queryClient]);
+    }, [liveSettings, uniqueFriends, sharePrefs, queryClient]);
 
     const mutation = useMutation({
         mutationFn: async ({ friendId, isLive }: { friendId: string; isLive: boolean }) => {
@@ -116,7 +122,7 @@ export const FriendOverrideList = () => {
     const effectiveSharePrefs = { ...sharePrefs, ...optimisticState };
     
     // Apply smart defaults based on scope settings
-    friendsWithPresence.forEach(friend => {
+    uniqueFriends.forEach(friend => {
         if (!(friend.id in effectiveSharePrefs)) {
             // If no explicit preference exists, default based on scope
             if (liveSettings?.live_scope === 'friends' && 
@@ -129,7 +135,7 @@ export const FriendOverrideList = () => {
     });
     
     const sharingCount = Object.values(effectiveSharePrefs).filter(Boolean).length;
-    const totalFriends = friendsWithPresence.length;
+    const totalFriends = uniqueFriends.length;
 
     return (
         <div className="space-y-4">
@@ -144,7 +150,7 @@ export const FriendOverrideList = () => {
             </div>
 
             <div className="space-y-3">
-                {friendsWithPresence.map((friend) => {
+                {uniqueFriends.map((friend) => {
                     const isSharing = effectiveSharePrefs[friend.id] || false;
 
                     return (

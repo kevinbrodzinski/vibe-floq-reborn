@@ -75,6 +75,15 @@ export function usePeopleSource(
   useEffect(() => {
     if (!map) return;
     
+    // 🔑 Always ensure the 'people' source exists first
+    const srcId = 'people';
+    if (!map.getSource(srcId)) {
+      map.addSource(srcId, { 
+        type: 'geojson', 
+        data: { type: 'FeatureCollection', features: [] }
+      });
+    }
+    
     withPeopleSource((src) => {
       src.setData(geojson);
     });

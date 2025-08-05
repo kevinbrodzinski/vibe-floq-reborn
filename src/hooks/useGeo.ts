@@ -44,6 +44,28 @@ export function useGeo(): GeoState {
   });
 
   useEffect(() => {
+    // Check for debug flag FIRST, before any real geolocation calls
+    const force = localStorage.getItem('floq-debug-forceLoc');
+    if (force) {
+      const [latStr, lngStr] = force.split(',');
+      const debugResult = {
+        coords: {
+          ...DEMO_COORDS,
+          latitude: +latStr,
+          longitude: +lngStr
+        },
+        timestamp: Date.now(),
+        status: 'ready' as const  // ★ normalize to 'ready' for UI consumption
+      };
+      
+      if (import.meta.env.DEV) {
+        (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
+      }
+      
+      setValue(debugResult);
+      return; // <-- bail out, don't start real watch
+    }
+
     // Skip if we're in debug mode with forced debug location
     if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
       console.log('[useGeo] Debug mode enabled - using demo coordinates');
