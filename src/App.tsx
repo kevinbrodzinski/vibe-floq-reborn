@@ -1,5 +1,10 @@
 
 import { useEffect, useRef, useMemo } from "react";
+
+// Import debug helpers in development
+if (import.meta.env.DEV) {
+  import('@/lib/debug/environmentHelper');
+}
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

@@ -134,6 +134,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
       if (map) {
         try {
           console.log('[FieldWebMap] 🧹 Cleaning up map...');
+          // Clean up any resize RAF loops
+          if (resizeRef.current) {
+            cancelAnimationFrame(resizeRef.current);
+          }
           map.off('moveend');
           map.off('load');
           map.off('error');
