@@ -54,6 +54,7 @@ export interface EnhancedGeoResult {
   coords: GeolocationCoordinates | null;
   timestamp: number | null;
   status: 'idle' | 'fetching' | 'success' | 'error' | 'debug';
+  error?: GeolocationPositionError;
 }
 
 /**
@@ -74,11 +75,12 @@ export const getEnhancedGeolocation = (
           timestamp: pos.timestamp,
           status: 'success',
         }),
-      () =>
+      (error) =>
         resolve({
           coords: null,
           timestamp: Date.now(),
           status: 'error',
+          error // Pass the error object so we can check error.code
         }),
       opts
     );
