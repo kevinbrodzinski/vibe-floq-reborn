@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/providers/AuthProvider';
 import { AfterglowVenueIntelligence } from '@/lib/venue-intelligence/afterglowIntegration';
 
 interface VenueIntelligenceData {

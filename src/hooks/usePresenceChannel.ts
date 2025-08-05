@@ -105,5 +105,5 @@ export const usePresenceChannel = () => {
     } catch (error) {
       console.warn('Failed to update presence visibility:', error);
     }
-  }, [authLoading, visibility]);
+  }, [authLoading, visibility, vibe, gh5, user?.id]);
 };
