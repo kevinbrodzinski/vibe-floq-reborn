@@ -397,44 +397,34 @@ export const LocationSystemHealthDashboard: React.FC = () => {
                   </>
                 )}
                 <div className="flex justify-between">
-                  <span>System Health:</span>
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-xs">GPS:</span>
-                      <span className={getStatusColor(systemHealth.gpsManager.isHealthy)}>
-                        {systemHealth.gpsManager.isHealthy ? '✓' : '✗'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-xs">Bus:</span>
-                      <span className={getStatusColor(systemHealth.locationBus.isHealthy)}>
-                        {systemHealth.locationBus.isHealthy ? '✓' : '✗'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-xs">Circuit:</span>
-                      <span className={getStatusColor(systemHealth.circuitBreaker.isHealthy)}>
-                        {systemHealth.circuitBreaker.isHealthy ? '✓' : '✗'}
-                      </span>
-                    </div>
-                  </div>
+                  <span>GPS Health:</span>
+                  <span className={getStatusColor(systemHealth?.gpsManager?.isHealthy || false)}>
+                    {systemHealth?.gpsManager?.isHealthy ? '✓' : '✗'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Store Metrics:</span>
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-xs">Updates:</span>
-                      <span>{storeMetrics.totalUpdates}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-xs">Subs:</span>
-                      <span>{storeMetrics.subscriptionCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-xs">Renders:</span>
-                      <span>{storeMetrics.renderCount}</span>
-                    </div>
-                  </div>
+                  <span>Bus Health:</span>
+                  <span className={getStatusColor(systemHealth?.locationBus?.isHealthy || false)}>
+                    {systemHealth?.locationBus?.isHealthy ? '✓' : '✗'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Circuit Health:</span>
+                  <span className={getStatusColor(systemHealth?.circuitBreaker?.isHealthy || false)}>
+                    {systemHealth?.circuitBreaker?.isHealthy ? '✓' : '✗'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Updates:</span>
+                  <span>{storeMetrics?.totalUpdates || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Subscriptions:</span>
+                  <span>{storeMetrics?.subscriptionCount || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Renders:</span>
+                  <span>{storeMetrics?.renderCount || 0}</span>
                 </div>
               </div>
             </div>
