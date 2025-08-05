@@ -38,7 +38,7 @@ import { BoostButton } from "@/components/BoostButton";
 import { SuggestChangeSheet } from "@/components/SuggestChangeSheet";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 
 import { useFloqUI } from "@/contexts/FloqUIContext";
 import { RadiusSlider } from "@/components/RadiusSlider";
@@ -242,8 +242,7 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange, onCardClick }: {
 
 export const FloqsScreen = () => {
   const navigate = useNavigate();
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
   const [debug] = useDebug();
   const { setShowCreateSheet } = useFloqUI();
   const [dmSheetOpen, setDmSheetOpen] = useState(false);

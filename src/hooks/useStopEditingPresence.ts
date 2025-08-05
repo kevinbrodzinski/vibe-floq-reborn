@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 import type { PlanStop } from '@/types/plan'
 
 export interface StopEditingPresence {
@@ -18,8 +18,7 @@ interface UseStopEditingPresenceOptions {
 
 export function useStopEditingPresence({ planId, enabled = true }: UseStopEditingPresenceOptions) {
   const [editingPresences, setEditingPresences] = useState<Map<string, StopEditingPresence>>(new Map())
-  const session = useSession()
-  const user = session?.user
+  const { user } = useAuth()
   const channelRef = useRef<any>()
 
   const channelName = `plan_editing_${planId}`

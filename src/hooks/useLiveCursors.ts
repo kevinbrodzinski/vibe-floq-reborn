@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 
 export interface LiveCursor {
   profileId: string
@@ -21,8 +21,7 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
   const [cursors, setCursors] = useState<Map<string, LiveCursor>>(new Map())
   const [myPosition, setMyPosition] = useState<{ x: number; y: number } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setTimeout>>()
-  const session = useSession()
-  const user = session?.user
+  const { user } = useAuth()
 
   const channelName = `plan_cursors_${planId}`
 

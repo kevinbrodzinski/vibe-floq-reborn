@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface FloqSuggestion {
@@ -23,8 +23,7 @@ export function useFloqSuggestions({
   limit = 10, 
   enabled = true 
 }: UseFloqSuggestionsOptions = {}) {
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
 
   return useQuery({
     queryKey: ["floq-suggestions", user?.id, geo?.lat, geo?.lng, limit],

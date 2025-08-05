@@ -12,8 +12,8 @@ const workerSingleton = (() => {
 
   if (g[key]) return g[key] as Worker;
 
-  const w = new Worker(
-    new URL('../workers/clustering.worker?worker&url', import.meta.url),
+const w = new Worker(
+    new URL('../workers/clustering.worker.ts', import.meta.url),
     { type: 'module' },
   );
 

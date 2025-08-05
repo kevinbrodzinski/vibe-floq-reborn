@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { RefreshCcw, Filter, Search, Settings, Map, Plus } from 'lucide-react';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +61,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const refreshRef = useRef<HTMLDivElement>(null);
-  const session = useSession();
+  const { user } = useAuth();
 
   // Use enhanced geolocation hook with better permission handling
   const {

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Loader2, TestTube, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { GenericStatusEnum, type GenericStatus } from '@/types/enums/genericStatus';
 
@@ -15,7 +15,7 @@ interface TestResult {
 }
 
 export default function WeeklyAITest() {
-  const user = useUser();
+  const { data: user } = useCurrentUser();
   const [tests, setTests] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 

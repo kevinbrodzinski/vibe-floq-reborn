@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -14,12 +14,12 @@ interface MentionNotification {
 }
 
 export function useMentionNotifications() {
-  const session = useSession();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<MentionNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
 
     // Subscribe to real-time mention notifications
     const channel = supabase
@@ -30,7 +30,7 @@ export function useMentionNotifications() {
           event: 'INSERT',
           schema: 'public',
           table: 'floq_message_mentions',
-          filter: `target_id=eq.${session.user.id}`,
+          filter: `target_id=eq.${user.id}`,
         },
         async (payload) => {
           try {
@@ -50,7 +50,7 @@ export function useMentionNotifications() {
                 )
               `)
               .eq('message_id', payload.new.message_id)
-              .eq('target_id', session.user.id)
+              .eq('target_id', user.id)
               .single();
 
             if (mentionDetails?.floq_messages) {
@@ -111,7 +111,7 @@ export function useMentionNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session?.user?.id]);
+  }, [user?.id]);
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev => 

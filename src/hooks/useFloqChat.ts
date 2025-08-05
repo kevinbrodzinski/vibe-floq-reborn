@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supaFn } from "@/lib/supaFn";
@@ -30,8 +30,7 @@ interface FloqChatReturn {
 }
 
 export function useFloqChat(floqId: string | null): FloqChatReturn {
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const messageIdsRef = useRef<Set<string>>(new Set());

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UserPresence {
@@ -9,11 +9,11 @@ interface UserPresence {
 }
 
 export function useUserPresence() {
-  const session = useSession();
+  const { user } = useAuth();
   const [userPresence, setUserPresence] = useState<Map<string, UserPresence>>(new Map());
 
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!user?.id) {
       if (process.env.NODE_ENV === 'development') {
         console.log('⏳ useUserPresence waiting for session');
       }
@@ -79,7 +79,7 @@ export function useUserPresence() {
             try {
               // Track our own presence
               await channel.track({
-                profile_id: session.user.id,
+                profile_id: user.id,
                 status: 'online',
                 last_seen: new Date().toISOString(),
               });
@@ -103,7 +103,7 @@ export function useUserPresence() {
     } catch (channelError) {
       console.error('Failed to create user presence channel:', channelError);
     }
-  }, [session?.user?.id]);
+  }, [user?.id]);
 
   const getUserPresence = (profileId: string): UserPresence | null => {
     return userPresence.get(profileId) || null;

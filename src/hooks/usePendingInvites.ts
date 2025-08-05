@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,8 +30,7 @@ interface UsePendingInvitesReturn {
 }
 
 export function usePendingInvites(): UsePendingInvitesReturn {
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const query = useQuery({

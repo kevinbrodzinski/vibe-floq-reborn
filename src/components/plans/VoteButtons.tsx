@@ -4,7 +4,7 @@ import { usePlanVote, useStopVotes } from '@/hooks/usePlanVote'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
 import { getSafeStatus } from '@/lib/planStatusConfig'
 
@@ -25,15 +25,15 @@ export function VoteButtons({
   size = 'sm',
   showCounts = true 
 }: VoteButtonsProps) {
-  const session = useSession()
+  const { user } = useAuth()
   const { data: votes = [] } = useStopVotes(stopId)
   const { mutate: vote, isPending } = usePlanVote()
   const [optimisticVote, setOptimisticVote] = useState<'up' | 'down' | null>(null)
   const { canVoteOnStops } = usePlanStatusValidation()
 
   // Find user's existing vote
-  const userVote = session?.user 
-    ? votes.find(v => (v as any).profile_id === session.user.id)?.vote_type 
+  const userVote = user 
+    ? votes.find(v => (v as any).profile_id === user.id)?.vote_type 
     : null
 
   // Calculate vote counts
@@ -41,7 +41,7 @@ export function VoteButtons({
   const downVotes = votes.filter(v => v.vote_type === 'down').length
 
   const handleVote = (voteType: 'up' | 'down') => {
-    if (!session?.user) return
+    if (!user) return
 
     setOptimisticVote(voteType)
     
@@ -58,7 +58,7 @@ export function VoteButtons({
 
   // Don't show if user not authenticated or voting not allowed for this plan status
   const normalizedStatus = getSafeStatus(planStatus)
-  if (!session?.user || !canVoteOnStops(normalizedStatus)) {
+  if (!user || !canVoteOnStops(normalizedStatus)) {
     return null
   }
 

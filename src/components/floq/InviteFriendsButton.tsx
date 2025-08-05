@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useInviteToFloq } from '@/hooks/useInviteToFloq'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/components/auth/EnhancedAuthProvider'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useUserSearch } from '@/hooks/useUserSearch'
@@ -61,7 +61,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
 }) => {
   /* ----------------------------- Local state ----------------------------- */
 
-  const session      = useSession()
+  const { user }      = useAuth()
   const [isOpen, setIsOpen]               = useState(false)
   const [selected, setSelected]           = useState<Set<string>>(new Set())
   const [query, setQuery]                 = useState('')

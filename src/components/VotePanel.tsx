@@ -1,7 +1,7 @@
 import { Vote, Check } from "lucide-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { usePlanVote } from "@/hooks/usePlanVote";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/components/auth/EnhancedAuthProvider";
 import { useState, useEffect } from "react";
 
 interface VotePanelProps {
@@ -19,8 +19,7 @@ const voteOptions = [
 ];
 
 export const VotePanel = ({ planId, stopId, className = "" }: VotePanelProps) => {
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
   const { mutate: submitVote, isPending, isSuccess } = usePlanVote();
   const [lastVoted, setLastVoted] = useState<string | null>(null);
 

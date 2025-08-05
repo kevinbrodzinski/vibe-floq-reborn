@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { UserMinus, Search, Crown, Shield, User, Mail, Send, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { FloqDetails, FloqParticipant, PendingInvitation } from '@/hooks/useFloqDetails';
@@ -28,10 +28,10 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
   const [selectedInvitation, setSelectedInvitation] = useState<PendingInvitation | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const queryClient = useQueryClient();
-  const session = useSession();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const currentUserId = session?.user?.id;
+  const currentUserId = user?.id;
 
   const filteredParticipants = floqDetails.participants.filter(participant =>
     participant.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||

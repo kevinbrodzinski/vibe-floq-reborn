@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 
 export type FloqStatus = 'host' | 'joined';
 
@@ -14,11 +14,11 @@ export const FloqStatusBadge: React.FC<FloqStatusBadgeProps> = ({
   isJoined,
   className
 }) => {
-  const session = useSession();
+  const { user } = useAuth();
   
   if (!isJoined) return null;
   
-  const isHost = creatorId === session?.user?.id;
+  const isHost = creatorId === user?.id;
   
   return (
     <Badge 
