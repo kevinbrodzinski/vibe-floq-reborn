@@ -71,7 +71,30 @@ export function runMapDiagnostics() {
   // Check performance
   console.log('\n⚡ Performance:');
   console.log(`  WebGL contexts: ${performance.getEntriesByType('frame').filter(e => e.name?.includes('WebGL')).length}`);
-  console.log(`  Canvas elements: ${document.querySelectorAll('.mapboxgl-canvas').length}`);
+  
+  // 🔍 CRITICAL: Check for duplicate maps
+  const canvasElements = document.querySelectorAll('.mapboxgl-canvas');
+  console.log(`  Canvas elements: ${canvasElements.length} ${canvasElements.length === 1 ? '✅' : '❌ DUPLICATE MAPS!'}`);
+  
+  if (canvasElements.length > 1) {
+    console.warn('🚨 MULTIPLE CANVAS DETECTED - This causes tile delays!');
+    canvasElements.forEach((canvas, i) => {
+      const rect = canvas.getBoundingClientRect();
+      console.log(`    Canvas ${i + 1}: ${rect.width}x${rect.height} at (${rect.x}, ${rect.y})`);
+    });
+  }
+  
+  // Check for large GeoJSON that could block rendering
+  if (map) {
+    const floqSource = map.getSource('floqs');
+    if (floqSource && (floqSource as any)._data?.features) {
+      const featureCount = (floqSource as any)._data.features.length;
+      console.log(`  Floq features: ${featureCount} ${featureCount > 100 ? '⚠️ LARGE DATASET' : '✅'}`);
+      if (featureCount > 100) {
+        console.warn('🐌 Large GeoJSON may cause WebWorker delays - consider debouncing');
+      }
+    }
+  }
   
   console.log('\n✨ Quick fixes available:');
   console.log('  - window.quickMapFixes() - Apply common fixes');

@@ -274,7 +274,7 @@ export function useMapLayers({
     };
   }, [map, layersInitialized.current, handleClusterClick]);
 
-  // Update floqs data
+  // Update floqs data with debouncing for large datasets
   useEffect(() => {
     if (!map || !layersInitialized.current) return;
 
@@ -300,7 +300,21 @@ export function useMapLayers({
 
     const source = map.getSource('floqs') as mapboxgl.GeoJSONSource;
     if (source) {
-      source.setData(floqsGeoJSON);
+      // 🔍 LARGE DATASET CHECK: Log if data is large enough to cause delays
+      const featureCount = floqsGeoJSON.features.length;
+      if (featureCount > 100) {
+        console.warn(`🐌 Large floqs dataset: ${featureCount} features - may cause WebWorker delay`);
+      }
+      
+      // For very large datasets, consider batching
+      if (featureCount > 500) {
+        console.log('📦 Batching large dataset...');
+        // Set empty first, then data on next tick to avoid blocking
+        source.setData({ type: 'FeatureCollection', features: [] });
+        setTimeout(() => source.setData(floqsGeoJSON), 0);
+      } else {
+        source.setData(floqsGeoJSON);
+      }
     }
   }, [map, floqs, layersInitialized.current]);
 

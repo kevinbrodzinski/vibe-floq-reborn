@@ -241,13 +241,23 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     });
   }, [location.coords?.lat, location.coords?.lng]);
 
-  // Handle resize events with debouncing to prevent RAF flooding
+  // Handle resize events with debouncing to prevent RAF flooding + loop detection
   const resizeRef = useRef<number>();
+  const resizeCountRef = useRef(0);
 
-  // Set up resize listener with debouncing
+  // Set up resize listener with debouncing + loop detection
   useEffect(() => {
     const onResize = () => {
       if (mapRef.current) {
+        resizeCountRef.current++;
+        
+        // 🔍 DETECT RESIZE LOOPS: Warn if too many resizes in short time
+        if (resizeCountRef.current > 10) {
+          console.warn('🚨 Resize loop detected! Count:', resizeCountRef.current);
+        } else {
+          console.log('📐 Map resize triggered', resizeCountRef.current);
+        }
+        
         cancelAnimationFrame(resizeRef.current!);
         resizeRef.current = requestAnimationFrame(() => {
           try {
@@ -258,10 +268,17 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         });
       }
     };
+    
+    // Reset counter every 5 seconds
+    const resetCounter = setInterval(() => {
+      resizeCountRef.current = 0;
+    }, 5000);
+    
     window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('resize', onResize);
       cancelAnimationFrame(resizeRef.current!);
+      clearInterval(resetCounter);
     };
   }, []);
 
