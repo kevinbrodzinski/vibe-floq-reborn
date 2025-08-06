@@ -1,9 +1,12 @@
-import { MapPin, Users, DollarSign, Star, Plus, Heart } from "lucide-react";
+import { MapPin, Users, DollarSign, Star, Plus, Heart, ThumbsUp } from "lucide-react";
 import { VenueMatchOverlay } from "./VenueMatchOverlay";
 import { useState } from "react";
 import { useFavorites } from '@/hooks/useFavorites';
 import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { cn } from '@/lib/utils';
+import { useFriendVisitStats, useLiveBumpCount, useToggleVenueBump } from '@/services/venue';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VenueCardProps {
   venue: {
@@ -34,6 +37,12 @@ export const VenueCard = ({
   const [showMatchDetails, setShowMatchDetails] = useState(false);
   const { toggleFavorite, isFavorite, isToggling } = useFavorites();
   const { favorite } = useVenueInteractions();
+  const currentUserId = useCurrentUserId();
+  
+  // New venue functionality
+  const { data: friendVisitStats } = useFriendVisitStats(venue.id, currentUserId || '');
+  const liveBumpCount = useLiveBumpCount(venue.id);
+  const toggleBump = useToggleVenueBump(venue.id);
   
   const isVenueFavorited = isFavorite(venue.id);
   
@@ -118,16 +127,49 @@ export const VenueCard = ({
               <span>{formatCost(estimatedCost)}</span>
             </div>
             
-            {friendPresence > 0 && (
-              <div className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span>{friendPresence} friend{friendPresence !== 1 ? 's' : ''}</span>
-              </div>
+            {(friendPresence > 0 || (friendVisitStats?.count && friendVisitStats.count > 0)) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 text-emerald-300">
+                      <Users className="w-3 h-3" />
+                      <span>{friendVisitStats?.count || friendPresence} friend{(friendVisitStats?.count || friendPresence) !== 1 ? 's' : ''} visited</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{friendVisitStats?.count || friendPresence} friends have been here</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>
 
         <div className="ml-3 flex items-center gap-1">
+          {/* Bump button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => toggleBump.mutate()}
+                  disabled={toggleBump.isPending}
+                  className={cn(
+                    "flex items-center justify-center gap-1 px-2 h-8 rounded-full transition-colors duration-200 text-xs font-medium",
+                    "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30",
+                    toggleBump.isPending && "opacity-50 cursor-not-allowed"
+                  )}
+                  aria-label={`Bump ${venue.name}`}
+                >
+                  <ThumbsUp className="w-3 h-3" />
+                  <span>{liveBumpCount ?? 0}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bump this venue to show you're interested</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <button
             onClick={handleHeartClick}
             disabled={isToggling}

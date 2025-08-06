@@ -12,7 +12,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const InputSchema = {
   safeParse: (data: any) => {
-    const validModes = ['afterglow', 'daily', 'floq-match', 'plan', 'weekly'];
+    const validModes = ['afterglow', 'daily', 'floq-match', 'plan', 'weekly', 'shared-activity-suggestions'];
     if (!data.mode || !validModes.includes(data.mode)) {
       return { success: false, error: { format: () => 'Invalid mode' } };
     }
@@ -464,6 +464,79 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      case 'shared-activity-suggestions': {
+        // Generate shared activity suggestions
+        if (!openAIApiKey) {
+          throw new Error('OpenAI API key not configured');
+        }
+
+        const { prompt, temperature = 0.7, max_tokens = 400 } = input.data;
+        
+        if (!prompt) {
+          return new Response(JSON.stringify({ error: 'Missing prompt' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Call OpenAI API with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        try {
+          const model = Deno.env.get('OPENAI_MODEL') ?? 'gpt-4o-mini';
+          
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { 
+                  role: 'system', 
+                  content: 'You are Floq\'s social-match engine. Generate activity suggestions as valid JSON arrays only. No markdown, no explanations, just pure JSON.' 
+                },
+                { role: 'user', content: prompt }
+              ],
+              temperature,
+              max_tokens,
+            }),
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errTxt = await response.text();
+            throw new Error(`OpenAI: ${response.status} ${errTxt}`);
+          }
+
+          const data = await response.json();
+          const choice = data.choices?.[0]?.message?.content?.trim();
+          
+          if (!choice) {
+            throw new Error('OpenAI returned no content');
+          }
+          
+          // Return the raw JSON string - the client will parse it
+          return new Response(JSON.stringify(choice), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            return new Response(JSON.stringify({ error: 'Request timeout - please try again' }), {
+              status: 408,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          throw fetchError;
+        }
       }
 
       default:

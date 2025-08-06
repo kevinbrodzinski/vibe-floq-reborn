@@ -41,6 +41,7 @@ import { PeopleDiscoveryStack } from '@/components/profile/PeopleDiscoveryStack'
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ClientOnly } from '@/components/ui/client-only';
 import { useUserOnlineStatus } from '@/hooks/useUserOnlineStatus';
+import { IdeasForYouTwo } from '@/components/profile/SharedInterests/IdeasForYouTwo';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -454,6 +455,19 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           <ClientOnly>
             <PeopleDiscoveryStack key={profile.id} targetId={profile.id} />
           </ClientOnly>
+        )}
+
+        {/* Zone 6.6: Ideas for You Two (non-friends only) */}
+        {!isMe && !isCurrentlyFriend && (
+          <IdeasForYouTwo
+            isMe={isMe}
+            currentProfileId={currentUserId || ''}
+            targetProfileId={profile.id}
+            vibeScore={stats.resonanceScore}
+            topCommonVenues={[]} // TODO: Get actual common venues data
+            sharedTags={['coffee', 'music']} // TODO: Get actual shared interests
+            lastHangDays={null} // TODO: Get actual last hang data
+          />
         )}
 
         {/* Zone 7: Highlights (always visible) */}
