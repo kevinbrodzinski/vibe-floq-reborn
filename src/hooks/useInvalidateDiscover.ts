@@ -9,8 +9,10 @@ export function useInvalidateDiscover(): InvalidateDiscoverFn {
 
   return () => {
     if (!user?.id) {
-      console.warn('useInvalidateDiscover called without authenticated user');
-      return;
+      if (import.meta.env.DEV) {
+        console.warn('useInvalidateDiscover called without authenticated user');
+      }
+      return () => {};
     }
 
     qc.invalidateQueries({ queryKey: ['discover', user.id] })

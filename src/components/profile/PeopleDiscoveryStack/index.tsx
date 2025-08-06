@@ -8,6 +8,8 @@ import { FloqSuggestion } from './FloqSuggestion';
 import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 
+const STACK_SKELETON_HEIGHT = 400;
+
 interface PeopleDiscoveryStackProps {
   targetId: string;
   className?: string;
@@ -35,7 +37,8 @@ export const PeopleDiscoveryStack: React.FC<PeopleDiscoveryStackProps> = ({
 
   return (
     <motion.div 
-      className={`space-y-4 min-h-[400px] ${className}`}
+      className={`space-y-4 ${className}`}
+      style={{ minHeight: `${STACK_SKELETON_HEIGHT}px` }}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
