@@ -72,32 +72,8 @@ export function useGeo(): GeoState {
     /* 3️⃣ Fallback timer -------------------------------------------------- */
     let fallback: ReturnType<typeof setTimeout> | null = null;
     
-    // Only arm fallback timer if permission state is 'prompt' (user hasn't decided yet)
-    navigator.permissions
-      ?.query({ name: 'geolocation' })
-      .then((p) => {
-        if (p.state === 'prompt') {
-          devLog('🔒 Permission is prompt - arming fallback timer');
-          fallback = setTimeout(() => {
-            if (completed) return;
-            completed = true;
-            devLog('⏰ timeout – falling back to demo coordinates');
-            publish(DEMO, 'ready', undefined);
-          }, TIMEOUT_MS);
-        } else {
-          devLog('🔒 Permission already decided:', p.state, '- no fallback timer');
-        }
-      })
-      .catch(() => {
-        // Permissions API not supported, arm fallback anyway
-        devLog('🔒 Permissions API not supported - arming fallback timer');
-        fallback = setTimeout(() => {
-          if (completed) return;
-          completed = true;
-          devLog('⏰ timeout – falling back to demo coordinates');
-          publish(DEMO, 'ready', undefined);
-        }, TIMEOUT_MS);
-      });
+    // Only use fallback for permission denied cases, not timeouts
+    devLog('🔒 Real GPS mode - no fallback timer for timeouts');
 
     /* 4️⃣ Request real GPS ---------------------------------------------- */
     devLog('📡 requesting real geolocation …');
