@@ -4966,115 +4966,44 @@ export type Database = {
       friend_suggestions: {
         Row: {
           confidence_level: string
-          created_at: string | null
-          expires_at: string | null
+          created_at: string
+          expires_at: string
           id: string
           responded_at: string | null
           score: number
           signals_summary: Json
           status: string
-          suggested_friend_id: string | null
+          suggested_profile_id: string
           suggestion_reason: string
-          target_profile_id: string | null
+          target_profile_id: string
         }
         Insert: {
           confidence_level: string
-          created_at?: string | null
-          expires_at?: string | null
+          created_at?: string
+          expires_at?: string
           id?: string
           responded_at?: string | null
           score: number
           signals_summary?: Json
           status?: string
-          suggested_friend_id?: string | null
+          suggested_profile_id: string
           suggestion_reason: string
-          target_profile_id?: string | null
+          target_profile_id: string
         }
         Update: {
           confidence_level?: string
-          created_at?: string | null
-          expires_at?: string | null
+          created_at?: string
+          expires_at?: string
           id?: string
           responded_at?: string | null
           score?: number
           signals_summary?: Json
           status?: string
-          suggested_friend_id?: string | null
+          suggested_profile_id?: string
           suggestion_reason?: string
-          target_profile_id?: string | null
+          target_profile_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
-            columns: ["suggested_friend_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
-            columns: ["suggested_friend_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
-            columns: ["suggested_friend_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
-            columns: ["suggested_friend_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
-            columns: ["suggested_friend_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       friend_trails: {
         Row: {
@@ -5135,113 +5064,36 @@ export type Database = {
       }
       friendship_analysis: {
         Row: {
-          analysis_date: string | null
           confidence_level: string
-          created_at: string | null
-          id: string
+          created_at: string
           overall_score: number
-          profile_high: string | null
-          profile_low: string | null
           relationship_type: string
           signals_data: Json
-          updated_at: string | null
+          updated_at: string
+          user_high: string
+          user_low: string
         }
         Insert: {
-          analysis_date?: string | null
           confidence_level: string
-          created_at?: string | null
-          id?: string
+          created_at?: string
           overall_score: number
-          profile_high?: string | null
-          profile_low?: string | null
           relationship_type: string
           signals_data?: Json
-          updated_at?: string | null
+          updated_at?: string
+          user_high: string
+          user_low: string
         }
         Update: {
-          analysis_date?: string | null
           confidence_level?: string
-          created_at?: string | null
-          id?: string
+          created_at?: string
           overall_score?: number
-          profile_high?: string | null
-          profile_low?: string | null
           relationship_type?: string
           signals_data?: Json
-          updated_at?: string | null
+          updated_at?: string
+          user_high?: string
+          user_low?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "friendship_analysis_profile_high_fkey"
-            columns: ["profile_high"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_high_fkey"
-            columns: ["profile_high"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_high_fkey"
-            columns: ["profile_high"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_high_fkey"
-            columns: ["profile_high"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_high_fkey"
-            columns: ["profile_high"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_low_fkey"
-            columns: ["profile_low"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_low_fkey"
-            columns: ["profile_low"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_low_fkey"
-            columns: ["profile_low"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_low_fkey"
-            columns: ["profile_low"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friendship_analysis_profile_low_fkey"
-            columns: ["profile_low"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       friendships: {
         Row: {
@@ -11792,13 +11644,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -11808,8 +11653,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -11822,8 +11667,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -11836,7 +11681,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -11849,13 +11694,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -11923,13 +11775,6 @@ export type Database = {
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -11939,8 +11784,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -11953,8 +11798,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -11967,7 +11812,7 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -11980,13 +11825,20 @@ export type Database = {
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_participants_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -13050,12 +12902,19 @@ export type Database = {
         Returns: string
       }
       analyze_co_location_events: {
-        Args: {
-          profile_a_id: string
-          profile_b_id: string
-          time_window: string
-          radius_m?: number
-        }
+        Args:
+          | {
+              profile_a_id: string
+              profile_b_id: string
+              days_back?: number
+              min_overlap_minutes?: number
+            }
+          | {
+              profile_a_id: string
+              profile_b_id: string
+              time_window: string
+              radius_m?: number
+            }
         Returns: {
           venue_id: string
           start_time: string
@@ -13065,25 +12924,19 @@ export type Database = {
         }[]
       }
       analyze_shared_floq_participation: {
-        Args: {
-          profile_a_id: string
-          profile_b_id: string
-          time_window: string
-        }
+        Args:
+          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { profile_a_id: string; profile_b_id: string; time_window: string }
         Returns: {
-          floq_id: string
-          activity_type: string
-          joined_at: string
-          floq_title: string
-          floq_vibe: string
+          shared_floqs_count: number
+          total_overlap_score: number
+          most_recent_shared: string
         }[]
       }
       analyze_shared_plan_participation: {
-        Args: {
-          profile_a_id: string
-          profile_b_id: string
-          time_window: string
-        }
+        Args:
+          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { profile_a_id: string; profile_b_id: string; time_window: string }
         Returns: {
           plan_id: string
           activity_type: string
@@ -13093,22 +12946,17 @@ export type Database = {
         }[]
       }
       analyze_time_sync_patterns: {
-        Args: {
-          profile_a_id: string
-          profile_b_id: string
-          time_window_days?: number
-        }
+        Args: { profile_a_id: string; profile_b_id: string; days_back?: number }
         Returns: {
           sync_score: number
-          common_windows: Json
+          peak_sync_hours: number[]
+          sync_consistency: number
         }[]
       }
       analyze_venue_overlap_patterns: {
-        Args: {
-          profile_a_id: string
-          profile_b_id: string
-          time_window: string
-        }
+        Args:
+          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { profile_a_id: string; profile_b_id: string; time_window: string }
         Returns: {
           venue_id: string
           profile_a_visits: number
@@ -13391,14 +13239,23 @@ export type Database = {
         Returns: string
       }
       create_friend_suggestion: {
-        Args: {
-          p_target_profile_id: string
-          p_suggested_friend_id: string
-          p_score: number
-          p_confidence_level: string
-          p_suggestion_reason: string
-          p_signals_summary: Json
-        }
+        Args:
+          | {
+              p_target_profile_id: string
+              p_suggested_friend_id: string
+              p_score: number
+              p_confidence_level: string
+              p_suggestion_reason: string
+              p_signals_summary: Json
+            }
+          | {
+              p_target_profile_id: string
+              p_suggested_profile_id: string
+              p_score: number
+              p_confidence_level: string
+              p_suggestion_reason: string
+              p_signals_summary: Json
+            }
         Returns: string
       }
       create_group_plan_with_floq: {
@@ -14167,7 +14024,13 @@ export type Database = {
         }[]
       }
       get_friend_suggestion_candidates: {
-        Args: { target_profile_id: string; limit_count?: number }
+        Args:
+          | { target_profile_id: string; limit_count?: number }
+          | {
+              target_profile_id: string
+              limit_count?: number
+              min_interactions?: number
+            }
         Returns: {
           profile_id: string
           interaction_score: number
@@ -16571,14 +16434,23 @@ export type Database = {
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_friendship_analysis: {
-        Args: {
-          p_profile_a: string
-          p_profile_b: string
-          p_overall_score: number
-          p_confidence_level: string
-          p_signals_data: Json
-          p_relationship_type: string
-        }
+        Args:
+          | {
+              p_profile_a: string
+              p_profile_b: string
+              p_overall_score: number
+              p_confidence_level: string
+              p_signals_data: Json
+              p_relationship_type: string
+            }
+          | {
+              p_profile_a: string
+              p_profile_b: string
+              p_overall_score: number
+              p_confidence_level: string
+              p_signals_data: Json
+              p_relationship_type: string
+            }
         Returns: string
       }
       upsert_live_position: {
