@@ -22,7 +22,7 @@ export function useUserOnlineStatus(profileId?: string): OnlineStatus | null {
     const fetchInitialStatus = async () => {
       try {
         const { data } = await supabase
-          .from('user_online_status' as any)
+          .from('user_online_status')
           .select('is_online,last_seen')
           .eq('profile_id', profileId)
           .single();

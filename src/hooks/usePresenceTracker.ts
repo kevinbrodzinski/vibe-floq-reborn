@@ -12,7 +12,7 @@ export function usePresenceTracker(heartbeatMs = 30_000) {
 
     const upsert = async (online: boolean) => {
       try {
-        await supabase.rpc('upsert_online_status' as any, { p_is_online: online });
+        await supabase.rpc('upsert_online_status', { p_is_online: online });
       } catch (error) {
         console.warn('Failed to update online status:', error);
       }
