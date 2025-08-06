@@ -37,10 +37,14 @@ export class FriendDetectionEngine {
   }
 
   /**
-   * 🎯 Main function: Analyze friendship potential between two users
+   * 🎯 Main function: Analyze friendship potential between two profiles
    */
-  async analyzeFriendshipPotential(userA: string, userB: string): Promise<FriendshipScore> {
-    console.log(`[FriendDetection] Analyzing friendship potential: ${userA} ↔ ${userB}`);
+  async analyzeFriendshipPotential(profileA: string, profileB: string): Promise<FriendshipScore> {
+    console.log(`[FriendDetection] Analyzing friendship potential: ${profileA} ↔ ${profileB}`);
+
+    // Ensure consistent ordering for profile_low/profile_high
+    const profileLow = profileA < profileB ? profileA : profileB;
+    const profileHigh = profileA < profileB ? profileB : profileA;
 
     // Collect all signals in parallel for performance
     const [
@@ -50,11 +54,11 @@ export class FriendDetectionEngine {
       timeSyncSignal,
       interactionFrequencySignal
     ] = await Promise.all([
-      this.analyzeCoLocationSignal(userA, userB),
-      this.analyzeSharedActivitySignal(userA, userB),
-      this.analyzeVenueOverlapSignal(userA, userB),
-      this.analyzeTimeSyncSignal(userA, userB),
-      this.analyzeInteractionFrequencySignal(userA, userB)
+      this.analyzeCoLocationSignal(profileA, profileB),
+      this.analyzeSharedActivitySignal(profileA, profileB),
+      this.analyzeVenueOverlapSignal(profileA, profileB),
+      this.analyzeTimeSyncSignal(profileA, profileB),
+      this.analyzeInteractionFrequencySignal(profileA, profileB)
     ]);
 
     const signals = [
@@ -71,8 +75,8 @@ export class FriendDetectionEngine {
     const relationshipType = this.determineRelationshipType(overallScore, signals);
 
     return {
-      user_a: userA,
-      user_b: userB,
+      profile_low: profileLow,
+      profile_high: profileHigh,
       overall_score: overallScore,
       confidence_level: confidenceLevel,
       signals,
@@ -84,14 +88,14 @@ export class FriendDetectionEngine {
   /**
    * 🗺️ Analyze co-location patterns (strongest signal)
    */
-  private async analyzeCoLocationSignal(userA: string, userB: string): Promise<FriendshipSignal | null> {
+  private async analyzeCoLocationSignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
     const timeWindow = new Date();
     timeWindow.setDate(timeWindow.getDate() - this.config.time_window_days);
 
     // Query for co-location events using venue_live_presence
     const { data: coLocations, error } = await supabase.rpc('analyze_co_location_events', {
-      user_a_id: userA,
-      user_b_id: userB,
+      profile_a_id: profileA,
+      profile_b_id: profileB,
       time_window: timeWindow.toISOString(),
       radius_m: this.config.co_location_radius_m
     });
@@ -138,21 +142,21 @@ export class FriendDetectionEngine {
   /**
    * 🎭 Analyze shared activity patterns (floqs, plans, events)
    */
-  private async analyzeSharedActivitySignal(userA: string, userB: string): Promise<FriendshipSignal | null> {
+  private async analyzeSharedActivitySignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
     const timeWindow = new Date();
     timeWindow.setDate(timeWindow.getDate() - this.config.time_window_days);
 
     // Query shared floq participation
     const { data: sharedFloqs, error: floqError } = await supabase.rpc('analyze_shared_floq_participation', {
-      user_a_id: userA,
-      user_b_id: userB,
+      profile_a_id: profileA,
+      profile_b_id: profileB,
       time_window: timeWindow.toISOString()
     });
 
     // Query shared plan participation
     const { data: sharedPlans, error: planError } = await supabase.rpc('analyze_shared_plan_participation', {
-      user_a_id: userA,
-      user_b_id: userB,
+      profile_a_id: profileA,
+      profile_b_id: profileB,
       time_window: timeWindow.toISOString()
     });
 
@@ -196,13 +200,13 @@ export class FriendDetectionEngine {
   /**
    * 🏢 Analyze venue overlap patterns (similar preferences)
    */
-  private async analyzeVenueOverlapSignal(userA: string, userB: string): Promise<FriendshipSignal | null> {
+  private async analyzeVenueOverlapSignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
     const timeWindow = new Date();
     timeWindow.setDate(timeWindow.getDate() - this.config.time_window_days);
 
     const { data: venueOverlap, error } = await supabase.rpc('analyze_venue_overlap_patterns', {
-      user_a_id: userA,
-      user_b_id: userB,
+      profile_a_id: profileA,
+      profile_b_id: profileB,
       time_window: timeWindow.toISOString()
     });
 
@@ -210,52 +214,52 @@ export class FriendDetectionEngine {
       return null;
     }
 
-    // Calculate Jaccard similarity for venue preferences
-    const userAVenues = new Set(venueOverlap.map((v: any) => v.venue_id).filter((id: string) => 
-      venueOverlap.find((v: any) => v.venue_id === id)?.user_a_visits > 0));
-    const userBVenues = new Set(venueOverlap.map((v: any) => v.venue_id).filter((id: string) => 
-      venueOverlap.find((v: any) => v.venue_id === id)?.user_b_visits > 0));
-    
-    const intersection = new Set([...userAVenues].filter(v => userBVenues.has(v)));
-    const union = new Set([...userAVenues, ...userBVenues]);
-    
-    const jaccardSimilarity = union.size > 0 ? intersection.size / union.size : 0;
-    
-    // Weight by venue quality/popularity
-    const weightedOverlap = venueOverlap.reduce((sum: number, venue: any) => {
-      if (venue.user_a_visits > 0 && venue.user_b_visits > 0) {
-        const venueWeight = Math.min(venue.user_a_visits + venue.user_b_visits, 10) / 10;
-        return sum + venueWeight;
-      }
-      return sum;
-    }, 0);
+            // Calculate Jaccard similarity for venue preferences
+        const profileAVenues = new Set(venueOverlap.map((v: any) => v.venue_id).filter((id: string) => 
+          venueOverlap.find((v: any) => v.venue_id === id)?.profile_a_visits > 0));
+        const profileBVenues = new Set(venueOverlap.map((v: any) => v.venue_id).filter((id: string) => 
+          venueOverlap.find((v: any) => v.venue_id === id)?.profile_b_visits > 0));
+        
+        const intersection = new Set([...profileAVenues].filter(v => profileBVenues.has(v)));
+        const union = new Set([...profileAVenues, ...profileBVenues]);
+        
+        const jaccardSimilarity = union.size > 0 ? intersection.size / union.size : 0;
+        
+        // Weight by venue quality/popularity
+        const weightedOverlap = venueOverlap.reduce((sum: number, venue: any) => {
+          if (venue.profile_a_visits > 0 && venue.profile_b_visits > 0) {
+            const venueWeight = Math.min(venue.profile_a_visits + venue.profile_b_visits, 10) / 10;
+            return sum + venueWeight;
+          }
+          return sum;
+        }, 0);
 
-    const strength = (jaccardSimilarity * 0.6 + Math.min(weightedOverlap / 5, 1) * 0.4);
-    const confidence = intersection.size >= 2 ? 0.7 : 0.4;
+        const strength = (jaccardSimilarity * 0.6 + Math.min(weightedOverlap / 5, 1) * 0.4);
+        const confidence = intersection.size >= 2 ? 0.7 : 0.4;
 
-    return {
-      signal_type: 'venue_overlap',
-      strength,
-      frequency: intersection.size,
-      recency: 0.8, // Venue preferences are relatively stable
-      confidence,
-      metadata: {
-        shared_venues: intersection.size,
-        total_venues_a: userAVenues.size,
-        total_venues_b: userBVenues.size,
-        jaccard_similarity: jaccardSimilarity,
-        weighted_overlap: weightedOverlap
-      }
-    };
+        return {
+          signal_type: 'venue_overlap',
+          strength,
+          frequency: intersection.size,
+          recency: 0.8, // Venue preferences are relatively stable
+          confidence,
+          metadata: {
+            shared_venues: intersection.size,
+            total_venues_a: profileAVenues.size,
+            total_venues_b: profileBVenues.size,
+            jaccard_similarity: jaccardSimilarity,
+            weighted_overlap: weightedOverlap
+          }
+        };
   }
 
   /**
    * ⏰ Analyze time synchronization patterns
    */
-  private async analyzeTimeSyncSignal(userA: string, userB: string): Promise<FriendshipSignal | null> {
+  private async analyzeTimeSyncSignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
     const { data: timeSyncData, error } = await supabase.rpc('analyze_time_sync_patterns', {
-      user_a_id: userA,
-      user_b_id: userB,
+      profile_a_id: profileA,
+      profile_b_id: profileB,
       time_window_days: this.config.time_window_days
     });
 
@@ -285,17 +289,17 @@ export class FriendDetectionEngine {
   /**
    * 📱 Analyze general interaction frequency
    */
-  private async analyzeInteractionFrequencySignal(userA: string, userB: string): Promise<FriendshipSignal | null> {
+  private async analyzeInteractionFrequencySignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
     // This could analyze app usage patterns, mutual floq activity, etc.
     // For now, return a basic signal based on presence in same floqs
     const { data: mutualFloqs, error } = await supabase
       .from('floq_participants')
       .select('floq_id')
-      .eq('user_id', userA)
+      .eq('user_id', profileA)
       .in('floq_id', 
         supabase.from('floq_participants')
           .select('floq_id')
-          .eq('user_id', userB)
+          .eq('user_id', profileB)
       );
 
     if (error || !mutualFloqs || mutualFloqs.length === 0) {
@@ -362,14 +366,14 @@ export class FriendDetectionEngine {
   }
 
   /**
-   * 🔍 Find friend suggestions for a user
+   * 🔍 Find friend suggestions for a profile
    */
-  async findFriendSuggestions(userId: string, limit: number = 10): Promise<FriendshipScore[]> {
-    console.log(`[FriendDetection] Finding friend suggestions for user: ${userId}`);
+  async findFriendSuggestions(profileId: string, limit: number = 10): Promise<FriendshipScore[]> {
+    console.log(`[FriendDetection] Finding friend suggestions for profile: ${profileId}`);
 
-    // Get potential candidates (users who have interacted with the user somehow)
+    // Get potential candidates (profiles who have interacted with the profile somehow)
     const { data: candidates, error } = await supabase.rpc('get_friend_suggestion_candidates', {
-      target_user_id: userId,
+      target_profile_id: profileId,
       limit: limit * 3 // Get more candidates to filter
     });
 
@@ -381,7 +385,7 @@ export class FriendDetectionEngine {
     // Analyze each candidate
     const suggestions = await Promise.all(
       candidates.map((candidate: any) => 
-        this.analyzeFriendshipPotential(userId, candidate.user_id)
+        this.analyzeFriendshipPotential(profileId, candidate.profile_id)
       )
     );
 
