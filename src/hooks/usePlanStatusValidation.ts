@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react'
-import type { Database } from '@/integrations/supabase/Database'
+import type { Database } from '@/integrations/supabase/types'
 
 type PlanStatus = Database['public']['Enums']['plan_status_enum']
 

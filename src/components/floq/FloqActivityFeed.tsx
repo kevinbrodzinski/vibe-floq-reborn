@@ -36,7 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { LazyAvatar } from '@/components/ui/lazy-avatar';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Database } from '@/integrations/supabase/Database';
+import type { Database } from '@/integrations/supabase/types';
 
 type FlockEventType = Database['public']['Enums']['flock_event_type_enum'];
 

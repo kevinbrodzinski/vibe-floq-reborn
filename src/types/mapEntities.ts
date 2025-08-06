@@ -1,4 +1,4 @@
-import type { Database } from '@/integrations/supabase/Database';
+import type { Database } from '@/integrations/supabase/types';
 
 // Base types from database
 export type DatabaseFloq = Database['public']['Tables']['floqs']['Row'];

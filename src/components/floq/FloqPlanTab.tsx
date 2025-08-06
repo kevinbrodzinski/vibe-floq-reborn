@@ -12,7 +12,7 @@ import { PlanHeader } from './PlanHeader'
 import { MobileTimelineGrid } from '@/components/planning/MobileTimelineGrid'
 import { AddStopModeSelector } from '@/components/planning/AddStopModeSelector'
 import { Loader2 } from 'lucide-react'
-import type { Database } from '@/integrations/supabase/Database'
+import type { Database } from '@/integrations/supabase/types'
 import { zIndex } from '@/constants/z'
 
 type Floq = Database['public']['Tables']['floqs']['Row']

@@ -1,5 +1,5 @@
 // Core type definitions for floq app (aligned with Supabase types)
-import { Database } from '@/integrations/supabase/Database';
+import { Database } from '@/integrations/supabase/types';
 import type { Vibe } from '@/lib/vibes';
 
 export type { Vibe } from '@/lib/vibes';

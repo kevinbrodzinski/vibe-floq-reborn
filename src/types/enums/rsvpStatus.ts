@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Database } from '@/integrations/supabase/Database';
+import type { Database } from '@/integrations/supabase/types';
 
 export const RSVPStatusEnum = z.enum([
   'attending',

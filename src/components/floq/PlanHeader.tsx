@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useNavigate } from 'react-router-dom'
 import { usePlanPresence } from '@/hooks/usePlanPresence'
-import type { Database } from '@/integrations/supabase/Database'
+import type { Database } from '@/integrations/supabase/types'
 import type { FloqDetails } from '@/hooks/useFloqDetails'
 
 type Plan = Database['public']['Tables']['floq_plans']['Row']
