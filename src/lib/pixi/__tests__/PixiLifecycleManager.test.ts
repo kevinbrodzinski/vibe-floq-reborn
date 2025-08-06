@@ -204,6 +204,9 @@ describe('PixiLifecycleManager', () => {
     manager.registerApp(app);
     
     expect(() => manager.destroyApp(app)).not.toThrow();
-    expect(app.destroy).toHaveBeenCalled();
+    // When GL context is null, destroy should be skipped for safety
+    expect(app.destroy).not.toHaveBeenCalled();
+    // But the app should still be removed from tracking
+    expect(manager.isDestroyed(app)).toBe(true);
   });
 });

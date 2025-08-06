@@ -39,7 +39,7 @@ describe('MapContainerManager', () => {
     // Second prepare should warn and force release
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(manager.prepareContainer(container)).toBe(true);
-    expect(consoleWarnSpy).toHaveBeenCalledWith('[MapContainerManager] Force releasing container for re-use');
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[MapContainerManager] Container reuse detected - this may indicate frequent re-renders');
     
     consoleWarnSpy.mockRestore();
   });
@@ -74,10 +74,17 @@ describe('MapContainerManager', () => {
   it('should handle container release errors gracefully', () => {
     manager.prepareContainer(container);
     
+    // Add a child element to trigger removeChild
+    const childDiv = document.createElement('div');
+    container.appendChild(childDiv);
+    
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Mock removeChild to throw an error
-    container.removeChild = vi.fn(() => {
+    // Mock removeChild to throw an error but still remove the child
+    const originalRemoveChild = container.removeChild;
+    container.removeChild = vi.fn((child) => {
+      // Actually remove the child first, then throw
+      originalRemoveChild.call(container, child);
       throw new Error('DOM manipulation failed');
     });
     
@@ -85,6 +92,7 @@ describe('MapContainerManager', () => {
     expect(consoleErrorSpy).toHaveBeenCalled();
     expect(manager.isContainerReady(container)).toBe(true); // Should still mark as released
     
+    container.removeChild = originalRemoveChild;
     consoleErrorSpy.mockRestore();
   });
 

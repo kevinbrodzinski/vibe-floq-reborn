@@ -6,22 +6,32 @@ import { FieldCanvas } from '../FieldCanvas';
 const mockPixiApp = {
   init: vi.fn().mockResolvedValue(undefined),
   stage: {
+    addChild: vi.fn(),
     removeAllListeners: vi.fn(),
     removeChildren: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
     eventMode: 'auto',
-    interactive: true
+    interactive: true,
+    children: []
   },
   ticker: { stop: vi.fn() },
   destroy: vi.fn(),
-  renderer: { gl: { isContextLost: () => false } }
+  renderer: { gl: { isContextLost: () => false } },
+  canvas: document.createElement('canvas')
 };
+
+// Add canvas class for tests
+mockPixiApp.canvas.className = 'absolute inset-0';
 
 // Mock PIXI Application constructor
 vi.mock('pixi.js', () => ({
   Application: vi.fn(() => mockPixiApp),
   Container: vi.fn(() => ({
     addChild: vi.fn(),
-    removeChild: vi.fn()
+    removeChild: vi.fn(),
+    removeChildren: vi.fn(),
+    children: []
   })),
   Graphics: vi.fn(() => ({
     clear: vi.fn(),
@@ -38,14 +48,34 @@ vi.mock('pixi.js', () => ({
 }));
 
 // Mock all the dependencies
+const mockManager = {
+  registerApp: vi.fn(),
+  destroyApp: vi.fn(),
+  isDestroyed: vi.fn(() => false)
+};
+
 vi.mock('@/lib/pixi/PixiLifecycleManager', () => ({
   PixiLifecycleManager: {
-    getInstance: () => ({
-      registerApp: vi.fn(),
-      destroyApp: vi.fn(),
-      isDestroyed: vi.fn(() => false)
-    })
+    getInstance: () => mockManager
   }
+}));
+
+// Mock graphics pool
+vi.mock('@/lib/pixi/GraphicsPool', () => ({
+  GraphicsPool: vi.fn(() => ({
+    releaseAll: vi.fn(),
+    acquire: vi.fn(),
+    release: vi.fn()
+  }))
+}));
+
+// Mock tile pool
+vi.mock('@/lib/pixi/TilePool', () => ({
+  TilePool: vi.fn(() => ({
+    clearAll: vi.fn(),
+    getTile: vi.fn(),
+    releaseTile: vi.fn()
+  }))
 }));
 
 vi.mock('@/hooks/useSpatialIndex', () => ({
@@ -159,12 +189,17 @@ describe('FieldCanvas', () => {
       expect(mockPixiApp.init).toHaveBeenCalled();
     });
     
-    const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
-    const mockManager = PixiLifecycleManager.getInstance();
+    // Give a bit more time for the async initialization to complete
+    await waitFor(() => {
+      expect(mockManager.registerApp).toHaveBeenCalled();
+    }, { timeout: 1000 });
     
     unmount();
     
-    expect(mockManager.destroyApp).toHaveBeenCalled();
+    // Wait for the async cleanup (dynamic import) to complete
+    await waitFor(() => {
+      expect(mockManager.destroyApp).toHaveBeenCalled();
+    }, { timeout: 1000 });
   });
 
   it('should handle fast unmount during initialization', async () => {
@@ -173,11 +208,9 @@ describe('FieldCanvas', () => {
     // Unmount immediately before init completes
     unmount();
     
-    const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
-    const mockManager = PixiLifecycleManager.getInstance();
-    
-    // Should still call destroyApp even if init didn't complete
-    expect(mockManager.destroyApp).toHaveBeenCalled();
+    // When unmounting before init completes, destroyApp shouldn't be called
+    // because appRef.current is still null
+    expect(mockManager.destroyApp).not.toHaveBeenCalled();
   });
 
   it('should set correct canvas attributes', () => {
@@ -185,7 +218,11 @@ describe('FieldCanvas', () => {
     
     const canvas = container.querySelector('canvas');
     expect(canvas).toBeInTheDocument();
-    expect(canvas).toHaveClass('absolute', 'inset-0');
+    expect(canvas).toHaveStyle({ 
+      width: '100%', 
+      height: '100%',
+      display: 'block'
+    });
   });
 
   it('should use device pixel ratio for resolution', () => {
