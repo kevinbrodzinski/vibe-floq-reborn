@@ -9,7 +9,7 @@ CREATE OR REPLACE FUNCTION get_location_track(
   lng double precision,
   captured_at timestamptz,
   accuracy double precision,
-  venue_id text
+  venue_id uuid
 ) LANGUAGE sql STABLE AS $$
 WITH location_points AS (
   SELECT 
@@ -17,7 +17,7 @@ WITH location_points AS (
     ST_X(location::geometry) as lng,
     captured_at,
     accuracy,
-    NULL::text as venue_id
+    NULL::uuid as venue_id
   FROM raw_locations 
   WHERE profile_id = p_profile_id
     AND captured_at BETWEEN p_start_time AND p_end_time
@@ -31,7 +31,7 @@ venue_stops AS (
     ST_X(v.location::geometry) as lng,
     vs.arrived_at as captured_at,
     30.0 as accuracy, -- Venue accuracy placeholder
-    vs.venue_id::text as venue_id
+    vs.venue_id as venue_id
   FROM venue_stays vs
   JOIN venues v ON vs.venue_id = v.id
   WHERE vs.profile_id = p_profile_id
