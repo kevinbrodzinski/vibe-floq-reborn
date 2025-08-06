@@ -12,6 +12,877 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
+  extensions: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      pg_all_foreign_keys: {
+        Row: {
+          fk_columns: unknown[] | null
+          fk_constraint_name: unknown | null
+          fk_schema_name: unknown | null
+          fk_table_name: unknown | null
+          fk_table_oid: unknown | null
+          is_deferrable: boolean | null
+          is_deferred: boolean | null
+          match_type: string | null
+          on_delete: string | null
+          on_update: string | null
+          pk_columns: unknown[] | null
+          pk_constraint_name: unknown | null
+          pk_index_name: unknown | null
+          pk_schema_name: unknown | null
+          pk_table_name: unknown | null
+          pk_table_oid: unknown | null
+        }
+        Relationships: []
+      }
+      pg_stat_statements: {
+        Row: {
+          calls: number | null
+          dbid: unknown | null
+          jit_deform_count: number | null
+          jit_deform_time: number | null
+          jit_emission_count: number | null
+          jit_emission_time: number | null
+          jit_functions: number | null
+          jit_generation_time: number | null
+          jit_inlining_count: number | null
+          jit_inlining_time: number | null
+          jit_optimization_count: number | null
+          jit_optimization_time: number | null
+          local_blk_read_time: number | null
+          local_blk_write_time: number | null
+          local_blks_dirtied: number | null
+          local_blks_hit: number | null
+          local_blks_read: number | null
+          local_blks_written: number | null
+          max_exec_time: number | null
+          max_plan_time: number | null
+          mean_exec_time: number | null
+          mean_plan_time: number | null
+          min_exec_time: number | null
+          min_plan_time: number | null
+          minmax_stats_since: string | null
+          plans: number | null
+          query: string | null
+          queryid: number | null
+          rows: number | null
+          shared_blk_read_time: number | null
+          shared_blk_write_time: number | null
+          shared_blks_dirtied: number | null
+          shared_blks_hit: number | null
+          shared_blks_read: number | null
+          shared_blks_written: number | null
+          stats_since: string | null
+          stddev_exec_time: number | null
+          stddev_plan_time: number | null
+          temp_blk_read_time: number | null
+          temp_blk_write_time: number | null
+          temp_blks_read: number | null
+          temp_blks_written: number | null
+          toplevel: boolean | null
+          total_exec_time: number | null
+          total_plan_time: number | null
+          userid: unknown | null
+          wal_bytes: number | null
+          wal_fpi: number | null
+          wal_records: number | null
+        }
+        Relationships: []
+      }
+      pg_stat_statements_info: {
+        Row: {
+          dealloc: number | null
+          stats_reset: string | null
+        }
+        Relationships: []
+      }
+      tap_funky: {
+        Row: {
+          args: string | null
+          is_definer: boolean | null
+          is_strict: boolean | null
+          is_visible: boolean | null
+          kind: unknown | null
+          langoid: unknown | null
+          name: unknown | null
+          oid: unknown | null
+          owner: unknown | null
+          returns: string | null
+          returns_set: boolean | null
+          schema: unknown | null
+          volatility: string | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      _cleanup: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      _contract_on: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      _currtest: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      _db_privs: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown[]
+      }
+      _definer: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _dexists: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _expand_context: {
+        Args: { "": string }
+        Returns: string
+      }
+      _expand_on: {
+        Args: { "": string }
+        Returns: string
+      }
+      _expand_vol: {
+        Args: { "": string }
+        Returns: string
+      }
+      _ext_exists: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _extensions: {
+        Args: Record<PropertyKey, never> | { "": unknown }
+        Returns: unknown[]
+      }
+      _funkargs: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      _get: {
+        Args: { "": string }
+        Returns: number
+      }
+      _get_db_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _get_dtype: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      _get_language_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _get_latest: {
+        Args: { "": string }
+        Returns: number[]
+      }
+      _get_note: {
+        Args: { "": number } | { "": string }
+        Returns: string
+      }
+      _get_opclass_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _get_rel_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _get_schema_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _get_tablespace_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _get_type_owner: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _got_func: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _grolist: {
+        Args: { "": unknown }
+        Returns: unknown[]
+      }
+      _has_group: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _has_role: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _has_user: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _inherited: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _is_schema: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _is_super: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _is_trusted: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _is_verbose: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      _lang: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      _opc_exists: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _parts: {
+        Args: { "": unknown }
+        Returns: unknown[]
+      }
+      _pg_sv_type_array: {
+        Args: { "": unknown[] }
+        Returns: unknown[]
+      }
+      _prokind: {
+        Args: { p_oid: unknown }
+        Returns: unknown
+      }
+      _query: {
+        Args: { "": string }
+        Returns: string
+      }
+      _refine_vol: {
+        Args: { "": string }
+        Returns: string
+      }
+      _relexists: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _returns: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      _strict: {
+        Args: { "": unknown }
+        Returns: boolean
+      }
+      _table_privs: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown[]
+      }
+      _temptypes: {
+        Args: { "": string }
+        Returns: string
+      }
+      _todo: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      _vol: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      armor: {
+        Args: { "": string }
+        Returns: string
+      }
+      can: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      casts_are: {
+        Args: { "": string[] }
+        Returns: string
+      }
+      col_is_null: {
+        Args:
+          | {
+              schema_name: unknown
+              table_name: unknown
+              column_name: unknown
+              description?: string
+            }
+          | { table_name: unknown; column_name: unknown; description?: string }
+        Returns: string
+      }
+      col_not_null: {
+        Args:
+          | {
+              schema_name: unknown
+              table_name: unknown
+              column_name: unknown
+              description?: string
+            }
+          | { table_name: unknown; column_name: unknown; description?: string }
+        Returns: string
+      }
+      collect_tap: {
+        Args: Record<PropertyKey, never> | { "": string[] }
+        Returns: string
+      }
+      dearmor: {
+        Args: { "": string }
+        Returns: string
+      }
+      diag: {
+        Args:
+          | Record<PropertyKey, never>
+          | Record<PropertyKey, never>
+          | { msg: string }
+          | { msg: unknown }
+        Returns: string
+      }
+      diag_test_name: {
+        Args: { "": string }
+        Returns: string
+      }
+      do_tap: {
+        Args: Record<PropertyKey, never> | { "": string } | { "": unknown }
+        Returns: string[]
+      }
+      domains_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      enums_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      extensions_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      fail: {
+        Args: Record<PropertyKey, never> | { "": string }
+        Returns: string
+      }
+      findfuncs: {
+        Args: { "": string }
+        Returns: string[]
+      }
+      finish: {
+        Args: { exception_on_failure?: boolean }
+        Returns: string[]
+      }
+      foreign_tables_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      functions_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      gen_random_bytes: {
+        Args: { "": number }
+        Returns: string
+      }
+      gen_random_uuid: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      gen_salt: {
+        Args: { "": string }
+        Returns: string
+      }
+      groups_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      has_check: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_composite: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_domain: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_enum: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_extension: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_fk: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_foreign_table: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_function: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_group: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_inherited_tables: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_language: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_materialized_view: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_opclass: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_pk: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_relation: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_role: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_schema: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_sequence: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_table: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_tablespace: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_type: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_unique: {
+        Args: { "": string }
+        Returns: string
+      }
+      has_user: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      has_view: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_composite: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_domain: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_enum: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_extension: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_fk: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_foreign_table: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_function: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_group: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_inherited_tables: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_language: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_materialized_view: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_opclass: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_pk: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_relation: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_role: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_schema: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_sequence: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_table: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_tablespace: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_type: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_user: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      hasnt_view: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      in_todo: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      index_is_primary: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      index_is_unique: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_aggregate: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_clustered: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_definer: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_empty: {
+        Args: { "": string }
+        Returns: string
+      }
+      is_normal_function: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_partitioned: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_procedure: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_strict: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_superuser: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      is_window: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_aggregate: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_definer: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_empty: {
+        Args: { "": string }
+        Returns: string
+      }
+      isnt_normal_function: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_partitioned: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_procedure: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_strict: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_superuser: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      isnt_window: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      language_is_trusted: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      languages_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      lives_ok: {
+        Args: { "": string }
+        Returns: string
+      }
+      materialized_views_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      no_plan: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean[]
+      }
+      num_failed: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      ok: {
+        Args: { "": boolean }
+        Returns: string
+      }
+      opclasses_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      operators_are: {
+        Args: { "": string[] }
+        Returns: string
+      }
+      os_name: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      pass: {
+        Args: Record<PropertyKey, never> | { "": string }
+        Returns: string
+      }
+      pg_stat_statements: {
+        Args: { showtext: boolean }
+        Returns: Record<string, unknown>[]
+      }
+      pg_stat_statements_info: {
+        Args: Record<PropertyKey, never>
+        Returns: Record<string, unknown>
+      }
+      pg_stat_statements_reset: {
+        Args: {
+          userid?: unknown
+          dbid?: unknown
+          queryid?: number
+          minmax_only?: boolean
+        }
+        Returns: string
+      }
+      pg_version: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      pg_version_num: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      pgp_armor_headers: {
+        Args: { "": string }
+        Returns: Record<string, unknown>[]
+      }
+      pgp_key_id: {
+        Args: { "": string }
+        Returns: string
+      }
+      pgtap_version: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      plan: {
+        Args: { "": number }
+        Returns: string
+      }
+      roles_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      runtests: {
+        Args: Record<PropertyKey, never> | { "": string } | { "": unknown }
+        Returns: string[]
+      }
+      schemas_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      sequences_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      skip: {
+        Args:
+          | { "": number }
+          | { "": string }
+          | { why: string; how_many: number }
+        Returns: string
+      }
+      tables_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      tablespaces_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      throws_ok: {
+        Args: { "": string }
+        Returns: string
+      }
+      todo: {
+        Args:
+          | { how_many: number }
+          | { how_many: number; why: string }
+          | { why: string }
+          | { why: string; how_many: number }
+        Returns: boolean[]
+      }
+      todo_end: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean[]
+      }
+      todo_start: {
+        Args: Record<PropertyKey, never> | { "": string }
+        Returns: boolean[]
+      }
+      types_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      users_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+      uuid_generate_v1: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_generate_v1mc: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_generate_v3: {
+        Args: { namespace: string; name: string }
+        Returns: string
+      }
+      uuid_generate_v4: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_generate_v5: {
+        Args: { namespace: string; name: string }
+        Returns: string
+      }
+      uuid_nil: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_ns_dns: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_ns_oid: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_ns_url: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uuid_ns_x500: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      views_are: {
+        Args: { "": unknown[] }
+        Returns: string
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      _time_trial_type: {
+        a_time: number | null
+      }
+    }
+  }
   public: {
     Tables: {
       achievement_catalogue: {
@@ -16157,6 +17028,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  extensions: {
+    Enums: {},
+  },
   public: {
     Enums: {
       acc_enum: ["exact", "street", "area"],
