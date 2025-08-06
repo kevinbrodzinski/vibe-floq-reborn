@@ -696,7 +696,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Cleanup throttled cluster refetch
   useEffect(() => {
     return () => {
-      throttledRefetch.cancel();
+      throttledRefetch.clear();
     };
   }, [throttledRefetch]);
 

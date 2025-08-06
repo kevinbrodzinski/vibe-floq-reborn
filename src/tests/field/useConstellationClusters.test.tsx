@@ -131,8 +131,8 @@ describe('useConstellationClusters integration', () => {
     expect(throttle).toHaveBeenCalledWith(mockRefetch, 100);
     
     // Test cleanup
-    throttledRefetch.cancel();
-    expect(throttledRefetch.cancel).toHaveBeenCalled();
+    throttledRefetch.clear();
+    expect(throttledRefetch.clear).toHaveBeenCalled();
   });
 
   it('should handle cluster projection coordinates correctly', () => {
