@@ -128,8 +128,8 @@ BEGIN
         f.title as floq_title,
         f.primary_vibe::TEXT as floq_vibe
     FROM floqs f
-    JOIN floq_participants fp_a ON f.id = fp_a.floq_id AND fp_a.user_id = profile_a_id
-    JOIN floq_participants fp_b ON f.id = fp_b.floq_id AND fp_b.user_id = profile_b_id
+    JOIN floq_participants fp_a ON f.id = fp_a.floq_id AND COALESCE(fp_a.user_id, fp_a.profile_id) = profile_a_id
+    JOIN floq_participants fp_b ON f.id = fp_b.floq_id AND COALESCE(fp_b.user_id, fp_b.profile_id) = profile_b_id
     WHERE f.created_at >= time_window
     AND f.deleted_at IS NULL
     ORDER BY joined_at DESC;
@@ -162,8 +162,8 @@ BEGIN
         fp.title as plan_title,
         fp.status as plan_status
     FROM floq_plans fp
-    JOIN plan_participants pp_a ON fp.id = pp_a.plan_id AND pp_a.profile_id = profile_a_id
-    JOIN plan_participants pp_b ON fp.id = pp_b.plan_id AND pp_b.profile_id = profile_b_id
+    JOIN plan_participants pp_a ON fp.id = pp_a.plan_id AND COALESCE(pp_a.user_id, pp_a.profile_id) = profile_a_id
+    JOIN plan_participants pp_b ON fp.id = pp_b.plan_id AND COALESCE(pp_b.user_id, pp_b.profile_id) = profile_b_id
     WHERE fp.created_at >= time_window
     AND fp.archived_at IS NULL
     ORDER BY fp.created_at DESC;
@@ -319,10 +319,10 @@ BEGIN
             COUNT(*) * 3 as score
         FROM floq_participants fp
         WHERE fp.floq_id IN (
-            SELECT floq_id FROM floq_participants WHERE user_id = target_profile_id
+            SELECT floq_id FROM floq_participants WHERE COALESCE(user_id, profile_id) = target_profile_id
         )
-        AND fp.user_id != target_profile_id
-        AND fp.user_id NOT IN (
+        AND COALESCE(fp.user_id, fp.profile_id) != target_profile_id
+        AND COALESCE(fp.user_id, fp.profile_id) NOT IN (
             -- Exclude existing friends
             SELECT CASE 
                 WHEN user_a = target_profile_id THEN user_b 
@@ -332,20 +332,20 @@ BEGIN
             WHERE (user_a = target_profile_id OR user_b = target_profile_id) 
             AND status = 'accepted'
         )
-        GROUP BY fp.user_id
+        GROUP BY COALESCE(fp.user_id, fp.profile_id)
         
         UNION ALL
         
         -- Profiles who have been in same plans
         SELECT 
-            pp.profile_id as user_id,
+            COALESCE(pp.user_id, pp.profile_id) as user_id,
             COUNT(*) * 2 as score
         FROM plan_participants pp
         WHERE pp.plan_id IN (
-            SELECT plan_id FROM plan_participants WHERE profile_id = target_profile_id
+            SELECT plan_id FROM plan_participants WHERE COALESCE(user_id, profile_id) = target_profile_id
         )
-        AND pp.profile_id != target_profile_id
-        AND pp.profile_id NOT IN (
+        AND COALESCE(pp.user_id, pp.profile_id) != target_profile_id
+        AND COALESCE(pp.user_id, pp.profile_id) NOT IN (
             SELECT CASE 
                 WHEN user_a = target_profile_id THEN user_b 
                 ELSE user_a 
@@ -354,7 +354,7 @@ BEGIN
             WHERE (user_a = target_profile_id OR user_b = target_profile_id) 
             AND status = 'accepted'
         )
-        GROUP BY pp.profile_id
+        GROUP BY COALESCE(pp.user_id, pp.profile_id)
         
         UNION ALL
         
