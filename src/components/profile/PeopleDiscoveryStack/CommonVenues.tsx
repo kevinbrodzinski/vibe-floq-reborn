@@ -70,16 +70,18 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
     const [isPressed, setIsPressed] = React.useState(false);
     const isSaved = savedVenues.includes(venue.venue_id);
     
+    const handleToggleSaved = () => {
+      setSavedVenues(prev => {
+        if (prev.includes(venue.venue_id)) {
+          return prev.filter(id => id !== venue.venue_id);
+        } else {
+          return [...prev, venue.venue_id];
+        }
+      });
+    };
+    
     const { handlers } = useLongPress({
-      onLongPress: () => {
-        setSavedVenues(prev => {
-          if (prev.includes(venue.venue_id)) {
-            return prev.filter(id => id !== venue.venue_id);
-          } else {
-            return [...prev, venue.venue_id];
-          }
-        });
-      },
+      onLongPress: handleToggleSaved,
       delay: 600
     });
 
@@ -108,14 +110,8 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            // Trigger the long press action directly
-            setSavedVenues(prev => {
-              if (prev.includes(venue.venue_id)) {
-                return prev.filter(id => id !== venue.venue_id);
-              } else {
-                return [...prev, venue.venue_id];
-              }
-            });
+            // Use same handler logic as touch to keep paths consistent
+            handleToggleSaved();
           }
         }}
       >

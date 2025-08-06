@@ -10,6 +10,12 @@ export function useVibeBreakdown(targetProfileId: string) {
   const session = useSession()
   const currentUserId = session?.user?.id
   
+  // Generate stable hash for consistent mock data
+  const hash = useMemo(
+    () => simpleHash(targetProfileId + (currentUserId || '')),
+    [targetProfileId, currentUserId]
+  )
+
   // Generate stable mock data to avoid SSR hydration mismatches
   const mockData = useMemo((): VibeBreakdown => {
     if (typeof window === 'undefined') {
@@ -21,20 +27,18 @@ export function useVibeBreakdown(targetProfileId: string) {
       }
     }
     
-    // Use better hash for consistent mock data distribution
-    const hash = simpleHash(targetProfileId + (currentUserId || ''))
     return {
       overall: Math.round((hash % 40) + 60), // 60-100
       venueDNA: Math.round(((hash >> 8) % 30) + 50), // 50-80
       timeRhythm: Math.round(((hash >> 16) % 25) + 65), // 65-90
       socialPattern: Math.round(((hash >> 24) % 35) + 45), // 45-80
     }
-  }, [targetProfileId, currentUserId])
+  }, [hash])
   
   return useQuery({
     enabled: !!currentUserId && !!targetProfileId,
     queryKey: QK.VibeBreakdown(currentUserId!, targetProfileId),
-    queryFn: async (): Promise<VibeBreakdown> => {
+    queryFn: (): VibeBreakdown => {
       // For now, return mock data since the RPC functions need the venue_visits table schema fixed
       // TODO: Replace with actual RPC call once database migration is complete
       return mockData

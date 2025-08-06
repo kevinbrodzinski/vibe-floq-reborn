@@ -11,6 +11,12 @@ export function usePlanSuggestions(targetProfileId: string, options: { limit?: n
   const session = useSession()
   const currentUserId = session?.user?.id
   
+  // Generate stable hash for consistent mock data
+  const hash = useMemo(
+    () => simpleHash(targetProfileId + (currentUserId || '') + limit.toString()),
+    [targetProfileId, currentUserId, limit]
+  )
+
   // Generate stable mock data to avoid SSR hydration mismatches
   const mockData = useMemo((): PlanSuggestion[] => {
     const suggestions = [
@@ -22,20 +28,18 @@ export function usePlanSuggestions(targetProfileId: string, options: { limit?: n
       { id: 'sug-6', title: 'Visit a gallery opening', vibe: 'cultural', venue_type: 'gallery', estimated_duration: '90 minutes' },
     ]
     
-    // Use better hash to determine which suggestions to show
-    const hash = simpleHash(targetProfileId + (currentUserId || '') + limit.toString())
     const start = hash % Math.max(1, suggestions.length - limit)
     
     return suggestions.slice(start, start + limit)
-  }, [targetProfileId, currentUserId, limit])
+  }, [hash])
   
   return useQuery({
     enabled: !!currentUserId && !!targetProfileId,
     queryKey: QK.PlanSuggestions(currentUserId!, targetProfileId, limit),
-    queryFn: (): Promise<PlanSuggestion[]> => {
+    queryFn: (): PlanSuggestion[] => {
       // For now, return mock data since the RPC functions need the venue_visits table schema fixed
       // TODO: Replace with actual RPC call once database migration is complete
-      return Promise.resolve(mockData)
+      return mockData
     },
     staleTime: 15 * 60 * 1000, // 15 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
