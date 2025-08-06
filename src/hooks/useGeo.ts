@@ -82,19 +82,20 @@ export function useGeo(): GeoState {
             if (completed) return;
             completed = true;
             devLog('⏰ timeout – surfacing error instead of demo coordinates');
-            setState({ coords: null, status: 'error', error: 'GPS timeout - please try again' });
+            publish(null, 'error', 'GPS timeout - please try again');
           }, TIMEOUT_MS);
         } else if (p.state === 'denied') {
           devLog('🔒 Permission denied - surfacing error without fallback');
-          setState({ coords: null, status: 'error', error: 'Location permission denied' });
+          publish(null, 'error', 'Location permission denied');
           return;
         } else {
           devLog('🔒 Permission already granted:', p.state, '- no fallback needed');
         }
       })
       .catch(() => {
-        // Permissions API not supported, don't use fallback
-        devLog('🔒 Permissions API not supported - no fallback timer');
+        // Permissions API not supported, surface error for safety
+        devLog('🔒 Permissions API not supported – surfacing error');
+        publish(null, 'error', 'Unable to obtain location');
       });
 
     /* 4️⃣ Request real GPS ---------------------------------------------- */
@@ -120,7 +121,7 @@ export function useGeo(): GeoState {
           publish(coords, 'ready');
         } else {
           devLog('⚠️ no coords in response – surfacing error');
-          setState({ coords: null, status: 'error', error: 'No location data received' });
+          publish(null, 'error', 'No location data received');
         }
       })
       .catch(err => {
