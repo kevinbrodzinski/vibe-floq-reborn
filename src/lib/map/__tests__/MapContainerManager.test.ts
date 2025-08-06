@@ -80,19 +80,21 @@ describe('MapContainerManager', () => {
     
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Mock removeChild to throw an error but still remove the child
+    // Mock removeChild to throw an error WITHOUT removing the child
     const originalRemoveChild = container.removeChild;
-    container.removeChild = vi.fn((child) => {
-      // Actually remove the child first, then throw
-      originalRemoveChild.call(container, child);
+    container.removeChild = vi.fn(() => {
       throw new Error('DOM manipulation failed');
     });
     
     manager.releaseContainer(container);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(manager.isContainerReady(container)).toBe(true); // Should still mark as released
+    expect(manager.isContainerReady(container)).toBe(false); // Container not ready due to failed cleanup (still has children)
     
+    // Restore original removeChild and manually clean up to test that activeContainers was properly cleaned up
     container.removeChild = originalRemoveChild;
+    container.removeChild(childDiv);
+    expect(manager.isContainerReady(container)).toBe(true); // Now ready after manual cleanup
+    
     consoleErrorSpy.mockRestore();
   });
 

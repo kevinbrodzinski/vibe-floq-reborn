@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">60% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
-                <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">60% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -79,34 +79,34 @@
 <a name='L14'></a><a href='#L14'>14</a>
 <a name='L15'></a><a href='#L15'>15</a>
 <a name='L16'></a><a href='#L16'>16</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Single canonical source of truth for vibes
-export const VIBES = [
-  'chill', 'hype', 'curious', 'social', 'solo', 'romantic',
-  'weird', 'down', 'flowing', 'open', 'energetic', 'excited', 'focused',
-] as const;
+<span class="cstat-no" title="statement not covered" >export const VIBES = [</span>
+<span class="cstat-no" title="statement not covered" >  'chill', 'hype', 'curious', 'social', 'solo', 'romantic',</span>
+<span class="cstat-no" title="statement not covered" >  'weird', 'down', 'flowing', 'open', 'energetic', 'excited', 'focused',</span>
+<span class="cstat-no" title="statement not covered" >] as const;</span>
 &nbsp;
 export type Vibe = (typeof VIBES)[number];
 &nbsp;
 // Validation helpers
-export const isValidVibe = <span class="fstat-no" title="function not covered" >(value: unknown): value is Vibe =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >export const isValidVibe = (value: unknown): value is Vibe =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  return typeof value === 'string' &amp;&amp; VIBES.includes(value as Vibe);</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;
-export const safeVibe = <span class="fstat-no" title="function not covered" >(value: unknown): Vibe =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >export const safeVibe = (value: unknown): Vibe =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  return isValidVibe(value) ? value : 'chill';</span>
 <span class="cstat-no" title="statement not covered" >};</span></pre></td></tr></table></pre>
 
@@ -115,7 +115,7 @@ export const safeVibe = <span class="fstat-no" title="function not covered" >(va
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-06T07:33:18.998Z
+                at 2025-08-06T07:35:22.217Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
