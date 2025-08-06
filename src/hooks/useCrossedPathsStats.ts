@@ -13,8 +13,8 @@ export function useCrossedPathsStats(targetProfileId: string) {
     queryKey: QK.CrossedPathsStats(currentUserId!, targetProfileId),
     queryFn: async (): Promise<CrossStat> => {
       const { data, error } = await supabase.rpc('get_crossed_paths_stats', {
-        p_current_profile_id: currentUserId!,
-        p_target_profile_id: targetProfileId
+        me_id: currentUserId!,
+        target_id: targetProfileId
       })
       
       if (error) {
@@ -22,7 +22,12 @@ export function useCrossedPathsStats(targetProfileId: string) {
         throw error
       }
       
-      return data as CrossStat
+      return {
+        countWeek: data[0].countweek,
+        lastVenue: data[0].lastvenue,
+        lastAt: data[0].lastat,
+        distance: data[0].distance
+      } as CrossStat
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes

@@ -13,8 +13,8 @@ export function useCommonVenues(targetProfileId: string) {
     queryKey: QK.CommonVenues(currentUserId!, targetProfileId),
     queryFn: async (): Promise<CommonVenue[]> => {
       const { data, error } = await supabase.rpc('get_common_venues', {
-        p_current_profile_id: currentUserId!,
-        p_target_profile_id: targetProfileId
+        me_id: currentUserId!,
+        target_id: targetProfileId
       })
       
       if (error) {

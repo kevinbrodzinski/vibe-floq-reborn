@@ -76,6 +76,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   
   // Get online status for this user
   const onlineStatus = useUserOnlineStatus(profileId);
+  const isOnline = onlineStatus?.isOnline ?? false;
 
   if (!profileId) {
     return (
@@ -136,7 +137,6 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
     location: 'Blue Bottle Coffee',
   };
 
-  const isOnline = onlineStatus?.isOnline ?? false;
 
   // Display name logic - display name first, then username
   const displayName = profile.display_name || profile.username || 'Unknown User';
@@ -160,14 +160,11 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(101,56,255,0.2),transparent)] rounded-3xl" />
           
           {/* Online pill in top right */}
-          {(isOnline || onlineStatus) && (
-            <div className="absolute top-4 right-4">
-              <ChipOnline 
-                isOnline={isOnline}
-                lastSeen={onlineStatus?.lastSeen}
-              />
-            </div>
-          )}
+          <ChipOnline
+            isOnline={isOnline}
+            lastSeen={onlineStatus?.lastSeen}
+            className="absolute top-4 right-4"
+          />
           
           {/* Location sharing badge - top left */}
           <LocationSharingBadge

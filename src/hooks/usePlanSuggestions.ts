@@ -14,9 +14,9 @@ export function usePlanSuggestions(targetProfileId: string, options: { limit?: n
     queryKey: QK.PlanSuggestions(currentUserId!, targetProfileId, limit),
     queryFn: async (): Promise<PlanSuggestion[]> => {
       const { data, error } = await supabase.rpc('get_plan_suggestions', {
-        p_current_profile_id: currentUserId!,
-        p_target_profile_id: targetProfileId,
-        p_limit: limit
+        me_id: currentUserId!,
+        target_id: targetProfileId,
+        limit_n: limit
       })
       
       if (error) {

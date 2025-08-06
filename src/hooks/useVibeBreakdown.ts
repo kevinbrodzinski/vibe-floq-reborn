@@ -13,8 +13,8 @@ export function useVibeBreakdown(targetProfileId: string) {
     queryKey: QK.VibeBreakdown(currentUserId!, targetProfileId),
     queryFn: async (): Promise<VibeBreakdown> => {
       const { data, error } = await supabase.rpc('get_vibe_breakdown', {
-        p_current_profile_id: currentUserId!,
-        p_target_profile_id: targetProfileId
+        me_id: currentUserId!,
+        target_id: targetProfileId
       })
       
       if (error) {
@@ -22,7 +22,12 @@ export function useVibeBreakdown(targetProfileId: string) {
         throw error
       }
       
-      return data as VibeBreakdown
+      return {
+        overall: data[0].overall,
+        venueDNA: data[0].venuedna,
+        timeRhythm: data[0].timerhythm,
+        socialPattern: data[0].socialpattern
+      } as VibeBreakdown
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes

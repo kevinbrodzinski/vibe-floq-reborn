@@ -22,7 +22,7 @@ export function usePresenceTracker(heartbeatMs = 30_000) {
     upsert(true);
 
     const startHeartbeat = () => {
-      hb = setInterval(() => upsert(true), heartbeatMs) as any;
+      hb = window.setInterval(() => upsert(true), heartbeatMs) as any;
     };
     
     const stopHeartbeat = () => {
