@@ -37,6 +37,8 @@ import { QuickPingButton } from '@/components/profile/QuickPingButton';
 import { LocationSharingBadge } from '@/components/profile/LocationSharingBadge';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { useFloqUI } from '@/contexts/FloqUIContext';
+import { PeopleDiscoveryStack } from '@/components/profile/PeopleDiscoveryStack';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -48,6 +50,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const currentUserId = useCurrentUserId();
   const [dmOpen, setDmOpen] = useState(false);
   const { setShowCreateSheet } = useFloqUI();
+  const showDiscoveryStack = useFeatureFlag('PEOPLE_DISCOVERY_STACK_V2');
   
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
@@ -439,6 +442,11 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
         {/* Zone 6: Mutual Context (friend only) */}
         {!isMe && isCurrentlyFriend && (
           <MutualContext friendId={profile.id} />
+        )}
+
+        {/* Zone 6.5: People Discovery Stack (non-friends only) */}
+        {!isMe && !isCurrentlyFriend && showDiscoveryStack && (
+          <PeopleDiscoveryStack targetId={profile.id} />
         )}
 
         {/* Zone 7: Highlights (always visible) */}
