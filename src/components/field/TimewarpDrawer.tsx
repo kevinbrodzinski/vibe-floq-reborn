@@ -9,9 +9,9 @@ export const TimewarpDrawer = () => {
 
   return (
     <div className={`
-      w-full max-w-screen-sm pointer-events-auto
+      w-full max-w-screen-sm
       transition-transform duration-300 ease-out
-      ${open ? 'translate-y-0' : 'translate-y-[110%]'}
+      ${open ? 'translate-y-0 pointer-events-auto' : 'translate-y-[calc(100%+20px)] pointer-events-none'}
     `}>
       <div className="
         rounded-t-xl bg-background/95 backdrop-blur-sm shadow-lg border border-border

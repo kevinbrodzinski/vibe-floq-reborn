@@ -18,9 +18,9 @@ export const FriendDrawer = () => {
 
   return (
     <div className={`
-      w-full max-w-screen-sm pointer-events-auto
+      w-full max-w-screen-sm
       transition-transform duration-300 ease-out
-      ${open ? 'translate-y-0' : 'translate-y-[110%]'}
+      ${open ? 'translate-y-0 pointer-events-auto' : 'translate-y-[calc(100%+20px)] pointer-events-none'}
     `}>
       <div className="
           flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 py-3
