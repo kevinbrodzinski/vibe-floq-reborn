@@ -119,8 +119,8 @@ BEGIN
         FROM floqs f
         JOIN floq_participants fp_a ON f.id = fp_a.floq_id 
         JOIN floq_participants fp_b ON f.id = fp_b.floq_id
-        WHERE COALESCE(fp_a.user_id, fp_a.profile_id) = profile_a_id
-        AND COALESCE(fp_b.user_id, fp_b.profile_id) = profile_b_id
+        WHERE fp_a.profile_id = profile_a_id
+        AND fp_b.profile_id = profile_b_id
         AND f.created_at >= NOW() - (days_back || ' days')::INTERVAL
     )
     SELECT 
@@ -149,11 +149,13 @@ BEGIN
             p.id as plan_id,
             p.created_at,
             1.0 as interaction_score -- Base score, could be enhanced
-        FROM plans p
+        FROM floq_plans p
         JOIN plan_participants pp_a ON p.id = pp_a.plan_id
         JOIN plan_participants pp_b ON p.id = pp_b.plan_id  
-        WHERE COALESCE(pp_a.user_id, pp_a.profile_id) = profile_a_id
-        AND COALESCE(pp_b.user_id, pp_b.profile_id) = profile_b_id
+        WHERE pp_a.profile_id = profile_a_id
+        AND pp_b.profile_id = profile_b_id
+        AND pp_a.is_guest = false -- Only include actual users, not guests
+        AND pp_b.is_guest = false
         AND p.created_at >= NOW() - (days_back || ' days')::INTERVAL
     )
     SELECT 
@@ -293,31 +295,33 @@ BEGIN
     WITH potential_friends AS (
         -- From floq participants
         SELECT 
-            COALESCE(fp.user_id, fp.profile_id) as candidate_id,
+            fp.profile_id as candidate_id,
             COUNT(*) as floq_interactions,
             MAX(f.created_at) as last_floq_interaction
         FROM floqs f
         JOIN floq_participants fp_target ON f.id = fp_target.floq_id
         JOIN floq_participants fp ON f.id = fp.floq_id
-        WHERE COALESCE(fp_target.user_id, fp_target.profile_id) = target_profile_id
-        AND COALESCE(fp.user_id, fp.profile_id) != target_profile_id
-        AND COALESCE(fp.user_id, fp.profile_id) IS NOT NULL
-        GROUP BY COALESCE(fp.user_id, fp.profile_id)
+        WHERE fp_target.profile_id = target_profile_id
+        AND fp.profile_id != target_profile_id
+        AND fp.profile_id IS NOT NULL
+        GROUP BY fp.profile_id
         
         UNION ALL
         
         -- From plan participants  
         SELECT 
-            COALESCE(pp.user_id, pp.profile_id) as candidate_id,
+            pp.profile_id as candidate_id,
             COUNT(*) as plan_interactions,
             MAX(p.created_at) as last_plan_interaction
-        FROM plans p
+        FROM floq_plans p
         JOIN plan_participants pp_target ON p.id = pp_target.plan_id
         JOIN plan_participants pp ON p.id = pp.plan_id
-        WHERE COALESCE(pp_target.user_id, pp_target.profile_id) = target_profile_id
-        AND COALESCE(pp.user_id, pp.profile_id) != target_profile_id
-        AND COALESCE(pp.user_id, pp.profile_id) IS NOT NULL
-        GROUP BY COALESCE(pp.user_id, pp.profile_id)
+        WHERE pp_target.profile_id = target_profile_id
+        AND pp.profile_id != target_profile_id
+        AND pp.profile_id IS NOT NULL
+        AND pp_target.is_guest = false -- Only include actual users
+        AND pp.is_guest = false
+        GROUP BY pp.profile_id
     ),
     aggregated_candidates AS (
         SELECT 
