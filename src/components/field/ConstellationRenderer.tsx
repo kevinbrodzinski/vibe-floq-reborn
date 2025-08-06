@@ -5,6 +5,7 @@ import { geohashToCenter } from '@/lib/geo';
 import { throttle } from 'lodash-es';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';
+import type { Cluster } from '@/hooks/useClusters';
 
 // Cached projection interface for performance
 interface CachedProjection {
@@ -17,6 +18,7 @@ interface CachedProjection {
 interface ConstellationRendererProps {
   people: Person[];
   fieldTiles: FieldTile[];
+  clusters: Cluster[];
   app: Application | null;
   container: Container | null;
 }
@@ -24,11 +26,13 @@ interface ConstellationRendererProps {
 export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
   people,
   fieldTiles,
+  clusters,
   app,
   container
 }) => {
   const constellationGraphicsRef = useRef<Graphics | null>(null);
   const friendConnectionsRef = useRef<Graphics | null>(null);
+  const clusterConnectionsRef = useRef<Graphics | null>(null);
   const [mapRev, setMapRev] = useState(0);
   
   // Subscribe to map movement and zoom events
@@ -81,22 +85,43 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     return cache;
   }, [people, fieldTiles, mapRev]); // Add mapRev to trigger updates on map movement
 
+  // Cache cluster projections for constellation connections
+  const cachedClusterProjections = useMemo(() => {
+    return clusters.map(cluster => {
+      const [lng, lat] = cluster.centroid.coordinates;
+      const projection = projectToScreen(lat, lng);
+      if (projection) {
+        return {
+          id: `cluster_${cluster.gh6}`,
+          screenX: projection.x,
+          screenY: projection.y,
+          data: cluster
+        };
+      }
+      return null;
+    }).filter(Boolean) as CachedProjection[];
+  }, [clusters, mapRev]);
+
   // Initialize constellation graphics
   useEffect(() => {
     if (!app || !container) return;
 
     const constellationGraphics = new Graphics();
     const friendConnections = new Graphics();
+    const clusterConnections = new Graphics();
     
-    container.addChild(friendConnections); // Friend lines behind everything
+    container.addChild(clusterConnections); // Cluster lines at bottom
+    container.addChild(friendConnections); // Friend lines in middle
     container.addChild(constellationGraphics); // Constellation effects on top
     
     constellationGraphicsRef.current = constellationGraphics;
     friendConnectionsRef.current = friendConnections;
+    clusterConnectionsRef.current = clusterConnections;
 
     return () => {
       constellationGraphics.destroy();
       friendConnections.destroy();
+      clusterConnections.destroy();
     };
   }, [app, container]);
 
@@ -104,12 +129,14 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
   useEffect(() => {
     const constellationGraphics = constellationGraphicsRef.current;
     const friendConnections = friendConnectionsRef.current;
+    const clusterConnections = clusterConnectionsRef.current;
     
-    if (!constellationGraphics || !friendConnections) return;
+    if (!constellationGraphics || !friendConnections || !clusterConnections) return;
 
     // Clear previous frame
     constellationGraphics.clear();
     friendConnections.clear();
+    clusterConnections.clear();
 
     // Only render during evening/night hours (6 PM - 6 AM)
     const currentHour = new Date().getHours();
@@ -119,12 +146,15 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     // Calculate constellation intensity based on time
     const nightIntensity = calculateNightIntensity(currentHour);
     
+    // 🛰️ NEW: Draw live cluster connections first (bottom layer)
+    drawClusterConnections(clusterConnections, cachedClusterProjections, nightIntensity);
+    
     // Group friends by proximity using cached projections
     const friendProjections = cachedProjections.filter(cp => cp.id.startsWith('person_'));
     const friendClusters = createFriendClustersFromCache(friendProjections);
     
-    // Draw constellation connections between friends
-    drawFriendConnections(friendConnections, friendClusters, nightIntensity);
+    // 🛰️ ENHANCED: Draw constellation connections between friends, now cluster-aware
+    drawFriendConnections(friendConnections, friendClusters, cachedClusterProjections, nightIntensity);
     
     // Draw constellation stars using cached tile projections
     const tileProjections = cachedProjections.filter(cp => cp.id.startsWith('tile_'));
@@ -133,7 +163,7 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     // Add ambient constellation effects
     drawAmbientStars(constellationGraphics, nightIntensity);
 
-  }, [cachedProjections]);
+  }, [cachedProjections, cachedClusterProjections]);
 
   return null; // This component only manages PIXI graphics
 };
@@ -183,10 +213,65 @@ function createFriendClustersFromCache(friendProjections: CachedProjection[]): C
   return clusters;
 }
 
+// 🛰️ NEW: Draw connections between live map clusters
+function drawClusterConnections(
+  graphics: Graphics,
+  clusterProjections: CachedProjection[],
+  intensity: number
+): void {
+  if (clusterProjections.length < 2) return;
+
+  // Draw connections between nearby clusters
+  for (let i = 0; i < clusterProjections.length; i++) {
+    for (let j = i + 1; j < clusterProjections.length; j++) {
+      const cluster1 = clusterProjections[i];
+      const cluster2 = clusterProjections[j];
+      
+      const distance = Math.sqrt(
+        Math.pow(cluster1.screenX - cluster2.screenX, 2) + 
+        Math.pow(cluster1.screenY - cluster2.screenY, 2)
+      );
+      
+      // Only connect nearby clusters (avoid long lines across screen)
+      if (distance > 300) continue;
+      
+      const cluster1Data = cluster1.data as Cluster;
+      const cluster2Data = cluster2.data as Cluster;
+      
+      // Connection strength based on cluster sizes and vibe compatibility
+      const connectionStrength = Math.min(
+        cluster1Data.total + cluster2Data.total,
+        20
+      ) / 20;
+      
+      // Subtle animated connection line
+      const alpha = (0.15 + 0.1 * Math.sin(Date.now() * 0.001)) * intensity * connectionStrength;
+      const lineWidth = 0.5 + connectionStrength;
+      
+      // Use a subtle purple/blue for cluster connections
+      graphics.lineStyle(lineWidth, 0x8b5cf6, alpha);
+      
+      // Draw curved connection with gentle arc
+      const midX = (cluster1.screenX + cluster2.screenX) / 2;
+      const midY = (cluster1.screenY + cluster2.screenY) / 2;
+      const curveOffset = 15 * Math.sin(Date.now() * 0.0008 + distance * 0.005);
+      
+      graphics.moveTo(cluster1.screenX, cluster1.screenY);
+      graphics.quadraticCurveTo(
+        midX + curveOffset, 
+        midY + curveOffset, 
+        cluster2.screenX, 
+        cluster2.screenY
+      );
+    }
+  }
+}
+
 // Draw elegant connecting lines between friends in constellations (cached version)
 function drawFriendConnections(
   graphics: Graphics, 
   clusters: CachedProjection[][], 
+  clusterProjections: CachedProjection[],
   intensity: number
 ): void {
   clusters.forEach(cluster => {

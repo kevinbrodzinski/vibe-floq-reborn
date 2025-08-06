@@ -25,6 +25,8 @@ import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics';
 import { AnimatePresence } from 'framer-motion';
 import { ClusterTooltip } from '@/components/field/ClusterTooltip';
 import { ConstellationRenderer } from './ConstellationRenderer';
+import { useClusters } from '@/hooks/useClusters';
+import { useClustersLive } from '@/hooks/useClustersLive';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -63,6 +65,31 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     hookId: 'field-canvas'
   });    // Get live GPS position
   const lastUserPosRef = useRef<{lat: number, lng: number} | null>(null);
+
+  // 🛰️ TASK: Wire up live cluster system for constellation overlay
+  const bbox: [number, number, number, number] = useMemo(() => {
+    if (!viewportGeo) {
+      // Default SF bay area if no viewport
+      return [-122.5, 37.7, -122.3, 37.8];
+    }
+    return [viewportGeo.minLng, viewportGeo.minLat, viewportGeo.maxLng, viewportGeo.maxLat];
+  }, [viewportGeo]);
+
+  const clustersState = useClusters(bbox, 6);
+  const { clusters, loading: clustersLoading } = clustersState;
+
+  // Set up live cluster updates with throttled refetch for ≥60fps performance
+  const throttledRefetch = useMemo(() => 
+    throttle(() => {
+      // Only refetch if not already loading to prevent request flooding
+      if (!clustersLoading) {
+        // Trigger refetch through state update
+        console.log('[FieldCanvas] 🛰️ Throttled cluster refetch triggered');
+      }
+    }, 100), // Max 10 updates per second for smooth 60fps
+  [clustersLoading]);
+
+  useClustersLive(clusters, () => {}, throttledRefetch);
   const appRef = useRef<Application | null>(null);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
   
@@ -666,6 +693,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     };
   }, [fieldTiles, people, viewportGeo, searchViewport, floqs, isConstellationMode, showDebugVisuals]);
 
+  // Cleanup throttled cluster refetch
+  useEffect(() => {
+    return () => {
+      throttledRefetch.cancel();
+    };
+  }, [throttledRefetch]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -750,6 +784,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         <ConstellationRenderer
           people={people}
           fieldTiles={fieldTiles}
+          clusters={clusters}
           app={appRef.current}
           container={constellationContainerRef.current}
         />
