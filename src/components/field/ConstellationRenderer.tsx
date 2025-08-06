@@ -12,7 +12,7 @@ interface CachedProjection {
   id: string;
   screenX: number;
   screenY: number;
-  data: Person | FieldTile;
+  data: Person | FieldTile | Cluster;
 }
 
 interface ConstellationRendererProps {
@@ -235,12 +235,12 @@ function drawClusterConnections(
       // Only connect nearby clusters (avoid long lines across screen)
       if (distance > 300) continue;
       
-      const cluster1Data = cluster1.data as Cluster;
-      const cluster2Data = cluster2.data as Cluster;
+      const cluster1Data = cluster1.data;
+      const cluster2Data = cluster2.data;
       
       // Connection strength based on cluster sizes and vibe compatibility
       const connectionStrength = Math.min(
-        cluster1Data.total + cluster2Data.total,
+        ((cluster1Data as any).total || 5) + ((cluster2Data as any).total || 5),
         20
       ) / 20;
       

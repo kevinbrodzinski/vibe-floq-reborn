@@ -40,7 +40,7 @@ export const planPointsLayer: AnyLayer = {
     ],
     'circle-stroke-opacity': 1,
     // Add a subtle inner ring to distinguish from floqs
-    'circle-stroke-dasharray': [2, 1] // Dashed stroke for plans
+    // 'circle-stroke-dasharray': [2, 1] // Dashed stroke for plans
   }
 };
 
@@ -64,7 +64,7 @@ export const planClustersLayer: AnyLayer = {
     'circle-stroke-width': 3,
     'circle-stroke-color': '#FFFFFF',
     'circle-stroke-opacity': 1,
-    'circle-stroke-dasharray': [3, 2] // Dashed stroke for plan clusters
+    // 'circle-stroke-dasharray': [3, 2] // Dashed stroke for plan clusters
   }
 };
 

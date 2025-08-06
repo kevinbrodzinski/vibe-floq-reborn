@@ -139,7 +139,12 @@ export function useFriendSuggestions(profileId: string, options?: { limit?: numb
 
       if (fetchError) throw fetchError;
 
-      setSuggestions(data || []);
+      setSuggestions((data || []).map((item: any) => ({
+        ...item,
+        created_at: new Date(item.created_at),
+        responded_at: item.responded_at ? new Date(item.responded_at) : null,
+        expires_at: new Date(item.expires_at)
+      })) as FriendSuggestionRecord[]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch friend suggestions';
       setError(errorMessage);
@@ -261,9 +266,9 @@ export function useFriendshipAnalysis(profileA: string, profileB: string) {
           user_low: existingAnalysis.user_low,
           user_high: existingAnalysis.user_high,
           overall_score: existingAnalysis.overall_score,
-          confidence_level: existingAnalysis.confidence_level,
-          relationship_type: existingAnalysis.relationship_type,
-          signals_data: existingAnalysis.signals_data,
+          confidence_level: existingAnalysis.confidence_level as 'low' | 'medium' | 'high',
+          relationship_type: existingAnalysis.relationship_type as 'friend' | 'acquaintance' | 'close_friend' | 'best_friend',
+          signals_data: existingAnalysis.signals_data as Record<string, any>,
           created_at: new Date(existingAnalysis.created_at),
           updated_at: new Date(existingAnalysis.updated_at)
         });

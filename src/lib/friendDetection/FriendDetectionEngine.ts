@@ -113,10 +113,10 @@ export class FriendDetectionEngine {
       if (error) throw error;
       if (!data || data.length === 0) return null;
 
-      const result = data[0];
-      const eventsCount = result.events_count || 0;
-      const totalMinutes = result.total_overlap_minutes || 0;
-      const avgProximity = result.avg_proximity_score || 0;
+      const result = data[0] as any;
+      const eventsCount = result?.events_count || 0;
+      const totalMinutes = result?.total_overlap_minutes || 0;
+      const avgProximity = result?.avg_proximity_score || 0;
 
       if (eventsCount === 0) return null;
 
@@ -128,7 +128,7 @@ export class FriendDetectionEngine {
       const strength = (frequencyScore * 0.4 + durationScore * 0.4 + proximityScore * 0.2);
       
       // Recency boost
-      const daysSinceLastEvent = result.most_recent_event 
+      const daysSinceLastEvent = result?.most_recent_event 
         ? Math.floor((Date.now() - new Date(result.most_recent_event).getTime()) / (1000 * 60 * 60 * 24))
         : 90;
       const recencyMultiplier = Math.pow(this.config.time_decay_factor, daysSinceLastEvent);
@@ -137,11 +137,11 @@ export class FriendDetectionEngine {
         type: 'co_location',
         strength: Math.min(strength * recencyMultiplier, 1),
         confidence: Math.min(eventsCount / 5, 1), // 5+ events = high confidence
-        lastSeen: result.most_recent_event ? new Date(result.most_recent_event) : new Date(),
+        lastSeen: result?.most_recent_event ? new Date(result.most_recent_event) : new Date(),
         metadata: {
           events_count: eventsCount,
           total_minutes: totalMinutes,
-          venues_count: result.venues_count,
+          venues_count: result?.venues_count || 0,
           avg_proximity: avgProximity
         }
       };
@@ -172,20 +172,20 @@ export class FriendDetectionEngine {
       const floqResult = floqData.data?.[0] || { shared_floqs_count: 0, total_overlap_score: 0, most_recent_shared: null };
       const planResult = planData.data?.[0] || { shared_plans_count: 0, total_overlap_score: 0, most_recent_shared: null };
 
-      const totalActivities = floqResult.shared_floqs_count + planResult.shared_plans_count;
-      const totalScore = floqResult.total_overlap_score + planResult.total_overlap_score;
+      const totalActivities = (floqResult as any).shared_floqs_count + (planResult as any).shared_plans_count;
+      const totalScore = (floqResult as any).total_overlap_score + (planResult as any).total_overlap_score;
 
       if (totalActivities === 0) return null;
 
       // Calculate strength based on frequency and diversity
       const frequencyScore = Math.min(totalActivities / 5, 1); // 5 shared activities = 1.0
-      const diversityScore = (floqResult.shared_floqs_count > 0 && planResult.shared_plans_count > 0) ? 1.2 : 1.0;
+      const diversityScore = ((floqResult as any).shared_floqs_count > 0 && (planResult as any).shared_plans_count > 0) ? 1.2 : 1.0;
       const qualityScore = totalScore / totalActivities; // Average interaction quality
 
       const strength = Math.min(frequencyScore * diversityScore * qualityScore, 1);
 
       // Recency calculation
-      const mostRecentActivity = [floqResult.most_recent_shared, planResult.most_recent_shared]
+      const mostRecentActivity = [(floqResult as any).most_recent_shared, (planResult as any).most_recent_shared]
         .filter(Boolean)
         .map(d => new Date(d!))
         .sort((a, b) => b.getTime() - a.getTime())[0];
@@ -201,8 +201,8 @@ export class FriendDetectionEngine {
         confidence: Math.min(totalActivities / 3, 1), // 3+ activities = high confidence
         lastSeen: mostRecentActivity || new Date(),
         metadata: {
-          shared_floqs: floqResult.shared_floqs_count,
-          shared_plans: planResult.shared_plans_count,
+          shared_floqs: (floqResult as any).shared_floqs_count,
+          shared_plans: (planResult as any).shared_plans_count,
           total_activities: totalActivities,
           avg_quality: qualityScore
         }
@@ -224,10 +224,10 @@ export class FriendDetectionEngine {
       if (error) throw error;
       if (!data || data.length === 0) return null;
 
-      const result = data[0];
-      const sharedVenues = result.shared_venues_count || 0;
-      const jaccardSimilarity = result.jaccard_similarity || 0;
-      const weightedOverlap = result.weighted_overlap_score || 0;
+      const result = data[0] as any;
+      const sharedVenues = result?.shared_venues_count || 0;
+      const jaccardSimilarity = result?.jaccard_similarity || 0;
+      const weightedOverlap = result?.weighted_overlap_score || 0;
 
       if (sharedVenues === 0) return null;
 

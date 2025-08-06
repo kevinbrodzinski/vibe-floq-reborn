@@ -34,15 +34,14 @@ export const FriendSuggestionsContainer: React.FC<FriendSuggestionsContainerProp
 
   const {
     suggestions,
-    loading,
+    isLoading: loading,
     error,
-    generateSuggestions,
+    generateNewSuggestions: generateSuggestions,
     respondToSuggestion,
     refetch
   } = useFriendSuggestions(user?.id || null, {
     limit: maxSuggestions,
-    autoRefresh,
-    refreshInterval: 5 * 60 * 1000 // 5 minutes
+    autoRefresh
   });
 
   const handleAccept = async (suggestionId: string) => {
@@ -66,7 +65,7 @@ export const FriendSuggestionsContainer: React.FC<FriendSuggestionsContainerProp
   const handleIgnore = async (suggestionId: string) => {
     setRespondingToId(suggestionId);
     try {
-      await respondToSuggestion(suggestionId, 'ignored');
+      await respondToSuggestion(suggestionId, 'declined');
     } finally {
       setRespondingToId(null);
     }
@@ -195,7 +194,7 @@ export const FriendSuggestionsContainer: React.FC<FriendSuggestionsContainerProp
                 transition={{ duration: 0.2 }}
               >
                 <FriendSuggestionCard
-                  suggestion={suggestion}
+                  suggestion={suggestion as any}
                   onAccept={handleAccept}
                   onDecline={handleDecline}
                   onIgnore={handleIgnore}
@@ -251,7 +250,7 @@ export const FriendSuggestionsContainer: React.FC<FriendSuggestionsContainerProp
                 <span className="flex items-center space-x-1">
                   <Sparkles className="h-4 w-4" />
                   <span>
-                    {suggestions.filter(s => s.confidence_level === 'very_high' || s.confidence_level === 'high').length} high matches
+                    {suggestions.filter(s => s.confidence_level === 'high').length} high matches
                   </span>
                 </span>
               </div>
