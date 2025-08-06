@@ -1,6 +1,6 @@
 -- ▸ venue_bumps : one row per (profile,venue)  ──👍 "Bump" feature
 create table if not exists venue_bumps (
-  venue_id   text  not null,
+  venue_id   uuid  not null,
   profile_id uuid  not null references profiles(id) on delete cascade,
   created_at timestamptz default now(),
   primary key (venue_id, profile_id)
@@ -41,7 +41,7 @@ select cron.schedule('refresh-friend-visits','*/5 * * * *',
 -- ▸ get_friend_visit_stats(viewer, venue)  → (#friends, list[id])
 create or replace function get_friend_visit_stats(
   p_viewer uuid,
-  p_venue  text
+  p_venue  uuid
 )
 returns table(friend_count int, friend_list jsonb)
 language sql stable as $$
@@ -53,7 +53,7 @@ where venue_id = p_venue;
 $$;
 
 -- ▸ toggle_venue_bump(venue)  → new bump_count
-create or replace function toggle_venue_bump(p_venue text)
+create or replace function toggle_venue_bump(p_venue uuid)
 returns int
 language plpgsql security definer as $$
 declare bumps int;
