@@ -22,6 +22,7 @@ import { VibeRealtime } from "@/providers/VibeRealtime";
 import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
+import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
 import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
@@ -43,6 +44,9 @@ const App = () => {
   
   // Auto-join presence channels for all users
   usePresenceChannel();
+  
+  // Track online status
+  usePresenceTracker();
 
   // Pre-warm the clustering worker
   useEffect(() => {

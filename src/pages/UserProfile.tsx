@@ -40,6 +40,7 @@ import { useFloqUI } from '@/contexts/FloqUIContext';
 import { PeopleDiscoveryStack } from '@/components/profile/PeopleDiscoveryStack';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ClientOnly } from '@/components/ui/client-only';
+import { useUserOnlineStatus } from '@/hooks/useUserOnlineStatus';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -72,6 +73,9 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
   // Get real distance data for this friend
   const friendDistance = profileId ? getFriendDistance(profileId) : null;
+  
+  // Get online status for this user
+  const onlineStatus = useUserOnlineStatus(profileId);
 
   if (!profileId) {
     return (
@@ -132,7 +136,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
     location: 'Blue Bottle Coffee',
   };
 
-  const isOnline = true; // TODO: Get actual presence data
+  const isOnline = onlineStatus?.isOnline ?? false;
 
   // Display name logic - display name first, then username
   const displayName = profile.display_name || profile.username || 'Unknown User';
@@ -156,9 +160,12 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(101,56,255,0.2),transparent)] rounded-3xl" />
           
           {/* Online pill in top right */}
-          {isOnline && (
+          {(isOnline || onlineStatus) && (
             <div className="absolute top-4 right-4">
-              <ChipOnline />
+              <ChipOnline 
+                isOnline={isOnline}
+                lastSeen={onlineStatus?.lastSeen}
+              />
             </div>
           )}
           
