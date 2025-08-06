@@ -12,875 +12,733 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
-  extensions: {
+  auth: {
+    Tables: {
+      audit_log_entries: {
+        Row: {
+          created_at: string | null
+          id: string
+          instance_id: string | null
+          ip_address: string
+          payload: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          instance_id?: string | null
+          ip_address?: string
+          payload?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          instance_id?: string | null
+          ip_address?: string
+          payload?: Json | null
+        }
+        Relationships: []
+      }
+      flow_state: {
+        Row: {
+          auth_code: string
+          auth_code_issued_at: string | null
+          authentication_method: string
+          code_challenge: string
+          code_challenge_method: Database["auth"]["Enums"]["code_challenge_method"]
+          created_at: string | null
+          id: string
+          provider_access_token: string | null
+          provider_refresh_token: string | null
+          provider_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth_code: string
+          auth_code_issued_at?: string | null
+          authentication_method: string
+          code_challenge: string
+          code_challenge_method: Database["auth"]["Enums"]["code_challenge_method"]
+          created_at?: string | null
+          id: string
+          provider_access_token?: string | null
+          provider_refresh_token?: string | null
+          provider_type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth_code?: string
+          auth_code_issued_at?: string | null
+          authentication_method?: string
+          code_challenge?: string
+          code_challenge_method?: Database["auth"]["Enums"]["code_challenge_method"]
+          created_at?: string | null
+          id?: string
+          provider_access_token?: string | null
+          provider_refresh_token?: string | null
+          provider_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      identities: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          identity_data: Json
+          last_sign_in_at: string | null
+          provider: string
+          provider_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          identity_data: Json
+          last_sign_in_at?: string | null
+          provider: string
+          provider_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          identity_data?: Json
+          last_sign_in_at?: string | null
+          provider?: string
+          provider_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instances: {
+        Row: {
+          created_at: string | null
+          id: string
+          raw_base_config: string | null
+          updated_at: string | null
+          uuid: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          raw_base_config?: string | null
+          updated_at?: string | null
+          uuid?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          raw_base_config?: string | null
+          updated_at?: string | null
+          uuid?: string | null
+        }
+        Relationships: []
+      }
+      mfa_amr_claims: {
+        Row: {
+          authentication_method: string
+          created_at: string
+          id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          authentication_method: string
+          created_at: string
+          id: string
+          session_id: string
+          updated_at: string
+        }
+        Update: {
+          authentication_method?: string
+          created_at?: string
+          id?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mfa_amr_claims_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mfa_challenges: {
+        Row: {
+          created_at: string
+          factor_id: string
+          id: string
+          ip_address: unknown
+          otp_code: string | null
+          verified_at: string | null
+          web_authn_session_data: Json | null
+        }
+        Insert: {
+          created_at: string
+          factor_id: string
+          id: string
+          ip_address: unknown
+          otp_code?: string | null
+          verified_at?: string | null
+          web_authn_session_data?: Json | null
+        }
+        Update: {
+          created_at?: string
+          factor_id?: string
+          id?: string
+          ip_address?: unknown
+          otp_code?: string | null
+          verified_at?: string | null
+          web_authn_session_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mfa_challenges_auth_factor_id_fkey"
+            columns: ["factor_id"]
+            isOneToOne: false
+            referencedRelation: "mfa_factors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mfa_factors: {
+        Row: {
+          created_at: string
+          factor_type: Database["auth"]["Enums"]["factor_type"]
+          friendly_name: string | null
+          id: string
+          last_challenged_at: string | null
+          phone: string | null
+          secret: string | null
+          status: Database["auth"]["Enums"]["factor_status"]
+          updated_at: string
+          user_id: string
+          web_authn_aaguid: string | null
+          web_authn_credential: Json | null
+        }
+        Insert: {
+          created_at: string
+          factor_type: Database["auth"]["Enums"]["factor_type"]
+          friendly_name?: string | null
+          id: string
+          last_challenged_at?: string | null
+          phone?: string | null
+          secret?: string | null
+          status: Database["auth"]["Enums"]["factor_status"]
+          updated_at: string
+          user_id: string
+          web_authn_aaguid?: string | null
+          web_authn_credential?: Json | null
+        }
+        Update: {
+          created_at?: string
+          factor_type?: Database["auth"]["Enums"]["factor_type"]
+          friendly_name?: string | null
+          id?: string
+          last_challenged_at?: string | null
+          phone?: string | null
+          secret?: string | null
+          status?: Database["auth"]["Enums"]["factor_status"]
+          updated_at?: string
+          user_id?: string
+          web_authn_aaguid?: string | null
+          web_authn_credential?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mfa_factors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      one_time_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          relates_to: string
+          token_hash: string
+          token_type: Database["auth"]["Enums"]["one_time_token_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          relates_to: string
+          token_hash: string
+          token_type: Database["auth"]["Enums"]["one_time_token_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          relates_to?: string
+          token_hash?: string
+          token_type?: Database["auth"]["Enums"]["one_time_token_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_time_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refresh_tokens: {
+        Row: {
+          created_at: string | null
+          id: number
+          instance_id: string | null
+          parent: string | null
+          revoked: boolean | null
+          session_id: string | null
+          token: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          instance_id?: string | null
+          parent?: string | null
+          revoked?: boolean | null
+          session_id?: string | null
+          token?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          instance_id?: string | null
+          parent?: string | null
+          revoked?: boolean | null
+          session_id?: string | null
+          token?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refresh_tokens_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saml_providers: {
+        Row: {
+          attribute_mapping: Json | null
+          created_at: string | null
+          entity_id: string
+          id: string
+          metadata_url: string | null
+          metadata_xml: string
+          name_id_format: string | null
+          sso_provider_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          attribute_mapping?: Json | null
+          created_at?: string | null
+          entity_id: string
+          id: string
+          metadata_url?: string | null
+          metadata_xml: string
+          name_id_format?: string | null
+          sso_provider_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          attribute_mapping?: Json | null
+          created_at?: string | null
+          entity_id?: string
+          id?: string
+          metadata_url?: string | null
+          metadata_xml?: string
+          name_id_format?: string | null
+          sso_provider_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saml_providers_sso_provider_id_fkey"
+            columns: ["sso_provider_id"]
+            isOneToOne: false
+            referencedRelation: "sso_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saml_relay_states: {
+        Row: {
+          created_at: string | null
+          flow_state_id: string | null
+          for_email: string | null
+          id: string
+          redirect_to: string | null
+          request_id: string
+          sso_provider_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flow_state_id?: string | null
+          for_email?: string | null
+          id: string
+          redirect_to?: string | null
+          request_id: string
+          sso_provider_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flow_state_id?: string | null
+          for_email?: string | null
+          id?: string
+          redirect_to?: string | null
+          request_id?: string
+          sso_provider_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saml_relay_states_flow_state_id_fkey"
+            columns: ["flow_state_id"]
+            isOneToOne: false
+            referencedRelation: "flow_state"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saml_relay_states_sso_provider_id_fkey"
+            columns: ["sso_provider_id"]
+            isOneToOne: false
+            referencedRelation: "sso_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schema_migrations: {
+        Row: {
+          version: string
+        }
+        Insert: {
+          version: string
+        }
+        Update: {
+          version?: string
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          aal: Database["auth"]["Enums"]["aal_level"] | null
+          created_at: string | null
+          factor_id: string | null
+          id: string
+          ip: unknown | null
+          not_after: string | null
+          refreshed_at: string | null
+          tag: string | null
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          aal?: Database["auth"]["Enums"]["aal_level"] | null
+          created_at?: string | null
+          factor_id?: string | null
+          id: string
+          ip?: unknown | null
+          not_after?: string | null
+          refreshed_at?: string | null
+          tag?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          aal?: Database["auth"]["Enums"]["aal_level"] | null
+          created_at?: string | null
+          factor_id?: string | null
+          id?: string
+          ip?: unknown | null
+          not_after?: string | null
+          refreshed_at?: string | null
+          tag?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sso_domains: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          sso_provider_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id: string
+          sso_provider_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          sso_provider_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sso_domains_sso_provider_id_fkey"
+            columns: ["sso_provider_id"]
+            isOneToOne: false
+            referencedRelation: "sso_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sso_providers: {
+        Row: {
+          created_at: string | null
+          id: string
+          resource_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          resource_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          resource_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          aud: string | null
+          banned_until: string | null
+          confirmation_sent_at: string | null
+          confirmation_token: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          email: string | null
+          email_change: string | null
+          email_change_confirm_status: number | null
+          email_change_sent_at: string | null
+          email_change_token_current: string | null
+          email_change_token_new: string | null
+          email_confirmed_at: string | null
+          encrypted_password: string | null
+          id: string
+          instance_id: string | null
+          invited_at: string | null
+          is_anonymous: boolean
+          is_sso_user: boolean
+          is_super_admin: boolean | null
+          last_sign_in_at: string | null
+          phone: string | null
+          phone_change: string | null
+          phone_change_sent_at: string | null
+          phone_change_token: string | null
+          phone_confirmed_at: string | null
+          raw_app_meta_data: Json | null
+          raw_user_meta_data: Json | null
+          reauthentication_sent_at: string | null
+          reauthentication_token: string | null
+          recovery_sent_at: string | null
+          recovery_token: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aud?: string | null
+          banned_until?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          email_change?: string | null
+          email_change_confirm_status?: number | null
+          email_change_sent_at?: string | null
+          email_change_token_current?: string | null
+          email_change_token_new?: string | null
+          email_confirmed_at?: string | null
+          encrypted_password?: string | null
+          id: string
+          instance_id?: string | null
+          invited_at?: string | null
+          is_anonymous?: boolean
+          is_sso_user?: boolean
+          is_super_admin?: boolean | null
+          last_sign_in_at?: string | null
+          phone?: string | null
+          phone_change?: string | null
+          phone_change_sent_at?: string | null
+          phone_change_token?: string | null
+          phone_confirmed_at?: string | null
+          raw_app_meta_data?: Json | null
+          raw_user_meta_data?: Json | null
+          reauthentication_sent_at?: string | null
+          reauthentication_token?: string | null
+          recovery_sent_at?: string | null
+          recovery_token?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aud?: string | null
+          banned_until?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          email_change?: string | null
+          email_change_confirm_status?: number | null
+          email_change_sent_at?: string | null
+          email_change_token_current?: string | null
+          email_change_token_new?: string | null
+          email_confirmed_at?: string | null
+          encrypted_password?: string | null
+          id?: string
+          instance_id?: string | null
+          invited_at?: string | null
+          is_anonymous?: boolean
+          is_sso_user?: boolean
+          is_super_admin?: boolean | null
+          last_sign_in_at?: string | null
+          phone?: string | null
+          phone_change?: string | null
+          phone_change_sent_at?: string | null
+          phone_change_token?: string | null
+          phone_confirmed_at?: string | null
+          raw_app_meta_data?: Json | null
+          raw_user_meta_data?: Json | null
+          reauthentication_sent_at?: string | null
+          reauthentication_token?: string | null
+          recovery_sent_at?: string | null
+          recovery_token?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      jwt: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uid: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+    }
+    Enums: {
+      aal_level: "aal1" | "aal2" | "aal3"
+      code_challenge_method: "s256" | "plain"
+      factor_status: "unverified" | "verified"
+      factor_type: "totp" | "webauthn" | "phone"
+      one_time_token_type:
+        | "confirmation_token"
+        | "reauthentication_token"
+        | "recovery_token"
+        | "email_change_token_new"
+        | "email_change_token_current"
+        | "phone_change_token"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  graphql_public: {
     Tables: {
       [_ in never]: never
     }
     Views: {
-      pg_all_foreign_keys: {
-        Row: {
-          fk_columns: unknown[] | null
-          fk_constraint_name: unknown | null
-          fk_schema_name: unknown | null
-          fk_table_name: unknown | null
-          fk_table_oid: unknown | null
-          is_deferrable: boolean | null
-          is_deferred: boolean | null
-          match_type: string | null
-          on_delete: string | null
-          on_update: string | null
-          pk_columns: unknown[] | null
-          pk_constraint_name: unknown | null
-          pk_index_name: unknown | null
-          pk_schema_name: unknown | null
-          pk_table_name: unknown | null
-          pk_table_oid: unknown | null
-        }
-        Relationships: []
-      }
-      pg_stat_statements: {
-        Row: {
-          calls: number | null
-          dbid: unknown | null
-          jit_deform_count: number | null
-          jit_deform_time: number | null
-          jit_emission_count: number | null
-          jit_emission_time: number | null
-          jit_functions: number | null
-          jit_generation_time: number | null
-          jit_inlining_count: number | null
-          jit_inlining_time: number | null
-          jit_optimization_count: number | null
-          jit_optimization_time: number | null
-          local_blk_read_time: number | null
-          local_blk_write_time: number | null
-          local_blks_dirtied: number | null
-          local_blks_hit: number | null
-          local_blks_read: number | null
-          local_blks_written: number | null
-          max_exec_time: number | null
-          max_plan_time: number | null
-          mean_exec_time: number | null
-          mean_plan_time: number | null
-          min_exec_time: number | null
-          min_plan_time: number | null
-          minmax_stats_since: string | null
-          plans: number | null
-          query: string | null
-          queryid: number | null
-          rows: number | null
-          shared_blk_read_time: number | null
-          shared_blk_write_time: number | null
-          shared_blks_dirtied: number | null
-          shared_blks_hit: number | null
-          shared_blks_read: number | null
-          shared_blks_written: number | null
-          stats_since: string | null
-          stddev_exec_time: number | null
-          stddev_plan_time: number | null
-          temp_blk_read_time: number | null
-          temp_blk_write_time: number | null
-          temp_blks_read: number | null
-          temp_blks_written: number | null
-          toplevel: boolean | null
-          total_exec_time: number | null
-          total_plan_time: number | null
-          userid: unknown | null
-          wal_bytes: number | null
-          wal_fpi: number | null
-          wal_records: number | null
-        }
-        Relationships: []
-      }
-      pg_stat_statements_info: {
-        Row: {
-          dealloc: number | null
-          stats_reset: string | null
-        }
-        Relationships: []
-      }
-      tap_funky: {
-        Row: {
-          args: string | null
-          is_definer: boolean | null
-          is_strict: boolean | null
-          is_visible: boolean | null
-          kind: unknown | null
-          langoid: unknown | null
-          name: unknown | null
-          oid: unknown | null
-          owner: unknown | null
-          returns: string | null
-          returns_set: boolean | null
-          schema: unknown | null
-          volatility: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      _cleanup: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      _contract_on: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      _currtest: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      _db_privs: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
-      }
-      _definer: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _dexists: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _expand_context: {
-        Args: { "": string }
-        Returns: string
-      }
-      _expand_on: {
-        Args: { "": string }
-        Returns: string
-      }
-      _expand_vol: {
-        Args: { "": string }
-        Returns: string
-      }
-      _ext_exists: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _extensions: {
-        Args: Record<PropertyKey, never> | { "": unknown }
-        Returns: unknown[]
-      }
-      _funkargs: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      _get: {
-        Args: { "": string }
-        Returns: number
-      }
-      _get_db_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _get_dtype: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      _get_language_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _get_latest: {
-        Args: { "": string }
-        Returns: number[]
-      }
-      _get_note: {
-        Args: { "": number } | { "": string }
-        Returns: string
-      }
-      _get_opclass_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _get_rel_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _get_schema_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _get_tablespace_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _get_type_owner: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _got_func: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _grolist: {
-        Args: { "": unknown }
-        Returns: unknown[]
-      }
-      _has_group: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _has_role: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _has_user: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _inherited: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _is_schema: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _is_super: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _is_trusted: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _is_verbose: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      _lang: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      _opc_exists: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _parts: {
-        Args: { "": unknown }
-        Returns: unknown[]
-      }
-      _pg_sv_type_array: {
-        Args: { "": unknown[] }
-        Returns: unknown[]
-      }
-      _prokind: {
-        Args: { p_oid: unknown }
-        Returns: unknown
-      }
-      _query: {
-        Args: { "": string }
-        Returns: string
-      }
-      _refine_vol: {
-        Args: { "": string }
-        Returns: string
-      }
-      _relexists: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _returns: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      _strict: {
-        Args: { "": unknown }
-        Returns: boolean
-      }
-      _table_privs: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
-      }
-      _temptypes: {
-        Args: { "": string }
-        Returns: string
-      }
-      _todo: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      _vol: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      armor: {
-        Args: { "": string }
-        Returns: string
-      }
-      can: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      casts_are: {
-        Args: { "": string[] }
-        Returns: string
-      }
-      col_is_null: {
-        Args:
-          | {
-              schema_name: unknown
-              table_name: unknown
-              column_name: unknown
-              description?: string
-            }
-          | { table_name: unknown; column_name: unknown; description?: string }
-        Returns: string
-      }
-      col_not_null: {
-        Args:
-          | {
-              schema_name: unknown
-              table_name: unknown
-              column_name: unknown
-              description?: string
-            }
-          | { table_name: unknown; column_name: unknown; description?: string }
-        Returns: string
-      }
-      collect_tap: {
-        Args: Record<PropertyKey, never> | { "": string[] }
-        Returns: string
-      }
-      dearmor: {
-        Args: { "": string }
-        Returns: string
-      }
-      diag: {
-        Args:
-          | Record<PropertyKey, never>
-          | Record<PropertyKey, never>
-          | { msg: string }
-          | { msg: unknown }
-        Returns: string
-      }
-      diag_test_name: {
-        Args: { "": string }
-        Returns: string
-      }
-      do_tap: {
-        Args: Record<PropertyKey, never> | { "": string } | { "": unknown }
-        Returns: string[]
-      }
-      domains_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      enums_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      extensions_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      fail: {
-        Args: Record<PropertyKey, never> | { "": string }
-        Returns: string
-      }
-      findfuncs: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      finish: {
-        Args: { exception_on_failure?: boolean }
-        Returns: string[]
-      }
-      foreign_tables_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      functions_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      gen_random_bytes: {
-        Args: { "": number }
-        Returns: string
-      }
-      gen_random_uuid: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      gen_salt: {
-        Args: { "": string }
-        Returns: string
-      }
-      groups_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      has_check: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_composite: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_domain: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_enum: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_extension: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_fk: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_foreign_table: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_function: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_group: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_inherited_tables: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_language: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_materialized_view: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_opclass: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_pk: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_relation: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_role: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_schema: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_sequence: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_table: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_tablespace: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_type: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_unique: {
-        Args: { "": string }
-        Returns: string
-      }
-      has_user: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      has_view: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_composite: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_domain: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_enum: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_extension: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_fk: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_foreign_table: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_function: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_group: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_inherited_tables: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_language: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_materialized_view: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_opclass: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_pk: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_relation: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_role: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_schema: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_sequence: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_table: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_tablespace: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_type: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_user: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      hasnt_view: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      in_todo: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      index_is_primary: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      index_is_unique: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_aggregate: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_clustered: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_definer: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_empty: {
-        Args: { "": string }
-        Returns: string
-      }
-      is_normal_function: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_partitioned: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_procedure: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_strict: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_superuser: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      is_window: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_aggregate: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_definer: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_empty: {
-        Args: { "": string }
-        Returns: string
-      }
-      isnt_normal_function: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_partitioned: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_procedure: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_strict: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_superuser: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      isnt_window: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      language_is_trusted: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      languages_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      lives_ok: {
-        Args: { "": string }
-        Returns: string
-      }
-      materialized_views_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      no_plan: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean[]
-      }
-      num_failed: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      ok: {
-        Args: { "": boolean }
-        Returns: string
-      }
-      opclasses_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      operators_are: {
-        Args: { "": string[] }
-        Returns: string
-      }
-      os_name: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      pass: {
-        Args: Record<PropertyKey, never> | { "": string }
-        Returns: string
-      }
-      pg_stat_statements: {
-        Args: { showtext: boolean }
-        Returns: Record<string, unknown>[]
-      }
-      pg_stat_statements_info: {
-        Args: Record<PropertyKey, never>
-        Returns: Record<string, unknown>
-      }
-      pg_stat_statements_reset: {
+      graphql: {
         Args: {
-          userid?: unknown
-          dbid?: unknown
-          queryid?: number
-          minmax_only?: boolean
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
         }
-        Returns: string
-      }
-      pg_version: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      pg_version_num: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      pgp_armor_headers: {
-        Args: { "": string }
-        Returns: Record<string, unknown>[]
-      }
-      pgp_key_id: {
-        Args: { "": string }
-        Returns: string
-      }
-      pgtap_version: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      plan: {
-        Args: { "": number }
-        Returns: string
-      }
-      roles_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      runtests: {
-        Args: Record<PropertyKey, never> | { "": string } | { "": unknown }
-        Returns: string[]
-      }
-      schemas_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      sequences_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      skip: {
-        Args:
-          | { "": number }
-          | { "": string }
-          | { why: string; how_many: number }
-        Returns: string
-      }
-      tables_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      tablespaces_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      throws_ok: {
-        Args: { "": string }
-        Returns: string
-      }
-      todo: {
-        Args:
-          | { how_many: number }
-          | { how_many: number; why: string }
-          | { why: string }
-          | { why: string; how_many: number }
-        Returns: boolean[]
-      }
-      todo_end: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean[]
-      }
-      todo_start: {
-        Args: Record<PropertyKey, never> | { "": string }
-        Returns: boolean[]
-      }
-      types_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      users_are: {
-        Args: { "": unknown[] }
-        Returns: string
-      }
-      uuid_generate_v1: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_generate_v1mc: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_generate_v3: {
-        Args: { namespace: string; name: string }
-        Returns: string
-      }
-      uuid_generate_v4: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_generate_v5: {
-        Args: { namespace: string; name: string }
-        Returns: string
-      }
-      uuid_nil: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_dns: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_oid: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_url: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_x500: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      views_are: {
-        Args: { "": unknown[] }
-        Returns: string
+        Returns: Json
       }
     }
     Enums: {
       [_ in never]: never
     }
     CompositeTypes: {
-      _time_trial_type: {
-        a_time: number | null
-      }
+      [_ in never]: never
     }
   }
   public: {
@@ -9986,6 +9844,67 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_bumps: {
+        Row: {
+          created_at: string | null
+          profile_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          profile_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string | null
+          profile_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_bumps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue_clusters: {
         Row: {
           active_hours: unknown | null
@@ -11976,6 +11895,21 @@ export type Database = {
         }
         Relationships: []
       }
+      v_friend_visits: {
+        Row: {
+          friend_pairs: Json | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_friends_flat: {
         Row: {
           created_at: string | null
@@ -12580,13 +12514,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -12596,8 +12523,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -12610,8 +12537,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -12624,7 +12551,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12637,13 +12564,20 @@ export type Database = {
           {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -14046,6 +13980,13 @@ export type Database = {
           lat: number
           lng: number
           captured_at: string
+        }[]
+      }
+      get_friend_visit_stats: {
+        Args: { p_viewer: string; p_venue: string }
+        Returns: {
+          friend_count: number
+          friend_list: Json
         }[]
       }
       get_friends_list: {
@@ -16339,6 +16280,10 @@ export type Database = {
         Args: { p_message_id: string; p_user_id: string; p_emoji: string }
         Returns: undefined
       }
+      toggle_venue_bump: {
+        Args: { p_venue: string }
+        Returns: number
+      }
       trim_weather_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -16799,6 +16744,723 @@ export type Database = {
       }
     }
   }
+  realtime: {
+    Tables: {
+      messages: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_03: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_04: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_05: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_06: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_07: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_08: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_09: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schema_migrations: {
+        Row: {
+          inserted_at: string | null
+          version: number
+        }
+        Insert: {
+          inserted_at?: string | null
+          version: number
+        }
+        Update: {
+          inserted_at?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      subscription: {
+        Row: {
+          claims: Json
+          claims_role: unknown
+          created_at: string
+          entity: unknown
+          filters: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
+          id: number
+          subscription_id: string
+        }
+        Insert: {
+          claims: Json
+          claims_role?: unknown
+          created_at?: string
+          entity: unknown
+          filters?: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
+          id?: never
+          subscription_id: string
+        }
+        Update: {
+          claims?: Json
+          claims_role?: unknown
+          created_at?: string
+          entity?: unknown
+          filters?: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
+          id?: never
+          subscription_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      apply_rls: {
+        Args: { wal: Json; max_record_bytes?: number }
+        Returns: Database["realtime"]["CompositeTypes"]["wal_rls"][]
+      }
+      broadcast_changes: {
+        Args: {
+          topic_name: string
+          event_name: string
+          operation: string
+          table_name: string
+          table_schema: string
+          new: Record<string, unknown>
+          old: Record<string, unknown>
+          level?: string
+        }
+        Returns: undefined
+      }
+      build_prepared_statement_sql: {
+        Args: {
+          prepared_statement_name: string
+          entity: unknown
+          columns: Database["realtime"]["CompositeTypes"]["wal_column"][]
+        }
+        Returns: string
+      }
+      cast: {
+        Args: { val: string; type_: unknown }
+        Returns: Json
+      }
+      check_equality_op: {
+        Args: {
+          op: Database["realtime"]["Enums"]["equality_op"]
+          type_: unknown
+          val_1: string
+          val_2: string
+        }
+        Returns: boolean
+      }
+      is_visible_through_filters: {
+        Args: {
+          columns: Database["realtime"]["CompositeTypes"]["wal_column"][]
+          filters: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
+        }
+        Returns: boolean
+      }
+      list_changes: {
+        Args: {
+          publication: unknown
+          slot_name: unknown
+          max_changes: number
+          max_record_bytes: number
+        }
+        Returns: Database["realtime"]["CompositeTypes"]["wal_rls"][]
+      }
+      quote_wal2json: {
+        Args: { entity: unknown }
+        Returns: string
+      }
+      send: {
+        Args: { payload: Json; event: string; topic: string; private?: boolean }
+        Returns: undefined
+      }
+      to_regrole: {
+        Args: { role_name: string }
+        Returns: unknown
+      }
+      topic: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+    }
+    Enums: {
+      action: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE" | "ERROR"
+      equality_op: "eq" | "neq" | "lt" | "lte" | "gt" | "gte" | "in"
+    }
+    CompositeTypes: {
+      user_defined_filter: {
+        column_name: string | null
+        op: Database["realtime"]["Enums"]["equality_op"] | null
+        value: string | null
+      }
+      wal_column: {
+        name: string | null
+        type_name: string | null
+        type_oid: unknown | null
+        value: Json | null
+        is_pkey: boolean | null
+        is_selectable: boolean | null
+      }
+      wal_rls: {
+        wal: Json | null
+        is_rls_enabled: boolean | null
+        subscription_ids: string[] | null
+        errors: string[] | null
+      }
+    }
+  }
+  storage: {
+    Tables: {
+      buckets: {
+        Row: {
+          allowed_mime_types: string[] | null
+          avif_autodetection: boolean | null
+          created_at: string | null
+          file_size_limit: number | null
+          id: string
+          name: string
+          owner: string | null
+          owner_id: string | null
+          public: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_mime_types?: string[] | null
+          avif_autodetection?: boolean | null
+          created_at?: string | null
+          file_size_limit?: number | null
+          id: string
+          name: string
+          owner?: string | null
+          owner_id?: string | null
+          public?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_mime_types?: string[] | null
+          avif_autodetection?: boolean | null
+          created_at?: string | null
+          file_size_limit?: number | null
+          id?: string
+          name?: string
+          owner?: string | null
+          owner_id?: string | null
+          public?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      migrations: {
+        Row: {
+          executed_at: string | null
+          hash: string
+          id: number
+          name: string
+        }
+        Insert: {
+          executed_at?: string | null
+          hash: string
+          id: number
+          name: string
+        }
+        Update: {
+          executed_at?: string | null
+          hash?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      objects: {
+        Row: {
+          bucket_id: string | null
+          created_at: string | null
+          id: string
+          last_accessed_at: string | null
+          metadata: Json | null
+          name: string | null
+          owner: string | null
+          owner_id: string | null
+          path_tokens: string[] | null
+          updated_at: string | null
+          user_metadata: Json | null
+          version: string | null
+        }
+        Insert: {
+          bucket_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          name?: string | null
+          owner?: string | null
+          owner_id?: string | null
+          path_tokens?: string[] | null
+          updated_at?: string | null
+          user_metadata?: Json | null
+          version?: string | null
+        }
+        Update: {
+          bucket_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          name?: string | null
+          owner?: string | null
+          owner_id?: string | null
+          path_tokens?: string[] | null
+          updated_at?: string | null
+          user_metadata?: Json | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objects_bucketId_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      s3_multipart_uploads: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          in_progress_size: number
+          key: string
+          owner_id: string | null
+          upload_signature: string
+          user_metadata: Json | null
+          version: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          id: string
+          in_progress_size?: number
+          key: string
+          owner_id?: string | null
+          upload_signature: string
+          user_metadata?: Json | null
+          version: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          in_progress_size?: number
+          key?: string
+          owner_id?: string | null
+          upload_signature?: string
+          user_metadata?: Json | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      s3_multipart_uploads_parts: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          etag: string
+          id: string
+          key: string
+          owner_id: string | null
+          part_number: number
+          size: number
+          upload_id: string
+          version: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          etag: string
+          id?: string
+          key: string
+          owner_id?: string | null
+          part_number: number
+          size?: number
+          upload_id: string
+          version: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          etag?: string
+          id?: string
+          key?: string
+          owner_id?: string | null
+          part_number?: number
+          size?: number
+          upload_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "s3_multipart_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      can_insert_object: {
+        Args: { bucketid: string; name: string; owner: string; metadata: Json }
+        Returns: undefined
+      }
+      extension: {
+        Args: { name: string }
+        Returns: string
+      }
+      filename: {
+        Args: { name: string }
+        Returns: string
+      }
+      foldername: {
+        Args: { name: string }
+        Returns: string[]
+      }
+      get_size_by_bucket: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          size: number
+          bucket_id: string
+        }[]
+      }
+      list_multipart_uploads_with_delimiter: {
+        Args: {
+          bucket_id: string
+          prefix_param: string
+          delimiter_param: string
+          max_keys?: number
+          next_key_token?: string
+          next_upload_token?: string
+        }
+        Returns: {
+          key: string
+          id: string
+          created_at: string
+        }[]
+      }
+      list_objects_with_delimiter: {
+        Args: {
+          bucket_id: string
+          prefix_param: string
+          delimiter_param: string
+          max_keys?: number
+          start_after?: string
+          next_token?: string
+        }
+        Returns: {
+          name: string
+          id: string
+          metadata: Json
+          updated_at: string
+        }[]
+      }
+      operation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      search: {
+        Args: {
+          prefix: string
+          bucketname: string
+          limits?: number
+          levels?: number
+          offsets?: number
+          search?: string
+          sortcolumn?: string
+          sortorder?: string
+        }
+        Returns: {
+          name: string
+          id: string
+          updated_at: string
+          created_at: string
+          last_accessed_at: string
+          metadata: Json
+        }[]
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
@@ -16919,7 +17581,23 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  extensions: {
+  auth: {
+    Enums: {
+      aal_level: ["aal1", "aal2", "aal3"],
+      code_challenge_method: ["s256", "plain"],
+      factor_status: ["unverified", "verified"],
+      factor_type: ["totp", "webauthn", "phone"],
+      one_time_token_type: [
+        "confirmation_token",
+        "reauthentication_token",
+        "recovery_token",
+        "email_change_token_new",
+        "email_change_token_current",
+        "phone_change_token",
+      ],
+    },
+  },
+  graphql_public: {
     Enums: {},
   },
   public: {
@@ -17072,5 +17750,14 @@ export const Constants = {
         "support-group",
       ],
     },
+  },
+  realtime: {
+    Enums: {
+      action: ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "ERROR"],
+      equality_op: ["eq", "neq", "lt", "lte", "gt", "gte", "in"],
+    },
+  },
+  storage: {
+    Enums: {},
   },
 } as const
