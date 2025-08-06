@@ -39,6 +39,7 @@ import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { PeopleDiscoveryStack } from '@/components/profile/PeopleDiscoveryStack';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { ClientOnly } from '@/components/ui/client-only';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -446,7 +447,9 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
         {/* Zone 6.5: People Discovery Stack (non-friends only) */}
         {!isMe && !isCurrentlyFriend && showDiscoveryStack && (
-          <PeopleDiscoveryStack targetId={profile.id} />
+          <ClientOnly>
+            <PeopleDiscoveryStack key={profile.id} targetId={profile.id} />
+          </ClientOnly>
         )}
 
         {/* Zone 7: Highlights (always visible) */}
