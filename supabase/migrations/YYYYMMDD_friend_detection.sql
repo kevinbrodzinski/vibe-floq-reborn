@@ -1,4 +1,4 @@
--- Friend Detection System Migration
+-- Friend Detection System Migration - Production Ready
 -- 
 -- This system analyzes user behavior patterns to automatically identify potential friendships.
 -- It works with the existing friendships table structure (user_low/user_high referencing auth.users.id).
@@ -41,11 +41,22 @@ CREATE TABLE IF NOT EXISTS public.friend_suggestions (
     CHECK (target_profile_id != suggested_profile_id)
 );
 
--- Create indexes for performance
+-- Create performance indexes
 CREATE INDEX IF NOT EXISTS idx_friendship_analysis_users ON public.friendship_analysis(user_low, user_high);
 CREATE INDEX IF NOT EXISTS idx_friendship_analysis_score ON public.friendship_analysis(overall_score DESC) WHERE overall_score >= 0.3;
 CREATE INDEX IF NOT EXISTS idx_friend_suggestions_target ON public.friend_suggestions(target_profile_id, status, expires_at);
-CREATE INDEX IF NOT EXISTS idx_friend_suggestions_expires ON public.friend_suggestions(expires_at) WHERE status = 'pending';
+
+-- Optimized partial index for pending suggestions
+CREATE INDEX IF NOT EXISTS idx_friend_suggestions_expires 
+ON public.friend_suggestions(expires_at) 
+WHERE status = 'pending';
+
+-- JSONB indexes for efficient querying of signals data
+CREATE INDEX IF NOT EXISTS idx_friendship_analysis_signals 
+ON public.friendship_analysis USING gin (signals_data jsonb_path_ops);
+
+CREATE INDEX IF NOT EXISTS idx_friend_suggestions_signals 
+ON public.friend_suggestions USING gin (signals_summary jsonb_path_ops);
 
 -- Function 1: Analyze co-location events between two users
 CREATE OR REPLACE FUNCTION analyze_co_location_events(
@@ -60,22 +71,27 @@ RETURNS TABLE(
     avg_proximity_score DECIMAL,
     venues_count INTEGER,
     most_recent_event TIMESTAMPTZ
-) LANGUAGE plpgsql AS $$
+) 
+LANGUAGE plpgsql 
+STABLE  -- Marked as STABLE for better performance
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
     RETURN QUERY
     WITH profile_a_presence AS (
-        SELECT venue_id, arrived_at, departed_at
+        SELECT venue_id, checked_in_at as arrived_at, 
+               CASE WHEN expires_at < NOW() THEN expires_at ELSE NOW() END as departed_at
         FROM venue_live_presence 
         WHERE profile_id = profile_a_id 
-        AND arrived_at >= NOW() - (days_back || ' days')::INTERVAL
-        AND departed_at IS NOT NULL
+        AND checked_in_at >= NOW() - (days_back || ' days')::INTERVAL
     ),
     profile_b_presence AS (
-        SELECT venue_id, arrived_at, departed_at
+        SELECT venue_id, checked_in_at as arrived_at,
+               CASE WHEN expires_at < NOW() THEN expires_at ELSE NOW() END as departed_at
         FROM venue_live_presence 
         WHERE profile_id = profile_b_id 
-        AND arrived_at >= NOW() - (days_back || ' days')::INTERVAL
-        AND departed_at IS NOT NULL
+        AND checked_in_at >= NOW() - (days_back || ' days')::INTERVAL
     ),
     overlapping_events AS (
         SELECT 
@@ -108,7 +124,12 @@ RETURNS TABLE(
     shared_floqs_count INTEGER,
     total_overlap_score DECIMAL,
     most_recent_shared TIMESTAMPTZ
-) LANGUAGE plpgsql AS $$
+) 
+LANGUAGE plpgsql 
+STABLE  -- Marked as STABLE for better performance
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
     RETURN QUERY
     WITH shared_floqs AS (
@@ -141,7 +162,12 @@ RETURNS TABLE(
     shared_plans_count INTEGER,
     total_overlap_score DECIMAL,
     most_recent_shared TIMESTAMPTZ
-) LANGUAGE plpgsql AS $$
+) 
+LANGUAGE plpgsql 
+STABLE  -- Marked as STABLE for better performance
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
     RETURN QUERY
     WITH shared_plans AS (
@@ -179,7 +205,12 @@ RETURNS TABLE(
     overlap_visits INTEGER,
     jaccard_similarity DECIMAL,
     weighted_overlap_score DECIMAL
-) LANGUAGE plpgsql AS $$
+) 
+LANGUAGE plpgsql 
+STABLE  -- Marked as STABLE for better performance
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
     RETURN QUERY
     WITH profile_a_venues AS (
@@ -233,26 +264,31 @@ RETURNS TABLE(
     sync_score DECIMAL,
     peak_sync_hours INTEGER[],
     sync_consistency DECIMAL
-) LANGUAGE plpgsql AS $$
+) 
+LANGUAGE plpgsql 
+STABLE  -- Marked as STABLE for better performance
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
     RETURN QUERY
     WITH profile_a_activity AS (
         SELECT 
-            DATE_TRUNC('hour', arrived_at) as activity_hour,
+            DATE_TRUNC('hour', checked_in_at) as activity_hour,
             COUNT(*) as activity_count
         FROM venue_live_presence
         WHERE profile_id = profile_a_id 
-        AND arrived_at >= NOW() - (days_back || ' days')::INTERVAL
-        GROUP BY DATE_TRUNC('hour', arrived_at)
+        AND checked_in_at >= NOW() - (days_back || ' days')::INTERVAL
+        GROUP BY DATE_TRUNC('hour', checked_in_at)
     ),
     profile_b_activity AS (
         SELECT 
-            DATE_TRUNC('hour', arrived_at) as activity_hour,
+            DATE_TRUNC('hour', checked_in_at) as activity_hour,
             COUNT(*) as activity_count
         FROM venue_live_presence
         WHERE profile_id = profile_b_id 
-        AND arrived_at >= NOW() - (days_back || ' days')::INTERVAL
-        GROUP BY DATE_TRUNC('hour', arrived_at)
+        AND checked_in_at >= NOW() - (days_back || ' days')::INTERVAL
+        GROUP BY DATE_TRUNC('hour', checked_in_at)
     ),
     sync_analysis AS (
         SELECT 
@@ -289,7 +325,12 @@ RETURNS TABLE(
     profile_id UUID,
     interaction_count INTEGER,
     last_interaction TIMESTAMPTZ
-) LANGUAGE plpgsql AS $$
+) 
+LANGUAGE plpgsql 
+STABLE  -- Marked as STABLE for better performance
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
     RETURN QUERY
     WITH potential_friends AS (
@@ -367,7 +408,11 @@ CREATE OR REPLACE FUNCTION upsert_friendship_analysis(
     p_signals_data JSONB,
     p_relationship_type TEXT
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 DECLARE
     ordered_profile_low UUID;
     ordered_profile_high UUID;
@@ -407,7 +452,11 @@ CREATE OR REPLACE FUNCTION create_friend_suggestion(
     p_suggestion_reason TEXT,
     p_signals_summary JSONB
 )
-RETURNS UUID LANGUAGE plpgsql AS $$
+RETURNS UUID 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 DECLARE
     suggestion_id UUID;
 BEGIN
@@ -435,7 +484,11 @@ $$;
 
 -- Function 9: Cleanup expired friend suggestions
 CREATE OR REPLACE FUNCTION cleanup_expired_friend_suggestions()
-RETURNS INTEGER LANGUAGE plpgsql AS $$
+RETURNS INTEGER 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 DECLARE
     deleted_count INTEGER;
 BEGIN
@@ -448,11 +501,6 @@ BEGIN
     RETURN deleted_count;
 END;
 $$;
-
--- Grant permissions
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
-GRANT ALL ON TABLE public.friendship_analysis TO authenticated;
-GRANT ALL ON TABLE public.friend_suggestions TO authenticated;
 
 -- Add RLS policies
 ALTER TABLE public.friendship_analysis ENABLE ROW LEVEL SECURITY;
@@ -477,3 +525,15 @@ CREATE POLICY "Users can update their friend suggestions" ON public.friend_sugge
 
 CREATE POLICY "System can insert friend suggestions" ON public.friend_suggestions
     FOR INSERT WITH CHECK (true); -- Allow system to create suggestions
+
+-- Grant permissions
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+GRANT ALL ON TABLE public.friendship_analysis TO authenticated;
+GRANT ALL ON TABLE public.friend_suggestions TO authenticated;
+
+-- Schedule cleanup job using pg_cron
+SELECT cron.schedule(
+  'cleanup_friend_suggestions_hourly',
+  '@hourly',
+  'SELECT public.cleanup_expired_friend_suggestions();'
+);
