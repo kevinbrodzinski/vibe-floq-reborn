@@ -16,14 +16,11 @@ export const FriendDrawer = () => {
   const pos = coords; // Compatibility alias
   const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng, 12)
 
-  // Only show drawer when button is selected AND there are nearby friends (or loading)
-  const shouldShow = open && (loading || people.length > 0)
-
   return (
     <div className={`
       w-full max-w-screen-sm pointer-events-auto
       transition-transform duration-300 ease-out
-      ${shouldShow ? 'translate-y-0' : 'translate-y-[110%]'}
+      ${open ? 'translate-y-0' : 'translate-y-[110%]'}
     `}>
       <div className="
           flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 py-3
