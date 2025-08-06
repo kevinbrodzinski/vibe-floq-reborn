@@ -5,23 +5,13 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/useLongPress';
+import { useCommonVenues } from '@/hooks/useCommonVenues';
 import type { CommonVenue } from '@/types/discovery';
 
 interface CommonVenuesProps {
   targetId: string;
   className?: string;
 }
-
-// Mock hook - will be replaced with real data
-const useMockCommonVenues = (targetId: string): CommonVenue[] => {
-  const venues = [
-    { venue_id: '1', name: 'Blue Bottle Coffee', category: 'cafe', overlap_visits: 5 },
-    { venue_id: '2', name: 'SFMOMA', category: 'gallery', overlap_visits: 2 },
-    { venue_id: '3', name: 'Dolores Park', category: 'park', overlap_visits: 3 },
-    { venue_id: '4', name: 'The Independent', category: 'music', overlap_visits: 1 }
-  ] as const;
-  return [...venues]; // Convert readonly to mutable
-};
 
 const getCategoryColor = (category: string) => {
   const colors = {
@@ -38,7 +28,7 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
   targetId, 
   className 
 }) => {
-  const venues = useMockCommonVenues(targetId);
+  const { data: venues = [] } = useCommonVenues(targetId);
   const [savedVenues, setSavedVenues] = React.useState<Set<string>>(new Set());
 
   if (!venues || venues.length === 0) {

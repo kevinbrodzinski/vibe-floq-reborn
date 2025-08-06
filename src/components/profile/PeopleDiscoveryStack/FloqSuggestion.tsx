@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { usePlanSuggestions } from '@/hooks/usePlanSuggestions';
 import type { PlanSuggestion } from '@/types/discovery';
 
 interface FloqSuggestionProps {
@@ -13,39 +14,11 @@ interface FloqSuggestionProps {
   className?: string;
 }
 
-// Mock hook - will be replaced with real data
-const useMockPlanSuggestions = (targetId: string): PlanSuggestion[] => {
-  const suggestions = [
-    { 
-      id: '1', 
-      title: 'Coffee & Gallery Hop', 
-      vibe: 'curious',
-      venue_type: 'cafe',
-      estimated_duration: '2h'
-    },
-    { 
-      id: '2', 
-      title: 'Park Picnic Session', 
-      vibe: 'chill',
-      venue_type: 'park',
-      estimated_duration: '3h'
-    },
-    { 
-      id: '3', 
-      title: 'Live Music Night', 
-      vibe: 'social',
-      venue_type: 'music',
-      estimated_duration: '4h'
-    }
-  ] as const;
-  return [...suggestions]; // Convert readonly to mutable
-};
-
 export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({ 
   targetId, 
   className 
 }) => {
-  const suggestions = useMockPlanSuggestions(targetId);
+  const { data: suggestions = [] } = usePlanSuggestions(targetId, 3);
   const [hoveredCard, setHoveredCard] = React.useState<string | null>(null);
   const [planningIds, setPlanningIds] = React.useState<Set<string>>(new Set());
   const { socialHaptics } = useHapticFeedback();

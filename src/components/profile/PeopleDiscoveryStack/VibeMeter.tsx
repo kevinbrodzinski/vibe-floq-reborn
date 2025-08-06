@@ -1,22 +1,16 @@
 import React, { useMemo } from 'react';
 import { motion, useSpring } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useVibeBreakdown } from '@/hooks/useVibeBreakdown';
 
 interface VibeeMeterProps {
   targetId: string;
   className?: string;
 }
 
-// Mock hook - will be replaced with real data
-const useMockVibeScore = (targetId: string) => {
-  return { 
-    score: 78, 
-    isLoading: false 
-  } as const satisfies { score: number; isLoading: boolean };
-};
-
 export const VibeMeter: React.FC<VibeeMeterProps> = ({ targetId, className }) => {
-  const { score, isLoading } = useMockVibeScore(targetId);
+  const { data: breakdown, isLoading } = useVibeBreakdown(targetId);
+  const score = breakdown?.overall ?? 50;
   const clamped = Math.min(100, Math.max(0, score));
   const angle = useMemo(() => -110 + (clamped * 220) / 100, [clamped]);
   const spring = useSpring(angle, { stiffness: 120, damping: 14 });

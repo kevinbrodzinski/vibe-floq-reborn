@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useVibeBreakdown } from '@/hooks/useVibeBreakdown';
 import type { VibeBreakdown } from '@/types/discovery';
 
 interface BreakdownStripProps {
@@ -8,26 +9,24 @@ interface BreakdownStripProps {
   className?: string;
 }
 
-// Mock hook - will be replaced with real data
-const useMockVibeBreakdown = (targetId: string): VibeBreakdown => {
-  return {
-    overall: 78,
-    venueDNA: 70,
-    timeRhythm: 50,
-    socialPattern: 90
-  } as const satisfies VibeBreakdown;
-};
-
 export const BreakdownStrip: React.FC<BreakdownStripProps> = ({ 
   targetId, 
   className 
 }) => {
-  const data = useMockVibeBreakdown(targetId);
+  const { data } = useVibeBreakdown(targetId);
+  
+  // Fallback to default values if data is not available
+  const breakdown: VibeBreakdown = data ?? {
+    overall: 50,
+    venueDNA: 50,
+    timeRhythm: 50,
+    socialPattern: 50
+  };
 
   const rows = [
-    { key: 'venueDNA', icon: '☕', label: 'Venue', score: data.venueDNA },
-    { key: 'timeRhythm', icon: '🕒', label: 'Time', score: data.timeRhythm },
-    { key: 'socialPattern', icon: '🧑‍🤝‍🧑', label: 'Social', score: data.socialPattern },
+    { key: 'venueDNA', icon: '☕', label: 'Venue', score: breakdown.venueDNA },
+    { key: 'timeRhythm', icon: '🕒', label: 'Time', score: breakdown.timeRhythm },
+    { key: 'socialPattern', icon: '🧑‍🤝‍🧑', label: 'Social', score: breakdown.socialPattern },
   ];
 
   const getScoreColor = (score: number) => {

@@ -4,6 +4,7 @@ import { MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useCrossedPathsStats } from '@/hooks/useCrossedPathsStats';
 import type { CrossStat } from '@/types/discovery';
 
 interface CloseEncountersProps {
@@ -11,21 +12,11 @@ interface CloseEncountersProps {
   className?: string;
 }
 
-// Mock hook - will be replaced with real data
-const useMockCrossStat = (targetId: string): CrossStat | null => {
-  return {
-    countWeek: 3,
-    lastVenue: 'Blue Bottle Coffee',
-    lastAt: '2 hours ago',
-    distance: 250 // meters
-  } as const satisfies CrossStat;
-};
-
 export const CloseEncounters: React.FC<CloseEncountersProps> = ({ 
   targetId, 
   className 
 }) => {
-  const crossStat = useMockCrossStat(targetId);
+  const { data: crossStat } = useCrossedPathsStats(targetId);
 
   if (!crossStat || crossStat.countWeek === 0) {
     return null; // Hide section if no encounters
@@ -127,7 +118,7 @@ export const CloseEncounters: React.FC<CloseEncountersProps> = ({
       </div>
 
       <div className="mt-3 text-xs text-muted-foreground">
-        Last seen at <span className="text-foreground font-medium">{crossStat.lastVenue}</span> • {crossStat.lastAt}
+        Last seen at <span className="text-foreground font-medium">{crossStat?.lastVenue}</span> • {crossStat?.lastAt}
       </div>
     </Card>
   );
