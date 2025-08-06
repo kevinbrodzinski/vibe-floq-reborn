@@ -3,14 +3,14 @@ import { motion, useSpring } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useVibeBreakdown } from '@/hooks/useVibeBreakdown';
 
-interface VibeeMeterProps {
+interface VibeMeterProps {
   targetId: string;
   className?: string;
 }
 
-export const VibeMeter: React.FC<VibeeMeterProps> = ({ targetId, className }) => {
-  const { data: breakdown, isLoading } = useVibeBreakdown(targetId);
-  const score = breakdown?.overall ?? 50;
+export const VibeMeter: React.FC<VibeMeterProps> = ({ targetId, className }) => {
+  const { data: breakdown, isLoading, isError } = useVibeBreakdown(targetId);
+  const score = breakdown?.overall ?? 0;
   const clamped = Math.min(100, Math.max(0, score));
   const angle = useMemo(() => -110 + (clamped * 220) / 100, [clamped]);
   const spring = useSpring(angle, { stiffness: 120, damping: 14 });
@@ -35,7 +35,23 @@ export const VibeMeter: React.FC<VibeeMeterProps> = ({ targetId, className }) =>
 
   if (isLoading) {
     return (
-      <div className={cn("w-16 h-16 rounded-full animate-pulse bg-muted", className)} />
+      <div className={cn("relative w-16 h-16", className)}>
+        <div className="w-16 h-16 rounded-full animate-pulse bg-muted/30" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="w-6 h-4 bg-muted/50 rounded animate-pulse mb-1" />
+          <div className="w-12 h-2 bg-muted/30 rounded animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className={cn("relative w-16 h-16", className)}>
+        <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center">
+          <span className="text-muted-foreground text-xs">--</span>
+        </div>
+      </div>
     );
   }
 

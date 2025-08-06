@@ -16,10 +16,29 @@ export const CloseEncounters: React.FC<CloseEncountersProps> = ({
   targetId, 
   className 
 }) => {
-  const { data: crossStat } = useCrossedPathsStats(targetId);
+  const { data: crossStat, isLoading, isError } = useCrossedPathsStats(targetId);
 
-  if (!crossStat || crossStat.countWeek === 0) {
-    return null; // Hide section if no encounters
+  if (isLoading) {
+    return (
+      <Card className={cn("p-4 bg-surface/10 border-border/20 backdrop-blur-sm", className)}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-28 h-4 bg-muted/30 rounded animate-pulse" />
+          <div className="w-20 h-6 bg-muted/30 rounded animate-pulse" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-4 h-4 bg-muted/30 rounded animate-pulse" />
+          <div className="flex-1 h-6 bg-muted/20 rounded animate-pulse" />
+        </div>
+        <div className="mt-3 space-y-1">
+          <div className="w-full h-3 bg-muted/20 rounded animate-pulse" />
+          <div className="w-32 h-3 bg-muted/20 rounded animate-pulse" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (isError || !crossStat || crossStat.countWeek === 0) {
+    return null; // Hide section if no encounters or error
   }
 
   const isNearby = crossStat.distance && crossStat.distance <= 500;

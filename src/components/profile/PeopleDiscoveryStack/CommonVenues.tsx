@@ -28,10 +28,33 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
   targetId, 
   className 
 }) => {
-  const { data: venues = [] } = useCommonVenues(targetId);
-  const [savedVenues, setSavedVenues] = React.useState<Set<string>>(new Set());
+  const { data: venues = [], isLoading, isError } = useCommonVenues(targetId);
+  const [savedVenues, setSavedVenues] = React.useState<string[]>([]);
 
-  if (!venues || venues.length === 0) {
+  if (isLoading) {
+    return (
+      <Card className={cn("p-4 bg-surface/10 border-border/20 backdrop-blur-sm", className)}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-24 h-4 bg-muted/30 rounded animate-pulse" />
+          <div className="w-16 h-6 bg-muted/30 rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-2">
+              <div className="w-1 h-8 bg-muted/30 rounded" />
+              <div className="flex-1">
+                <div className="w-32 h-3 bg-muted/30 rounded mb-1" />
+                <div className="w-16 h-2 bg-muted/20 rounded" />
+              </div>
+              <div className="w-12 h-5 bg-muted/30 rounded" />
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  if (isError || !venues || venues.length === 0) {
     return (
       <Card className={cn("p-4 bg-surface/10 border-border/20 backdrop-blur-sm", className)}>
         <h3 className="text-sm font-medium text-foreground mb-2">Common Venues</h3>
@@ -44,7 +67,7 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
             <span className="text-2xl">🏢</span>
           </motion.div>
           <p className="text-xs text-muted-foreground">
-            No shared venues discovered
+            {isError ? 'Unable to load venues' : 'No shared venues discovered'}
           </p>
         </div>
       </Card>
@@ -53,18 +76,16 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
 
   const VenueRow: React.FC<{ venue: CommonVenue; index: number }> = ({ venue, index }) => {
     const [isPressed, setIsPressed] = React.useState(false);
-    const isSaved = savedVenues.has(venue.venue_id);
+    const isSaved = savedVenues.includes(venue.venue_id);
     
     const { handlers } = useLongPress({
       onLongPress: () => {
         setSavedVenues(prev => {
-          const newSet = new Set(prev);
-          if (newSet.has(venue.venue_id)) {
-            newSet.delete(venue.venue_id);
+          if (prev.includes(venue.venue_id)) {
+            return prev.filter(id => id !== venue.venue_id);
           } else {
-            newSet.add(venue.venue_id);
+            return [...prev, venue.venue_id];
           }
-          return newSet;
         });
       },
       delay: 600
@@ -86,6 +107,10 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
         }}
         {...handlers}
         onTouchStart={() => setIsPressed(false)}
+        onPointerLeave={() => setIsPressed(false)}
+        role="button"
+        aria-pressed={isSaved}
+        aria-label={`${venue.name} - ${isSaved ? 'Remove from' : 'Add to'} saved venues`}
       >
         {/* Category gradient bar */}
         <div 
@@ -111,6 +136,7 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
               "transition-colors duration-200",
               isSaved ? "fill-warning text-warning" : "text-muted-foreground"
             )}
+            aria-hidden="true"
           />
         </motion.div>
 

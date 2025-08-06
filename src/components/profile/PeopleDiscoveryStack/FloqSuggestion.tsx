@@ -18,12 +18,35 @@ export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({
   targetId, 
   className 
 }) => {
-  const { data: suggestions = [] } = usePlanSuggestions(targetId, 3);
+  const { data: suggestions = [], isLoading, isError } = usePlanSuggestions(targetId, { limit: 3 });
   const [hoveredCard, setHoveredCard] = React.useState<string | null>(null);
   const [planningIds, setPlanningIds] = React.useState<Set<string>>(new Set());
   const { socialHaptics } = useHapticFeedback();
 
-  if (!suggestions || suggestions.length === 0) {
+  if (isLoading) {
+    return (
+      <Card className={cn("p-4 bg-surface/10 border-border/20 backdrop-blur-sm", className)}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-28 h-4 bg-muted/30 rounded animate-pulse" />
+          <div className="w-16 h-6 bg-muted/30 rounded animate-pulse" />
+        </div>
+        <div className="relative h-[120px]">
+          {[...Array(3)].map((_, i) => (
+            <div 
+              key={i} 
+              className="absolute inset-0 bg-muted/20 rounded-lg animate-pulse"
+              style={{ 
+                zIndex: 3 - i,
+                transform: `translateY(${i * 4}px) scale(${1 - i * 0.02})`
+              }}
+            />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  if (isError || !suggestions || suggestions.length === 0) {
     return (
       <Card className={cn("p-4 bg-surface/10 border-border/20 backdrop-blur-sm", className)}>
         <h3 className="text-sm font-medium text-foreground mb-2">Try This Together</h3>
@@ -36,7 +59,7 @@ export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({
             <span className="text-2xl">💡</span>
           </motion.div>
           <p className="text-xs text-muted-foreground">
-            No suggestions available yet
+            {isError ? 'Unable to load suggestions' : 'No suggestions available yet'}
           </p>
         </div>
       </Card>
