@@ -4963,6 +4963,119 @@ export type Database = {
           },
         ]
       }
+      friend_suggestions: {
+        Row: {
+          confidence_level: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          responded_at: string | null
+          score: number
+          signals_summary: Json
+          status: string
+          suggested_friend_id: string | null
+          suggestion_reason: string
+          target_profile_id: string | null
+        }
+        Insert: {
+          confidence_level: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          responded_at?: string | null
+          score: number
+          signals_summary?: Json
+          status?: string
+          suggested_friend_id?: string | null
+          suggestion_reason: string
+          target_profile_id?: string | null
+        }
+        Update: {
+          confidence_level?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          responded_at?: string | null
+          score?: number
+          signals_summary?: Json
+          status?: string
+          suggested_friend_id?: string | null
+          suggestion_reason?: string
+          target_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
+            columns: ["suggested_friend_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
+            columns: ["suggested_friend_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
+            columns: ["suggested_friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
+            columns: ["suggested_friend_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_suggested_friend_id_fkey"
+            columns: ["suggested_friend_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_suggestions_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friend_trails: {
         Row: {
           lat: number
@@ -5014,6 +5127,116 @@ export type Database = {
           {
             foreignKeyName: "fk_friend_trails_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friendship_analysis: {
+        Row: {
+          analysis_date: string | null
+          confidence_level: string
+          created_at: string | null
+          id: string
+          overall_score: number
+          profile_high: string | null
+          profile_low: string | null
+          relationship_type: string
+          signals_data: Json
+          updated_at: string | null
+        }
+        Insert: {
+          analysis_date?: string | null
+          confidence_level: string
+          created_at?: string | null
+          id?: string
+          overall_score: number
+          profile_high?: string | null
+          profile_low?: string | null
+          relationship_type: string
+          signals_data?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          analysis_date?: string | null
+          confidence_level?: string
+          created_at?: string | null
+          id?: string
+          overall_score?: number
+          profile_high?: string | null
+          profile_low?: string | null
+          relationship_type?: string
+          signals_data?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendship_analysis_profile_high_fkey"
+            columns: ["profile_high"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_high_fkey"
+            columns: ["profile_high"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_high_fkey"
+            columns: ["profile_high"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_high_fkey"
+            columns: ["profile_high"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_high_fkey"
+            columns: ["profile_high"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_low_fkey"
+            columns: ["profile_low"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_low_fkey"
+            columns: ["profile_low"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_low_fkey"
+            columns: ["profile_low"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_low_fkey"
+            columns: ["profile_low"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_analysis_profile_low_fkey"
+            columns: ["profile_low"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -12826,6 +13049,73 @@ export type Database = {
             }
         Returns: string
       }
+      analyze_co_location_events: {
+        Args: {
+          profile_a_id: string
+          profile_b_id: string
+          time_window: string
+          radius_m?: number
+        }
+        Returns: {
+          venue_id: string
+          start_time: string
+          end_time: string
+          duration_minutes: number
+          distance_m: number
+        }[]
+      }
+      analyze_shared_floq_participation: {
+        Args: {
+          profile_a_id: string
+          profile_b_id: string
+          time_window: string
+        }
+        Returns: {
+          floq_id: string
+          activity_type: string
+          joined_at: string
+          floq_title: string
+          floq_vibe: string
+        }[]
+      }
+      analyze_shared_plan_participation: {
+        Args: {
+          profile_a_id: string
+          profile_b_id: string
+          time_window: string
+        }
+        Returns: {
+          plan_id: string
+          activity_type: string
+          created_at: string
+          plan_title: string
+          plan_status: string
+        }[]
+      }
+      analyze_time_sync_patterns: {
+        Args: {
+          profile_a_id: string
+          profile_b_id: string
+          time_window_days?: number
+        }
+        Returns: {
+          sync_score: number
+          common_windows: Json
+        }[]
+      }
+      analyze_venue_overlap_patterns: {
+        Args: {
+          profile_a_id: string
+          profile_b_id: string
+          time_window: string
+        }
+        Returns: {
+          venue_id: string
+          profile_a_visits: number
+          profile_b_visits: number
+          overlap_score: number
+        }[]
+      }
       are_friends: {
         Args: { user_a: string; user_b: string }
         Returns: boolean
@@ -13003,6 +13293,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_expired_friend_suggestions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_live_positions: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -13093,6 +13387,17 @@ export type Database = {
           p_title: string
           p_invitees: string[]
           p_flock_type: string
+        }
+        Returns: string
+      }
+      create_friend_suggestion: {
+        Args: {
+          p_target_profile_id: string
+          p_suggested_friend_id: string
+          p_score: number
+          p_confidence_level: string
+          p_suggestion_reason: string
+          p_signals_summary: Json
         }
         Returns: string
       }
@@ -13859,6 +14164,13 @@ export type Database = {
           friend_username: string
           friend_display_name: string
           friend_avatar_url: string
+        }[]
+      }
+      get_friend_suggestion_candidates: {
+        Args: { target_profile_id: string; limit_count?: number }
+        Returns: {
+          profile_id: string
+          interaction_score: number
         }[]
       }
       get_friend_trail: {
@@ -16257,6 +16569,17 @@ export type Database = {
           _is_close?: boolean
         }
         Returns: Database["public"]["Enums"]["friend_state"]
+      }
+      upsert_friendship_analysis: {
+        Args: {
+          p_profile_a: string
+          p_profile_b: string
+          p_overall_score: number
+          p_confidence_level: string
+          p_signals_data: Json
+          p_relationship_type: string
+        }
+        Returns: string
       }
       upsert_live_position: {
         Args: {
