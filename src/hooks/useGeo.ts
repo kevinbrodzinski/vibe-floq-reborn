@@ -81,22 +81,20 @@ export function useGeo(): GeoState {
           fallback = setTimeout(() => {
             if (completed) return;
             completed = true;
-            devLog('⏰ timeout – falling back to demo coordinates');
-            publish(DEMO, 'ready', undefined);
+            devLog('⏰ timeout – surfacing error instead of demo coordinates');
+            setState({ coords: null, status: 'error', error: 'GPS timeout - please try again' });
           }, TIMEOUT_MS);
+        } else if (p.state === 'denied') {
+          devLog('🔒 Permission denied - surfacing error without fallback');
+          setState({ coords: null, status: 'error', error: 'Location permission denied' });
+          return;
         } else {
-          devLog('🔒 Permission already decided:', p.state, '- no fallback timer');
+          devLog('🔒 Permission already granted:', p.state, '- no fallback needed');
         }
       })
       .catch(() => {
-        // Permissions API not supported, arm fallback anyway
-        devLog('🔒 Permissions API not supported - arming fallback timer');
-        fallback = setTimeout(() => {
-          if (completed) return;
-          completed = true;
-          devLog('⏰ timeout – falling back to demo coordinates');
-          publish(DEMO, 'ready', undefined);
-        }, TIMEOUT_MS);
+        // Permissions API not supported, don't use fallback
+        devLog('🔒 Permissions API not supported - no fallback timer');
       });
 
     /* 4️⃣ Request real GPS ---------------------------------------------- */
@@ -121,8 +119,8 @@ export function useGeo(): GeoState {
           devLog('✔︎ real location received', coords);
           publish(coords, 'ready');
         } else {
-          devLog('⚠️ no coords in response – using fallback');
-          publish(DEMO, 'ready');
+          devLog('⚠️ no coords in response – surfacing error');
+          setState({ coords: null, status: 'error', error: 'No location data received' });
         }
       })
       .catch(err => {

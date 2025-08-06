@@ -21,14 +21,21 @@ export function setDebugLocationNow(lat: number = 37.7749, lng: number = -122.41
 
 // Auto-setup for Lovable development environment
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  // Check if we're in Lovable preview and no debug location is set
-  if (location.hostname.includes('lovable') && !localStorage.getItem('floq-debug-forceLoc')) {
-    console.log('🔧 Auto-setting debug location for Lovable preview...');
-    setDebugLocationNow();
+  // Clear any existing debug location on load to force real GPS
+  if (localStorage.getItem('floq-debug-forceLoc')) {
+    console.log('🧹 Clearing existing debug location to force real GPS...');
+    localStorage.removeItem('floq-debug-forceLoc');
   }
+  
+  // Commented out auto-debug setup - use manual debugging only
+  // if (location.hostname.includes('lovable') && !localStorage.getItem('floq-debug-forceLoc')) {
+  //   console.log('🔧 Auto-setting debug location for Lovable preview...');
+  //   setDebugLocationNow();
+  // }
   
   // Make available globally for manual debugging
   (window as any).setDebugLocationNow = setDebugLocationNow;
   
   console.log('🌍 Debug location helper available: window.setDebugLocationNow()');
+  console.log('📍 Real GPS location will be used by default');
 }
