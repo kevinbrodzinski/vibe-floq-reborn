@@ -305,7 +305,13 @@ BEGIN
     )
     SELECT 
         COALESCE(AVG(hour_sync_score), 0)::DECIMAL as sync_score,
-        ARRAY_AGG(hour_of_day::INTEGER ORDER BY hour_sync_score DESC LIMIT 3) as peak_sync_hours,
+        ARRAY(
+            SELECT hour_of_day::INTEGER 
+            FROM sync_analysis 
+            WHERE hour_sync_score > 0 
+            ORDER BY hour_sync_score DESC 
+            LIMIT 3
+        ) as peak_sync_hours,
         CASE 
             WHEN COUNT(*) > 0 THEN (1.0 - STDDEV(hour_sync_score) / NULLIF(AVG(hour_sync_score), 0))::DECIMAL
             ELSE 0
