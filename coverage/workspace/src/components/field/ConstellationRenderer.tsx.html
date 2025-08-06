@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">0.78% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/256</span>
+                <span class='fraction'>2/256</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">0.78% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/256</span>
+                <span class='fraction'>2/256</span>
             </div>
         
             
@@ -448,7 +448,7 @@
 <a name='L383'></a><a href='#L383'>383</a>
 <a name='L384'></a><a href='#L384'>384</a>
 <a name='L385'></a><a href='#L385'>385</a>
-<a name='L386'></a><a href='#L386'>386</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L386'></a><a href='#L386'>386</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -473,6 +473,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -483,7 +484,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -833,7 +833,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React, { useRef, useEffect, useMemo, useState } from 'react';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Graphics, Container, Application } from 'pixi.js';
 import { projectToScreen, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter } from '@/lib/geo';
@@ -858,7 +858,7 @@ interface ConstellationRendererProps {
   container: Container | null;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const ConstellationRenderer: React.FC&lt;ConstellationRendererProps&gt; = ({</span>
+export const ConstellationRenderer: React.FC&lt;ConstellationRendererProps&gt; = <span class="fstat-no" title="function not covered" >({</span>
 <span class="cstat-no" title="statement not covered" >  people,</span>
 <span class="cstat-no" title="statement not covered" >  fieldTiles,</span>
 <span class="cstat-no" title="statement not covered" >  clusters,</span>
@@ -1004,7 +1004,7 @@ interface ConstellationRendererProps {
 <span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;
 // Calculate how intense the night effects should be
-<span class="cstat-no" title="statement not covered" >function calculateNightIntensity(hour: number): number {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function calculateNightIntensity(hour: number): number {</span></span>
 <span class="cstat-no" title="statement not covered" >  if (hour &gt;= 22 || hour &lt;= 2) return 1.0; // Peak night (10 PM - 2 AM)</span>
 <span class="cstat-no" title="statement not covered" >  if (hour &gt;= 20 || hour &lt;= 4) return 0.8; // Deep night (8 PM - 4 AM) </span>
 <span class="cstat-no" title="statement not covered" >  if (hour &gt;= 18 || hour &lt;= 6) return 0.5; // Dusk/dawn (6 PM - 6 AM)</span>
@@ -1012,7 +1012,7 @@ interface ConstellationRendererProps {
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 // Group friends by proximity using cached projections for performance
-<span class="cstat-no" title="statement not covered" >function createFriendClustersFromCache(friendProjections: CachedProjection[]): CachedProjection[][] {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function createFriendClustersFromCache(friendProjections: CachedProjection[]): CachedProjection[][] {</span></span>
 <span class="cstat-no" title="statement not covered" >  const clusters: CachedProjection[][] = [];</span>
 <span class="cstat-no" title="statement not covered" >  const visited = new Set&lt;string&gt;();</span>
   
@@ -1049,7 +1049,7 @@ interface ConstellationRendererProps {
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 // 🛰️ NEW: Draw connections between live map clusters
-<span class="cstat-no" title="statement not covered" >function drawClusterConnections(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function drawClusterConnections(</span></span>
 <span class="cstat-no" title="statement not covered" >  graphics: Graphics,</span>
 <span class="cstat-no" title="statement not covered" >  clusterProjections: CachedProjection[],</span>
 <span class="cstat-no" title="statement not covered" >  intensity: number</span>
@@ -1103,7 +1103,7 @@ interface ConstellationRendererProps {
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 // Draw elegant connecting lines between friends in constellations (cached version)
-<span class="cstat-no" title="statement not covered" >function drawFriendConnections(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function drawFriendConnections(</span></span>
 <span class="cstat-no" title="statement not covered" >  graphics: Graphics, </span>
 <span class="cstat-no" title="statement not covered" >  clusters: CachedProjection[][], </span>
 <span class="cstat-no" title="statement not covered" >  clusterProjections: CachedProjection[],</span>
@@ -1164,7 +1164,7 @@ interface ConstellationRendererProps {
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 // Draw enhanced constellation stars using cached projections for performance
-<span class="cstat-no" title="statement not covered" >function drawConstellationStarsFromCache(</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function drawConstellationStarsFromCache(</span></span>
 <span class="cstat-no" title="statement not covered" >  graphics: Graphics, </span>
 <span class="cstat-no" title="statement not covered" >  tileProjections: CachedProjection[], </span>
 <span class="cstat-no" title="statement not covered" >  intensity: number</span>
@@ -1204,7 +1204,7 @@ interface ConstellationRendererProps {
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 // Add ambient background stars for atmosphere
-<span class="cstat-no" title="statement not covered" >function drawAmbientStars(graphics: Graphics, intensity: number): void {</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >function drawAmbientStars(graphics: Graphics, intensity: number): void {</span></span>
 <span class="cstat-no" title="statement not covered" >  const starCount = Math.floor(20 * intensity);</span>
   
 <span class="cstat-no" title="statement not covered" >  for (let i = 0; i &lt; starCount; i++) {</span>
@@ -1225,7 +1225,7 @@ interface ConstellationRendererProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-06T07:35:22.217Z
+                at 2025-08-06T07:37:32.814Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
