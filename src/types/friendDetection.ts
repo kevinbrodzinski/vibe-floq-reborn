@@ -8,8 +8,8 @@ export interface FriendshipSignal {
 }
 
 export interface FriendshipScore {
-  user_a: string;
-  user_b: string;
+  profile_low: string;
+  profile_high: string;
   overall_score: number; // 0-100 composite score
   confidence_level: 'low' | 'medium' | 'high' | 'very_high';
   signals: FriendshipSignal[];
@@ -42,7 +42,7 @@ export interface FriendDetectionConfig {
 
 export interface FriendSuggestion {
   suggested_friend_id: string;
-  target_user_id: string;
+  target_profile_id: string;
   score: FriendshipScore;
   suggestion_reason: string;
   created_at: string;
@@ -50,8 +50,8 @@ export interface FriendSuggestion {
 }
 
 export interface CoLocationEvent {
-  user_a: string;
-  user_b: string;
+  profile_a: string;
+  profile_b: string;
   venue_id: string;
   start_time: string;
   end_time?: string;
@@ -60,8 +60,8 @@ export interface CoLocationEvent {
 }
 
 export interface SharedActivityEvent {
-  user_a: string;
-  user_b: string;
+  profile_a: string;
+  profile_b: string;
   activity_type: 'floq_participation' | 'plan_attendance' | 'venue_visit';
   activity_id: string;
   timestamp: string;
@@ -69,8 +69,8 @@ export interface SharedActivityEvent {
 }
 
 export interface VenueOverlapPattern {
-  user_a: string;
-  user_b: string;
+  profile_a: string;
+  profile_b: string;
   venue_id: string;
   visit_count_a: number;
   visit_count_b: number;
@@ -79,8 +79,8 @@ export interface VenueOverlapPattern {
 }
 
 export interface TimeSyncPattern {
-  user_a: string;
-  user_b: string;
+  profile_a: string;
+  profile_b: string;
   sync_score: number; // How often they're active at the same times
   common_activity_windows: Array<{
     start_hour: number;
@@ -93,8 +93,8 @@ export interface TimeSyncPattern {
 // Database table types for storing friend detection data
 export interface FriendshipAnalysis {
   id: string;
-  user_a: string;
-  user_b: string;
+  profile_low: string;
+  profile_high: string;
   analysis_date: string;
   overall_score: number;
   confidence_level: string;
@@ -106,7 +106,7 @@ export interface FriendshipAnalysis {
 
 export interface FriendSuggestionRecord {
   id: string;
-  target_user_id: string;
+  target_profile_id: string;
   suggested_friend_id: string;
   score: number;
   confidence_level: string;

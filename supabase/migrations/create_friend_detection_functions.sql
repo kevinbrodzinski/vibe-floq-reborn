@@ -5,8 +5,8 @@
 -- Create tables for storing friend detection data
 CREATE TABLE IF NOT EXISTS friendship_analysis (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_a UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    user_b UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_low UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_high UUID REFERENCES profiles(id) ON DELETE CASCADE,
     analysis_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     overall_score INTEGER NOT NULL CHECK (overall_score >= 0 AND overall_score <= 100),
     confidence_level TEXT NOT NULL CHECK (confidence_level IN ('low', 'medium', 'high', 'very_high')),
@@ -15,13 +15,15 @@ CREATE TABLE IF NOT EXISTS friendship_analysis (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    -- Ensure unique analysis per user pair
-    UNIQUE(user_a, user_b)
+    -- Ensure unique analysis per profile pair
+    UNIQUE(profile_low, profile_high),
+    -- Ensure profile_low < profile_high for consistent ordering
+    CHECK (profile_low < profile_high)
 );
 
 CREATE TABLE IF NOT EXISTS friend_suggestions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    target_user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    target_profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     suggested_friend_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     score INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
     confidence_level TEXT NOT NULL CHECK (confidence_level IN ('low', 'medium', 'high', 'very_high')),
@@ -32,22 +34,22 @@ CREATE TABLE IF NOT EXISTS friend_suggestions (
     responded_at TIMESTAMP WITH TIME ZONE,
     expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '30 days'),
     
-    -- Ensure unique suggestion per user pair
-    UNIQUE(target_user_id, suggested_friend_id)
+    -- Ensure unique suggestion per profile pair
+    UNIQUE(target_profile_id, suggested_friend_id)
 );
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_friendship_analysis_users ON friendship_analysis(user_a, user_b);
+CREATE INDEX IF NOT EXISTS idx_friendship_analysis_profiles ON friendship_analysis(profile_low, profile_high);
 CREATE INDEX IF NOT EXISTS idx_friendship_analysis_score ON friendship_analysis(overall_score DESC);
-CREATE INDEX IF NOT EXISTS idx_friend_suggestions_target ON friend_suggestions(target_user_id, status, score DESC);
+CREATE INDEX IF NOT EXISTS idx_friend_suggestions_target ON friend_suggestions(target_profile_id, status, score DESC);
 CREATE INDEX IF NOT EXISTS idx_friend_suggestions_expires ON friend_suggestions(expires_at);
 
 -- =====================================================
 -- 🗺️ FUNCTION: Analyze Co-location Events
 -- =====================================================
 CREATE OR REPLACE FUNCTION analyze_co_location_events(
-    user_a_id UUID,
-    user_b_id UUID,
+    profile_a_id UUID,
+    profile_b_id UUID,
     time_window TIMESTAMP WITH TIME ZONE,
     radius_m INTEGER DEFAULT 100
 )
@@ -62,22 +64,22 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    WITH user_a_presence AS (
+    WITH profile_a_presence AS (
         SELECT 
             vlp.venue_id,
             vlp.checked_in_at as start_time,
             COALESCE(vlp.checked_in_at + vlp.session_duration, vlp.expires_at) as end_time
         FROM venue_live_presence vlp
-        WHERE vlp.user_id = user_a_id 
+        WHERE vlp.user_id = profile_a_id 
         AND vlp.checked_in_at >= time_window
     ),
-    user_b_presence AS (
+    profile_b_presence AS (
         SELECT 
             vlp.venue_id,
             vlp.checked_in_at as start_time,
             COALESCE(vlp.checked_in_at + vlp.session_duration, vlp.expires_at) as end_time
         FROM venue_live_presence vlp
-        WHERE vlp.user_id = user_b_id 
+        WHERE vlp.user_id = profile_b_id 
         AND vlp.checked_in_at >= time_window
     ),
     co_location_events AS (
@@ -85,8 +87,8 @@ BEGIN
             a.venue_id,
             GREATEST(a.start_time, b.start_time) as overlap_start,
             LEAST(a.end_time, b.end_time) as overlap_end
-        FROM user_a_presence a
-        JOIN user_b_presence b ON a.venue_id = b.venue_id
+        FROM profile_a_presence a
+        JOIN profile_b_presence b ON a.venue_id = b.venue_id
         WHERE GREATEST(a.start_time, b.start_time) < LEAST(a.end_time, b.end_time)
     )
     SELECT 
@@ -104,8 +106,8 @@ $$;
 -- 🎭 FUNCTION: Analyze Shared Floq Participation
 -- =====================================================
 CREATE OR REPLACE FUNCTION analyze_shared_floq_participation(
-    user_a_id UUID,
-    user_b_id UUID,
+    profile_a_id UUID,
+    profile_b_id UUID,
     time_window TIMESTAMP WITH TIME ZONE
 )
 RETURNS TABLE (
@@ -126,8 +128,8 @@ BEGIN
         f.title as floq_title,
         f.primary_vibe::TEXT as floq_vibe
     FROM floqs f
-    JOIN floq_participants fp_a ON f.id = fp_a.floq_id AND fp_a.user_id = user_a_id
-    JOIN floq_participants fp_b ON f.id = fp_b.floq_id AND fp_b.user_id = user_b_id
+    JOIN floq_participants fp_a ON f.id = fp_a.floq_id AND fp_a.user_id = profile_a_id
+    JOIN floq_participants fp_b ON f.id = fp_b.floq_id AND fp_b.user_id = profile_b_id
     WHERE f.created_at >= time_window
     AND f.deleted_at IS NULL
     ORDER BY joined_at DESC;
@@ -138,8 +140,8 @@ $$;
 -- 📅 FUNCTION: Analyze Shared Plan Participation
 -- =====================================================
 CREATE OR REPLACE FUNCTION analyze_shared_plan_participation(
-    user_a_id UUID,
-    user_b_id UUID,
+    profile_a_id UUID,
+    profile_b_id UUID,
     time_window TIMESTAMP WITH TIME ZONE
 )
 RETURNS TABLE (
@@ -160,8 +162,8 @@ BEGIN
         fp.title as plan_title,
         fp.status as plan_status
     FROM floq_plans fp
-    JOIN plan_participants pp_a ON fp.id = pp_a.plan_id AND pp_a.profile_id = user_a_id
-    JOIN plan_participants pp_b ON fp.id = pp_b.plan_id AND pp_b.profile_id = user_b_id
+    JOIN plan_participants pp_a ON fp.id = pp_a.plan_id AND pp_a.profile_id = profile_a_id
+    JOIN plan_participants pp_b ON fp.id = pp_b.plan_id AND pp_b.profile_id = profile_b_id
     WHERE fp.created_at >= time_window
     AND fp.archived_at IS NULL
     ORDER BY fp.created_at DESC;
@@ -172,58 +174,58 @@ $$;
 -- 🏢 FUNCTION: Analyze Venue Overlap Patterns
 -- =====================================================
 CREATE OR REPLACE FUNCTION analyze_venue_overlap_patterns(
-    user_a_id UUID,
-    user_b_id UUID,
+    profile_a_id UUID,
+    profile_b_id UUID,
     time_window TIMESTAMP WITH TIME ZONE
 )
 RETURNS TABLE (
     venue_id TEXT,
-    user_a_visits INTEGER,
-    user_b_visits INTEGER,
+    profile_a_visits INTEGER,
+    profile_b_visits INTEGER,
     overlap_score REAL
 ) 
 LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    WITH user_a_venues AS (
+    WITH profile_a_venues AS (
         SELECT 
             vs.venue_id,
             COUNT(*) as visit_count
         FROM venue_stays vs
-        WHERE vs.user_id = user_a_id 
+        WHERE vs.user_id = profile_a_id 
         AND vs.arrived_at >= time_window
         GROUP BY vs.venue_id
     ),
-    user_b_venues AS (
+    profile_b_venues AS (
         SELECT 
             vs.venue_id,
             COUNT(*) as visit_count
         FROM venue_stays vs
-        WHERE vs.user_id = user_b_id 
+        WHERE vs.user_id = profile_b_id 
         AND vs.arrived_at >= time_window
         GROUP BY vs.venue_id
     ),
     venue_overlap AS (
         SELECT 
             COALESCE(a.venue_id, b.venue_id) as venue_id,
-            COALESCE(a.visit_count, 0) as user_a_visits,
-            COALESCE(b.visit_count, 0) as user_b_visits
-        FROM user_a_venues a
-        FULL OUTER JOIN user_b_venues b ON a.venue_id = b.venue_id
+            COALESCE(a.visit_count, 0) as profile_a_visits,
+            COALESCE(b.visit_count, 0) as profile_b_visits
+        FROM profile_a_venues a
+        FULL OUTER JOIN profile_b_venues b ON a.venue_id = b.venue_id
         WHERE COALESCE(a.visit_count, 0) > 0 OR COALESCE(b.visit_count, 0) > 0
     )
     SELECT 
         vo.venue_id,
-        vo.user_a_visits,
-        vo.user_b_visits,
+        vo.profile_a_visits,
+        vo.profile_b_visits,
         CASE 
-            WHEN vo.user_a_visits > 0 AND vo.user_b_visits > 0 
-            THEN LEAST(vo.user_a_visits, vo.user_b_visits)::REAL / GREATEST(vo.user_a_visits, vo.user_b_visits)::REAL
+            WHEN vo.profile_a_visits > 0 AND vo.profile_b_visits > 0 
+            THEN LEAST(vo.profile_a_visits, vo.profile_b_visits)::REAL / GREATEST(vo.profile_a_visits, vo.profile_b_visits)::REAL
             ELSE 0::REAL
         END as overlap_score
     FROM venue_overlap vo
-    ORDER BY overlap_score DESC, (vo.user_a_visits + vo.user_b_visits) DESC;
+    ORDER BY overlap_score DESC, (vo.profile_a_visits + vo.profile_b_visits) DESC;
 END;
 $$;
 
@@ -231,8 +233,8 @@ $$;
 -- ⏰ FUNCTION: Analyze Time Sync Patterns
 -- =====================================================
 CREATE OR REPLACE FUNCTION analyze_time_sync_patterns(
-    user_a_id UUID,
-    user_b_id UUID,
+    profile_a_id UUID,
+    profile_b_id UUID,
     time_window_days INTEGER DEFAULT 90
 )
 RETURNS TABLE (
@@ -246,23 +248,23 @@ DECLARE
     common_activity_windows JSONB := '[]'::JSONB;
 BEGIN
     -- Simplified time sync analysis based on venue presence overlap
-    WITH user_a_activity AS (
+    WITH profile_a_activity AS (
         SELECT 
             EXTRACT(HOUR FROM checked_in_at) as activity_hour,
             EXTRACT(DOW FROM checked_in_at) as day_of_week,
             COUNT(*) as activity_count
         FROM venue_live_presence
-        WHERE user_id = user_a_id 
+        WHERE user_id = profile_a_id 
         AND checked_in_at >= NOW() - (time_window_days || ' days')::INTERVAL
         GROUP BY EXTRACT(HOUR FROM checked_in_at), EXTRACT(DOW FROM checked_in_at)
     ),
-    user_b_activity AS (
+    profile_b_activity AS (
         SELECT 
             EXTRACT(HOUR FROM checked_in_at) as activity_hour,
             EXTRACT(DOW FROM checked_in_at) as day_of_week,
             COUNT(*) as activity_count
         FROM venue_live_presence
-        WHERE user_id = user_b_id 
+        WHERE user_id = profile_b_id 
         AND checked_in_at >= NOW() - (time_window_days || ' days')::INTERVAL
         GROUP BY EXTRACT(HOUR FROM checked_in_at), EXTRACT(DOW FROM checked_in_at)
     ),
@@ -272,8 +274,8 @@ BEGIN
             a.day_of_week,
             LEAST(a.activity_count, b.activity_count) as overlap_count,
             GREATEST(a.activity_count, b.activity_count) as max_count
-        FROM user_a_activity a
-        JOIN user_b_activity b ON a.activity_hour = b.activity_hour AND a.day_of_week = b.day_of_week
+        FROM profile_a_activity a
+        JOIN profile_b_activity b ON a.activity_hour = b.activity_hour AND a.day_of_week = b.day_of_week
     )
     SELECT 
         COALESCE(AVG(overlap_count::REAL / NULLIF(max_count::REAL, 0)), 0) as calculated_sync_score,
@@ -299,11 +301,11 @@ $$;
 -- 👥 FUNCTION: Get Friend Suggestion Candidates
 -- =====================================================
 CREATE OR REPLACE FUNCTION get_friend_suggestion_candidates(
-    target_user_id UUID,
+    target_profile_id UUID,
     limit_count INTEGER DEFAULT 30
 )
 RETURNS TABLE (
-    user_id UUID,
+    profile_id UUID,
     interaction_score INTEGER
 ) 
 LANGUAGE plpgsql
@@ -311,52 +313,52 @@ AS $$
 BEGIN
     RETURN QUERY
     WITH potential_friends AS (
-        -- Users who have been in same floqs
+        -- Profiles who have been in same floqs
         SELECT 
             fp.user_id,
             COUNT(*) * 3 as score
         FROM floq_participants fp
         WHERE fp.floq_id IN (
-            SELECT floq_id FROM floq_participants WHERE user_id = target_user_id
+            SELECT floq_id FROM floq_participants WHERE user_id = target_profile_id
         )
-        AND fp.user_id != target_user_id
+        AND fp.user_id != target_profile_id
         AND fp.user_id NOT IN (
             -- Exclude existing friends
             SELECT CASE 
-                WHEN user_a = target_user_id THEN user_b 
+                WHEN user_a = target_profile_id THEN user_b 
                 ELSE user_a 
             END
             FROM friends 
-            WHERE (user_a = target_user_id OR user_b = target_user_id) 
+            WHERE (user_a = target_profile_id OR user_b = target_profile_id) 
             AND status = 'accepted'
         )
         GROUP BY fp.user_id
         
         UNION ALL
         
-        -- Users who have been in same plans
+        -- Profiles who have been in same plans
         SELECT 
             pp.profile_id as user_id,
             COUNT(*) * 2 as score
         FROM plan_participants pp
         WHERE pp.plan_id IN (
-            SELECT plan_id FROM plan_participants WHERE profile_id = target_user_id
+            SELECT plan_id FROM plan_participants WHERE profile_id = target_profile_id
         )
-        AND pp.profile_id != target_user_id
+        AND pp.profile_id != target_profile_id
         AND pp.profile_id NOT IN (
             SELECT CASE 
-                WHEN user_a = target_user_id THEN user_b 
+                WHEN user_a = target_profile_id THEN user_b 
                 ELSE user_a 
             END
             FROM friends 
-            WHERE (user_a = target_user_id OR user_b = target_user_id) 
+            WHERE (user_a = target_profile_id OR user_b = target_profile_id) 
             AND status = 'accepted'
         )
         GROUP BY pp.profile_id
         
         UNION ALL
         
-        -- Users who have been at same venues
+        -- Profiles who have been at same venues
         SELECT 
             vs.user_id,
             COUNT(DISTINCT vs.venue_id) as score
@@ -364,18 +366,18 @@ BEGIN
         WHERE vs.venue_id IN (
             SELECT DISTINCT venue_id 
             FROM venue_stays 
-            WHERE user_id = target_user_id 
+            WHERE user_id = target_profile_id 
             AND arrived_at >= NOW() - INTERVAL '90 days'
         )
-        AND vs.user_id != target_user_id
+        AND vs.user_id != target_profile_id
         AND vs.arrived_at >= NOW() - INTERVAL '90 days'
         AND vs.user_id NOT IN (
             SELECT CASE 
-                WHEN user_a = target_user_id THEN user_b 
+                WHEN user_a = target_profile_id THEN user_b 
                 ELSE user_a 
             END
             FROM friends 
-            WHERE (user_a = target_user_id OR user_b = target_user_id) 
+            WHERE (user_a = target_profile_id OR user_b = target_profile_id) 
             AND status = 'accepted'
         )
         GROUP BY vs.user_id
@@ -389,7 +391,7 @@ BEGIN
         HAVING SUM(pf.score) >= 2 -- Minimum interaction threshold
     )
     SELECT 
-        ac.user_id,
+        ac.user_id as profile_id,
         ac.total_score::INTEGER as interaction_score
     FROM aggregated_candidates ac
     ORDER BY ac.total_score DESC
@@ -401,8 +403,8 @@ $$;
 -- 🔄 FUNCTION: Update Friendship Analysis
 -- =====================================================
 CREATE OR REPLACE FUNCTION upsert_friendship_analysis(
-    p_user_a UUID,
-    p_user_b UUID,
+    p_profile_a UUID,
+    p_profile_b UUID,
     p_overall_score INTEGER,
     p_confidence_level TEXT,
     p_signals_data JSONB,
@@ -413,26 +415,26 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     analysis_id UUID;
-    ordered_user_a UUID;
-    ordered_user_b UUID;
+    ordered_profile_low UUID;
+    ordered_profile_high UUID;
 BEGIN
-    -- Ensure consistent ordering of user pairs
-    IF p_user_a::TEXT < p_user_b::TEXT THEN
-        ordered_user_a := p_user_a;
-        ordered_user_b := p_user_b;
+    -- Ensure consistent ordering of profile pairs (profile_low < profile_high)
+    IF p_profile_a::TEXT < p_profile_b::TEXT THEN
+        ordered_profile_low := p_profile_a;
+        ordered_profile_high := p_profile_b;
     ELSE
-        ordered_user_a := p_user_b;
-        ordered_user_b := p_user_a;
+        ordered_profile_low := p_profile_b;
+        ordered_profile_high := p_profile_a;
     END IF;
 
     INSERT INTO friendship_analysis (
-        user_a, user_b, overall_score, confidence_level, 
+        profile_low, profile_high, overall_score, confidence_level, 
         signals_data, relationship_type, updated_at
     ) VALUES (
-        ordered_user_a, ordered_user_b, p_overall_score, p_confidence_level,
+        ordered_profile_low, ordered_profile_high, p_overall_score, p_confidence_level,
         p_signals_data, p_relationship_type, NOW()
     )
-    ON CONFLICT (user_a, user_b) 
+    ON CONFLICT (profile_low, profile_high) 
     DO UPDATE SET
         overall_score = EXCLUDED.overall_score,
         confidence_level = EXCLUDED.confidence_level,
@@ -449,7 +451,7 @@ $$;
 -- 🎯 FUNCTION: Create Friend Suggestion
 -- =====================================================
 CREATE OR REPLACE FUNCTION create_friend_suggestion(
-    p_target_user_id UUID,
+    p_target_profile_id UUID,
     p_suggested_friend_id UUID,
     p_score INTEGER,
     p_confidence_level TEXT,
@@ -463,13 +465,13 @@ DECLARE
     suggestion_id UUID;
 BEGIN
     INSERT INTO friend_suggestions (
-        target_user_id, suggested_friend_id, score, confidence_level,
+        target_profile_id, suggested_friend_id, score, confidence_level,
         suggestion_reason, signals_summary
     ) VALUES (
-        p_target_user_id, p_suggested_friend_id, p_score, p_confidence_level,
+        p_target_profile_id, p_suggested_friend_id, p_score, p_confidence_level,
         p_suggestion_reason, p_signals_summary
     )
-    ON CONFLICT (target_user_id, suggested_friend_id) 
+    ON CONFLICT (target_profile_id, suggested_friend_id) 
     DO UPDATE SET
         score = EXCLUDED.score,
         confidence_level = EXCLUDED.confidence_level,
