@@ -1343,106 +1343,106 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_direct_threads_member_a_profile"
+            foreignKeyName: "fk_direct_threads_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_member_a"
             columns: ["member_a_profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_a_profile"
+            foreignKeyName: "fk_member_a"
             columns: ["member_a_profile_id"]
             isOneToOne: false
             referencedRelation: "presence_view"
             referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_a_profile"
+            foreignKeyName: "fk_member_a"
             columns: ["member_a_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_a_profile"
+            foreignKeyName: "fk_member_a"
             columns: ["member_a_profile_id"]
             isOneToOne: false
             referencedRelation: "v_discover_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_a_profile"
+            foreignKeyName: "fk_member_a"
             columns: ["member_a_profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_b_profile"
+            foreignKeyName: "fk_member_b"
             columns: ["member_b_profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_b_profile"
+            foreignKeyName: "fk_member_b"
             columns: ["member_b_profile_id"]
             isOneToOne: false
             referencedRelation: "presence_view"
             referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_b_profile"
+            foreignKeyName: "fk_member_b"
             columns: ["member_b_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_b_profile"
+            foreignKeyName: "fk_member_b"
             columns: ["member_b_profile_id"]
             isOneToOne: false
             referencedRelation: "v_discover_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_direct_threads_member_b_profile"
+            foreignKeyName: "fk_member_b"
             columns: ["member_b_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -2766,7 +2766,7 @@ export type Database = {
           floq_id: string
           id?: string
           invitee_id: string
-          inviter_id: string
+          inviter_id?: string
           profile_id?: string | null
           responded_at?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
@@ -3650,7 +3650,7 @@ export type Database = {
           auto_created: boolean | null
           catchment_area: unknown | null
           created_at: string | null
-          creator_id: string | null
+          creator_id: string
           deleted_at: string | null
           description: string | null
           ends_at: string | null
@@ -3684,7 +3684,7 @@ export type Database = {
           auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
-          creator_id?: string | null
+          creator_id?: string
           deleted_at?: string | null
           description?: string | null
           ends_at?: string | null
@@ -3705,7 +3705,7 @@ export type Database = {
           radius_m?: number | null
           recurrence_pattern?: Json | null
           starts_at?: string | null
-          title: string
+          title?: string
           type?: string | null
           updated_at?: string | null
           vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
@@ -3718,7 +3718,7 @@ export type Database = {
           auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
-          creator_id?: string | null
+          creator_id?: string
           deleted_at?: string | null
           description?: string | null
           ends_at?: string | null
@@ -10300,6 +10300,33 @@ export type Database = {
       }
     }
     Views: {
+      friendships_v: {
+        Row: {
+          created_at: string | null
+          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          is_close: boolean | null
+          profile_high: string | null
+          profile_low: string | null
+          responded_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          is_close?: boolean | null
+          profile_high?: string | null
+          profile_low?: string | null
+          responded_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          is_close?: boolean | null
+          profile_high?: string | null
+          profile_low?: string | null
+          responded_at?: string | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -10628,18 +10655,21 @@ export type Database = {
       }
       v_friend_ids: {
         Row: {
+          current_profile_id: string | null
           is_close: boolean | null
           other_profile_id: string | null
           responded_at: string | null
         }
         Insert: {
+          current_profile_id?: string | null
           is_close?: boolean | null
-          other_profile_id?: never
+          other_profile_id?: string | null
           responded_at?: string | null
         }
         Update: {
+          current_profile_id?: string | null
           is_close?: boolean | null
-          other_profile_id?: never
+          other_profile_id?: string | null
           responded_at?: string | null
         }
         Relationships: []
@@ -10751,6 +10781,33 @@ export type Database = {
           other_profile_id: string | null
           profile_id: string | null
           recent_vibes: Database["public"]["Enums"]["vibe_enum"][] | null
+        }
+        Relationships: []
+      }
+      v_friends_flat: {
+        Row: {
+          created_at: string | null
+          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          is_close: boolean | null
+          profile_high: string | null
+          profile_low: string | null
+          responded_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          is_close?: boolean | null
+          profile_high?: never
+          profile_low?: never
+          responded_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          is_close?: boolean | null
+          profile_high?: never
+          profile_low?: never
+          responded_at?: string | null
         }
         Relationships: []
       }
@@ -11531,6 +11588,10 @@ export type Database = {
       call_weekly_ai_suggestion: {
         Args: { p_profile_id: string }
         Returns: undefined
+      }
+      can_read_floq_plan: {
+        Args: { p_plan_id: string }
+        Returns: boolean
       }
       can_user_access_floq: {
         Args: { p_floq_id: string; p_user_id: string }
@@ -13416,6 +13477,21 @@ export type Database = {
           search_rank: number
         }[]
       }
+      search_direct_threads: {
+        Args: { p_uid: string; p_query: string }
+        Returns: {
+          thread_id: string
+          friend_profile_id: string
+          friend_display_name: string
+          friend_username: string
+          friend_avatar_url: string
+          last_message_at: string
+          my_unread_count: number
+          last_message_content: string
+          match_type: string
+          match_score: number
+        }[]
+      }
       search_everything: {
         Args: { query: string; limit_count?: number }
         Returns: {
@@ -13480,6 +13556,7 @@ export type Database = {
           display_name: string
           avatar_url: string
           created_at: string
+          username: string
         }[]
       }
       send_dm_message: {
@@ -15132,310 +15209,6 @@ export type Database = {
       }
     }
   }
-  storage: {
-    Tables: {
-      buckets: {
-        Row: {
-          allowed_mime_types: string[] | null
-          avif_autodetection: boolean | null
-          created_at: string | null
-          file_size_limit: number | null
-          id: string
-          name: string
-          owner: string | null
-          owner_id: string | null
-          public: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id: string
-          name: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id?: string
-          name?: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      migrations: {
-        Row: {
-          executed_at: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Insert: {
-          executed_at?: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Update: {
-          executed_at?: string | null
-          hash?: string
-          id?: number
-          name?: string
-        }
-        Relationships: []
-      }
-      objects: {
-        Row: {
-          bucket_id: string | null
-          created_at: string | null
-          id: string
-          last_accessed_at: string | null
-          metadata: Json | null
-          name: string | null
-          owner: string | null
-          owner_id: string | null
-          path_tokens: string[] | null
-          updated_at: string | null
-          user_metadata: Json | null
-          version: string | null
-        }
-        Insert: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Update: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          id: string
-          in_progress_size: number
-          key: string
-          owner_id: string | null
-          upload_signature: string
-          user_metadata: Json | null
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          id: string
-          in_progress_size?: number
-          key: string
-          owner_id?: string | null
-          upload_signature: string
-          user_metadata?: Json | null
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          id?: string
-          in_progress_size?: number
-          key?: string
-          owner_id?: string | null
-          upload_signature?: string
-          user_metadata?: Json | null
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads_parts: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          etag: string
-          id: string
-          key: string
-          owner_id: string | null
-          part_number: number
-          size: number
-          upload_id: string
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          etag: string
-          id?: string
-          key: string
-          owner_id?: string | null
-          part_number: number
-          size?: number
-          upload_id: string
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          etag?: string
-          id?: string
-          key?: string
-          owner_id?: string | null
-          part_number?: number
-          size?: number
-          upload_id?: string
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "s3_multipart_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      can_insert_object: {
-        Args: { bucketid: string; name: string; owner: string; metadata: Json }
-        Returns: undefined
-      }
-      extension: {
-        Args: { name: string }
-        Returns: string
-      }
-      filename: {
-        Args: { name: string }
-        Returns: string
-      }
-      foldername: {
-        Args: { name: string }
-        Returns: string[]
-      }
-      get_size_by_bucket: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          size: number
-          bucket_id: string
-        }[]
-      }
-      list_multipart_uploads_with_delimiter: {
-        Args: {
-          bucket_id: string
-          prefix_param: string
-          delimiter_param: string
-          max_keys?: number
-          next_key_token?: string
-          next_upload_token?: string
-        }
-        Returns: {
-          key: string
-          id: string
-          created_at: string
-        }[]
-      }
-      list_objects_with_delimiter: {
-        Args: {
-          bucket_id: string
-          prefix_param: string
-          delimiter_param: string
-          max_keys?: number
-          start_after?: string
-          next_token?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          metadata: Json
-          updated_at: string
-        }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      search: {
-        Args: {
-          prefix: string
-          bucketname: string
-          limits?: number
-          levels?: number
-          offsets?: number
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          updated_at: string
-          created_at: string
-          last_accessed_at: string
-          metadata: Json
-        }[]
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
@@ -15706,8 +15479,5 @@ export const Constants = {
         "support-group",
       ],
     },
-  },
-  storage: {
-    Enums: {},
   },
 } as const
