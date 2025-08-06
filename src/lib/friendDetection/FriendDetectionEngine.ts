@@ -292,16 +292,16 @@ export class FriendDetectionEngine {
 
   private async analyzeInteractionFrequencySignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
     try {
-      // Query for mutual floq/plan participation frequency
+      // Query for mutual floq participation frequency
       const { data: mutualFloqs, error: floqError } = await supabase
         .from('floq_participants')
         .select('floq_id, floqs!inner(created_at)')
-        .or(`user_id.eq.${profileA},profile_id.eq.${profileA}`)
+        .eq('profile_id', profileA)
         .in('floq_id', 
           await supabase
             .from('floq_participants')
             .select('floq_id')
-            .or(`user_id.eq.${profileB},profile_id.eq.${profileB}`)
+            .eq('profile_id', profileB)
             .then(res => res.data?.map(r => r.floq_id) || [])
         );
 

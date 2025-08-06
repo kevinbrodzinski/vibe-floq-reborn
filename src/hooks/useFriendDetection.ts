@@ -1,81 +1,88 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FriendDetectionEngine } from '@/lib/friendDetection/FriendDetectionEngine';
-import type { 
-  FriendshipScore, 
-  FriendSuggestion, 
+import type {
   FriendDetectionConfig,
+  FriendshipAnalysis,
+  FriendSuggestion,
   FriendSuggestionRecord
 } from '@/types/friendDetection';
 
-// =====================================================
-// 🎯 Main Friend Detection Hook
-// =====================================================
+/**
+ * React hooks for friend detection system
+ * 
+ * Note: These hooks use profileId which equals auth.users.id (1:1 FK relationship).
+ * The friendships table uses auth.users.id directly as user_low/user_high.
+ */
+
+// Hook for the core friend detection engine
 export function useFriendDetection(config?: Partial<FriendDetectionConfig>) {
   const [engine] = useState(() => new FriendDetectionEngine(config));
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Analyze friendship potential between two users
-   */
-     const analyzeFriendship = useCallback(async (profileA: string, profileB: string): Promise<FriendshipScore | null> => {
-     setIsAnalyzing(true);
-     setError(null);
+  const analyzeFriendship = useCallback(async (profileA: string, profileB: string): Promise<FriendshipAnalysis | null> => {
+    setIsAnalyzing(true);
+    setError(null);
+    
+    try {
+      const analysis = await engine.analyzeFriendshipPotential(profileA, profileB);
+      
+      // Store the analysis in the database
+      const { error: rpcError } = await supabase.rpc('upsert_friendship_analysis', {
+        p_profile_a: profileA,
+        p_profile_b: profileB,
+        p_overall_score: analysis.overall_score,
+        p_confidence_level: analysis.confidence_level,
+        p_signals_data: analysis.signals_data,
+        p_relationship_type: analysis.relationship_type
+      });
 
-     try {
-       const score = await engine.analyzeFriendshipPotential(profileA, profileB);
-       
-       // Store analysis in database
-       await supabase.rpc('upsert_friendship_analysis', {
-         p_profile_a: profileA,
-         p_profile_b: profileB,
-         p_overall_score: score.overall_score,
-         p_confidence_level: score.confidence_level,
-         p_signals_data: score.signals,
-         p_relationship_type: score.relationship_type
-       });
+      if (rpcError) {
+        console.error('Error storing friendship analysis:', rpcError);
+        // Don't throw here - return the analysis even if storage fails
+      }
 
-       return score;
+      return analysis;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error during friendship analysis';
       setError(errorMessage);
-      console.error('[useFriendDetection] Analysis error:', err);
+      console.error('Friendship analysis error:', err);
       return null;
     } finally {
       setIsAnalyzing(false);
     }
   }, [engine]);
 
-     /**
-    * Get friend suggestions for a profile
-    */
-   const getFriendSuggestions = useCallback(async (profileId: string, limit: number = 10): Promise<FriendshipScore[]> => {
-     setIsAnalyzing(true);
-     setError(null);
+  const getFriendSuggestions = useCallback(async (profileId: string, limit: number = 10): Promise<FriendSuggestion[]> => {
+    setIsAnalyzing(true);
+    setError(null);
 
-     try {
-       const suggestions = await engine.findFriendSuggestions(profileId, limit);
-       
-       // Store suggestions in database for tracking
-       await Promise.all(
-         suggestions.map(suggestion => 
-           supabase.rpc('create_friend_suggestion', {
-             p_target_profile_id: profileId,
-             p_suggested_friend_id: suggestion.profile_high === profileId ? suggestion.profile_low : suggestion.profile_high,
-             p_score: suggestion.overall_score,
-             p_confidence_level: suggestion.confidence_level,
-             p_suggestion_reason: generateSuggestionReason(suggestion),
-             p_signals_summary: generateSignalsSummary(suggestion.signals)
-           })
-         )
-       );
+    try {
+      const suggestions = await engine.findFriendSuggestions(profileId, limit);
+      
+      // Store suggestions in the database
+      for (const suggestion of suggestions) {
+        try {
+          await supabase.rpc('create_friend_suggestion', {
+            p_target_profile_id: suggestion.target_profile_id,
+            p_suggested_profile_id: suggestion.suggested_profile_id,
+            p_score: suggestion.score,
+            p_confidence_level: suggestion.confidence_level,
+            p_suggestion_reason: suggestion.suggestion_reason,
+            p_signals_summary: suggestion.signals_summary
+          });
+        } catch (suggestionError) {
+          console.error('Error storing friend suggestion:', suggestionError);
+          // Continue with other suggestions even if one fails
+        }
+      }
 
       return suggestions;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error getting friend suggestions';
       setError(errorMessage);
-      console.error('[useFriendDetection] Suggestions error:', err);
+      console.error('Friend suggestions error:', err);
       return [];
     } finally {
       setIsAnalyzing(false);
@@ -86,43 +93,38 @@ export function useFriendDetection(config?: Partial<FriendDetectionConfig>) {
     analyzeFriendship,
     getFriendSuggestions,
     isAnalyzing,
-    error,
-    engine
+    error
   };
 }
 
-// =====================================================
-// 🎯 Friend Suggestions Hook
-// =====================================================
-export function useFriendSuggestions(profileId: string | null, options?: {
-  limit?: number;
-  autoRefresh?: boolean;
-  refreshInterval?: number;
-}) {
-  const { limit = 10, autoRefresh = false, refreshInterval = 5 * 60 * 1000 } = options || {};
-  
+// Hook for managing friend suggestions for a specific user
+export function useFriendSuggestions(profileId: string, options?: { limit?: number; autoRefresh?: boolean }) {
   const [suggestions, setSuggestions] = useState<FriendSuggestionRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetch, setLastFetch] = useState<Date | null>(null);
 
-  const { getFriendSuggestions } = useFriendDetection();
-
-  /**
-   * Fetch suggestions from database
-   */
   const fetchSuggestions = useCallback(async () => {
     if (!profileId) return;
 
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error: dbError } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('friend_suggestions')
         .select(`
-          *,
-          suggested_friend:profiles!friend_suggestions_suggested_friend_id_fkey(
+          id,
+          target_profile_id,
+          suggested_profile_id,
+          score,
+          confidence_level,
+          suggestion_reason,
+          signals_summary,
+          status,
+          created_at,
+          responded_at,
+          expires_at,
+          profiles!friend_suggestions_suggested_profile_id_fkey(
             id,
             username,
             display_name,
@@ -131,52 +133,25 @@ export function useFriendSuggestions(profileId: string | null, options?: {
         `)
         .eq('target_profile_id', profileId)
         .eq('status', 'pending')
-        .gte('expires_at', new Date().toISOString())
+        .gt('expires_at', new Date().toISOString())
         .order('score', { ascending: false })
-        .limit(limit);
+        .limit(options?.limit || 10);
 
-      if (dbError) throw dbError;
+      if (fetchError) throw fetchError;
 
       setSuggestions(data || []);
-      setLastFetch(new Date());
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch suggestions';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch friend suggestions';
       setError(errorMessage);
-      console.error('[useFriendSuggestions] Fetch error:', err);
+      console.error('Error fetching friend suggestions:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-      }, [profileId, limit]);
+  }, [profileId, options?.limit]);
 
-  /**
-   * Generate new suggestions
-   */
-     const generateSuggestions = useCallback(async () => {
-     if (!profileId) return;
-
-     setLoading(true);
-     setError(null);
-
-     try {
-       await getFriendSuggestions(profileId, limit);
-       await fetchSuggestions(); // Refresh the list
-     } catch (err) {
-       const errorMessage = err instanceof Error ? err.message : 'Failed to generate suggestions';
-       setError(errorMessage);
-       console.error('[useFriendSuggestions] Generate error:', err);
-     } finally {
-       setLoading(false);
-     }
-   }, [profileId, limit, getFriendSuggestions, fetchSuggestions]);
-
-  /**
-   * Respond to a friend suggestion
-   */
-  const respondToSuggestion = useCallback(async (
-    suggestionId: string, 
-    response: 'accepted' | 'declined' | 'ignored'
-  ) => {
+  const respondToSuggestion = useCallback(async (suggestionId: string, response: 'accepted' | 'declined'): Promise<boolean> => {
     try {
+      // Update the suggestion status
       const { error: updateError } = await supabase
         .from('friend_suggestions')
         .update({
@@ -187,242 +162,198 @@ export function useFriendSuggestions(profileId: string | null, options?: {
 
       if (updateError) throw updateError;
 
-      // If accepted, create actual friendship
+      // If accepted, create the friendship
       if (response === 'accepted') {
         const suggestion = suggestions.find(s => s.id === suggestionId);
         if (suggestion) {
-                   const { error: friendError } = await supabase
-           .from('friends')
-           .insert({
-             user_a: profileId,
-             user_b: suggestion.suggested_friend_id,
-             status: 'accepted'
-           });
+          // Ensure canonical ordering for friendships table
+          const userLow = profileId < suggestion.suggested_profile_id ? profileId : suggestion.suggested_profile_id;
+          const userHigh = profileId < suggestion.suggested_profile_id ? suggestion.suggested_profile_id : profileId;
 
-          if (friendError) {
-            console.error('[useFriendSuggestions] Friend creation error:', friendError);
-          }
+          const { error: friendshipError } = await supabase
+            .from('friendships')
+            .insert({
+              user_low: userLow,
+              user_high: userHigh,
+              friend_state: 'accepted',
+              responded_at: new Date().toISOString()
+            });
+
+          if (friendshipError) throw friendshipError;
         }
       }
 
-      // Remove from local state
-      setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
-         } catch (err) {
-       const errorMessage = err instanceof Error ? err.message : 'Failed to respond to suggestion';
-       setError(errorMessage);
-       console.error('[useFriendSuggestions] Response error:', err);
-     }
-   }, [suggestions, profileId]);
+      // Refresh suggestions
+      await fetchSuggestions();
+      return true;
+    } catch (err) {
+      console.error(`Error responding to suggestion:`, err);
+      setError(err instanceof Error ? err.message : 'Failed to respond to suggestion');
+      return false;
+    }
+  }, [suggestions, profileId, fetchSuggestions]);
 
-     // Initial fetch
-   useEffect(() => {
-     if (profileId) {
-       fetchSuggestions();
-     }
-   }, [profileId, fetchSuggestions]);
+  const generateNewSuggestions = useCallback(async (): Promise<boolean> => {
+    const { getFriendSuggestions } = useFriendDetection();
+    
+    try {
+      await getFriendSuggestions(profileId, options?.limit || 10);
+      await fetchSuggestions();
+      return true;
+    } catch (err) {
+      console.error('Error generating new suggestions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate suggestions');
+      return false;
+    }
+  }, [profileId, options?.limit, fetchSuggestions]);
 
-   // Auto-refresh
-   useEffect(() => {
-     if (!autoRefresh || !profileId) return;
-
-     const interval = setInterval(() => {
-       fetchSuggestions();
-     }, refreshInterval);
-
-     return () => clearInterval(interval);
-   }, [autoRefresh, profileId, refreshInterval, fetchSuggestions]);
-
-  // Cleanup expired suggestions
+  // Auto-fetch on mount and when profileId changes
   useEffect(() => {
-    const cleanupExpired = () => {
-      setSuggestions(prev => 
-        prev.filter(s => new Date(s.expires_at) > new Date())
-      );
-    };
+    fetchSuggestions();
+  }, [fetchSuggestions]);
 
-    const interval = setInterval(cleanupExpired, 60 * 1000); // Check every minute
+  // Auto-refresh if enabled
+  useEffect(() => {
+    if (!options?.autoRefresh) return;
+
+    const interval = setInterval(fetchSuggestions, 5 * 60 * 1000); // 5 minutes
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchSuggestions, options?.autoRefresh]);
 
   return {
     suggestions,
-    loading,
+    isLoading,
     error,
-    lastFetch,
-    fetchSuggestions,
-    generateSuggestions,
+    refetch: fetchSuggestions,
     respondToSuggestion,
-    refetch: fetchSuggestions
+    generateNewSuggestions
   };
 }
 
-// =====================================================
-// 🎯 Friendship Analysis Hook
-// =====================================================
-export function useFriendshipAnalysis(profileA: string | null, profileB: string | null) {
-  const [analysis, setAnalysis] = useState<FriendshipScore | null>(null);
-  const [loading, setLoading] = useState(false);
+// Hook for analyzing a specific friendship pair
+export function useFriendshipAnalysis(profileA: string, profileB: string) {
+  const [analysis, setAnalysis] = useState<FriendshipAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const { analyzeFriendship } = useFriendDetection();
 
-  const performAnalysis = useCallback(async () => {
+  const analyzeRelationship = useCallback(async () => {
     if (!profileA || !profileB || profileA === profileB) return;
 
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
 
     try {
-      const result = await analyzeFriendship(profileA, profileB);
-      setAnalysis(result);
+      // First check if we have a recent analysis
+      const userLow = profileA < profileB ? profileA : profileB;
+      const userHigh = profileA < profileB ? profileB : profileA;
+
+      const { data: existingAnalysis } = await supabase
+        .from('friendship_analysis')
+        .select('*')
+        .eq('user_low', userLow)
+        .eq('user_high', userHigh)
+        .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Within 24 hours
+        .single();
+
+      if (existingAnalysis) {
+        setAnalysis({
+          user_low: existingAnalysis.user_low,
+          user_high: existingAnalysis.user_high,
+          overall_score: existingAnalysis.overall_score,
+          confidence_level: existingAnalysis.confidence_level,
+          relationship_type: existingAnalysis.relationship_type,
+          signals_data: existingAnalysis.signals_data,
+          created_at: new Date(existingAnalysis.created_at),
+          updated_at: new Date(existingAnalysis.updated_at)
+        });
+        return;
+      }
+
+      // Perform new analysis
+      const newAnalysis = await analyzeFriendship(profileA, profileB);
+      setAnalysis(newAnalysis);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Analysis failed';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to analyze friendship';
       setError(errorMessage);
-      setAnalysis(null);
+      console.error('Friendship analysis error:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, [profileA, profileB, analyzeFriendship]);
 
   // Auto-analyze when profiles change
   useEffect(() => {
-    if (profileA && profileB) {
-      performAnalysis();
-    } else {
-      setAnalysis(null);
-    }
-  }, [profileA, profileB, performAnalysis]);
+    analyzeRelationship();
+  }, [analyzeRelationship]);
 
   return {
     analysis,
-    loading,
+    isLoading,
     error,
-    performAnalysis,
-    refetch: performAnalysis
+    reanalyze: analyzeRelationship
   };
 }
 
-// =====================================================
-// 🔧 Helper Functions
-// =====================================================
-
-/**
- * Generate human-readable suggestion reason
- */
-function generateSuggestionReason(score: FriendshipScore): string {
-  const signals = score.signals;
-  const reasons: string[] = [];
-
-  const coLocationSignal = signals.find(s => s.signal_type === 'co_location');
-  if (coLocationSignal && coLocationSignal.strength > 0.5) {
-    const venues = coLocationSignal.metadata?.venues?.length || 0;
-    reasons.push(`You've been at the same ${venues > 1 ? 'places' : 'place'} ${coLocationSignal.frequency} times`);
-  }
-
-  const sharedActivitySignal = signals.find(s => s.signal_type === 'shared_activity');
-  if (sharedActivitySignal && sharedActivitySignal.strength > 0.4) {
-    const floqs = sharedActivitySignal.metadata?.shared_floqs || 0;
-    const plans = sharedActivitySignal.metadata?.shared_plans || 0;
-    if (floqs > 0 && plans > 0) {
-      reasons.push(`You've joined ${floqs} floqs and ${plans} plans together`);
-    } else if (floqs > 0) {
-      reasons.push(`You've been in ${floqs} floqs together`);
-    } else if (plans > 0) {
-      reasons.push(`You've attended ${plans} plans together`);
-    }
-  }
-
-  const venueOverlapSignal = signals.find(s => s.signal_type === 'venue_overlap');
-  if (venueOverlapSignal && venueOverlapSignal.strength > 0.3) {
-    const sharedVenues = venueOverlapSignal.metadata?.shared_venues || 0;
-    reasons.push(`You both visit ${sharedVenues} of the same places`);
-  }
-
-  const timeSyncSignal = signals.find(s => s.signal_type === 'time_sync');
-  if (timeSyncSignal && timeSyncSignal.strength > 0.4) {
-    reasons.push(`You're often active at similar times`);
-  }
-
-  if (reasons.length === 0) {
-    reasons.push(`You have ${score.overall_score}/100 compatibility based on your activity patterns`);
-  }
-
-  return reasons.join(' • ');
-}
-
-/**
- * Generate signals summary for storage
- */
-function generateSignalsSummary(signals: any[]): Record<string, number> {
-  const summary: Record<string, number> = {};
-  
-  signals.forEach(signal => {
-    summary[signal.signal_type] = Math.round(signal.strength * 100);
-  });
-
-  return summary;
-}
-
-// =====================================================
-// 🎯 Batch Friend Analysis Hook
-// =====================================================
+// Hook for batch friendship analysis
 export function useBatchFriendAnalysis() {
-  const [results, setResults] = useState<Map<string, FriendshipScore>>(new Map());
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<Map<string, FriendshipAnalysis>>(new Map());
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
-
   const { analyzeFriendship } = useFriendDetection();
 
-  /**
-   * Analyze multiple user pairs in batch
-   */
-     const analyzeBatch = useCallback(async (profilePairs: Array<[string, string]>) => {
-     setLoading(true);
-     setError(null);
-     
-     try {
-       const analyses = await Promise.allSettled(
-         profilePairs.map(([profileA, profileB]) => 
-           analyzeFriendship(profileA, profileB).then(result => ({
-             key: `${profileA}-${profileB}`,
-             result
-           }))
-         )
-       );
+  const analyzeBatch = useCallback(async (profilePairs: Array<[string, string]>): Promise<void> => {
+    setIsAnalyzing(true);
+    setError(null);
+    setProgress({ completed: 0, total: profilePairs.length });
+    setResults(new Map());
 
-       const newResults = new Map<string, FriendshipScore>();
-       
-       analyses.forEach((analysis, index) => {
-         if (analysis.status === 'fulfilled' && analysis.value.result) {
-           newResults.set(analysis.value.key, analysis.value.result);
-         } else if (analysis.status === 'rejected') {
-           console.error(`[useBatchFriendAnalysis] Failed to analyze pair ${profilePairs[index]}:`, analysis.reason);
-         }
-       });
+    try {
+      for (let i = 0; i < profilePairs.length; i++) {
+        const [profileA, profileB] = profilePairs[i];
+        
+        try {
+          const analysis = await analyzeFriendship(profileA, profileB);
+          if (analysis) {
+            const key = `${profileA}-${profileB}`;
+            setResults(prev => new Map(prev.set(key, analysis)));
+          }
+        } catch (pairError) {
+          console.error(`Error analyzing pair ${profileA}-${profileB}:`, pairError);
+          // Continue with other pairs
+        }
 
-       setResults(newResults);
-     } catch (err) {
-       const errorMessage = err instanceof Error ? err.message : 'Batch analysis failed';
-       setError(errorMessage);
-       console.error('[useBatchFriendAnalysis] Batch error:', err);
-     } finally {
-       setLoading(false);
-     }
-   }, [analyzeFriendship]);
+        setProgress({ completed: i + 1, total: profilePairs.length });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Batch analysis failed';
+      setError(errorMessage);
+      console.error('Batch analysis error:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [analyzeFriendship]);
 
-     /**
-    * Get analysis result for a specific pair
-    */
-   const getResult = useCallback((profileA: string, profileB: string): FriendshipScore | null => {
-     return results.get(`${profileA}-${profileB}`) || results.get(`${profileB}-${profileA}`) || null;
-   }, [results]);
+  const getResult = useCallback((profileA: string, profileB: string): FriendshipAnalysis | null => {
+    const key1 = `${profileA}-${profileB}`;
+    const key2 = `${profileB}-${profileA}`;
+    return results.get(key1) || results.get(key2) || null;
+  }, [results]);
+
+  const clearResults = useCallback(() => {
+    setResults(new Map());
+    setProgress({ completed: 0, total: 0 });
+    setError(null);
+  }, []);
 
   return {
-    results,
-    loading,
-    error,
     analyzeBatch,
     getResult,
-    clear: () => setResults(new Map())
+    clearResults,
+    results: Array.from(results.values()),
+    isAnalyzing,
+    progress,
+    error
   };
 }
