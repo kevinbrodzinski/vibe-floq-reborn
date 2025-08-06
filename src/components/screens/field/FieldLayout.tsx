@@ -22,6 +22,9 @@ import { useGeo } from "@/hooks/useGeo";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
+import { TimewarpDrawerProvider } from "@/contexts/TimewarpDrawerContext";
+import { TimewarpFab } from "@/components/field/TimewarpFab";
+import { TimewarpDrawer } from "@/components/field/TimewarpDrawer";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
@@ -187,7 +190,8 @@ export const FieldLayout = () => {
   return (
     <ErrorBoundary>
       <FriendDrawerProvider>
-        <div className="relative h-svh w-full bg-background">
+        <TimewarpDrawerProvider>
+          <div className="relative h-svh w-full bg-background">
           {/* Motion Permission Banner - Global Level */}
           <MotionPermissionBanner
             requestMotionPermission={requestMotionPermission}
@@ -211,13 +215,17 @@ export const FieldLayout = () => {
           {/* Modal/Sheet Layer - z-40 to z-60 */}
           <FieldModalLayer data={data} />
 
-          {/* Bottom HUD - Friends drawer - z-60 */}
+          {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
           <BottomHud>
             <FriendDrawer />
+            <TimewarpDrawer />
           </BottomHud>
 
           {/* Friend FAB - z-65 */}
           <FriendFab />
+
+          {/* Timewarp FAB - z-65 */}
+          <TimewarpFab />
 
           {/* Proximity Notifications - z-50 */}
           <ProximityNotifications />
@@ -289,7 +297,8 @@ export const FieldLayout = () => {
               visible={data.showDebugVisuals}
             />
           )}
-        </div>
+          </div>
+        </TimewarpDrawerProvider>
       </FriendDrawerProvider>
     </ErrorBoundary>
   );
