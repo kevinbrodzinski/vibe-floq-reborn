@@ -1,52 +1,58 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { 
-  FriendshipSignal, 
-  FriendshipScore, 
+import type {
   FriendDetectionConfig,
+  FriendshipAnalysis,
+  FriendSuggestion,
+  FriendshipSignal,
   CoLocationEvent,
   SharedActivityEvent,
   VenueOverlapPattern,
   TimeSyncPattern
 } from '@/types/friendDetection';
 
+/**
+ * Friend Detection Engine
+ * 
+ * Analyzes user behavior patterns to identify potential friendships.
+ * Uses the existing friendships table structure (user_low/user_high).
+ * 
+ * Note: profileId refers to profiles.id which equals auth.users.id (1:1 FK).
+ * The friendships table uses auth.users.id directly as user_low/user_high.
+ */
 export class FriendDetectionEngine {
   private config: FriendDetectionConfig;
 
   constructor(config?: Partial<FriendDetectionConfig>) {
     this.config = {
-      // Default configuration
-      min_co_location_events: 3,
-      min_shared_activities: 2,
-      co_location_radius_m: 100,
-      time_window_days: 90,
-      
       weights: {
-        co_location: 0.35,        // Strongest signal - being in same place
-        shared_activity: 0.25,    // Strong signal - doing things together
-        venue_overlap: 0.20,      // Medium signal - similar preferences
-        time_sync: 0.15,          // Medium signal - similar schedules
-        interaction_frequency: 0.05  // Weak signal - general activity
+        co_location: 0.3,
+        shared_activity: 0.25,
+        venue_overlap: 0.2,
+        time_sync: 0.15,
+        interaction_frequency: 0.1
       },
-      
-      recency_decay_days: 30,
-      min_confidence_for_suggestion: 0.6,
-      
-      // Override with provided config
+      thresholds: {
+        friend_suggestion: 0.3,
+        close_friend: 0.7,
+        best_friend: 0.9
+      },
+      time_decay_factor: 0.95,
+      min_confidence: 0.2,
       ...config
     };
   }
 
   /**
-   * 🎯 Main function: Analyze friendship potential between two profiles
+   * Analyze friendship potential between two users
+   * @param profileA First user's profile ID (equals auth.users.id)
+   * @param profileB Second user's profile ID (equals auth.users.id)
    */
-  async analyzeFriendshipPotential(profileA: string, profileB: string): Promise<FriendshipScore> {
-    console.log(`[FriendDetection] Analyzing friendship potential: ${profileA} ↔ ${profileB}`);
+  async analyzeFriendshipPotential(profileA: string, profileB: string): Promise<FriendshipAnalysis> {
+    // Ensure canonical ordering for consistent storage
+    const userLow = profileA < profileB ? profileA : profileB;
+    const userHigh = profileA < profileB ? profileB : profileA;
 
-    // Ensure consistent ordering for profile_low/profile_high
-    const profileLow = profileA < profileB ? profileA : profileB;
-    const profileHigh = profileA < profileB ? profileB : profileA;
-
-    // Collect all signals in parallel for performance
+    // Analyze all signals in parallel for better performance
     const [
       coLocationSignal,
       sharedActivitySignal,
@@ -69,333 +75,365 @@ export class FriendDetectionEngine {
       interactionFrequencySignal
     ].filter(signal => signal !== null) as FriendshipSignal[];
 
-    // Calculate composite score
     const overallScore = this.calculateCompositeScore(signals);
     const confidenceLevel = this.determineConfidenceLevel(signals, overallScore);
     const relationshipType = this.determineRelationshipType(overallScore, signals);
 
     return {
-      profile_low: profileLow,
-      profile_high: profileHigh,
+      user_low: userLow,
+      user_high: userHigh,
       overall_score: overallScore,
       confidence_level: confidenceLevel,
-      signals,
-      last_calculated: new Date().toISOString(),
-      relationship_type: relationshipType
+      relationship_type: relationshipType,
+      signals_data: {
+        signals: signals.map(s => ({
+          type: s.type,
+          strength: s.strength,
+          confidence: s.confidence,
+          lastSeen: s.lastSeen.toISOString(),
+          metadata: s.metadata
+        })),
+        weights_used: this.config.weights,
+        analysis_timestamp: new Date().toISOString()
+      },
+      created_at: new Date(),
+      updated_at: new Date()
     };
   }
 
-  /**
-   * 🗺️ Analyze co-location patterns (strongest signal)
-   */
   private async analyzeCoLocationSignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
-    const timeWindow = new Date();
-    timeWindow.setDate(timeWindow.getDate() - this.config.time_window_days);
+    try {
+      const { data, error } = await supabase.rpc('analyze_co_location_events', {
+        profile_a_id: profileA,
+        profile_b_id: profileB,
+        days_back: 90,
+        min_overlap_minutes: 15
+      });
 
-    // Query for co-location events using venue_live_presence
-    const { data: coLocations, error } = await supabase.rpc('analyze_co_location_events', {
-      profile_a_id: profileA,
-      profile_b_id: profileB,
-      time_window: timeWindow.toISOString(),
-      radius_m: this.config.co_location_radius_m
-    });
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
 
-    if (error || !coLocations || coLocations.length === 0) {
+      const result = data[0];
+      const eventsCount = result.events_count || 0;
+      const totalMinutes = result.total_overlap_minutes || 0;
+      const avgProximity = result.avg_proximity_score || 0;
+
+      if (eventsCount === 0) return null;
+
+      // Calculate strength based on frequency, duration, and proximity
+      const frequencyScore = Math.min(eventsCount / 10, 1); // Normalize to 10 events = 1.0
+      const durationScore = Math.min(totalMinutes / (60 * 10), 1); // 10 hours = 1.0
+      const proximityScore = avgProximity;
+      
+      const strength = (frequencyScore * 0.4 + durationScore * 0.4 + proximityScore * 0.2);
+      
+      // Recency boost
+      const daysSinceLastEvent = result.most_recent_event 
+        ? Math.floor((Date.now() - new Date(result.most_recent_event).getTime()) / (1000 * 60 * 60 * 24))
+        : 90;
+      const recencyMultiplier = Math.pow(this.config.time_decay_factor, daysSinceLastEvent);
+
+      return {
+        type: 'co_location',
+        strength: Math.min(strength * recencyMultiplier, 1),
+        confidence: Math.min(eventsCount / 5, 1), // 5+ events = high confidence
+        lastSeen: result.most_recent_event ? new Date(result.most_recent_event) : new Date(),
+        metadata: {
+          events_count: eventsCount,
+          total_minutes: totalMinutes,
+          venues_count: result.venues_count,
+          avg_proximity: avgProximity
+        }
+      };
+    } catch (error) {
+      console.error('Error analyzing co-location signal:', error);
       return null;
     }
-
-    // Calculate signal strength based on frequency, duration, and recency
-    const totalEvents = coLocations.length;
-    const totalDurationMinutes = coLocations.reduce((sum: number, event: any) => 
-      sum + (event.duration_minutes || 0), 0);
-    
-    const avgDurationMinutes = totalDurationMinutes / totalEvents;
-    const recentEvents = coLocations.filter((event: any) => {
-      const eventDate = new Date(event.start_time);
-      const daysAgo = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24);
-      return daysAgo <= this.config.recency_decay_days;
-    }).length;
-
-    // Normalize scores
-    const frequencyScore = Math.min(totalEvents / 10, 1); // Cap at 10 events
-    const durationScore = Math.min(avgDurationMinutes / 120, 1); // Cap at 2 hours avg
-    const recencyScore = recentEvents / totalEvents;
-
-    const strength = (frequencyScore * 0.4 + durationScore * 0.3 + recencyScore * 0.3);
-    const confidence = totalEvents >= this.config.min_co_location_events ? 0.9 : 0.6;
-
-    return {
-      signal_type: 'co_location',
-      strength,
-      frequency: totalEvents,
-      recency: recencyScore,
-      confidence,
-      metadata: {
-        total_events: totalEvents,
-        avg_duration_minutes: avgDurationMinutes,
-        recent_events: recentEvents,
-        venues: [...new Set(coLocations.map((e: any) => e.venue_id))]
-      }
-    };
   }
 
-  /**
-   * 🎭 Analyze shared activity patterns (floqs, plans, events)
-   */
   private async analyzeSharedActivitySignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
-    const timeWindow = new Date();
-    timeWindow.setDate(timeWindow.getDate() - this.config.time_window_days);
+    try {
+      const [floqData, planData] = await Promise.all([
+        supabase.rpc('analyze_shared_floq_participation', {
+          profile_a_id: profileA,
+          profile_b_id: profileB,
+          days_back: 90
+        }),
+        supabase.rpc('analyze_shared_plan_participation', {
+          profile_a_id: profileA,
+          profile_b_id: profileB,
+          days_back: 90
+        })
+      ]);
 
-    // Query shared floq participation
-    const { data: sharedFloqs, error: floqError } = await supabase.rpc('analyze_shared_floq_participation', {
-      profile_a_id: profileA,
-      profile_b_id: profileB,
-      time_window: timeWindow.toISOString()
-    });
+      if (floqData.error) throw floqData.error;
+      if (planData.error) throw planData.error;
 
-    // Query shared plan participation
-    const { data: sharedPlans, error: planError } = await supabase.rpc('analyze_shared_plan_participation', {
-      profile_a_id: profileA,
-      profile_b_id: profileB,
-      time_window: timeWindow.toISOString()
-    });
+      const floqResult = floqData.data?.[0] || { shared_floqs_count: 0, total_overlap_score: 0, most_recent_shared: null };
+      const planResult = planData.data?.[0] || { shared_plans_count: 0, total_overlap_score: 0, most_recent_shared: null };
 
-    if ((floqError && planError) || (!sharedFloqs?.length && !sharedPlans?.length)) {
+      const totalActivities = floqResult.shared_floqs_count + planResult.shared_plans_count;
+      const totalScore = floqResult.total_overlap_score + planResult.total_overlap_score;
+
+      if (totalActivities === 0) return null;
+
+      // Calculate strength based on frequency and diversity
+      const frequencyScore = Math.min(totalActivities / 5, 1); // 5 shared activities = 1.0
+      const diversityScore = (floqResult.shared_floqs_count > 0 && planResult.shared_plans_count > 0) ? 1.2 : 1.0;
+      const qualityScore = totalScore / totalActivities; // Average interaction quality
+
+      const strength = Math.min(frequencyScore * diversityScore * qualityScore, 1);
+
+      // Recency calculation
+      const mostRecentActivity = [floqResult.most_recent_shared, planResult.most_recent_shared]
+        .filter(Boolean)
+        .map(d => new Date(d!))
+        .sort((a, b) => b.getTime() - a.getTime())[0];
+
+      const daysSinceLastActivity = mostRecentActivity
+        ? Math.floor((Date.now() - mostRecentActivity.getTime()) / (1000 * 60 * 60 * 24))
+        : 90;
+      const recencyMultiplier = Math.pow(this.config.time_decay_factor, daysSinceLastActivity);
+
+      return {
+        type: 'shared_activity',
+        strength: Math.min(strength * recencyMultiplier, 1),
+        confidence: Math.min(totalActivities / 3, 1), // 3+ activities = high confidence
+        lastSeen: mostRecentActivity || new Date(),
+        metadata: {
+          shared_floqs: floqResult.shared_floqs_count,
+          shared_plans: planResult.shared_plans_count,
+          total_activities: totalActivities,
+          avg_quality: qualityScore
+        }
+      };
+    } catch (error) {
+      console.error('Error analyzing shared activity signal:', error);
       return null;
     }
-
-    const totalSharedActivities = (sharedFloqs?.length || 0) + (sharedPlans?.length || 0);
-    const recentActivities = [...(sharedFloqs || []), ...(sharedPlans || [])].filter((activity: any) => {
-      const activityDate = new Date(activity.joined_at || activity.created_at);
-      const daysAgo = (Date.now() - activityDate.getTime()) / (1000 * 60 * 60 * 24);
-      return daysAgo <= this.config.recency_decay_days;
-    }).length;
-
-    const frequencyScore = Math.min(totalSharedActivities / 5, 1); // Cap at 5 activities
-    const recencyScore = totalSharedActivities > 0 ? recentActivities / totalSharedActivities : 0;
-    const diversityScore = Math.min(
-      [...new Set([...(sharedFloqs || []), ...(sharedPlans || [])]
-        .map((a: any) => a.activity_type))].length / 3, 1
-    ); // Reward diversity
-
-    const strength = (frequencyScore * 0.5 + recencyScore * 0.3 + diversityScore * 0.2);
-    const confidence = totalSharedActivities >= this.config.min_shared_activities ? 0.8 : 0.5;
-
-    return {
-      signal_type: 'shared_activity',
-      strength,
-      frequency: totalSharedActivities,
-      recency: recencyScore,
-      confidence,
-      metadata: {
-        shared_floqs: sharedFloqs?.length || 0,
-        shared_plans: sharedPlans?.length || 0,
-        recent_activities: recentActivities,
-        activity_types: [...new Set([...(sharedFloqs || []), ...(sharedPlans || [])]
-          .map((a: any) => a.activity_type))]
-      }
-    };
   }
 
-  /**
-   * 🏢 Analyze venue overlap patterns (similar preferences)
-   */
   private async analyzeVenueOverlapSignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
-    const timeWindow = new Date();
-    timeWindow.setDate(timeWindow.getDate() - this.config.time_window_days);
+    try {
+      const { data, error } = await supabase.rpc('analyze_venue_overlap_patterns', {
+        profile_a_id: profileA,
+        profile_b_id: profileB,
+        days_back: 90
+      });
 
-    const { data: venueOverlap, error } = await supabase.rpc('analyze_venue_overlap_patterns', {
-      profile_a_id: profileA,
-      profile_b_id: profileB,
-      time_window: timeWindow.toISOString()
-    });
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
 
-    if (error || !venueOverlap || venueOverlap.length === 0) {
+      const result = data[0];
+      const sharedVenues = result.shared_venues_count || 0;
+      const jaccardSimilarity = result.jaccard_similarity || 0;
+      const weightedOverlap = result.weighted_overlap_score || 0;
+
+      if (sharedVenues === 0) return null;
+
+      // Combine Jaccard similarity and weighted overlap for strength
+      const strength = (jaccardSimilarity * 0.6 + weightedOverlap * 0.4);
+
+      return {
+        type: 'venue_overlap',
+        strength: Math.min(strength, 1),
+        confidence: Math.min(sharedVenues / 5, 1), // 5+ shared venues = high confidence
+        lastSeen: new Date(), // Venue overlap doesn't have a specific timestamp
+        metadata: {
+          shared_venues: sharedVenues,
+          profile_a_visits: result.profile_a_visits,
+          profile_b_visits: result.profile_b_visits,
+          jaccard_similarity: jaccardSimilarity,
+          weighted_overlap: weightedOverlap
+        }
+      };
+    } catch (error) {
+      console.error('Error analyzing venue overlap signal:', error);
       return null;
     }
-
-            // Calculate Jaccard similarity for venue preferences
-        const profileAVenues = new Set(venueOverlap.map((v: any) => v.venue_id).filter((id: string) => 
-          venueOverlap.find((v: any) => v.venue_id === id)?.profile_a_visits > 0));
-        const profileBVenues = new Set(venueOverlap.map((v: any) => v.venue_id).filter((id: string) => 
-          venueOverlap.find((v: any) => v.venue_id === id)?.profile_b_visits > 0));
-        
-        const intersection = new Set([...profileAVenues].filter(v => profileBVenues.has(v)));
-        const union = new Set([...profileAVenues, ...profileBVenues]);
-        
-        const jaccardSimilarity = union.size > 0 ? intersection.size / union.size : 0;
-        
-        // Weight by venue quality/popularity
-        const weightedOverlap = venueOverlap.reduce((sum: number, venue: any) => {
-          if (venue.profile_a_visits > 0 && venue.profile_b_visits > 0) {
-            const venueWeight = Math.min(venue.profile_a_visits + venue.profile_b_visits, 10) / 10;
-            return sum + venueWeight;
-          }
-          return sum;
-        }, 0);
-
-        const strength = (jaccardSimilarity * 0.6 + Math.min(weightedOverlap / 5, 1) * 0.4);
-        const confidence = intersection.size >= 2 ? 0.7 : 0.4;
-
-        return {
-          signal_type: 'venue_overlap',
-          strength,
-          frequency: intersection.size,
-          recency: 0.8, // Venue preferences are relatively stable
-          confidence,
-          metadata: {
-            shared_venues: intersection.size,
-            total_venues_a: profileAVenues.size,
-            total_venues_b: profileBVenues.size,
-            jaccard_similarity: jaccardSimilarity,
-            weighted_overlap: weightedOverlap
-          }
-        };
   }
 
-  /**
-   * ⏰ Analyze time synchronization patterns
-   */
   private async analyzeTimeSyncSignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
-    const { data: timeSyncData, error } = await supabase.rpc('analyze_time_sync_patterns', {
-      profile_a_id: profileA,
-      profile_b_id: profileB,
-      time_window_days: this.config.time_window_days
-    });
+    try {
+      const { data, error } = await supabase.rpc('analyze_time_sync_patterns', {
+        profile_a_id: profileA,
+        profile_b_id: profileB,
+        days_back: 30
+      });
 
-    if (error || !timeSyncData) {
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+
+      const result = data[0];
+      const syncScore = result.sync_score || 0;
+      const syncConsistency = result.sync_consistency || 0;
+
+      if (syncScore === 0) return null;
+
+      // Combine sync score and consistency
+      const strength = (syncScore * 0.7 + syncConsistency * 0.3);
+
+      return {
+        type: 'time_sync',
+        strength: Math.min(strength, 1),
+        confidence: syncConsistency, // Consistency indicates confidence
+        lastSeen: new Date(),
+        metadata: {
+          sync_score: syncScore,
+          sync_consistency: syncConsistency,
+          peak_sync_hours: result.peak_sync_hours || []
+        }
+      };
+    } catch (error) {
+      console.error('Error analyzing time sync signal:', error);
       return null;
     }
-
-    const syncScore = timeSyncData.sync_score || 0;
-    const commonWindows = timeSyncData.common_windows || [];
-    
-    const strength = Math.min(syncScore, 1);
-    const confidence = commonWindows.length >= 2 ? 0.6 : 0.3;
-
-    return {
-      signal_type: 'time_sync',
-      strength,
-      frequency: commonWindows.length,
-      recency: 0.9, // Time patterns are recent by nature
-      confidence,
-      metadata: {
-        sync_score: syncScore,
-        common_activity_windows: commonWindows
-      }
-    };
   }
 
-  /**
-   * 📱 Analyze general interaction frequency
-   */
   private async analyzeInteractionFrequencySignal(profileA: string, profileB: string): Promise<FriendshipSignal | null> {
-    // This could analyze app usage patterns, mutual floq activity, etc.
-    // For now, return a basic signal based on presence in same floqs
-    const { data: mutualFloqs, error } = await supabase
-      .from('floq_participants')
-      .select('floq_id')
-      .eq('user_id', profileA)
-      .in('floq_id', 
-        supabase.from('floq_participants')
-          .select('floq_id')
-          .eq('user_id', profileB)
-      );
+    try {
+      // Query for mutual floq/plan participation frequency
+      const { data: mutualFloqs, error: floqError } = await supabase
+        .from('floq_participants')
+        .select('floq_id, floqs!inner(created_at)')
+        .or(`user_id.eq.${profileA},profile_id.eq.${profileA}`)
+        .in('floq_id', 
+          await supabase
+            .from('floq_participants')
+            .select('floq_id')
+            .or(`user_id.eq.${profileB},profile_id.eq.${profileB}`)
+            .then(res => res.data?.map(r => r.floq_id) || [])
+        );
 
-    if (error || !mutualFloqs || mutualFloqs.length === 0) {
+      if (floqError) throw floqError;
+
+      const mutualCount = mutualFloqs?.length || 0;
+      if (mutualCount === 0) return null;
+
+      // Calculate interaction frequency strength
+      const strength = Math.min(mutualCount / 10, 1); // 10 mutual interactions = 1.0
+
+      return {
+        type: 'interaction_frequency',
+        strength,
+        confidence: Math.min(mutualCount / 5, 1), // 5+ interactions = high confidence
+        lastSeen: new Date(),
+        metadata: {
+          mutual_interactions: mutualCount
+        }
+      };
+    } catch (error) {
+      console.error('Error analyzing interaction frequency signal:', error);
       return null;
     }
-
-    const mutualFloqCount = mutualFloqs.length;
-    const strength = Math.min(mutualFloqCount / 3, 1); // Cap at 3 mutual floqs
-    
-    return {
-      signal_type: 'interaction_frequency',
-      strength,
-      frequency: mutualFloqCount,
-      recency: 0.7,
-      confidence: 0.5, // Lower confidence for this indirect signal
-      metadata: {
-        mutual_floq_count: mutualFloqCount
-      }
-    };
   }
 
-  /**
-   * 🧮 Calculate weighted composite score
-   */
   private calculateCompositeScore(signals: FriendshipSignal[]): number {
+    if (signals.length === 0) return 0;
+
     let weightedSum = 0;
     let totalWeight = 0;
 
-    signals.forEach(signal => {
-      const weight = this.config.weights[signal.signal_type];
-      const adjustedStrength = signal.strength * signal.confidence * signal.recency;
-      
-      weightedSum += adjustedStrength * weight;
+    for (const signal of signals) {
+      const weight = this.config.weights[signal.type] || 0;
+      weightedSum += signal.strength * signal.confidence * weight;
       totalWeight += weight;
-    });
+    }
 
-    return totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 100) : 0;
+    return totalWeight > 0 ? Math.min(weightedSum / totalWeight, 1) : 0;
   }
 
-  /**
-   * 🎯 Determine confidence level based on signal quality
-   */
-  private determineConfidenceLevel(signals: FriendshipSignal[], overallScore: number): 'low' | 'medium' | 'high' | 'very_high' {
+  private determineConfidenceLevel(signals: FriendshipSignal[], overallScore: number): 'low' | 'medium' | 'high' {
     const avgConfidence = signals.reduce((sum, s) => sum + s.confidence, 0) / signals.length;
-    const strongSignals = signals.filter(s => s.strength > 0.6 && s.confidence > 0.7).length;
+    const signalDiversity = signals.length;
 
-    if (strongSignals >= 3 && avgConfidence > 0.8 && overallScore > 75) return 'very_high';
-    if (strongSignals >= 2 && avgConfidence > 0.7 && overallScore > 60) return 'high';
-    if (strongSignals >= 1 && avgConfidence > 0.5 && overallScore > 40) return 'medium';
+    if (avgConfidence >= 0.8 && signalDiversity >= 3) return 'high';
+    if (avgConfidence >= 0.5 && signalDiversity >= 2) return 'medium';
     return 'low';
   }
 
-  /**
-   * 👥 Determine relationship type based on score and signals
-   */
   private determineRelationshipType(overallScore: number, signals: FriendshipSignal[]): 'acquaintance' | 'friend' | 'close_friend' | 'best_friend' {
-    const coLocationStrength = signals.find(s => s.signal_type === 'co_location')?.strength || 0;
-    const sharedActivityStrength = signals.find(s => s.signal_type === 'shared_activity')?.strength || 0;
-
-    if (overallScore >= 80 && coLocationStrength > 0.8 && sharedActivityStrength > 0.7) return 'best_friend';
-    if (overallScore >= 65 && (coLocationStrength > 0.6 || sharedActivityStrength > 0.6)) return 'close_friend';
-    if (overallScore >= 45) return 'friend';
+    if (overallScore >= this.config.thresholds.best_friend) return 'best_friend';
+    if (overallScore >= this.config.thresholds.close_friend) return 'close_friend';
+    if (overallScore >= this.config.thresholds.friend_suggestion) return 'friend';
     return 'acquaintance';
   }
 
   /**
-   * 🔍 Find friend suggestions for a profile
+   * Find friend suggestions for a user
+   * @param profileId The user's profile ID (equals auth.users.id)
+   * @param limit Maximum number of suggestions to return
    */
-  async findFriendSuggestions(profileId: string, limit: number = 10): Promise<FriendshipScore[]> {
-    console.log(`[FriendDetection] Finding friend suggestions for profile: ${profileId}`);
+  async findFriendSuggestions(profileId: string, limit: number = 10): Promise<FriendSuggestion[]> {
+    try {
+      // Get candidates from the database
+      const { data: candidates, error } = await supabase.rpc('get_friend_suggestion_candidates', {
+        target_profile_id: profileId,
+        limit_count: limit * 2, // Get more candidates to filter through
+        min_interactions: 2
+      });
 
-    // Get potential candidates (profiles who have interacted with the profile somehow)
-    const { data: candidates, error } = await supabase.rpc('get_friend_suggestion_candidates', {
-      target_profile_id: profileId,
-      limit: limit * 3 // Get more candidates to filter
-    });
+      if (error) throw error;
+      if (!candidates || candidates.length === 0) return [];
 
-    if (error || !candidates) {
-      console.error('[FriendDetection] Error getting candidates:', error);
+      // Analyze each candidate
+      const suggestions: FriendSuggestion[] = [];
+      
+      for (const candidate of candidates) {
+        try {
+          const analysis = await this.analyzeFriendshipPotential(profileId, candidate.profile_id);
+          
+          if (analysis.overall_score >= this.config.thresholds.friend_suggestion && 
+              analysis.confidence_level !== 'low') {
+            
+            suggestions.push({
+              target_profile_id: profileId,
+              suggested_profile_id: candidate.profile_id,
+              score: analysis.overall_score,
+              confidence_level: analysis.confidence_level,
+              suggestion_reason: this.generateSuggestionReason(analysis),
+              signals_summary: analysis.signals_data,
+              status: 'pending',
+              created_at: new Date(),
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+            });
+          }
+        } catch (analysisError) {
+          console.error(`Error analyzing candidate ${candidate.profile_id}:`, analysisError);
+          continue;
+        }
+      }
+
+      // Sort by score and return top suggestions
+      return suggestions
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
+    } catch (error) {
+      console.error('Error finding friend suggestions:', error);
       return [];
     }
+  }
 
-    // Analyze each candidate
-    const suggestions = await Promise.all(
-      candidates.map((candidate: any) => 
-        this.analyzeFriendshipPotential(profileId, candidate.profile_id)
-      )
-    );
+  private generateSuggestionReason(analysis: FriendshipAnalysis): string {
+    const signals = analysis.signals_data.signals || [];
+    const topSignal = signals.sort((a, b) => b.strength - a.strength)[0];
+    
+    if (!topSignal) return 'Based on your activity patterns';
 
-    // Filter and sort by score
-    return suggestions
-      .filter(suggestion => 
-        suggestion.overall_score >= 30 && // Minimum threshold
-        suggestion.confidence_level !== 'low'
-      )
-      .sort((a, b) => b.overall_score - a.overall_score)
-      .slice(0, limit);
+    switch (topSignal.type) {
+      case 'co_location':
+        return `You've been at the same places ${topSignal.metadata?.events_count || 'multiple'} times`;
+      case 'shared_activity':
+        return `You've participated in ${topSignal.metadata?.total_activities || 'several'} activities together`;
+      case 'venue_overlap':
+        return `You visit ${topSignal.metadata?.shared_venues || 'several'} of the same places`;
+      case 'time_sync':
+        return 'You have similar activity patterns';
+      case 'interaction_frequency':
+        return 'You frequently interact in group activities';
+      default:
+        return 'Based on your shared interests and activities';
+    }
   }
 }
