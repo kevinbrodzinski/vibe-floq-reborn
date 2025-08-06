@@ -8,38 +8,21 @@ export function useInvalidateDiscover(): InvalidateDiscoverFn {
   const { user } = useAuth()
 
   return () => {
-    qc.invalidateQueries({ queryKey: ['discover', user?.id] })
-    qc.invalidateQueries({ queryKey: ['friends', user?.id] })
+    if (!user?.id) {
+      console.warn('useInvalidateDiscover called without authenticated user');
+      return;
+    }
+
+    qc.invalidateQueries({ queryKey: ['discover', user.id] })
+    qc.invalidateQueries({ queryKey: ['friends', user.id] })
     
     // Invalidate People Discovery Stack queries using predicate for partial matching
-    if (user?.id) {
-      qc.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'vibe-breakdown' &&
-          query.queryKey[1] === user.id
-      });
-      
-      qc.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'common-venues' &&
-          query.queryKey[1] === user.id
-      });
-      
-      qc.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'plan-suggestions' &&
-          query.queryKey[1] === user.id
-      });
-      
-      qc.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'crossed-paths-stats' &&
-          query.queryKey[1] === user.id
-      });
-    }
+    const discoveryQueryHeads = ['vibe-breakdown', 'common-venues', 'plan-suggestions', 'crossed-paths-stats'];
+    qc.invalidateQueries({
+      predicate: (query) =>
+        Array.isArray(query.queryKey) &&
+        discoveryQueryHeads.includes(query.queryKey[0] as string) &&
+        query.queryKey[1] === user.id
+    });
   }
 }

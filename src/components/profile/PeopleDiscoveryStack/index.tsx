@@ -35,7 +35,7 @@ export const PeopleDiscoveryStack: React.FC<PeopleDiscoveryStackProps> = ({
 
   return (
     <motion.div 
-      className={`space-y-4 ${className}`}
+      className={`space-y-4 min-h-[400px] ${className}`}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
