@@ -1,4 +1,6 @@
+
 -- Friend Detection System Migration - Production Ready
+
 -- 
 -- This system analyzes user behavior patterns to automatically identify potential friendships.
 -- It works with the existing friendships table structure (user_low/user_high referencing auth.users.id).
@@ -57,6 +59,7 @@ ON public.friendship_analysis USING gin (signals_data jsonb_path_ops);
 
 CREATE INDEX IF NOT EXISTS idx_friend_suggestions_signals 
 ON public.friend_suggestions USING gin (signals_summary jsonb_path_ops);
+
 
 -- Function 1: Analyze co-location events between two users
 CREATE OR REPLACE FUNCTION analyze_co_location_events(
@@ -130,6 +133,7 @@ STABLE  -- Marked as STABLE for better performance
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
+
 BEGIN
     RETURN QUERY
     WITH shared_floqs AS (
@@ -168,6 +172,7 @@ STABLE  -- Marked as STABLE for better performance
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
+
 BEGIN
     RETURN QUERY
     WITH shared_plans AS (
@@ -270,6 +275,7 @@ STABLE  -- Marked as STABLE for better performance
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
+
 BEGIN
     RETURN QUERY
     WITH profile_a_activity AS (
@@ -289,6 +295,7 @@ BEGIN
         WHERE profile_id = profile_b_id 
         AND checked_in_at >= NOW() - (days_back || ' days')::INTERVAL
         GROUP BY DATE_TRUNC('hour', checked_in_at)
+
     ),
     sync_analysis AS (
         SELECT 
@@ -337,6 +344,7 @@ STABLE  -- Marked as STABLE for better performance
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
+
 BEGIN
     RETURN QUERY
     WITH potential_friends AS (
@@ -419,6 +427,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
+
 DECLARE
     ordered_profile_low UUID;
     ordered_profile_high UUID;
@@ -458,6 +467,7 @@ CREATE OR REPLACE FUNCTION create_friend_suggestion(
     p_suggestion_reason TEXT,
     p_signals_summary JSONB
 )
+
 RETURNS UUID 
 LANGUAGE plpgsql 
 SECURITY DEFINER

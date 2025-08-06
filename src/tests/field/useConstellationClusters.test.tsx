@@ -16,6 +16,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+
 // Mock lodash-es with proper exports
 vi.mock('lodash-es', async (importOriginal) => {
   const actual = await importOriginal() as any;
@@ -33,6 +34,7 @@ vi.mock('lodash-es', async (importOriginal) => {
     }),
   };
 });
+
 
 describe('useConstellationClusters integration', () => {
   const mockBbox: [number, number, number, number] = [-122.5, 37.7, -122.3, 37.8];
@@ -137,6 +139,7 @@ describe('useConstellationClusters integration', () => {
     expect(supabase.channel).toHaveBeenCalledWith('clusters-live');
     expect(mockChannel.on).toHaveBeenCalledWith('broadcast', { event: 'clusters_updated' }, expect.any(Function));
     expect(mockChannel.subscribe).toHaveBeenCalled();
+
   });
 
   it('should handle cluster projection coordinates correctly', () => {
@@ -153,6 +156,7 @@ describe('useConstellationClusters integration', () => {
   it('should provide cluster data compatible with constellation renderer', () => {
     // Test that cluster data has all required fields for ConstellationRenderer
     mockClusters.forEach(cluster => {
+
       expect(cluster).toHaveProperty('gh6');
       expect(cluster).toHaveProperty('centroid');
       expect(cluster).toHaveProperty('total');
@@ -210,5 +214,6 @@ describe('useConstellationClusters integration', () => {
     expect(result.current.clusters).toHaveLength(0);
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBe('Database connection failed');
+
   });
 });
