@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',        // DOM globals for React tests
     setupFiles: ['./vitest.setup.ts'],
+    deps: {
+      inline: ['lodash-es'],   // 👈 add this line
+    },
     coverage: {
       provider: 'v8',            // ← built-in; no external package needed
       reportsDirectory: 'coverage'

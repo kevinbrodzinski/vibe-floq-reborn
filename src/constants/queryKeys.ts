@@ -3,4 +3,10 @@ export const QK = {
   VenueInsights: (ver = 'v1') => ['venue-insights', ver] as const,
   ProfileStats: (profileId: string, ver = 'v1') => ['profile-stats', profileId, ver] as const,
   AnnualRecap: (ver = 'v1') => ['annual-recap', ver] as const,
+  
+  // People Discovery Stack
+  VibeBreakdown: (me: string, other: string, ver = 'v1') => ['vibe-breakdown', me, other, ver] as const,
+  CommonVenues: (me: string, other: string, ver = 'v1') => ['common-venues', me, other, ver] as const,
+  PlanSuggestions: (me: string, other: string, limit: number, ver = 'v1') => ['plan-suggestions', me, other, limit, ver] as const,
+  CrossedPathsStats: (me: string, other: string, ver = 'v1') => ['crossed-paths-stats', me, other, ver] as const,
 } as const;

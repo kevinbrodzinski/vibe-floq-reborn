@@ -4963,6 +4963,48 @@ export type Database = {
           },
         ]
       }
+      friend_suggestions: {
+        Row: {
+          confidence_level: string
+          created_at: string
+          expires_at: string
+          id: string
+          responded_at: string | null
+          score: number
+          signals_summary: Json
+          status: string
+          suggested_profile_id: string
+          suggestion_reason: string
+          target_profile_id: string
+        }
+        Insert: {
+          confidence_level: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          score: number
+          signals_summary?: Json
+          status?: string
+          suggested_profile_id: string
+          suggestion_reason: string
+          target_profile_id: string
+        }
+        Update: {
+          confidence_level?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          score?: number
+          signals_summary?: Json
+          status?: string
+          suggested_profile_id?: string
+          suggestion_reason?: string
+          target_profile_id?: string
+        }
+        Relationships: []
+      }
       friend_trails: {
         Row: {
           lat: number
@@ -5019,6 +5061,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      friendship_analysis: {
+        Row: {
+          confidence_level: string
+          created_at: string
+          overall_score: number
+          relationship_type: string
+          signals_data: Json
+          updated_at: string
+          user_high: string
+          user_low: string
+        }
+        Insert: {
+          confidence_level: string
+          created_at?: string
+          overall_score: number
+          relationship_type: string
+          signals_data?: Json
+          updated_at?: string
+          user_high: string
+          user_low: string
+        }
+        Update: {
+          confidence_level?: string
+          created_at?: string
+          overall_score?: number
+          relationship_type?: string
+          signals_data?: Json
+          updated_at?: string
+          user_high?: string
+          user_low?: string
+        }
+        Relationships: []
       }
       friendships: {
         Row: {
@@ -12826,6 +12901,69 @@ export type Database = {
             }
         Returns: string
       }
+      analyze_co_location_events: {
+        Args:
+          | {
+              profile_a_id: string
+              profile_b_id: string
+              days_back?: number
+              min_overlap_minutes?: number
+            }
+          | {
+              profile_a_id: string
+              profile_b_id: string
+              time_window: string
+              radius_m?: number
+            }
+        Returns: {
+          venue_id: string
+          start_time: string
+          end_time: string
+          duration_minutes: number
+          distance_m: number
+        }[]
+      }
+      analyze_shared_floq_participation: {
+        Args:
+          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { profile_a_id: string; profile_b_id: string; time_window: string }
+        Returns: {
+          shared_floqs_count: number
+          total_overlap_score: number
+          most_recent_shared: string
+        }[]
+      }
+      analyze_shared_plan_participation: {
+        Args:
+          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { profile_a_id: string; profile_b_id: string; time_window: string }
+        Returns: {
+          plan_id: string
+          activity_type: string
+          created_at: string
+          plan_title: string
+          plan_status: string
+        }[]
+      }
+      analyze_time_sync_patterns: {
+        Args: { profile_a_id: string; profile_b_id: string; days_back?: number }
+        Returns: {
+          sync_score: number
+          peak_sync_hours: number[]
+          sync_consistency: number
+        }[]
+      }
+      analyze_venue_overlap_patterns: {
+        Args:
+          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { profile_a_id: string; profile_b_id: string; time_window: string }
+        Returns: {
+          venue_id: string
+          profile_a_visits: number
+          profile_b_visits: number
+          overlap_score: number
+        }[]
+      }
       are_friends: {
         Args: { user_a: string; user_b: string }
         Returns: boolean
@@ -13003,6 +13141,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_expired_friend_suggestions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_live_positions: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -13094,6 +13236,26 @@ export type Database = {
           p_invitees: string[]
           p_flock_type: string
         }
+        Returns: string
+      }
+      create_friend_suggestion: {
+        Args:
+          | {
+              p_target_profile_id: string
+              p_suggested_friend_id: string
+              p_score: number
+              p_confidence_level: string
+              p_suggestion_reason: string
+              p_signals_summary: Json
+            }
+          | {
+              p_target_profile_id: string
+              p_suggested_profile_id: string
+              p_score: number
+              p_confidence_level: string
+              p_suggestion_reason: string
+              p_signals_summary: Json
+            }
         Returns: string
       }
       create_group_plan_with_floq: {
@@ -13859,6 +14021,19 @@ export type Database = {
           friend_username: string
           friend_display_name: string
           friend_avatar_url: string
+        }[]
+      }
+      get_friend_suggestion_candidates: {
+        Args:
+          | { target_profile_id: string; limit_count?: number }
+          | {
+              target_profile_id: string
+              limit_count?: number
+              min_interactions?: number
+            }
+        Returns: {
+          profile_id: string
+          interaction_score: number
         }[]
       }
       get_friend_trail: {
@@ -16257,6 +16432,26 @@ export type Database = {
           _is_close?: boolean
         }
         Returns: Database["public"]["Enums"]["friend_state"]
+      }
+      upsert_friendship_analysis: {
+        Args:
+          | {
+              p_profile_a: string
+              p_profile_b: string
+              p_overall_score: number
+              p_confidence_level: string
+              p_signals_data: Json
+              p_relationship_type: string
+            }
+          | {
+              p_profile_a: string
+              p_profile_b: string
+              p_overall_score: number
+              p_confidence_level: string
+              p_signals_data: Json
+              p_relationship_type: string
+            }
+        Returns: string
       }
       upsert_live_position: {
         Args: {

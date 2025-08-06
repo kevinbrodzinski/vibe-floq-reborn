@@ -1,15 +1,17 @@
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { UserPlus, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Profile } from '@/types/profile';
 
-interface ActionBarNonFriendProps {
+export interface ActionBarNonFriendProps {
   profile: Profile;
+  requested?: boolean;
 }
 
-export const ActionBarNonFriend = ({ profile }: ActionBarNonFriendProps) => {
+export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonFriendProps) => {
   const [isAddingFriend, setIsAddingFriend] = useState(false);
   const { toast } = useToast();
 
@@ -56,12 +58,33 @@ export const ActionBarNonFriend = ({ profile }: ActionBarNonFriendProps) => {
     });
   };
 
+  if (requested) {
+    return (
+      <div className="flex gap-3">
+        <Badge 
+          variant="outline" 
+          className="flex-1 justify-center px-4 py-3 text-sm border-primary text-primary min-h-[44px] flex items-center"
+        >
+          Requested
+        </Badge>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleWave}
+          className="border border-white/20 text-white hover:bg-white/10 min-h-[44px] min-w-[44px] touch-manipulation"
+        >
+          <Zap className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-3">
       <Button
         onClick={handleAddFriend}
         disabled={isAddingFriend}
-        className="flex-1 bg-gradient-primary text-white font-medium border-0"
+        className="flex-1 bg-gradient-primary text-white font-medium border-0 min-h-[44px] touch-manipulation"
       >
         <UserPlus className="h-4 w-4 mr-2" />
         {isAddingFriend ? 'Sending...' : 'Add Friend'}
@@ -70,7 +93,7 @@ export const ActionBarNonFriend = ({ profile }: ActionBarNonFriendProps) => {
         variant="ghost"
         size="icon"
         onClick={handleWave}
-        className="border border-white/20 text-white hover:bg-white/10"
+        className="border border-white/20 text-white hover:bg-white/10 min-h-[44px] min-w-[44px] touch-manipulation"
       >
         <Zap className="h-4 w-4" />
       </Button>

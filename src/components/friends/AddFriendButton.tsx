@@ -6,7 +6,7 @@ type Status = 'none' | 'pending_out' | 'pending_in' | 'friends';
 
 interface AddFriendButtonProps {
   status: Status;
-  onAdd: () => void;
+  onAdd: (e?: React.MouseEvent) => void;
   isLoading?: boolean;
 }
 
@@ -30,7 +30,7 @@ export function AddFriendButton({ status, onAdd, isLoading }: AddFriendButtonPro
       variant="outline"
       onClick={onAdd}
       disabled={isLoading}
-      className="flex items-center gap-1"
+      className="flex items-center gap-1 min-h-[44px] px-3 touch-manipulation"
     >
       <UserPlus className="w-3 h-3" />
       Add

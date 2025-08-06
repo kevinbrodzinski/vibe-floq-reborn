@@ -5,6 +5,7 @@ import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass, Sparkles
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
@@ -36,6 +37,10 @@ import { QuickPingButton } from '@/components/profile/QuickPingButton';
 import { LocationSharingBadge } from '@/components/profile/LocationSharingBadge';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { useFloqUI } from '@/contexts/FloqUIContext';
+import { PeopleDiscoveryStack } from '@/components/profile/PeopleDiscoveryStack';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { ClientOnly } from '@/components/ui/client-only';
+import { useUserOnlineStatus } from '@/hooks/useUserOnlineStatus';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -47,6 +52,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const currentUserId = useCurrentUserId();
   const [dmOpen, setDmOpen] = useState(false);
   const { setShowCreateSheet } = useFloqUI();
+  const showDiscoveryStack = useFeatureFlag('PEOPLE_DISCOVERY_STACK_V2');
   
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
@@ -63,10 +69,14 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const { data: streak } = useUserStreak();
   const { data: achievements } = useUserAchievements(profileId);
   const { data: realStats, isLoading: statsLoading } = useRealProfileStats(profileId);
-  const { isFriend, rows: friendsData } = useUnifiedFriends();
+  const { isFriend, rows: friendsData, isPending, accept, block } = useUnifiedFriends();
 
   // Get real distance data for this friend
   const friendDistance = profileId ? getFriendDistance(profileId) : null;
+  
+  // Get online status for this user
+  const onlineStatus = useUserOnlineStatus(profileId);
+  const isOnline = onlineStatus?.isOnline ?? false;
 
   if (!profileId) {
     return (
@@ -103,10 +113,10 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const isMe = profile.id === currentUserId;
   const isCurrentlyFriend = profile.id ? isFriend(profile.id) : false;
   
-  // TODO: Get actual friendship data
-  const friendship = null; // Replace with actual friendship query
-  const pendingFromMe = false; // friendship?.state === 'pending' && friendship.requester === currentUserId
-  const pendingToMe = false; // friendship?.state === 'pending' && friendship.requester !== currentUserId
+  // Get actual friendship data from friendsData
+  const friendRow = friendsData?.find(f => f.id === profile.id);
+  const pendingFromMe = friendRow?.friend_state === 'pending' && friendRow.is_outgoing_request;
+  const pendingToMe = friendRow?.friend_state === 'pending' && friendRow.is_incoming_request;
 
   // Use real stats or fallback to defaults
   const stats = realStats || {
@@ -127,7 +137,6 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
     location: 'Blue Bottle Coffee',
   };
 
-  const isOnline = true; // TODO: Get actual presence data
 
   // Display name logic - display name first, then username
   const displayName = profile.display_name || profile.username || 'Unknown User';
@@ -151,11 +160,11 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(101,56,255,0.2),transparent)] rounded-3xl" />
           
           {/* Online pill in top right */}
-          {isOnline && (
-            <div className="absolute top-4 right-4">
-              <ChipOnline />
-            </div>
-          )}
+          <ChipOnline
+            isOnline={isOnline}
+            lastSeen={onlineStatus?.lastSeen}
+            className="absolute top-4 right-4"
+          />
           
           {/* Location sharing badge - top left */}
           <LocationSharingBadge
@@ -336,25 +345,31 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
         )}
 
         {/* Zone 3: CTA Bar (non-friend only) */}
-        {!isMe && !isCurrentlyFriend && !pendingFromMe && !pendingToMe && (
-          <ActionBarNonFriend profile={profile} />
-        )}
-
-        {/* Pending states */}
-        {!isMe && pendingFromMe && (
-          <GlassCard>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-yellow-300">Request sent</span>
-              {/* TODO: Add cancel button */}
-            </div>
-          </GlassCard>
+        {!isMe && !isCurrentlyFriend && !pendingToMe && (
+          <ActionBarNonFriend profile={profile} requested={pendingFromMe} />
         )}
 
         {!isMe && pendingToMe && (
           <GlassCard>
-            <div className="flex gap-3">
-              {/* TODO: Add Accept and Decline buttons */}
-              <span className="text-blue-300">Friend request received</span>
+            <div className="space-y-3">
+              <div className="text-center">
+                <span className="text-blue-300">Friend request received</span>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => accept(profile.id)}
+                  className="flex-1 bg-gradient-primary text-white font-medium border-0"
+                >
+                  Accept
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => block(profile.id)}
+                  className="flex-1"
+                >
+                  Decline
+                </Button>
+              </div>
             </div>
           </GlassCard>
         )}
@@ -432,6 +447,13 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
         {/* Zone 6: Mutual Context (friend only) */}
         {!isMe && isCurrentlyFriend && (
           <MutualContext friendId={profile.id} />
+        )}
+
+        {/* Zone 6.5: People Discovery Stack (non-friends only) */}
+        {!isMe && !isCurrentlyFriend && showDiscoveryStack && (
+          <ClientOnly>
+            <PeopleDiscoveryStack key={profile.id} targetId={profile.id} />
+          </ClientOnly>
         )}
 
         {/* Zone 7: Highlights (always visible) */}
