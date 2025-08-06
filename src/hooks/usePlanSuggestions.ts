@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useSession } from '@/hooks/useSession'
+import { QK } from '@/constants/queryKeys'
+import { simpleHash } from '@/lib/utils/hash'
 import type { PlanSuggestion } from '@/types/discovery'
 
 export function usePlanSuggestions(targetProfileId: string, options: { limit?: number } = {}) {
@@ -20,19 +22,22 @@ export function usePlanSuggestions(targetProfileId: string, options: { limit?: n
       { id: 'sug-6', title: 'Visit a gallery opening', vibe: 'cultural', venue_type: 'gallery', estimated_duration: '90 minutes' },
     ]
     
-    // Use targetProfileId to determine which suggestions to show
-    const seed = targetProfileId.charCodeAt(0) % suggestions.length
-    return suggestions.slice(seed % 3, seed % 3 + limit)
-  }, [targetProfileId, limit])
+    // Use better hash to determine which suggestions to show
+    const hash = simpleHash(targetProfileId + (currentUserId || '') + limit.toString())
+    const start = hash % Math.max(1, suggestions.length - limit)
+    
+    return suggestions.slice(start, start + limit)
+  }, [targetProfileId, currentUserId, limit])
   
   return useQuery({
     enabled: !!currentUserId && !!targetProfileId,
-    queryKey: ['plan-suggestions', currentUserId, targetProfileId, limit],
-    queryFn: async (): Promise<PlanSuggestion[]> => {
+    queryKey: QK.PlanSuggestions(currentUserId!, targetProfileId, limit),
+    queryFn: (): Promise<PlanSuggestion[]> => {
       // For now, return mock data since the RPC functions need the venue_visits table schema fixed
       // TODO: Replace with actual RPC call once database migration is complete
-      return mockData
+      return Promise.resolve(mockData)
     },
     staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 }

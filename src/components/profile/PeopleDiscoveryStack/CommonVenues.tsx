@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonRows } from '@/components/ui/skeleton-rows';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useCommonVenues } from '@/hooks/useCommonVenues';
@@ -39,16 +40,7 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
           <div className="w-16 h-6 bg-muted/30 rounded animate-pulse" />
         </div>
         <div className="space-y-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-2">
-              <div className="w-1 h-8 bg-muted/30 rounded" />
-              <div className="flex-1">
-                <div className="w-32 h-3 bg-muted/30 rounded mb-1" />
-                <div className="w-16 h-2 bg-muted/20 rounded" />
-              </div>
-              <div className="w-12 h-5 bg-muted/30 rounded" />
-            </div>
-          ))}
+          <SkeletonRows rows={venues?.length || 3} className="h-8" />
         </div>
       </Card>
     );
@@ -95,9 +87,10 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
       <motion.div
         className={cn(
           "relative flex items-center gap-3 p-2 rounded-lg transition-all duration-200",
-          "hover:bg-surface/20 cursor-pointer overflow-hidden",
+          "hover:bg-surface/20 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           isPressed && "translate-x-8"
         )}
+        style={{ touchAction: 'manipulation' }}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ 
@@ -109,8 +102,22 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
         onTouchStart={() => setIsPressed(false)}
         onPointerLeave={() => setIsPressed(false)}
         role="button"
+        tabIndex={0}
         aria-pressed={isSaved}
         aria-label={`${venue.name} - ${isSaved ? 'Remove from' : 'Add to'} saved venues`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            // Trigger the long press action directly
+            setSavedVenues(prev => {
+              if (prev.includes(venue.venue_id)) {
+                return prev.filter(id => id !== venue.venue_id);
+              } else {
+                return [...prev, venue.venue_id];
+              }
+            });
+          }
+        }}
       >
         {/* Category gradient bar */}
         <div 
@@ -138,6 +145,9 @@ export const CommonVenues: React.FC<CommonVenuesProps> = ({
             )}
             aria-hidden="true"
           />
+          <span className="sr-only">
+            {isSaved ? 'Remove from saved venues' : 'Add to saved venues'}
+          </span>
         </motion.div>
 
         <div className="flex-1 min-w-0 pl-3">

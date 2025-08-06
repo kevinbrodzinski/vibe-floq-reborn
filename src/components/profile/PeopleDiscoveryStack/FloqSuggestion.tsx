@@ -4,6 +4,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonRows } from '@/components/ui/skeleton-rows';
 import { cn } from '@/lib/utils';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { usePlanSuggestions } from '@/hooks/usePlanSuggestions';
@@ -31,16 +32,7 @@ export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({
           <div className="w-16 h-6 bg-muted/30 rounded animate-pulse" />
         </div>
         <div className="relative h-[120px]">
-          {[...Array(3)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute inset-0 bg-muted/20 rounded-lg animate-pulse"
-              style={{ 
-                zIndex: 3 - i,
-                transform: `translateY(${i * 4}px) scale(${1 - i * 0.02})`
-              }}
-            />
-          ))}
+          <SkeletonRows rows={3} className="absolute inset-0 bg-muted/20 rounded-lg" />
         </div>
       </Card>
     );
