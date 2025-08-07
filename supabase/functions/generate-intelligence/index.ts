@@ -10,6 +10,17 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Helper functions for consistent responses
+const ok = (data: any) => new Response(JSON.stringify(data), { 
+  status: 200, 
+  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+});
+
+const fail = (code: number, msg: string) => new Response(JSON.stringify({ error: msg }), { 
+  status: code, 
+  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+});
+
 const InputSchema = {
   safeParse: (data: any) => {
     const validModes = ['afterglow', 'daily', 'floq-match', 'plan', 'weekly', 'shared-activity-suggestions'];
@@ -52,13 +63,7 @@ serve(async (req) => {
     const input = InputSchema.safeParse(body);
 
     if (!input.success) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid payload', 
-        details: input.error.format() 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return fail(400, `Invalid mode. Expected one of: afterglow, daily, weekly, plan, floq-match, shared-activity-suggestions`);
     }
 
     const { mode, user_id, plan_id, floq_id, date, afterglow_id, prompt, temperature, max_tokens } = input.data;
@@ -67,11 +72,11 @@ serve(async (req) => {
       case 'afterglow': {
         // Generate afterglow summary logic
         if (!openAIApiKey) {
-          throw new Error('OpenAI API key not configured');
+          return fail(500, 'OpenAI API key not configured');
         }
 
         if (!afterglow_id) {
-          throw new Error('Afterglow ID is required');
+          return fail(400, 'Afterglow ID is required for afterglow mode');
         }
 
         // Fetch afterglow data with moments
@@ -91,16 +96,14 @@ serve(async (req) => {
           .single();
 
         if (fetchError || !afterglow) {
-          throw new Error('Failed to fetch afterglow data');
+          return fail(500, 'Failed to fetch afterglow data');
         }
 
         // Check if summary already exists
         if (afterglow.ai_summary) {
-          return new Response(JSON.stringify({ 
+          return ok({ 
             ai_summary: afterglow.ai_summary,
             cached: true 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
@@ -186,30 +189,22 @@ Write a compelling one-sentence summary that captures the essence of this day in
           ai_summary: generatedSummary
         });
 
-        return new Response(JSON.stringify({ 
+        return ok({ 
           ai_summary: generatedSummary,
           cached: false 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
       case 'plan': {
         // Generate plan summary logic
         if (!plan_id) {
-          return new Response(JSON.stringify({ error: 'Missing plan_id' }), { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          });
+          return fail(400, 'Missing plan_id parameter for plan mode');
         }
 
         const planMode = body.plan_mode || 'finalized';
 
         if (!['finalized', 'afterglow'].includes(planMode)) {
-          return new Response(JSON.stringify({ error: 'Invalid mode. Must be "finalized" or "afterglow"' }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return fail(400, 'Invalid plan_mode. Must be "finalized" or "afterglow"');
         }
 
         // Fetch plan with stops and participants
@@ -469,7 +464,7 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
       case 'shared-activity-suggestions': {
         // Generate shared activity suggestions
         if (!openAIApiKey) {
-          throw new Error('OpenAI API key not configured');
+          return fail(500, 'OpenAI API key not configured');
         }
 
         // Use the destructured values from input.data with defaults
@@ -478,10 +473,7 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
         const maxTokensValue = max_tokens || 400;
         
         if (!promptValue) {
-          return new Response(JSON.stringify({ error: 'Missing prompt' }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return fail(400, 'Missing prompt parameter for shared-activity-suggestions mode');
         }
 
         // Call OpenAI API with timeout
@@ -516,52 +508,39 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
 
           if (!response.ok) {
             const errTxt = await response.text();
-            throw new Error(`OpenAI: ${response.status} ${errTxt}`);
+            return fail(500, `OpenAI API error: ${response.status} ${errTxt}`);
           }
 
           const data = await response.json();
           const choice = data.choices?.[0]?.message?.content?.trim();
           
           if (!choice) {
-            throw new Error('OpenAI returned no content');
+            return fail(500, 'OpenAI returned no content');
           }
           
-          // Try to parse the JSON to validate it, then return the raw string
+          // Try to parse the JSON to validate it, then return the parsed result
           try {
-            JSON.parse(choice); // Validate it's valid JSON
-            return new Response(choice, {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+            const parsed = JSON.parse(choice); // Validate and parse JSON
+            return ok(parsed); // Return the parsed JSON object
           } catch (parseError) {
-            // If it's not valid JSON, return it as a string for the client to handle
-            return new Response(JSON.stringify(choice), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+            // If it's not valid JSON, return an error
+                         return fail(500, `OpenAI returned invalid JSON: ${choice.substring(0, 100)}...`);
           }
         } catch (fetchError) {
           clearTimeout(timeoutId);
           if (fetchError.name === 'AbortError') {
-            return new Response(JSON.stringify({ error: 'Request timeout - please try again' }), {
-              status: 408,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+            return fail(408, 'Request timeout - please try again');
           }
-          throw fetchError;
+          return fail(500, `OpenAI request failed: ${fetchError.message}`);
         }
       }
 
       default:
-        return new Response(JSON.stringify({ error: 'Unhandled mode' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return fail(400, `Unhandled mode: ${mode}`);
     }
 
   } catch (error) {
     console.error('Error in generate-intelligence function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return fail(500, error.message || 'Internal server error');
   }
 });

@@ -10,13 +10,13 @@ export const getSharedActivitySuggestions = async (
 ): Promise<ActivitySuggestion[]> => {
   try {
     const prompt = buildSharedActivitySuggestionsPrompt(ctx);
-    const raw = await callGenerateIntelligence(
+    const response = await callGenerateIntelligence(
       'shared-activity-suggestions',
       { prompt, temperature: 0.7, max_tokens: 400 }
     );
     
-    // Parse the response - it should be a JSON array
-    const suggestions = JSON.parse(raw) as ActivitySuggestion[];
+    // Response is already parsed by supabase.functions.invoke()
+    const suggestions = response as ActivitySuggestion[];
     return Array.isArray(suggestions) ? suggestions : [];
   } catch (error) {
     console.error('Failed to generate shared activity suggestions:', error);
