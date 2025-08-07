@@ -1,7 +1,7 @@
 'use client';
 import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -107,7 +107,9 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-4xl">
-          <DialogHeader>Share your Afterglow</DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Share your Afterglow</DialogTitle>
+          </DialogHeader>
 
           <div className="space-y-6">
             {/* Share Link Section */}
@@ -197,7 +199,9 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
       {/* QR Code Dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
         <DialogContent className="flex flex-col items-center gap-4 max-w-sm">
-          <DialogHeader>Share via QR Code</DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Share via QR Code</DialogTitle>
+          </DialogHeader>
           {shareLink ? (
             <>
               <a 
