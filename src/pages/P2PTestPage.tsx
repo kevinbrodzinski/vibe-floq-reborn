@@ -31,10 +31,15 @@ const MOCK_THREAD_ID = 'a1b2c3d4-e5f6-7890-1234-567890abcdef';
 const MOCK_USER_ID = 'f1e2d3c4-b5a6-9870-5432-109876fedcba';
 const MOCK_CURRENT_USER_ID = 'c1d2e3f4-a5b6-7890-3456-789012345678';
 
+// Fixed message IDs for consistent reactions
+const MOCK_MESSAGE_1_ID = 'msg-a1b2c3d4-e5f6-7890-1234-567890abcde1';
+const MOCK_MESSAGE_2_ID = 'msg-a1b2c3d4-e5f6-7890-1234-567890abcde2';
+const MOCK_MESSAGE_3_ID = 'msg-a1b2c3d4-e5f6-7890-1234-567890abcde3';
+
 // Mock data for testing with proper UUIDs
 const MOCK_MESSAGES = [
   {
-    id: 'msg-' + crypto.randomUUID(),
+    id: MOCK_MESSAGE_1_ID,
     content: 'Hey! How are you doing?',
     profile_id: MOCK_USER_ID,
     created_at: new Date(Date.now() - 300000).toISOString(),
@@ -62,7 +67,7 @@ const MOCK_MESSAGES = [
     status: 'delivered' as const
   },
   {
-    id: 'msg-' + crypto.randomUUID(),
+    id: MOCK_MESSAGE_2_ID,
     content: 'That sounds exciting! What kind of features?',
     profile_id: MOCK_USER_ID,
     created_at: new Date(Date.now() - 180000).toISOString(),
@@ -76,7 +81,7 @@ const MOCK_MESSAGES = [
     status: 'read' as const
   },
   {
-    id: 'msg-' + crypto.randomUUID(),
+    id: MOCK_MESSAGE_3_ID,
     content: 'Real-time messaging improvements, friend system enhancements, and better performance monitoring!',
     profile_id: MOCK_CURRENT_USER_ID,
     created_at: new Date(Date.now() - 120000).toISOString(),
@@ -228,9 +233,9 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
 
 // Mock data for test mode
 const MOCK_REACTIONS = [
-  { id: '1', message_id: MOCK_MESSAGES[0].id, profile_id: MOCK_CURRENT_USER_ID, emoji: '👍', reacted_at: new Date().toISOString() },
-  { id: '2', message_id: MOCK_MESSAGES[0].id, profile_id: MOCK_USER_ID, emoji: '❤️', reacted_at: new Date().toISOString() },
-  { id: '3', message_id: MOCK_MESSAGES[1].id, profile_id: MOCK_CURRENT_USER_ID, emoji: '😂', reacted_at: new Date().toISOString() },
+  { id: '1', message_id: MOCK_MESSAGE_1_ID, profile_id: MOCK_CURRENT_USER_ID, emoji: '👍', reacted_at: new Date().toISOString() },
+  { id: '2', message_id: MOCK_MESSAGE_1_ID, profile_id: MOCK_USER_ID, emoji: '❤️', reacted_at: new Date().toISOString() },
+  { id: '3', message_id: MOCK_MESSAGE_2_ID, profile_id: MOCK_CURRENT_USER_ID, emoji: '😂', reacted_at: new Date().toISOString() },
 ];
 
 const MOCK_THREADS = [
@@ -248,9 +253,9 @@ const MOCK_THREADS = [
       avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     },
     lastMessage: {
-      content: MOCK_MESSAGES[MOCK_MESSAGES.length - 1].content,
-      created_at: MOCK_MESSAGES[MOCK_MESSAGES.length - 1].created_at,
-      isFromMe: MOCK_MESSAGES[MOCK_MESSAGES.length - 1].profile_id === MOCK_CURRENT_USER_ID,
+      content: 'Real-time messaging improvements, friend system enhancements, and better performance monitoring!',
+      created_at: new Date(Date.now() - 120000).toISOString(),
+      isFromMe: true,
     },
     unreadCount: 2,
     lastMessageAt: new Date().toISOString(),
@@ -307,6 +312,12 @@ function useTestModeHooks() {
   const [mockSending, setMockSending] = useState(false);
 
   const toggleReaction = async (messageId: string, emoji: string) => {
+    // Validate inputs
+    if (!messageId || !emoji) {
+      console.warn('Invalid messageId or emoji for reaction toggle');
+      return;
+    }
+    
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
     
@@ -899,7 +910,7 @@ export default function P2PTestPage() {
                           key={emoji}
                           variant="outline"
                           size="sm"
-                          onClick={() => handleToggleReaction(MOCK_MESSAGES[0].id, emoji)}
+                          onClick={() => handleToggleReaction(MOCK_MESSAGE_1_ID, emoji)}
                           className="text-lg p-2"
                         >
                           {emoji}
@@ -1060,7 +1071,7 @@ export default function P2PTestPage() {
                       <div className="space-y-1 max-h-32 overflow-y-auto">
                         {reactions.slice(0, 5).map((reaction) => (
                           <div key={reaction.id} className="text-xs text-muted-foreground">
-                            {reaction.emoji} on message {reaction.message_id.slice(0, 8)}...
+                            {reaction.emoji} on message {reaction.message_id?.slice?.(0, 8) || 'unknown'}...
                           </div>
                         ))}
                       </div>
