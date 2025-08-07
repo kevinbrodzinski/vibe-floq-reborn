@@ -61,7 +61,7 @@ serve(async (req) => {
       });
     }
 
-    const { mode, user_id, plan_id, floq_id, date, afterglow_id } = input.data;
+    const { mode, user_id, plan_id, floq_id, date, afterglow_id, prompt, temperature, max_tokens } = input.data;
 
     switch (mode) {
       case 'afterglow': {
@@ -467,14 +467,27 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
       }
 
       case 'shared-activity-suggestions': {
+        console.log('[Edge Function] Processing shared-activity-suggestions request');
+        console.log('[Edge Function] Input data:', JSON.stringify(input.data, null, 2));
+        
         // Generate shared activity suggestions
         if (!openAIApiKey) {
+          console.error('[Edge Function] OpenAI API key not configured');
           throw new Error('OpenAI API key not configured');
         }
 
-        const { prompt, temperature = 0.7, max_tokens = 400 } = input.data;
+        // Use the destructured values from input.data with defaults
+        const promptValue = prompt;
+        const temperatureValue = temperature || 0.7;
+        const maxTokensValue = max_tokens || 400;
         
-        if (!prompt) {
+        console.log('[Edge Function] Extracted values:', {
+          promptLength: promptValue?.length || 0,
+          temperature: temperatureValue,
+          maxTokens: maxTokensValue
+        });
+        
+        if (!promptValue) {
           return new Response(JSON.stringify({ error: 'Missing prompt' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -502,10 +515,10 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
                   role: 'system', 
                   content: 'You are Floq\'s social-match engine. Generate activity suggestions as valid JSON arrays only. No markdown, no explanations, just pure JSON.' 
                 },
-                { role: 'user', content: prompt }
+                { role: 'user', content: promptValue }
               ],
-              temperature,
-              max_tokens,
+              temperature: temperatureValue,
+              max_tokens: maxTokensValue,
             }),
           });
 
@@ -513,20 +526,39 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
 
           if (!response.ok) {
             const errTxt = await response.text();
+            console.error('[Edge Function] OpenAI API error:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: errTxt
+            });
             throw new Error(`OpenAI: ${response.status} ${errTxt}`);
           }
 
           const data = await response.json();
           const choice = data.choices?.[0]?.message?.content?.trim();
           
+          console.log('[Edge Function] OpenAI response data:', {
+            choices: data.choices?.length || 0,
+            choice: choice?.substring(0, 100) + '...' || 'null'
+          });
+          
           if (!choice) {
+            console.error('[Edge Function] OpenAI returned no content');
             throw new Error('OpenAI returned no content');
           }
           
-          // Return the raw JSON string - the client will parse it
-          return new Response(JSON.stringify(choice), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          // Try to parse the JSON to validate it, then return the raw string
+          try {
+            JSON.parse(choice); // Validate it's valid JSON
+            return new Response(choice, {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          } catch (parseError) {
+            // If it's not valid JSON, return it as a string for the client to handle
+            return new Response(JSON.stringify(choice), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
         } catch (fetchError) {
           clearTimeout(timeoutId);
           if (fetchError.name === 'AbortError') {
