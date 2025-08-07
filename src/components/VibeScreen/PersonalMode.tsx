@@ -4,6 +4,9 @@ import { motion } from 'framer-motion';
 import { PersonalHero } from './PersonalHero';
 import { EnhancedPersonalHero } from './EnhancedPersonalHero';
 import { TimelineCarousel } from './TimelineCarousel';
+import { VibeFlowChart } from './enhanced-visualizations/VibeFlowChart';
+import { VibePersonalityRadar } from './enhanced-visualizations/VibePersonalityRadar';
+import { VibeMetricsDashboard } from './enhanced-visualizations/VibeMetricsDashboard';
 import { StreakCard } from './StreakCard';
 import { VibeWheel } from '@/components/vibe/VibeWheel';
 import { DynamicVibeToggle } from '@/components/ui/DynamicVibeToggle';
@@ -13,7 +16,8 @@ import { LearningPatterns } from '@/components/ui/LearningPatterns';
 import { VisibilityButton } from '@/components/vibe/VisibilityButton';
 import { SystemHealthMonitor } from '@/components/ui/SystemHealthMonitor';
 import { Button } from '@/components/ui/button';
-import { Zap, ZapOff, Activity } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Zap, ZapOff, Activity, BarChart3, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { useVibe } from '@/lib/store/useVibe';
 import { useVibeDetection } from '@/store/useVibeDetection';
 import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
@@ -48,6 +52,8 @@ export const PersonalMode: React.FC = () => {
   const [showSystemHealth, setShowSystemHealth] = useState(false);
   const [isEnhancedMode, setIsEnhancedMode] = useState(true);
   const [isTogglingMode, setIsTogglingMode] = useState(false);
+  const [showAdvancedVisuals, setShowAdvancedVisuals] = useState(true);
+  const [visualsMode, setVisualsMode] = useState<'basic' | 'flow' | 'analytics' | 'personality'>('analytics');
 
   // Update hero data when sensor data or location changes
   useEffect(() => {
@@ -189,6 +195,18 @@ export const PersonalMode: React.FC = () => {
                 <Activity className="w-3 h-3" />
               </Button>
             )}
+            
+            {/* Enhanced Visuals Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedVisuals(!showAdvancedVisuals)}
+              className={`p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs ${
+                showAdvancedVisuals ? "text-blue-500 border-blue-500/30 bg-blue-500/10" : "text-muted-foreground"
+              }`}
+            >
+              {showAdvancedVisuals ? <BarChart3 className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+            </Button>
           </div>
         </div>
 
@@ -249,6 +267,76 @@ export const PersonalMode: React.FC = () => {
 
         {/* Timeline Carousel */}
         <TimelineCarousel onVibeSelect={handleVibeSelect} />
+
+        {/* Enhanced Visualizations Section */}
+        {showAdvancedVisuals && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-2 mb-4 space-y-4"
+          >
+            {/* Visualization Mode Selector */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex bg-muted/50 rounded-lg p-1">
+                {[
+                  { key: 'basic', label: 'Basic', icon: Activity },
+                  { key: 'flow', label: 'Flow', icon: TrendingUp },
+                  { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+                  { key: 'personality', label: 'Personality', icon: Zap }
+                ].map(({ key, label, icon: Icon }) => (
+                  <Button
+                    key={key}
+                    variant={visualsMode === key ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setVisualsMode(key as any)}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Icon className="w-3 h-3 mr-1" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                High-end visuals
+              </Badge>
+            </div>
+
+            {/* Enhanced Visualization Content */}
+            <motion.div
+              key={visualsMode}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {visualsMode === 'basic' && (
+                <TimelineCarousel onVibeSelect={handleVibeSelect} />
+              )}
+              
+              {visualsMode === 'flow' && (
+                <VibeFlowChart
+                  timeRange="24h"
+                  onVibeSelect={handleVibeSelect}
+                  showPredictions={isEnhancedMode}
+                />
+              )}
+              
+              {visualsMode === 'analytics' && (
+                <VibeMetricsDashboard
+                  realTimeMode={autoMode}
+                />
+              )}
+              
+              {visualsMode === 'personality' && (
+                <VibePersonalityRadar
+                  showComparison={true}
+                  timeframe="month"
+                />
+              )}
+            </motion.div>
+          </motion.div>
+        )}
 
         {/* Dynamic Vibe Toggle */}
         <div className="px-2 mb-2 flex justify-center">
