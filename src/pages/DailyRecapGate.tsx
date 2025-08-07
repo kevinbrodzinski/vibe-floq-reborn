@@ -14,7 +14,7 @@ export default function DailyRecapGate() {
   const { data, isLoading, error } = useTodayRecap()
   const enhancedData = null; // Stub until analytics restored
   const enhancedLoading = false;
-  const [showEnhanced, setShowEnhanced] = useState(true)
+  const [showEnhanced, setShowEnhanced] = useState(false) // Default to false since enhancedData is null
   const navigate = useNavigate()
 
   // Debug logging
@@ -93,8 +93,13 @@ export default function DailyRecapGate() {
         {/* Recap Card */}
         {showEnhanced && enhancedData ? (
           <EnhancedDailyRecapCard data={enhancedData} />
+        ) : data ? (
+          <DailyRecapCard data={data} />
         ) : (
-          <DailyRecapCard data={data!} />
+          <div className="text-center text-white">
+            <p>No recap data available</p>
+            <Button onClick={handleSkip} className="mt-4">Continue to App</Button>
+          </div>
         )}
 
         <div className="flex flex-col gap-3">
