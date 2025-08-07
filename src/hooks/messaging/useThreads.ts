@@ -294,6 +294,11 @@ export function useThreads() {
           console.warn('[useThreads] Search function not found - P2P migrations may not be applied yet');
           return [];
         }
+        // Handle function signature mismatch (type issues)
+        if (error.code === '42804' || error.message?.includes('structure of query does not match function result type')) {
+          console.warn('[useThreads] Function signature mismatch - please apply the latest migration to fix data types');
+          return [];
+        }
         throw error;
       }
       
