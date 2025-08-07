@@ -34,9 +34,10 @@ export const useVibe = create<VibeState>()(
           return;
         }
         
+        // Update UI immediately for better UX
         set({ currentVibe: vibe, isUpdating: true });
         
-        // Update in database
+        // Update in database (but don't block UI if it fails)
         try {
           const { data, error } = await supabase.rpc('set_user_vibe', {
             new_vibe: vibe
@@ -51,11 +52,17 @@ export const useVibe = create<VibeState>()(
               hint: error.hint,
               vibe: vibe
             });
+            
+            // If it's the user_id error, show a helpful message
+            if (error.code === '42703' && error.message.includes('user_id')) {
+              console.warn('Database function needs to be updated to use profile_id. Vibe updated in UI only.');
+            }
           } else {
-            console.log('Vibe updated successfully:', data);
+            console.log('Vibe updated successfully in database:', data);
           }
         } catch (error) {
           console.error('Error calling set_user_vibe:', error);
+          console.warn('Database update failed, but vibe updated in UI');
         } finally {
           set({ isUpdating: false });
         }
