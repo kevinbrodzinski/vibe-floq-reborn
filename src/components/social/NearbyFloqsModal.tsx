@@ -1,6 +1,6 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -158,6 +158,9 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
           <DialogContent className="flex flex-col max-w-2xl max-h-[80vh]">
             <DialogHeader>
               <DialogTitle>Nearby Floqs</DialogTitle>
+              <DialogDescription>
+                Discover and join exciting floqs happening near you
+              </DialogDescription>
             </DialogHeader>
             <ModalContent />
           </DialogContent>
@@ -170,6 +173,9 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
           <SheetContent side="bottom" className="flex flex-col h-[85vh] px-3 sm:px-6">
             <SheetHeader>
               <SheetTitle>Nearby Floqs</SheetTitle>
+              <SheetDescription>
+                Discover and join exciting floqs happening near you
+              </SheetDescription>
             </SheetHeader>
             <ModalContent />
           </SheetContent>
