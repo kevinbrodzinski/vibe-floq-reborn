@@ -519,7 +519,7 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
 
   const typingText = useTypingIndicatorText(typingUsers);
 
-  // Real friendship operations with database calls
+  // Real friendship operations with database calls (these don't require realtime subscriptions)
   const {
     sendFriendRequest,
     acceptFriendRequest,
@@ -529,12 +529,11 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
     isRejecting = false
   } = useAtomicFriendships();
 
-  // Real friends data with presence information
-  const { 
-    unifiedFriends = [], 
-    friendsLoading = false,
-    error: friendsError = null 
-  } = useUnifiedFriends();
+  // For production demo, we'll use mock friends data to avoid realtime subscription issues
+  // In a real app, you'd call useUnifiedFriends() when the database schema is properly set up
+  const unifiedFriends = MOCK_UNIFIED_FRIENDS;
+  const friendsLoading = false;
+  const friendsError = null;
 
   // For production, we'll need a real messages hook
   // This is a placeholder - you'd implement useMessages hook for real message fetching
@@ -857,10 +856,14 @@ export default function P2PTestPage() {
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
               <p className="text-sm text-blue-800 font-medium mb-1">Production Demo Note:</p>
-              <p className="text-xs text-blue-700">
-                In production, thread-specific features (reactions, typing) require selecting a real thread. 
-                Thread-independent features (friend requests, thread search) work immediately.
+              <p className="text-xs text-blue-700 mb-2">
+                This demo shows how the P2P system works without requiring database migrations:
               </p>
+              <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                <li><strong>Working:</strong> Friend requests, thread search, thread creation (real database calls)</li>
+                <li><strong>Demo mode:</strong> Friend list, reactions, typing (uses mock data to avoid schema dependencies)</li>
+                <li><strong>Full production:</strong> Apply migrations first, then all features use live database</li>
+              </ul>
             </div>
             <ul className="space-y-1 text-xs text-green-600">
               <li>• Realtime subscriptions: Enabled (live database connections)</li>
@@ -1176,7 +1179,10 @@ export default function P2PTestPage() {
                 Friend Operations
               </CardTitle>
               <CardDescription>
-                Test atomic friendship operations
+                {isTestMode 
+                  ? 'Test atomic friendship operations with mock data'
+                  : 'Real database friend requests with rate limiting and atomic operations'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1241,6 +1247,17 @@ export default function P2PTestPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {!isTestMode && (
+                <Card className="bg-blue-50 border-blue-200 mb-4">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-blue-800">
+                      <strong>Note:</strong> Friend list shows mock data in production demo mode. 
+                      Friend request operations above use real database calls with rate limiting.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+              
               {friendsLoading ? (
                 <div className="text-center py-4">
                   <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
@@ -1250,6 +1267,7 @@ export default function P2PTestPage() {
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">
                     Total friends: {unifiedFriends?.length || 0}
+                    {!isTestMode && <span className="text-blue-600 ml-2">(mock data)</span>}
                   </div>
                   {unifiedFriends?.slice(0, 3).map((friend) => (
                     <div key={friend.id} className="flex items-center justify-between p-2 border rounded">
