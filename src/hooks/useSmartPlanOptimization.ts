@@ -42,7 +42,7 @@ export const useSmartPlanOptimization = () => {
         body: { 
           plan_id: planId,
           mode: 'optimization',
-          user_id: user.id
+          profile_id: user.id
         }
       });
 
