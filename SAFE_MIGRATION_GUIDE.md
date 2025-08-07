@@ -54,7 +54,7 @@ After Step 2 completes successfully, apply the enhanced functions:
 
 ```sql
 -- In Supabase SQL Editor, run:
-\i supabase/migrations/20250106000003_safe_p2p_enhancements_step2.sql
+\i supabase/migrations/20250106000004_safe_p2p_enhancements_step2_fixed.sql
 ```
 
 **What this does:**
