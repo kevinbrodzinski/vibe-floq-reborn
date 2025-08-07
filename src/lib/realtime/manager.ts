@@ -37,7 +37,8 @@ class RealtimeManager {
 
   constructor() {
     this.startHealthMonitoring();
-    this.setupGlobalErrorHandling();
+    // Note: Global error handling moved to individual channel subscriptions
+    // as Supabase doesn't provide global realtime connection events
   }
 
   /**
@@ -92,6 +93,9 @@ class RealtimeManager {
         .on('system', { event: 'PRESENCE_DIFF' }, (payload) => {
           console.log(`[RealtimeManager] Presence diff for ${key}:`, payload);
         });
+
+      // Add enhanced channel event handling
+      this.handleChannelEvents(configuredChannel, channelName);
 
       // Subscribe with promise handling
       const subscriptionPromise = new Promise<void>((resolve, reject) => {
@@ -246,26 +250,24 @@ class RealtimeManager {
   }
 
   /**
-   * Setup global error handling for realtime connections
+   * Enhanced channel subscription with proper error handling
+   * Note: Supabase handles connection events at the channel level, not globally
    */
-  private setupGlobalErrorHandling() {
-    // Listen for Supabase connection events
-    supabase.realtime.onOpen(() => {
-      console.log('[RealtimeManager] Realtime connection opened');
-    });
-
-    supabase.realtime.onClose(() => {
-      console.log('[RealtimeManager] Realtime connection closed');
-      // Mark all subscriptions as potentially unhealthy
-      for (const subscription of this.subscriptions.values()) {
-        subscription.isHealthy = false;
+  private handleChannelEvents(channel: any, channelName: string) {
+    // Handle channel-specific events (this is the proper way with Supabase)
+    channel.on('system', { event: '*' }, (payload: any) => {
+      console.log(`[RealtimeManager] Channel ${channelName} system event:`, payload);
+      
+      if (payload.type === 'connected') {
+        console.log(`[RealtimeManager] Channel ${channelName} connected`);
+      } else if (payload.type === 'disconnected') {
+        console.log(`[RealtimeManager] Channel ${channelName} disconnected`);
+        // Mark subscription as potentially unhealthy
+        const subscription = this.subscriptions.get(channelName);
+        if (subscription) {
+          subscription.isHealthy = false;
+        }
       }
-    });
-
-    supabase.realtime.onError((error) => {
-      console.error('[RealtimeManager] Realtime connection error:', error);
-      this.connectionStats.totalReconnects++;
-      this.connectionStats.lastReconnectAt = new Date();
     });
   }
 
