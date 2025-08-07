@@ -8,7 +8,7 @@ import { VibeFlowChart } from './enhanced-visualizations/VibeFlowChart';
 import { VibePersonalityRadar } from './enhanced-visualizations/VibePersonalityRadar';
 import { VibeMetricsDashboard } from './enhanced-visualizations/VibeMetricsDashboard';
 import { PersistentVibeDistribution } from './PersistentVibeDistribution';
-import { StreakCard } from './StreakCard';
+import { EnhancedProgressInsights } from './EnhancedProgressInsights';
 import { VibeWheel } from '@/components/vibe/VibeWheel';
 import { DynamicVibeToggle } from '@/components/ui/DynamicVibeToggle';
 import { FeedbackButtons } from '@/components/ui/FeedbackButtons';
@@ -442,7 +442,7 @@ export const PersonalMode: React.FC = () => {
         )}
 
         {/* Streak & Achievements Card */}
-        <StreakCard />
+        <EnhancedProgressInsights />
       </ScrollView>
       
     </div>
