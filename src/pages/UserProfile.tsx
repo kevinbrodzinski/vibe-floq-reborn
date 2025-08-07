@@ -71,7 +71,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const { data: streak } = useUserStreak();
   const { data: achievements } = useUserAchievements(profileId);
   const { data: realStats, isLoading: statsLoading } = useRealProfileStats(profileId);
-  const { isFriend, rows: friendsData, isPending, accept, block } = useUnifiedFriends();
+  const { isFriend, rows: friendsData, isPending: _friendsLoading, accept, block } = useUnifiedFriends();
 
   // Get real distance data for this friend
   const friendDistance = profileId ? getFriendDistance(profileId) : null;
