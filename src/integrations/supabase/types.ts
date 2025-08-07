@@ -11563,13 +11563,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -11579,8 +11572,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -11593,8 +11586,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -11607,7 +11600,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -11620,13 +11613,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -11642,6 +11642,26 @@ export type Database = {
           username: string | null
         }
         Relationships: []
+      }
+      v_dm_message_reactions_summary: {
+        Row: {
+          emoji: string | null
+          first_reaction_at: string | null
+          latest_reaction_at: string | null
+          message_id: string | null
+          reaction_count: number | null
+          reactor_details: Json[] | null
+          reactor_profile_ids: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_encounter_heat: {
         Row: {
@@ -12385,13 +12405,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -12401,8 +12414,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -12415,8 +12428,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -12429,7 +12442,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12442,13 +12455,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: true
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -12784,7 +12804,9 @@ export type Database = {
         Returns: Json
       }
       accept_friend_request_atomic: {
-        Args: { requester_id: string }
+        Args:
+          | { p_requester_id: string; p_accepter_id: string }
+          | { requester_id: string }
         Returns: Json
       }
       add_plan_stop_with_order: {
@@ -12855,6 +12877,14 @@ export type Database = {
           end_time: string
           duration_minutes: number
           distance_m: number
+        }[]
+      }
+      analyze_dm_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          metric_value: number
+          description: string
         }[]
       }
       analyze_shared_floq_participation: {
@@ -13205,6 +13235,10 @@ export type Database = {
           plan_id: string
           floq_id: string
         }[]
+      }
+      create_or_get_thread: {
+        Args: { p_user_a: string; p_user_b: string }
+        Returns: string
       }
       create_or_replace_cron_job: {
         Args: { job_name: string; schedule: string; command: string }
@@ -14610,6 +14644,10 @@ export type Database = {
         Args: { p_surface: string; p_thread_id: string; p_profile_id: string }
         Returns: undefined
       }
+      mark_thread_read_enhanced: {
+        Args: { p_thread_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       match_locations_batch: {
         Args: { _since: string }
         Returns: number
@@ -15014,6 +15052,20 @@ export type Database = {
           match_score: number
         }[]
       }
+      search_direct_threads_enhanced: {
+        Args: { p_profile_id: string; p_query?: string; p_limit?: number }
+        Returns: {
+          thread_id: string
+          other_profile_id: string
+          other_display_name: string
+          other_username: string
+          other_avatar_url: string
+          last_message_content: string
+          last_message_at: string
+          unread_count: number
+          is_online: boolean
+        }[]
+      }
       search_everything: {
         Args: { query: string; limit_count?: number }
         Returns: {
@@ -15107,7 +15159,9 @@ export type Database = {
         Returns: Json
       }
       send_friend_request_with_rate_limit: {
-        Args: { p_target_profile_id: string }
+        Args:
+          | { p_from_profile: string; p_to_profile: string }
+          | { p_target_profile_id: string }
         Returns: Json
       }
       send_message: {
@@ -15160,11 +15214,13 @@ export type Database = {
         Returns: undefined
       }
       set_user_vibe: {
-        Args: {
-          new_vibe: Database["public"]["Enums"]["vibe_enum"]
-          lat?: number
-          lng?: number
-        }
+        Args:
+          | {
+              new_vibe: Database["public"]["Enums"]["vibe_enum"]
+              lat?: number
+              lng?: number
+            }
+          | { new_vibe: string; lat?: number; lng?: number }
         Returns: {
           active: boolean | null
           gh5: string | null
@@ -16292,8 +16348,8 @@ export type Database = {
         Returns: undefined
       }
       toggle_dm_reaction: {
-        Args: { p_message_id: string; p_user_id: string; p_emoji: string }
-        Returns: undefined
+        Args: { p_message_id: string; p_profile_id: string; p_emoji: string }
+        Returns: Json
       }
       toggle_venue_bump: {
         Args: { p_venue: string }
