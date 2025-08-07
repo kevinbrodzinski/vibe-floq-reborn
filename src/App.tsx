@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 
 // Conditional imports for development vs production
 if (import.meta.env.DEV) {
@@ -32,11 +32,6 @@ import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
 
-// Development-only imports
-const LocationSystemHealthDashboard = import.meta.env.DEV 
-  ? require("@/components/debug/LocationSystemHealthDashboard").LocationSystemHealthDashboard 
-  : null;
-
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
@@ -54,6 +49,9 @@ const App = () => {
   // Track online status
   usePresenceTracker();
 
+  // Development-only dashboard component
+  const [LocationSystemHealthDashboard, setLocationSystemHealthDashboard] = useState<React.ComponentType | null>(null);
+
   // Initialize cluster worker for performance
   const workerRef = useRef<Worker | null>(null);
   
@@ -63,6 +61,19 @@ const App = () => {
       return () => {
         workerRef.current?.terminate();
       };
+    }
+  }, []);
+
+  // Load debug dashboard in development
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      import("@/components/debug/LocationSystemHealthDashboard")
+        .then((module) => {
+          setLocationSystemHealthDashboard(() => module.LocationSystemHealthDashboard);
+        })
+        .catch((error) => {
+          console.warn('LocationSystemHealthDashboard not available:', error);
+        });
     }
   }, []);
 
