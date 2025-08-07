@@ -26,9 +26,10 @@
     "resolveJsonModule": true,
     
     /* === Type resolution === */
-    "moduleResolution": "node",
+    "moduleResolution": "node", 
     "types": ["node", "react", "react-dom"],
     "typeRoots": ["./node_modules/@types"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "skipLibCheck": true
   }
 }
