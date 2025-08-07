@@ -150,7 +150,22 @@ const App = () => {
                               <Route path="*" element={
                                 <>
                                   {console.log('🎯 CATCH-ALL ROUTE MATCHED - Rendering Index for:', window.location.pathname)}
-                                  <Index />
+                                  <div style={{
+                                    position: 'fixed',
+                                    inset: 0,
+                                    zIndex: 999999,
+                                    backgroundColor: '#ff0000',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '24px',
+                                    fontWeight: 'bold'
+                                  }}>
+                                    🔴 CATCH-ALL ROUTE IS WORKING!
+                                    <br />
+                                    Path: {window.location.pathname}
+                                  </div>
                                 </>
                               } />
                             </Routes>
