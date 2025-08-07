@@ -26,9 +26,6 @@ import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedV
 import type { EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
 import { useVibeContext } from '@/hooks/useVibeContext';
 
-// Debug import - remove after fixing
-import { VibeWheelDebug } from '@/components/debug/VibeWheelDebug';
-
 /**
  * PersonalMode - Enhanced immersive self-dashboard with ML-powered vibe detection
  * Now integrates with LocationEnhancedVibeSystem for context-aware vibe analysis
@@ -272,8 +269,6 @@ export const PersonalMode: React.FC = () => {
         <StreakCard />
       </ScrollView>
       
-      {/* Debug component - remove after fixing */}
-      <VibeWheelDebug />
     </div>
   );
 };
