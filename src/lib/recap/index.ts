@@ -51,7 +51,7 @@ export const useTodayRecap = () => {
         const result = await client
           .from('daily_recap_cache')
           .select('payload')
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)  // ✅ Fixed: use profile_id
           .eq('day', yesterday)
           .maybeSingle();
         
