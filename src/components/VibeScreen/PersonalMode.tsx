@@ -302,9 +302,6 @@ export const PersonalMode: React.FC = () => {
           />
         </motion.div>
 
-        {/* Timeline Carousel */}
-        <TimelineCarousel onVibeSelect={handleVibeSelect} />
-
         {/* Enhanced Visualizations Section */}
         {showAdvancedVisuals && (
           <motion.div
