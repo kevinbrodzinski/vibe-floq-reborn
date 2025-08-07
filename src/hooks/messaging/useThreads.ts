@@ -50,9 +50,13 @@ export function useThreads() {
   const queryKey = ['dm-threads', currentUserId];
 
   // Fetch all threads for current user
+  const isMockUserId = currentUserId === '1954da62-be4d-4224-917b-cfb77ebb2122' || 
+                      currentUserId === 'f1e2d3c4-b5a6-9870-5432-109876fedcba';
+  const isDevelopmentMode = import.meta.env.DEV;
+  
   const { data: threads = [], isLoading, error } = useQuery({
     queryKey,
-    enabled: !!currentUserId,
+    enabled: !!currentUserId && !(isDevelopmentMode && (!import.meta.env.VITE_P2P_MIGRATIONS_APPLIED || isMockUserId)),
     queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
       const { data, error } = await supabase
         .from("direct_threads")
@@ -84,8 +88,11 @@ export function useThreads() {
     // Skip realtime subscriptions if database tables don't exist yet
     // This prevents errors when the P2P migrations haven't been applied
     const isDevelopmentMode = import.meta.env.DEV;
-    if (isDevelopmentMode && !import.meta.env.VITE_P2P_MIGRATIONS_APPLIED) {
-      console.log('[useThreads] Skipping realtime subscription - P2P migrations not applied');
+    const isMockUserId = currentUserId === '1954da62-be4d-4224-917b-cfb77ebb2122' || 
+                        currentUserId === 'f1e2d3c4-b5a6-9870-5432-109876fedcba';
+    
+    if (isDevelopmentMode && (!import.meta.env.VITE_P2P_MIGRATIONS_APPLIED || isMockUserId)) {
+      console.log('[useThreads] Skipping realtime subscription - P2P migrations not applied or using mock user');
       return;
     }
 
