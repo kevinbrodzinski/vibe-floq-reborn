@@ -212,7 +212,7 @@ export const PersonalMode: React.FC = () => {
                   isEnhancedMode ? "text-green-500 border-green-500/30 bg-green-500/10" : "text-muted-foreground"
                 } ${isTogglingMode ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <Activity className={`mr-1 w-3 h-3 ${isTogglingMode ? "animate-spin" : ""}`} />
+                <Zap className={`mr-1 w-3 h-3 ${isTogglingMode ? "animate-spin" : ""}`} />
                 {isTogglingMode ? 'Switching...' : (isEnhancedMode ? 'Enhanced' : 'Basic')}
               </Button>
             )}
