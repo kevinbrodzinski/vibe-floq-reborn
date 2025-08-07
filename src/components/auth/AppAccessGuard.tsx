@@ -25,6 +25,15 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const { getItem, setItem } = useSafeStorage();
   const location = useLocation();
 
+  // Debug logging
+  console.log('🔍 AppAccessGuard state:', {
+    user: !!user,
+    loading,
+    showSplash,
+    loadingPrefs,
+    pathname: location.pathname
+  });
+
   // Check if user is visiting a shared plan route (bypass onboarding and splash)
   const isSharedPlanRoute = location.pathname.startsWith('/share/');
   const isDirectPlanRoute = location.pathname.startsWith('/plan/');
@@ -129,8 +138,17 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   if (loading || (user && loadingPrefs) || onboardingLoading || showSplash === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-white text-lg font-medium">Loading Floq...</p>
+          {import.meta.env.DEV && (
+            <div className="text-sm text-gray-400 space-y-1">
+              <p>Auth: {loading ? '🔄 loading' : '✅ ready'}</p>
+              <p>Prefs: {loadingPrefs ? '🔄 loading' : '✅ ready'}</p>
+              <p>Onboarding: {onboardingLoading ? '🔄 loading' : '✅ ready'}</p>
+              <p>Splash: {showSplash === null ? '🔄 loading' : showSplash ? '🎬 show' : '✅ ready'}</p>
+            </div>
+          )}
           {onboardingLoading && (
             <p className="text-sm text-muted-foreground animate-pulse">
               Loading your progress...
