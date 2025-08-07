@@ -58,6 +58,7 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
       try {
         // Only fetch if we have sensor data (when auto mode is enabled)
         if (!autoMode || !sensorData) {
+          setHeroData(null);
           return;
         }
         
@@ -65,14 +66,26 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
         setHeroData(data);
       } catch (error) {
         console.warn('Failed to fetch enhanced hero data:', error);
+        // Clear data on error to prevent freeze
+        setHeroData(null);
       }
     };
     
-    fetchEnhancedData();
-    const interval = setInterval(fetchEnhancedData, 10000); // Update every 10 seconds
+    // Debounce to prevent rapid updates
+    const timeoutId = setTimeout(fetchEnhancedData, 500);
     
-    return () => clearInterval(interval);
-  }, [vibeSystem, sensorData, contextData, autoMode]);
+    // Cleanup interval if it exists
+    const interval = setInterval(() => {
+      if (autoMode && sensorData) {
+        fetchEnhancedData();
+      }
+    }, 15000); // Reduced frequency to prevent overload
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
+  }, [autoMode, sensorData?.timestamp]); // Simplified dependencies
   
   if (!heroData) {
     return (

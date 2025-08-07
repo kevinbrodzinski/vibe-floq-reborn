@@ -47,11 +47,16 @@ export const PersonalMode: React.FC = () => {
   const [heroData, setHeroData] = useState<EnhancedPersonalHeroData | null>(null);
   const [showSystemHealth, setShowSystemHealth] = useState(false);
   const [isEnhancedMode, setIsEnhancedMode] = useState(true);
+  const [isTogglingMode, setIsTogglingMode] = useState(false);
 
   // Update hero data when sensor data or location changes
   useEffect(() => {
+    // Debounce rapid updates to prevent freeze
     const updateHeroData = async () => {
-      if (!autoMode || !sensorData) return;
+      if (!autoMode || !sensorData) {
+        setHeroData(null);
+        return;
+      }
 
       try {
         if (enhancedLocation.location && isEnhancedMode) {
@@ -68,12 +73,15 @@ export const PersonalMode: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to update hero data:', error);
-        // Graceful degradation - keep existing data
+        // Graceful degradation - clear data to prevent freeze
+        setHeroData(null);
       }
     };
 
-    updateHeroData();
-  }, [vibeSystem, sensorData, contextData, enhancedLocation, autoMode, isEnhancedMode]);
+    // Debounce the update to prevent rapid re-renders
+    const timeoutId = setTimeout(updateHeroData, 300);
+    return () => clearTimeout(timeoutId);
+  }, [autoMode, isEnhancedMode, sensorData?.timestamp]); // Only depend on essential values
 
   const handleVibeSelect = (vibe: string) => {
     console.log('Jump to vibe:', vibe);
@@ -98,8 +106,35 @@ export const PersonalMode: React.FC = () => {
     setShowSystemHealth(!showSystemHealth);
   };
 
-  const toggleEnhancedMode = () => {
-    setIsEnhancedMode(!isEnhancedMode);
+  const toggleEnhancedMode = async () => {
+    if (isTogglingMode) return; // Prevent rapid clicking
+    
+    try {
+      setIsTogglingMode(true);
+      console.log('Toggling enhanced mode from:', isEnhancedMode, 'to:', !isEnhancedMode);
+      
+      // Clear hero data when switching modes to force fresh data
+      setHeroData(null);
+      
+      // Toggle the mode
+      setIsEnhancedMode(!isEnhancedMode);
+      
+      // If switching to enhanced mode, ensure we have necessary data
+      if (!isEnhancedMode && !sensorData) {
+        console.warn('Enhanced mode requires sensor data - auto mode should be enabled');
+      }
+      
+      // Small delay to prevent rapid state changes
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+    } catch (error) {
+      console.error('Error toggling enhanced mode:', error);
+      // Fallback to basic mode on error
+      setIsEnhancedMode(false);
+      setHeroData(null);
+    } finally {
+      setIsTogglingMode(false);
+    }
   };
 
   return (
@@ -129,12 +164,13 @@ export const PersonalMode: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={toggleEnhancedMode}
+                disabled={isTogglingMode}
                 className={`p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs ${
                   isEnhancedMode ? "text-green-500 border-green-500/30 bg-green-500/10" : "text-muted-foreground"
-                }`}
+                } ${isTogglingMode ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <Activity className="mr-1 w-3 h-3" />
-                {isEnhancedMode ? 'Enhanced' : 'Basic'}
+                <Activity className={`mr-1 w-3 h-3 ${isTogglingMode ? "animate-spin" : ""}`} />
+                {isTogglingMode ? 'Switching...' : (isEnhancedMode ? 'Enhanced' : 'Basic')}
               </Button>
             )}
           </div>
@@ -167,13 +203,23 @@ export const PersonalMode: React.FC = () => {
         )}
 
         {/* Enhanced Personal Hero Status Strip */}
-        {heroData && isEnhancedMode ? (
-      <EnhancedPersonalHero
-        {...{ heroData, sensorData, locationData: enhancedLocation } as any}
-      />
-        ) : (
-          <PersonalHero />
-        )}
+        {(() => {
+          try {
+            if (heroData && isEnhancedMode) {
+              return (
+                <EnhancedPersonalHero
+                  {...{ heroData, sensorData, locationData: enhancedLocation } as any}
+                />
+              );
+            } else {
+              return <PersonalHero />;
+            }
+          } catch (error) {
+            console.error('Error rendering hero component:', error);
+            // Fallback to basic hero on error
+            return <PersonalHero />;
+          }
+        })()}
 
         {/* Enhanced Vibe Wheel with Dynamic Halo */}
         <motion.div 
@@ -227,23 +273,34 @@ export const PersonalMode: React.FC = () => {
             }}
             layout
           >
-            {isEnhancedMode && heroData ? (
-              <EnhancedFeedbackButtons
-                analysis={vibeDetection}
-                onFeedback={handleEnhancedFeedback}
-                enhancedLocationData={enhancedLocation.location ? enhancedLocation : undefined}
-              />
-            ) : (
-              <FeedbackButtons
-                suggestedVibe={vibeDetection.suggestedVibe}
-                confidence={vibeDetection.confidence}
-                onAccept={() => console.log('Accept suggestion')}
-                onCorrect={() => console.log('Correct suggestion')}
-                onClose={() => console.log('Close feedback')}
-                isProcessing={false}
-                learningBoost={vibeDetection.learningBoost}
-              />
-            )}
+            {(() => {
+              try {
+                if (isEnhancedMode && heroData) {
+                  return (
+                    <EnhancedFeedbackButtons
+                      analysis={vibeDetection}
+                      onFeedback={handleEnhancedFeedback}
+                      enhancedLocationData={enhancedLocation.location ? enhancedLocation : undefined}
+                    />
+                  );
+                } else {
+                  return (
+                    <FeedbackButtons
+                      suggestedVibe={vibeDetection.suggestedVibe}
+                      confidence={vibeDetection.confidence}
+                      onAccept={() => console.log('Accept suggestion')}
+                      onCorrect={() => console.log('Correct suggestion')}
+                      onClose={() => console.log('Close feedback')}
+                      isProcessing={false}
+                      learningBoost={vibeDetection.learningBoost}
+                    />
+                  );
+                }
+              } catch (error) {
+                console.error('Error rendering feedback buttons:', error);
+                return null; // Hide feedback buttons on error
+              }
+            })()}
           </motion.div>
         )}
 
