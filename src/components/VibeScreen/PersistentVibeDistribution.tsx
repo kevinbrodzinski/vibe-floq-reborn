@@ -15,44 +15,44 @@ interface PersistentVibeDistributionProps {
   className?: string;
 }
 
-export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProps> = ({ 
+export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProps> = React.memo(({ 
   className = "" 
 }) => {
   const [pieData, setPieData] = useState<VibeDistributionData[]>([]);
 
-  const getVibeColor = (vibe: string) => {
+  // Memoize the color function to prevent re-creation on every render
+  const getVibeColor = React.useCallback((vibe: string) => {
     if (VIBE_RGB[vibe as keyof typeof VIBE_RGB]) {
       const [r, g, b] = VIBE_RGB[vibe as keyof typeof VIBE_RGB];
       return `rgb(${r}, ${g}, ${b})`;
     }
     return '#4C92FF';
-  };
+  }, []);
 
-  const generatePieData = (): VibeDistributionData[] => {
+  // Memoize the data generation function
+  const generatePieData = React.useCallback((): VibeDistributionData[] => {
     return VIBES.slice(0, 6).map(vibe => ({
       name: vibe.charAt(0).toUpperCase() + vibe.slice(1),
       value: Math.floor(10 + Math.random() * 40),
       color: getVibeColor(vibe)
     }));
-  };
+  }, [getVibeColor]);
 
   useEffect(() => {
-    // Initial data
+    // Initial data - only run once on mount
     const initialData = generatePieData();
-    console.log('🥧 PersistentVibeDistribution: Initial pie data:', initialData);
+    console.log('🥧 PersistentVibeDistribution: Initial pie data loaded');
     setPieData(initialData);
 
-    // Update every 30 seconds for demo purposes
+    // Update every hour (3600000 ms) instead of every 30 seconds
     const interval = setInterval(() => {
       const newData = generatePieData();
-      console.log('🥧 PersistentVibeDistribution: Updated pie data:', newData);
+      console.log('🥧 PersistentVibeDistribution: Hourly data update');
       setPieData(newData);
-    }, 30000);
+    }, 3600000); // 1 hour = 3600000 ms
 
     return () => clearInterval(interval);
-  }, []);
-
-  console.log('🥧 PersistentVibeDistribution: Rendering with pieData:', pieData);
+  }, [generatePieData]); // Only depend on the memoized function
 
   return (
     <Card className={`p-4 bg-card/40 backdrop-blur-sm border-border/30 ${className}`}>
@@ -134,4 +134,4 @@ export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProp
       )}
     </Card>
   );
-};
+});
