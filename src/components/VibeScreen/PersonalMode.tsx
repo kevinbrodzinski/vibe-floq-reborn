@@ -7,6 +7,7 @@ import { TimelineCarousel } from './TimelineCarousel';
 import { VibeFlowChart } from './enhanced-visualizations/VibeFlowChart';
 import { VibePersonalityRadar } from './enhanced-visualizations/VibePersonalityRadar';
 import { VibeMetricsDashboard } from './enhanced-visualizations/VibeMetricsDashboard';
+import { PersistentVibeDistribution } from './PersistentVibeDistribution';
 import { StreakCard } from './StreakCard';
 import { VibeWheel } from '@/components/vibe/VibeWheel';
 import { DynamicVibeToggle } from '@/components/ui/DynamicVibeToggle';
@@ -52,7 +53,7 @@ export const PersonalMode: React.FC = () => {
   const [isEnhancedMode, setIsEnhancedMode] = useState(true);
   const [isTogglingMode, setIsTogglingMode] = useState(false);
   const [showAdvancedVisuals, setShowAdvancedVisuals] = useState(true);
-  const [visualsMode, setVisualsMode] = useState<'basic' | 'flow' | 'analytics' | 'personality'>('analytics');
+  const [visualsMode, setVisualsMode] = useState<'basic' | 'flow' | 'analytics' | 'personality'>('flow');
   const [showFeedback, setShowFeedback] = useState(false);
   const [stableFeedbackData, setStableFeedbackData] = useState<any>(null);
 
@@ -375,6 +376,16 @@ export const PersonalMode: React.FC = () => {
             </motion.div>
           </motion.div>
         )}
+
+        {/* Persistent Vibe Distribution Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="px-2 mb-4"
+        >
+          <PersistentVibeDistribution />
+        </motion.div>
 
         {/* Dynamic Vibe Toggle */}
         <div className="px-2 mb-2 flex justify-center">
