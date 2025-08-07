@@ -5,7 +5,7 @@ import type { Vibe } from '@/types';
 import type { FloqFilters } from '@/contexts/FloqUIContext';
 import { useEffect } from 'react';
 import { z } from 'zod';
-import { type Vibe } from '@/lib/vibes';
+import { VibeEnum } from '@/types/enums/vibes';
 
 export interface NearbyFloq {
   id: string;
