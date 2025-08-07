@@ -17,12 +17,33 @@ export default function DailyRecapGate() {
   const [showEnhanced, setShowEnhanced] = useState(true)
   const navigate = useNavigate()
 
+  // Debug logging
+  console.log('🎯 DailyRecapGate state:', {
+    isLoading,
+    error: !!error,
+    hasData: !!data,
+    shouldShow: data ? shouldShowRecap(data) : 'no-data'
+  })
+
   // Move navigation logic into useEffect to avoid render-time state updates
   useEffect(() => {
     if (!isLoading && (error || !shouldShowRecap(data))) {
+      console.log('🏠 DailyRecapGate navigating to /home')
       navigate('/home', { replace: true })
     }
   }, [data, error, isLoading, navigate])
+
+  // Fallback: if stuck loading for too long, navigate to home
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('⏰ DailyRecapGate timeout, navigating to /home')
+        navigate('/home', { replace: true })
+      }
+    }, 5000) // 5 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [isLoading, navigate])
 
   // Show skeleton while loading
   if (isLoading || (showEnhanced && enhancedLoading)) {
