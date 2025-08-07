@@ -23,11 +23,11 @@ if (!container) {
 // React 18 concurrent features
 const root = createRoot(container);
 
-// Enhanced error boundary for production
+// Enhanced error boundary for production - TEMPORARILY DISABLE STRICTMODE
 const AppWithErrorBoundary = () => (
-  <StrictMode>
+  // <StrictMode>  // DISABLED FOR DEBUGGING
     <App />
-  </StrictMode>
+  // </StrictMode>  // DISABLED FOR DEBUGGING
 );
 
 console.log('🚀 MAIN.WEB.TSX - About to render App');
