@@ -60,6 +60,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   const userMarkerRef = useRef<mapboxgl.Marker|null>(null);
   const detachUserLocationSourceRef = useRef<(() => void) | null>(null);
   const firstPosRef = useRef(true); // 🔧 FIX: Track first position for jumpTo vs flyTo
+  const debounceRef = useRef<number>(); // Debounce loading state changes
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedVibe, setSelectedVibe] = useState<string>('all');
@@ -148,9 +149,11 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     
     const result = [...currentUserPerson, ...floqMembers, ...mockFriends];
     
-    // 🔧 DEBUG: Log filteredPeople table for easy debugging
-    console.log('[FieldWebMap] 🔧 filteredPeople result:');
-    console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you, friend: p.isFriend, vibe: p.vibe })));
+    // 🔧 DEBUG: Log filteredPeople table for easy debugging (dev only)
+    if (import.meta.env.DEV) {
+      console.log('[FieldWebMap] 🔧 filteredPeople result:');
+      console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you, friend: p.isFriend, vibe: p.vibe })));
+    }
     
     return result;
   }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
@@ -321,9 +324,11 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     console.log('[FieldWebMap] 🔧 Props:', { visible, realtime, floqsCount: floqs.length });
   }, []);
 
-  // Debug re-renders
+  // Debug re-renders (dev only)
   useEffect(() => {
-    trackRender('FieldWebMap', `Props changed - visible: ${visible}, realtime: ${realtime}, floqs: ${floqs.length}`);
+    if (import.meta.env.DEV) {
+      trackRender('FieldWebMap', `Props changed - visible: ${visible}, realtime: ${realtime}, floqs: ${floqs.length}`);
+    }
   }, [visible, realtime, floqs.length]);
 
   useEffect(()=>{
@@ -1036,8 +1041,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       // Use memoized GeoJSON data
       source.setData(floqsGeoJSON);
       
-      // Clear loading state after data is updated
-      setTimeout(() => setIsLoading(false), 300);
+      // Debounce: only clear after *no* update for 300ms
+      clearTimeout(debounceRef.current);
+      debounceRef.current = window.setTimeout(() => setIsLoading(false), 300);
     });
   }, [floqsGeoJSON, withFloqsSource]);
 
