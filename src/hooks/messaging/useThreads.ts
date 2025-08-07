@@ -119,43 +119,18 @@ export function useThreads() {
     return cleanup;
   }, [currentUserId, queryClient, queryKey]);
 
-  // Create or get existing thread
+  // Create or get existing thread using enhanced function
   const createThread = useMutation({
     mutationFn: async (otherUserId: string) => {
       if (!currentUserId) throw new Error('User not authenticated');
-      
-      // Check if thread already exists
-      const { data: existingThread } = await supabase
-        .from('direct_threads')
-        .select('id')
-        .or(`and(member_a.eq.${currentUserId},member_b.eq.${otherUserId}),and(member_a.eq.${otherUserId},member_b.eq.${currentUserId})`)
-        .maybeSingle();
 
-      if (existingThread) {
-        return existingThread.id;
-      }
-
-      // Create new thread with canonical ordering
-      const memberA = currentUserId < otherUserId ? currentUserId : otherUserId;
-      const memberB = currentUserId < otherUserId ? otherUserId : currentUserId;
-
-      const { data: newThread, error } = await supabase
-        .from('direct_threads')
-        .insert({
-          member_a: memberA,
-          member_b: memberB,
-          member_a_profile_id: memberA,
-          member_b_profile_id: memberB,
-          last_read_at_a: new Date().toISOString(),
-          last_read_at_b: new Date().toISOString(),
-          unread_a: 0,
-          unread_b: 0,
-        })
-        .select('id')
-        .single();
+      const { data: threadId, error } = await supabase.rpc('create_or_get_thread', {
+        p_user_a: currentUserId,
+        p_user_b: otherUserId,
+      });
 
       if (error) throw error;
-      return newThread.id;
+      return threadId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -168,13 +143,12 @@ export function useThreads() {
     },
   });
 
-  // Mark thread as read
+  // Mark thread as read using enhanced function
   const markThreadRead = useMutation({
     mutationFn: async (threadId: string) => {
       if (!currentUserId) throw new Error('User not authenticated');
 
-      const { error } = await supabase.rpc('mark_thread_read', {
-        p_surface: 'dm',
+      const { error } = await supabase.rpc('mark_thread_read_enhanced', {
         p_thread_id: threadId,
         p_profile_id: currentUserId,
       });
@@ -234,29 +208,34 @@ export function useThreads() {
     });
   }, [threads, currentUserId]);
 
-  // Search threads
+  // Search threads using enhanced function
   const searchThreads = async (query: string): Promise<ThreadSummary[]> => {
-    if (!query.trim() || query.length < 2) return [];
+    if (!query.trim() || query.length < 2 || !currentUserId) return [];
 
     try {
-      const { data, error } = await supabase.rpc('search_direct_threads', { q: query });
+      const { data, error } = await supabase.rpc('search_direct_threads_enhanced', { 
+        p_profile_id: currentUserId,
+        p_query: query,
+        p_limit: 20
+      });
       if (error) throw error;
       
       return data?.map((result: any) => ({
         id: result.thread_id,
         friendProfile: {
-          id: result.friend_profile_id,
-          display_name: result.friend_display_name,
-          username: result.friend_username,
-          avatar_url: result.friend_avatar_url,
+          id: result.other_profile_id,
+          display_name: result.other_display_name,
+          username: result.other_username,
+          avatar_url: result.other_avatar_url,
         },
         lastMessage: result.last_message_content ? {
           content: result.last_message_content,
           created_at: result.last_message_at,
           isFromMe: false, // Search results don't indicate sender
         } : null,
-        unreadCount: result.my_unread_count || 0,
+        unreadCount: result.unread_count || 0,
         lastMessageAt: result.last_message_at,
+        isOnline: result.is_online || false,
       })) || [];
     } catch (error) {
       console.error('Thread search error:', error);

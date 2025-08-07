@@ -32,9 +32,9 @@ Before making ANY changes, run this audit to understand your current state:
 
 **Review the output carefully** before proceeding!
 
-### **Step 2: Safe Incremental Migration**
+### **Step 2: Safe Incremental Migration - Views & Indexes**
 
-Only after reviewing the audit, run the safe migration:
+Only after reviewing the audit, run the first safe migration:
 
 ```sql
 -- In Supabase SQL Editor, run:
@@ -42,11 +42,26 @@ Only after reviewing the audit, run the safe migration:
 ```
 
 **What this does:**
-- ✅ Adds ONLY non-conflicting components
+- ✅ Adds ONLY non-conflicting views and indexes
 - ✅ Checks for existence before creating anything
 - ✅ Uses safe `DO $$ BEGIN...END $$` blocks
 - ✅ No function signature conflicts
 - ✅ No RLS policy name conflicts
+
+### **Step 3: Safe Incremental Migration - Functions & Policies**
+
+After Step 2 completes successfully, apply the enhanced functions:
+
+```sql
+-- In Supabase SQL Editor, run:
+\i supabase/migrations/20250106000003_safe_p2p_enhancements_step2.sql
+```
+
+**What this does:**
+- ✅ Adds enhanced database functions with proper conflict handling
+- ✅ Creates comprehensive RLS policies for security
+- ✅ Uses `CREATE OR REPLACE` for safe function updates
+- ✅ Grants proper permissions to authenticated users
 
 ---
 

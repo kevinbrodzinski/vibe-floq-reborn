@@ -18,23 +18,28 @@ export function useAtomicFriendships() {
       if (!currentUserId) throw new Error('User not authenticated');
       if (currentUserId === targetUserId) throw new Error('Cannot send request to yourself');
 
-      // Use the rate-limited edge function
+      // Use the enhanced rate-limited function
       const { data, error } = await supabase.rpc('send_friend_request_with_rate_limit', {
-        _target_user: targetUserId,
+        p_from_profile: currentUserId,
+        p_to_profile: targetUserId,
       });
 
       if (error) {
-        // Handle specific error cases
-        if (error.message.includes('rate limit')) {
-          throw new Error('Too many friend requests sent. Please wait before sending more.');
-        }
-        if (error.message.includes('already exists')) {
-          throw new Error('Friend request already sent or you are already friends.');
-        }
-        if (error.message.includes('blocked')) {
-          throw new Error('Unable to send friend request.');
-        }
         throw error;
+      }
+
+      // Handle function response
+      if (data && !data.success) {
+        if (data.error === 'rate_limit') {
+          throw new Error(data.message || 'Too many friend requests sent. Please wait before sending more.');
+        }
+        if (data.error === 'already_friends') {
+          throw new Error(data.message || 'You are already friends with this user.');
+        }
+        if (data.error === 'request_exists') {
+          throw new Error(data.message || 'Friend request already sent.');
+        }
+        throw new Error(data.message || 'Failed to send friend request.');
       }
 
       return data;
@@ -89,16 +94,22 @@ export function useAtomicFriendships() {
     mutationFn: async (fromUserId: string) => {
       if (!currentUserId) throw new Error('User not authenticated');
 
-      // Use atomic accept function to prevent race conditions
+      // Use enhanced atomic accept function to prevent race conditions
       const { data, error } = await supabase.rpc('accept_friend_request_atomic', {
-        _from_user: fromUserId,
+        p_requester_id: fromUserId,
+        p_accepter_id: currentUserId,
       });
 
       if (error) {
-        if (error.message.includes('not found')) {
-          throw new Error('Friend request not found or already processed.');
-        }
         throw error;
+      }
+
+      // Handle function response
+      if (data && !data.success) {
+        if (data.error === 'no_request') {
+          throw new Error(data.message || 'Friend request not found or already processed.');
+        }
+        throw new Error(data.message || 'Failed to accept friend request.');
       }
 
       return data;

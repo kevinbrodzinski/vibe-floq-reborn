@@ -140,10 +140,10 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
       } catch (edgeError) {
         console.warn('Edge function failed, falling back to RPC:', edgeError);
         
-        // Fallback to RPC function
+        // Fallback to enhanced RPC function
         const { data, error } = await supabase.rpc('toggle_dm_reaction', {
           p_message_id: messageId,
-          p_user_id: currentUserId,
+          p_profile_id: currentUserId,
           p_emoji: emoji,
         });
 
