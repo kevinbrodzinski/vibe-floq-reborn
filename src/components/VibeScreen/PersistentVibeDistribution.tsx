@@ -54,15 +54,15 @@ const PersistentVibeDistributionComponent: React.FC<PersistentVibeDistributionPr
     return () => clearInterval(interval);
   }, [generatePieData]); // Only depend on the memoized function
 
-  return (
+    return (
     <Card className={`p-4 bg-card/40 backdrop-blur-sm border-border/30 ${className}`}>
-              <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-foreground">Vibe Distribution</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">({pieData.length}/10 vibes)</span>
-            <PieChartIcon className="h-4 w-4 text-muted-foreground" />
-          </div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-foreground">Vibe Distribution</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">({pieData.length}/10 vibes)</span>
+          <PieChartIcon className="h-4 w-4 text-muted-foreground" />
         </div>
+      </div>
       
       <div className="h-48 w-full">
         {pieData.length > 0 ? (
