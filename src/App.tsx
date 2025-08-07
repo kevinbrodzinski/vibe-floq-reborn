@@ -39,8 +39,12 @@ import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 
 const App = () => {
+  // EMERGENCY DEBUG - Very first line
+  console.log('🚨 APP.TSX CALLED - Main App component is mounting, pathname:', window.location.pathname);
+  
   // Quick bypass for testing - go directly to /home
   if (import.meta.env.DEV && window.location.pathname === '/') {
+    console.log('🔄 REDIRECTING from / to /home');
     window.location.href = '/home';
     return (
       <div style={{ 

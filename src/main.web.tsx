@@ -30,6 +30,7 @@ const AppWithErrorBoundary = () => (
   </StrictMode>
 );
 
+console.log('🚀 MAIN.WEB.TSX - About to render App');
 root.render(<AppWithErrorBoundary />);
 
 // Development-only diagnostics
