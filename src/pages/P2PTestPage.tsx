@@ -491,15 +491,15 @@ function useTestModeHooks() {
 
 // Production hook implementations
 function useProductionHooks(currentUserId: string | null, realThreadId: string | null) {
-  // Real message reactions with actual database calls
+  // Always call hooks but disable them internally when no valid thread/user
   const { 
     reactions = [], 
     toggleReaction, 
     isLoading: reactionsLoading = false,
     error: reactionsError = null 
-  } = useMessageReactions(realThreadId || '', currentUserId || '');
+  } = useMessageReactions(realThreadId || '', 'dm'); // Pass empty string and type when no thread
 
-  // Real thread management with database operations
+  // Real thread management with database operations (this doesn't require a specific thread)
   const { 
     threads = [], 
     createThread, 
@@ -509,7 +509,7 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
     error: threadsError = null
   } = useThreads();
 
-  // Real typing indicators with realtime subscriptions
+  // Always call typing indicators but it will handle empty thread ID internally
   const {
     isTyping = false,
     typingUsers = [],
@@ -604,9 +604,11 @@ export default function P2PTestPage() {
 
   // Use null for hooks when we want to disable realtime subscriptions in test mode
   const isTestMode = false; // Set to false to enable production mode with real database
-  // In production mode, we'll use real thread IDs. For demo, we'll use the mock thread ID
-  // In a real app, this would come from route params or thread selection
-  const realThreadId = currentUserId ? MOCK_THREAD_ID : null;
+  
+  // In production mode, we need a real thread ID from route params or thread selection
+  // For the demo, we'll set this to null to avoid subscribing to non-existent threads
+  // In a real app, this would come from route params like `/messages/:threadId`
+  const realThreadId = null; // Set to null to avoid mock data subscriptions
 
   // Conditionally use test mode or production hooks
   const hooks = isTestMode 
@@ -853,6 +855,13 @@ export default function P2PTestPage() {
             <p className="text-sm text-green-700 mb-2">
               This page is running in production mode with real database connections and live realtime subscriptions.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+              <p className="text-sm text-blue-800 font-medium mb-1">Production Demo Note:</p>
+              <p className="text-xs text-blue-700">
+                In production, thread-specific features (reactions, typing) require selecting a real thread. 
+                Thread-independent features (friend requests, thread search) work immediately.
+              </p>
+            </div>
             <ul className="space-y-1 text-xs text-green-600">
               <li>• Realtime subscriptions: Enabled (live database connections)</li>
               <li>• Database operations: All operations use real Supabase calls</li>
@@ -1113,29 +1122,48 @@ export default function P2PTestPage() {
                 ))}
                 
                 {/* Quick Reaction Test */}
-                <Card className="bg-yellow-50 border-yellow-200">
-                  <CardHeader>
-                    <CardTitle className="text-sm">🧪 Quick Reaction Test</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-2 flex-wrap">
-                      {['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '💯'].map(emoji => (
-                        <Button
-                          key={emoji}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleReaction(MOCK_MESSAGE_1_ID, emoji)}
-                          className="text-lg p-2"
-                        >
-                          {emoji}
-                        </Button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Click emojis to add/remove reactions on the first message
-                    </p>
-                  </CardContent>
-                </Card>
+                {isTestMode ? (
+                  <Card className="bg-yellow-50 border-yellow-200">
+                    <CardHeader>
+                      <CardTitle className="text-sm">🧪 Quick Reaction Test</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2 flex-wrap">
+                        {['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '💯'].map(emoji => (
+                          <Button
+                            key={emoji}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleReaction(MOCK_MESSAGE_1_ID, emoji)}
+                            className="text-lg p-2"
+                          >
+                            {emoji}
+                          </Button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">
+                        Click emojis to add/remove reactions on the first message
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-sm">💡 Production Mode: Message Features</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-blue-800 mb-2">
+                        In production mode, message reactions and replies work with real threads:
+                      </p>
+                      <ul className="text-xs text-blue-700 space-y-1">
+                        <li>• Navigate to a real message thread to test reactions</li>
+                        <li>• All reactions are stored in the database</li>
+                        <li>• Realtime updates work across all connected clients</li>
+                        <li>• Thread search and creation work immediately</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
