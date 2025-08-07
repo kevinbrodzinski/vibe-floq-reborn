@@ -38,51 +38,69 @@ export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProp
 
   useEffect(() => {
     // Initial data
-    setPieData(generatePieData());
+    const initialData = generatePieData();
+    console.log('🥧 PersistentVibeDistribution: Initial pie data:', initialData);
+    setPieData(initialData);
 
     // Update every 30 seconds for demo purposes
     const interval = setInterval(() => {
-      setPieData(generatePieData());
+      const newData = generatePieData();
+      console.log('🥧 PersistentVibeDistribution: Updated pie data:', newData);
+      setPieData(newData);
     }, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
+  console.log('🥧 PersistentVibeDistribution: Rendering with pieData:', pieData);
+
   return (
     <Card className={`p-4 bg-card/40 backdrop-blur-sm border-border/30 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-foreground">Vibe Distribution</h3>
-        <PieChartIcon className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">({pieData.length} vibes)</span>
+          <PieChartIcon className="h-4 w-4 text-muted-foreground" />
+        </div>
       </div>
       
       <div className="h-48 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={pieData}
-              cx="50%"
-              cy="50%"
-              innerRadius={40}
-              outerRadius={80}
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {pieData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip 
-              formatter={(value: any, name: any) => [`${value}%`, name]}
-              labelFormatter={(label) => `${label} Vibe`}
-              contentStyle={{
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                color: 'white'
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        {pieData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value: any, name: any) => [`${value}%`, name]}
+                labelFormatter={(label) => `${label} Vibe`}
+                contentStyle={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: 'white'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="text-center">
+              <PieChartIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Loading vibe data...</p>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Legend */}

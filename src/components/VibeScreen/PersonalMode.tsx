@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
 import { PersonalHero } from './PersonalHero';
 import { EnhancedPersonalHero } from './EnhancedPersonalHero';
@@ -184,10 +184,8 @@ export const PersonalMode: React.FC = () => {
 
   return (
     <div className="bg-gradient-to-b from-background to-secondary/20">
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: bottomGap + 16 }}
-      >
+      <ScrollArea className="h-full">
+        <div style={{ paddingBottom: bottomGap + 16 }}>
         {/* Enhanced Header Bar */}
         <div className="flex justify-between items-center p-2 pt-4">
           <div className="flex items-center gap-2">
@@ -377,16 +375,6 @@ export const PersonalMode: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Persistent Vibe Distribution Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="px-2 mb-4"
-        >
-          <PersistentVibeDistribution />
-        </motion.div>
-
         {/* Dynamic Vibe Toggle */}
         <div className="px-2 mb-2 flex justify-center">
           <DynamicVibeToggle
@@ -441,9 +429,20 @@ export const PersonalMode: React.FC = () => {
           </motion.div>
         )}
 
+        {/* Persistent Vibe Distribution Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="px-2 mb-4"
+        >
+          <PersistentVibeDistribution />
+        </motion.div>
+
         {/* Streak & Achievements Card */}
         <EnhancedProgressInsights />
-      </ScrollView>
+        </div>
+      </ScrollArea>
       
     </div>
   );
