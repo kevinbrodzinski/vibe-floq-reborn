@@ -1,17 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, handleOptions } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests FIRST
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Length": "0" 
-      } 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     const supabase = createClient(

@@ -1,7 +1,7 @@
 // Deno runtime  – cache Google Place Details  →  public.place_details
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { z }            from "https://esm.sh/zod@3";
 
 const FIELDS =
@@ -11,16 +11,8 @@ const FIELDS =
 const Input = z.object({ place_id: z.string().min(1) });
 
 serve(async (req) => {
-  // Handle CORS preflight requests FIRST
-  if (req.method === "OPTIONS") {
-    return new Response(null, { 
-      status: 204, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Length": "0" 
-      } 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     const { place_id } = Input.parse(await req.json());

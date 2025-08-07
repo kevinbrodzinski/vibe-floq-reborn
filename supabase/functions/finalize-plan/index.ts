@@ -1,13 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { corsHeaders, handleOptions } from '../_shared/cors.ts'
 import { FinalizePlanRequest } from '../_shared/types.ts'
 
 export default serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     const { plan_id, force_finalize = false }: FinalizePlanRequest = await req.json();

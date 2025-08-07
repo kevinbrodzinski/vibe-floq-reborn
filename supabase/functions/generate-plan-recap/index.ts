@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, handleOptions } from '../_shared/cors.ts';
 
 interface GeneratePlanRecapRequest {
   planId: string;
@@ -35,10 +35,8 @@ interface PlanDetails {
 const openAIApiKey = Deno.env.get('OPENAI_KEY');
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     const { planId }: GeneratePlanRecapRequest = await req.json();
