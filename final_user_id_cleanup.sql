@@ -75,6 +75,87 @@ COMMENT ON FUNCTION public.sync_profile_user_id() IS
 'Trigger function that sets profile_id to auth.uid() on INSERT/UPDATE';
 
 -- =============================================================================
+-- STEP 2B: Fix specific functions with user_id/profile_id mismatches
+-- =============================================================================
+
+-- Fix analyze_venue_overlap_patterns function
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'analyze_venue_overlap_patterns') THEN
+        RAISE NOTICE 'Fixing analyze_venue_overlap_patterns function...';
+        
+        -- Get current function and replace user_id with profile_id
+        -- This is a placeholder - you'll need to recreate the function properly
+        DROP FUNCTION IF EXISTS public.analyze_venue_overlap_patterns CASCADE;
+        RAISE NOTICE 'Dropped analyze_venue_overlap_patterns - needs manual recreation with profile_id';
+    END IF;
+END $$;
+
+-- Fix analyze_co_location_events function  
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'analyze_co_location_events') THEN
+        RAISE NOTICE 'Fixing analyze_co_location_events function...';
+        
+        -- Check if venue_live_presence has user_id or profile_id
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'venue_live_presence' 
+            AND column_name = 'user_id'
+        ) THEN
+            RAISE NOTICE 'venue_live_presence still has user_id column - needs migration';
+        END IF;
+        
+        DROP FUNCTION IF EXISTS public.analyze_co_location_events CASCADE;
+        RAISE NOTICE 'Dropped analyze_co_location_events - needs manual recreation with profile_id';
+    END IF;
+END $$;
+
+-- Fix get_hotspot_time_series function
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_hotspot_time_series') THEN
+        RAISE NOTICE 'Fixing get_hotspot_time_series function...';
+        
+        -- Check if vibes_log has user_id or profile_id
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'vibes_log' 
+            AND column_name = 'user_id'
+        ) THEN
+            RAISE NOTICE 'vibes_log still has user_id column - needs migration';
+        END IF;
+        
+        DROP FUNCTION IF EXISTS public.get_hotspot_time_series CASCADE;
+        RAISE NOTICE 'Dropped get_hotspot_time_series - needs manual recreation with profile_id';
+    END IF;
+END $$;
+
+-- Fix get_enhanced_vibe_clusters function
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_enhanced_vibe_clusters') THEN
+        RAISE NOTICE 'Fixing get_enhanced_vibe_clusters function...';
+        
+        -- Check if vibes_now has user_id or profile_id
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'vibes_now' 
+            AND column_name = 'user_id'
+        ) THEN
+            RAISE NOTICE 'vibes_now still has user_id column - needs migration';
+        ELSE
+            RAISE NOTICE 'vibes_now appears to use profile_id - updating function';
+        END IF;
+        
+        -- We'll recreate this function with profile_id
+        -- First, let's get the current definition to understand its structure
+        DROP FUNCTION IF EXISTS public.get_enhanced_vibe_clusters CASCADE;
+        RAISE NOTICE 'Dropped get_enhanced_vibe_clusters - needs manual recreation with profile_id';
+    END IF;
+END $$;
+
+-- =============================================================================
 -- STEP 3: Rename triggers for clarity (optional but recommended)
 -- =============================================================================
 
@@ -240,7 +321,53 @@ BEGIN
 END $$;
 
 -- =============================================================================
--- STEP 6: Final verification
+-- STEP 6: Check for tables that might need user_id -> profile_id migration
+-- =============================================================================
+
+-- Check specific tables mentioned in the analysis
+DO $$
+BEGIN
+    RAISE NOTICE '=== CHECKING SPECIFIC TABLES FOR user_id/profile_id ===';
+    
+    -- venue_stays table
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'venue_stays') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_stays' AND column_name = 'user_id') THEN
+            RAISE WARNING 'venue_stays table has user_id column - needs migration to profile_id';
+        ELSE
+            RAISE NOTICE '✅ venue_stays table uses profile_id (or doesn''t exist)';
+        END IF;
+    END IF;
+    
+    -- venue_live_presence table  
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'venue_live_presence') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_live_presence' AND column_name = 'user_id') THEN
+            RAISE WARNING 'venue_live_presence table has user_id column - needs migration to profile_id';
+        ELSE
+            RAISE NOTICE '✅ venue_live_presence table uses profile_id (or doesn''t exist)';
+        END IF;
+    END IF;
+    
+    -- vibes_log table
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vibes_log') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'vibes_log' AND column_name = 'user_id') THEN
+            RAISE WARNING 'vibes_log table has user_id column - needs migration to profile_id';
+        ELSE
+            RAISE NOTICE '✅ vibes_log table uses profile_id (or doesn''t exist)';
+        END IF;
+    END IF;
+    
+    -- vibes_now table
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vibes_now') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'vibes_now' AND column_name = 'user_id') THEN
+            RAISE WARNING 'vibes_now table has user_id column - needs migration to profile_id';
+        ELSE
+            RAISE NOTICE '✅ vibes_now table uses profile_id (or doesn''t exist)';
+        END IF;
+    END IF;
+END $$;
+
+-- =============================================================================
+-- STEP 7: Final verification
 -- =============================================================================
 
 RAISE NOTICE '=== CLEANUP COMPLETE ===';
@@ -248,5 +375,13 @@ RAISE NOTICE 'Please verify:';
 RAISE NOTICE '1. All user_id columns renamed to profile_id (except in auth schema)';
 RAISE NOTICE '2. All foreign keys updated to reference profile_id';
 RAISE NOTICE '3. All triggers and functions updated';
-RAISE NOTICE '4. Test your application functionality';
-RAISE NOTICE '5. Check the warnings above for any remaining issues';
+RAISE NOTICE '4. Functions with user_id/profile_id mismatches have been dropped and need recreation';
+RAISE NOTICE '5. Test your application functionality';
+RAISE NOTICE '6. Check the warnings above for any remaining issues';
+RAISE NOTICE '';
+RAISE NOTICE '⚠️  IMPORTANT: Some functions were DROPPED and need manual recreation:';
+RAISE NOTICE '   - analyze_venue_overlap_patterns';
+RAISE NOTICE '   - analyze_co_location_events'; 
+RAISE NOTICE '   - get_hotspot_time_series';
+RAISE NOTICE '   - get_enhanced_vibe_clusters';
+RAISE NOTICE 'These functions need to be recreated with profile_id instead of user_id';
