@@ -104,7 +104,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_relativeSplatPath: true }}>
           <EnhancedAuthProvider>
             <AppProviders>
               <BannerProvider>
