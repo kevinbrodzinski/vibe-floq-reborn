@@ -150,32 +150,43 @@ const App = () => {
                               <Route path="*" element={
                                 <>
                                   {console.log('🎯 CATCH-ALL ROUTE MATCHED - Rendering Index for:', window.location.pathname)}
-                                  <div style={{
-                                    position: 'fixed',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100vw',
-                                    height: '100vh',
-                                    zIndex: 9999999,
-                                    backgroundColor: '#ff0000 !important',
-                                    color: '#ffffff !important',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '32px',
-                                    fontWeight: 'bold',
-                                    textAlign: 'center',
-                                    fontFamily: 'Arial, sans-serif'
-                                  }}>
-                                    <div>🔴 CATCH-ALL ROUTE IS WORKING!</div>
-                                    <div style={{ fontSize: '18px', marginTop: '20px' }}>
-                                      Path: {window.location.pathname}
-                                    </div>
-                                    <div style={{ fontSize: '14px', marginTop: '10px', opacity: 0.8 }}>
-                                      If you see this, routing works but Index component has issues
-                                    </div>
-                                  </div>
+                                  {(() => {
+                                    // Direct DOM manipulation to bypass React rendering issues
+                                    setTimeout(() => {
+                                      const testDiv = document.createElement('div');
+                                      testDiv.innerHTML = `
+                                        <div style="
+                                          position: fixed !important;
+                                          top: 0 !important;
+                                          left: 0 !important;
+                                          width: 100vw !important;
+                                          height: 100vh !important;
+                                          z-index: 999999999 !important;
+                                          background: red !important;
+                                          color: white !important;
+                                          display: flex !important;
+                                          flex-direction: column !important;
+                                          align-items: center !important;
+                                          justify-content: center !important;
+                                          font-size: 32px !important;
+                                          font-weight: bold !important;
+                                          text-align: center !important;
+                                          font-family: Arial, sans-serif !important;
+                                        ">
+                                          <div>🔴 DIRECT DOM TEST</div>
+                                          <div style="font-size: 18px; margin-top: 20px;">
+                                            Path: ${window.location.pathname}
+                                          </div>
+                                          <div style="font-size: 14px; margin-top: 10px;">
+                                            This bypasses React - if you see this, React rendering is the issue
+                                          </div>
+                                        </div>
+                                      `;
+                                      document.body.appendChild(testDiv);
+                                      console.log('🔴 DIRECT DOM ELEMENT ADDED TO BODY');
+                                    }, 100);
+                                    return null;
+                                  })()}
                                 </>
                               } />
                             </Routes>
