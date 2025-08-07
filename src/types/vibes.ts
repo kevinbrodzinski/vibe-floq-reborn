@@ -1,10 +1,26 @@
-// Re-export canonical vibe types
-export type { Vibe } from '@/lib/vibes';
-export { VIBES, VIBE_ORDER, safeVibe, isValidVibe } from '@/lib/vibes';
+// Re-export canonical vibe types and constants from the single source of truth
+import { 
+  VIBES, 
+  VIBE_ORDER, 
+  VIBE_RGB,
+  VIBE_COLORS,
+  safeVibe, 
+  isValidVibe,
+  type Vibe
+} from '@/lib/vibes';
+
+// Primary exports
+export type { Vibe };
+export { 
+  VIBES, 
+  VIBE_ORDER, 
+  VIBE_RGB,
+  VIBE_COLORS,
+  safeVibe, 
+  isValidVibe 
+};
 
 // Legacy compatibility exports
 export type VibeEnum = Vibe;
 export const vibeOptions = VIBE_ORDER;
-
-// Additional compatibility exports
-export { safeVibe as safeVibeState } from '@/lib/vibes';
+export const safeVibeState = safeVibe;
