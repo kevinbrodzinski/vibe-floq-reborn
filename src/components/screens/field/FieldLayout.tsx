@@ -192,6 +192,27 @@ export const FieldLayout = () => {
       <FriendDrawerProvider>
         <TimewarpDrawerProvider>
           <div className="relative h-svh w-full bg-background">
+          {/* EMERGENCY DEBUG OVERLAY - HIGHEST Z-INDEX */}
+          {import.meta.env.DEV && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 9999999,
+              backgroundColor: '#00ff00',
+              color: 'black',
+              padding: '20px',
+              textAlign: 'center',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              border: '5px solid red'
+            }}>
+              🟢 FieldLayout is rendering! Location ready: {geoReady ? 'YES' : 'NO'}
+              <br />
+              Status: {geo.status} | Error: {geo.error || 'none'}
+            </div>
+          )}
           {/* Motion Permission Banner - Global Level */}
           <MotionPermissionBanner
             requestMotionPermission={requestMotionPermission}
