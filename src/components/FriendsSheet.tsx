@@ -3,6 +3,7 @@ import { MapPin, Share2, Settings, User, Loader2, Check, X, Search } from 'lucid
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetFooter,
@@ -114,6 +115,9 @@ export const FriendsSheet = ({
             Your friends
             {!!friendIds.length && <Badge variant="secondary">{friendIds.length}</Badge>}
           </SheetTitle>
+          <SheetDescription>
+            View your friends, see who's online and nearby, and manage friend requests.
+          </SheetDescription>
 
           {/* search bar */}
           <div className="relative mt-4">

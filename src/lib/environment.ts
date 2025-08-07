@@ -54,7 +54,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   const localStorageConfig = safeStorage.getItem('floq_env_config');
   
   // Parse safe storage config if available
-  let localConfig: Partial<EnvironmentConfig> = safeStorageHelpers.getJSON('floq_env_config', {});
+  const localConfig: Partial<EnvironmentConfig> = safeStorageHelpers.getJSON('floq_env_config', {});
   
   // Determine presence mode with priority: URL > localStorage > env var > default
   let presenceMode: 'offline' | 'mock' | 'live' = 'live'; // default to live

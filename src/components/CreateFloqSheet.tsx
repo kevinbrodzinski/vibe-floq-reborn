@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -156,6 +156,9 @@ export function CreateFloqSheet() {
               <Sparkles className="w-6 h-6 text-primary" />
               Create New Floq
             </SheetTitle>
+            <SheetDescription className="mt-2">
+              Create a new floq to connect with friends and plan activities together.
+            </SheetDescription>
             <Button
               variant="ghost"
               size="sm"

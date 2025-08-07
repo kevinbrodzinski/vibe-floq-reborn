@@ -20,7 +20,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AnimatedBadge } from '@/components/ui/animated-badge';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { FriendsSheet } from './FriendsSheet';
 import { AddFriendModal } from './AddFriendModal';
 import { MessagesSheet } from './MessagesSheet';
@@ -204,7 +204,12 @@ export const AvatarDropdown = () => {
       <Sheet open={avatarMgr.open} onOpenChange={avatarMgr.setOpen}>
         <SheetContent side="bottom" className="p-4">
           <div className="max-w-sm mx-auto">
-            <h3 className="text-lg font-semibold text-center mb-4">Change Avatar</h3>
+            <SheetHeader className="text-center mb-4">
+              <SheetTitle>Change Avatar</SheetTitle>
+              <SheetDescription>
+                Upload a new profile picture or choose from your existing photos.
+              </SheetDescription>
+            </SheetHeader>
             <AvatarUpload
               currentAvatarUrl={profile?.avatar_url}
               displayName={profile?.display_name}

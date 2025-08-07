@@ -2,8 +2,8 @@
  * Debug utilities for tracking component re-renders
  */
 
-let renderCounts = new Map<string, number>();
-let lastRenderTimes = new Map<string, number>();
+const renderCounts = new Map<string, number>();
+const lastRenderTimes = new Map<string, number>();
 
 export function trackRender(componentName: string, reason?: string) {
   if (import.meta.env.PROD) return; // Only track in development

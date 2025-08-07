@@ -102,7 +102,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   if (venue && isSocialLoading) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto" aria-label="Loading venue details">
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
@@ -116,7 +116,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto" aria-label={`${venue?.name || 'Venue'} details and social activity`}>
         <SheetHeader className="space-y-4">
           {isLoading ? (
             <div className="space-y-3">
