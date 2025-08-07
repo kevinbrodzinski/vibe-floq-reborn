@@ -15,7 +15,7 @@ import { planStatusColor } from '@/lib/planStatusColor';
 import { VibePill } from '@/components/floq/VibePill';
 import { cn } from '@/lib/utils';
 import type { PlanStatus } from '@/types/enums/planStatus';
-import type { Vibe } from '@/types/enums/vibes';
+import type { Vibe } from '@/lib/vibes';
 
 interface PlanCardProps {
   plan: {

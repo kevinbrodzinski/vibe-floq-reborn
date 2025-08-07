@@ -22,6 +22,9 @@ import { getVibeIcon } from '@/utils/vibeIcons';
 import { usePulseTime } from '@/hooks/usePulseTime';
 import { VibeSystemIntegration, type EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
 import { cn } from '@/lib/utils';
+import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
+import { useVibeContext } from '@/hooks/useVibeContext';
+import { useVibeDetection } from '@/store/useVibeDetection';
 
 interface EnhancedPersonalHeroProps {
   className?: string;
@@ -40,42 +43,49 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
   const [showPredictions, setShowPredictions] = useState(false);
   const [vibeSystem] = useState(() => new VibeSystemIntegration());
   
+  // Get real sensor data and context
+  const { autoMode } = useVibeDetection();
+  const { sensorData } = useSensorMonitoring(autoMode);
+  const contextData = useVibeContext();
+  
   // Convert pulse time to smooth sine wave for animations
   const pulseScale = 1 + Math.sin(pulseTime * Math.PI) * 0.1;
   const glowIntensity = Math.sin(pulseTime * Math.PI * 2) * 0.5 + 0.5;
   
   useEffect(() => {
-    // Simulate getting enhanced data from the vibe system
+    // Get enhanced data using real sensor data and context
     const fetchEnhancedData = async () => {
       try {
-        // Mock sensor data - in real implementation, this would come from sensors
-        const mockSensorData = {
-          audioLevel: 45,
-          lightLevel: 60,
-          movement: { intensity: 20, pattern: 'still', frequency: 0 },
-          location: { context: 'indoor', density: 15 }
-        };
+        // Only fetch if we have sensor data (when auto mode is enabled)
+        if (!autoMode || !sensorData) {
+          setHeroData(null);
+          return;
+        }
         
-        const mockContext = {
-          timestamp: new Date(),
-          hourOfDay: new Date().getHours(),
-          timeOfDay: 'evening' as const,
-          isWeekend: false,
-          dayOfWeek: new Date().getDay()
-        };
-        
-        const data = await vibeSystem.getEnhancedPersonalHeroData(mockSensorData, mockContext);
+        const data = await vibeSystem.getEnhancedPersonalHeroData(sensorData, contextData);
         setHeroData(data);
       } catch (error) {
         console.warn('Failed to fetch enhanced hero data:', error);
+        // Clear data on error to prevent freeze
+        setHeroData(null);
       }
     };
     
-    fetchEnhancedData();
-    const interval = setInterval(fetchEnhancedData, 10000); // Update every 10 seconds
+    // Debounce to prevent rapid updates
+    const timeoutId = setTimeout(fetchEnhancedData, 500);
     
-    return () => clearInterval(interval);
-  }, [vibeSystem]);
+    // Cleanup interval if it exists
+    const interval = setInterval(() => {
+      if (autoMode && sensorData) {
+        fetchEnhancedData();
+      }
+    }, 15000); // Reduced frequency to prevent overload
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
+  }, [autoMode, sensorData?.timestamp]); // Simplified dependencies
   
   if (!heroData) {
     return (

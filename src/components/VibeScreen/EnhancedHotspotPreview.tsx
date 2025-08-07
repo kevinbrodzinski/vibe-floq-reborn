@@ -22,6 +22,7 @@ import { VibeSystemIntegration, type EnhancedSocialContextData } from '@/lib/vib
 import { getVibeColor } from '@/utils/getVibeColor';
 import { getVibeIcon } from '@/utils/vibeIcons';
 import { cn } from '@/lib/utils';
+import { useRealProximityData } from '@/hooks/useRealProximityData';
 
 interface EnhancedHotspotPreviewProps {
   className?: string;
@@ -42,20 +43,17 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>(null);
   const [vibeSystem] = useState(() => new VibeSystemIntegration());
   
+  // Get real proximity data
+  const { proximityFriends } = useRealProximityData();
+  
   useEffect(() => {
     const fetchSocialData = async () => {
       try {
-        // Mock friends data - in real implementation, this would come from friends API
-        const mockFriends = [
-          { id: '1', name: 'Alice', currentVibe: 'social', distance: '0.3 km', isActive: true },
-          { id: '2', name: 'Bob', currentVibe: 'hype', distance: '0.8 km', isActive: true },
-          { id: '3', name: 'Carol', currentVibe: 'chill', distance: '1.2 km', isActive: false }
-        ];
-        
+        // Use real proximity friends data
         const data = await vibeSystem.getEnhancedSocialContextData(
           userLocation,
           currentVibe,
-          mockFriends
+          proximityFriends
         );
         setSocialData(data);
       } catch (error) {
@@ -67,7 +65,7 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
     const interval = setInterval(fetchSocialData, 15000); // Update every 15 seconds
     
     return () => clearInterval(interval);
-  }, [vibeSystem, userLocation, currentVibe]);
+  }, [vibeSystem, userLocation, currentVibe, proximityFriends]);
   
   if (!socialData) {
     return (

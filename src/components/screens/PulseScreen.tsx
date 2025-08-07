@@ -23,7 +23,7 @@ import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
 import { useNavigate } from 'react-router-dom';
 import { EnhancedRecommendationCard } from '@/components/ui/EnhancedRecommendationCard';
 import { AvatarStack } from '@/components/ui/AvatarStack';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useVibeMatch } from '@/hooks/useVibeMatch';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { SmartFilterPill } from '@/components/filters/SmartFilterPill';
@@ -732,7 +732,9 @@ export const PulseScreen: React.FC = () => {
         {/* Friends Modal */}
         <Dialog open={friendsModalOpen} onOpenChange={setFriendsModalOpen}>
           <DialogContent>
-            <h3 className="font-bold text-lg mb-4">Friends Going</h3>
+            <DialogHeader>
+              <DialogTitle>Friends Going</DialogTitle>
+            </DialogHeader>
             <div className="space-y-2">
               {modalFriends.map((f, i) => (
                 <div key={i} className="flex items-center gap-3">

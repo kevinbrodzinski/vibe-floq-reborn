@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { VIBE_COLORS, type VibeEnum } from '@/constants/vibes';
-import { safeVibe } from '@/types/enums/vibes';
+import { safeVibe } from '@/lib/vibes';
 import type { Vibe } from '@/types';
 import { useVibe } from '@/lib/store/useVibe';       
 import { shallow } from 'zustand/shallow';

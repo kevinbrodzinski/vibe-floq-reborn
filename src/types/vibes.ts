@@ -1,6 +1,26 @@
-// Re-export from constants for backward compatibility
-export type { VibeEnum as Vibe } from '@/constants/vibes';
-export { VIBE_ORDER as vibeOptions } from '@/constants/vibes';
+// Re-export canonical vibe types and constants from the single source of truth
+import { 
+  VIBES, 
+  VIBE_ORDER, 
+  VIBE_RGB,
+  VIBE_COLORS,
+  safeVibe, 
+  isValidVibe,
+  type Vibe
+} from '@/lib/vibes';
 
-// Additional compatibility exports
-export { safeVibe, safeVibeState } from '@/types/enums/vibes';
+// Primary exports
+export type { Vibe };
+export { 
+  VIBES, 
+  VIBE_ORDER, 
+  VIBE_RGB,
+  VIBE_COLORS,
+  safeVibe, 
+  isValidVibe 
+};
+
+// Legacy compatibility exports
+export type VibeEnum = Vibe;
+export const vibeOptions = VIBE_ORDER;
+export const safeVibeState = safeVibe;

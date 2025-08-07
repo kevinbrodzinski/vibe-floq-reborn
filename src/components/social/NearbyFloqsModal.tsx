@@ -1,10 +1,12 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MapPin, Clock, Zap } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, MapPin, Users, Clock, Zap } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { VibeFloqCard } from '@/components/social/VibeFloqCard';
 
@@ -64,17 +66,38 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
   onOpenChange
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [mounted, setMounted] = React.useState(false);
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   
-  const filteredFloqs = mockFloqs.filter(floq =>
-    floq.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    floq.description.toLowerCase().includes(searchQuery.toLowerCase())
+  // Prevent hydration issues
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Memoize filtered floqs to prevent unnecessary re-renders
+  const filteredFloqs = React.useMemo(() => 
+    mockFloqs.filter(floq =>
+      floq.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      floq.description.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [searchQuery]
   );
 
-  const ModalContent = () => (
+  // Reset search when modal closes to prevent visual glitches
+  React.useEffect(() => {
+    if (!open) {
+      setSearchQuery('');
+    }
+  }, [open]);
+
+  // Don't render until mounted to prevent hydration issues
+  if (!mounted) {
+    return null;
+  }
+
+  const ModalContent = React.memo(() => (
     <>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-semibold">Nearby Floqs</h2>
           <p className="text-sm text-muted-foreground">
             {mockFloqs.length} active floqs in your area
           </p>
@@ -125,23 +148,39 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
         </div>
       </ScrollArea>
     </>
-  );
+  ));
 
   return (
     <>
       {/* Desktop Dialog */}
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="hidden md:flex md:flex-col max-w-2xl max-h-[80vh]">
-          <ModalContent />
-        </DialogContent>
-      </Dialog>
+      {isDesktop && (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="flex flex-col max-w-2xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Nearby Floqs</DialogTitle>
+              <DialogDescription>
+                Discover and join exciting floqs happening near you
+              </DialogDescription>
+            </DialogHeader>
+            <ModalContent />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Mobile Sheet */}
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="md:hidden flex flex-col h-[85vh] px-3 sm:px-6">
-          <ModalContent />
-        </SheetContent>
-      </Sheet>
+      {!isDesktop && (
+        <Sheet open={open} onOpenChange={onOpenChange}>
+          <SheetContent side="bottom" className="flex flex-col h-[85vh] px-3 sm:px-6">
+            <SheetHeader>
+              <SheetTitle>Nearby Floqs</SheetTitle>
+              <SheetDescription>
+                Discover and join exciting floqs happening near you
+              </SheetDescription>
+            </SheetHeader>
+            <ModalContent />
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 };

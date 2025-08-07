@@ -20,22 +20,6 @@ export interface CompatGlowState {
   userCount: number;
 }
 
-const fetcher = async (url: string): Promise<CompatCluster[]> => {
-  const { data, error } = await supabase.functions.invoke('compat_clusters', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (error) {
-    console.error('compat_clusters error:', error);
-    throw new Error('Failed to fetch compatibility clusters');
-  }
-
-  return data || [];
-};
-
 export function useCompatGlow(): CompatGlowState {
   const vibe = useCurrentVibe();
   const { coords, status } = useUnifiedLocation({
@@ -57,40 +41,62 @@ export function useCompatGlow(): CompatGlowState {
 
   const { data, error } = useSWR<CompatCluster[]>(
     fetchUrl,
-    () => {
-      if (!fetchUrl) return Promise.resolve([]);
+    async () => {
+      if (!fetchUrl) return [];
       
-      // Call the edge function directly
-      const urlParams = new URLSearchParams({
-        lat: location!.coords.latitude.toString(),
-        lng: location!.coords.longitude.toString(),
-        vibe: String(vibe || 'chill'),
-      });
-      
-      return fetch(`https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/compat_clusters?${urlParams}`, {
-        headers: {
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck`,
-          'Content-Type': 'application/json',
-        },
-      }).then(res => res.json());
+      try {
+        // Call the edge function with JSON body (POST method)
+        const { data, error } = await supabase.functions.invoke('compat_clusters', {
+          body: {
+            lat: location!.coords.latitude,
+            lng: location!.coords.longitude,  
+            vibe: String(vibe || 'chill'),
+          }
+        });
+
+        if (error) {
+          console.warn('compat_clusters API error:', error);
+          return []; // Return empty array for graceful degradation
+        }
+        
+        return data || [];
+      } catch (err) {
+        console.warn('compat_clusters network error:', err);
+        return []; // Return empty array for graceful degradation
+      }
     },
     { 
-      refreshInterval: 10000, // 10 seconds
+      refreshInterval: 30000, // Increased to 30 seconds to reduce server load
       revalidateOnFocus: false,
-      errorRetryCount: 2,
+      errorRetryCount: 1, // Reduced retry count
+      shouldRetryOnError: false, // Don't retry on errors to avoid spam
     }
   );
 
   useEffect(() => {
     if (error) {
-      console.error('CompatGlow fetch error:', error);
-      setStrength(0);
+      console.warn('CompatGlow fetch error (using fallback):', error);
+      // Fallback to current vibe color with low strength
+      if (vibe && VIBE_RGB[vibe as keyof typeof VIBE_RGB]) {
+        const [r, g, b] = VIBE_RGB[vibe as keyof typeof VIBE_RGB];
+        setHue(`rgb(${r}, ${g}, ${b})`);
+        setStrength(0.1); // Very low strength to indicate fallback
+      } else {
+        setStrength(0);
+      }
       setUserCount(0);
       return;
     }
 
     if (!data?.length) {
-      setStrength(0);
+      // No nearby compatible clusters - use current vibe with minimal glow
+      if (vibe && VIBE_RGB[vibe as keyof typeof VIBE_RGB]) {
+        const [r, g, b] = VIBE_RGB[vibe as keyof typeof VIBE_RGB];
+        setHue(`rgb(${r}, ${g}, ${b})`);
+        setStrength(0.05); // Very minimal glow
+      } else {
+        setStrength(0);
+      }
       setUserCount(0);
       return;
     }
@@ -113,7 +119,7 @@ export function useCompatGlow(): CompatGlowState {
       const [r, g, b] = VIBE_RGB[dom_vibe as keyof typeof VIBE_RGB];
       setHue(`rgb(${r}, ${g}, ${b})`);
     }
-  }, [data, error]);
+  }, [data, error, vibe]);
 
   return { strength, hue, userCount };
 }

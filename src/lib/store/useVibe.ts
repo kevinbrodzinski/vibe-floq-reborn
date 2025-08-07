@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import type { Vibe } from '@/lib/vibes';
+import { isValidVibe } from '@/lib/vibes';
 
 interface VibeState {
   currentVibe: Vibe;
@@ -25,19 +26,43 @@ export const useVibe = create<VibeState>()(
       hydrated: true,
       
       setVibe: async (vibe: Vibe) => {
+        console.log('Setting vibe to:', vibe, 'type:', typeof vibe);
+        
+        // Validate vibe before proceeding
+        if (!isValidVibe(vibe)) {
+          console.error('Invalid vibe provided:', vibe);
+          return;
+        }
+        
+        // Update UI immediately for better UX
         set({ currentVibe: vibe, isUpdating: true });
         
-        // Update in database
+        // Update in database (but don't block UI if it fails)
         try {
-          const { error } = await supabase.rpc('set_user_vibe', {
+          const { data, error } = await supabase.rpc('set_user_vibe', {
             new_vibe: vibe
           });
           
           if (error) {
             console.error('Error updating vibe in database:', error);
+            console.error('Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+              vibe: vibe
+            });
+            
+            // If it's the user_id error, show a helpful message
+            if (error.code === '42703' && error.message.includes('user_id')) {
+              console.warn('Database function needs to be updated to use profile_id. Vibe updated in UI only.');
+            }
+          } else {
+            console.log('Vibe updated successfully in database:', data);
           }
         } catch (error) {
           console.error('Error calling set_user_vibe:', error);
+          console.warn('Database update failed, but vibe updated in UI');
         } finally {
           set({ isUpdating: false });
         }

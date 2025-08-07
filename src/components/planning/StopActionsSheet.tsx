@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Trash2, Pencil } from 'lucide-react'
 import type { PlanStop } from '@/types/plan'
@@ -21,7 +21,9 @@ export function StopActionsSheet({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[280px] p-4">
-        <h4 className="text-sm font-medium mb-3">{stop.title}</h4>
+        <DialogHeader>
+          <DialogTitle>{stop.title}</DialogTitle>
+        </DialogHeader>
 
         <Button
           variant="ghost"

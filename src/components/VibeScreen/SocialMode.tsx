@@ -8,12 +8,14 @@ import { VenueRecommendationsModal } from '@/components/social/VenueRecommendati
 import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 import { NearbyFloqsModal } from '@/components/social/NearbyFloqsModal';
 import { NearbyPeopleModal } from '@/components/social/NearbyPeopleModal';
+import { LocationFallback } from '@/components/LocationFallback';
 import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
 import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
 import { useVibe } from '@/lib/store/useVibe';
 import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
 import { useVibeDetection } from '@/store/useVibeDetection';
 import type { EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
+import { useRealProximityData } from '@/hooks/useRealProximityData';
 
 /**
  * SocialMode - Real social features with proximity intelligence
@@ -32,7 +34,9 @@ export const SocialMode: React.FC = () => {
   const enhancedLocation = useEnhancedLocationSharing();
   const [vibeSystem] = useState(() => new LocationEnhancedVibeSystem());
   const [socialData, setSocialData] = useState<EnhancedSocialContextData | null>(null);
-  const [proximityInsights, setProximityInsights] = useState<any>(null);
+  
+  // Get real proximity data instead of mock data
+  const { proximityFriends, proximityInsights, isLoading: proximityLoading } = useRealProximityData();
 
   // Update social context data when location or vibe changes
   useEffect(() => {
@@ -40,40 +44,20 @@ export const SocialMode: React.FC = () => {
       if (!enhancedLocation.location || !currentVibe) return;
 
       try {
-        // Get enhanced social context data
-        const mockFriends = enhancedLocation.proximityEvents?.map((event: any) => ({
-          id: event.id || 'test-friend',
-          distance: 150,
-          confidence: 0.8,
-          vibe: 'unknown'
-        })) || [];
-
+        // Get enhanced social context data using real proximity friends
         const data = await vibeSystem.getLocationEnhancedSocialContextData(
           enhancedLocation.location,
           currentVibe as any,
-          mockFriends
+          proximityFriends
         );
         setSocialData(data);
-
-        // Get proximity insights if we have recent events
-        if (enhancedLocation.proximityEvents && enhancedLocation.proximityEvents.length > 0) {
-          const insights = {
-            nearbyFriendsCount: mockFriends.length,
-            averageDistance: mockFriends.reduce((sum, f) => sum + f.distance, 0) / mockFriends.length,
-            highConfidenceConnections: mockFriends.filter(f => f.confidence > 0.8).length,
-            recentActivity: enhancedLocation.proximityEvents.filter(
-              (event: any) => new Date().getTime() - new Date(event.timestamp || Date.now()).getTime() < 15 * 60 * 1000
-            ).length
-          };
-          setProximityInsights(insights);
-        }
       } catch (error) {
         console.error('Failed to update social data:', error);
       }
     };
 
     updateSocialData();
-  }, [vibeSystem, enhancedLocation, currentVibe]);
+  }, [vibeSystem, enhancedLocation, currentVibe, proximityFriends]);
 
   const handleMapPress = () => {
     setShowDensityMap(true);
@@ -128,6 +112,19 @@ export const SocialMode: React.FC = () => {
   return (
     <div className="overflow-y-auto pb-8">
       <VibeContextHeader />
+      
+      {/* Show location fallback if there are location errors */}
+      {enhancedLocation.error && (
+        <LocationFallback 
+          error={enhancedLocation.error}
+          onRetry={() => {
+            // Trigger location refresh if available
+            if (enhancedLocation.requestLocation) {
+              enhancedLocation.requestLocation();
+            }
+          }}
+        />
+      )}
       
       {/* Enhanced Friend Carousel with Proximity Data */}
       <InlineFriendCarousel 
