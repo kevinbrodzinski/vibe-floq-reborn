@@ -132,6 +132,9 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
       {/* Desktop Dialog */}
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="hidden md:flex md:flex-col max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Nearby Floqs</DialogTitle>
+          </DialogHeader>
           <ModalContent />
         </DialogContent>
       </Dialog>
