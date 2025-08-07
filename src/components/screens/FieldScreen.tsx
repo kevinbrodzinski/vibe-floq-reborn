@@ -25,16 +25,37 @@ export const FieldScreen = () => {
   }));
 
   return (
-    <FieldDataProvider>
-      <FieldUIProvider>
-        <FieldLocationProvider friendIds={friendIds}>
-          <FieldSocialProvider profiles={profiles}>
-            <FieldGestureProvider>
-              <FieldLayout />
-            </FieldGestureProvider>
-          </FieldSocialProvider>
-        </FieldLocationProvider>
-      </FieldUIProvider>
-    </FieldDataProvider>
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      {/* Debug overlay */}
+      {import.meta.env.DEV && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 999999,
+          backgroundColor: '#ff0000',
+          color: 'white',
+          padding: '10px',
+          textAlign: 'center',
+          fontSize: '16px',
+          fontWeight: 'bold'
+        }}>
+          🎯 FieldScreen is rendering! Friends: {friends.length}
+        </div>
+      )}
+      
+      <FieldDataProvider>
+        <FieldUIProvider>
+          <FieldLocationProvider friendIds={friendIds}>
+            <FieldSocialProvider profiles={profiles}>
+              <FieldGestureProvider>
+                <FieldLayout />
+              </FieldGestureProvider>
+            </FieldSocialProvider>
+          </FieldLocationProvider>
+        </FieldUIProvider>
+      </FieldDataProvider>
+    </div>
   );
 };
