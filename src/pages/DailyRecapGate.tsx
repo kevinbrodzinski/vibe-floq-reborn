@@ -72,6 +72,33 @@ export default function DailyRecapGate() {
   // Determine which data to show
   const displayData = showEnhanced && enhancedData ? enhancedData : data!
 
+  // Debug render - show what we have
+  if (import.meta.env.DEV) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-900/95 backdrop-blur-sm p-4 text-white">
+        <div className="bg-black/80 p-6 rounded-lg max-w-md">
+          <h2 className="text-xl font-bold mb-4">🔧 DEBUG: DailyRecapGate</h2>
+          <div className="space-y-2 text-sm">
+            <p>Loading: {isLoading ? '✅ YES' : '❌ NO'}</p>
+            <p>Error: {error ? '❌ YES' : '✅ NO'}</p>
+            <p>Has Data: {data ? '✅ YES' : '❌ NO'}</p>
+            <p>Should Show: {data ? (shouldShowRecap(data) ? '✅ YES' : '❌ NO') : '❓ N/A'}</p>
+            <p>Enhanced Data: {enhancedData ? '✅ YES' : '❌ NO'}</p>
+            <p>Show Enhanced: {showEnhanced ? '✅ YES' : '❌ NO'}</p>
+          </div>
+          <div className="mt-4 space-y-2">
+            <Button onClick={handleSkip} className="w-full">
+              Skip to Main App
+            </Button>
+            <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+              Reload Page
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm space-y-6">
