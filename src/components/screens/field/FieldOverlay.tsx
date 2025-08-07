@@ -46,10 +46,6 @@ export const FieldOverlay = memo(({
         </div>
       )}
 
-      {/* Time Status - Centered above status region */}
-      <div className="absolute top-14 left-1/2 -translate-x-1/2 pointer-events-auto" {...zIndex('uiInteractive')}>
-        <TimeStatusIndicator />
-      </div>
 
       {/* Status Region - Top left under header */}
       <div className="absolute top-28 left-4 pointer-events-auto min-h-[44px] max-w-[200px]" {...zIndex('overlay')}>
