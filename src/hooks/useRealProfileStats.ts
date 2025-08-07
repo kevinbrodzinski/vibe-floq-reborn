@@ -151,10 +151,14 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         if (currentUserId && currentUserId !== profileId) {
           // Check if they're friends (boosts resonance)
+          const userLow = currentUserId < profileId ? currentUserId : profileId;
+          const userHigh = currentUserId < profileId ? profileId : currentUserId;
+          
           const { data: friendship } = await supabase
             .from('friendships')
             .select('*')
-            .or(`and(user_low.eq.${currentUserId},user_high.eq.${profileId}),and(user_low.eq.${profileId},user_high.eq.${currentUserId})`)
+            .eq('user_low', userLow)
+            .eq('user_high', userHigh)
             .eq('friend_state', 'accepted')
             .maybeSingle();
 
@@ -167,10 +171,14 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           }
 
           // Check for recent interactions (messages, etc.)
+          const userA = currentUserId < profileId ? currentUserId : profileId;
+          const userB = currentUserId < profileId ? profileId : currentUserId;
+          
           const { data: recentInteractions } = await supabase
             .from('flock_relationships')
             .select('last_interaction_at, interaction_count')
-            .or(`and(user_a_id.eq.${currentUserId},user_b_id.eq.${profileId}),and(user_a_id.eq.${profileId},user_b_id.eq.${currentUserId})`)
+            .eq('user_a_id', userA)
+            .eq('user_b_id', userB)
             .maybeSingle();
 
           if (recentInteractions?.last_interaction_at) {

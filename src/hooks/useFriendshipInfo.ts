@@ -20,10 +20,15 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       }
 
       // Check friendship using the friendships table 
+      // Use canonical ordering: user_low is always the smaller UUID
+      const userLow = currentUserId < profileId ? currentUserId : profileId;
+      const userHigh = currentUserId < profileId ? profileId : currentUserId;
+      
       const { data: friends } = await supabase
         .from('friendships')
         .select('*')
-        .or(`and(user_low.eq.${currentUserId},user_high.eq.${profileId}),and(user_low.eq.${profileId},user_high.eq.${currentUserId})`)
+        .eq('user_low', userLow)
+        .eq('user_high', userHigh)
         .maybeSingle();
 
       if (!friends) {
@@ -31,10 +36,14 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       }
 
       // Try to get interaction data from flock_relationships if it exists
+      const userA = currentUserId < profileId ? currentUserId : profileId;
+      const userB = currentUserId < profileId ? profileId : currentUserId;
+      
       const { data: relationship } = await supabase
         .from('flock_relationships')
         .select('last_interaction_at')
-        .or(`and(user_a_id.eq.${currentUserId},user_b_id.eq.${profileId}),and(user_a_id.eq.${profileId},user_b_id.eq.${currentUserId})`)
+        .eq('user_a_id', userA)
+        .eq('user_b_id', userB)
         .maybeSingle();
 
       // Calculate days since last interaction
