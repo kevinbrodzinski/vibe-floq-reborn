@@ -22,7 +22,6 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useSendMessage } from '@/hooks/messaging/useSendMessage';
-import { useMarkThreadRead } from '@/hooks/messaging/useMarkThreadRead';
 import { useThreads } from '@/hooks/messaging/useThreads';
 import { useTypingIndicators, useTypingIndicatorText } from '@/hooks/messaging/useTypingIndicators';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
@@ -86,7 +85,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     messages.error,
     messages.data
   ]);
-  const markReadMut = useMarkThreadRead();
+  
+  // Get markThreadRead from useThreads
+  const { markThreadRead } = useThreads();
   
   // Enhanced typing indicators
   const { typingUsers, handleTyping, handleMessageSent, hasTypingUsers } = useTypingIndicators(threadId, 'dm');
@@ -188,14 +189,16 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   // Mark thread as read with proper auth guard
   useEffect(() => {
     if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
-      markReadMut.mutate({ surface: 'dm', threadId });
+      markThreadRead.mutateAsync(threadId).catch(error => {
+        console.error('Failed to mark thread as read:', error);
+      });
       
       // Optimistically clear unread badge with proper typing
       queryClient.setQueryData<Array<{thread_id: string}>>(['dm-unread', currentProfileId], 
         (old) => old?.filter(r => r.thread_id !== threadId) ?? []
       );
     }
-  }, [open, currentProfileId, friendId, threadId, markReadMut, queryClient]);
+  }, [open, currentProfileId, friendId, threadId, markThreadRead, queryClient]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
