@@ -20,7 +20,7 @@ export const FriendDrawer = () => {
     <div className={`
       w-full max-w-screen-sm pointer-events-auto
       transition-transform duration-300 ease-out
-      ${open ? 'translate-y-0' : 'translate-y-[110%]'}
+      ${open ? 'translate-y-0' : 'translate-y-[300%]'}
     `}>
       <div className="
           flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 py-3
