@@ -24,6 +24,7 @@ import { useMessages } from '@/hooks/messaging/useMessages';
 import { useSendMessage } from '@/hooks/messaging/useSendMessage';
 import { useMarkThreadRead } from '@/hooks/messaging/useMarkThreadRead';
 import { useThreads } from '@/hooks/messaging/useThreads';
+import { useTypingIndicators, useTypingIndicatorText } from '@/hooks/messaging/useTypingIndicators';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,8 +87,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     messages.data
   ]);
   const markReadMut = useMarkThreadRead();
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
+  
+  // Enhanced typing indicators
+  const { typingUsers, handleTyping, handleMessageSent, hasTypingUsers } = useTypingIndicators(threadId, 'dm');
+  const typingText = useTypingIndicatorText(typingUsers);
 
   // Debug logging for overlay management
   useEffect(() => {
@@ -209,36 +212,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     const value = e.target.value;
     setInput(value);
     
-    // Typing indicator logic
-    if (value.length === 1 && !isTyping) {
-      setIsTyping(true);
-      // TODO: Implement sendTyping('start') when ready
-    }
-    
-    // Clear existing timeout
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-    
-    // Set new timeout to stop typing indicator
-    const timeout = setTimeout(() => {
-      setIsTyping(false);
-      // TODO: Implement sendTyping('stop') when ready
-    }, 3000);
-    
-    setTypingTimeout(timeout);
+    // Enhanced typing indicators - automatically handles debouncing and timeouts
+    handleTyping();
   };
-
-  // Auto-clear typing when input becomes empty
-  useEffect(() => {
-    if (!input && isTyping) {
-      setIsTyping(false);
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
-        setTypingTimeout(null);
-      }
-    }
-  }, [input, isTyping, typingTimeout]);
 
   const handleSend = async () => {
     if (!input.trim() || sending) return;
@@ -268,12 +244,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     // Use local sending state as fallback
     setSending(true);
 
-    // Clear typing state immediately
-    setIsTyping(false);
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-      setTypingTimeout(null);
-    }
+    // Clear typing state immediately with enhanced indicators
+    handleMessageSent();
 
     try {
       console.log('[DMQuickSheet] Calling mutateAsync...');
@@ -410,9 +382,15 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
           </div>
         )}
         
-        {isTyping && (
-          <div className="text-sm text-muted-foreground italic animate-pulse px-4">
-            {friend?.display_name} is typing...
+        {/* Enhanced Typing Indicators */}
+        {hasTypingUsers && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+            </div>
+            <span className="italic">{typingText}</span>
           </div>
         )}
 

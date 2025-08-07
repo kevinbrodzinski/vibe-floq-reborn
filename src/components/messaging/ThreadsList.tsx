@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useSearchThreads, type ThreadSearchResult } from '@/hooks/useSearchThreads';
 import { useThreads, type DirectThreadWithProfiles } from '@/hooks/messaging/useThreads';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { formatDistanceToNow } from 'date-fns';
@@ -32,12 +31,27 @@ const highlightMatch = (text: string, query: string) => {
   );
 };
 
+// Define ThreadSearchResult type locally since we're replacing the old hook
+interface ThreadSearchResult {
+  thread_id: string;
+  friend_profile_id: string;
+  friend_display_name: string;
+  friend_username: string;
+  friend_avatar_url: string;
+  last_message_at: string | null;
+  my_unread_count: number;
+  last_message_content?: string;
+  match_type: 'name' | 'username' | 'message';
+  match_score: number;
+}
+
 export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListProps) => {
   const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<ThreadSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
   
-  const { data: allThreads = [], isLoading: threadsLoading } = useThreads();
-  const { data: searchResults = [], isFetching: searchLoading } = useSearchThreads(debouncedSearch);
+  const { data: allThreads = [], isLoading: threadsLoading, searchThreads } = useThreads();
   const { data: unreadCounts = [] } = useUnreadDMCounts(currentProfileId);
 
   // Create unread counts lookup for better performance
@@ -46,6 +60,30 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
     unreadCounts.forEach(item => map.set(item.thread_id, item.cnt));
     return map;
   }, [unreadCounts]);
+
+  // Enhanced search with the new searchThreads function
+  useEffect(() => {
+    if (!debouncedSearch) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    const performSearch = async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchThreads(debouncedSearch);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    performSearch();
+  }, [debouncedSearch, searchThreads]);
 
   const threadsToShow = debouncedSearch ? searchResults : 
     allThreads.map(thread => {

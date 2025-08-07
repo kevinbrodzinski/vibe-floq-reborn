@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
+import { useAtomicFriendships } from '@/hooks/useAtomicFriendships';
 import { useAuth } from '@/hooks/useAuth';
 
 export function FriendsTab() {
   const { user } = useAuth();
-  const { rows, pendingIn, accept, updating, friendIds } = useUnifiedFriends();
+  const { rows, pendingIn, friendIds } = useUnifiedFriends();
+  const { acceptFriendRequest, rejectFriendRequest, isAccepting, isRejecting } = useAtomicFriendships();
 
   // Filter for accepted friends
   const friends = rows.filter(r => r.friend_state === 'accepted');
@@ -40,18 +42,18 @@ export function FriendsTab() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => accept(request.id)}
-                    disabled={updating}
+                    onClick={() => acceptFriendRequest(request.id)}
+                    disabled={isAccepting || isRejecting}
                   >
-                    Accept
+                    {isAccepting ? 'Accepting...' : 'Accept'}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => accept(request.id)}
-                    disabled={updating}
+                    onClick={() => rejectFriendRequest({ userId: request.id, isIncoming: true })}
+                    disabled={isAccepting || isRejecting}
                   >
-                    Decline
+                    {isRejecting ? 'Declining...' : 'Decline'}
                   </Button>
                 </div>
               </div>

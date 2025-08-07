@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Zap } from 'lucide-react';
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAtomicFriendships } from '@/hooks/useAtomicFriendships';
 import { useToast } from '@/hooks/use-toast';
 import { Profile } from '@/types/profile';
 
@@ -12,41 +11,18 @@ export interface ActionBarNonFriendProps {
 }
 
 export const ActionBarNonFriend = ({ profile, isPending = false }: ActionBarNonFriendProps) => {
-  const [isAddingFriend, setIsAddingFriend] = useState(false);
   const { toast } = useToast();
+  const { sendFriendRequest, isSending } = useAtomicFriendships();
 
   const handleAddFriend = async () => {
-    if (!profile?.id || isAddingFriend) return;
-    
-    setIsAddingFriend(true);
+    if (!profile?.id || isSending) return;
     
     try {
-      const { error } = await supabase.rpc('send_friend_request', {
-        _target: profile.id
-      });
-      
-      if (error) {
-        console.error('Failed to send friend request:', error);
-        toast({
-          title: "Failed to send friend request",
-          description: "Please try again later",
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: "Friend request sent! 👋",
-          description: `Friend request sent to @${profile.username}`,
-        });
-      }
+      sendFriendRequest(profile.id);
+      // Success toast is handled by the hook
     } catch (error) {
+      // Error toast is handled by the hook
       console.error('Error sending friend request:', error);
-      toast({
-        title: "Connection error",
-        description: "Check your internet connection and try again",
-        variant: 'destructive',
-      });
-    } finally {
-      setIsAddingFriend(false);
     }
   };
 
@@ -83,11 +59,11 @@ export const ActionBarNonFriend = ({ profile, isPending = false }: ActionBarNonF
     <div className="flex gap-3">
       <Button
         onClick={handleAddFriend}
-        disabled={isAddingFriend}
+        disabled={isSending}
         className="flex-1 bg-gradient-primary text-white font-medium border-0 min-h-[44px] touch-manipulation"
       >
         <UserPlus className="h-4 w-4 mr-2" />
-        {isAddingFriend ? 'Sending...' : 'Add Friend'}
+        {isSending ? 'Sending...' : 'Add Friend'}
       </Button>
       <Button
         variant="ghost"
