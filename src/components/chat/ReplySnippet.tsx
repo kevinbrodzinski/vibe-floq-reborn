@@ -16,10 +16,10 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
         .from('direct_messages')
         .select('id, content, profile_id, metadata')
         .eq('id', messageId)
-        .single();
+        .maybeSingle(); // ✅ Fixed: use maybeSingle to avoid 406 errors
       
       if (error) throw error;
-      return data;
+      return data ?? null; // graceful fallback
     },
     staleTime: 60_000, // Cache for 1 minute since replies don't change often
   });

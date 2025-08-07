@@ -16,7 +16,18 @@ const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
     autoRefreshToken: true,
   },
   global: {
-    headers: { 'X-Client-Info': 'floq-web v1.0' },
+    headers: { 
+      'X-Client-Info': 'floq-web v1.0',
+      'Accept-Profile': 'public',
+      'Range-Unit': 'items'
+    },
+  },
+  db: {
+    schema: 'public',
+    fetchOptions: { 
+      // ✅ Skip HEAD requests to prevent 400 errors from PostgREST
+      noHead: true 
+    } as any,
   },
 });
 

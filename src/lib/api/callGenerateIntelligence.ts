@@ -1,28 +1,20 @@
 import { supabase } from '@/integrations/supabase/client'
-
-interface GenerateIntelligencePayload {
-  // Common parameters
-  prompt?: string;
-  temperature?: number;
-  max_tokens?: number;
-  
-  // Mode-specific parameters
-  user_id?: string;
-  plan_id?: string;
-  floq_id?: string;
-  date?: string;
-  afterglow_id?: string;
-  plan_mode?: 'finalized' | 'afterglow';
-}
+import type { IntelligenceMode, IntelligencePayload } from '@/lib/intelligence/types'
 
 export async function callGenerateIntelligence(
-  mode: 'afterglow' | 'daily' | 'weekly' | 'plan' | 'floq-match' | 'shared-activity-suggestions',
-  payload: GenerateIntelligencePayload
+  mode: IntelligenceMode,
+  payload: IntelligencePayload
 ) {
   const { data, error } = await supabase.functions.invoke('generate-intelligence', {
     body: { mode, ...payload },
   })
   
-  if (error) throw error
+  if (error) {
+    // Enhanced error handling for 400/422 responses
+    const errorMessage = error.message || 'Unknown error';
+    console.error('[Intelligence] Error:', { mode, payload, error: errorMessage });
+    throw new Error(`Intelligence generation failed: ${errorMessage}`);
+  }
+  
   return data
 }

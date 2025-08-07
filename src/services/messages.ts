@@ -1,4 +1,5 @@
 import pLimit from 'p-limit'
+import pThrottle from 'p-throttle'
 import { supabase } from '@/integrations/supabase/client'
 import { supaFn } from '@/lib/supaFn'
 
@@ -29,6 +30,11 @@ async function sendMessageRPC(payload: {
 /** Allow only N concurrent calls & queue the rest */
 const limit = pLimit(2);              // 2 parallel, change to taste
 
+/** Throttle to max 1 message per 750ms to prevent burst flooding */
+const throttle = pThrottle({ limit: 1, interval: 750 });
+
+const throttledSendMessage = throttle(sendMessageRPC);
+
 export function limitedSendMessage(input: Parameters<typeof sendMessageRPC>[0]) {
-  return limit(() => sendMessageRPC(input));
+  return limit(() => throttledSendMessage(input));
 }

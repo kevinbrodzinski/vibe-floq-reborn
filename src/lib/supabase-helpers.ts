@@ -14,9 +14,10 @@ export const safeProfileUpdate = async (id: string, updates: {
     .update(updates as any)
     .eq('id', id as any)
     .select()
-    .single();
+    .maybeSingle(); // ✅ Fixed: use maybeSingle to avoid 406 errors
     
-  return { data, error };
+  if (error) throw error;
+  return { data: data ?? null, error };
 };
 
 export const safeUserSettingsQuery = async (profileId: string) => {
@@ -234,10 +235,10 @@ export const createCollection = async (name: string, description?: string, color
       profile_id: user.data.user.id
     })
     .select()
-    .single();
+    .maybeSingle(); // ✅ Fixed: use maybeSingle to avoid 406 errors
 
   if (error) throw error;
-  return data;
+  return data ?? null;
 };
 
 export const getCollections = async (): Promise<Collection[]> => {
