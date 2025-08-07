@@ -16,7 +16,7 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
         .from('direct_messages')
         .select('id, content, profile_id, metadata')
         .eq('id', messageId)
-        .maybeSingle(); // ✅ Fixed: use maybeSingle to avoid 406 errors
+        .maybeSingle();
       
       if (error) throw error;
       return data ?? null; // graceful fallback

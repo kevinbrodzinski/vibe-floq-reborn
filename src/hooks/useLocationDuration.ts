@@ -16,7 +16,7 @@ export const useLocationDuration = (profileId: string | undefined) => {
         .gt('expires_at', new Date().toISOString())
         .order('last_heartbeat', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (venuePresence?.checked_in_at) {
         const startTime = new Date(venuePresence.checked_in_at);
@@ -35,7 +35,7 @@ export const useLocationDuration = (profileId: string | undefined) => {
         .eq('profile_id', profileId)
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (presence?.started_at) {
         const startTime = new Date(presence.started_at);

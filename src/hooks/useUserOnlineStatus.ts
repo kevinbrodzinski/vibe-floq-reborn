@@ -25,7 +25,7 @@ export function useUserOnlineStatus(profileId?: string): OnlineStatus | null {
           .from('user_online_status')
           .select('is_online,last_seen')
           .eq('profile_id', profileId)
-          .single();
+          .maybeSingle();
         
         setStatus(
           data
