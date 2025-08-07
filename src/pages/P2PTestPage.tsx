@@ -90,6 +90,130 @@ const MOCK_MESSAGES = [
   }
 ];
 
+// Test wrapper for MessageBubble that handles mock data
+function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick }: {
+  message: any;
+  showAvatar: boolean;
+  isConsecutive: boolean;
+  onReactionClick?: (emoji: string) => void;
+}) {
+  // In test mode, we'll create a simplified version that doesn't rely on hooks
+  const currentUserId = useCurrentUserId();
+  const isOwn = message.profile_id === MOCK_CURRENT_USER_ID;
+  
+  // Mock reactions for demo
+  const mockReactions = [
+    { emoji: '❤️', count: 2, hasUserReacted: false },
+    { emoji: '👍', count: 1, hasUserReacted: isOwn },
+  ];
+
+  const formatTime = (timestamp: string) => {
+    if (!timestamp) return 'Now';
+    
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Now';
+    
+    try {
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+      const minutes = Math.floor(diff / (1000 * 60));
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      
+      if (minutes < 60) {
+        return `${minutes}m ago`;
+      } else if (hours < 24) {
+        return `${hours}h ago`;
+      } else {
+        return date.toLocaleDateString();
+      }
+    } catch {
+      return 'Now';
+    }
+  };
+
+  return (
+    <div className={`flex gap-3 max-w-[80%] ${isOwn ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
+      {/* Avatar */}
+      {showAvatar && !isConsecutive && (
+        <div className="flex-shrink-0">
+          {message.senderProfile?.avatar_url ? (
+            <img
+              src={message.senderProfile.avatar_url}
+              alt={message.senderProfile.display_name || 'User'}
+              className="w-8 h-8 rounded-full"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium">
+              {(message.senderProfile?.display_name || 'U')[0].toUpperCase()}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Message Content */}
+      <div className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}>
+        {/* Sender name (only for non-own messages and first in group) */}
+        {!isOwn && showAvatar && !isConsecutive && (
+          <div className="text-sm font-medium text-gray-900 px-1">
+            {message.senderProfile?.display_name || 'Unknown User'}
+          </div>
+        )}
+        
+        {/* Message bubble */}
+        <div
+          className={`
+            relative px-4 py-2 rounded-2xl max-w-md break-words
+            ${isOwn 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-100 text-gray-900'
+            }
+            ${isConsecutive ? (isOwn ? 'rounded-tr-md' : 'rounded-tl-md') : ''}
+          `}
+        >
+          <div className="text-sm">{message.content}</div>
+          
+          {/* Mock reactions */}
+          {mockReactions.length > 0 && (
+            <div className="flex gap-1 mt-2 flex-wrap">
+              {mockReactions.map((reaction) => (
+                <button
+                  key={reaction.emoji}
+                  className={`
+                    flex items-center gap-1 px-2 py-1 rounded-full text-xs
+                    ${reaction.hasUserReacted 
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                      : 'bg-white/20 hover:bg-white/30 border border-white/20'
+                    }
+                  `}
+                                     onClick={() => {
+                     onReactionClick?.(reaction.emoji);
+                   }}
+                >
+                  <span>{reaction.emoji}</span>
+                  <span>{reaction.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Timestamp and status */}
+        <div className={`flex items-center gap-2 text-xs text-gray-500 px-1 ${isOwn ? 'flex-row-reverse' : ''}`}>
+          <span>{formatTime(message.created_at)}</span>
+          {isOwn && (
+            <span className="text-blue-500">
+              {message.status === 'read' && '✓✓'}
+              {message.status === 'delivered' && '✓'}
+              {message.status === 'sent' && '→'}
+              {message.status === 'sending' && '⋯'}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function P2PTestPage() {
   const [testMessage, setTestMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -496,10 +620,9 @@ export default function P2PTestPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {MOCK_MESSAGES.map((message, index) => (
-                <MessageBubble
+                <TestMessageBubble
                   key={message.id}
                   message={message}
-                  isOwn={message.profile_id === MOCK_CURRENT_USER_ID}
                   showAvatar={index === 0 || MOCK_MESSAGES[index - 1]?.profile_id !== message.profile_id}
                   isConsecutive={index > 0 && MOCK_MESSAGES[index - 1]?.profile_id === message.profile_id}
                   onReactionClick={(emoji) => handleToggleReaction(message.id, emoji)}

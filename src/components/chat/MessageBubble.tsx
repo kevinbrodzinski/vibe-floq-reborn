@@ -49,16 +49,30 @@ export function MessageBubble({
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
   const { reactionsByMessage, toggleReaction, isToggling } = useMessageReactions(threadId, 'dm');
-  const messageReactions = reactionsByMessage[id] || [];
+  const messageReactions = reactionsByMessage?.[id] || [];
 
   const formatTime = (timestamp: string) => {
+    if (!timestamp) return 'Now';
+    
     const date = new Date(timestamp);
-    if (isToday(date)) {
-      return format(date, 'h:mm a');
-    } else if (isYesterday(date)) {
-      return `Yesterday ${format(date, 'h:mm a')}`;
-    } else {
-      return format(date, 'MMM d, h:mm a');
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid timestamp:', timestamp);
+      return 'Now';
+    }
+    
+    try {
+      if (isToday(date)) {
+        return format(date, 'h:mm a');
+      } else if (isYesterday(date)) {
+        return `Yesterday ${format(date, 'h:mm a')}`;
+      } else {
+        return format(date, 'MMM d, h:mm a');
+      }
+    } catch (error) {
+      console.warn('Error formatting date:', timestamp, error);
+      return 'Now';
     }
   };
 
