@@ -10,6 +10,7 @@ export const VIBES = [
   'social',
   'open',
   'down',
+  'curious',
 ] as const;
 
 export type Vibe = (typeof VIBES)[number];
@@ -37,6 +38,7 @@ export const VIBE_RGB: Record<Vibe, [number, number, number]> = {
   social:  [ 35, 209,  96],
   open:    [175,  82, 222],
   down:    [ 88,  86, 214],
+  curious: [255, 193,   7], // Yellow-orange for curiosity
 };
 
 // HSL colors for CSS (using Tailwind tokens where appropriate)
@@ -50,4 +52,5 @@ export const VIBE_COLORS: Record<Vibe, string> = {
   social:   'hsl(200 70% 60%)',
   open:     'hsl(120 70% 60%)',
   down:     'hsl(280 70% 60%)',
+  curious:  'hsl(45 100% 51%)', // Bright yellow-orange for curiosity
 };

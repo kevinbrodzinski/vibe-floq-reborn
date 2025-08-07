@@ -15,7 +15,7 @@ interface PersistentVibeDistributionProps {
   className?: string;
 }
 
-export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProps> = React.memo(({ 
+const PersistentVibeDistributionComponent: React.FC<PersistentVibeDistributionProps> = ({ 
   className = "" 
 }) => {
   const [pieData, setPieData] = useState<VibeDistributionData[]>([]);
@@ -31,9 +31,9 @@ export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProp
 
   // Memoize the data generation function
   const generatePieData = React.useCallback((): VibeDistributionData[] => {
-    return VIBES.slice(0, 6).map(vibe => ({
+    return VIBES.map(vibe => ({
       name: vibe.charAt(0).toUpperCase() + vibe.slice(1),
-      value: Math.floor(10 + Math.random() * 40),
+      value: Math.floor(5 + Math.random() * 25), // Smaller values since we have more vibes
       color: getVibeColor(vibe)
     }));
   }, [getVibeColor]);
@@ -56,13 +56,13 @@ export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProp
 
   return (
     <Card className={`p-4 bg-card/40 backdrop-blur-sm border-border/30 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">Vibe Distribution</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">({pieData.length} vibes)</span>
-          <PieChartIcon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-foreground">Vibe Distribution</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">({pieData.length}/10 vibes)</span>
+            <PieChartIcon className="h-4 w-4 text-muted-foreground" />
+          </div>
         </div>
-      </div>
       
       <div className="h-48 w-full">
         {pieData.length > 0 ? (
@@ -103,12 +103,12 @@ export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProp
         )}
       </div>
       
-      {/* Legend */}
-      <div className="grid grid-cols-2 gap-1 mt-2">
-        {pieData.slice(0, 4).map((item) => (
+      {/* Legend - Show all 10 vibes in a 2-column grid */}
+      <div className="grid grid-cols-2 gap-1 mt-2 max-h-32 overflow-y-auto">
+        {pieData.map((item) => (
           <div key={item.name} className="flex items-center gap-2 text-xs">
             <div 
-              className="w-2 h-2 rounded-full"
+              className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
             <span className="truncate text-foreground">{item.name}</span>
@@ -116,22 +116,8 @@ export const PersistentVibeDistribution: React.FC<PersistentVibeDistributionProp
           </div>
         ))}
       </div>
-      
-      {/* Show remaining items if more than 4 */}
-      {pieData.length > 4 && (
-        <div className="grid grid-cols-2 gap-1 mt-1">
-          {pieData.slice(4).map((item) => (
-            <div key={item.name} className="flex items-center gap-2 text-xs">
-              <div 
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="truncate text-foreground">{item.name}</span>
-              <span className="text-muted-foreground ml-auto">{item.value}%</span>
-            </div>
-          ))}
-        </div>
-      )}
     </Card>
   );
-});
+};
+
+export const PersistentVibeDistribution = React.memo(PersistentVibeDistributionComponent);
