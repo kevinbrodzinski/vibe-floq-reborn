@@ -6,9 +6,10 @@
     "module": "ESNext",
     "skipLibCheck": true,
     
-    /* Enable proper type resolution */
+    /* Enable proper type resolution for React 18 */
     "types": ["node", "react", "react-dom"],
     "typeRoots": ["./node_modules/@types"],
+    "jsx": "react-jsx",
 
     /* Bundler mode */
     "moduleResolution": "bundler",

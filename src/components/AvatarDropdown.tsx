@@ -204,12 +204,7 @@ export const AvatarDropdown = () => {
       <Sheet open={avatarMgr.open} onOpenChange={avatarMgr.setOpen}>
         <SheetContent side="bottom" className="p-4">
           <div className="max-w-sm mx-auto">
-            <SheetHeader className="text-center mb-4">
-              <SheetTitle>Change Avatar</SheetTitle>
-              <SheetDescription>
-                Upload a new profile picture or choose from your existing photos.
-              </SheetDescription>
-            </SheetHeader>
+            <h3 className="text-lg font-semibold text-center mb-4">Change Avatar</h3>
             <AvatarUpload
               currentAvatarUrl={profile?.avatar_url}
               displayName={profile?.display_name}
