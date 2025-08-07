@@ -39,40 +39,22 @@ import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 
 const App = () => {
-  // EMERGENCY DEBUG MODE - bypass everything
-  if (import.meta.env.DEV) {
+  // Quick bypass for testing - go directly to /home
+  if (import.meta.env.DEV && window.location.pathname === '/') {
+    window.location.href = '/home';
     return (
       <div style={{ 
         position: 'fixed', 
         inset: 0, 
         zIndex: 999999, 
-        backgroundColor: '#ff0000', 
+        backgroundColor: '#0066ff', 
         color: 'white', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '20px',
-        fontSize: '20px'
+        fontSize: '18px'
       }}>
-        <h1>🚨 EMERGENCY DEBUG MODE</h1>
-        <p>React is working!</p>
-        <p>Current URL: {window.location.href}</p>
-        <button 
-          onClick={() => window.location.href = '/home'}
-          style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}
-        >
-          Go to /home
-        </button>
-        <button 
-          onClick={() => window.location.reload()}
-          style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}
-        >
-          Reload Page
-        </button>
-        <div style={{ fontSize: '14px', opacity: 0.8 }}>
-          Check browser console for errors
-        </div>
+        Redirecting to /home...
       </div>
     );
   }
