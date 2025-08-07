@@ -149,8 +149,26 @@ const App = () => {
                               {/* Catch-all route for app routes handled by AppRoutes.tsx */}
                               <Route path="*" element={
                                 <>
-                                  {console.log('🎯 CATCH-ALL ROUTE MATCHED - Trying to render Index')}
-                                  <Index />
+                                  {console.log('🎯 CATCH-ALL ROUTE MATCHED - Trying inline component')}
+                                  <div style={{
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100vw',
+                                    height: '100vh',
+                                    backgroundColor: '#00ff00',
+                                    color: 'black',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    zIndex: 999999
+                                  }}>
+                                    ✅ INLINE REACT COMPONENT WORKS!
+                                    <br />
+                                    Path: {window.location.pathname}
+                                  </div>
                                 </>
                               } />
                             </Routes>
