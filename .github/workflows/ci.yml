@@ -13,7 +13,7 @@ jobs:
       # 2. Set up Node and enable the npm cache (locks to package-lock.json)
       - uses: actions/setup-node@v4
         with:
-          node-version: 18          # use the version your project needs
+          node-version: 22          # updated to match local development environment
           cache: npm                # 👉  switched from 'pnpm' to 'npm'
 
       # 3. Install deps from package-lock.json (fail if it’s out of sync)
