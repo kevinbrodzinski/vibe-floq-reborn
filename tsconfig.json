@@ -33,7 +33,6 @@
     "moduleResolution": "node", 
     "types": ["node", "react", "react-dom"],
     "typeRoots": ["./node_modules/@types"],
-    "jsx": "react-jsx",
-    "skipLibCheck": true
+    "jsx": "react-jsx"
   }
 }
