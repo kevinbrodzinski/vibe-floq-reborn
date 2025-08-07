@@ -40,7 +40,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           .from('friendships')
           .select('*', { count: 'exact', head: true })
           .or(`user_low.eq.${profileId},user_high.eq.${profileId}`)
-          .eq('status', 'accepted');
+          .eq('friend_state', 'accepted');
         
         friendCount = friendsCount || 0;
 
@@ -51,14 +51,14 @@ export const useRealProfileStats = (profileId: string | undefined) => {
             .from('friendships')
             .select('user_low, user_high')
             .or(`user_low.eq.${currentUserId},user_high.eq.${currentUserId}`)
-            .eq('status', 'accepted');
+            .eq('friend_state', 'accepted');
 
           // Get target user's friends
           const { data: theirFriends } = await supabase
             .from('friendships')
             .select('user_low, user_high')
             .or(`user_low.eq.${profileId},user_high.eq.${profileId}`)
-            .eq('status', 'accepted');
+            .eq('friend_state', 'accepted');
 
           if (myFriends && theirFriends) {
             // Extract friend IDs for current user
@@ -155,7 +155,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
             .from('friendships')
             .select('*')
             .or(`and(user_low.eq.${currentUserId},user_high.eq.${profileId}),and(user_low.eq.${profileId},user_high.eq.${currentUserId})`)
-            .eq('status', 'accepted')
+            .eq('friend_state', 'accepted')
             .maybeSingle();
 
           if (friendship) {
