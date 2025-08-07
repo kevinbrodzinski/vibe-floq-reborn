@@ -347,7 +347,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
         {/* Zone 3: CTA Bar (non-friend only) */}
         {!isMe && !isCurrentlyFriend && !pendingToMe && (
-          <ActionBarNonFriend profile={profile} requested={pendingFromMe} />
+          <ActionBarNonFriend profile={profile} isPending={pendingFromMe} />
         )}
 
         {!isMe && pendingToMe && (
