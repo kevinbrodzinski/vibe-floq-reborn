@@ -6,7 +6,7 @@
 First, run the database migration:
 ```sql
 -- In your Supabase SQL editor, run:
-\i complete_p2p_migration.sql
+\i supabase/migrations/20250106000000_p2p_enhancements_optimized.sql
 ```
 
 ### 2. **Start Development Server**
