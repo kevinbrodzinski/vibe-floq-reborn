@@ -8,10 +8,11 @@ import type { SharedActivityContext } from '@/lib/intelligence';
 
 interface Props extends SharedActivityContext { 
   isMe: boolean;
+  onPlanIt?: (suggestion: { title: string; venue_id?: string; vibe?: string }) => void;
 }
 
 export const IdeasForYouTwo: React.FC<Props> = (ctx) => {
-  const { isMe, ...promptCtx } = ctx;
+  const { isMe, onPlanIt, ...promptCtx } = ctx;
   const { data, isFetching } = useSharedActivitySuggestions(promptCtx, { enabled: !isMe });
   const { setShowCreateSheet } = useFloqUI();
 
@@ -31,9 +32,16 @@ export const IdeasForYouTwo: React.FC<Props> = (ctx) => {
   const suggestions = data?.length ? data : fallback;
 
   const handlePlanIt = (suggestion: typeof suggestions[0]) => {
-    // For now, just open the Create Floq sheet
-    // TODO: Implement prefill functionality when available
-    setShowCreateSheet(true);
+    if (onPlanIt) {
+      onPlanIt({
+        title: suggestion.title,
+        venue_id: suggestion.venue_id,
+        vibe: suggestion.vibe,
+      });
+    } else {
+      // Fallback: just open the Create Floq sheet
+      setShowCreateSheet(true);
+    }
   };
 
   if (isMe) return null;

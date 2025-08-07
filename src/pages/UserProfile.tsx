@@ -1,5 +1,5 @@
 
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass, Sparkles, Navigation, Shield } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
@@ -54,6 +54,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const [dmOpen, setDmOpen] = useState(false);
   const { setShowCreateSheet } = useFloqUI();
   const showDiscoveryStack = useFeatureFlag('PEOPLE_DISCOVERY_STACK_V2');
+  const navigate = useNavigate();
   
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
@@ -118,6 +119,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const friendRow = friendsData?.find(f => f.id === profile.id);
   const pendingFromMe = friendRow?.friend_state === 'pending' && friendRow.is_outgoing_request;
   const pendingToMe = friendRow?.friend_state === 'pending' && friendRow.is_incoming_request;
+  const isPending = pendingFromMe || pendingToMe;
 
   // Use real stats or fallback to defaults
   const stats = realStats || {
@@ -143,10 +145,16 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const displayName = profile.display_name || profile.username || 'Unknown User';
   const username = profile.username;
 
-  const handleQuickFloq = () => {
-    // Pre-fill the Create Floq sheet with this user
+  const handleQuickFloq = (preset?: { title?: string; venueId?: string; vibe?: string }) => {
+    // Pre-fill the Create Floq sheet with this user and optional preset data
     setShowCreateSheet(true);
     // TODO: Add logic to pre-populate participants with current user and profile
+    // TODO: Use preset data (title, venueId, vibe) when available
+    console.log('Quick Floq with preset:', preset);
+  };
+
+  const handleNavigateToMap = () => {
+    navigate(`/field?focus=${profile.id}`);
   };
 
   return (
@@ -173,20 +181,27 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
             className="z-10"
           />
           
-          {/* Avatar without vibe halo */}
+          {/* Avatar with vibe halo */}
           <div className="relative mb-4">
-            <Avatar className="w-32 h-32 mx-auto bg-surface border border-white/10">
-              <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
-              <AvatarFallback className="text-2xl">
-                {getInitials(profile.display_name || profile.username)}
-              </AvatarFallback>
-            </Avatar>
+            <VibeHalo vibe={mockLiveVibe?.vibe} className="w-32 h-32 mx-auto">
+              <Avatar className="w-32 h-32 bg-surface border border-white/10">
+                <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
+                <AvatarFallback className="text-2xl">
+                  {getInitials(profile.display_name || profile.username)}
+                </AvatarFallback>
+              </Avatar>
+            </VibeHalo>
             
             {/* Quick ping button */}
             {!isMe && <QuickPingButton targetId={profile.id} />}
           </div>
           
-          <h1 className="text-white text-xl font-medium mb-1">{displayName}</h1>
+          <h1 className="text-white text-xl font-medium mb-1 flex items-center gap-2 justify-center">
+            {displayName}
+            {profile.created_at && new Date(profile.created_at) < new Date('2024-01-01') && (
+              <ProfileChip text="Early Member" className="bg-purple-500/20 text-purple-300" />
+            )}
+          </h1>
           {username && (
             <p className="text-gray-400 text-sm mb-3">@{username}</p>
           )}
@@ -224,6 +239,13 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
                     <Shield className="h-3 w-3 text-blue-400" aria-label="Privacy filtered distance" />
                   )}
                 </div>
+                <button
+                  onClick={handleNavigateToMap}
+                  title="Open on map"
+                  className="p-1 rounded hover:bg-white/10 transition"
+                >
+                  <Compass className="h-4 w-4 text-blue-300" />
+                </button>
                 {friendDistance.isNearby && (
                   <Badge variant="secondary" className="text-xs px-2 py-0">
                     <MapPin className="h-3 w-3 mr-1" />
@@ -347,7 +369,16 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
         {/* Zone 3: CTA Bar (non-friend only) */}
         {!isMe && !isCurrentlyFriend && !pendingToMe && (
-          <ActionBarNonFriend profile={profile} isPending={pendingFromMe} />
+          <div className="space-y-2">
+            <ActionBarNonFriend profile={profile} isPending={pendingFromMe} />
+            {isPending && (
+              <div className="flex justify-center">
+                <Badge variant="outline" className="text-xs">
+                  Request pending...
+                </Badge>
+              </div>
+            )}
+          </div>
         )}
 
         {!isMe && pendingToMe && (
@@ -467,6 +498,11 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
             topCommonVenues={[]} // TODO: Get actual common venues data
             sharedTags={['coffee', 'music']} // TODO: Get actual shared interests
             lastHangDays={null} // TODO: Get actual last hang data
+            onPlanIt={(suggestion) => handleQuickFloq({
+              title: suggestion.title,
+              venueId: suggestion.venue_id,
+              vibe: suggestion.vibe,
+            })}
           />
         )}
 
