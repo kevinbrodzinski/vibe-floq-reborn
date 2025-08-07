@@ -12,7 +12,6 @@ import { VibeWheel } from '@/components/vibe/VibeWheel';
 import { DynamicVibeToggle } from '@/components/ui/DynamicVibeToggle';
 import { FeedbackButtons } from '@/components/ui/FeedbackButtons';
 import { EnhancedFeedbackButtons } from '@/components/ui/EnhancedFeedbackButtons';
-import { LearningPatterns } from '@/components/ui/LearningPatterns';
 import { VisibilityButton } from '@/components/vibe/VisibilityButton';
 import { SystemHealthMonitor } from '@/components/ui/SystemHealthMonitor';
 import { Button } from '@/components/ui/button';
@@ -54,6 +53,8 @@ export const PersonalMode: React.FC = () => {
   const [isTogglingMode, setIsTogglingMode] = useState(false);
   const [showAdvancedVisuals, setShowAdvancedVisuals] = useState(true);
   const [visualsMode, setVisualsMode] = useState<'basic' | 'flow' | 'analytics' | 'personality'>('analytics');
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [stableFeedbackData, setStableFeedbackData] = useState<any>(null);
 
   // Update hero data when sensor data or location changes
   useEffect(() => {
@@ -89,6 +90,33 @@ export const PersonalMode: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [autoMode, isEnhancedMode, sensorData?.timestamp]); // Only depend on essential values
 
+  // Stabilize feedback button visibility to prevent glitching
+  useEffect(() => {
+    const shouldShowFeedback = vibeDetection && 
+                              vibeDetection.suggestedVibe && 
+                              vibeDetection.confidence > 0.3 &&
+                              autoMode;
+
+    if (shouldShowFeedback && !showFeedback) {
+      // Debounce showing feedback
+      const showTimer = setTimeout(() => {
+        setShowFeedback(true);
+        setStableFeedbackData(vibeDetection);
+      }, 500);
+      return () => clearTimeout(showTimer);
+    } else if (!shouldShowFeedback && showFeedback) {
+      // Debounce hiding feedback
+      const hideTimer = setTimeout(() => {
+        setShowFeedback(false);
+        setStableFeedbackData(null);
+      }, 1000);
+      return () => clearTimeout(hideTimer);
+    } else if (shouldShowFeedback && showFeedback) {
+      // Update data while visible
+      setStableFeedbackData(vibeDetection);
+    }
+  }, [vibeDetection?.suggestedVibe, vibeDetection?.confidence, autoMode, showFeedback]);
+
   const handleVibeSelect = (vibe: string) => {
     console.log('Jump to vibe:', vibe);
     // TODO: Implement wheel rotation to selected vibe
@@ -103,9 +131,19 @@ export const PersonalMode: React.FC = () => {
           heroData.currentVibe
         );
       }
+      // Dismiss feedback after interaction
+      setShowFeedback(false);
+      setStableFeedbackData(null);
     } catch (error) {
       console.error('Failed to record enhanced feedback:', error);
     }
+  };
+
+  const handleBasicFeedback = (action: string) => {
+    console.log(`${action} suggestion`);
+    // Dismiss feedback after interaction
+    setShowFeedback(false);
+    setStableFeedbackData(null);
   };
 
   const toggleSystemHealth = () => {
@@ -347,7 +385,7 @@ export const PersonalMode: React.FC = () => {
         </div>
 
         {/* Enhanced Feedback Buttons (when auto-detection suggests changes) */}
-        {vibeDetection && vibeDetection.suggestedVibe && vibeDetection.confidence > 0.3 && (
+        {showFeedback && stableFeedbackData && (
           <motion.div 
             className="px-2 mb-2"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -366,7 +404,7 @@ export const PersonalMode: React.FC = () => {
                 if (isEnhancedMode && heroData) {
                   return (
                     <EnhancedFeedbackButtons
-                      analysis={vibeDetection}
+                      analysis={stableFeedbackData}
                       onFeedback={handleEnhancedFeedback}
                       enhancedLocationData={enhancedLocation.location ? enhancedLocation : undefined}
                     />
@@ -374,13 +412,13 @@ export const PersonalMode: React.FC = () => {
                 } else {
                   return (
                     <FeedbackButtons
-                      suggestedVibe={vibeDetection.suggestedVibe}
-                      confidence={vibeDetection.confidence}
-                      onAccept={() => console.log('Accept suggestion')}
-                      onCorrect={() => console.log('Correct suggestion')}
-                      onClose={() => console.log('Close feedback')}
+                      suggestedVibe={stableFeedbackData.suggestedVibe}
+                      confidence={stableFeedbackData.confidence}
+                      onAccept={() => handleBasicFeedback('Accept')}
+                      onCorrect={() => handleBasicFeedback('Correct')}
+                      onClose={() => handleBasicFeedback('Close')}
                       isProcessing={false}
-                      learningBoost={vibeDetection.learningBoost}
+                      learningBoost={stableFeedbackData.learningBoost}
                     />
                   );
                 }
@@ -390,24 +428,6 @@ export const PersonalMode: React.FC = () => {
               }
             })()}
           </motion.div>
-        )}
-
-        {/* Learning Patterns (when auto mode is enabled) */}
-        {autoMode && (
-          <div className="px-2 mb-2">
-            <motion.div
-              initial={{ y: 32, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ type: "spring", damping: 24, stiffness: 260 }}
-            >
-              <LearningPatterns
-                patterns={learningData.patterns}
-                topPreferences={learningData.preferences}
-                accuracy={heroData?.accuracy || learningData.accuracy}
-                correctionCount={learningData.correctionCount}
-              />
-            </motion.div>
-          </div>
         )}
 
         {/* Streak & Achievements Card */}

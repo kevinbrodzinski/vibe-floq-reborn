@@ -360,20 +360,6 @@ export const VibePersonalityRadar: React.FC<VibePersonalityRadarProps> = ({
           )}
         </AnimatePresence>
       </div>
-
-      {/* Insights */}
-      <div className="text-xs text-muted-foreground">
-        <div className="flex items-center gap-1 mb-1">
-          <Sparkles className="w-3 h-3" />
-          <span className="font-medium">Insights:</span>
-        </div>
-        <p>
-          You're most consistent with <strong className="capitalize">{dominantVibe.vibe}</strong> vibes. 
-          {dominantVibe.growth > 5 && " This is trending up significantly!"}
-          {dominantVibe.growth < -5 && " Consider exploring this vibe more."}
-          {Math.abs(dominantVibe.growth) <= 5 && " Your patterns are stable."}
-        </p>
-      </div>
     </Card>
   );
 };
