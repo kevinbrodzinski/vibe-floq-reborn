@@ -16,6 +16,7 @@ export function useAtomicFriendships() {
   const sendFriendRequest = useMutation({
     mutationFn: async (targetUserId: string) => {
       if (!currentUserId) throw new Error('User not authenticated');
+      if (!targetUserId) throw new Error('Target user ID is required');
       if (currentUserId === targetUserId) throw new Error('Cannot send request to yourself');
 
       // Use the enhanced rate-limited function
@@ -93,6 +94,7 @@ export function useAtomicFriendships() {
   const acceptFriendRequest = useMutation({
     mutationFn: async (fromUserId: string) => {
       if (!currentUserId) throw new Error('User not authenticated');
+      if (!fromUserId) throw new Error('Requester user ID is required');
 
       // Use enhanced atomic accept function to prevent race conditions
       const { data, error } = await supabase.rpc('accept_friend_request_atomic', {
@@ -163,6 +165,7 @@ export function useAtomicFriendships() {
   const rejectFriendRequest = useMutation({
     mutationFn: async ({ userId, isIncoming }: { userId: string; isIncoming: boolean }) => {
       if (!currentUserId) throw new Error('User not authenticated');
+      if (!userId) throw new Error('Target user ID is required');
 
       if (isIncoming) {
         // Rejecting an incoming request
