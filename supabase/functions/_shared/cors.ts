@@ -28,3 +28,10 @@ export const respondWithCorsOptions = () =>
       "Content-Length": "0",
     },
   });
+
+export function handleOptions(req: Request) {
+  if (req.method === "OPTIONS") {
+    return respondWithCorsOptions();
+  }
+  return undefined; // let the caller continue
+}

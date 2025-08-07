@@ -3,21 +3,11 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
 import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-};
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204,
-      headers: corsHeaders 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     const supabase = createClient(
@@ -109,14 +99,14 @@ serve(async (req) => {
     // Track relationships when users are nearby (distance gated for performance)
     if (nearby && nearby.length > 1) { // Only if there are other users
       const relationshipPayload = {
-        profile_id: user.id,
+        profile_id: String(user.id),
         nearby_users: nearby.filter(u => u.profile_id !== user.id).map(u => ({
-          profile_id: u.profile_id,
-          distance: u.distance,
-          vibe: u.vibe
+          profile_id: String(u.profile_id),
+          distance: u.distance ?? 0,
+          vibe: u.vibe ?? 'chill'
         })),
-        current_vibe: vibe || 'chill',
-        venue_id: venue_id,
+        current_vibe: String(vibe || 'chill'),
+        venue_id: venue_id ? String(venue_id) : null,
         timestamp: new Date().toISOString()
       };
       
@@ -130,11 +120,11 @@ serve(async (req) => {
     // Process activity scores for nearby floqs
     if (floqs && floqs.length > 0) {
       const activityEvents = floqs.map(floq => ({
-        floq_id: floq.id,
+        floq_id: String(floq.id),
         event_type: 'proximity_update' as const,
-        profile_id: user.id,
+        profile_id: String(user.id),
         proximity_users: nearby ? nearby.length - 1 : 0, // Exclude self
-        vibe: vibe || 'chill',
+        vibe: String(vibe || 'chill'),
         timestamp: new Date().toISOString()
       }));
 

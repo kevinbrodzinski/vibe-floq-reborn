@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -23,8 +23,21 @@ const fail = (code: number, msg: string) => new Response(JSON.stringify({ error:
 
 const InputSchema = {
   safeParse: (data: any) => {
-    const validModes = ['afterglow', 'daily', 'floq-match', 'plan', 'weekly', 'shared-activity-suggestions', 'afterglow-summary'];
-    if (!data.mode || !validModes.includes(data.mode)) {
+    // Accept both legacy and new aliases
+    const validModes = new Set([
+      "afterglow",
+      "afterglow-summary", 
+      "daily",
+      "daily-afterglow",
+      "weekly",
+      "weekly-ai",
+      "plan",
+      "plan-summary",
+      "floq-match",
+      "shared-activity-suggestions",
+    ]);
+    
+    if (!data.mode || !validModes.has(data.mode)) {
       return { success: false, error: { format: () => 'Invalid mode' } };
     }
     return { success: true, data };
@@ -51,13 +64,8 @@ async function broadcast(
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204,
-      headers: { ...corsHeaders, 'Access-Control-Max-Age': '86400' } 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     const body = await req.json();
@@ -197,7 +205,8 @@ Write a compelling one-sentence summary that captures the essence of this day in
         });
       }
 
-      case 'plan': {
+      case 'plan':
+      case 'plan-summary': {
         // Generate plan summary logic
         if (!plan_id) {
           return fail(400, 'Missing plan_id parameter for plan mode');
@@ -361,7 +370,8 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
         });
       }
 
-      case 'daily': {
+      case 'daily':
+      case 'daily-afterglow': {
         // Generate daily afterglow logic
         if (!user_id || !date) {
           return new Response(JSON.stringify({ error: 'Missing user_id or date' }), {
@@ -411,7 +421,8 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
         }
       }
 
-      case 'weekly': {
+      case 'weekly':
+      case 'weekly-ai': {
         // Generate weekly AI suggestion logic
         if (!user_id) {
           return new Response(JSON.stringify({ error: 'Missing user_id' }), {
