@@ -55,6 +55,12 @@ export const FloqApp = () => {
       <TimeSyncProvider>
         <FloqUIProvider>
           <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
+            {/* Debug indicator */}
+            {import.meta.env.DEV && (
+              <div className="fixed top-6 left-0 z-50 bg-blue-500 text-white px-2 py-1 text-xs">
+                🚀 FloqApp Rendering
+              </div>
+            )}
             {/* Header with search and notifications */}
             <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2" {...zIndex('uiHeader')}>
               <div className="flex items-center justify-between">

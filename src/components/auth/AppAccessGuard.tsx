@@ -218,5 +218,18 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   }
 
   console.log('✅ Onboarding complete, showing main app');
+  
+  // Debug: Add a visible indicator that we're rendering children
+  if (import.meta.env.DEV) {
+    return (
+      <div className="min-h-screen">
+        <div className="fixed top-0 left-0 z-50 bg-green-500 text-white px-2 py-1 text-xs">
+          ✅ AUTH OK - Rendering App
+        </div>
+        {children}
+      </div>
+    );
+  }
+  
   return <>{children}</>;
 }
