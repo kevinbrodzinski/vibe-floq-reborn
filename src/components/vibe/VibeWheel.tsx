@@ -107,27 +107,42 @@ export const VibeWheel = memo<VibeWheelProps>(({
 
   /* ---------- orb drag handlers ---------- */
   const handleOrbDragEnd = useCallback((_: any, info: PanInfo) => {
-    // Use velocity and offset to determine direction of drag
-    const offset = Math.sqrt(info.offset.x ** 2 + info.offset.y ** 2);
-    
-    // Calculate angle based on drag offset
+    // Simplified drag logic for better performance
+    const { velocity, offset } = info;
     const currentAngle = orbAngle.get();
-    const dragAngle = (info.offset.x > 0 ? 1 : -1) * Math.min(offset * 0.3, 120); // limit max rotation
-    let newAngle = currentAngle + dragAngle;
     
-    // Normalize angle
-    while (newAngle < 0) newAngle += 360;
-    while (newAngle >= 360) newAngle -= 360;
+    // Calculate drag direction based on velocity (primary) and offset (fallback)
+    let dragDirection = 0;
+    if (Math.abs(velocity.x) > 50 || Math.abs(velocity.y) > 50) {
+      // Use velocity for fast drags
+      dragDirection = velocity.x > 0 ? 1 : -1;
+    } else if (Math.abs(offset.x) > 20 || Math.abs(offset.y) > 20) {
+      // Use offset for slow drags
+      dragDirection = offset.x > 0 ? 1 : -1;
+    } else {
+      // No significant drag, stay in place
+      return;
+    }
+    
+    // Calculate how many segments to move (1-3 based on drag intensity)
+    const dragIntensity = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
+    const segmentsToMove = Math.max(1, Math.min(3, Math.floor(dragIntensity / 200)));
+    
+    // Calculate new angle
+    let newAngle = currentAngle + (dragDirection * SEGMENT * segmentsToMove);
+    
+    // Normalize angle to 0-360 range
+    newAngle = ((newAngle % 360) + 360) % 360;
     
     // Snap to nearest segment
     const snappedAngle = Math.round(newAngle / SEGMENT) * SEGMENT;
     
-    // Use spring for smooth snap
+    // Smooth animation to new position
     orbAngle.set(snappedAngle);
     
-    // Determine which vibe was selected
-    const idx = ((Math.round(snappedAngle / SEGMENT) % VIBE_ORDER.length) + VIBE_ORDER.length) % VIBE_ORDER.length;
-    commitVibe(VIBE_ORDER[idx]);
+    // Update vibe selection
+    const vibeIndex = Math.round(snappedAngle / SEGMENT) % VIBE_ORDER.length;
+    commitVibe(VIBE_ORDER[vibeIndex]);
   }, [orbAngle, commitVibe]);
 
   return (

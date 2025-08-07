@@ -213,8 +213,20 @@ export const PersonalMode: React.FC = () => {
         </div>
 
         {/* Enhanced Feedback Buttons (when auto-detection suggests changes) */}
-        {vibeDetection && (
-          <div className="px-2 mb-2">
+        {vibeDetection && vibeDetection.suggestedVibe && vibeDetection.confidence > 0.3 && (
+          <motion.div 
+            className="px-2 mb-2"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ 
+              type: "spring", 
+              damping: 25, 
+              stiffness: 300,
+              duration: 0.3
+            }}
+            layout
+          >
             {isEnhancedMode && heroData ? (
               <EnhancedFeedbackButtons
                 analysis={vibeDetection}
@@ -232,7 +244,7 @@ export const PersonalMode: React.FC = () => {
                 learningBoost={vibeDetection.learningBoost}
               />
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Learning Patterns (when auto mode is enabled) */}
