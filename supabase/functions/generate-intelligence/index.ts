@@ -23,7 +23,7 @@ const fail = (code: number, msg: string) => new Response(JSON.stringify({ error:
 
 const InputSchema = {
   safeParse: (data: any) => {
-    const validModes = ['afterglow', 'daily', 'floq-match', 'plan', 'weekly', 'shared-activity-suggestions'];
+    const validModes = ['afterglow', 'daily', 'floq-match', 'plan', 'weekly', 'shared-activity-suggestions', 'afterglow-summary'];
     if (!data.mode || !validModes.includes(data.mode)) {
       return { success: false, error: { format: () => 'Invalid mode' } };
     }
@@ -54,6 +54,7 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
+      status: 204,
       headers: { ...corsHeaders, 'Access-Control-Max-Age': '86400' } 
     });
   }
@@ -63,13 +64,14 @@ serve(async (req) => {
     const input = InputSchema.safeParse(body);
 
     if (!input.success) {
-      return fail(400, `Invalid mode. Expected one of: afterglow, daily, weekly, plan, floq-match, shared-activity-suggestions`);
+      return fail(400, `Invalid mode. Expected one of: afterglow, afterglow-summary, daily, weekly, plan, floq-match, shared-activity-suggestions`);
     }
 
     const { mode, user_id, plan_id, floq_id, date, afterglow_id, prompt, temperature, max_tokens } = input.data;
 
     switch (mode) {
-      case 'afterglow': {
+      case 'afterglow':
+      case 'afterglow-summary': {
         // Generate afterglow summary logic
         if (!openAIApiKey) {
           return fail(500, 'OpenAI API key not configured');

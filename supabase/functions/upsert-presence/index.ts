@@ -7,12 +7,16 @@ import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -37,8 +41,16 @@ serve(async (req) => {
       return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
+
+    // Validate required parameters
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return new Response(JSON.stringify({ error: "Valid lat/lng numbers required" }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Calculate H3 index for the location
     const h3_7 = geoToH3(lat, lng, 7);
@@ -96,14 +108,21 @@ serve(async (req) => {
 
     // Track relationships when users are nearby (distance gated for performance)
     if (nearby && nearby.length > 1) { // Only if there are other users
+      const relationshipPayload = {
+        profile_id: user.id,
+        nearby_users: nearby.filter(u => u.profile_id !== user.id).map(u => ({
+          profile_id: u.profile_id,
+          distance: u.distance,
+          vibe: u.vibe
+        })),
+        current_vibe: vibe || 'chill',
+        venue_id: venue_id,
+        timestamp: new Date().toISOString()
+      };
+      
       backgroundTasks.push(
         supabase.functions.invoke('relationship-tracker', {
-          body: {
-            profile_id: user.id,
-            nearby_users: nearby.filter(u => u.profile_id !== user.id),
-            current_vibe: vibe || 'chill',
-            venue_id: venue_id
-          }
+          body: relationshipPayload
         }).catch(err => console.error('Relationship tracking failed:', err))
       );
     }
@@ -115,7 +134,8 @@ serve(async (req) => {
         event_type: 'proximity_update' as const,
         profile_id: user.id,
         proximity_users: nearby ? nearby.length - 1 : 0, // Exclude self
-        vibe: vibe || 'chill'
+        vibe: vibe || 'chill',
+        timestamp: new Date().toISOString()
       }));
 
       backgroundTasks.push(

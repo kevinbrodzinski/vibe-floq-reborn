@@ -3,12 +3,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -24,7 +28,8 @@ Deno.serve(async (req) => {
       return new Response('Unauthorized', { status: 401, headers: corsHeaders });
     }
 
-    const { on = true, duration_min = 60 } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { on = true, duration_min = 60 } = body;
 
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,

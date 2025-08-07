@@ -7,18 +7,23 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 async function fetchFromOpenWeatherMap(lat: number, lng: number) {
+  const apiKey = Deno.env.get("WEATHER_API_KEY");
+  if (!apiKey) {
+    throw new Error("WEATHER_API_KEY environment variable is not configured");
+  }
+
   const url = new URL("https://api.openweathermap.org/data/2.5/weather");
   url.searchParams.set("lat", String(lat));
   url.searchParams.set("lon", String(lng));
   url.searchParams.set("units", "imperial");        // °F / mph
-  url.searchParams.set("appid", Deno.env.get("WEATHER_API_KEY")!);
+  url.searchParams.set("appid", apiKey);
 
   const r = await fetch(url.href);
   if (!r.ok) throw new Error(`OpenWeatherMap API error: ${r.status}`);
@@ -38,14 +43,22 @@ async function fetchFromOpenWeatherMap(lat: number, lng: number) {
 }
 
 serve(async req => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders
+    });
+  }
 
   try {
-    const { lat, lng } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { lat, lng } = body;
+    
     if (typeof lat !== "number" || typeof lng !== "number") {
+      console.error("[weather] Invalid input:", { lat, lng });
       return new Response(
-        JSON.stringify({ error: "lat/lng required" }),
-        { status: 400, headers: CORS },
+        JSON.stringify({ error: "Valid lat/lng numbers required" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -69,7 +82,7 @@ serve(async req => {
     if (cached) {
       console.log(`[weather] Cache hit for ${geohash6}`);
       return new Response(JSON.stringify(cached.payload), {
-        headers: { ...CORS, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -94,13 +107,26 @@ serve(async req => {
     }
 
     return new Response(JSON.stringify(weatherData), {
-      headers: { ...CORS, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("[weather] Error:", err);
+    
+    // Enhanced error response based on error type
+    let errorMessage = "weather fetch failed";
+    let statusCode = 500;
+    
+    if (err.message.includes("WEATHER_API_KEY")) {
+      errorMessage = "Weather service not configured";
+      statusCode = 503;
+    } else if (err.message.includes("OpenWeatherMap API error")) {
+      errorMessage = "Weather service temporarily unavailable";
+      statusCode = 502;
+    }
+    
     return new Response(
-      JSON.stringify({ error: "weather fetch failed" }),
-      { status: 500, headers: CORS },
+      JSON.stringify({ error: errorMessage, details: err.message }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
