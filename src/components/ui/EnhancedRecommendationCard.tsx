@@ -15,7 +15,8 @@ import {
   Unlock,
   AlertCircle,
   Bookmark,
-  Share2
+  Share2,
+  ThumbsUp
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,9 @@ import { useWatchlist } from '@/hooks/useWatchlist';
 import { calculateVibeMatch, getUserVibeDistribution, getEventVibeDistribution } from '@/utils/vibeMatch';
 import { VibeMatchBadge } from './VibeMatchBadge';
 import { useVibe } from '@/lib/store/useVibe';
+import { BumpButton } from '@/components/venue/BumpButton';
+import { FriendVisitBadge } from '@/components/venue/FriendVisitBadge';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface RecommendationItem {
   id: string;
@@ -183,7 +187,7 @@ export const EnhancedRecommendationCard: React.FC<EnhancedRecommendationCardProp
     const actions = [];
     
     if (item.type === 'venue') {
-      actions.push('Favorite', 'Share');
+      actions.push('Bump', 'Favorite', 'Share');
     } else {
       if (item.status === 'upcoming') actions.push('Watch');
       actions.push('Favorite', 'Share');
@@ -256,6 +260,14 @@ export const EnhancedRecommendationCard: React.FC<EnhancedRecommendationCardProp
           <span>{item.location || 'Location not specified'}</span>
           <span>•</span>
           <span>{formatDistance(item.distance)}</span>
+          {item.type === 'venue' && (
+            <>
+              <span>•</span>
+              <TooltipProvider>
+                <FriendVisitBadge venueId={item.id} />
+              </TooltipProvider>
+            </>
+          )}
         </div>
 
         {/* Participants (for floqs/plans) */}
@@ -375,23 +387,34 @@ export const EnhancedRecommendationCard: React.FC<EnhancedRecommendationCardProp
         {/* Secondary Actions */}
         <div className="flex gap-1">
           {getSecondaryActions().map((action) => (
-            <Button
-              key={action}
-              variant="ghost"
-              size="sm"
-              className="w-8 h-8 p-0"
-              onClick={() => handleAction(action.toLowerCase())}
-            >
-              {action === 'Favorite' && (
-                <Heart className={cn("w-4 h-4", isFavorite(item.id) && "fill-red-500 text-red-500")} />
-              )}
-              {action === 'Watch' && (
-                <Eye className={cn("w-4 h-4", isInWatchlist(item.id) && "text-blue-500")} />
-              )}
-              {action === 'Share' && (
-                <Share2 className="w-4 h-4" />
-              )}
-            </Button>
+            action === 'Bump' && item.type === 'venue' ? (
+              <TooltipProvider key={action}>
+                <BumpButton 
+                  venueId={item.id}
+                  className="w-8 h-8 p-0"
+                  size="sm"
+                  variant="ghost"
+                />
+              </TooltipProvider>
+            ) : (
+              <Button
+                key={action}
+                variant="ghost"
+                size="sm"
+                className="w-8 h-8 p-0"
+                onClick={() => handleAction(action.toLowerCase())}
+              >
+                {action === 'Favorite' && (
+                  <Heart className={cn("w-4 h-4", isFavorite(item.id) && "fill-red-500 text-red-500")} />
+                )}
+                {action === 'Watch' && (
+                  <Eye className={cn("w-4 h-4", isInWatchlist(item.id) && "text-blue-500")} />
+                )}
+                {action === 'Share' && (
+                  <Share2 className="w-4 h-4" />
+                )}
+              </Button>
+            )
           ))}
         </div>
       </div>
