@@ -92,57 +92,84 @@ export const VibeWheel = memo<VibeWheelProps>(({
 
   /* ---------- commit vibe change ---------- */
   const commitVibe = useCallback((v: Vibe) => {
-    if (v === current) return;
+    console.log('commitVibe called:', { 
+      newVibe: v, 
+      currentVibe: current, 
+      isEqual: v === current 
+    });
+    
+    if (v === current) {
+      console.log('Vibe unchanged, skipping update');
+      return;
+    }
+    
+    console.log('Committing vibe change:', current, '→', v);
     triggerHaptic();
     setVibe(v as VibeEnum);
   }, [current, setVibe]);
 
   /* ---------- sync orb position when vibe changes externally ---------- */
   React.useEffect(() => {
-    const targetAngle = VIBE_ORDER.indexOf(current as Vibe ?? 'chill') * SEGMENT;
-    if (Math.abs(orbAngle.get() - targetAngle) > 1) {
+    if (!current) return;
+    
+    const vibeIndex = VIBE_ORDER.indexOf(current as Vibe);
+    if (vibeIndex === -1) {
+      console.warn('Unknown vibe:', current);
+      return;
+    }
+    
+    const targetAngle = vibeIndex * SEGMENT;
+    const currentAngle = orbAngle.get();
+    
+    // Only update if there's a significant difference (avoid micro-updates)
+    if (Math.abs(currentAngle - targetAngle) > 5) {
+      console.log('Syncing orb to vibe:', current, 'angle:', targetAngle);
       orbAngle.set(targetAngle);
     }
   }, [current, orbAngle]);
 
   /* ---------- orb drag handlers ---------- */
+  const handleOrbDrag = useCallback((_: any, info: PanInfo) => {
+    // Real-time drag feedback - calculate angle from center
+    const centerX = RADIUS;
+    const centerY = RADIUS;
+    const dragX = centerX + info.offset.x;
+    const dragY = centerY + info.offset.y;
+    
+    // Calculate angle from center to drag position
+    let angle = Math.atan2(dragY - centerY, dragX - centerX) * (180 / Math.PI);
+    
+    // Adjust angle to start from top (0° = top, clockwise)
+    angle = (angle + 90 + 360) % 360;
+    
+    // Update orb position in real-time
+    orbAngle.set(angle);
+  }, [orbAngle]);
+
   const handleOrbDragEnd = useCallback((_: any, info: PanInfo) => {
-    // Simplified drag logic for better performance
-    const { velocity, offset } = info;
+    // Get the current angle from the drag
     const currentAngle = orbAngle.get();
     
-    // Calculate drag direction based on velocity (primary) and offset (fallback)
-    let dragDirection = 0;
-    if (Math.abs(velocity.x) > 50 || Math.abs(velocity.y) > 50) {
-      // Use velocity for fast drags
-      dragDirection = velocity.x > 0 ? 1 : -1;
-    } else if (Math.abs(offset.x) > 20 || Math.abs(offset.y) > 20) {
-      // Use offset for slow drags
-      dragDirection = offset.x > 0 ? 1 : -1;
-    } else {
-      // No significant drag, stay in place
-      return;
-    }
+    // Snap to the nearest vibe segment
+    const snappedAngle = Math.round(currentAngle / SEGMENT) * SEGMENT;
     
-    // Calculate how many segments to move (1-3 based on drag intensity)
-    const dragIntensity = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
-    const segmentsToMove = Math.max(1, Math.min(3, Math.floor(dragIntensity / 200)));
-    
-    // Calculate new angle
-    let newAngle = currentAngle + (dragDirection * SEGMENT * segmentsToMove);
-    
-    // Normalize angle to 0-360 range
-    newAngle = ((newAngle % 360) + 360) % 360;
-    
-    // Snap to nearest segment
-    const snappedAngle = Math.round(newAngle / SEGMENT) * SEGMENT;
-    
-    // Smooth animation to new position
+    // Smooth snap animation
     orbAngle.set(snappedAngle);
     
-    // Update vibe selection
+    // Calculate which vibe this corresponds to
     const vibeIndex = Math.round(snappedAngle / SEGMENT) % VIBE_ORDER.length;
-    commitVibe(VIBE_ORDER[vibeIndex]);
+    const selectedVibe = VIBE_ORDER[vibeIndex];
+    
+    console.log('Drag ended:', {
+      currentAngle,
+      snappedAngle,
+      vibeIndex,
+      selectedVibe,
+      totalVibes: VIBE_ORDER.length
+    });
+    
+    // Update the vibe
+    commitVibe(selectedVibe);
   }, [orbAngle, commitVibe]);
 
   return (
@@ -237,6 +264,7 @@ export const VibeWheel = memo<VibeWheelProps>(({
         drag
         dragMomentum={false}
         dragConstraints={false}
+        onDrag={handleOrbDrag}
         onDragEnd={handleOrbDragEnd}
         animate={PULSE_ANIMATION}
         className="absolute rounded-full shadow-lg cursor-grab active:cursor-grabbing transition-colors duration-500"
