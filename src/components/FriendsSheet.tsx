@@ -17,7 +17,7 @@ import { useUnifiedFriends }  from '@/hooks/useUnifiedFriends';
 import { useNearbyFriends }   from '@/hooks/useNearbyFriends';
 import { useEnhancedFriendDistances } from '@/hooks/useEnhancedFriendDistances';
 import { useProfileCache }    from '@/hooks/useProfileCache';
-import { useRealtimeFriends } from '@/hooks/useRealtimeFriends';
+
 import { useGeo }             from '@/hooks/useGeo';
 import { useQuery }           from '@tanstack/react-query';
 import { supabase }           from '@/integrations/supabase/client';
@@ -59,7 +59,6 @@ export const FriendsSheet = ({
   });
 
   const { primeProfiles } = useProfileCache();
-  useRealtimeFriends();
 
   /* -- share prefs ---------------------------------------------------- */
   const { data: sharePrefs = {} } = useQuery({

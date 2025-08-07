@@ -22,6 +22,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useEnhancedFriendDistances } from '@/hooks/useEnhancedFriendDistances';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { FriendDistanceCard } from './FriendDistanceCard';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,9 @@ export function EnhancedFriendsList({
   onFriendMessage 
 }: EnhancedFriendsListProps) {
   const { toast } = useToast();
+  
+  // Get unified friends data for integration
+  const { rows: unifiedFriends, isLoading: friendsLoading } = useUnifiedFriends();
   
   // Settings state
   const [maxDistance, setMaxDistance] = useState(5000); // 5km default
@@ -73,11 +77,21 @@ export function EnhancedFriendsList({
     updateInterval: 30000
   });
 
-  // Filter friends based on search and tab
+  // Enhanced filtering with unified friends integration
   const filteredFriends = friends.filter(friendDistance => {
     const friend = friendDistance.friend;
+    
+    // Find corresponding unified friend data
+    const unifiedFriend = unifiedFriends.find(uf => uf.id === friend.profileId);
+    
+    // Only show accepted friends (filter out pending/blocked)
+    if (!unifiedFriend || unifiedFriend.friend_state !== 'accepted') {
+      return false;
+    }
+    
     const matchesSearch = !searchQuery || 
-      friend.displayName?.toLowerCase().includes(searchQuery.toLowerCase());
+      friend.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      unifiedFriend.username?.toLowerCase().includes(searchQuery.toLowerCase());
     
     if (!matchesSearch) return false;
 
@@ -88,6 +102,8 @@ export function EnhancedFriendsList({
         return friendDistance.confidence > 0.8;
       case 'recent':
         return Date.now() - friendDistance.lastSeen < 30 * 60 * 1000; // 30 minutes
+      case 'online':
+        return unifiedFriend.online;
       default:
         return true;
     }
@@ -298,13 +314,21 @@ export function EnhancedFriendsList({
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                 <TabsTrigger value="nearby" className="text-xs">
                   Nearby
                   {nearbyCount > 0 && (
                     <Badge variant="secondary" className="ml-1 h-4 text-xs">
                       {nearbyCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="online" className="text-xs">
+                  Online
+                  {unifiedFriends.filter(f => f.online && f.friend_state === 'accepted').length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-4 text-xs">
+                      {unifiedFriends.filter(f => f.online && f.friend_state === 'accepted').length}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -318,7 +342,7 @@ export function EnhancedFriendsList({
 
       {/* Friends list */}
       <div className="space-y-3">
-        {isLoading && filteredFriends.length === 0 && (
+        {(isLoading || friendsLoading) && filteredFriends.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
@@ -347,16 +371,33 @@ export function EnhancedFriendsList({
           </Card>
         )}
 
-        {filteredFriends.map((friendDistance) => (
-          <FriendDistanceCard
-            key={friendDistance.friend.profileId}
-            friendDistance={friendDistance}
-            onNavigate={handleNavigate}
-            onMessage={handleMessage}
-            showConfidence={true}
-            showPrivacyStatus={true}
-          />
-        ))}
+        {filteredFriends.map((friendDistance) => {
+          // Get unified friend data for enhanced display
+          const unifiedFriend = unifiedFriends.find(uf => uf.id === friendDistance.friend.profileId);
+          
+          return (
+            <FriendDistanceCard
+              key={friendDistance.friend.profileId}
+              friendDistance={{
+                ...friendDistance,
+                // Enhance with unified friend data
+                friend: {
+                  ...friendDistance.friend,
+                  displayName: unifiedFriend?.display_name || friendDistance.friend.displayName,
+                  avatarUrl: unifiedFriend?.avatar_url || friendDistance.friend.avatarUrl,
+                }
+              }}
+              onNavigate={handleNavigate}
+              onMessage={handleMessage}
+              showConfidence={true}
+              showPrivacyStatus={true}
+              // Additional props from unified friends
+              isOnline={unifiedFriend?.online}
+              vibeTag={unifiedFriend?.vibe_tag}
+              username={unifiedFriend?.username}
+            />
+          );
+        })}
       </div>
 
       {/* Footer info */}
