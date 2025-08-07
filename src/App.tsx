@@ -152,19 +152,29 @@ const App = () => {
                                   {console.log('🎯 CATCH-ALL ROUTE MATCHED - Rendering Index for:', window.location.pathname)}
                                   <div style={{
                                     position: 'fixed',
-                                    inset: 0,
-                                    zIndex: 999999,
-                                    backgroundColor: '#ff0000',
-                                    color: 'white',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100vw',
+                                    height: '100vh',
+                                    zIndex: 9999999,
+                                    backgroundColor: '#ff0000 !important',
+                                    color: '#ffffff !important',
                                     display: 'flex',
+                                    flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontSize: '24px',
-                                    fontWeight: 'bold'
+                                    fontSize: '32px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    fontFamily: 'Arial, sans-serif'
                                   }}>
-                                    🔴 CATCH-ALL ROUTE IS WORKING!
-                                    <br />
-                                    Path: {window.location.pathname}
+                                    <div>🔴 CATCH-ALL ROUTE IS WORKING!</div>
+                                    <div style={{ fontSize: '18px', marginTop: '20px' }}>
+                                      Path: {window.location.pathname}
+                                    </div>
+                                    <div style={{ fontSize: '14px', marginTop: '10px', opacity: 0.8 }}>
+                                      If you see this, routing works but Index component has issues
+                                    </div>
                                   </div>
                                 </>
                               } />
