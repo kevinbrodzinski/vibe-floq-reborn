@@ -99,10 +99,11 @@ export default function P2PTestPage() {
 
   const currentUserId = useCurrentUserId();
 
-  // Use real thread ID for hooks, but handle gracefully if no real data exists
-  const realThreadId = currentUserId ? MOCK_THREAD_ID : null;
+  // Use null for hooks when we want to disable realtime subscriptions in test mode
+  const isTestMode = true; // Set to true to disable realtime subscriptions
+  const realThreadId = (currentUserId && !isTestMode) ? MOCK_THREAD_ID : null;
 
-  // Only initialize hooks if we have a current user
+  // Only initialize hooks if we have a current user and not in test mode
   const { 
     reactions, 
     toggleReaction, 
@@ -172,8 +173,13 @@ export default function P2PTestPage() {
     if (threadsError) errors.push(`Threads: ${threadsError.message}`);
     if (friendsError) errors.push(`Friends: ${friendsError.message}`);
     
+    // Add test mode explanation
+    if (isTestMode) {
+      errors.push('Test Mode: Realtime subscriptions are disabled for demo purposes');
+    }
+    
     setRealtimeErrors(errors);
-  }, [reactionsError, threadsError, friendsError]);
+  }, [reactionsError, threadsError, friendsError, isTestMode]);
 
   const handleSendTestMessage = async () => {
     if (!testMessage.trim()) return;
@@ -290,8 +296,31 @@ export default function P2PTestPage() {
         </Badge>
       </div>
 
+      {/* Test Mode Info */}
+      {isTestMode && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-blue-800 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Test Mode Active
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-blue-700 mb-2">
+              This page is running in test mode with mock data and disabled realtime subscriptions.
+            </p>
+            <ul className="space-y-1 text-xs text-blue-600">
+              <li>• Realtime subscriptions: Disabled (prevents connection errors)</li>
+              <li>• Mock data: Using sample messages and UUIDs</li>
+              <li>• Database operations: Will attempt real calls but may fail gracefully</li>
+              <li>• UI components: Fully functional for testing interfaces</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Error Display */}
-      {realtimeErrors.length > 0 && (
+      {realtimeErrors.length > 0 && !isTestMode && (
         <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader>
             <CardTitle className="text-yellow-800 flex items-center gap-2">
@@ -306,7 +335,7 @@ export default function P2PTestPage() {
               ))}
             </ul>
             <p className="text-xs text-yellow-600 mt-2">
-              These are expected in test mode with mock data. Real functionality will work with proper authentication and data.
+              These errors indicate connection issues with the realtime system.
             </p>
           </CardContent>
         </Card>

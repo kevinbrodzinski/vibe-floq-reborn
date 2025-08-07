@@ -85,11 +85,11 @@ export function useThreads() {
               event: '*',
               schema: 'public',
               table: 'direct_threads',
-              filter: `member_a=eq.${currentUserId},member_b=eq.${currentUserId}`,
+              filter: `member_a_profile_id=eq.${currentUserId}`,
             },
             createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
               ({ eventType, new: newThread, old: oldThread }) => {
-                console.log('📨 Thread update:', { eventType, newThread, oldThread });
+                console.log('📨 Thread update (member_a):', { eventType, newThread, oldThread });
                 
                 queryClient.setQueryData(queryKey, (oldData: DirectThreadWithProfiles[] = []) => {
                   if (eventType === 'INSERT' && newThread) {
@@ -109,7 +109,41 @@ export function useThreads() {
                 });
               },
               (error, payload) => {
-                console.error('[useThreads] Realtime error:', error, payload);
+                console.error('[useThreads] Realtime error (member_a):', error, payload);
+              }
+            )
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'direct_threads',
+              filter: `member_b_profile_id=eq.${currentUserId}`,
+            },
+            createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
+              ({ eventType, new: newThread, old: oldThread }) => {
+                console.log('📨 Thread update (member_b):', { eventType, newThread, oldThread });
+                
+                queryClient.setQueryData(queryKey, (oldData: DirectThreadWithProfiles[] = []) => {
+                  if (eventType === 'INSERT' && newThread) {
+                    // Add new thread (will need to fetch profile data)
+                    queryClient.invalidateQueries({ queryKey });
+                    return oldData;
+                  } else if (eventType === 'UPDATE' && newThread) {
+                    return oldData.map(thread => 
+                      thread.id === newThread.id 
+                        ? { ...thread, ...newThread }
+                        : thread
+                    );
+                  } else if (eventType === 'DELETE' && oldThread) {
+                    return oldData.filter(thread => thread.id !== oldThread.id);
+                  }
+                  return oldData;
+                });
+              },
+              (error, payload) => {
+                console.error('[useThreads] Realtime error (member_b):', error, payload);
               }
             )
           ),
