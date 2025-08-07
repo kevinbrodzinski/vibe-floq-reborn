@@ -17,7 +17,7 @@ export const useWeeklySuggestion = () => {
       }
       
       const { data, error } = await supabase.functions.invoke('generate-intelligence', {
-        body: { mode: 'weekly-ai', forceRefresh: false },
+        body: { mode: 'weekly', forceRefresh: false },
       });
       
       if (error) throw error;
@@ -80,7 +80,7 @@ export const useWeeklySuggestion = () => {
       }
       
       const { data, error } = await supabase.functions.invoke('generate-intelligence', {
-        body: { mode: 'weekly-ai', forceRefresh: true },
+        body: { mode: 'weekly', forceRefresh: true },
       });
       
       if (error) {

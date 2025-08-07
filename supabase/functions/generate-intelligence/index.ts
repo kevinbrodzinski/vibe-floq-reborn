@@ -467,12 +467,8 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
       }
 
       case 'shared-activity-suggestions': {
-        console.log('[Edge Function] Processing shared-activity-suggestions request');
-        console.log('[Edge Function] Input data:', JSON.stringify(input.data, null, 2));
-        
         // Generate shared activity suggestions
         if (!openAIApiKey) {
-          console.error('[Edge Function] OpenAI API key not configured');
           throw new Error('OpenAI API key not configured');
         }
 
@@ -480,12 +476,6 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
         const promptValue = prompt;
         const temperatureValue = temperature || 0.7;
         const maxTokensValue = max_tokens || 400;
-        
-        console.log('[Edge Function] Extracted values:', {
-          promptLength: promptValue?.length || 0,
-          temperature: temperatureValue,
-          maxTokens: maxTokensValue
-        });
         
         if (!promptValue) {
           return new Response(JSON.stringify({ error: 'Missing prompt' }), {
@@ -526,24 +516,13 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
 
           if (!response.ok) {
             const errTxt = await response.text();
-            console.error('[Edge Function] OpenAI API error:', {
-              status: response.status,
-              statusText: response.statusText,
-              error: errTxt
-            });
             throw new Error(`OpenAI: ${response.status} ${errTxt}`);
           }
 
           const data = await response.json();
           const choice = data.choices?.[0]?.message?.content?.trim();
           
-          console.log('[Edge Function] OpenAI response data:', {
-            choices: data.choices?.length || 0,
-            choice: choice?.substring(0, 100) + '...' || 'null'
-          });
-          
           if (!choice) {
-            console.error('[Edge Function] OpenAI returned no content');
             throw new Error('OpenAI returned no content');
           }
           
