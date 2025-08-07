@@ -20,6 +20,7 @@ import {
   Search,
   Activity,
   CheckCircle,
+  CheckCircle2,
   Clock,
   AlertCircle
 } from 'lucide-react';
@@ -91,21 +92,32 @@ const MOCK_MESSAGES = [
 ];
 
 // Test wrapper for MessageBubble that handles mock data
-function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick }: {
+function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick, reactions }: {
   message: any;
   showAvatar: boolean;
   isConsecutive: boolean;
   onReactionClick?: (emoji: string) => void;
+  reactions?: any[];
 }) {
   // In test mode, we'll create a simplified version that doesn't rely on hooks
   const currentUserId = useCurrentUserId();
   const isOwn = message.profile_id === MOCK_CURRENT_USER_ID;
   
-  // Mock reactions for demo
-  const mockReactions = [
-    { emoji: '❤️', count: 2, hasUserReacted: false },
-    { emoji: '👍', count: 1, hasUserReacted: isOwn },
-  ];
+  // Get reactions for this specific message and group them
+  const messageReactions = reactions?.filter(r => r.message_id === message.id) || [];
+  const groupedReactions = messageReactions.reduce((acc, reaction) => {
+    const emoji = reaction.emoji;
+    if (!acc[emoji]) {
+      acc[emoji] = { emoji, count: 0, hasUserReacted: false };
+    }
+    acc[emoji].count++;
+    if (reaction.profile_id === MOCK_CURRENT_USER_ID) {
+      acc[emoji].hasUserReacted = true;
+    }
+    return acc;
+  }, {} as Record<string, { emoji: string; count: number; hasUserReacted: boolean }>);
+  
+  const reactionArray = Object.values(groupedReactions);
 
   const formatTime = (timestamp: string) => {
     if (!timestamp) return 'Now';
@@ -172,22 +184,22 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
         >
           <div className="text-sm">{message.content}</div>
           
-          {/* Mock reactions */}
-          {mockReactions.length > 0 && (
+          {/* Live reactions */}
+          {reactionArray.length > 0 && (
             <div className="flex gap-1 mt-2 flex-wrap">
-              {mockReactions.map((reaction) => (
+              {reactionArray.map((reaction) => (
                 <button
                   key={reaction.emoji}
                   className={`
-                    flex items-center gap-1 px-2 py-1 rounded-full text-xs
+                    flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors
                     ${reaction.hasUserReacted 
                       ? 'bg-blue-100 text-blue-700 border border-blue-200' 
                       : 'bg-white/20 hover:bg-white/30 border border-white/20'
                     }
                   `}
-                                     onClick={() => {
-                     onReactionClick?.(reaction.emoji);
-                   }}
+                  onClick={() => {
+                    onReactionClick?.(reaction.emoji);
+                  }}
                 >
                   <span>{reaction.emoji}</span>
                   <span>{reaction.count}</span>
@@ -214,31 +226,157 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
   );
 }
 
+// Mock data for test mode
+const MOCK_REACTIONS = [
+  { id: '1', message_id: MOCK_MESSAGES[0].id, profile_id: MOCK_CURRENT_USER_ID, emoji: '👍', reacted_at: new Date().toISOString() },
+  { id: '2', message_id: MOCK_MESSAGES[0].id, profile_id: MOCK_USER_ID, emoji: '❤️', reacted_at: new Date().toISOString() },
+  { id: '3', message_id: MOCK_MESSAGES[1].id, profile_id: MOCK_CURRENT_USER_ID, emoji: '😂', reacted_at: new Date().toISOString() },
+];
+
+const MOCK_THREADS = [
+  {
+    id: MOCK_THREAD_ID,
+    member_a_profile_id: MOCK_CURRENT_USER_ID,
+    member_b_profile_id: MOCK_USER_ID,
+    last_message_at: new Date().toISOString(),
+    unread_a: 0,
+    unread_b: 2,
+    friendProfile: {
+      id: MOCK_USER_ID,
+      display_name: 'Alex Chen',
+      username: 'alexc',
+      avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    },
+    lastMessage: {
+      content: MOCK_MESSAGES[MOCK_MESSAGES.length - 1].content,
+      created_at: MOCK_MESSAGES[MOCK_MESSAGES.length - 1].created_at,
+      isFromMe: MOCK_MESSAGES[MOCK_MESSAGES.length - 1].profile_id === MOCK_CURRENT_USER_ID,
+    },
+    unreadCount: 2,
+    lastMessageAt: new Date().toISOString(),
+    isOnline: true,
+  }
+];
+
+const MOCK_UNIFIED_FRIENDS = [
+  {
+    id: MOCK_USER_ID,
+    display_name: 'Alex Chen',
+    username: 'alexc',
+    avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    friend_state: 'accepted',
+    online: true,
+    vibe_tag: 'working',
+    created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    responded_at: new Date(Date.now() - 86400000).toISOString(),
+    is_outgoing_request: false,
+    is_incoming_request: false,
+  },
+  {
+    id: 'f2e3d4c5-b6a7-9871-5433-209876fedcbb',
+    display_name: 'Sarah Kim',
+    username: 'sarahk',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+    friend_state: 'pending',
+    online: false,
+    vibe_tag: null,
+    created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    responded_at: null,
+    is_outgoing_request: true,
+    is_incoming_request: false,
+  },
+  {
+    id: 'e3f4d5c6-a7b8-9872-5434-309876fedcbc',
+    display_name: 'Mike Johnson',
+    username: 'mikej',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    friend_state: 'pending',
+    online: true,
+    vibe_tag: 'exploring',
+    created_at: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
+    responded_at: null,
+    is_outgoing_request: false,
+    is_incoming_request: true,
+  },
+];
+
 // Test mode hook implementations
 function useTestModeHooks() {
+  const [mockReactions, setMockReactions] = useState(MOCK_REACTIONS);
+  const [mockTyping, setMockTyping] = useState(false);
+  const [mockSending, setMockSending] = useState(false);
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    setMockReactions(prev => {
+      const existing = prev.find(r => r.message_id === messageId && r.emoji === emoji && r.profile_id === MOCK_CURRENT_USER_ID);
+      if (existing) {
+        // Remove reaction
+        return prev.filter(r => !(r.message_id === messageId && r.emoji === emoji && r.profile_id === MOCK_CURRENT_USER_ID));
+      } else {
+        // Add reaction
+        return [...prev, {
+          id: crypto.randomUUID(),
+          message_id: messageId,
+          profile_id: MOCK_CURRENT_USER_ID,
+          emoji,
+          reacted_at: new Date().toISOString()
+        }];
+      }
+    });
+  };
+
+  const sendFriendRequest = async (userId: string) => {
+    setMockSending(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setMockSending(false);
+    // Show success toast
+    console.log('Mock: Friend request sent to', userId);
+  };
+
+  const handleTyping = () => {
+    setMockTyping(true);
+    setTimeout(() => setMockTyping(false), 3000);
+  };
+
   return {
-    reactions: [],
-    toggleReaction: async () => {},
+    reactions: mockReactions,
+    toggleReaction,
     reactionsLoading: false,
     reactionsError: null,
-    threads: [],
-    createThread: async () => 'mock-thread-id',
+    threads: MOCK_THREADS,
+    createThread: async () => MOCK_THREAD_ID,
     markThreadRead: async () => {},
-    searchThreads: async () => [],
+    searchThreads: async (query: string) => {
+      // Simple mock search
+      if (!query) return MOCK_THREADS;
+      return MOCK_THREADS.filter(t => 
+        t.friendProfile.display_name.toLowerCase().includes(query.toLowerCase()) ||
+        t.friendProfile.username.toLowerCase().includes(query.toLowerCase())
+      );
+    },
     threadsLoading: false,
     threadsError: null,
-    isTyping: false,
-    typingUsers: [],
-    handleTyping: () => {},
-    handleMessageSent: () => {},
-    typingText: '',
-    sendFriendRequest: async () => {},
-    acceptFriendRequest: async () => {},
-    rejectFriendRequest: async () => {},
-    isSending: false,
+    isTyping: mockTyping,
+    typingUsers: mockTyping ? [{ profile_id: MOCK_USER_ID, display_name: 'Alex Chen' }] : [],
+    handleTyping,
+    handleMessageSent: () => setMockTyping(false),
+    typingText: mockTyping ? 'Alex is typing...' : '',
+    sendFriendRequest,
+    acceptFriendRequest: async () => {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      console.log('Mock: Friend request accepted');
+    },
+    rejectFriendRequest: async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('Mock: Friend request rejected');
+    },
+    isSending: mockSending,
     isAccepting: false,
     isRejecting: false,
-    unifiedFriends: [],
+    unifiedFriends: MOCK_UNIFIED_FRIENDS,
     friendsLoading: false,
     friendsError: null,
   };
@@ -697,6 +835,34 @@ export default function P2PTestPage() {
                     <li>Friend username</li>
                   </ul>
                 </div>
+                
+                {/* Test Mode Stats */}
+                {isTestMode && (
+                  <Card className="bg-green-50 border-green-200">
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        Test Mode Stats
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="font-medium">Reactions:</span> {reactions.length}
+                        </div>
+                        <div>
+                          <span className="font-medium">Threads:</span> {threads.length}
+                        </div>
+                        <div>
+                          <span className="font-medium">Friends:</span> {unifiedFriends.length}
+                        </div>
+                        <div>
+                          <span className="font-medium">Typing:</span> {isTyping ? '✅' : '❌'}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -710,18 +876,44 @@ export default function P2PTestPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {MOCK_MESSAGES.map((message, index) => (
-                <TestMessageBubble
-                  key={message.id}
-                  message={message}
-                  showAvatar={index === 0 || MOCK_MESSAGES[index - 1]?.profile_id !== message.profile_id}
-                  isConsecutive={index > 0 && MOCK_MESSAGES[index - 1]?.profile_id === message.profile_id}
-                  onReactionClick={(emoji) => handleToggleReaction(message.id, emoji)}
-                />
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                                              {MOCK_MESSAGES.map((message, index) => (
+                  <TestMessageBubble
+                    key={message.id}
+                    message={message}
+                    showAvatar={index === 0 || MOCK_MESSAGES[index - 1]?.profile_id !== message.profile_id}
+                    isConsecutive={index > 0 && MOCK_MESSAGES[index - 1]?.profile_id === message.profile_id}
+                    onReactionClick={(emoji) => handleToggleReaction(message.id, emoji)}
+                    reactions={reactions}
+                  />
+                ))}
+                
+                {/* Quick Reaction Test */}
+                <Card className="bg-yellow-50 border-yellow-200">
+                  <CardHeader>
+                    <CardTitle className="text-sm">🧪 Quick Reaction Test</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2 flex-wrap">
+                      {['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '💯'].map(emoji => (
+                        <Button
+                          key={emoji}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleReaction(MOCK_MESSAGES[0].id, emoji)}
+                          className="text-lg p-2"
+                        >
+                          {emoji}
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">
+                      Click emojis to add/remove reactions on the first message
+                    </p>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
         <TabsContent value="friendships" className="space-y-4">
           <Card>
