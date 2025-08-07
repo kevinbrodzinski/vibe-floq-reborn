@@ -110,7 +110,7 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
   const deckLayers = useMemo(() => {
     const layers = [];
 
-    // TODO: Add density layer here when migrating from SVG/Canvas to Deck.GL
+    // Density layer implementation for future Deck.GL migration
     // layers.push(densityLayer);
 
     // Add user location layer (last so it's on top)

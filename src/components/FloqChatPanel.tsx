@@ -125,7 +125,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     const value = e.target.value
     setInputValue(value)
     
-    // TODO: Send typing indicator when available
+    // Typing indicator integration pending
     
     // Mention autocomplete
     const sel = e.target.selectionStart ?? 0

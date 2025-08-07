@@ -43,8 +43,20 @@ import Phase34DemoRoutes from '@/routes/Phase34DemoRoutes';
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
 
+  // Debug logging
+  if (import.meta.env.DEV) {
+    console.log('🛣️ AppRoutes rendering, current path:', window.location.pathname);
+  }
+
   return (
-    <Routes>
+    <div>
+      {/* Debug indicator */}
+      {import.meta.env.DEV && (
+        <div className="fixed top-12 left-0 z-[99999] bg-purple-500 text-white px-2 py-1 text-xs">
+          🛣️ AppRoutes: {window.location.pathname}
+        </div>
+      )}
+      <Routes>
       <Route path="/" element={<DailyRecapGate />} />
       <Route path="/home" element={
         <Suspense fallback={<FullScreenSpinner />}>
@@ -128,6 +140,7 @@ export const AppRoutes = () => {
       )}
       <Route path="/location-sharing" element={<LocationSharingScreen />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+          </Routes>
+    </div>
   );
 };

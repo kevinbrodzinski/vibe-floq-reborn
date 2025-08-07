@@ -1,17 +1,19 @@
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 
-// Import debug helpers in development only
+// Conditional imports for development vs production
 if (import.meta.env.DEV) {
+  // Development-only imports
   import('@/lib/debug/environmentHelper');
   import('@/lib/debug/immediateLocationFix');
   import('@/lib/debug/mapDiagnostics');
   import('@/lib/debug/quickMapFixes');
   import('@/lib/debug/mockGeolocation');
 } else {
-  // Initialize production optimizations
+  // Production optimizations
   import('@/lib/productionOptimizations');
 }
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -23,13 +25,11 @@ import { EventNotificationsProvider } from "@/providers/EventNotificationsProvid
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
-import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
 import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
-import { clusterWorker } from "@/lib/clusterWorker";
 
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -39,6 +39,30 @@ import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 
 const App = () => {
+  // EMERGENCY DEBUG - Very first line
+  console.log('🚨 APP.TSX CALLED - Main App component is mounting, pathname:', window.location.pathname);
+  
+  // Quick bypass for testing - go directly to /home
+  if (import.meta.env.DEV && window.location.pathname === '/') {
+    console.log('🔄 REDIRECTING from / to /home');
+    window.location.href = '/home';
+    return (
+      <div style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        zIndex: 999999, 
+        backgroundColor: '#0066ff', 
+        color: 'white', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        fontSize: '18px'
+      }}>
+        Redirecting to /home...
+      </div>
+    );
+  }
+
   // Create a stable QueryClient instance using useMemo
   const queryClient = useMemo(() => new QueryClient(), []);
   
@@ -48,10 +72,22 @@ const App = () => {
   // Track online status
   usePresenceTracker();
 
-  // Pre-warm the clustering worker
+  // Development-only dashboard component
+  const [LocationSystemHealthDashboard, setLocationSystemHealthDashboard] = useState<React.ComponentType | null>(null);
+
+
+
+  // Load debug dashboard in development
   useEffect(() => {
-    // Empty call warms the Comlink proxy & spins the worker
-    clusterWorker.cluster([], 11);
+    if (import.meta.env.DEV) {
+      import("@/components/debug/LocationSystemHealthDashboard")
+        .then((module) => {
+          setLocationSystemHealthDashboard(() => module.LocationSystemHealthDashboard);
+        })
+        .catch((error) => {
+          console.warn('LocationSystemHealthDashboard not available:', error);
+        });
+    }
   }, []);
 
   // Realtime subscription for floq messages
@@ -90,37 +126,70 @@ const App = () => {
   }, [queryClient]);
   
   return (
-    <ProductionModeGuard>
-      <QueryClientProvider client={queryClient}>
-        <EnhancedAuthProvider>
-          <AppProviders>
-            <EventNotificationsProvider>
-              <PlanNotificationProvider>
-                <VibeRealtime />
-                <BannerProvider>
-                  <TooltipProvider>
-                    {/* Toaster removed to prevent infinite loops */}
-                    <NetworkStatusBanner />
-                    <BrowserRouter>
-                      <PlanInviteProvider />
-                      {import.meta.env.DEV && <LocationSystemHealthDashboard />}
-                      <Routes>
-                        <Route path="/a/:slug" element={<SharedAfterglow />} />
-                        <Route path="/share/:slug" element={<SharedPlan />} />
-                        <Route path="/invite/:slug" element={<PlanInvite />} />
-                        <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
-                        <Route path="/settings/profile" element={<Settings />} />
-                        <Route path="/*" element={<Index />} />
-                      </Routes>
-                    </BrowserRouter>
-                  </TooltipProvider>
-                </BannerProvider>
-              </PlanNotificationProvider>
-            </EventNotificationsProvider>
-          </AppProviders>
-        </EnhancedAuthProvider>
-      </QueryClientProvider>
-    </ProductionModeGuard>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+          <EnhancedAuthProvider>
+            <AppProviders>
+              <BannerProvider>
+                <VibeRealtime>
+                  <EventNotificationsProvider>
+                    <PlanNotificationProvider>
+                      <PlanInviteProvider>
+                        <ProductionModeGuard>
+                          <div className="min-h-screen bg-background">
+                            <NetworkStatusBanner />
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/settings" element={<Settings />} />
+                              <Route path="/afterglow/:id" element={<SharedAfterglow />} />
+                              <Route path="/plan/:id" element={<SharedPlan />} />
+                              <Route path="/ripple/:id" element={<ShareRipplePage />} />
+                              <Route path="/invite/:id" element={<PlanInvite />} />
+                              {/* Catch-all route for app routes handled by AppRoutes.tsx */}
+                              <Route path="*" element={
+                                <>
+                                  {console.log('🎯 CATCH-ALL ROUTE MATCHED - Trying inline component')}
+                                  <div style={{
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100vw',
+                                    height: '100vh',
+                                    backgroundColor: '#00ff00',
+                                    color: 'black',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    zIndex: 999999
+                                  }}>
+                                    ✅ INLINE REACT COMPONENT WORKS!
+                                    <br />
+                                    Path: {window.location.pathname}
+                                  </div>
+                                </>
+                              } />
+                            </Routes>
+                            
+                            {/* Development-only health dashboard */}
+                            {import.meta.env.DEV && LocationSystemHealthDashboard && (
+                              <LocationSystemHealthDashboard />
+                            )}
+                          </div>
+                        </ProductionModeGuard>
+                      </PlanInviteProvider>
+                    </PlanNotificationProvider>
+                  </EventNotificationsProvider>
+                </VibeRealtime>
+              </BannerProvider>
+            </AppProviders>
+          </EnhancedAuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+      <Toaster />
+    </QueryClientProvider>
   );
 };
 
