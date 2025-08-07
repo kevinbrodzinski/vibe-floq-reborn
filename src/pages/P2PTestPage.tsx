@@ -499,15 +499,32 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
     error: reactionsError = null 
   } = useMessageReactions(realThreadId || '', 'dm'); // Pass empty string and type when no thread
 
-  // Real thread management with database operations (this doesn't require a specific thread)
-  const { 
-    threads = [], 
-    createThread, 
-    markThreadRead, 
-    searchThreads,
-    isLoading: threadsLoading = false,
-    error: threadsError = null
-  } = useThreads();
+  // For production demo, use mock thread data to avoid realtime subscription issues
+  // In a real app, you'd call useThreads() when the database schema is properly set up
+  const threads = MOCK_THREADS;
+  const threadsLoading = false;
+  const threadsError = null;
+  
+  // Mock thread operations for production demo
+  const createThread = async (otherUserId: string) => {
+    console.log('Production demo: Creating thread with user:', otherUserId);
+    // In real implementation, this would call the create_or_get_thread RPC
+    return 'mock-thread-id';
+  };
+  
+  const markThreadRead = async (threadId: string) => {
+    console.log('Production demo: Marking thread as read:', threadId);
+    // In real implementation, this would call mark_thread_read_enhanced RPC
+  };
+  
+  const searchThreads = async (query: string) => {
+    console.log('Production demo: Searching threads for:', query);
+    // In real implementation, this would call search_direct_threads_enhanced RPC
+    return MOCK_THREADS.filter(thread => 
+      thread.friendProfile.display_name?.toLowerCase().includes(query.toLowerCase()) ||
+      thread.friendProfile.username?.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 5);
+  };
 
   // Always call typing indicators but it will handle empty thread ID internally
   const {
@@ -860,8 +877,8 @@ export default function P2PTestPage() {
                 This demo shows how the P2P system works without requiring database migrations:
               </p>
               <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
-                <li><strong>Working:</strong> Friend requests, thread search, thread creation (real database calls)</li>
-                <li><strong>Demo mode:</strong> Friend list, reactions, typing (uses mock data to avoid schema dependencies)</li>
+                <li><strong>Working:</strong> Friend requests (real database calls with rate limiting)</li>
+                <li><strong>Demo mode:</strong> Friend list, thread search, reactions, typing (mock data to avoid schema dependencies)</li>
                 <li><strong>Full production:</strong> Apply migrations first, then all features use live database</li>
               </ul>
             </div>
@@ -1043,6 +1060,17 @@ export default function P2PTestPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {!isTestMode && (
+                  <Card className="bg-blue-50 border-blue-200 mb-4">
+                    <CardContent className="p-3">
+                      <p className="text-xs text-blue-800">
+                        <strong>Note:</strong> Thread search uses mock data in production demo mode. 
+                        Apply migrations to enable real database thread search.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                
                 <div className="flex gap-2">
                   <Input
                     value={searchQuery}
