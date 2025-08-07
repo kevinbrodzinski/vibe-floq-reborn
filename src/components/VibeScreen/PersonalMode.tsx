@@ -229,7 +229,7 @@ export const PersonalMode: React.FC = () => {
                 onClick={toggleSystemHealth}
                 className="p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs"
               >
-                <Activity className="w-3 h-3" />
+                <BarChart3 className="w-3 h-3" />
               </Button>
             )}
             
