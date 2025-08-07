@@ -30,7 +30,6 @@ import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
-import { clusterWorker } from "@/lib/clusterWorker";
 
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -52,17 +51,7 @@ const App = () => {
   // Development-only dashboard component
   const [LocationSystemHealthDashboard, setLocationSystemHealthDashboard] = useState<React.ComponentType | null>(null);
 
-  // Initialize cluster worker for performance
-  const workerRef = useRef<Worker | null>(null);
-  
-  useEffect(() => {
-    if (typeof Worker !== 'undefined') {
-      workerRef.current = clusterWorker;
-      return () => {
-        workerRef.current?.terminate();
-      };
-    }
-  }, []);
+
 
   // Load debug dashboard in development
   useEffect(() => {
