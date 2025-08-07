@@ -1,6 +1,6 @@
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range-unit',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range, range-unit, accept-profile, prefer, x-supabase-api-version',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Max-Age': '86400',
   'Cache-Control': 'private, max-age=0',
