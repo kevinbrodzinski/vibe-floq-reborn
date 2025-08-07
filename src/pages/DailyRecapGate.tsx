@@ -75,7 +75,7 @@ export default function DailyRecapGate() {
   // Debug render - show what we have
   if (import.meta.env.DEV) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-900/95 backdrop-blur-sm p-4 text-white">
+      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-red-900/95 backdrop-blur-sm p-4 text-white">
         <div className="bg-black/80 p-6 rounded-lg max-w-md">
           <h2 className="text-xl font-bold mb-4">🔧 DEBUG: DailyRecapGate</h2>
           <div className="space-y-2 text-sm">

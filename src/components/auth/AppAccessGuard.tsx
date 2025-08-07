@@ -223,7 +223,7 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   if (import.meta.env.DEV) {
     return (
       <div className="min-h-screen">
-        <div className="fixed top-0 left-0 z-50 bg-green-500 text-white px-2 py-1 text-xs">
+        <div className="fixed top-0 left-0 z-[99999] bg-green-500 text-white px-2 py-1 text-xs">
           ✅ AUTH OK - Rendering App
         </div>
         {children}

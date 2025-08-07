@@ -57,7 +57,7 @@ export const FloqApp = () => {
           <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
             {/* Debug indicator */}
             {import.meta.env.DEV && (
-              <div className="fixed top-6 left-0 z-50 bg-blue-500 text-white px-2 py-1 text-xs">
+              <div className="fixed top-6 left-0 z-[99999] bg-blue-500 text-white px-2 py-1 text-xs">
                 🚀 FloqApp Rendering
               </div>
             )}

@@ -52,7 +52,7 @@ export const AppRoutes = () => {
     <div>
       {/* Debug indicator */}
       {import.meta.env.DEV && (
-        <div className="fixed top-12 left-0 z-50 bg-purple-500 text-white px-2 py-1 text-xs">
+        <div className="fixed top-12 left-0 z-[99999] bg-purple-500 text-white px-2 py-1 text-xs">
           🛣️ AppRoutes: {window.location.pathname}
         </div>
       )}
