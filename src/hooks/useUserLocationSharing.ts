@@ -34,9 +34,9 @@ export function useUserLocationSharing(profileId: string | undefined) {
           .from('friend_share_pref')
           .select('is_live, ends_at')
           .eq('profile_id', profileId)
-          .single();
+          .maybeSingle();
 
-        if (shareError && shareError.code !== 'PGRST116') {
+        if (shareError) {
           console.log('[DEBUG] Error fetching share prefs:', shareError);
           return {
             isSharing: false,
@@ -68,9 +68,9 @@ export function useUserLocationSharing(profileId: string | undefined) {
           .from('vibes_now')
           .select('updated_at')
           .eq('profile_id', profileId)
-          .single();
+          .maybeSingle();
 
-        if (presenceError && presenceError.code !== 'PGRST116') {
+        if (presenceError) {
           console.log('[DEBUG] Error fetching presence:', presenceError);
         }
 
