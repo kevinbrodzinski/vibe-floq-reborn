@@ -310,6 +310,7 @@ function useTestModeHooks() {
   const [mockReactions, setMockReactions] = useState(MOCK_REACTIONS);
   const [mockTyping, setMockTyping] = useState(false);
   const [mockSending, setMockSending] = useState(false);
+  const [mockMessages, setMockMessages] = useState(MOCK_MESSAGES);
 
   const toggleReaction = async (messageId: string, emoji: string) => {
     // Validate inputs
@@ -352,6 +353,35 @@ function useTestModeHooks() {
     setTimeout(() => setMockTyping(false), 3000);
   };
 
+  const sendTestMessage = async (content: string) => {
+    if (!content.trim()) return;
+    
+    // Simulate sending delay
+    setMockSending(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Add new message to mock data
+    const newMessage = {
+      id: 'msg-' + crypto.randomUUID(),
+      content: content.trim(),
+      profile_id: MOCK_CURRENT_USER_ID,
+      created_at: new Date().toISOString(),
+      threadId: MOCK_THREAD_ID,
+      thread_id: MOCK_THREAD_ID,
+      senderProfile: {
+        display_name: 'You',
+        username: 'you',
+        avatar_url: null
+      },
+      status: 'sent' as const
+    };
+    
+    setMockMessages(prev => [...prev, newMessage]);
+    setMockSending(false);
+    
+    return newMessage;
+  };
+
   return {
     reactions: mockReactions,
     toggleReaction,
@@ -390,6 +420,9 @@ function useTestModeHooks() {
     unifiedFriends: MOCK_UNIFIED_FRIENDS,
     friendsLoading: false,
     friendsError: null,
+    // Add messaging functionality
+    messages: mockMessages,
+    sendTestMessage,
   };
 }
 
@@ -460,6 +493,9 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
     unifiedFriends,
     friendsLoading,
     friendsError,
+    // Production mode messaging (would need actual message hooks)
+    messages: MOCK_MESSAGES, // Fallback to static messages in production
+    sendTestMessage: undefined, // No test message function in production
   };
 }
 
@@ -506,6 +542,9 @@ export default function P2PTestPage() {
     unifiedFriends,
     friendsLoading,
     friendsError,
+    // New messaging properties
+    messages = MOCK_MESSAGES,
+    sendTestMessage,
   } = hooks;
 
   // Monitor connection health
@@ -549,10 +588,19 @@ export default function P2PTestPage() {
     if (!testMessage.trim()) return;
     
     try {
-      handleMessageSent();
-      toast.success('Test message sent!', {
-        description: `Message: "${testMessage}"`
-      });
+      if (isTestMode && sendTestMessage) {
+        await sendTestMessage(testMessage);
+        handleMessageSent();
+        toast.success('Test message sent!', {
+          description: `Message: "${testMessage}"`
+        });
+      } else {
+        // In production mode, this would send via real API
+        handleMessageSent();
+        toast.success('Test message sent!', {
+          description: `Message: "${testMessage}"`
+        });
+      }
       setTestMessage('');
     } catch (error) {
       toast.error('Failed to send message', {
@@ -563,7 +611,13 @@ export default function P2PTestPage() {
 
   const handleToggleReaction = async (messageId: string, emoji: string) => {
     try {
-      await toggleReaction({ messageId, emoji });
+      // In test mode, toggleReaction expects (messageId, emoji)
+      // In production mode, it expects ({ messageId, emoji })
+      if (isTestMode) {
+        await toggleReaction(messageId, emoji);
+      } else {
+        await toggleReaction({ messageId, emoji });
+      }
       toast.success('Reaction toggled!', {
         description: `${emoji} on message ${messageId.slice(0, 8)}...`
       });
@@ -787,8 +841,11 @@ export default function P2PTestPage() {
                     placeholder="Type a test message..."
                     className="flex-1"
                   />
-                  <Button onClick={handleSendTestMessage} disabled={!testMessage.trim()}>
-                    Send
+                  <Button 
+                    onClick={handleSendTestMessage} 
+                    disabled={!testMessage.trim() || isSending}
+                  >
+                    {isSending ? 'Sending...' : 'Send'}
                   </Button>
                 </div>
                 
@@ -856,22 +913,28 @@ export default function P2PTestPage() {
                         Test Mode Stats
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="font-medium">Reactions:</span> {reactions.length}
-                        </div>
-                        <div>
-                          <span className="font-medium">Threads:</span> {threads.length}
-                        </div>
-                        <div>
-                          <span className="font-medium">Friends:</span> {unifiedFriends.length}
-                        </div>
-                        <div>
-                          <span className="font-medium">Typing:</span> {isTyping ? '✅' : '❌'}
-                        </div>
-                      </div>
-                    </CardContent>
+                                         <CardContent className="text-sm">
+                       <div className="grid grid-cols-2 gap-2">
+                         <div>
+                           <span className="font-medium">Messages:</span> {messages.length}
+                         </div>
+                         <div>
+                           <span className="font-medium">Reactions:</span> {reactions.length}
+                         </div>
+                         <div>
+                           <span className="font-medium">Threads:</span> {threads.length}
+                         </div>
+                         <div>
+                           <span className="font-medium">Friends:</span> {unifiedFriends.length}
+                         </div>
+                         <div>
+                           <span className="font-medium">Typing:</span> {isTyping ? '✅' : '❌'}
+                         </div>
+                         <div>
+                           <span className="font-medium">Sending:</span> {isSending ? '✅' : '❌'}
+                         </div>
+                       </div>
+                     </CardContent>
                   </Card>
                 )}
               </CardContent>
@@ -886,13 +949,13 @@ export default function P2PTestPage() {
                 These are sample messages to test the UI components
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                                              {MOCK_MESSAGES.map((message, index) => (
+                          <CardContent className="space-y-4">
+                {messages.map((message, index) => (
                   <TestMessageBubble
                     key={message.id}
                     message={message}
-                    showAvatar={index === 0 || MOCK_MESSAGES[index - 1]?.profile_id !== message.profile_id}
-                    isConsecutive={index > 0 && MOCK_MESSAGES[index - 1]?.profile_id === message.profile_id}
+                    showAvatar={index === 0 || messages[index - 1]?.profile_id !== message.profile_id}
+                    isConsecutive={index > 0 && messages[index - 1]?.profile_id === message.profile_id}
                     onReactionClick={(emoji) => handleToggleReaction(message.id, emoji)}
                     reactions={reactions}
                   />
