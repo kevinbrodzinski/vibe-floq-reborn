@@ -142,6 +142,8 @@ const App = () => {
                               <Route path="/plan/:id" element={<SharedPlan />} />
                               <Route path="/ripple/:id" element={<ShareRipplePage />} />
                               <Route path="/invite/:id" element={<PlanInvite />} />
+                              {/* Catch-all route for app routes handled by AppRoutes.tsx */}
+                              <Route path="*" element={<Index />} />
                             </Routes>
                             
                             {/* Development-only health dashboard */}
