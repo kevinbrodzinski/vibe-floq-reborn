@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
+import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
@@ -1265,6 +1266,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             </div>
           </div>
         )}
+
+        {/* Timewarp Map Layer */}
+        <TimewarpMapLayer map={mapRef.current} />
 
         {children}
       </div>

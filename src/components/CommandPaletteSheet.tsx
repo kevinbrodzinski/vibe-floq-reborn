@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup } from '@/components/ui/command';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { OnlineFriendRow } from '@/components/OnlineFriendRow';
@@ -92,6 +92,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
         side="top" 
         className="h-[90vh] p-0 border-0 bg-background/95 backdrop-blur-sm"
         style={{ maxHeight: '90vh' }}
+        aria-label="Global search - Find users, venues, floqs, and events"
       >
         <Command className="h-full border-0">
           {/* Sticky Search Input */}

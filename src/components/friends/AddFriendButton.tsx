@@ -16,7 +16,7 @@ export function AddFriendButton({ status, onAdd, isLoading }: AddFriendButtonPro
   }
 
   if (status === 'pending_out') {
-    return <Badge variant="outline">Requested</Badge>;
+    return <Badge variant="outline">Pending</Badge>;
   }
 
   if (status === 'pending_in') {

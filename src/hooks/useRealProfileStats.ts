@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
@@ -40,7 +39,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           .from('friendships')
           .select('*', { count: 'exact', head: true })
           .or(`user_low.eq.${profileId},user_high.eq.${profileId}`)
-          .eq('status', 'accepted');
+          .eq('friend_state', 'accepted');
         
         friendCount = friendsCount || 0;
 
@@ -51,14 +50,14 @@ export const useRealProfileStats = (profileId: string | undefined) => {
             .from('friendships')
             .select('user_low, user_high')
             .or(`user_low.eq.${currentUserId},user_high.eq.${currentUserId}`)
-            .eq('status', 'accepted');
+            .eq('friend_state', 'accepted');
 
           // Get target user's friends
           const { data: theirFriends } = await supabase
             .from('friendships')
             .select('user_low, user_high')
             .or(`user_low.eq.${profileId},user_high.eq.${profileId}`)
-            .eq('status', 'accepted');
+            .eq('friend_state', 'accepted');
 
           if (myFriends && theirFriends) {
             // Extract friend IDs for current user
@@ -78,7 +77,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         // 3. Get floq/plan participation (fix table name)
         const { data: floqParticipation } = await supabase
-          .from('floq_participants' as any)
+          .from('floq_participants')
           .select('floq_id, role')
           .eq('profile_id', profileId);
 
@@ -87,13 +86,13 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         // Count shared floqs with current user
         if (currentUserId && currentUserId !== profileId && floqParticipation) {
           const { data: myFloqs } = await supabase
-            .from('floq_participants' as any)
+            .from('floq_participants')
             .select('floq_id')
             .eq('profile_id', currentUserId);
 
           if (myFloqs) {
-            const myFlockIds = new Set(myFloqs.map((f: any) => f.floq_id));
-            sharedFloqs = floqParticipation.filter((f: any) => myFlockIds.has(f.floq_id)).length;
+            const myFlockIds = new Set(myFloqs.map((f) => f.floq_id));
+            sharedFloqs = floqParticipation.filter((f) => myFlockIds.has(f.floq_id)).length;
           }
         }
 
@@ -125,7 +124,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         // 7. Calculate average vibe score from recent presence
         const { data: recentVibes } = await supabase
-          .from('vibes_now' as any)
+          .from('vibes_now')
           .select('vibe')
           .eq('profile_id', profileId)
           .order('updated_at', { ascending: false })
@@ -133,7 +132,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         if (recentVibes && recentVibes.length > 0) {
           // Basic vibe score mapping since vibe_score field doesn't exist
-          const vibeScores = recentVibes.map((v: any) => {
+          const vibeScores = recentVibes.map((v) => {
             switch (v.vibe) {
               case 'hype': case 'energetic': case 'excited': return 80;
               case 'social': case 'open': return 70;
@@ -151,11 +150,15 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         if (currentUserId && currentUserId !== profileId) {
           // Check if they're friends (boosts resonance)
+          const userLow = currentUserId < profileId ? currentUserId : profileId;
+          const userHigh = currentUserId < profileId ? profileId : currentUserId;
+          
           const { data: friendship } = await supabase
             .from('friendships')
             .select('*')
-            .or(`and(user_low.eq.${currentUserId},user_high.eq.${profileId}),and(user_low.eq.${profileId},user_high.eq.${currentUserId})`)
-            .eq('status', 'accepted')
+            .eq('user_low', userLow)
+            .eq('user_high', userHigh)
+            .eq('friend_state', 'accepted')
             .maybeSingle();
 
           if (friendship) {
@@ -167,10 +170,14 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           }
 
           // Check for recent interactions (messages, etc.)
+          const userA = currentUserId < profileId ? currentUserId : profileId;
+          const userB = currentUserId < profileId ? profileId : currentUserId;
+          
           const { data: recentInteractions } = await supabase
             .from('flock_relationships')
             .select('last_interaction_at, interaction_count')
-            .or(`and(user_a_id.eq.${currentUserId},user_b_id.eq.${profileId}),and(user_a_id.eq.${profileId},user_b_id.eq.${currentUserId})`)
+            .eq('user_a_id', userA)
+            .eq('user_b_id', userB)
             .maybeSingle();
 
           if (recentInteractions?.last_interaction_at) {

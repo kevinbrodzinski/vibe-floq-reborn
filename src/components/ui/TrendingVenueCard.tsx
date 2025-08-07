@@ -4,6 +4,9 @@ import { vibeToBorder } from '@/utils/vibeColors'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useVenueInteractions } from '@/hooks/useVenueInteractions'
 import { cn } from '@/lib/utils'
+import { BumpButton } from '@/components/venue/BumpButton'
+import { FriendVisitBadge } from '@/components/venue/FriendVisitBadge'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 interface TrendingVenue {
   id: string
@@ -103,16 +106,21 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
       </div>
 
       {/* Live activity indicator */}
-      <div className="flex items-center gap-3 mb-4 p-3 bg-white/5 rounded-2xl">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <Users className="w-4 h-4 text-white/70" />
-          <span className="text-white/90 font-medium">{venue.people_now} people here</span>
+      <div className="flex items-center justify-between mb-4 p-3 bg-white/5 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <Users className="w-4 h-4 text-white/70" />
+            <span className="text-white/90 font-medium">{venue.people_now} people here</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Clock className="w-4 h-4 text-white/50" />
+            <span className="text-white/50 text-sm">Live now</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="w-4 h-4 text-white/50" />
-          <span className="text-white/50 text-sm">Live now</span>
-        </div>
+        <TooltipProvider>
+          <FriendVisitBadge venueId={venue.venue_id || venue.id} />
+        </TooltipProvider>
       </div>
 
       {/* Quick actions */}
@@ -126,6 +134,13 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
           </button>
         )}
         <div className="flex gap-1">
+          <TooltipProvider>
+            <BumpButton 
+              venueId={venue.venue_id || venue.id}
+              className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white"
+              variant="ghost"
+            />
+          </TooltipProvider>
           <button
             onClick={handleHeartClick}
             disabled={isToggling}

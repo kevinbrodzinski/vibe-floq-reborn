@@ -6,7 +6,7 @@
 export function runCoordinateFlowTest() {
   console.log('🔧 === COORDINATE FLOW DEBUGGING TEST ===');
   
-  let testResults = {
+  const testResults = {
     stage1: '❌',
     stage2: '❌', 
     stage3: '❌',

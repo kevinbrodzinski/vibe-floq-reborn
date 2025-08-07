@@ -26,7 +26,7 @@ export const useVenueDetails = (venueId: string | null) => {
 
       const { data, error } = await supabase
         .rpc("venue_details", { p_venue_id: venueId })
-        .single();
+        .maybeSingle();
 
       if (error) {
         devError(`❌ Failed to fetch venue details for ${venueId}:`, error);
@@ -34,8 +34,8 @@ export const useVenueDetails = (venueId: string | null) => {
       }
 
       if (!data) {
-        devWarn(`⚠️ No venue data found for ID: ${venueId}`);
-        throw new Error("Venue not found");
+        devError(`❌ No venue details found for ${venueId}`);
+        throw new Error('Venue not found');
       }
 
       devLog(`✅ Successfully fetched venue details:`, data);

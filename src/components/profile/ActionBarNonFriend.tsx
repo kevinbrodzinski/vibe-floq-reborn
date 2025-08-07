@@ -8,10 +8,10 @@ import { Profile } from '@/types/profile';
 
 export interface ActionBarNonFriendProps {
   profile: Profile;
-  requested?: boolean;
+  isPending?: boolean;
 }
 
-export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonFriendProps) => {
+export const ActionBarNonFriend = ({ profile, isPending = false }: ActionBarNonFriendProps) => {
   const [isAddingFriend, setIsAddingFriend] = useState(false);
   const { toast } = useToast();
 
@@ -58,14 +58,14 @@ export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonF
     });
   };
 
-  if (requested) {
+  if (isPending) {
     return (
       <div className="flex gap-3">
         <Badge 
           variant="outline" 
           className="flex-1 justify-center px-4 py-3 text-sm border-primary text-primary min-h-[44px] flex items-center"
         >
-          Requested
+          Pending
         </Badge>
         <Button
           variant="ghost"

@@ -8624,6 +8624,41 @@ export type Database = {
           },
         ]
       }
+      venue_bumps: {
+        Row: {
+          venue_id: string
+          profile_id: string
+          created_at: string
+        }
+        Insert: {
+          venue_id: string
+          profile_id: string
+          created_at?: string
+        }
+        Update: {
+          venue_id?: string
+          profile_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_bumps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_friend_visits: {
+        Row: {
+          venue_id: string
+          friend_pairs: Json
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       venue_visits: {
         Row: {
           arrived_at: string

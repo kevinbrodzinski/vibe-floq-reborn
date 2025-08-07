@@ -42,19 +42,19 @@ export const hasGeolocation = (): boolean => {
 export const platformLog = {
   debug: (...args: unknown[]) => {
     if (import.meta.env.DEV || import.meta.env.VITE_PREVIEW || isLovablePreview()) {
-      // eslint-disable-next-line no-console
+       
       console.log('[platform]', ...args);
     }
   },
   warn: (...args: unknown[]) => {
     if (import.meta.env.DEV || import.meta.env.VITE_PREVIEW || isLovablePreview()) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[platform]', ...args);
     }
   },
   error: (...args: unknown[]) => {
     if (import.meta.env.DEV || import.meta.env.VITE_PREVIEW || isLovablePreview()) {
-      // eslint-disable-next-line no-console
+       
       console.error('[platform]', ...args);
     }
   }

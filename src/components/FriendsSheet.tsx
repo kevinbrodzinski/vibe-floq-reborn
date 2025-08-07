@@ -3,6 +3,7 @@ import { MapPin, Share2, Settings, User, Loader2, Check, X, Search } from 'lucid
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetFooter,
@@ -114,6 +115,9 @@ export const FriendsSheet = ({
             Your friends
             {!!friendIds.length && <Badge variant="secondary">{friendIds.length}</Badge>}
           </SheetTitle>
+          <SheetDescription>
+            View your friends, see who's online and nearby, and manage friend requests.
+          </SheetDescription>
 
           {/* search bar */}
           <div className="relative mt-4">
@@ -171,14 +175,38 @@ export const FriendsSheet = ({
             ) : filteredFriends.length ? (
               <div className="space-y-4">
                 {(() => {
-                  // Get list of friend IDs already shown in enhanced section
+                  // Get list of friend IDs already shown in enhanced section (deduplicated)
+                  const uniqueEnhancedFriends = enhancedFriends.friends
+                    .slice(0, 5)
+                    .reduce<typeof enhancedFriends.friends>((acc, friend) => {
+                      if (!acc.some(f => f.friend.profileId === friend.friend.profileId)) {
+                        acc.push(friend);
+                      }
+                      return acc;
+                    }, []);
+                  
                   const enhancedFriendIds = new Set(
-                    enhancedFriends.friends.slice(0, 5).map(fd => fd.friend.profileId)
+                    uniqueEnhancedFriends.map(fd => fd.friend.profileId)
                   );
                   
-                  // Filter out friends already shown in enhanced section
-                  const online  = filteredFriends.filter((f) => f.online && !enhancedFriendIds.has(f.id));
-                  const offline = filteredFriends.filter((f) => !f.online && !enhancedFriendIds.has(f.id));
+                  // Filter out friends already shown in enhanced section and deduplicate
+                  const online = filteredFriends
+                    .filter((f) => f.online && !enhancedFriendIds.has(f.id))
+                    .reduce<typeof filteredFriends>((acc, friend) => {
+                      if (!acc.some(f => f.id === friend.id)) {
+                        acc.push(friend);
+                      }
+                      return acc;
+                    }, []);
+                  
+                  const offline = filteredFriends
+                    .filter((f) => !f.online && !enhancedFriendIds.has(f.id))
+                    .reduce<typeof filteredFriends>((acc, friend) => {
+                      if (!acc.some(f => f.id === friend.id)) {
+                        acc.push(friend);
+                      }
+                      return acc;
+                    }, []);
 
                   return (
                     <>
@@ -258,8 +286,19 @@ export const FriendsSheet = ({
                 )}
               </h3>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {enhancedFriends.friends.slice(0, 5).map((friendDistance, index) => (
-                  <div key={`enhanced-${friendDistance.friend.profileId}-${index}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                {(() => {
+                  // Deduplicate enhanced friends by profileId
+                  const uniqueEnhancedFriends = enhancedFriends.friends
+                    .slice(0, 5)
+                    .reduce<typeof enhancedFriends.friends>((acc, friend) => {
+                      if (!acc.some(f => f.friend.profileId === friend.friend.profileId)) {
+                        acc.push(friend);
+                      }
+                      return acc;
+                    }, []);
+                  
+                  return uniqueEnhancedFriends.map((friendDistance) => (
+                    <div key={`enhanced-${friendDistance.friend.profileId}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2">
                       <AvatarWithFallback
                         src={friendDistance.friend.avatarUrl}
@@ -294,7 +333,8 @@ export const FriendsSheet = ({
                       </Badge>
                     </div>
                   </div>
-                ))}
+                  ));
+                })()}
                 {enhancedFriends.friends.length > 5 && (
                   <div className="text-xs text-muted-foreground text-center py-1">
                     +{enhancedFriends.friends.length - 5} more friends

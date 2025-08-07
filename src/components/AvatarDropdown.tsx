@@ -20,7 +20,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AnimatedBadge } from '@/components/ui/animated-badge';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { FriendsSheet } from './FriendsSheet';
 import { AddFriendModal } from './AddFriendModal';
 import { MessagesSheet } from './MessagesSheet';
@@ -42,8 +42,7 @@ export const AvatarDropdown = () => {
   const { user } = useAuth();
 
   // Use real friends data, pending requests, and unread messages for notification badge
-  const { friendIds, rows } = useUnifiedFriends();
-  const { pendingIn } = useUnifiedFriends();
+  const { friendIds, rows, pendingIn } = useUnifiedFriends();
   const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
 
   // Total notifications = pending friend requests + unread messages

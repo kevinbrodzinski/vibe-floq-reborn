@@ -8,7 +8,7 @@ export async function bulkAddToFloqs(
   if (!floqIds.length || !userIds.length) return;
 
   const rows = floqIds.flatMap(floq_id =>
-    userIds.map(user_id => ({ floq_id, user_id, role: 'member' as const }))
+    userIds.map(profile_id => ({ floq_id, profile_id, role: 'member' as const }))  // ✅ Fixed: use profile_id
   );
 
   const { error } = await supabase

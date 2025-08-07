@@ -94,7 +94,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
         return {
           ...oldData,
           participants: oldData.participants.map((p: any) => 
-            p.user_id === profileId ? { ...p, role: newRole } : p
+            p.profile_id === profileId ? { ...p, role: newRole } : p  // ✅ Fixed: use profile_id
           )
         };
       });

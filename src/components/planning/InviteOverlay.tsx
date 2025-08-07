@@ -100,7 +100,7 @@ export function InviteOverlay({
         table: 'plan_participants',
         filter: `plan_id=eq.${planId}`
       }, async (payload) => {
-        const profileId = payload.new?.user_id;
+        const profileId = payload.new?.profile_id;  // ✅ Fixed: use profile_id
         if (!profileId) return;
 
         const { data: profile } = await supabase

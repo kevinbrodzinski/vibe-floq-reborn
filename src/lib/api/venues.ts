@@ -55,10 +55,10 @@ export async function fetchVenueSnapshot(venueId: string) {
     .from('venue_presence_snapshot')
     .select('*')
     .eq('venue_id', venueId)
-    .single();
+    .maybeSingle(); // ✅ Fixed: use maybeSingle to avoid 406 errors
 
   if (error) throw error;
-  return data;
+  return data ?? null; // graceful fallback
 }
 
 /* ---------- 3. venue population functions ---------- */

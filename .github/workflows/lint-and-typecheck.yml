@@ -13,10 +13,10 @@ jobs:
       # 1️⃣  Checkout code
       - uses: actions/checkout@v4
 
-      # 2️⃣  Node 18 + npm cache
+      # 2️⃣  Node 22 + npm cache
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: npm
 
       # 3️⃣  Install deps (peer-deps workaround)

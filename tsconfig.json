@@ -8,7 +8,11 @@
     /* === Path mapping === */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"],
+      "@/components/*": ["src/components/*"],
+      "@/hooks/*": ["src/hooks/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/integrations/*": ["src/integrations/*"]
     },
 
     /* === Type-checking behaviour === */
@@ -17,10 +21,18 @@
     "noUnusedLocals": false,
     "strictNullChecks": false,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
 
     /* === JavaScript interop === */
     "allowJs": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    
+    /* === Type resolution === */
+    "moduleResolution": "node", 
+    "types": ["node", "react", "react-dom"],
+    "typeRoots": ["./node_modules/@types"],
+    "jsx": "react-jsx"
   }
 }

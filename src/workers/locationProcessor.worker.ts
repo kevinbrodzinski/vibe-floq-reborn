@@ -81,7 +81,7 @@ function calculateBearing(lat1: number, lng1: number, lat2: number, lng2: number
   const y = Math.sin(Δλ) * Math.cos(φ2);
   const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
 
-  let bearing = Math.atan2(y, x) * 180 / Math.PI;
+  const bearing = Math.atan2(y, x) * 180 / Math.PI;
   return (bearing + 360) % 360;
 }
 

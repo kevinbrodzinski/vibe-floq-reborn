@@ -146,13 +146,13 @@ export function useUnifiedFriends() {
       .on(
         'postgres_changes',
         { event:'*', schema:'public', table:'friendships',
-          filter:`or(user_low.eq.${uid},user_high.eq.${uid})` },
+          filter:`user_low=eq.${uid},user_high=eq.${uid}` },
         invalidate
       )
       .on(
         'postgres_changes',
         { event:'*', schema:'public', table:'friend_requests',
-          filter:`or(profile_id.eq.${uid},other_profile_id.eq.${uid})` },
+          filter:`profile_id=eq.${uid},other_profile_id=eq.${uid}` },
         invalidate
       )
       .on(

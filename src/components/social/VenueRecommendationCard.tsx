@@ -18,6 +18,9 @@ import { cn } from '@/lib/utils';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { BaseVenueCard, VenueStatGrid, VenueHighlight, VenueWarning } from '@/components/ui/BaseVenueCard';
+import { BumpButton } from '@/components/venue/BumpButton';
+import { FriendVisitBadge } from '@/components/venue/FriendVisitBadge';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { VenueRecommendation } from '@/hooks/useVenueRecommendations';
 
 interface VenueRecommendationCardProps {
@@ -79,9 +82,14 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
   // Right badge for header
   const rightBadge = (
     <div className="text-right flex-shrink-0">
-      <div className="flex items-center gap-1 text-green-600 font-medium text-xs sm:text-sm">
-        <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
-        {Math.round(venue.vibeMatch.score * 100)}%
+      <div className="flex items-center gap-2 mb-1">
+        <TooltipProvider>
+          <FriendVisitBadge venueId={venue.id} />
+        </TooltipProvider>
+        <div className="flex items-center gap-1 text-green-600 font-medium text-xs sm:text-sm">
+          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+          {Math.round(venue.vibeMatch.score * 100)}%
+        </div>
       </div>
       <div className="text-xs text-muted-foreground">
         {Math.round(venue.confidence * 100)}% confident
@@ -177,7 +185,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
   }, [handleToggleFavorite]);
 
   const actionButtons = (
-    <>
+    <div className="flex gap-2">
       <Button 
         variant="secondary" 
         size="sm"
@@ -187,6 +195,13 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
         <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
         Directions
       </Button>
+      <TooltipProvider>
+        <BumpButton 
+          venueId={venue.id}
+          className="h-8 sm:h-10 w-8 sm:w-10"
+          size="sm"
+        />
+      </TooltipProvider>
       <Button 
         variant={isFavorite(venue.id) ? "default" : "outline"}
         size="sm"
@@ -203,7 +218,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
         )} />
         {isToggling ? '...' : isFavorite(venue.id) ? 'Saved' : 'Save'}
       </Button>
-    </>
+    </div>
   );
 
   // Expandable content

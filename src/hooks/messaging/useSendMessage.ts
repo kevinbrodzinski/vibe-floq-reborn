@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { supaFn } from "@/lib/supaFn";
+import { limitedSendMessage } from "@/services/messages";
 import type { Database } from "@/integrations/supabase/types";
+import { toast } from "sonner";
 
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
@@ -53,34 +54,29 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
         };
       });
 
-      // Send via direct fetch to avoid DataCloneError with supabase.functions.invoke()
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("No auth session");
-
-      console.log('[useSendMessage] Calling supaFn...');
+      console.log('[useSendMessage] Calling limitedSendMessage...');
       try {
-        const res = await supaFn(
-          "send-message",
-          session.access_token,
-          { surface, thread_id: threadId, sender_id: user.id, content, client_id }
-        );
+        const data = await limitedSendMessage({
+          surface, 
+          thread_id: threadId, 
+          sender_id: user.id, 
+          content, 
+          client_id 
+        });
         
-        console.log('[useSendMessage] supaFn resolved:', res.ok, res.status);
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.log('[useSendMessage] Error response:', errorText);
-          throw new Error(`Failed to send message: ${res.status} ${errorText}`);
-        }
-        
-        const data = await res.json();
         console.log('[useSendMessage] Success data:', data);
         return { ...data, client_id, threadId };
       } catch (error) {
-        console.error('[useSendMessage] supaFn error:', error);
+        console.error('[useSendMessage] limitedSendMessage error:', error);
         throw error; // Make sure we re-throw so the mutation fails properly
       }
     },
+
+    /** automatic retries w/ exponential back-off only when 429 */
+    retry: (failureCount, err: any) =>
+      err?.status === 429 && failureCount < 3,
+
+    retryDelay: (failureCount) => 2 ** failureCount * 1000, // 1s,2s,4s
 
     onSuccess: ({ message, client_id, threadId }) => {
       // Replace optimistic message with real message
@@ -108,8 +104,20 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
     },
 
-    onError: (err, { threadId }, _ctx) => {
+    onError: (err: any, { threadId }, _ctx) => {
       console.log('[useSendMessage] Error:', err);
+      
+      // Show user-friendly error messages
+      if (err?.status === 429) {
+        toast.info('Slow down a sec 🐢', {
+          description: "You're sending messages too quickly. Trying again…",
+        });
+      } else {
+        toast.error("Couldn't send message", {
+          description: err?.message ?? 'Unknown error',
+        });
+      }
+      
       // Remove failed optimistic message
       queryClient.setQueryData(["messages", surface, threadId], (old: any) => {
         if (!old) return old;

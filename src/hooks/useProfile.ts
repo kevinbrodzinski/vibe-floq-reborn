@@ -17,9 +17,13 @@ export function useCurrentUserProfile() {
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .eq('id', session!.user.id)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code === 'PGRST116') {        // "No rows"
+      if (error) {
+        throw error;
+      }
+      
+      if (!data) {        // "No rows"
         // attempt one retry: maybe trigger hasn't fired yet (cold edge function)
         await new Promise(r => setTimeout(r, 1500))
         const result = await queryClient.fetchQuery({
@@ -29,15 +33,14 @@ export function useCurrentUserProfile() {
               .from('profiles')
               .select('id, username, display_name, avatar_url')
               .eq('id', session!.user.id)
-              .single()
+              .maybeSingle()
             if (error) throw error
+            if (!data) throw new Error('Profile not found after retry')
             return data as Profile
           }
         })
         return result
       }
-
-      if (error) throw error
       return data as Profile
     },
   })

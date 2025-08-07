@@ -3,7 +3,7 @@ import { X, RotateCcw, Calendar, MapPin, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -113,6 +113,9 @@ export function AdvancedSearchSheet({ open, onOpenChange }: AdvancedSearchSheetP
               </Button>
             </div>
           </div>
+          <SheetDescription>
+            Use advanced filters to find exactly what you're looking for.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 pb-6 overflow-y-auto max-h-[calc(90vh-120px)]">
