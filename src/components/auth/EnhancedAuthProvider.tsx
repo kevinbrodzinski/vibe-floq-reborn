@@ -76,33 +76,54 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    let retryTimeout: NodeJS.Timeout;
+    // Type that works in both Node and browser
+    let retryTimeout: ReturnType<typeof setTimeout>;
 
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    // Handle both v1 & v2 return shapes safely
+    const res = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        setNetworkError(false);
+        try {
+          console.log('[auth] state change:', event);
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+          setNetworkError(false);
 
-        // Handle session recovery after network reconnection
-        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
-          // Invalidate queries to refresh data
-          setTimeout(() => {
-            queryClient.invalidateQueries();
-          }, 0);
+          // Handle session recovery after network reconnection
+          if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+            // Defer so that state setters flush first, with safe guards
+            setTimeout(() => {
+              queryClient?.invalidateQueries?.();
+            }, 0);
+          }
+        } catch (err) {
+          console.error('[auth] callback failed:', err);
+          setLoading(false);
+          setNetworkError(true);
         }
       }
     );
 
-    // THEN check for existing session
+    // v2 returns res instead of res.data - handle both versions safely
+    const subscription = ('data' in res ? res.data?.subscription : res) as
+      | { unsubscribe: () => void }
+      | undefined;
+
+    if (!subscription) {
+      console.error(
+        '[auth] onAuthStateChange did not return a subscription — check Supabase keys / network'
+      );
+      setLoading(false);
+      setNetworkError(true);
+    }
+
+    // THEN check for existing session with error handling
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('Initial session check error:', error);
         setNetworkError(true);
+        setLoading(false);
         // Use navigation helper instead of window.location
         navigation.replace('/');
         return;
@@ -110,11 +131,15 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch((err) => {
+      console.error('Failed to get initial session:', err);
+      setNetworkError(true);
+      setLoading(false);
     });
 
     return () => {
-      subscription.unsubscribe();
       if (retryTimeout) clearTimeout(retryTimeout);
+      subscription?.unsubscribe?.();
     };
   }, [queryClient]);
 
