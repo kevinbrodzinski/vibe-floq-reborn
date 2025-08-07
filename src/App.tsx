@@ -147,7 +147,12 @@ const App = () => {
                               <Route path="/ripple/:id" element={<ShareRipplePage />} />
                               <Route path="/invite/:id" element={<PlanInvite />} />
                               {/* Catch-all route for app routes handled by AppRoutes.tsx */}
-                              <Route path="*" element={<Index />} />
+                              <Route path="*" element={
+                                <>
+                                  {console.log('🎯 CATCH-ALL ROUTE MATCHED - Rendering Index for:', window.location.pathname)}
+                                  <Index />
+                                </>
+                              } />
                             </Routes>
                             
                             {/* Development-only health dashboard */}
