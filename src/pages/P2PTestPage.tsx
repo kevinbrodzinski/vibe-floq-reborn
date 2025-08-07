@@ -619,7 +619,7 @@ export default function P2PTestPage() {
   const currentUserId = useCurrentUserId();
 
   // Use null for hooks when we want to disable realtime subscriptions in test mode
-  const isTestMode = false; // Set to false to enable production mode with real database
+  const isTestMode = true; // Set to false to enable production mode with real database
   
   // In production mode, we need a real thread ID from route params or thread selection
   // For the demo, we'll set this to null to avoid subscribing to non-existent threads
