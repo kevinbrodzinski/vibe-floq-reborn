@@ -33,13 +33,9 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
   const queryKey = ['message-reactions', surface, threadId];
 
   // Fetch reactions for all messages in thread
-  const isMockUserId = currentUserId === '1954da62-be4d-4224-917b-cfb77ebb2122' || 
-                      currentUserId === 'f1e2d3c4-b5a6-9870-5432-109876fedcba';
-  const isDevelopmentMode = import.meta.env.DEV;
-  
   const { data: reactions = [], isLoading } = useQuery({
     queryKey,
-    enabled: !!threadId && !!currentUserId && !(isDevelopmentMode && (!import.meta.env.VITE_P2P_MIGRATIONS_APPLIED || isMockUserId)),
+    enabled: !!threadId && !!currentUserId,
     queryFn: async (): Promise<MessageReaction[]> => {
       if (surface !== 'dm') {
         throw new Error('Only DM reactions are currently supported');
@@ -85,17 +81,6 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
   // Real-time subscription for reaction changes
   useEffect(() => {
     if (!threadId || !currentUserId) return;
-    
-    // Skip realtime subscriptions if database tables don't exist yet
-    // This prevents errors when the P2P migrations haven't been applied
-    const isDevelopmentMode = import.meta.env.DEV;
-    const isMockUserId = currentUserId === '1954da62-be4d-4224-917b-cfb77ebb2122' || 
-                        currentUserId === 'f1e2d3c4-b5a6-9870-5432-109876fedcba';
-    
-    if (isDevelopmentMode && (!import.meta.env.VITE_P2P_MIGRATIONS_APPLIED || isMockUserId)) {
-      console.log('[useMessageReactions] Skipping realtime subscription - P2P migrations not applied or using mock user');
-      return;
-    }
 
     const cleanup = realtimeManager.subscribe(
       `reactions:${threadId}`,
