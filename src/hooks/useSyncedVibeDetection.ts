@@ -1,24 +1,23 @@
 import { useEffect } from 'react'
 import { useVibeDetection } from '@/store/useVibeDetection'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useCurrentUserId } from '@/hooks/useCurrentUser'
 import { supabase } from '@/integrations/supabase/client'
 import { updateVibeDetectionPreference } from '@/lib/sync/updateVibeDetectionPreference'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 export function useSyncedVibeDetection() {
-  const userQuery = useCurrentUser()            // ✅ keep the TanStack object
-  const user      = userQuery.data              //   (undefined until resolved)
+  const userId = useCurrentUserId()             // ✅ get current user ID directly
   const { autoMode, setAutoMode } = useVibeDetection()
 
   // Pull preference from Supabase on mount
   useEffect(() => {
-    if (!user) return        // the query is still loading or unauthenticated
+    if (!userId) return        // user is not authenticated
 
     const fetchPreference = async () => {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('vibe_detection_enabled')
-        .eq('profile_id', user.id)
+        .eq('profile_id', userId)
         .maybeSingle()
 
       if (error) {
@@ -32,13 +31,13 @@ export function useSyncedVibeDetection() {
     }
 
     fetchPreference()
-  }, [user?.id, setAutoMode])
+  }, [userId, setAutoMode])
 
   // 🕓 Debounce Supabase writes
   const debouncedAutoMode = useDebouncedValue(autoMode, 1000)
 
   useEffect(() => {
-    if (!user) return
-    updateVibeDetectionPreference(user.id, debouncedAutoMode)
-  }, [debouncedAutoMode, user?.id])
+    if (!userId) return
+    updateVibeDetectionPreference(userId, debouncedAutoMode)
+  }, [debouncedAutoMode, userId])
 }

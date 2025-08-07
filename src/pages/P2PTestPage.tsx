@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageBubble } from '@/components/chat/MessageBubble';
+
 import { useMessageReactions } from '@/hooks/messaging/useMessageReactions';
 import { useThreads } from '@/hooks/messaging/useThreads';
 import { useTypingIndicators, useTypingIndicatorText } from '@/hooks/messaging/useTypingIndicators';
@@ -122,7 +122,6 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
   messages?: any[];
 }) {
   // In test mode, we'll create a simplified version that doesn't rely on hooks
-  const currentUserId = useCurrentUserId();
   const isOwn = message.profile_id === MOCK_CURRENT_USER_ID;
   
   // Get reactions for this specific message and group them
@@ -389,12 +388,12 @@ function useTestModeHooks() {
     });
   };
 
-  const sendFriendRequest = async (userId: string) => {
+  const sendFriendRequest = async (profileId: string) => {
     setMockSending(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     setMockSending(false);
     // Show success toast
-    console.log('Mock: Friend request sent to', userId);
+    console.log('Mock: Friend request sent to', profileId);
   };
 
   const handleTyping = () => {
