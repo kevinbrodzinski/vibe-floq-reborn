@@ -214,20 +214,38 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
   );
 }
 
-export default function P2PTestPage() {
-  const [testMessage, setTestMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState(MOCK_USER_ID);
-  const [connectionStats, setConnectionStats] = useState<any>(null);
-  const [realtimeErrors, setRealtimeErrors] = useState<string[]>([]);
+// Test mode hook implementations
+function useTestModeHooks() {
+  return {
+    reactions: [],
+    toggleReaction: async () => {},
+    reactionsLoading: false,
+    reactionsError: null,
+    threads: [],
+    createThread: async () => 'mock-thread-id',
+    markThreadRead: async () => {},
+    searchThreads: async () => [],
+    threadsLoading: false,
+    threadsError: null,
+    isTyping: false,
+    typingUsers: [],
+    handleTyping: () => {},
+    handleMessageSent: () => {},
+    typingText: '',
+    sendFriendRequest: async () => {},
+    acceptFriendRequest: async () => {},
+    rejectFriendRequest: async () => {},
+    isSending: false,
+    isAccepting: false,
+    isRejecting: false,
+    unifiedFriends: [],
+    friendsLoading: false,
+    friendsError: null,
+  };
+}
 
-  const currentUserId = useCurrentUserId();
-
-  // Use null for hooks when we want to disable realtime subscriptions in test mode
-  const isTestMode = true; // Set to true to disable realtime subscriptions
-  const realThreadId = (currentUserId && !isTestMode) ? MOCK_THREAD_ID : null;
-
-  // Only initialize hooks if we have a current user and not in test mode
+// Production hook implementations
+function useProductionHooks(currentUserId: string | null, realThreadId: string | null) {
   const { 
     reactions, 
     toggleReaction, 
@@ -267,6 +285,79 @@ export default function P2PTestPage() {
     friendsLoading,
     error: friendsError 
   } = useUnifiedFriends();
+
+  return {
+    reactions,
+    toggleReaction,
+    reactionsLoading,
+    reactionsError,
+    threads,
+    createThread,
+    markThreadRead,
+    searchThreads,
+    threadsLoading,
+    threadsError,
+    isTyping,
+    typingUsers,
+    handleTyping,
+    handleMessageSent,
+    typingText,
+    sendFriendRequest,
+    acceptFriendRequest,
+    rejectFriendRequest,
+    isSending,
+    isAccepting,
+    isRejecting,
+    unifiedFriends,
+    friendsLoading,
+    friendsError,
+  };
+}
+
+export default function P2PTestPage() {
+  const [testMessage, setTestMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(MOCK_USER_ID);
+  const [connectionStats, setConnectionStats] = useState<any>(null);
+  const [realtimeErrors, setRealtimeErrors] = useState<string[]>([]);
+
+  const currentUserId = useCurrentUserId();
+
+  // Use null for hooks when we want to disable realtime subscriptions in test mode
+  const isTestMode = true; // Set to true to disable realtime subscriptions
+  const realThreadId = (currentUserId && !isTestMode) ? MOCK_THREAD_ID : null;
+
+  // Conditionally use test mode or production hooks
+  const hooks = isTestMode 
+    ? useTestModeHooks() 
+    : useProductionHooks(currentUserId, realThreadId);
+
+  const {
+    reactions,
+    toggleReaction,
+    reactionsLoading,
+    reactionsError,
+    threads,
+    createThread,
+    markThreadRead,
+    searchThreads,
+    threadsLoading,
+    threadsError,
+    isTyping,
+    typingUsers,
+    handleTyping,
+    handleMessageSent,
+    typingText,
+    sendFriendRequest,
+    acceptFriendRequest,
+    rejectFriendRequest,
+    isSending,
+    isAccepting,
+    isRejecting,
+    unifiedFriends,
+    friendsLoading,
+    friendsError,
+  } = hooks;
 
   // Monitor connection health
   useEffect(() => {
