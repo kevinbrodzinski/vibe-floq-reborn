@@ -4,16 +4,21 @@ import { Waypoint } from 'react-waypoint';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
+import { MessageBubble } from '@/components/MessageBubble';
+import { useProfile } from '@/hooks/useProfile';
 import { ChatMediaBubble } from './ChatMediaBubble';
 import { ReplySnippet } from './ReplySnippet';
 
 interface Message {
   id: string;
+  thread_id: string;
   content?: string | null;
   metadata?: any;
   reply_to_id?: string | null;
   created_at: string;
-  sender_id: string;
+  sender_id?: string;
+  profile_id: string;
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
   reactions?: Record<string, string[]>;
 }
 
@@ -70,75 +75,83 @@ export const MessageList: React.FC<MessageListProps> = ({
       )}
 
       {/* Messages */}
-      {allMessages.map((message) => {
-        const isOwn = message.sender_id === currentUserId;
+      {allMessages.map((message, index) => {
+        const senderId = message.profile_id || message.sender_id;
+        const isOwn = senderId === currentUserId;
+        const previousMessage = allMessages[index - 1];
+        const isConsecutive = previousMessage && 
+          (previousMessage.profile_id || previousMessage.sender_id) === senderId &&
+          dayjs(message.created_at).diff(dayjs(previousMessage.created_at), 'minute') < 5;
+
         return (
-          <div
+          <MessageBubbleWrapper 
             key={message.id}
-            className={cn(
-              "max-w-[70%] p-3 rounded-lg group",
-              isOwn
-                ? "bg-primary text-primary-foreground ml-auto"
-                : "bg-muted"
-            )}
-            onDoubleClick={() => onReply?.(message.id)}
-          >
-            {/* Reply context */}
-            {message.reply_to_id && (
-              <ReplySnippet messageId={message.reply_to_id} />
-            )}
-
-            {/* Main content / media */}
-            {message.metadata?.media ? (
-              <ChatMediaBubble 
-                media={message.metadata.media}
-                className="max-w-xs"
-              />
-            ) : (
-              <div className="text-sm">{message.content}</div>
-            )}
-
-            {/* Reactions */}
-            {message.reactions && Object.keys(message.reactions).length > 0 && (
-              <div className="flex gap-1 mt-2 flex-wrap">
-                {Object.entries(message.reactions).map(([emoji, arr]) => (
-                  <button
-                    key={emoji}
-                    onClick={() => onReact?.(message.id, emoji)}
-                    className={cn(
-                      "px-2 py-1 rounded-full text-xs bg-muted hover:bg-muted/80 transition-colors",
-                      Array.isArray(arr) && arr.includes(currentUserId || '') ? 'ring-1 ring-primary' : ''
-                    )}
-                  >
-                    {emoji} {Array.isArray(arr) ? arr.length : 0}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-1">
-              <div className="text-xs opacity-70">
-                {dayjs(message.created_at).format('HH:mm')}
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6 text-xs"
-                  onClick={() => onReact?.(message.id, '👍')}
-                >
-                  👍
-                </button>
-                <button
-                  className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6 text-xs"
-                  onClick={() => onReply?.(message.id)}
-                >
-                  ↩️
-                </button>
-              </div>
-            </div>
-          </div>
+            message={message}
+            isOwn={isOwn}
+            isConsecutive={isConsecutive}
+            senderId={senderId}
+          />
         );
       })}
       <div ref={bottomRef} />
     </div>
+  );
+};
+
+// Wrapper component to handle profile loading for MessageBubble
+const MessageBubbleWrapper: React.FC<{
+  message: Message;
+  isOwn: boolean;
+  isConsecutive: boolean;
+  senderId: string | undefined;
+}> = ({ message, isOwn, isConsecutive, senderId }) => {
+  const { data: senderProfile } = useProfile(senderId);
+
+  // Handle media messages
+  if (message.metadata?.media) {
+    return (
+      <div className="flex flex-col gap-2">
+        <MessageBubble
+          message={message}
+          isOwn={isOwn}
+          showAvatar={!isOwn}
+          isConsecutive={isConsecutive}
+          senderProfile={senderProfile}
+        />
+        <div className="max-w-[70%] mx-auto">
+          <ChatMediaBubble 
+            media={message.metadata.media}
+            className="max-w-xs"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Handle reply context
+  if (message.reply_to_id) {
+    return (
+      <div className="flex flex-col gap-2">
+        <ReplySnippet messageId={message.reply_to_id} />
+        <MessageBubble
+          message={message}
+          isOwn={isOwn}
+          showAvatar={!isOwn}
+          isConsecutive={isConsecutive}
+          senderProfile={senderProfile}
+        />
+      </div>
+    );
+  }
+
+  // Regular message
+  return (
+    <MessageBubble
+      message={message}
+      isOwn={isOwn}
+      showAvatar={!isOwn}
+      isConsecutive={isConsecutive}
+      senderProfile={senderProfile}
+    />
   );
 };

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { realtimeManager } from '@/lib/realtime/manager';
 import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
+import { supaFn } from '@/lib/supaFn';
 import { toast } from 'sonner';
 
 interface MessageReaction {
@@ -123,14 +124,32 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
     mutationFn: async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
       if (!currentUserId) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase.rpc('toggle_dm_reaction', {
-        p_message_id: messageId,
-        p_user_id: currentUserId,
-        p_emoji: emoji,
-      });
+      // Try edge function first (for compatibility with existing system)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error("No auth session");
+        
+        const res = await supaFn('toggle-dm-reaction', session.access_token, {
+          p_message_id: messageId,
+          p_user_id: currentUserId,
+          p_emoji: emoji
+        });
+        
+        if (!res.ok) throw new Error(await res.text());
+        return await res.json();
+      } catch (edgeError) {
+        console.warn('Edge function failed, falling back to RPC:', edgeError);
+        
+        // Fallback to RPC function
+        const { data, error } = await supabase.rpc('toggle_dm_reaction', {
+          p_message_id: messageId,
+          p_user_id: currentUserId,
+          p_emoji: emoji,
+        });
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      }
     },
     onMutate: async ({ messageId, emoji }) => {
       // Optimistic update
