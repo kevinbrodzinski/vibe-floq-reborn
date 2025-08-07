@@ -750,11 +750,67 @@ export default function P2PTestPage() {
   const handleSendFriendRequest = async () => {
     if (!selectedUserId) return;
     
+    // In production mode, check if we have real authentication
+    if (!isTestMode && (!currentUserId || currentUserId === MOCK_CURRENT_USER_ID)) {
+      toast.error('Authentication required', {
+        description: 'Please log in with a real account to send friend requests'
+      });
+      return;
+    }
+    
     try {
-      await sendFriendRequest(selectedUserId);
+      if (isTestMode) {
+        // Test mode uses mock implementation
+        await sendFriendRequest(selectedUserId);
+      } else {
+        // Production mode uses real database
+        await sendFriendRequest(selectedUserId);
+      }
       toast.success('Friend request sent!');
     } catch (error) {
       toast.error('Failed to send friend request', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  const handleAcceptFriendRequest = async () => {
+    if (!selectedUserId) return;
+    
+    // In production mode, check if we have real authentication
+    if (!isTestMode && (!currentUserId || currentUserId === MOCK_CURRENT_USER_ID)) {
+      toast.error('Authentication required', {
+        description: 'Please log in with a real account to accept friend requests'
+      });
+      return;
+    }
+    
+    try {
+      await acceptFriendRequest(selectedUserId);
+      toast.success('Friend request accepted!');
+    } catch (error) {
+      toast.error('Failed to accept friend request', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  const handleRejectFriendRequest = async () => {
+    if (!selectedUserId) return;
+    
+    // In production mode, check if we have real authentication
+    if (!isTestMode && (!currentUserId || currentUserId === MOCK_CURRENT_USER_ID)) {
+      toast.error('Authentication required', {
+        description: 'Please log in with a real account to reject friend requests'
+      });
+      return;
+    }
+    
+    try {
+      await rejectFriendRequest(selectedUserId);
+      toast.success('Friend request rejected!');
+    } catch (error) {
+      toast.error('Failed to reject friend request', {
         description: error instanceof Error ? error.message : 'Unknown error'
       });
     }
@@ -877,9 +933,9 @@ export default function P2PTestPage() {
                 This demo shows how the P2P system works without requiring database migrations:
               </p>
               <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
-                <li><strong>Working:</strong> Friend requests (real database calls with rate limiting)</li>
-                <li><strong>Demo mode:</strong> Friend list, thread search, reactions, typing (mock data to avoid schema dependencies)</li>
-                <li><strong>Full production:</strong> Apply migrations first, then all features use live database</li>
+                <li><strong>Authentication required:</strong> Friend requests (real database calls - requires login)</li>
+                <li><strong>Demo mode:</strong> Friend list, thread search, reactions, typing (mock data)</li>
+                <li><strong>Full production:</strong> Login + apply migrations for complete P2P system</li>
               </ul>
             </div>
             <ul className="space-y-1 text-xs text-green-600">
@@ -1241,7 +1297,7 @@ export default function P2PTestPage() {
                 <Button 
                   variant="outline" 
                   disabled={isAccepting}
-                  onClick={() => acceptFriendRequest(selectedUserId)}
+                  onClick={handleAcceptFriendRequest}
                   className="flex items-center gap-2"
                 >
                   {isAccepting ? (
@@ -1259,7 +1315,7 @@ export default function P2PTestPage() {
                 <Button 
                   variant="outline" 
                   disabled={isRejecting}
-                  onClick={() => rejectFriendRequest(selectedUserId)}
+                  onClick={handleRejectFriendRequest}
                 >
                   {isRejecting ? 'Rejecting...' : 'Reject Request'}
                 </Button>
@@ -1275,16 +1331,20 @@ export default function P2PTestPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!isTestMode && (
-                <Card className="bg-blue-50 border-blue-200 mb-4">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-blue-800">
-                      <strong>Note:</strong> Friend list shows mock data in production demo mode. 
-                      Friend request operations above use real database calls with rate limiting.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+                              {!isTestMode && (
+                  <Card className="bg-blue-50 border-blue-200 mb-4">
+                    <CardContent className="p-3">
+                      <p className="text-xs text-blue-800 mb-2">
+                        <strong>Production Demo Mode:</strong>
+                      </p>
+                      <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                        <li><strong>Friend requests:</strong> Require real authentication (login required)</li>
+                        <li><strong>Friend list:</strong> Shows mock data to avoid database dependencies</li>
+                        <li><strong>Operations:</strong> Use atomic database functions with rate limiting</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               
               {friendsLoading ? (
                 <div className="text-center py-4">
