@@ -411,7 +411,7 @@ export const FriendsSheet = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => accept(req.id)} // TODO: decline
+                        onClick={() => accept(req.id)}
                         disabled={updating}
                       >
                         <X className="w-3 h-3" />

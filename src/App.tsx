@@ -1,17 +1,19 @@
 
 import { useEffect, useRef, useMemo } from "react";
 
-// Import debug helpers in development only
+// Conditional imports for development vs production
 if (import.meta.env.DEV) {
+  // Development-only imports
   import('@/lib/debug/environmentHelper');
   import('@/lib/debug/immediateLocationFix');
   import('@/lib/debug/mapDiagnostics');
   import('@/lib/debug/quickMapFixes');
   import('@/lib/debug/mockGeolocation');
 } else {
-  // Initialize production optimizations
+  // Production optimizations
   import('@/lib/productionOptimizations');
 }
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -23,13 +25,17 @@ import { EventNotificationsProvider } from "@/providers/EventNotificationsProvid
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
-import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
 import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
+
+// Development-only imports
+const LocationSystemHealthDashboard = import.meta.env.DEV 
+  ? require("@/components/debug/LocationSystemHealthDashboard").LocationSystemHealthDashboard 
+  : null;
 
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -48,10 +54,16 @@ const App = () => {
   // Track online status
   usePresenceTracker();
 
-  // Pre-warm the clustering worker
+  // Initialize cluster worker for performance
+  const workerRef = useRef<Worker | null>(null);
+  
   useEffect(() => {
-    // Empty call warms the Comlink proxy & spins the worker
-    clusterWorker.cluster([], 11);
+    if (typeof Worker !== 'undefined') {
+      workerRef.current = clusterWorker;
+      return () => {
+        workerRef.current?.terminate();
+      };
+    }
   }, []);
 
   // Realtime subscription for floq messages
@@ -90,37 +102,45 @@ const App = () => {
   }, [queryClient]);
   
   return (
-    <ProductionModeGuard>
-      <QueryClientProvider client={queryClient}>
-        <EnhancedAuthProvider>
-          <AppProviders>
-            <EventNotificationsProvider>
-              <PlanNotificationProvider>
-                <VibeRealtime />
-                <BannerProvider>
-                  <TooltipProvider>
-                    {/* Toaster removed to prevent infinite loops */}
-                    <NetworkStatusBanner />
-                    <BrowserRouter>
-                      <PlanInviteProvider />
-                      {import.meta.env.DEV && <LocationSystemHealthDashboard />}
-                      <Routes>
-                        <Route path="/a/:slug" element={<SharedAfterglow />} />
-                        <Route path="/share/:slug" element={<SharedPlan />} />
-                        <Route path="/invite/:slug" element={<PlanInvite />} />
-                        <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
-                        <Route path="/settings/profile" element={<Settings />} />
-                        <Route path="/*" element={<Index />} />
-                      </Routes>
-                    </BrowserRouter>
-                  </TooltipProvider>
-                </BannerProvider>
-              </PlanNotificationProvider>
-            </EventNotificationsProvider>
-          </AppProviders>
-        </EnhancedAuthProvider>
-      </QueryClientProvider>
-    </ProductionModeGuard>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <EnhancedAuthProvider>
+            <AppProviders>
+              <BannerProvider>
+                <VibeRealtime>
+                  <EventNotificationsProvider>
+                    <PlanNotificationProvider>
+                      <PlanInviteProvider>
+                        <ProductionModeGuard>
+                          <div className="min-h-screen bg-background">
+                            <NetworkStatusBanner />
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/settings" element={<Settings />} />
+                              <Route path="/afterglow/:id" element={<SharedAfterglow />} />
+                              <Route path="/plan/:id" element={<SharedPlan />} />
+                              <Route path="/ripple/:id" element={<ShareRipplePage />} />
+                              <Route path="/invite/:id" element={<PlanInvite />} />
+                            </Routes>
+                            
+                            {/* Development-only health dashboard */}
+                            {import.meta.env.DEV && LocationSystemHealthDashboard && (
+                              <LocationSystemHealthDashboard />
+                            )}
+                          </div>
+                        </ProductionModeGuard>
+                      </PlanInviteProvider>
+                    </PlanNotificationProvider>
+                  </EventNotificationsProvider>
+                </VibeRealtime>
+              </BannerProvider>
+            </AppProviders>
+          </EnhancedAuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+      <Toaster />
+    </QueryClientProvider>
   );
 };
 
