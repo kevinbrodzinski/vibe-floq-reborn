@@ -8,6 +8,7 @@ import { VenueRecommendationsModal } from '@/components/social/VenueRecommendati
 import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 import { NearbyFloqsModal } from '@/components/social/NearbyFloqsModal';
 import { NearbyPeopleModal } from '@/components/social/NearbyPeopleModal';
+import { LocationFallback } from '@/components/LocationFallback';
 import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
 import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
 import { useVibe } from '@/lib/store/useVibe';
@@ -111,6 +112,19 @@ export const SocialMode: React.FC = () => {
   return (
     <div className="overflow-y-auto pb-8">
       <VibeContextHeader />
+      
+      {/* Show location fallback if there are location errors */}
+      {enhancedLocation.error && (
+        <LocationFallback 
+          error={enhancedLocation.error}
+          onRetry={() => {
+            // Trigger location refresh if available
+            if (enhancedLocation.requestLocation) {
+              enhancedLocation.requestLocation();
+            }
+          }}
+        />
+      )}
       
       {/* Enhanced Friend Carousel with Proximity Data */}
       <InlineFriendCarousel 
