@@ -15,8 +15,20 @@ export const VibeScreen: React.FC = () => {
   const { mode, setMode } = useVibeScreenMode();
   const lastHapticTime = React.useRef(0);
 
-  const handleModeChange = async (value: 'personal' | 'social') => {
-    setMode(value);
+  // Debug: Log current mode
+  React.useEffect(() => {
+    console.log('VibeScreen current mode:', mode);
+  }, [mode]);
+
+  const handleModeChange = async (value: string) => {
+    // Ensure we have a valid mode value
+    if (value !== 'personal' && value !== 'social') {
+      console.warn('Invalid mode value:', value);
+      return;
+    }
+    
+    console.log('Switching to mode:', value); // Debug log
+    setMode(value as 'personal' | 'social');
     
     // Throttled haptic feedback - native only
     if (Platform.OS !== 'web') {

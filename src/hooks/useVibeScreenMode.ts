@@ -12,7 +12,7 @@ interface VibeScreenState {
 export const useVibeScreenMode = create<VibeScreenState>()(
   persist(
     (set) => ({
-      mode: 'social', // Start with social mode as default
+      mode: 'personal', // Start with personal mode as default - core vibe functionality
       setMode: (mode) => set({ mode }),
     }),
     {
