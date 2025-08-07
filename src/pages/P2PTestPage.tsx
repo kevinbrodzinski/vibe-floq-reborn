@@ -93,16 +93,33 @@ const MOCK_MESSAGES = [
       avatar_url: null
     },
     status: 'sent' as const
+  },
+  {
+    id: 'msg-a1b2c3d4-e5f6-7890-1234-567890abcde4',
+    content: 'That sounds amazing! Can\'t wait to try it out.',
+    profile_id: MOCK_USER_ID,
+    created_at: new Date(Date.now() - 60000).toISOString(),
+    threadId: MOCK_THREAD_ID,
+    thread_id: MOCK_THREAD_ID,
+    reply_to_id: MOCK_MESSAGE_3_ID, // Reply to the previous message
+    senderProfile: {
+      display_name: 'Alice Johnson',
+      username: 'alice',
+      avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612c42e?w=100&h=100&fit=crop&crop=face'
+    },
+    status: 'read' as const
   }
 ];
 
 // Test wrapper for MessageBubble that handles mock data
-function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick, reactions }: {
+function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick, reactions, onReplyClick, messages }: {
   message: any;
   showAvatar: boolean;
   isConsecutive: boolean;
   onReactionClick?: (emoji: string) => void;
   reactions?: any[];
+  onReplyClick?: (messageId: string) => void;
+  messages?: any[];
 }) {
   // In test mode, we'll create a simplified version that doesn't rely on hooks
   const currentUserId = useCurrentUserId();
@@ -123,6 +140,11 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
   }, {} as Record<string, { emoji: string; count: number; hasUserReacted: boolean }>);
   
   const reactionArray = Object.values(groupedReactions);
+
+  // Find the message this is replying to
+  const replyToMessage = message.reply_to_id 
+    ? messages?.find(m => m.id === message.reply_to_id)
+    : null;
 
   const formatTime = (timestamp: string) => {
     if (!timestamp) return 'Now';
@@ -149,7 +171,7 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
   };
 
   return (
-    <div className={`flex gap-3 max-w-[80%] ${isOwn ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
+    <div className={`group flex gap-3 max-w-[80%] ${isOwn ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
       {/* Avatar */}
       {showAvatar && !isConsecutive && (
         <div className="flex-shrink-0">
@@ -173,6 +195,24 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
         {!isOwn && showAvatar && !isConsecutive && (
           <div className="text-sm font-medium text-gray-900 px-1">
             {message.senderProfile?.display_name || 'Unknown User'}
+          </div>
+        )}
+        
+        {/* Reply snippet */}
+        {replyToMessage && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border-l-2 ${
+            isOwn 
+              ? 'bg-blue-50 border-blue-300 text-blue-800' 
+              : 'bg-gray-50 border-gray-300 text-gray-600'
+          }`}>
+            <div className="flex-1 truncate">
+              <div className="font-medium">
+                {replyToMessage.profile_id === MOCK_CURRENT_USER_ID ? 'You' : replyToMessage.senderProfile?.display_name || 'Unknown'}
+              </div>
+              <div className="truncate opacity-75">
+                {replyToMessage.content}
+              </div>
+            </div>
           </div>
         )}
         
@@ -225,6 +265,14 @@ function TestMessageBubble({ message, showAvatar, isConsecutive, onReactionClick
               {message.status === 'sending' && '⋯'}
             </span>
           )}
+          {/* Reply button */}
+          <button
+            onClick={() => onReplyClick?.(message.id)}
+            className="opacity-0 group-hover:opacity-100 hover:bg-gray-200 rounded px-2 py-1 text-xs transition-all"
+            title="Reply to this message"
+          >
+            Reply
+          </button>
         </div>
       </div>
     </div>
@@ -311,6 +359,7 @@ function useTestModeHooks() {
   const [mockTyping, setMockTyping] = useState(false);
   const [mockSending, setMockSending] = useState(false);
   const [mockMessages, setMockMessages] = useState(MOCK_MESSAGES);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const toggleReaction = async (messageId: string, emoji: string) => {
     // Validate inputs
@@ -353,7 +402,7 @@ function useTestModeHooks() {
     setTimeout(() => setMockTyping(false), 3000);
   };
 
-  const sendTestMessage = async (content: string) => {
+  const sendTestMessage = async (content: string, replyToId?: string) => {
     if (!content.trim()) return;
     
     // Simulate sending delay
@@ -368,6 +417,7 @@ function useTestModeHooks() {
       created_at: new Date().toISOString(),
       threadId: MOCK_THREAD_ID,
       thread_id: MOCK_THREAD_ID,
+      reply_to_id: replyToId || null,
       senderProfile: {
         display_name: 'You',
         username: 'you',
@@ -379,7 +429,18 @@ function useTestModeHooks() {
     setMockMessages(prev => [...prev, newMessage]);
     setMockSending(false);
     
+    // Clear reply state
+    setReplyingTo(null);
+    
     return newMessage;
+  };
+
+  const startReply = (messageId: string) => {
+    setReplyingTo(messageId);
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
   };
 
   return {
@@ -423,6 +484,9 @@ function useTestModeHooks() {
     // Add messaging functionality
     messages: mockMessages,
     sendTestMessage,
+    replyingTo,
+    startReply,
+    cancelReply,
   };
 }
 
@@ -496,6 +560,9 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
     // Production mode messaging (would need actual message hooks)
     messages: MOCK_MESSAGES, // Fallback to static messages in production
     sendTestMessage: undefined, // No test message function in production
+    replyingTo: null,
+    startReply: () => {},
+    cancelReply: () => {},
   };
 }
 
@@ -545,6 +612,9 @@ export default function P2PTestPage() {
     // New messaging properties
     messages = MOCK_MESSAGES,
     sendTestMessage,
+    replyingTo,
+    startReply,
+    cancelReply,
   } = hooks;
 
   // Monitor connection health
@@ -589,9 +659,10 @@ export default function P2PTestPage() {
     
     try {
       if (isTestMode && sendTestMessage) {
-        await sendTestMessage(testMessage);
+        await sendTestMessage(testMessage, replyingTo || undefined);
         handleMessageSent();
-        toast.success('Test message sent!', {
+        const replyText = replyingTo ? ' (reply)' : '';
+        toast.success(`Test message sent${replyText}!`, {
           description: `Message: "${testMessage}"`
         });
       } else {
@@ -831,6 +902,27 @@ export default function P2PTestPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Reply indicator */}
+                {replyingTo && (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex-1 text-sm text-blue-800">
+                      <span className="font-medium">Replying to:</span>{' '}
+                      {(() => {
+                        const replyMsg = messages.find(m => m.id === replyingTo);
+                        return replyMsg?.content?.slice(0, 50) + (replyMsg?.content && replyMsg.content.length > 50 ? '...' : '') || 'Unknown message';
+                      })()}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => cancelReply?.()}
+                      className="text-blue-600 hover:text-blue-800 h-6 w-6 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="flex gap-2">
                   <Input
                     value={testMessage}
@@ -838,14 +930,14 @@ export default function P2PTestPage() {
                       setTestMessage(e.target.value);
                       handleTyping();
                     }}
-                    placeholder="Type a test message..."
+                    placeholder={replyingTo ? "Type your reply..." : "Type a test message..."}
                     className="flex-1"
                   />
                   <Button 
                     onClick={handleSendTestMessage} 
                     disabled={!testMessage.trim() || isSending}
                   >
-                    {isSending ? 'Sending...' : 'Send'}
+                    {isSending ? 'Sending...' : replyingTo ? 'Reply' : 'Send'}
                   </Button>
                 </div>
                 
@@ -930,10 +1022,13 @@ export default function P2PTestPage() {
                          <div>
                            <span className="font-medium">Typing:</span> {isTyping ? '✅' : '❌'}
                          </div>
-                         <div>
-                           <span className="font-medium">Sending:</span> {isSending ? '✅' : '❌'}
-                         </div>
-                       </div>
+                                                   <div>
+                            <span className="font-medium">Sending:</span> {isSending ? '✅' : '❌'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Replying:</span> {replyingTo ? '✅' : '❌'}
+                          </div>
+                        </div>
                      </CardContent>
                   </Card>
                 )}
@@ -957,7 +1052,9 @@ export default function P2PTestPage() {
                     showAvatar={index === 0 || messages[index - 1]?.profile_id !== message.profile_id}
                     isConsecutive={index > 0 && messages[index - 1]?.profile_id === message.profile_id}
                     onReactionClick={(emoji) => handleToggleReaction(message.id, emoji)}
+                    onReplyClick={(messageId) => startReply?.(messageId)}
                     reactions={reactions}
+                    messages={messages}
                   />
                 ))}
                 
