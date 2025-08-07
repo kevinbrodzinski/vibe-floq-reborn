@@ -64,7 +64,14 @@ export function useThreads() {
         .or(`member_a.eq.${currentUserId},member_b.eq.${currentUserId}`)
         .order('last_message_at', { ascending: false, nullsLast: true });
 
-      if (error) throw error;
+      if (error) {
+        // Handle case where database table doesn't exist yet
+        if (error.code === 'PGRST116' || error.message?.includes('direct_threads')) {
+          console.warn('[useThreads] Database table not found - returning empty threads');
+          return [];
+        }
+        throw error;
+      }
       return data as DirectThreadWithProfiles[];
     },
     staleTime: 30_000, // 30 seconds
@@ -73,6 +80,14 @@ export function useThreads() {
   // Real-time subscription for thread updates
   useEffect(() => {
     if (!currentUserId) return;
+    
+    // Skip realtime subscriptions if database tables don't exist yet
+    // This prevents errors when the P2P migrations haven't been applied
+    const isDevelopmentMode = import.meta.env.DEV;
+    if (isDevelopmentMode && !import.meta.env.VITE_P2P_MIGRATIONS_APPLIED) {
+      console.log('[useThreads] Skipping realtime subscription - P2P migrations not applied');
+      return;
+    }
 
     const cleanup = realtimeManager.subscribe(
       `threads:${currentUserId}`,
@@ -163,7 +178,14 @@ export function useThreads() {
         p_user_b: otherUserId,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle case where database function doesn't exist yet
+        if (error.code === 'PGRST202' || error.message?.includes('create_or_get_thread')) {
+          console.warn('[useThreads] Database function not found - P2P migrations may not be applied yet');
+          throw new Error('Thread creation not available yet - please apply P2P migrations');
+        }
+        throw error;
+      }
       return threadId;
     },
     onSuccess: () => {
@@ -187,7 +209,14 @@ export function useThreads() {
         p_profile_id: currentUserId,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle case where database function doesn't exist yet
+        if (error.code === 'PGRST202' || error.message?.includes('mark_thread_read_enhanced')) {
+          console.warn('[useThreads] Database function not found - P2P migrations may not be applied yet');
+          throw new Error('Mark thread read not available yet - please apply P2P migrations');
+        }
+        throw error;
+      }
     },
     onSuccess: (_, threadId) => {
       // Optimistically update unread counts
@@ -252,7 +281,14 @@ export function useThreads() {
         p_query: query,
         p_limit: 20
       });
-      if (error) throw error;
+      if (error) {
+        // Handle case where database function doesn't exist yet
+        if (error.code === 'PGRST202' || error.message?.includes('search_direct_threads_enhanced')) {
+          console.warn('[useThreads] Search function not found - P2P migrations may not be applied yet');
+          return [];
+        }
+        throw error;
+      }
       
       return data?.map((result: any) => ({
         id: result.thread_id,
