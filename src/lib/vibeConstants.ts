@@ -1,41 +1,37 @@
 // src/lib/vibeConstants.ts
-import { VIBES, type Vibe } from '@/lib/vibes';
+import { VIBES, VIBE_COLORS, type Vibe } from '@/lib/vibes';
 
 export type VibeMeta = {
-  id: Vibe;
-  label: string;
+  vibe: Vibe;
   emoji: string;
+  label: string;
   color: string;
-  energy: 'low' | 'medium' | 'high';
-  social: 'solo' | 'group' | 'any';
-  timeOfDay: 'day' | 'night' | 'any';
+  energy: number; // 0-100
+  social: number; // 0-100 
+  timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night' | 'any';
 };
 
 export const vibeOptions: VibeMeta[] = VIBES.map((vibe) => {
-  const map: Record<Vibe, Omit<VibeMeta, 'id'>> = {
-    chill:     { label: 'Chill',     emoji: '🛋️', color: 'blue',   energy: 'low',    social: 'any',  timeOfDay: 'night' },
-    hype:      { label: 'Hype',      emoji: '⚡️', color: 'orange', energy: 'high',   social: 'group', timeOfDay: 'night' },
-    curious:   { label: 'Curious',   emoji: '🧠', color: 'violet', energy: 'medium', social: 'any',  timeOfDay: 'day' },
-    social:    { label: 'Social',    emoji: '👯‍♀️', color: 'yellow', energy: 'medium', social: 'group', timeOfDay: 'any' },
-    solo:      { label: 'Solo',      emoji: '🌙', color: 'gray',   energy: 'low',    social: 'solo', timeOfDay: 'night' },
-    romantic:  { label: 'Romantic',  emoji: '💘', color: 'pink',   energy: 'medium', social: 'group', timeOfDay: 'night' },
-    weird:     { label: 'Weird',     emoji: '👽', color: 'lime',   energy: 'medium', social: 'any',  timeOfDay: 'night' },
-    down:      { label: 'Down',      emoji: '🫠', color: 'rose',   energy: 'low',    social: 'solo', timeOfDay: 'any' },
-    flowing:   { label: 'Flowing',   emoji: '🌊', color: 'cyan',   energy: 'medium', social: 'any',  timeOfDay: 'day' },
-    open:      { label: 'Open',      emoji: '🌈', color: 'green',  energy: 'medium', social: 'any',  timeOfDay: 'any' },
-    energetic: { label: 'Energetic', emoji: '⚡', color: 'amber',  energy: 'high',   social: 'group', timeOfDay: 'day' },
-    excited:   { label: 'Excited',   emoji: '🤩', color: 'purple', energy: 'high',   social: 'group', timeOfDay: 'any' },
-    focused:   { label: 'Focused',   emoji: '🎯', color: 'emerald', energy: 'medium', social: 'solo', timeOfDay: 'day' },
+  const baseMeta: Record<Vibe, Omit<VibeMeta, 'vibe'>> = {
+    chill: { emoji: '😌', label: 'Chill', color: VIBE_COLORS.chill, energy: 30, social: 40, timeOfDay: 'any' },
+    flowing: { emoji: '🌊', label: 'Flowing', color: VIBE_COLORS.flowing, energy: 50, social: 30, timeOfDay: 'any' },
+    romantic: { emoji: '💕', label: 'Romantic', color: VIBE_COLORS.romantic, energy: 60, social: 80, timeOfDay: 'evening' },
+    hype: { emoji: '🔥', label: 'Hype', color: VIBE_COLORS.hype, energy: 90, social: 90, timeOfDay: 'night' },
+    weird: { emoji: '🤪', label: 'Weird', color: VIBE_COLORS.weird, energy: 70, social: 60, timeOfDay: 'any' },
+    solo: { emoji: '🧘', label: 'Solo', color: VIBE_COLORS.solo, energy: 20, social: 10, timeOfDay: 'any' },
+    social: { emoji: '👥', label: 'Social', color: VIBE_COLORS.social, energy: 70, social: 95, timeOfDay: 'afternoon' },
+    open: { emoji: '🌱', label: 'Open', color: VIBE_COLORS.open, energy: 40, social: 70, timeOfDay: 'morning' },
+    down: { emoji: '😔', label: 'Down', color: VIBE_COLORS.down, energy: 10, social: 20, timeOfDay: 'any' },
   };
 
   return {
-    id: vibe,
-    ...map[vibe],
+    vibe,
+    ...baseMeta[vibe]
   };
 });
 
 export const getVibeMeta = (vibe: Vibe) =>
-  vibeOptions.find((v) => v.id === vibe)!;
+  vibeOptions.find(v => v.vibe === vibe) || vibeOptions[0];
 
 export const getVibeEmoji = (vibe: Vibe) =>
   getVibeMeta(vibe).emoji;

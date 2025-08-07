@@ -5,20 +5,9 @@ export const VibeEnum = z.enum(VIBES)
 
 export type { Vibe } from '@/lib/vibes'
 
-// For VibeState compatibility with existing code (removes 'curious')
-export const VibeStateEnum = z.enum([
-  'chill',
-  'hype',
-  'social',
-  'solo', 
-  'romantic',
-  'weird',
-  'down',
-  'flowing',
-  'open',
-])
-
-export type VibeState = z.infer<typeof VibeStateEnum>
+// Since we've unified the vibe types, VibeState is now the same as Vibe
+export type VibeState = Vibe
+export const VibeStateEnum = VibeEnum
 
 export const safeVibe = (input: unknown): Vibe => {
   const parsed = VibeEnum.safeParse(input)

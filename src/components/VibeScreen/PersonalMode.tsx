@@ -24,6 +24,7 @@ import { useBottomGap } from '@/hooks/useBottomGap';
 import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
 import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
 import type { EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
+import { useVibeContext } from '@/hooks/useVibeContext';
 
 /**
  * PersonalMode - Enhanced immersive self-dashboard with ML-powered vibe detection
@@ -39,6 +40,7 @@ export const PersonalMode: React.FC = () => {
   const { learningData, vibeDetection, sensorData } = useSensorMonitoring(autoMode);
   const { crowdData, eventTags, dominantVibe } = useVibeMatch();
   const enhancedLocation = useEnhancedLocationSharing();
+  const contextData = useVibeContext();
 
   // Enhanced vibe system integration
   const [vibeSystem] = useState(() => new LocationEnhancedVibeSystem());
@@ -60,14 +62,8 @@ export const PersonalMode: React.FC = () => {
           );
           setHeroData(data);
         } else {
-          // Fallback to basic enhanced system
-          const mockContext = {
-            timestamp: new Date(),
-            location: enhancedLocation.location || null,
-            socialContext: { nearbyFriends: [], crowdDensity: 0 },
-            environmentalFactors: { timeOfDay: 'day', weather: 'clear' }
-          };
-          const data = await vibeSystem.getEnhancedPersonalHeroData(sensorData, mockContext);
+          // Fallback to basic enhanced system using real context
+          const data = await vibeSystem.getEnhancedPersonalHeroData(sensorData, contextData);
           setHeroData(data);
         }
       } catch (error) {
@@ -77,7 +73,7 @@ export const PersonalMode: React.FC = () => {
     };
 
     updateHeroData();
-  }, [vibeSystem, sensorData, enhancedLocation, autoMode, isEnhancedMode]);
+  }, [vibeSystem, sensorData, contextData, enhancedLocation, autoMode, isEnhancedMode]);
 
   const handleVibeSelect = (vibe: string) => {
     console.log('Jump to vibe:', vibe);
