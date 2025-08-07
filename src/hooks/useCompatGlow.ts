@@ -20,29 +20,6 @@ export interface CompatGlowState {
   userCount: number;
 }
 
-const fetcher = async (url: string): Promise<CompatCluster[]> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('compat_clusters', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (error) {
-      console.error('compat_clusters error:', error);
-      // Return empty array instead of throwing to prevent UI crashes
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('compat_clusters fetch error:', error);
-    // Graceful degradation - return empty array
-    return [];
-  }
-};
-
 export function useCompatGlow(): CompatGlowState {
   const vibe = useCurrentVibe();
   const { coords, status } = useUnifiedLocation({
@@ -64,27 +41,29 @@ export function useCompatGlow(): CompatGlowState {
 
   const { data, error } = useSWR<CompatCluster[]>(
     fetchUrl,
-    () => {
-      if (!fetchUrl) return Promise.resolve([]);
+    async () => {
+      if (!fetchUrl) return [];
       
-      // Call the edge function via supabase client (more reliable than direct fetch)
-      return supabase.functions.invoke('compat_clusters', {
-        method: 'GET',
-        body: {
-          lat: location!.coords.latitude,
-          lng: location!.coords.longitude,
-          vibe: String(vibe || 'chill'),
-        }
-      }).then(({ data, error }) => {
+      try {
+        // Call the edge function with JSON body (POST method)
+        const { data, error } = await supabase.functions.invoke('compat_clusters', {
+          body: {
+            lat: location!.coords.latitude,
+            lng: location!.coords.longitude,  
+            vibe: String(vibe || 'chill'),
+          }
+        });
+
         if (error) {
           console.warn('compat_clusters API error:', error);
           return []; // Return empty array for graceful degradation
         }
+        
         return data || [];
-      }).catch(err => {
+      } catch (err) {
         console.warn('compat_clusters network error:', err);
         return []; // Return empty array for graceful degradation
-      });
+      }
     },
     { 
       refreshInterval: 30000, // Increased to 30 seconds to reduce server load

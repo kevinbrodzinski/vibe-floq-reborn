@@ -36,10 +36,28 @@ serve(async (req) => {
       );
     }
 
-    const url = new URL(req.url);
-    const lat = Number(url.searchParams.get('lat'));
-    const lng = Number(url.searchParams.get('lng'));
-    const vibe = url.searchParams.get('vibe');
+    let lat: number, lng: number, vibe: string;
+
+    // Handle both GET (URL params) and POST (JSON body) requests
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      lat = Number(url.searchParams.get('lat'));
+      lng = Number(url.searchParams.get('lng'));
+      vibe = url.searchParams.get('vibe') || '';
+    } else if (req.method === 'POST') {
+      const body = await req.json();
+      lat = Number(body.lat);
+      lng = Number(body.lng);
+      vibe = body.vibe || '';
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }), 
+        { 
+          status: 405,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
 
     if (!lat || !lng || !vibe) {
       return new Response(
