@@ -65,7 +65,14 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
         .in('message_id', messageIds)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        // Handle case where database table doesn't exist yet
+        if (error.code === 'PGRST116' || error.message?.includes('dm_message_reactions')) {
+          console.warn('[useMessageReactions] Database table not found - returning empty reactions');
+          return [];
+        }
+        throw error;
+      }
       return data || [];
     },
     staleTime: 30_000, // 30 seconds
@@ -74,6 +81,14 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
   // Real-time subscription for reaction changes
   useEffect(() => {
     if (!threadId || !currentUserId) return;
+    
+    // Skip realtime subscriptions if database tables don't exist yet
+    // This prevents errors when the P2P migrations haven't been applied
+    const isDevelopmentMode = import.meta.env.DEV;
+    if (isDevelopmentMode && !import.meta.env.VITE_P2P_MIGRATIONS_APPLIED) {
+      console.log('[useMessageReactions] Skipping realtime subscription - P2P migrations not applied');
+      return;
+    }
 
     const cleanup = realtimeManager.subscribe(
       `reactions:${threadId}`,
@@ -147,7 +162,14 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
           p_emoji: emoji,
         });
 
-        if (error) throw error;
+        if (error) {
+          // Handle case where database table doesn't exist yet
+          if (error.code === 'PGRST116' || error.message?.includes('dm_message_reactions')) {
+            console.warn('[useMessageReactions] Database table not found - P2P migrations may not be applied yet');
+            return { success: false, message: 'Reactions feature not available yet' };
+          }
+          throw error;
+        }
         return data;
       }
     },
@@ -186,8 +208,16 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
         queryClient.setQueryData(queryKey, context.previousReactions);
       }
       
+      // Handle database table not existing gracefully
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      if (errorMessage.includes('dm_message_reactions') || errorMessage.includes('not available yet')) {
+        console.warn('[useMessageReactions] Reaction feature not available - database not ready');
+        // Don't show error toast for missing database tables
+        return;
+      }
+      
       toast.error('Failed to update reaction', {
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: errorMessage,
       });
     },
     onSuccess: () => {
