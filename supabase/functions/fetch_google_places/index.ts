@@ -1,21 +1,13 @@
 // Deno runtime • Google NearbySearch → integrations.place_feed_raw
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { mapToVenue, upsertVenues } from "../_shared/venues.ts";
 
 
 serve(async (req) => {
-  // Handle CORS preflight requests FIRST
-  if (req.method === "OPTIONS") {
-    return new Response(null, { 
-      status: 204, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Length": "0" 
-      } 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
   
   if (req.method !== "POST") {
     return new Response("POST only", { status: 405, headers: corsHeaders });
@@ -44,7 +36,7 @@ serve(async (req) => {
           error: "lat & lng are required numbers",
           details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
         }),
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -56,7 +48,7 @@ serve(async (req) => {
           error: "Invalid coordinates range",
           details: "Latitude must be between -90 and 90, longitude between -180 and 180"
         }),
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -66,7 +58,7 @@ serve(async (req) => {
       console.error("[Google Places] GOOGLE_PLACES_KEY missing from environment");
       return new Response(
         JSON.stringify({ error: "API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets." }), 
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -86,7 +78,7 @@ serve(async (req) => {
       console.error(`[Google Places] HTTP error: ${response.status} ${response.statusText}`);
       return new Response(
         JSON.stringify({ error: `Google Places API HTTP error: ${response.status}` }),
-        { status: 502, headers: corsHeaders }
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -101,7 +93,7 @@ serve(async (req) => {
           details: gp.error_message,
           help: "Ensure your Google Cloud project has Places API enabled and the API key has proper restrictions."
         }),
-        { status: 403, headers: corsHeaders }
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
@@ -112,7 +104,7 @@ serve(async (req) => {
           error: `Google Places API error: ${gp.status}`,
           details: gp.error_message 
         }),
-        { status: 502, headers: corsHeaders }
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -120,7 +112,7 @@ serve(async (req) => {
       console.log(`[Google Places] No results found for location ${lat},${lng}`);
       return new Response(
         JSON.stringify({ ok: true, count: 0, message: "No places found in this area" }),
-        { headers: corsHeaders }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -151,7 +143,7 @@ serve(async (req) => {
         source: "google_places",
         location: { lat, lng }
       }),
-      { headers: corsHeaders },
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (e) {
     console.error("[Google Places] Unexpected error:", e);
@@ -162,7 +154,7 @@ serve(async (req) => {
         details: errorMessage,
         source: "google_places"
       }),
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });

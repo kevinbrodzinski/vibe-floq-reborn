@@ -1,21 +1,13 @@
 // Deno runtime • Foursquare Nearby → integrations.place_feed_raw
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
-import { corsHeaders, respondWithCors } from "../_shared/cors.ts";
+import { corsHeaders, respondWithCors, handleOptions } from "../_shared/cors.ts";
 import { mapToVenue, upsertVenues } from "../_shared/venues.ts";
 
 
 serve(async (req) => {
-  // Handle CORS preflight requests FIRST
-  if (req.method === "OPTIONS") {
-    return new Response(null, { 
-      status: 204, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Length": "0" 
-      } 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
   
   if (req.method !== "POST") {
     return respondWithCors({ error: "Method not allowed" }, 405);

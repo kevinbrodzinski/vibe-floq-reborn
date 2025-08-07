@@ -110,7 +110,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       // Show user-friendly error messages
       if (err?.status === 429) {
         toast.info('Slow down a sec 🐢', {
-          description: "You're sending messages too quickly. Trying again…",
+          description: 'You\'re sending messages too quickly. Trying again…',
         });
       } else {
         toast.error("Couldn't send message", {

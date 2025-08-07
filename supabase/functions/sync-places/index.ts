@@ -2,7 +2,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import { corsHeaders, respondWithCors } from '../_shared/cors.ts';
+import { corsHeaders, respondWithCors, handleOptions } from '../_shared/cors.ts';
 import { mapToVenue, upsertVenues, logVenueDrop } from '../_shared/venues.ts';
 import { withRetry } from '../_shared/retry.ts';
 
@@ -16,16 +16,8 @@ const RADIUS_M   = 1_200;
 
 
 serve(async (req) => {
-  // Handle CORS preflight requests FIRST
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Length": "0" 
-      } 
-    });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
   
   if (req.method !== 'POST') {
     return new Response('POST only', { status: 405, headers: corsHeaders });

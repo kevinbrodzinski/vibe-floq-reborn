@@ -3,25 +3,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// ────────────────────────────────────────────────────────────
-// CORS helpers
-// ────────────────────────────────────────────────────────────
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin":
-    "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-} as const;
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 // ────────────────────────────────────────────────────────────
 // Main handler
 // ────────────────────────────────────────────────────────────
 serve(async (req) => {
-  // 1. Handle CORS pre-flight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: CORS_HEADERS });
-  }
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
 
   try {
     // 2. Parse body (guard against empty / malformed JSON)
@@ -110,7 +99,7 @@ serve(async (req) => {
 function response(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
