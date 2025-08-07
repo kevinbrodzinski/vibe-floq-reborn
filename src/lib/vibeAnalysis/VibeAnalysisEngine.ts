@@ -1,4 +1,13 @@
 import type { Vibe } from '@/lib/vibes';
+import { VIBES } from '@/lib/vibes';
+
+// Helper function to create a zero-filled vibe score object
+const createEmptyVibeScores = (): Record<Vibe, number> => {
+  return VIBES.reduce((acc, vibe) => {
+    acc[vibe] = 0;
+    return acc;
+  }, {} as Record<Vibe, number>);
+};
 import { SensorFusion } from './SensorFusion';
 import { TemporalContext } from './TemporalContext';
 import { ConfidenceCalculator } from './ConfidenceCalculator';
@@ -128,10 +137,7 @@ export class VibeAnalysisEngine {
     flowing: [0.6, 0.5, 0.5, 0.7],
     open: [0.5, 0.7, 0.6, 0.8],
     curious: [0.4, 0.4, 0.8, 0.6],
-    weird: [0.8, 0.3, 0.7, 0.4],
-    energetic: [0.9, 0.6, 0.4, 0.8],
-    excited: [0.8, 0.7, 0.3, 0.9],
-    focused: [0.3, 0.2, 0.9, 0.6]
+    weird: [0.8, 0.3, 0.7, 0.4]
   };
 
   constructor() {
@@ -305,7 +311,7 @@ export class VibeAnalysisEngine {
     
     // Weighted ensemble combination
     const ensembleScores: Record<Vibe, number> = {} as Record<Vibe, number>;
-    const vibes: Vibe[] = ['chill', 'social', 'hype', 'solo', 'romantic', 'down', 'flowing', 'open', 'curious', 'weird', 'energetic', 'excited', 'focused'];
+    const vibes: Vibe[] = VIBES;
     
     vibes.forEach(vibe => {
       ensembleScores[vibe] = 
@@ -727,9 +733,7 @@ export class VibeAnalysisEngine {
    */
   private createRuleBasedClassifier(): (features: MLFeatureVector) => Record<Vibe, number> {
     return (features: MLFeatureVector) => {
-      const scores: Record<Vibe, number> = {
-        chill: 0, social: 0, hype: 0, solo: 0, romantic: 0, down: 0, flowing: 0, open: 0, curious: 0, weird: 0, energetic: 0, excited: 0, focused: 0
-      };
+      const scores: Record<Vibe, number> = createEmptyVibeScores();
 
       // Energy-based rules
       if (features.energy < 0.3) {
@@ -785,9 +789,7 @@ export class VibeAnalysisEngine {
    */
   private createTemporalPatternClassifier(): (features: MLFeatureVector) => Record<Vibe, number> {
     return (features: MLFeatureVector) => {
-      const scores: Record<Vibe, number> = {
-        chill: 0, social: 0, hype: 0, solo: 0, romantic: 0, down: 0, flowing: 0, open: 0, curious: 0, weird: 0, energetic: 0, excited: 0, focused: 0
-      };
+      const scores: Record<Vibe, number> = createEmptyVibeScores();
 
       // Temporal momentum rules
       if (features.temporalMomentum > 0.5) {
@@ -822,9 +824,7 @@ export class VibeAnalysisEngine {
    */
   private createContextualClassifier(): (features: MLFeatureVector) => Record<Vibe, number> {
     return (features: MLFeatureVector) => {
-      const scores: Record<Vibe, number> = {
-        chill: 0, social: 0, hype: 0, solo: 0, romantic: 0, down: 0, flowing: 0, open: 0, curious: 0, weird: 0, energetic: 0, excited: 0, focused: 0
-      };
+      const scores: Record<Vibe, number> = createEmptyVibeScores();
 
       // Context-based rules
       if (features.locationContextEncoded[2] === 1) { // Venue context
@@ -859,9 +859,7 @@ export class VibeAnalysisEngine {
    */
   private createPersonalityClassifier(): (features: MLFeatureVector) => Record<Vibe, number> {
     return (features: MLFeatureVector) => {
-      const scores: Record<Vibe, number> = {
-        chill: 0, social: 0, hype: 0, solo: 0, romantic: 0, down: 0, flowing: 0, open: 0, curious: 0, weird: 0, energetic: 0, excited: 0, focused: 0
-      };
+      const scores: Record<Vibe, number> = createEmptyVibeScores();
 
       // Personality-based rules
       if (features.energySocialRatio > 1.5) {

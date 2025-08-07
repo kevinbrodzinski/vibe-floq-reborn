@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
 import { PersonalHero } from './PersonalHero';
 import { EnhancedPersonalHero } from './EnhancedPersonalHero';
-import { TimelineCarousel } from './TimelineCarousel';
+
 import { VibeFlowChart } from './enhanced-visualizations/VibeFlowChart';
 import { VibePersonalityRadar } from './enhanced-visualizations/VibePersonalityRadar';
 import { VibeMetricsDashboard } from './enhanced-visualizations/VibeMetricsDashboard';
@@ -17,7 +17,7 @@ import { VisibilityButton } from '@/components/vibe/VisibilityButton';
 import { SystemHealthMonitor } from '@/components/ui/SystemHealthMonitor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Zap, ZapOff, Activity, BarChart3, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { Zap, ZapOff, BarChart3, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { useVibe } from '@/lib/store/useVibe';
 import { useVibeDetection } from '@/store/useVibeDetection';
 import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
@@ -53,7 +53,7 @@ export const PersonalMode: React.FC = () => {
   const [isEnhancedMode, setIsEnhancedMode] = useState(true);
   const [isTogglingMode, setIsTogglingMode] = useState(false);
   const [showAdvancedVisuals, setShowAdvancedVisuals] = useState(true);
-  const [visualsMode, setVisualsMode] = useState<'basic' | 'flow' | 'analytics' | 'personality'>('flow');
+  const [visualsMode, setVisualsMode] = useState<'flow' | 'analytics' | 'personality'>('flow');
   const [showFeedback, setShowFeedback] = useState(false);
   const [stableFeedbackData, setStableFeedbackData] = useState<any>(null);
 
@@ -314,7 +314,6 @@ export const PersonalMode: React.FC = () => {
             <div className="flex items-center gap-2 mb-4">
               <div className="flex bg-muted/50 rounded-lg p-1">
                 {[
-                  { key: 'basic', label: 'Basic', icon: Activity },
                   { key: 'flow', label: 'Flow', icon: TrendingUp },
                   { key: 'analytics', label: 'Analytics', icon: BarChart3 },
                   { key: 'personality', label: 'Personality', icon: Zap }
@@ -344,10 +343,6 @@ export const PersonalMode: React.FC = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {visualsMode === 'basic' && (
-                <TimelineCarousel onVibeSelect={handleVibeSelect} />
-              )}
-              
               {visualsMode === 'flow' && (
                 <VibeFlowChart
                   timeRange="24h"

@@ -1,5 +1,14 @@
 import type { Vibe } from '@/lib/vibes';
+import { VIBES } from '@/lib/vibes';
 import type { AnalysisContext, SensorData } from './VibeAnalysisEngine';
+
+// Helper function to create a zero-filled vibe count object
+const createEmptyVibeCounts = (): Record<Vibe, number> => {
+  return VIBES.reduce((acc, vibe) => {
+    acc[vibe] = 0;
+    return acc;
+  }, {} as Record<Vibe, number>);
+};
 
 export interface UserCorrection {
   originalSuggestion: Vibe;
@@ -257,10 +266,7 @@ export class UserLearningSystem {
       flowing: [0.6, 0.5, 0.5, 0.7],
       open: [0.5, 0.7, 0.6, 0.8],
       curious: [0.4, 0.4, 0.8, 0.6],
-      weird: [0.8, 0.3, 0.7, 0.4],
-      energetic: [0.9, 0.6, 0.4, 0.8],
-      excited: [0.8, 0.7, 0.3, 0.9],
-      focused: [0.3, 0.2, 0.9, 0.6]
+      weird: [0.8, 0.3, 0.7, 0.4]
     };
     
     const originalEmb = vibeEmbeddings[original] || [0, 0, 0, 0];
@@ -526,10 +532,7 @@ export class UserLearningSystem {
    * Extract preferred vibe from a pattern
    */
   private extractPreferredVibe(context: string, corrections: UserCorrection[]): Vibe {
-    const vibeCounts: Record<any, number> = {
-      social: 0, chill: 0, hype: 0, curious: 0, solo: 0, romantic: 0,
-      weird: 0, down: 0, flowing: 0, open: 0, energetic: 0, excited: 0, focused: 0
-    };
+    const vibeCounts: Record<Vibe, number> = createEmptyVibeCounts();
     const totalConfidence = corrections.length;
     
     corrections.forEach(correction => {
