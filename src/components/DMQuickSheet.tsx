@@ -197,7 +197,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         (old) => old?.filter(r => r.thread_id !== threadId) ?? []
       );
     }
-  }, [open, currentProfileId, friendId, threadId, markThreadRead, queryClient]);
+  }, [open, currentProfileId, friendId, threadId, queryClient]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
