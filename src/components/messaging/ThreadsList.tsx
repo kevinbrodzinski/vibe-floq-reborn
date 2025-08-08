@@ -61,7 +61,7 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
     return map;
   }, [unreadCounts]);
 
-  // Enhanced search with the new searchThreads function
+  // Enhanced search with AbortController for resilient transport
   useEffect(() => {
     if (!debouncedSearch) {
       setSearchResults([]);
@@ -69,20 +69,32 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
       return;
     }
 
+    const ctrl = new AbortController();
+    
     const performSearch = async () => {
       setSearchLoading(true);
       try {
-        const results = await searchThreads(debouncedSearch);
-        setSearchResults(results);
-      } catch (error) {
-        console.error('Search failed:', error);
-        setSearchResults([]);
+        const results = await searchThreads(debouncedSearch, { signal: ctrl.signal });
+        if (!ctrl.signal.aborted) {
+          setSearchResults(results);
+        }
+      } catch (e: any) {
+        if (e.name !== 'AbortError' && !ctrl.signal.aborted) {
+          console.warn('Search failed (transient network issue):', e);
+          setSearchResults([]);
+        }
       } finally {
-        setSearchLoading(false);
+        if (!ctrl.signal.aborted) {
+          setSearchLoading(false);
+        }
       }
     };
 
     performSearch();
+    
+    return () => {
+      ctrl.abort();
+    };
   }, [debouncedSearch, searchThreads]);
 
   const threadsToShow = debouncedSearch ? searchResults : 

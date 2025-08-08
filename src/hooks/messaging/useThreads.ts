@@ -423,50 +423,91 @@ export function useThreads() {
     });
   }, [threads, currentUserId]);
 
-  // Search threads using enhanced function
-  const searchThreads = async (query: string): Promise<ThreadSummary[]> => {
+  /**
+   * Search threads with resilient transport and fallback
+   */
+  const searchThreads = async (query: string, opts?: { signal?: AbortSignal }): Promise<ThreadSummary[]> => {
     if (!query.trim() || query.length < 2 || !currentUserId) return [];
+    
+    // Check if we're offline
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      console.warn('[searchThreads] Offline, skipping search');
+      return [];
+    }
 
     try {
-      const { data, error } = await supabase.rpc('search_direct_threads_enhanced', { 
+      // Primary: PostgREST RPC
+      const { data, error } = await supabase.rpc('search_direct_threads_enhanced', {
         p_profile_id: currentUserId,
         p_query: query,
-        p_limit: 20
+        p_limit: 20,
       });
-      if (error) {
-        // Handle case where database function doesn't exist yet
-        if (error.code === 'PGRST202' || error.message?.includes('search_direct_threads_enhanced')) {
-          console.warn('[useThreads] Search function not found - P2P migrations may not be applied yet');
-          return [];
-        }
-        // Handle function signature mismatch (type issues)
-        if (error.code === '42804' || error.message?.includes('structure of query does not match function result type')) {
-          console.warn('[useThreads] Function signature mismatch - please apply the latest migration to fix data types');
-          return [];
-        }
-        throw error;
-      }
-      
-      return data?.map((result: any) => ({
-        id: result.thread_id,
+
+      if (error) throw error;
+
+      return (data ?? []).map((r: any) => ({
+        id: r.thread_id,
         friendProfile: {
-          id: result.other_profile_id,
-          display_name: result.other_display_name,
-          username: result.other_username,
-          avatar_url: result.other_avatar_url,
+          id: r.other_profile_id,
+          display_name: r.other_display_name,
+          username: r.other_username,
+          avatar_url: r.other_avatar_url,
         },
-        lastMessage: result.last_message_content ? {
-          content: result.last_message_content,
-          created_at: result.last_message_at,
-          isFromMe: false, // Search results don't indicate sender
-        } : null,
-        unreadCount: result.unread_count || 0,
-        lastMessageAt: result.last_message_at,
-        isOnline: result.is_online || false,
-      })) || [];
-    } catch (error) {
-      console.error('Thread search error:', error);
-      return [];
+        lastMessage: r.last_message_content
+          ? { content: r.last_message_content, created_at: r.last_message_at, isFromMe: false }
+          : null,
+        unreadCount: r.unread_count || 0,
+        lastMessageAt: r.last_message_at,
+        isOnline: r.is_online || false,
+      }));
+
+    } catch (primaryError) {
+      // Check if request was aborted
+      if (opts?.signal?.aborted) {
+        console.log('[searchThreads] Search aborted');
+        return [];
+      }
+
+      console.warn('[searchThreads] RPC failed, trying Edge Function fallback:', primaryError);
+
+      try {
+        // Fallback: Edge Function (Deno handler)
+        const { data, error } = await supabase.functions.invoke('search-threads', {
+          body: { query, limit: 20 },
+          // @ts-expect-error: pass AbortSignal through
+          signal: opts?.signal,
+        });
+
+        if (error) throw error;
+
+        return (data?.results ?? []).map((r: any) => ({
+          id: r.thread_id,
+          friendProfile: {
+            id: r.friend_profile_id,
+            display_name: r.friend_display_name,
+            username: r.friend_username,
+            avatar_url: r.friend_avatar_url,
+          },
+          lastMessage: r.last_message_content
+            ? { content: r.last_message_content, created_at: r.last_message_at, isFromMe: false }
+            : null,
+          unreadCount: r.my_unread_count || 0,
+          lastMessageAt: r.last_message_at,
+        }));
+
+      } catch (fallbackError) {
+        // Check if request was aborted
+        if (opts?.signal?.aborted) {
+          console.log('[searchThreads] Fallback search aborted');
+          return [];
+        }
+
+        console.warn('[searchThreads] Both RPC and Edge Function failed:', {
+          primary: primaryError,
+          fallback: fallbackError
+        });
+        return [];
+      }
     }
   };
 
