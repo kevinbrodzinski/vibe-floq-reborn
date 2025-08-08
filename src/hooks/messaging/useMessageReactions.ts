@@ -50,9 +50,18 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
       if (messagesError) throw messagesError;
       if (!messages?.length) return [];
 
-      const messageIds = messages.map(m => m.id);
+      const messageIds = messages.map(m => m.id).filter(Boolean);
 
-      // Get all reactions for these messages
+      // 👇 Ensure *all* ids are valid UUIDs to prevent 400 errors
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const invalid = messageIds.filter(id => !UUID_RE.test(id));
+      if (invalid.length) {
+        console.warn('[useMessageReactions] Skipping invalid message_ids', invalid);
+      }
+      const validIds = messageIds.filter(id => UUID_RE.test(id));
+      if (validIds.length === 0) return [];
+
+      // Get all reactions for these messages - use only validIds
       const { data, error } = await supabase
         .from('dm_message_reactions')
         .select(`
@@ -62,8 +71,9 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
           emoji,
           created_at
         `)
-        .in('message_id', messageIds)
-        .order('created_at', { ascending: true });
+        .in('message_id', validIds)
+        .order('created_at', { ascending: true })
+        .throwOnError(); // helps expose the real error in console
 
       if (error) {
         // Handle case where database table doesn't exist yet
