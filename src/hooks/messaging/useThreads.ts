@@ -54,13 +54,10 @@ export function useThreads() {
     queryKey,
     enabled: !!currentUserId,
     queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
-      const { data, error } = await supabase
+      // First get threads without joins to avoid foreign key issues
+      const { data: threadsData, error } = await supabase
         .from("direct_threads")
-        .select(`
-          *,
-          member_a_profile:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
-          member_b_profile:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
-        `)
+        .select('*')
         .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
         .order('last_message_at', { ascending: false, nullsLast: true });
 
@@ -72,7 +69,36 @@ export function useThreads() {
         }
         throw error;
       }
-      return data as DirectThreadWithProfiles[];
+
+      // Then get profile data separately
+      const profileIds = new Set<string>();
+      threadsData?.forEach(thread => {
+        if (thread.member_a_profile_id) profileIds.add(thread.member_a_profile_id);
+        if (thread.member_b_profile_id) profileIds.add(thread.member_b_profile_id);
+      });
+
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .in('id', Array.from(profileIds));
+
+      // Combine the data
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      const combinedData = threadsData?.map(thread => ({
+        ...thread,
+        member_a_profile: profilesMap.get(thread.member_a_profile_id) || null,
+        member_b_profile: profilesMap.get(thread.member_b_profile_id) || null,
+      })) || [];
+
+      return combinedData.map(thread => {
+        const isMemberA = thread.member_a_profile_id === currentUserId;
+        return {
+          ...thread,
+          otherProfileId: isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
+          unreadCount: isMemberA ? thread.unread_a : thread.unread_b,
+          lastReadAt: isMemberA ? thread.last_read_at_a : thread.last_read_at_b,
+        };
+      }) as DirectThreadWithProfiles[];
     },
     staleTime: 30_000, // 30 seconds
   });

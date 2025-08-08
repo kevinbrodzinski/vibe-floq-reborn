@@ -7,7 +7,7 @@
  * to your Supabase database by testing for the existence of key functions.
  */
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 // You'll need to set these environment variables or update them here
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://reztyrrafsmlvvlqvsqt.supabase.co';
