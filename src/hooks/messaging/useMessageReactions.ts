@@ -105,8 +105,10 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
     staleTime: 30_000, // 30 seconds
   });
 
-  // ✅ FIX: Stable subscription with useRef hookId
+  // ✅ FIX: Stable subscription with useRef hookId and queryKey
   const hookIdRef = useRef(`reactions-hook-${threadId ?? 'none'}-${Math.random().toString(36).slice(2)}`);
+  const queryKeyRef = useRef(queryKey);
+  queryKeyRef.current = queryKey; // Keep it updated
 
   // Real-time subscription for reaction changes - FIXED: stable dependencies
   useEffect(() => {
@@ -128,7 +130,7 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
               ({ eventType, new: newReaction, old: oldReaction }) => {
                 console.log('🎭 Reaction update:', { eventType, newReaction, oldReaction });
                 
-                queryClient.setQueryData(queryKey, (oldData: MessageReaction[] = []) => {
+                queryClient.setQueryData(queryKeyRef.current, (oldData: MessageReaction[] = []) => {
                   if (eventType === 'INSERT' && newReaction) {
                     // Check if reaction already exists to prevent duplicates
                     if (oldData.some(r => r.id === newReaction.id)) return oldData;
@@ -154,7 +156,7 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
     );
 
     return cleanup;
-    // ✅ FIXED: Only depend on stable values - no reactions or queryKey
+    // ✅ FIXED: Only depend on truly stable values - no queryKey, no reactions
   }, [threadId, currentUserId, queryClient]);
 
   // Toggle reaction mutation

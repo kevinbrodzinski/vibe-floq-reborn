@@ -11,12 +11,12 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ threadId, content, replyToMessageId }: { 
+    mutationFn: async ({ threadId, content, replyTo }: { 
       threadId: string; 
       content: string; 
-      replyToMessageId?: string | null; 
+      replyTo?: string | null; 
     }) => {
-      console.log('[useSendMessage] Starting mutation:', { threadId, content, replyToMessageId });
+      console.log('[useSendMessage] Starting mutation:', { threadId, content, replyTo });
       
       // Validate required parameters
       if (!threadId || threadId === 'null') {
@@ -46,7 +46,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
           metadata: { client_id },
           status: "sending",
           message_type: "text",
-          reply_to_id: replyToMessageId, // ✅ FIX: Include reply ID in optimistic update
+          reply_to_id: replyTo, // ✅ FIX: Use replyTo parameter name
         };
 
         const pages = old.pages || [];
@@ -58,29 +58,33 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
         };
       });
 
-      console.log('[useSendMessage] Calling limitedSendMessage...');
+      console.log('[useSendMessage] Sending message...');
       try {
-        // Try Edge Function first
-        const data = await limitedSendMessage({
-          surface, 
-          thread_id: threadId, 
-          sender_id: user.id, 
-          content, 
-          client_id,
-          reply_to_id: replyToMessageId, // ✅ FIX: Pass reply ID to API
+        // ✅ FIX: Use supabase.functions.invoke instead of supaFn to avoid CORS issues
+        const { data, error } = await supabase.functions.invoke('send-message', {
+          body: {
+            thread_id: threadId,
+            profile_id: user.id,
+            content,
+            reply_to: replyTo ?? null,
+            client_id,
+          }
         });
         
-        console.log('[useSendMessage] Success data:', data);
-        return { ...data, client_id, threadId };
+        if (error) throw error;
+        
+        console.log('[useSendMessage] Edge Function success:', data);
+        return { message: data, client_id, threadId };
       } catch (edgeError) {
         console.warn('[useSendMessage] Edge Function failed, trying RPC fallback:', edgeError);
         
-        // ✅ FIX: Fallback to RPC so the UI stays responsive if functions hiccup
+        // ✅ FIX: Fallback to correct RPC function name
         try {
-          const { data, error } = await supabase.rpc('send_dm_message_enhanced', {
+          const { data, error } = await supabase.rpc('send_dm_message', {
             p_thread_id: threadId,
+            p_profile_id: user.id,
             p_content: content,
-            p_reply_to: replyToMessageId ?? null,
+            p_reply_to: replyTo ?? null,
             p_client_id: client_id,
           });
           
