@@ -88,7 +88,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   
   // Get markThreadRead from useThreads
   const { markThreadRead } = useThreads();
-  
+
   // Enhanced typing indicators
   const { typingUsers, handleTyping, handleMessageSent, hasTypingUsers } = useTypingIndicators(threadId, 'dm');
   const typingText = useTypingIndicatorText(typingUsers);
@@ -186,12 +186,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
      };
    }, [open, currentProfileId, friendId, threadIdFrom, toast]);
 
-  // Mark thread as read with proper auth guard
-  useEffect(() => {
-    if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
-      markThreadRead.mutateAsync(threadId).catch(error => {
-        console.error('Failed to mark thread as read:', error);
-      });
+      // Mark thread as read with proper auth guard
+    useEffect(() => {
+      if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
+        markThreadRead.mutateAsync(threadId).catch(error => {
+          console.error('Failed to mark thread as read:', error);
+        });
       
       // Optimistically clear unread badge with proper typing
       queryClient.setQueryData<Array<{thread_id: string}>>(['dm-unread', currentProfileId], 

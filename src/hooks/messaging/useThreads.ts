@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { realtimeManager } from '@/lib/realtime/manager';
 import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from "sonner";
 
@@ -63,76 +63,145 @@ export function useThreads() {
   const subscriptionAttempts = useRef(0);
   const maxSubscriptionAttempts = 3;
 
-  // Fetch all threads for current user
-  const { data: threads = [], isLoading, error } = useQuery({
-    queryKey,
-    enabled: !!currentUserId,
-    queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
-      try {
-        // First get threads without joins to avoid foreign key issues
-        const { data: threadsData, error } = await supabase
-          .from("direct_threads")
-          .select('*')
-          .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
-          .order('last_message_at', { ascending: false, nullsLast: true });
+  // Add error state to track if hook is in error state
+  const [hookError, setHookError] = useState<Error | null>(null);
 
-        if (error) {
-          // Handle case where database table doesn't exist yet
-          if (error.code === 'PGRST116' || error.message?.includes('direct_threads')) {
-            console.warn('[useThreads] Database table not found - returning empty threads');
+  // Reset error when currentUserId changes
+  useEffect(() => {
+    if (currentUserId) {
+      setHookError(null);
+    }
+  }, [currentUserId]);
+
+  // If hook is in error state, return safe defaults
+  if (hookError) {
+    console.warn('[useThreads] Hook in error state, returning safe defaults:', hookError.message);
+    return {
+      threads: [],
+      isLoading: false,
+      error: hookError,
+      createThread: {
+        mutateAsync: async () => {
+          throw new Error('useThreads hook is in error state');
+        },
+        isPending: false,
+        error: hookError,
+      },
+      markThreadRead: {
+        mutateAsync: async () => {
+          console.warn('[useThreads] markThreadRead called while hook is in error state');
+        },
+        isPending: false,
+        error: hookError,
+      },
+      searchThreads: async () => {
+        console.warn('[useThreads] searchThreads called while hook is in error state');
+        return [];
+      },
+    };
+  }
+
+  let threadsQuery;
+  try {
+    // Fetch all threads for current user
+    threadsQuery = useQuery({
+      queryKey,
+      enabled: !!currentUserId,
+      queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
+        try {
+          // First get threads without joins to avoid foreign key issues
+          const { data: threadsData, error } = await supabase
+            .from("direct_threads")
+            .select('*')
+            .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
+            .order('last_message_at', { ascending: false, nullsLast: true });
+
+          if (error) {
+            // Handle case where database table doesn't exist yet
+            if (error.code === 'PGRST116' || error.message?.includes('direct_threads')) {
+              console.warn('[useThreads] Database table not found - returning empty threads');
+              return [];
+            }
+            throw error;
+          }
+
+          if (!threadsData || threadsData.length === 0) {
             return [];
           }
-          throw error;
-        }
 
-        if (!threadsData || threadsData.length === 0) {
+          // Then get profile data separately
+          const profileIds = new Set<string>();
+          threadsData?.forEach(thread => {
+            if (thread.member_a_profile_id) profileIds.add(thread.member_a_profile_id);
+            if (thread.member_b_profile_id) profileIds.add(thread.member_b_profile_id);
+          });
+
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, display_name, username, avatar_url')
+            .in('id', Array.from(profileIds));
+
+          // Combine the data
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+          const combinedData = threadsData?.map(thread => ({
+            ...thread,
+            member_a_profile: profilesMap.get(thread.member_a_profile_id) || null,
+            member_b_profile: profilesMap.get(thread.member_b_profile_id) || null,
+          })) || [];
+
+          return combinedData.map(thread => {
+            const isMemberA = thread.member_a_profile_id === currentUserId;
+            return {
+              ...thread,
+              otherProfileId: isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
+              unreadCount: isMemberA ? thread.unread_a : thread.unread_b,
+              lastReadAt: isMemberA ? thread.last_read_at_a : thread.last_read_at_b,
+            };
+          }) as DirectThreadWithProfiles[];
+        } catch (error) {
+          console.error('[useThreads] Query error:', error);
+          // Return empty array instead of throwing to prevent page freezing
           return [];
         }
-
-        // Then get profile data separately
-        const profileIds = new Set<string>();
-        threadsData?.forEach(thread => {
-          if (thread.member_a_profile_id) profileIds.add(thread.member_a_profile_id);
-          if (thread.member_b_profile_id) profileIds.add(thread.member_b_profile_id);
-        });
-
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, display_name, username, avatar_url')
-          .in('id', Array.from(profileIds));
-
-        // Combine the data
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        const combinedData = threadsData?.map(thread => ({
-          ...thread,
-          member_a_profile: profilesMap.get(thread.member_a_profile_id) || null,
-          member_b_profile: profilesMap.get(thread.member_b_profile_id) || null,
-        })) || [];
-
-        return combinedData.map(thread => {
-          const isMemberA = thread.member_a_profile_id === currentUserId;
-          return {
-            ...thread,
-            otherProfileId: isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
-            unreadCount: isMemberA ? thread.unread_a : thread.unread_b,
-            lastReadAt: isMemberA ? thread.last_read_at_a : thread.last_read_at_b,
-          };
-        }) as DirectThreadWithProfiles[];
-      } catch (error) {
-        console.error('[useThreads] Query error:', error);
-        // Return empty array instead of throwing to prevent page freezing
+      },
+      staleTime: 30_000, // 30 seconds
+      retry: (failureCount, error: any) => {
+        // Don't retry if it's a schema/table issue
+        if (error?.code === 'PGRST116' || error?.message?.includes('direct_threads')) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+    });
+  } catch (error) {
+    console.error('[useThreads] Query setup error:', error);
+    setHookError(error instanceof Error ? error : new Error('Unknown query setup error'));
+    return {
+      threads: [],
+      isLoading: false,
+      error: error,
+      createThread: {
+        mutateAsync: async () => {
+          throw new Error('useThreads hook query setup failed');
+        },
+        isPending: false,
+        error: error,
+      },
+      markThreadRead: {
+        mutateAsync: async () => {
+          console.warn('[useThreads] markThreadRead called after query setup error');
+        },
+        isPending: false,
+        error: error,
+      },
+      searchThreads: async () => {
+        console.warn('[useThreads] searchThreads called after query setup error');
         return [];
-      }
-    },
-    staleTime: 30_000, // 30 seconds
-    retry: (failureCount, error: any) => {
-      // Don't retry if it's a schema/table issue
-      if (error?.code === 'PGRST116' || error?.message?.includes('direct_threads')) {
-        return false;
-      }
-      return failureCount < 2;
-    },
-  });
+      },
+    };
+  }
+
+  const { data: threads = [], isLoading, error } = threadsQuery;
 
   // Real-time subscription for thread updates - with enhanced error handling
   useEffect(() => {
