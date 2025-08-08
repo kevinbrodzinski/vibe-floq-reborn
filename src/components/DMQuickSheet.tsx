@@ -345,6 +345,13 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       queryClient.invalidateQueries({ queryKey: ['messages', 'dm', threadId] });
       queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
       
+      // ✅ Optimistically move thread to top for instant UI feedback
+      queryClient.setQueryData(['dm-threads', currentProfileId], (old: any[] = []) => {
+        return old
+          .map(t => t.id === threadId ? { ...t, last_message_at: new Date().toISOString() } : t)
+          .sort((a, b) => (b.last_message_at ?? '').localeCompare(a.last_message_at ?? ''));
+      });
+      
     } catch (error) {
       console.error('[DMQuickSheet] Send failed:', error);
       
