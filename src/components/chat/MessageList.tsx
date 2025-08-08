@@ -8,7 +8,6 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { useProfile } from '@/hooks/useProfile';
 import { ChatMediaBubble } from './ChatMediaBubble';
 import { ReplySnippet } from './ReplySnippet';
-import { MessageReactions } from './MessageReactions';
 
 interface Message {
   id: string;
@@ -17,15 +16,16 @@ interface Message {
   metadata?: any;
   reply_to?: string | null;
   reply_to_msg?: {
-    id: string;
-    profile_id: string;
-    content: string;
-    created_at: string;
-  } | null; // ✅ Parent message data for reply preview
+    id: string | null;
+    profile_id: string | null;
+    content: string | null;
+    created_at: string | null;
+  } | null; // ✅ Updated to match expanded view format
   reactions?: Array<{
     emoji: string;
     count: number;
-  }>; // ✅ Aggregated reactions from the view
+    reactors: string[];
+  }>; // ✅ Updated to match expanded view format
   created_at: string;
   sender_id?: string;
   profile_id: string;
@@ -141,16 +141,14 @@ const MessageBubbleWrapper: React.FC<{
   }
 
   // Handle reply context
-  if (message.reply_to && message.reply_to_msg) {
+  if (message.reply_to && message.reply_to_msg && message.reply_to_msg.id) {
     return (
       <div className="flex flex-col gap-2">
-        {/* ✅ Use reply_to_msg data directly for better performance */}
-        <div className="mx-4 px-3 py-2 bg-muted/30 rounded-lg border-l-2 border-muted-foreground/20">
-          <div className="text-xs text-muted-foreground mb-1">
-            Replying to {message.reply_to_msg.profile_id === senderId ? 'themselves' : 'message'}
-          </div>
-          <div className="text-sm text-muted-foreground line-clamp-2">
-            {message.reply_to_msg.content || '(no content)'}
+        {/* ✅ Inline reply preview using expanded view data */}
+        <div className="mb-1 rounded border border-border/50 bg-muted/30 px-2 py-1 text-xs">
+          <div className="opacity-70">Replying to</div>
+          <div className="line-clamp-2">
+            {message.reply_to_msg.content ?? '(deleted message)'}
           </div>
         </div>
         <div className="flex flex-col">
@@ -161,11 +159,14 @@ const MessageBubbleWrapper: React.FC<{
             isConsecutive={isConsecutive}
             senderProfile={senderProfile}
           />
-          <MessageReactions 
-            reactions={message.reactions || []} 
-            onReact={onReact ? (emoji) => onReact(message.id, emoji) : undefined}
-            className={isOwn ? "justify-end mr-4" : "ml-4"}
-          />
+          {/* Render reactions */}
+          <div className={`mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
+            {message.reactions?.map(r => (
+              <span key={r.emoji} className="text-xs rounded px-1 border border-border/50 bg-background">
+                {r.emoji} {r.count}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -181,11 +182,31 @@ const MessageBubbleWrapper: React.FC<{
         isConsecutive={isConsecutive}
         senderProfile={senderProfile}
       />
-      <MessageReactions 
-        reactions={message.reactions || []} 
-        onReact={onReact ? (emoji) => onReact(message.id, emoji) : undefined}
-        className={isOwn ? "justify-end mr-4" : "ml-4"}
-      />
+      {/* Reaction controls and display */}
+      <div className={`mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
+        {/* Quick reaction buttons */}
+        <button
+          className="text-xs opacity-70 hover:opacity-100 transition-opacity"
+          onClick={() => onReact?.(message.id, '👍')}
+          title="Like"
+        >
+          👍
+        </button>
+        <button
+          className="text-xs opacity-70 hover:opacity-100 transition-opacity"
+          onClick={() => onReact?.(message.id, '❤️')}
+          title="Love"
+        >
+          ❤️
+        </button>
+
+        {/* Current reactions */}
+        {message.reactions?.map(r => (
+          <span key={r.emoji} className="text-xs rounded px-1 border border-border/50 bg-background">
+            {r.emoji} {r.count}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };
