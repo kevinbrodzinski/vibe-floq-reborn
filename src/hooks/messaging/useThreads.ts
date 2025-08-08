@@ -63,6 +63,13 @@ export function useThreads() {
   const subscriptionAttempts = useRef(0);
   const maxSubscriptionAttempts = 3;
 
+  // ✅ DEBUG: Log currentUserId state
+  console.log('[useThreads] Hook state:', { 
+    currentUserId, 
+    enabled: !!currentUserId,
+    queryKey 
+  });
+
   // Add error state to track if hook is in error state
   const [hookError, setHookError] = useState<Error | null>(null);
 
@@ -109,14 +116,16 @@ export function useThreads() {
       enabled: !!currentUserId,
       queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
         try {
-          // First get threads without joins to avoid foreign key issues
+          // ✅ FIX: Query the correct table with correct column names
+          console.log('[useThreads] Fetching threads for user:', currentUserId);
           const { data: threadsData, error } = await supabase
             .from("direct_threads")
             .select('*')
-            .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
+            .or(`member_a.eq.${currentUserId},member_b.eq.${currentUserId}`)
             .order('last_message_at', { ascending: false, nullsLast: true });
 
           if (error) {
+            console.error('[useThreads] Query error:', error);
             // Handle case where database table doesn't exist yet
             if (error.code === 'PGRST116' || error.message?.includes('direct_threads')) {
               console.warn('[useThreads] Database table not found - returning empty threads');
@@ -125,39 +134,54 @@ export function useThreads() {
             throw error;
           }
 
+          console.log('[useThreads] Raw threads data:', threadsData);
+
           if (!threadsData || threadsData.length === 0) {
+            console.log('[useThreads] No threads found');
             return [];
           }
 
-          // Then get profile data separately
+          // ✅ FIX: Use correct column names (member_a, member_b)
           const profileIds = new Set<string>();
           threadsData?.forEach(thread => {
-            if (thread.member_a_profile_id) profileIds.add(thread.member_a_profile_id);
-            if (thread.member_b_profile_id) profileIds.add(thread.member_b_profile_id);
+            if (thread.member_a) profileIds.add(thread.member_a);
+            if (thread.member_b) profileIds.add(thread.member_b);
           });
 
-          const { data: profilesData } = await supabase
+          console.log('[useThreads] Fetching profiles for IDs:', Array.from(profileIds));
+          const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
             .select('id, display_name, username, avatar_url')
             .in('id', Array.from(profileIds));
 
-          // Combine the data
-          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-          const combinedData = threadsData?.map(thread => ({
-            ...thread,
-            member_a_profile: profilesMap.get(thread.member_a_profile_id) || null,
-            member_b_profile: profilesMap.get(thread.member_b_profile_id) || null,
-          })) || [];
+          if (profilesError) {
+            console.error('[useThreads] Profiles query error:', profilesError);
+          }
 
-          return combinedData.map(thread => {
-            const isMemberA = thread.member_a_profile_id === currentUserId;
+          // ✅ FIX: Map using correct column names and add computed fields
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+          const combinedData = threadsData?.map(thread => {
+            // Determine which member is the "other" person
+            const otherProfileId = thread.member_a === currentUserId ? thread.member_b : thread.member_a;
+            const isUserMemberA = thread.member_a === currentUserId;
+            
             return {
               ...thread,
-              otherProfileId: isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
-              unreadCount: isMemberA ? thread.unread_a : thread.unread_b,
-              lastReadAt: isMemberA ? thread.last_read_at_a : thread.last_read_at_b,
+              // Keep original column names for compatibility
+              member_a_profile_id: thread.member_a,
+              member_b_profile_id: thread.member_b,
+              // Add profile data
+              member_a_profile: profilesMap.get(thread.member_a) || null,
+              member_b_profile: profilesMap.get(thread.member_b) || null,
+              // Computed fields for easier access
+              otherProfileId,
+              unreadCount: isUserMemberA ? (thread.unread_a || 0) : (thread.unread_b || 0),
+              lastReadAt: isUserMemberA ? thread.last_read_at_a : thread.last_read_at_b,
             };
-          }) as DirectThreadWithProfiles[];
+          }) || [];
+
+          console.log('[useThreads] Combined data:', combinedData);
+          return combinedData;
         } catch (error) {
           console.error('[useThreads] Query error:', error);
           // Return empty array instead of throwing to prevent page freezing
