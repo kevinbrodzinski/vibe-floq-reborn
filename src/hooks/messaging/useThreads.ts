@@ -1,16 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUserId } from "@/hooks/useCurrentUser";
-import { realtimeManager } from "@/lib/realtime/manager";
-import { createSafeRealtimeHandler } from "@/lib/realtime/validation";
-import type { Database } from "@/integrations/supabase/types";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
+import { realtimeManager } from '@/lib/realtime/manager';
+import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
+import { useEffect, useRef } from 'react';
+import type { Database } from '@/integrations/supabase/types';
 import { toast } from "sonner";
 
-export type DirectThreadWithProfiles = Database["public"]["Tables"]["direct_threads"]["Row"] & {
+export interface DirectThreadWithProfiles {
+  id: string;
+  member_a: string;
+  member_b: string;
+  member_a_profile_id: string;
+  member_b_profile_id: string;
+  created_at: string;
+  last_message_at: string | null;
+  last_read_at_a: string | null;
+  last_read_at_b: string | null;
+  unread_a: number;
+  unread_b: number;
   member_a_profile: {
     display_name: string | null;
-    username: string | null; 
+    username: string | null;
     avatar_url: string | null;
   } | null;
   member_b_profile: {
@@ -18,12 +29,11 @@ export type DirectThreadWithProfiles = Database["public"]["Tables"]["direct_thre
     username: string | null;
     avatar_url: string | null;
   } | null;
-  last_message?: {
-    content: string;
-    created_at: string;
-    profile_id: string;
-  } | null;
-};
+  // Computed fields for easier access
+  otherProfileId: string;
+  unreadCount: number;
+  lastReadAt: string | null;
+}
 
 export interface ThreadSummary {
   id: string;
@@ -43,119 +53,202 @@ export interface ThreadSummary {
   isOnline?: boolean;
 }
 
+// Global subscription tracking to prevent conflicts
+const globalSubscriptionTracking = new Map<string, number>();
+
 export function useThreads() {
-  const queryClient = useQueryClient();
   const currentUserId = useCurrentUserId();
-  
+  const queryClient = useQueryClient();
   const queryKey = ['dm-threads', currentUserId];
+  const subscriptionAttempts = useRef(0);
+  const maxSubscriptionAttempts = 3;
 
   // Fetch all threads for current user
   const { data: threads = [], isLoading, error } = useQuery({
     queryKey,
     enabled: !!currentUserId,
     queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
-      // First get threads without joins to avoid foreign key issues
-      const { data: threadsData, error } = await supabase
-        .from("direct_threads")
-        .select('*')
-        .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
-        .order('last_message_at', { ascending: false, nullsLast: true });
+      try {
+        // First get threads without joins to avoid foreign key issues
+        const { data: threadsData, error } = await supabase
+          .from("direct_threads")
+          .select('*')
+          .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
+          .order('last_message_at', { ascending: false, nullsLast: true });
 
-      if (error) {
-        // Handle case where database table doesn't exist yet
-        if (error.code === 'PGRST116' || error.message?.includes('direct_threads')) {
-          console.warn('[useThreads] Database table not found - returning empty threads');
+        if (error) {
+          // Handle case where database table doesn't exist yet
+          if (error.code === 'PGRST116' || error.message?.includes('direct_threads')) {
+            console.warn('[useThreads] Database table not found - returning empty threads');
+            return [];
+          }
+          throw error;
+        }
+
+        if (!threadsData || threadsData.length === 0) {
           return [];
         }
-        throw error;
-      }
 
-      // Then get profile data separately
-      const profileIds = new Set<string>();
-      threadsData?.forEach(thread => {
-        if (thread.member_a_profile_id) profileIds.add(thread.member_a_profile_id);
-        if (thread.member_b_profile_id) profileIds.add(thread.member_b_profile_id);
-      });
+        // Then get profile data separately
+        const profileIds = new Set<string>();
+        threadsData?.forEach(thread => {
+          if (thread.member_a_profile_id) profileIds.add(thread.member_a_profile_id);
+          if (thread.member_b_profile_id) profileIds.add(thread.member_b_profile_id);
+        });
 
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, display_name, username, avatar_url')
-        .in('id', Array.from(profileIds));
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, display_name, username, avatar_url')
+          .in('id', Array.from(profileIds));
 
-      // Combine the data
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-      const combinedData = threadsData?.map(thread => ({
-        ...thread,
-        member_a_profile: profilesMap.get(thread.member_a_profile_id) || null,
-        member_b_profile: profilesMap.get(thread.member_b_profile_id) || null,
-      })) || [];
-
-      return combinedData.map(thread => {
-        const isMemberA = thread.member_a_profile_id === currentUserId;
-        return {
+        // Combine the data
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        const combinedData = threadsData?.map(thread => ({
           ...thread,
-          otherProfileId: isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
-          unreadCount: isMemberA ? thread.unread_a : thread.unread_b,
-          lastReadAt: isMemberA ? thread.last_read_at_a : thread.last_read_at_b,
-        };
-      }) as DirectThreadWithProfiles[];
+          member_a_profile: profilesMap.get(thread.member_a_profile_id) || null,
+          member_b_profile: profilesMap.get(thread.member_b_profile_id) || null,
+        })) || [];
+
+        return combinedData.map(thread => {
+          const isMemberA = thread.member_a_profile_id === currentUserId;
+          return {
+            ...thread,
+            otherProfileId: isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
+            unreadCount: isMemberA ? thread.unread_a : thread.unread_b,
+            lastReadAt: isMemberA ? thread.last_read_at_a : thread.last_read_at_b,
+          };
+        }) as DirectThreadWithProfiles[];
+      } catch (error) {
+        console.error('[useThreads] Query error:', error);
+        // Return empty array instead of throwing to prevent page freezing
+        return [];
+      }
     },
     staleTime: 30_000, // 30 seconds
+    retry: (failureCount, error: any) => {
+      // Don't retry if it's a schema/table issue
+      if (error?.code === 'PGRST116' || error?.message?.includes('direct_threads')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
-  // Real-time subscription for thread updates
+  // Real-time subscription for thread updates - with enhanced error handling
   useEffect(() => {
     if (!currentUserId) return;
 
-    const cleanup = realtimeManager.subscribe(
-      `threads:${currentUserId}`,
-      `dm_threads_${currentUserId}`,
-      (channel) =>
-        channel
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'direct_threads',
-              filter: `member_a_profile_id=eq.${currentUserId}`,
-            },
-            createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
-              ({ eventType, new: newThread, old: oldThread }) => {
-                console.log('📨 Thread update (member_a):', { eventType, newThread, oldThread });
-                
-                // Invalidate all thread queries for this user to avoid stale data
-                queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
-              },
-              (error, payload) => {
-                console.error('[useThreads] Realtime error (member_a):', error, payload);
-              }
-            )
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'direct_threads',
-              filter: `member_b_profile_id=eq.${currentUserId}`,
-            },
-            createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
-              ({ eventType, new: newThread, old: oldThread }) => {
-                console.log('📨 Thread update (member_b):', { eventType, newThread, oldThread });
-                
-                // Invalidate all thread queries for this user to avoid stale data
-                queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
-              },
-              (error, payload) => {
-                console.error('[useThreads] Realtime error (member_b):', error, payload);
-              }
-            )
-          ),
-      `threads-hook-${currentUserId}-${Math.random().toString(36).substr(2, 9)}`
-    );
+    // Prevent excessive subscription attempts
+    const subscriptionKey = `threads:${currentUserId}`;
+    const currentAttempts = globalSubscriptionTracking.get(subscriptionKey) || 0;
+    
+    if (currentAttempts >= maxSubscriptionAttempts) {
+      console.warn(`[useThreads] Max subscription attempts reached for ${subscriptionKey}, skipping realtime`);
+      return;
+    }
 
-    return cleanup;
+    // Track this attempt
+    globalSubscriptionTracking.set(subscriptionKey, currentAttempts + 1);
+    subscriptionAttempts.current = currentAttempts + 1;
+
+    // Generate a unique hook ID to prevent conflicts between multiple useThreads instances
+    const hookId = `threads-hook-${currentUserId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    let cleanup: (() => void) | null = null;
+    let subscriptionTimer: NodeJS.Timeout | null = null;
+
+    const setupSubscription = async () => {
+      try {
+        cleanup = realtimeManager.subscribe(
+          subscriptionKey,
+          `dm_threads_${currentUserId}`,
+          (channel) =>
+            channel
+              .on(
+                'postgres_changes',
+                {
+                  event: '*',
+                  schema: 'public',
+                  table: 'direct_threads',
+                  filter: `member_a_profile_id=eq.${currentUserId}`,
+                },
+                createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
+                  ({ eventType, new: newThread, old: oldThread }) => {
+                    console.log('📨 Thread update (member_a):', { eventType, newThread, oldThread });
+                    
+                    // Debounce invalidation to prevent excessive refetching
+                    if (subscriptionTimer) {
+                      clearTimeout(subscriptionTimer);
+                    }
+                    subscriptionTimer = setTimeout(() => {
+                      queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
+                    }, 500);
+                  },
+                  (error, payload) => {
+                    console.error('[useThreads] Realtime error (member_a):', error, payload);
+                    // Don't throw error to prevent page freezing
+                  }
+                )
+              )
+              .on(
+                'postgres_changes',
+                {
+                  event: '*',
+                  schema: 'public',
+                  table: 'direct_threads',
+                  filter: `member_b_profile_id=eq.${currentUserId}`,
+                },
+                createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
+                  ({ eventType, new: newThread, old: oldThread }) => {
+                    console.log('📨 Thread update (member_b):', { eventType, newThread, oldThread });
+                    
+                    // Debounce invalidation to prevent excessive refetching
+                    if (subscriptionTimer) {
+                      clearTimeout(subscriptionTimer);
+                    }
+                    subscriptionTimer = setTimeout(() => {
+                      queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
+                    }, 500);
+                  },
+                  (error, payload) => {
+                    console.error('[useThreads] Realtime error (member_b):', error, payload);
+                    // Don't throw error to prevent page freezing
+                  }
+                )
+              ),
+          hookId
+        );
+      } catch (error) {
+        console.error('[useThreads] Subscription setup error:', error);
+        // Don't throw error to prevent page freezing
+      }
+    };
+
+    // Setup subscription with error handling
+    setupSubscription();
+
+    return () => {
+      try {
+        // Clear debounce timer
+        if (subscriptionTimer) {
+          clearTimeout(subscriptionTimer);
+        }
+        
+        // Cleanup subscription
+        if (cleanup) {
+          cleanup();
+        }
+        
+        // Reset attempt counter on successful cleanup
+        const attempts = globalSubscriptionTracking.get(subscriptionKey) || 0;
+        if (attempts > 0) {
+          globalSubscriptionTracking.set(subscriptionKey, Math.max(0, attempts - 1));
+        }
+      } catch (error) {
+        console.error('[useThreads] Cleanup error:', error);
+        // Don't throw error during cleanup
+      }
+    };
   }, [currentUserId, queryClient]);
 
   // Create or get existing thread using enhanced function
