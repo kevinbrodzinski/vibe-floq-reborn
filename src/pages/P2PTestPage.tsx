@@ -594,7 +594,7 @@ function useProductionHooks(currentUserId: string | null, realThreadId: string |
 export default function P2PTestPage() {
   const [testMessage, setTestMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState(MOCK_USER_ID);
+  const [selectedProfileId, setSelectedProfileId] = useState(MOCK_USER_ID);
   const [connectionStats, setConnectionStats] = useState<any>(null);
   const [realtimeErrors, setRealtimeErrors] = useState<string[]>([]);
 
@@ -730,10 +730,10 @@ export default function P2PTestPage() {
   };
 
   const handleSendFriendRequest = async () => {
-    if (!selectedUserId) return;
+    if (!selectedProfileId) return;
     
     try {
-      await sendFriendRequest(selectedUserId);
+      await sendFriendRequest(selectedProfileId);
       toast.success('Friend request sent!');
     } catch (error) {
       toast.error('Failed to send friend request', {
@@ -743,10 +743,10 @@ export default function P2PTestPage() {
   };
 
   const handleAcceptFriendRequest = async () => {
-    if (!selectedUserId) return;
+    if (!selectedProfileId) return;
     
     try {
-      await acceptFriendRequest(selectedUserId);
+      await acceptFriendRequest(selectedProfileId);
       toast.success('Friend request accepted!');
     } catch (error) {
       toast.error('Failed to accept friend request', {
@@ -756,10 +756,10 @@ export default function P2PTestPage() {
   };
 
   const handleRejectFriendRequest = async () => {
-    if (!selectedUserId) return;
+    if (!selectedProfileId) return;
     
     try {
-      await rejectFriendRequest({ userId: selectedUserId, isIncoming: false });
+      await rejectFriendRequest({ userId: selectedProfileId, isIncoming: false });
       toast.success('Friend request rejected!');
     } catch (error) {
       toast.error('Failed to reject friend request', {
@@ -785,7 +785,7 @@ export default function P2PTestPage() {
 
   const handleCreateThread = async () => {
     try {
-      const threadId = await createThread(selectedUserId);
+      const threadId = await createThread(selectedProfileId);
       toast.success('Thread created!', {
         description: `Thread ID: ${threadId.slice(0, 8)}...`
       });
@@ -1009,9 +1009,9 @@ export default function P2PTestPage() {
                   <h4 className="font-medium">Thread Management</h4>
                   <div className="flex gap-2">
                     <Input
-                      value={selectedUserId}
-                      onChange={(e) => setSelectedUserId(e.target.value)}
-                      placeholder="User ID for thread..."
+                      value={selectedProfileId}
+                      onChange={(e) => setSelectedProfileId(e.target.value)}
+                      placeholder="Profile ID for thread..."
                       className="flex-1"
                     />
                     <Button onClick={handleCreateThread} size="sm">
@@ -1189,14 +1189,14 @@ export default function P2PTestPage() {
             <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  placeholder="User ID to send friend request..."
+                  value={selectedProfileId}
+                  onChange={(e) => setSelectedProfileId(e.target.value)}
+                  placeholder="Profile ID to send friend request..."
                   className="flex-1"
                 />
                 <Button 
                   onClick={handleSendFriendRequest} 
-                  disabled={isSending || !selectedUserId}
+                  disabled={isSending || !selectedProfileId}
                   className="flex items-center gap-2"
                 >
                   {isSending ? (
