@@ -271,33 +271,84 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       return;
     }
 
-    console.log('[DMQuickSheet] Starting send with sending:', sending, 'isPending:', sending);
-    
-    // Use local sending state as fallback
-    setSending(true);
+    // ✅ Validate replyTo is in the same thread (defense-in-depth)
+    if (replyTo && !messages.data?.pages?.some(page => page?.some(m => m.id === replyTo))) {
+      console.warn('[DMQuickSheet] replyTo is not in the loaded page set – still sending, server will validate');
+    }
 
-    // Clear typing state immediately with enhanced indicators
-    handleMessageSent();
+    console.log('[DMQuickSheet] Starting send with sending:', sending);
+    
+    setSending(true);
+    handleMessageSent(); // Clear typing state immediately
+
+    const tempId = `temp_${Date.now()}`;
+    const messageContent = input.trim();
+    
+    // ✅ Optimistic UI update
+    queryClient.setQueryData(['messages', 'dm', threadId], (old: any) => {
+      if (!old) return old;
+      
+      const optimisticMessage = {
+        id: tempId,
+        thread_id: threadId,
+        sender_id: currentProfileId,
+        profile_id: currentProfileId,
+        content: messageContent,
+        created_at: new Date().toISOString(),
+        metadata: { client_id: tempId },
+        status: "sending",
+        message_type: "text",
+        reply_to: replyTo,
+      };
+
+      const pages = old.pages || [];
+      const lastPage = pages[pages.length - 1] || [];
+      
+      return {
+        ...old,
+        pages: [...pages.slice(0, -1), [...lastPage, optimisticMessage]]
+      };
+    });
 
     try {
       console.log('[DMQuickSheet] Calling sendMessageRPC...');
-      await sendMessageRPC({
+      const newId = await sendMessageRPC({
         threadId,
-        senderId: currentProfileId,    // ✅ NOTE: p_sender_id
-        body: input.trim(),            // ✅ NOTE: p_body
-        replyTo,                       // ✅ NOTE: p_reply_to
-        media: null,                   // fill later if you add uploads
-        type: 'text',                  // must match dm_msg_type labels
+        senderId: currentProfileId,
+        body: messageContent,
+        replyTo,
+        media: null,
+        type: 'text',
       });
-      console.log('[DMQuickSheet] sendMessageRPC completed successfully');
+      
+      console.log('[DMQuickSheet] sendMessageRPC success, newId:', newId);
+      
+      // Clear input/reply after success
       setInput('');
       setReplyTo(null);
       
-      // Invalidate queries to refresh the UI
+      // ✅ Invalidate queries to refresh with server data
+      queryClient.invalidateQueries({ queryKey: ['messages', 'dm', threadId] });
       queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
-      // optionally also invalidate the message pages for this thread key if you have one
+      
     } catch (error) {
       console.error('[DMQuickSheet] Send failed:', error);
+      
+      // ✅ Remove optimistic message on failure
+      queryClient.setQueryData(['messages', 'dm', threadId], (old: any) => {
+        if (!old) return old;
+        
+        const pages = old.pages || [];
+        const updatedPages = pages.map((page: any[]) => 
+          page.filter(msg => msg.id !== tempId)
+        );
+        
+        return {
+          ...old,
+          pages: updatedPages
+        };
+      });
+      
       toast({
         title: "Message failed to send",
         description: "Please try again.",
@@ -305,7 +356,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       });
     } finally {
       console.log('[DMQuickSheet] Clearing sending state');
-      setSending(false); // Always re-enable input
+      setSending(false);
     }
   };
 

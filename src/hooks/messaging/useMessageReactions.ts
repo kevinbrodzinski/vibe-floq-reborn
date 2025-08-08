@@ -110,7 +110,9 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
   const queryKeyRef = useRef(queryKey);
   queryKeyRef.current = queryKey; // Keep it updated
 
-  // Real-time subscription for reaction changes - FIXED: stable dependencies
+  // ✅ TEMPORARILY DISABLED: Real-time subscription for reaction changes
+  // Re-enable after send path is stabilized
+  /*
   useEffect(() => {
     if (!threadId || !currentUserId) return;
 
@@ -158,6 +160,10 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
     return cleanup;
     // ✅ FIXED: Only depend on truly stable values - no queryKey, no reactions
   }, [threadId, currentUserId, queryClient]);
+  */
+
+  // ✅ TODO: Re-enable reactions subscription after send path is stable
+  console.log('[useMessageReactions] Reactions subscription temporarily disabled for send path stabilization');
 
   // Toggle reaction mutation
   const toggleReaction = useMutation({

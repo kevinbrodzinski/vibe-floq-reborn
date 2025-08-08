@@ -2,32 +2,34 @@ import pLimit from 'p-limit'
 import pThrottle from 'p-throttle'
 import { supabase } from '@/integrations/supabase/client';
 
-export async function sendMessageRPC({
-  threadId,
-  senderId,           // current user's profile_id
-  body,               // message text
-  replyTo,            // optional message id
-  media,              // optional json (or null)
-  type = 'text',      // dm_msg_type enum label (e.g. 'text')
-}: {
+type SendArgs = {
   threadId: string;
-  senderId: string;
+  senderId: string;       // profiles.id (same as auth user id in your setup)
   body: string;
   replyTo?: string | null;
-  media?: any | null;
-  type?: 'text' | 'image' | 'video' | string;
-}) {
-  const { data, error } = await supabase.rpc('send_dm_message', {
+  media?: any | null;     // jsonb if you add uploads later
+  type?: 'text' | 'image' | 'video'; // must match dm_msg_type
+};
+
+export async function sendMessageRPC({
+  threadId, senderId, body, replyTo = null, media = null, type = 'text',
+}: SendArgs): Promise<string> {
+  const { data, error } = await supabase.rpc('send_dm_message_uuid', {
     p_thread_id: threadId,
     p_sender_id: senderId,
     p_body: body,
-    p_reply_to: replyTo ?? null,
-    p_media: media ?? null,
-    p_type: type,          // PostgREST will cast to enum if label exists
+    p_reply_to: replyTo,
+    p_media: media,
+    p_type: type,
   });
 
-  if (error) throw error;   // surface PostgREST errors to the caller
-  return data;              // usually the new message id (depends on your fn)
+  if (error) {
+    // Helpful logs during setup
+    console.error('[sendMessageRPC] RPC error', error);
+    throw new Error(error.message || 'Failed to send message');
+  }
+  // data is the new message id (uuid)
+  return data as string;
 }
 
 /** Allow only N concurrent calls & queue the rest */
