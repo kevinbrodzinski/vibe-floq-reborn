@@ -272,8 +272,10 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
     };
   }, [thread.friend_profile_id, thread.friend_display_name, thread.friend_username]);
 
-  // Clean display logic - no more email fallbacks
-  const displayName = thread.friend_display_name || 'New User';
+  // Clean display logic - no more email fallbacks + defensive email filter
+  const displayName = thread.friend_display_name || 
+                     (!isEmailLike(thread.friend_username) ? thread.friend_username : '') || 
+                     'New User'; // ✅ FIX: Defensive client-only email filter
   const handle = thread.friend_username; // we already filtered emails out
 
   const avatarUrl = fallback?.avatar_url || thread.friend_avatar_url || undefined;

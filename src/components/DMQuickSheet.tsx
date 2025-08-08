@@ -286,7 +286,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       console.log('[DMQuickSheet] Calling mutateAsync...');
       await sendMut.mutateAsync({ 
         threadId,
-        content: input.trim()
+        content: input.trim(),
+        replyToMessageId: replyTo ?? null, // ✅ FIX: Pass reply ID through
       });
       console.log('[DMQuickSheet] mutateAsync completed successfully');
       setInput('');

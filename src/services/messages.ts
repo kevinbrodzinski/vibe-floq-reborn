@@ -3,19 +3,24 @@ import pThrottle from 'p-throttle'
 import { supabase } from '@/integrations/supabase/client'
 import { supaFn } from '@/lib/supaFn'
 
-/** Edge function call – unchanged */
+/** Edge function call – updated to handle reply_to_id */
 async function sendMessageRPC(payload: { 
   surface: "dm" | "floq" | "plan"; 
   thread_id: string; 
   sender_id: string; 
   content: string; 
-  client_id: string 
+  client_id: string;
+  reply_to_id?: string | null; // ✅ FIX: Add reply_to_id parameter
 }) {
   // Get session for auth token
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new Error("No auth session");
 
-  const res = await supaFn("send-message", session.access_token, payload);
+  // ✅ FIX: Pass reply_to_id through to Edge Function
+  const res = await supaFn("send-message", session.access_token, {
+    ...payload,
+    p_reply_to: payload.reply_to_id ?? null, // Map to Edge Function parameter name
+  });
   
   if (!res.ok) {
     const errorText = await res.text();

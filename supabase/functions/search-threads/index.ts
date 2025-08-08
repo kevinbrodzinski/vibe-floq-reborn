@@ -3,7 +3,7 @@ import { getUserId } from '../_shared/getUserId.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range-unit',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range, range-unit',
 }
 
 interface ThreadSearchResult {

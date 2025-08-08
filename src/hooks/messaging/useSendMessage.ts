@@ -11,8 +11,12 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ threadId, content }: { threadId: string; content: string }) => {
-      console.log('[useSendMessage] Starting mutation:', { threadId, content });
+    mutationFn: async ({ threadId, content, replyToMessageId }: { 
+      threadId: string; 
+      content: string; 
+      replyToMessageId?: string | null; 
+    }) => {
+      console.log('[useSendMessage] Starting mutation:', { threadId, content, replyToMessageId });
       
       // Validate required parameters
       if (!threadId || threadId === 'null') {
@@ -42,7 +46,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
           metadata: { client_id },
           status: "sending",
           message_type: "text",
-          reply_to_id: null,
+          reply_to_id: replyToMessageId, // ✅ FIX: Include reply ID in optimistic update
         };
 
         const pages = old.pages || [];
@@ -56,19 +60,38 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
 
       console.log('[useSendMessage] Calling limitedSendMessage...');
       try {
+        // Try Edge Function first
         const data = await limitedSendMessage({
           surface, 
           thread_id: threadId, 
           sender_id: user.id, 
           content, 
-          client_id 
+          client_id,
+          reply_to_id: replyToMessageId, // ✅ FIX: Pass reply ID to API
         });
         
         console.log('[useSendMessage] Success data:', data);
         return { ...data, client_id, threadId };
-      } catch (error) {
-        console.error('[useSendMessage] limitedSendMessage error:', error);
-        throw error; // Make sure we re-throw so the mutation fails properly
+      } catch (edgeError) {
+        console.warn('[useSendMessage] Edge Function failed, trying RPC fallback:', edgeError);
+        
+        // ✅ FIX: Fallback to RPC so the UI stays responsive if functions hiccup
+        try {
+          const { data, error } = await supabase.rpc('send_dm_message_enhanced', {
+            p_thread_id: threadId,
+            p_content: content,
+            p_reply_to: replyToMessageId ?? null,
+            p_client_id: client_id,
+          });
+          
+          if (error) throw error;
+          
+          console.log('[useSendMessage] RPC fallback success:', data);
+          return { message: data, client_id, threadId };
+        } catch (rpcError) {
+          console.error('[useSendMessage] Both Edge Function and RPC failed:', { edgeError, rpcError });
+          throw rpcError; // Throw the RPC error as it's likely more informative
+        }
       }
     },
 
