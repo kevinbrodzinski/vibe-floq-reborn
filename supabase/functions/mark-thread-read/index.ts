@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range-unit',
 };
 
 const supabase = createClient(
@@ -22,83 +22,25 @@ async function markThreadRead({ surface, thread_id, profile_id }: Payload) {
   
   try {
     if (surface === "dm") {
-      // For DMs, we need to determine if this user is member_a or member_b
-      const { data: thread, error: threadError } = await supabase
-        .from("direct_threads")
-        .select("member_a, member_b")
-        .eq("id", thread_id)
-        .single();
+      // Use the enhanced RPC function that works with profile IDs
+      const { error: rpcError } = await supabase
+        .rpc('mark_thread_read_enhanced', {
+          p_thread_id: thread_id,
+          p_profile_id: profile_id
+        });
 
-      if (threadError) {
-        console.error(`[mark-thread-read] Failed to fetch thread:`, threadError);
-        throw new Error(`Thread not found: ${threadError.message}`);
+      if (rpcError) {
+        console.error(`[mark-thread-read] RPC failed:`, rpcError);
+        throw new Error(`Failed to mark thread as read: ${rpcError.message}`);
       }
 
-      const isMemberA = thread.member_a === profile_id;
-      const isMemberB = thread.member_b === profile_id;
-
-      if (!isMemberA && !isMemberB) {
-        throw new Error("User is not a member of this thread");
-      }
-
-      // Update the appropriate last_read_at and unread columns
-      const updateData = isMemberA 
-        ? { last_read_at_a: new Date().toISOString(), unread_a: 0 }
-        : { last_read_at_b: new Date().toISOString(), unread_b: 0 };
-
-      const { error: updateError } = await supabase
-        .from("direct_threads")
-        .update(updateData)
-        .eq("id", thread_id);
-
-      if (updateError) {
-        console.error(`[mark-thread-read] Failed to update direct thread:`, updateError);
-        throw updateError;
-      }
-
-      console.log(`[mark-thread-read] Successfully updated direct thread for ${isMemberA ? 'member_a' : 'member_b'}`);
-
-    } else if (surface === "floq") {
-      // For floq threads, update last_read_at and reset unread count
-      const { error: updateError } = await supabase
-        .from("floq_threads")
-        .update({
-          last_read_at: new Date().toISOString(),
-          unread: 0
-        })
-        .eq("id", thread_id)
-        .eq("profile_id", profile_id);
-
-      if (updateError) {
-        console.error(`[mark-thread-read] Failed to update floq thread:`, updateError);
-        throw updateError;
-      }
-
-      console.log(`[mark-thread-read] Successfully updated floq thread`);
-
-    } else if (surface === "plan") {
-      // For plan threads, update last_read_at and reset unread count
-      const { error: updateError } = await supabase
-        .from("plan_threads")
-        .update({
-          last_read_at: new Date().toISOString(),
-          unread: 0
-        })
-        .eq("id", thread_id)
-        .eq("profile_id", profile_id);
-
-      if (updateError) {
-        console.error(`[mark-thread-read] Failed to update plan thread:`, updateError);
-        throw updateError;
-      }
-
-      console.log(`[mark-thread-read] Successfully updated plan thread`);
-    } else {
-      throw new Error(`Invalid surface: ${surface}`);
+      console.log(`[mark-thread-read] Successfully marked thread ${thread_id} as read for profile ${profile_id}`);
+      return { success: true };
     }
-
-    return { success: true };
-
+    
+    // Handle other surfaces (floq, plan) if needed
+    throw new Error(`Surface ${surface} not yet implemented`);
+    
   } catch (error) {
     console.error(`[mark-thread-read] Error:`, error);
     throw error;

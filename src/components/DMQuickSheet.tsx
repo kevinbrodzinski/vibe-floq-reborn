@@ -22,7 +22,7 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useSendMessage } from '@/hooks/messaging/useSendMessage';
-import { useThreads } from '@/hooks/messaging/useThreads';
+
 import { useTypingIndicators, useTypingIndicatorText } from '@/hooks/messaging/useTypingIndicators';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
@@ -86,8 +86,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     messages.data
   ]);
   
-  // Get markThreadRead from useThreads
-  const { markThreadRead } = useThreads();
+
 
   // Enhanced typing indicators
   const { typingUsers, handleTyping, handleMessageSent, hasTypingUsers } = useTypingIndicators(threadId, 'dm');
@@ -189,7 +188,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       // Mark thread as read with proper auth guard
     useEffect(() => {
       if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
-        markThreadRead.mutateAsync(threadId).catch(error => {
+        rpc_markThreadRead(threadId, 'dm').catch(error => {
           console.error('Failed to mark thread as read:', error);
         });
       

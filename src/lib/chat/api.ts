@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import { supaFn } from '@/lib/supaFn';
 
 export interface ChatMessage {
   id: string;
@@ -14,7 +14,7 @@ export interface ChatMessage {
   reactions?: Record<string, string[]>;
 }
 
-export type Surface = 'dm' | 'floq';
+export type Surface = 'dm' | 'floq' | 'plan';
 export const PAGE_SIZE = 40;
 
 export const rpc_sendMessage = (payload: {
@@ -32,44 +32,136 @@ export const rpc_reactToMsg = (payload: {
   p_emoji: string;
 }) => supabase.rpc('react_to_message', payload);
 
-export const rpc_markThreadRead = (payload: {
-  p_surface: 'dm' | 'floq' | 'plan';
-  p_thread_id: string;
-  p_profile_id: string;
-}) => (supabase as any).rpc('mark_thread_read', payload);
+/**
+ * Enhanced thread creation that handles both old and new schema
+ */
+export async function getOrCreateThread(profileIdA: string, profileIdB: string): Promise<string> {
+  try {
+    // First try the new enhanced function
+    const { data: threadId, error: newError } = await supabase
+      .rpc('create_or_get_thread', {
+        p_user_a: profileIdA,
+        p_user_b: profileIdB
+      });
 
-export const getOrCreateThread = async (
-  me: string,        // profile_id of current user
-  friend: string     // profile_id of friend
-): Promise<string> => {
-  if (me === friend) {
-    throw new Error('Cannot DM yourself');
-  }
-
-  const { data, error } = await supabase.rpc('create_or_get_thread', {
-    p_user_a: me,     // Updated to match actual migration parameter names
-    p_user_b: friend, // Updated to match actual migration parameter names
-  });
-
-  if (error || !data) {
-    if (import.meta.env.MODE === 'development') {
-      console.error('[getOrCreateThread] RPC error:', error);
+    if (!newError && threadId) {
+      return threadId;
     }
-    
-    // If function doesn't exist, it means migrations haven't been applied
-    if (error?.code === 'PGRST202') {
-      throw new Error('P2P migrations not applied. Please run the database migrations first.');
+
+    console.warn('[getOrCreateThread] New function failed, trying fallback:', newError);
+
+    // Fallback: Try to find existing thread manually
+    const { data: existingThread, error: findError } = await supabase
+      .from('direct_threads')
+      .select('id')
+      .or(`member_a_profile_id.eq.${profileIdA},member_b_profile_id.eq.${profileIdA}`)
+      .or(`member_a_profile_id.eq.${profileIdB},member_b_profile_id.eq.${profileIdB}`)
+      .limit(1)
+      .single();
+
+    if (!findError && existingThread) {
+      return existingThread.id;
     }
-    
-    throw error ?? new Error('No thread ID returned');
+
+    // Last resort: Create thread manually (if we have the right permissions)
+    const { data: newThread, error: createError } = await supabase
+      .from('direct_threads')
+      .insert({
+        member_a: profileIdA < profileIdB ? profileIdA : profileIdB,
+        member_b: profileIdA < profileIdB ? profileIdB : profileIdA,
+        member_a_profile_id: profileIdA < profileIdB ? profileIdA : profileIdB,
+        member_b_profile_id: profileIdA < profileIdB ? profileIdB : profileIdA,
+        created_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString(),
+        unread_a: 0,
+        unread_b: 0
+      })
+      .select('id')
+      .single();
+
+    if (createError) {
+      throw new Error(`Failed to create thread: ${createError.message}`);
+    }
+
+    return newThread.id;
+
+  } catch (error) {
+    console.error('[getOrCreateThread] All methods failed:', error);
+    throw error;
   }
-  
-  if (typeof data !== 'string') {
-    throw new Error('Unexpected RPC payload');
+}
+
+/**
+ * Enhanced thread read marking that handles both old and new schema
+ */
+export async function rpc_markThreadRead(threadId: string, surface: Surface = 'dm') {
+  try {
+    // Get current user profile ID
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // First try the enhanced RPC function
+    const { error: rpcError } = await supabase
+      .rpc('mark_thread_read_enhanced', {
+        p_thread_id: threadId,
+        p_profile_id: user.id
+      });
+
+    if (!rpcError) {
+      console.log('[rpc_markThreadRead] Successfully marked thread as read with enhanced RPC');
+      return;
+    }
+
+    console.warn('[rpc_markThreadRead] Enhanced RPC failed, trying edge function:', rpcError);
+
+    // Fallback: Try the edge function
+    const { data, error: edgeError } = await supaFn('mark-thread-read', {
+      surface,
+      thread_id: threadId,
+      profile_id: user.id
+    });
+
+    if (!edgeError) {
+      console.log('[rpc_markThreadRead] Successfully marked thread as read with edge function');
+      return;
+    }
+
+    console.warn('[rpc_markThreadRead] Edge function failed, trying manual update:', edgeError);
+
+    // Last resort: Manual update (requires knowing the thread structure)
+    const { data: thread, error: fetchError } = await supabase
+      .from('direct_threads')
+      .select('member_a_profile_id, member_b_profile_id')
+      .eq('id', threadId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch thread: ${fetchError.message}`);
+    }
+
+    const isMemberA = thread.member_a_profile_id === user.id;
+    const updateData = isMemberA 
+      ? { last_read_at_a: new Date().toISOString(), unread_a: 0 }
+      : { last_read_at_b: new Date().toISOString(), unread_b: 0 };
+
+    const { error: updateError } = await supabase
+      .from('direct_threads')
+      .update(updateData)
+      .eq('id', threadId);
+
+    if (updateError) {
+      throw new Error(`Failed to update thread: ${updateError.message}`);
+    }
+
+    console.log('[rpc_markThreadRead] Successfully marked thread as read with manual update');
+
+  } catch (error) {
+    console.error('[rpc_markThreadRead] All methods failed:', error);
+    throw error;
   }
-  
-  return data;
-};
+}
 
 export const fn_uploadChatMedia = async (body: Record<string, unknown>) => {
   const { data: { session } } = await supabase.auth.getSession();

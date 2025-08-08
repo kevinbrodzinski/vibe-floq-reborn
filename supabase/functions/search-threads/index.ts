@@ -19,221 +19,83 @@ interface ThreadSearchResult {
   match_score: number;
 }
 
-// Simple fuzzy search scoring
-function calculateMatchScore(query: string, text: string): number {
-  const queryLower = query.toLowerCase();
-  const textLower = text.toLowerCase();
-  
-  // Exact match gets highest score
-  if (textLower === queryLower) return 100;
-  
-  // Starts with query gets high score
-  if (textLower.startsWith(queryLower)) return 80;
-  
-  // Contains query gets medium score
-  if (textLower.includes(queryLower)) return 60;
-  
-  // Fuzzy match - check if all characters of query appear in order
-  let queryIndex = 0;
-  for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
-    if (textLower[i] === queryLower[queryIndex]) {
-      queryIndex++;
-    }
-  }
-  
-  if (queryIndex === queryLower.length) {
-    return Math.max(20, 40 - (textLower.length - queryLower.length));
-  }
-  
-  return 0;
-}
-
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const profileId = await getUserId(req); // getUserId returns the profile_id (main user identifier)
+    // Get user ID from auth
+    const profileId = await getUserId(req)
     if (!profileId) {
-      return new Response('Unauthorized', { 
-        status: 401, 
-        headers: corsHeaders 
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Parse request body
+    const { query, limit = 20 } = await req.json()
+    if (!query || typeof query !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Query parameter is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log(`[search-threads] Searching for: "${query}" (profile_id: ${profileId})`)
+
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Use the enhanced RPC function for thread search
+    const { data: searchResults, error: rpcError } = await supabase
+      .rpc('search_direct_threads_enhanced', {
+        p_profile_id: profileId,
+        p_query: query,
+        p_limit: limit
       });
+
+    if (rpcError) {
+      console.error('[search-threads] RPC error:', rpcError);
+      return new Response(
+        JSON.stringify({ error: 'Search failed', details: rpcError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Check for auth header early
-    const auth = req.headers.get('authorization');
-    if (!auth) {
-      return new Response('Unauthorized', { 
-        status: 401, 
-        headers: corsHeaders 
-      });
-    }
+    console.log(`[search-threads] Found ${searchResults?.length || 0} results`)
 
-    const body = await req.text();
-    if (!body) {
-      return new Response(JSON.stringify([]), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // Transform results to match expected format
+    const transformedResults: ThreadSearchResult[] = (searchResults || []).map(result => ({
+      thread_id: result.thread_id,
+      friend_profile_id: result.other_profile_id,
+      friend_display_name: result.other_display_name || 'Unknown',
+      friend_username: result.other_username || 'unknown',
+      friend_avatar_url: result.other_avatar_url || '',
+      last_message_at: result.last_message_at || new Date().toISOString(),
+      my_unread_count: result.unread_count || 0,
+      last_message_content: result.last_message_content || '',
+      match_type: 'name', // The RPC handles matching logic
+      match_score: 80 // Default score since RPC handles relevance
+    }));
 
-    const { q } = JSON.parse(body);
-    
-    if (!q || q.trim().length < 2) {
-      return new Response(JSON.stringify([]), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Use anon key with proper auth headers to respect RLS
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      {
-        global: {
-          headers: {
-            authorization: auth
-          }
-        }
-      }
-    );
-
-    const query = q.toLowerCase().trim();
-
-    // Search DM threads where current profile_id is a participant with enhanced data
-    // Note: RLS policies filter by member_a/member_b, and profile_id equals auth.users.id
-    const { data: threadsData, error: threadsError } = await supabase
-      .from('direct_threads')
-      .select(`
-        id,
-        member_a,
-        member_b,
-        member_a_profile_id,
-        member_b_profile_id,
-        last_message_at,
-        unread_a,
-        unread_b,
-        pa:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
-        pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
-      `)
-      .or(`member_a.eq.${profileId},member_b.eq.${profileId}`) // Query by member columns (RLS compatible)
-      .order('last_message_at', { ascending: false });
-
-    if (threadsError) {
-      console.error('Database error:', threadsError);
-      return new Response('Database error', { 
-        status: 500, 
-        headers: corsHeaders 
-      });
-    }
-
-    // Get recent messages for content search
-    const { data: messagesData, error: messagesError } = await supabase
-      .from('direct_messages')
-      .select('thread_id, content, created_at')
-      .in('thread_id', (threadsData || []).map(t => t.id))
-      .order('created_at', { ascending: false })
-      .limit(200); // Limit to recent messages for performance
-
-    if (messagesError) {
-      console.error('Messages search error:', messagesError);
-      // Don't fail the entire request, just skip message content search
-    }
-
-    // Build message content lookup
-    const messagesByThread = new Map<string, string[]>();
-    if (messagesData) {
-      messagesData.forEach(msg => {
-        if (msg.content) {
-          if (!messagesByThread.has(msg.thread_id)) {
-            messagesByThread.set(msg.thread_id, []);
-          }
-          messagesByThread.get(msg.thread_id)!.push(msg.content);
-        }
-      });
-    }
-
-    // Process and score results
-    const results: ThreadSearchResult[] = (threadsData || [])
-      .map(thread => {
-        // Check if current profile_id is member_a or member_b (since profile_id equals auth.users.id)
-        const isCurrentProfileMemberA = thread.member_a === profileId;
-        const friendProfile = isCurrentProfileMemberA ? thread.pb : thread.pa;
-        
-        if (!friendProfile) return null;
-
-        const displayName = friendProfile.display_name || '';
-        const username = friendProfile.username || '';
-        
-        // Calculate scores for different match types
-        const nameScore = calculateMatchScore(query, displayName);
-        const usernameScore = calculateMatchScore(query, username);
-        
-        // Search in message content
-        let messageScore = 0;
-        let matchingMessage = '';
-        const threadMessages = messagesByThread.get(thread.id) || [];
-        
-        for (const message of threadMessages.slice(0, 10)) { // Check recent 10 messages
-          const score = calculateMatchScore(query, message);
-          if (score > messageScore) {
-            messageScore = score;
-            matchingMessage = message;
-          }
-        }
-
-        // Determine best match type and score
-        let bestScore = Math.max(nameScore, usernameScore, messageScore);
-        let matchType: 'name' | 'username' | 'message' = 'name';
-
-        if (usernameScore >= nameScore && usernameScore >= messageScore) {
-          matchType = 'username';
-          bestScore = usernameScore;
-        } else if (messageScore >= nameScore && messageScore >= usernameScore) {
-          matchType = 'message';
-          bestScore = messageScore;
-        }
-
-        // Only return results with meaningful scores
-        if (bestScore < 20) return null;
-
-        return {
-          thread_id: thread.id,
-          friend_profile_id: isCurrentProfileMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
-          friend_display_name: displayName,
-          friend_username: username,
-          friend_avatar_url: friendProfile.avatar_url || '',
-          last_message_at: thread.last_message_at,
-          my_unread_count: isCurrentProfileMemberA ? thread.unread_a : thread.unread_b,
-          last_message_content: matchType === 'message' ? matchingMessage : undefined,
-          match_type: matchType,
-          match_score: bestScore
-        };
-      })
-      .filter(Boolean) as ThreadSearchResult[];
-
-    // Sort by match score (highest first), then by last message time
-    results.sort((a, b) => {
-      if (a.match_score !== b.match_score) {
-        return b.match_score - a.match_score;
-      }
-      return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
-    });
-
-    // Limit results
-    const limitedResults = results.slice(0, 15);
-
-    return new Response(JSON.stringify(limitedResults), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ 
+        results: transformedResults,
+        total: transformedResults.length 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
-    console.error('Search threads error:', error);
-    return new Response('Internal server error', { 
-      status: 500, 
-      headers: corsHeaders 
-    });
+    console.error('[search-threads] Unexpected error:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-});
+})
