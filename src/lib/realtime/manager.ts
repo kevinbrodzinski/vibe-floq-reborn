@@ -31,6 +31,7 @@ class RealtimeManager {
   private mountedHooks = new Set<string>();
   private healthCheckInterval?: ReturnType<typeof setInterval>; // Fixed typing
   private creating = new Set<string>(); // Prevent double subscribe race conditions
+  private closing = new Set<string>(); // Track intentional closes
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 2000;
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
@@ -126,9 +127,22 @@ class RealtimeManager {
             if (status === 'SUBSCRIBED') {
               console.log(`[RealtimeManager] Successfully subscribed to ${key}`);
               resolve();
-            } else if (['CHANNEL_ERROR', 'CLOSED', 'TIMED_OUT'].includes(status) || error) {
+              return;
+            }
+
+            // Don't treat CLOSED as an error if we're intentionally closing
+            if (status === 'CLOSED' && this.closing.has(key)) {
+              console.log(`[RealtimeManager] Channel ${key} closed (cleanup)`);
+              return;
+            }
+
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || error) {
               console.error(`[RealtimeManager] Subscription error for ${key}:`, error || status);
               reject(error || new Error(`Subscription failed with status: ${status}`));
+            } else if (status === 'CLOSED') {
+              // CLOSED without intentional cleanup - this is unexpected
+              console.error(`[RealtimeManager] Unexpected channel close for ${key}`);
+              reject(new Error(`Channel unexpectedly closed: ${key}`));
             }
           });
       });
@@ -206,7 +220,8 @@ class RealtimeManager {
   private async unsubscribe(key: string, hookId: string) {
     const subscription = this.subscriptions.get(key);
     if (!subscription) {
-      console.warn(`[RealtimeManager] No subscription found for key: ${key}`);
+      // Silence double-unsubscribe noise (React Strict Mode can unmount twice)
+      console.debug(`[RealtimeManager] Unsubscribe ignored, no subscription found: ${key}`);
       return;
     }
 
@@ -226,9 +241,14 @@ class RealtimeManager {
       }
       
       try {
+        // Mark intentional close to prevent logging it as an error
+        this.closing.add(key);
         await subscription.cleanup();
       } catch (error) {
         console.error(`[RealtimeManager] Error during cleanup for ${key}:`, error);
+      } finally {
+        // Clear the intentional close guard
+        this.closing.delete(key);
       }
     } else {
       console.log(`[RealtimeManager] Keeping subscription ${key} (${subscription.hookIds.size} hooks still using it)`);
@@ -274,9 +294,13 @@ class RealtimeManager {
       }
       
       try {
+        // Mark intentional close for health check cleanup
+        this.closing.add(key);
         await subscription.cleanup();
       } catch (error) {
         console.error(`[RealtimeManager] Error cleaning up inactive subscription ${key}:`, error);
+      } finally {
+        this.closing.delete(key);
       }
     }));
 
@@ -345,11 +369,16 @@ class RealtimeManager {
       this.healthCheckInterval = undefined;
     }
 
+    // Mark all subscriptions for intentional close
+    const subscriptionKeys = Array.from(this.subscriptions.keys());
+    subscriptionKeys.forEach(key => this.closing.add(key));
+    
     const cleanupPromises = Array.from(this.subscriptions.values()).map(sub => sub.cleanup());
     
     this.subscriptions.clear();
     this.mountedHooks.clear();
     this.creating.clear(); // Clear creation tracking
+    this.closing.clear(); // Clear close tracking
     
     this.connectionStats = {
       totalSubscriptions: 0,
