@@ -26,6 +26,9 @@ interface ReactionsByMessage {
   [messageId: string]: ReactionSummary[];
 }
 
+// ✅ Global toggle for reactions subscription
+const REACTIONS_SUB_ENABLED = false; // flip to true when you're ready
+
 export function useMessageReactions(threadId: string | undefined, surface: 'dm' | 'floq' | 'plan' = 'dm') {
   const queryClient = useQueryClient();
   const currentUserId = useCurrentUserId();
@@ -110,10 +113,19 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
   const queryKeyRef = useRef(queryKey);
   queryKeyRef.current = queryKey; // Keep it updated
 
-  // ✅ TEMPORARILY DISABLED: Real-time subscription for reaction changes
-  // Re-enable after send path is stabilized
-  /*
+  // 🔇 Print the "disabled" notice only once per mount
+  const warnedRef = useRef(false);
+
   useEffect(() => {
+    if (!REACTIONS_SUB_ENABLED) {
+      if (!warnedRef.current) {
+        console.log('[useMessageReactions] Reactions subscription temporarily disabled for send path stabilization');
+        warnedRef.current = true;
+      }
+      return; // <-- do not subscribe
+    }
+
+    // ✅ Only subscribe when enabled
     if (!threadId || !currentUserId) return;
 
     const cleanup = realtimeManager.subscribe(
@@ -158,12 +170,8 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
     );
 
     return cleanup;
-    // ✅ FIXED: Only depend on truly stable values - no queryKey, no reactions
-  }, [threadId, currentUserId, queryClient]);
-  */
-
-  // ✅ TODO: Re-enable reactions subscription after send path is stable
-  console.log('[useMessageReactions] Reactions subscription temporarily disabled for send path stabilization');
+    // keep deps minimal so we don't resubscribe unnecessarily
+  }, [REACTIONS_SUB_ENABLED, threadId, currentUserId]); // <- DO NOT include queryClient, queryKey, reactions, etc.
 
   // Toggle reaction mutation
   const toggleReaction = useMutation({

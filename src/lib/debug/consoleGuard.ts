@@ -141,6 +141,7 @@ if (shouldApplyGuard) {
   const SILENCE = [
     /^\[useThreads]/,
     /^\[RealtimeManager]/,
+    /^\[useMessageReactions]/,  // 👈 add this
   ];
 
   const shouldSilence = (args: any[]) => {
