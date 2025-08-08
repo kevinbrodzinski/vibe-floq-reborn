@@ -8,6 +8,8 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { useProfile } from '@/hooks/useProfile';
 import { ChatMediaBubble } from './ChatMediaBubble';
 import { ReplySnippet } from './ReplySnippet';
+import { ReactionPicker } from './ReactionPicker';
+import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
 interface Message {
   id: string;
@@ -40,6 +42,7 @@ interface MessageListProps {
     isLoading: boolean;
   };
   currentUserId: string | null;
+  threadId?: string; // ✅ Add threadId prop
   onReply?: (messageId: string) => void;
   onReact?: (messageId: string, emoji: string) => void;
   className?: string;
@@ -48,6 +51,7 @@ interface MessageListProps {
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   currentUserId,
+  threadId,
   onReply,
   onReact,
   className
@@ -64,6 +68,9 @@ export const MessageList: React.FC<MessageListProps> = ({
       return () => cancelAnimationFrame(id);
     }
   }, [allMessages.length]);
+
+  // ✅ Use the reactions hook if we have a threadId
+  const { toggle: toggleReaction } = threadId ? useDmReactions(threadId) : { toggle: () => {} };
 
   if (messages.isLoading) {
     return (
@@ -100,7 +107,9 @@ export const MessageList: React.FC<MessageListProps> = ({
             isOwn={isOwn}
             isConsecutive={isConsecutive}
             senderId={senderId}
-            onReact={onReact}
+            currentUserId={currentUserId}
+            toggleReaction={toggleReaction}
+            onReply={onReply}
           />
         );
       })}
@@ -115,8 +124,10 @@ const MessageBubbleWrapper: React.FC<{
   isOwn: boolean;
   isConsecutive: boolean;
   senderId: string | undefined;
-  onReact?: (messageId: string, emoji: string) => void;
-}> = ({ message, isOwn, isConsecutive, senderId, onReact }) => {
+  currentUserId: string | null;
+  toggleReaction: (messageId: string, emoji: string) => void;
+  onReply?: (messageId: string) => void;
+}> = ({ message, isOwn, isConsecutive, senderId, currentUserId, toggleReaction, onReply }) => {
   const { data: senderProfile } = useProfile(senderId);
 
   // Handle media messages
@@ -160,12 +171,30 @@ const MessageBubbleWrapper: React.FC<{
             senderProfile={senderProfile}
           />
           {/* Render reactions */}
-          <div className={`mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
-            {message.reactions?.map(r => (
-              <span key={r.emoji} className="text-xs rounded px-1 border border-border/50 bg-background">
-                {r.emoji} {r.count}
-              </span>
-            ))}
+          <div className={`group mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
+            {/* Reaction picker (hidden until hover) */}
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <ReactionPicker onPick={(emoji) => toggleReaction(message.id, emoji)} />
+            </div>
+
+            {/* Current reactions with "your reaction" highlighting */}
+            {message.reactions?.map(r => {
+              const isYourReaction = r.reactors.includes(currentUserId || '');
+              return (
+                <span
+                  key={r.emoji}
+                  className={`text-xs rounded px-1 border transition-colors cursor-pointer hover:bg-muted/50 ${
+                    isYourReaction 
+                      ? 'border-primary/50 bg-primary/10 ring-1 ring-primary/20' 
+                      : 'border-border/50 bg-background/40'
+                  }`}
+                  title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
+                  onClick={() => toggleReaction(message.id, r.emoji)}
+                >
+                  {r.emoji} {r.count}
+                </span>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -183,29 +212,30 @@ const MessageBubbleWrapper: React.FC<{
         senderProfile={senderProfile}
       />
       {/* Reaction controls and display */}
-      <div className={`mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
-        {/* Quick reaction buttons */}
-        <button
-          className="text-xs opacity-70 hover:opacity-100 transition-opacity"
-          onClick={() => onReact?.(message.id, '👍')}
-          title="Like"
-        >
-          👍
-        </button>
-        <button
-          className="text-xs opacity-70 hover:opacity-100 transition-opacity"
-          onClick={() => onReact?.(message.id, '❤️')}
-          title="Love"
-        >
-          ❤️
-        </button>
+      <div className={`group mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
+        {/* Reaction picker (hidden until hover) */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <ReactionPicker onPick={(emoji) => toggleReaction(message.id, emoji)} />
+        </div>
 
-        {/* Current reactions */}
-        {message.reactions?.map(r => (
-          <span key={r.emoji} className="text-xs rounded px-1 border border-border/50 bg-background">
-            {r.emoji} {r.count}
-          </span>
-        ))}
+        {/* Current reactions with "your reaction" highlighting */}
+        {message.reactions?.map(r => {
+          const isYourReaction = r.reactors.includes(currentUserId || '');
+          return (
+            <span
+              key={r.emoji}
+              className={`text-xs rounded px-1 border transition-colors cursor-pointer hover:bg-muted/50 ${
+                isYourReaction 
+                  ? 'border-primary/50 bg-primary/10 ring-1 ring-primary/20' 
+                  : 'border-border/50 bg-background/40'
+              }`}
+              title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
+              onClick={() => toggleReaction(message.id, r.emoji)}
+            >
+              {r.emoji} {r.count}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
