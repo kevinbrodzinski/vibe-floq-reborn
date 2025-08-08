@@ -55,6 +55,12 @@ export const getOrCreateThread = async (
     if (import.meta.env.MODE === 'development') {
       console.error('[getOrCreateThread] RPC error:', error);
     }
+    
+    // If function doesn't exist, it means migrations haven't been applied
+    if (error?.code === 'PGRST202') {
+      throw new Error('P2P migrations not applied. Please run the database migrations first.');
+    }
+    
     throw error ?? new Error('No thread ID returned');
   }
   
