@@ -137,9 +137,22 @@ if (shouldApplyGuard) {
     }
   };
 
+  // Silence patterns for known spammy lines
+  const SILENCE = [
+    /^\[useThreads]/,
+    /^\[RealtimeManager]/,
+  ];
+
+  const shouldSilence = (args: any[]) => {
+    const first = args?.[0];
+    if (typeof first !== 'string') return false;
+    return SILENCE.some(rx => rx.test(first));
+  };
+
   // Wrap the methods
   const wrap = (fn: (...a: any[]) => void) => (...args: any[]) => {
     const safeArgs = args.map(safeClone);
+    if (shouldSilence(safeArgs)) return;      // 🚫 swallow spam
     const deduped = dedupe(safeArgs);
     if (deduped) fn.apply(console, deduped);
   };

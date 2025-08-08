@@ -62,13 +62,18 @@ type FriendProfileLite = {
 };
 const friendProfileCache = new Map<string, FriendProfileLite>();
 
-export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListProps) => {
-  const [search, setSearch] = useState('');
+export const ThreadsList: React.FC<ThreadsListProps> = ({
+  onThreadSelect,
+  currentProfileId,
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ThreadSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const debouncedSearch = useDebounce(search, 300);
 
-  const { threads: allThreads = [], isLoading: threadsLoading, searchThreads } = useThreads();
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // ✅ Use the new simplified hook
+  const { data: threads = [], isLoading, isFetching, error } = useThreads();
   const { data: unreadCounts = [] } = useUnreadDMCounts(currentProfileId);
 
   // Create unread counts lookup for better performance
@@ -78,90 +83,58 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
     return map;
   }, [unreadCounts]);
 
-  // Enhanced search using hook RPC with AbortController
+  // TODO: Implement search functionality separately if needed
+  // For now, just clear search results when query changes
   useEffect(() => {
     if (!debouncedSearch) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
     }
-
-    const ctrl = new AbortController(); // Added AbortController
     
-    const performSearch = async () => {
-      setSearchLoading(true);
-      try {
-        const results = await searchThreads(debouncedSearch); // Note: removed signal for now as it may not be supported
-        // results are ThreadSummary[]; normalize to ThreadSearchResult
-        const normalized: ThreadSearchResult[] = (results || []).map((r: any) => {
-          // Filter out email-like usernames
-          const normHandle = !isEmailLike(r.friendProfile?.username ?? r.friend_username)
-            ? (r.friendProfile?.username ?? r.friend_username ?? '')
-            : '';
-
-          return {
-            thread_id: r.id ?? r.thread_id,
-            friend_profile_id: r.friendProfile?.id ?? r.friend_profile_id ?? '',
-            friend_display_name: 
-              r.friendProfile?.display_name ?? 
-              r.friend_display_name ?? 
-              (normHandle || 'New User'),
-            friend_username: normHandle,
-            friend_avatar_url: r.friendProfile?.avatar_url ?? r.friend_avatar_url ?? '',
-            last_message_at: r.lastMessageAt ?? r.last_message_at ?? null,
-            my_unread_count: r.unreadCount ?? r.my_unread_count ?? 0,
-            last_message_content: r.lastMessage?.content ?? r.last_message_content ?? '',
-            match_type: r.match_type ?? 'name',
-            match_score: r.match_score ?? 80,
-          };
-        });
-
-        if (!ctrl.signal.aborted) { // Check if not aborted
-          setSearchResults(normalized);
-        }
-      } catch (e: any) {
-        if (e.name !== 'AbortError' && !ctrl.signal.aborted) { // Ignore AbortError
-          console.warn('Search failed (transient network issue):', e);
-          setSearchResults([]);
-        }
-      } finally {
-        if (!ctrl.signal.aborted) { // Only update if not aborted
-          setSearchLoading(false);
-        }
-      }
-    };
-
-    performSearch();
+    // Simple client-side search for now
+    setSearchLoading(true);
+    const filtered = threads.filter(thread => 
+      thread.friend_display_name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      thread.friend_username.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
     
-    return () => {
-      ctrl.abort(); // Abort on cleanup/re-run
-    };
-  }, [debouncedSearch, searchThreads]);
+    setSearchResults(filtered.map(thread => ({
+      thread_id: thread.id,
+      friend_profile_id: thread.friend_profile_id,
+      friend_display_name: thread.friend_display_name,
+      friend_username: thread.friend_username,
+      friend_avatar_url: thread.friend_avatar_url,
+      last_message_at: thread.last_message_at,
+      my_unread_count: unreadMap.get(thread.id) || 0,
+      last_message_content: '',
+      match_type: 'name',
+      match_score: 80,
+    })));
+    setSearchLoading(false);
+  }, [debouncedSearch, threads, unreadMap]);
 
-  // Build list when not searching - FIXED to use ThreadSummary structure with email filtering
+  // Build list when not searching - use the new thread structure
   const mappedThreads: ThreadSearchResult[] = useMemo(() => {
-    return allThreads.map((thread) => {
+    return threads.map((thread) => {
       // Choose safe name + handle, filtering out email-like usernames
-      const displayName =
-        thread.friendProfile?.display_name?.trim() ||
-        (!isEmailLike(thread.friendProfile?.username) ? thread.friendProfile?.username?.trim() : '') ||
-        'New User';
-
-      const handle = !isEmailLike(thread.friendProfile?.username) ? thread.friendProfile?.username?.trim() || '' : '';
+      const displayName = thread.friend_display_name || 'New User';
+      const handle = !isEmailLike(thread.friend_username) ? thread.friend_username : '';
 
       return {
         thread_id: thread.id,
-        friend_profile_id: thread.friendProfile?.id ?? '',
+        friend_profile_id: thread.friend_profile_id,
         friend_display_name: displayName,
-        friend_username: handle, // <= no emails here
-        friend_avatar_url: thread.friendProfile?.avatar_url ?? '',
-        last_message_at: thread.lastMessageAt ?? null,
-        my_unread_count: thread.unreadCount ?? 0,
-        match_type: 'name' as const,
-        match_score: 0,
+        friend_username: handle,
+        friend_avatar_url: thread.friend_avatar_url,
+        last_message_at: thread.last_message_at,
+        my_unread_count: unreadMap.get(thread.id) || 0,
+        last_message_content: '',
+        match_type: 'name',
+        match_score: 100,
       };
     });
-  }, [allThreads]);
+  }, [threads, unreadMap]);
 
   // Pick which array to show, dedupe by thread_id to be safe
   const threadsToShow: ThreadSearchResult[] = useMemo(() => {
@@ -193,8 +166,8 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search conversations..."
             className="pl-10 bg-background/60"
           />
@@ -207,11 +180,15 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
       </div>
 
       <ScrollArea className="flex-1">
-        {(searchLoading || threadsLoading) && (
+        {error && (
+          <div className="p-4 text-sm text-red-500">Failed to load threads</div>
+        )}
+
+        {(searchLoading || isLoading || isFetching) && (
           <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
         )}
 
-        {threadsToShow.length === 0 && !searchLoading && !threadsLoading && (
+        {threadsToShow.length === 0 && !searchLoading && !isLoading && !isFetching && !error && (
           <div className="p-4 text-center text-sm text-muted-foreground">
             {debouncedSearch ? 'No matches found' : 'No conversations yet'}
           </div>
