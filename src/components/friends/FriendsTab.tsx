@@ -50,7 +50,7 @@ export function FriendsTab() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => rejectFriendRequest({ userId: request.id, isIncoming: true })}
+                    onClick={() => rejectFriendRequest({ profileId: request.id, isIncoming: true })}
                     disabled={isAccepting || isRejecting}
                   >
                     {isRejecting ? 'Declining...' : 'Decline'}

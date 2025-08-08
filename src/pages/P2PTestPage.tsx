@@ -759,7 +759,7 @@ export default function P2PTestPage() {
     if (!selectedProfileId) return;
     
     try {
-      await rejectFriendRequest({ userId: selectedProfileId, isIncoming: false });
+      await rejectFriendRequest({ profileId: selectedProfileId, isIncoming: false });
       toast.success('Friend request rejected!');
     } catch (error) {
       toast.error('Failed to reject friend request', {

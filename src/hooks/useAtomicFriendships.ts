@@ -163,9 +163,9 @@ export function useAtomicFriendships() {
 
   // Reject/cancel friend request
   const rejectFriendRequest = useMutation({
-    mutationFn: async ({ userId, isIncoming }: { userId: string; isIncoming: boolean }) => {
+    mutationFn: async ({ profileId, isIncoming }: { profileId: string; isIncoming: boolean }) => {
       if (!currentUserId) throw new Error('User not authenticated');
-      if (!userId) throw new Error('Target user ID is required');
+      if (!profileId) throw new Error('Target profile ID is required');
 
       if (isIncoming) {
         // Rejecting an incoming request
@@ -175,7 +175,7 @@ export function useAtomicFriendships() {
             status: 'rejected',
             responded_at: new Date().toISOString(),
           })
-          .eq('profile_id', userId)
+          .eq('profile_id', profileId)
           .eq('other_profile_id', currentUserId)
           .eq('status', 'pending');
 
@@ -186,13 +186,13 @@ export function useAtomicFriendships() {
           .from('friend_requests')
           .delete()
           .eq('profile_id', currentUserId)
-          .eq('other_profile_id', userId)
+          .eq('other_profile_id', profileId)
           .eq('status', 'pending');
 
         if (error) throw error;
       }
     },
-    onMutate: async ({ userId, isIncoming }) => {
+    onMutate: async ({ profileId, isIncoming }) => {
       await queryClient.cancelQueries({ queryKey: ['friends', currentUserId] });
       
       const previousFriends = queryClient.getQueryData(['friends', currentUserId]);
@@ -204,12 +204,12 @@ export function useAtomicFriendships() {
         return {
           ...old,
           rows: old.rows.filter((friend: any) => 
-            !(friend.id === userId && friend.friend_state === 'pending')
+            !(friend.id === profileId && friend.friend_state === 'pending')
           ),
         };
       });
 
-      return { previousFriends, userId, isIncoming };
+      return { previousFriends, profileId, isIncoming };
     },
     onError: (error, variables, context) => {
       if (context?.previousFriends) {
