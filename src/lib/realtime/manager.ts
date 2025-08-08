@@ -221,7 +221,7 @@ class RealtimeManager {
     const subscription = this.subscriptions.get(key);
     if (!subscription) {
       // Silence double-unsubscribe noise (React Strict Mode can unmount twice)
-      console.debug(`[RealtimeManager] Unsubscribe ignored, no subscription found: ${key}`);
+      // console.debug(`[RealtimeManager] Unsubscribe ignored, no subscription found: ${key}`);
       return;
     }
 
