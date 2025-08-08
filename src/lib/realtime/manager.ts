@@ -1,10 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { RealtimeChannel, REALTIME_POSTGRES_CHANGES_LISTEN_EVENT } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ActiveSubscription {
   channel: RealtimeChannel;
   key: string;
   channelName: string;
+  setup: (channel: RealtimeChannel) => RealtimeChannel; // Store setup for reconnection
   cleanup: () => Promise<void>;
   hookIds: Set<string>;
   createdAt: Date;
@@ -18,31 +19,28 @@ interface ConnectionStats {
   healthySubscriptions: number;
   totalReconnects: number;
   lastReconnectAt?: Date;
-  avgLatency?: number;
 }
 
 class RealtimeManager {
   private subscriptions = new Map<string, ActiveSubscription>();
-  private mountedHooks = new Set<string>();
   private connectionStats: ConnectionStats = {
     totalSubscriptions: 0,
     healthySubscriptions: 0,
     totalReconnects: 0,
   };
-  private healthCheckInterval?: NodeJS.Timeout;
+  private mountedHooks = new Set<string>();
+  private healthCheckInterval?: ReturnType<typeof setInterval>; // Fixed typing
   private readonly MAX_RETRIES = 3;
-  private readonly RETRY_DELAY = 2000; // 2 seconds
+  private readonly RETRY_DELAY = 2000;
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
-  private readonly SUBSCRIPTION_TIMEOUT = 300000; // 5 minutes inactive cleanup
+  private readonly INACTIVE_THRESHOLD = 300000; // 5 minutes
 
   constructor() {
     this.startHealthMonitoring();
-    // Note: Global error handling moved to individual channel subscriptions
-    // as Supabase doesn't provide global realtime connection events
   }
 
   /**
-   * Subscribe to a realtime channel with deduplication and enhanced error handling
+   * Subscribe to a realtime channel with automatic retry and health monitoring
    */
   subscribe(
     key: string,
@@ -50,22 +48,19 @@ class RealtimeManager {
     setup: (channel: RealtimeChannel) => RealtimeChannel,
     hookId: string
   ): () => void {
-    console.log(`[RealtimeManager] Subscribe request: ${key} from ${hookId}`);
-    
-    // Track mounted hook
+    // Track this hook
     this.mountedHooks.add(hookId);
 
-    // If subscription already exists, add this hook to tracking
+    // If subscription already exists, just add this hook to it
     const existingSubscription = this.subscriptions.get(key);
     if (existingSubscription) {
       existingSubscription.hookIds.add(hookId);
-      existingSubscription.lastActivity = new Date();
-      console.log(`[RealtimeManager] Reusing existing subscription: ${key}`);
+      console.log(`[RealtimeManager] Added hook ${hookId} to existing subscription ${key}`);
       return () => this.unsubscribe(key, hookId);
     }
 
-    // Create new subscription with retry logic
-    this.createSubscription(key, channelName, setup, hookId);
+    // Create new subscription
+    this.createSubscription(key, channelName, setup, hookId, 0);
 
     return () => this.unsubscribe(key, hookId);
   }
@@ -78,26 +73,36 @@ class RealtimeManager {
     channelName: string,
     setup: (channel: RealtimeChannel) => RealtimeChannel,
     hookId: string,
-    retryCount = 0
+    retryCount: number
   ) {
     try {
       console.log(`[RealtimeManager] Creating subscription: ${key} (attempt ${retryCount + 1})`);
       
       const channel = supabase.channel(channelName);
       
-      // Add connection status handlers
-      const configuredChannel = setup(channel)
-        .on('system', { event: 'PRESENCE_STATE' }, (payload) => {
-          console.log(`[RealtimeManager] Presence state for ${key}:`, payload);
-        })
-        .on('system', { event: 'PRESENCE_DIFF' }, (payload) => {
-          console.log(`[RealtimeManager] Presence diff for ${key}:`, payload);
-        });
+      // Configure the channel with the provided setup function
+      const configuredChannel = setup(channel);
 
-      // Add enhanced channel event handling
-      this.handleChannelEvents(configuredChannel, channelName);
+      // Only add presence handlers if this is actually a presence channel
+      // For postgres_changes channels, skip presence entirely
+      const isPresenceChannel = channelName.includes('presence') || channelName.includes('typing');
+      if (isPresenceChannel) {
+        configuredChannel
+          .on('presence', { event: 'sync' }, (state) => {
+            console.log(`[RealtimeManager] Presence sync for ${key}:`, state);
+            this.updateActivity(key);
+          })
+          .on('presence', { event: 'join' }, (payload) => {
+            console.log(`[RealtimeManager] Presence join for ${key}:`, payload);
+            this.updateActivity(key);
+          })
+          .on('presence', { event: 'leave' }, (payload) => {
+            console.log(`[RealtimeManager] Presence leave for ${key}:`, payload);
+            this.updateActivity(key);
+          });
+      }
 
-      // Subscribe with promise handling
+      // Subscribe with enhanced promise handling
       const subscriptionPromise = new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error(`Subscription timeout for ${key}`));
@@ -109,8 +114,8 @@ class RealtimeManager {
             if (status === 'SUBSCRIBED') {
               console.log(`[RealtimeManager] Successfully subscribed to ${key}`);
               resolve();
-            } else if (status === 'CHANNEL_ERROR' || error) {
-              console.error(`[RealtimeManager] Subscription error for ${key}:`, error);
+            } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT' || error) {
+              console.error(`[RealtimeManager] Subscription error for ${key}:`, error || status);
               reject(error || new Error(`Subscription failed with status: ${status}`));
             }
           });
@@ -131,6 +136,7 @@ class RealtimeManager {
         channel: configuredChannel,
         key,
         channelName,
+        setup, // Store setup function for reconnection
         cleanup,
         hookIds: new Set([hookId]),
         createdAt: new Date(),
@@ -149,10 +155,11 @@ class RealtimeManager {
       console.error(`[RealtimeManager] Failed to create subscription ${key}:`, error);
       
       if (retryCount < this.MAX_RETRIES) {
-        console.log(`[RealtimeManager] Retrying subscription ${key} in ${this.RETRY_DELAY}ms`);
+        const backoffDelay = this.RETRY_DELAY * (1 << retryCount) + Math.random() * 250; // Exponential backoff with jitter
+        console.log(`[RealtimeManager] Retrying subscription ${key} in ${backoffDelay}ms`);
         setTimeout(() => {
           this.createSubscription(key, channelName, setup, hookId, retryCount + 1);
-        }, this.RETRY_DELAY * (retryCount + 1)); // Exponential backoff
+        }, backoffDelay);
         
         this.connectionStats.totalReconnects++;
         this.connectionStats.lastReconnectAt = new Date();
@@ -168,36 +175,39 @@ class RealtimeManager {
    * Unsubscribe from a channel when hook unmounts
    */
   private async unsubscribe(key: string, hookId: string) {
-    console.log(`[RealtimeManager] Unsubscribe request: ${key} from ${hookId}`);
-    
-    // Remove hook from global tracking
-    this.mountedHooks.delete(hookId);
-
     const subscription = this.subscriptions.get(key);
     if (!subscription) {
       console.warn(`[RealtimeManager] No subscription found for key: ${key}`);
       return;
     }
 
-    // Remove hook from this subscription's tracking
+    // Remove this hook from the subscription
     subscription.hookIds.delete(hookId);
+    this.mountedHooks.delete(hookId);
 
-    // Only cleanup if no other hooks are using this subscription
+    // If no more hooks are using this subscription, clean it up
     if (subscription.hookIds.size === 0) {
-      console.log(`[RealtimeManager] No more hooks using ${key}, cleaning up...`);
+      console.log(`[RealtimeManager] Cleaning up unused subscription: ${key}`);
       this.subscriptions.delete(key);
-      this.connectionStats.totalSubscriptions--;
+      
+      // Update stats properly
+      this.connectionStats.totalSubscriptions = Math.max(0, this.connectionStats.totalSubscriptions - 1);
       if (subscription.isHealthy) {
-        this.connectionStats.healthySubscriptions--;
+        this.connectionStats.healthySubscriptions = Math.max(0, this.connectionStats.healthySubscriptions - 1);
       }
-      await subscription.cleanup();
+      
+      try {
+        await subscription.cleanup();
+      } catch (error) {
+        console.error(`[RealtimeManager] Error during cleanup for ${key}:`, error);
+      }
     } else {
-      console.log(`[RealtimeManager] ${subscription.hookIds.size} hooks still using ${key}`);
+      console.log(`[RealtimeManager] Keeping subscription ${key} (${subscription.hookIds.size} hooks still using it)`);
     }
   }
 
   /**
-   * Start health monitoring for subscriptions
+   * Start health monitoring
    */
   private startHealthMonitoring() {
     this.healthCheckInterval = setInterval(() => {
@@ -206,69 +216,86 @@ class RealtimeManager {
   }
 
   /**
-   * Perform health check on all subscriptions
+   * Perform health check and cleanup inactive subscriptions
    */
-  private performHealthCheck() {
+  private async performHealthCheck() {
     const now = new Date();
-    let healthyCount = 0;
     const subscriptionsToCleanup: string[] = [];
 
-    for (const [key, subscription] of this.subscriptions.entries()) {
-      const timeSinceLastActivity = now.getTime() - subscription.lastActivity.getTime();
+    for (const [key, subscription] of this.subscriptions) {
+      const timeSinceActivity = now.getTime() - subscription.lastActivity.getTime();
       
-      // Mark as unhealthy if no activity for a while
-      if (timeSinceLastActivity > this.SUBSCRIPTION_TIMEOUT) {
-        console.warn(`[RealtimeManager] Subscription ${key} inactive for ${timeSinceLastActivity}ms`);
-        subscription.isHealthy = false;
-        
-        // Clean up inactive subscriptions with no hooks
-        if (subscription.hookIds.size === 0) {
-          subscriptionsToCleanup.push(key);
-        }
-      } else {
-        subscription.isHealthy = true;
-        healthyCount++;
+      if (timeSinceActivity > this.INACTIVE_THRESHOLD) {
+        console.warn(`[RealtimeManager] Subscription ${key} inactive for ${Math.round(timeSinceActivity / 1000)}s, marking for cleanup`);
+        subscriptionsToCleanup.push(key);
       }
     }
 
-    // Cleanup inactive subscriptions
-    for (const key of subscriptionsToCleanup) {
-      console.log(`[RealtimeManager] Cleaning up inactive subscription: ${key}`);
+    // Clean up inactive subscriptions with proper stats tracking
+    await Promise.all(subscriptionsToCleanup.map(async (key) => {
       const subscription = this.subscriptions.get(key);
-      if (subscription) {
-        this.subscriptions.delete(key);
-        subscription.cleanup();
+      if (!subscription) return;
+      
+      this.subscriptions.delete(key);
+      
+      // Update stats properly
+      this.connectionStats.totalSubscriptions = Math.max(0, this.connectionStats.totalSubscriptions - 1);
+      if (subscription.isHealthy) {
+        this.connectionStats.healthySubscriptions = Math.max(0, this.connectionStats.healthySubscriptions - 1);
       }
+      
+      try {
+        await subscription.cleanup();
+      } catch (error) {
+        console.error(`[RealtimeManager] Error cleaning up inactive subscription ${key}:`, error);
+      }
+    }));
+
+    console.log(`[RealtimeManager] Health check complete. Active: ${this.subscriptions.size}, Cleaned: ${subscriptionsToCleanup.length}`);
+  }
+
+  /**
+   * Reconnect a subscription (now properly implemented)
+   */
+  async reconnectSubscription(key: string) {
+    const subscription = this.subscriptions.get(key);
+    if (!subscription) {
+      console.warn(`[RealtimeManager] Cannot reconnect: subscription ${key} not found`);
+      return;
     }
 
-    this.connectionStats.healthySubscriptions = healthyCount;
+    console.log(`[RealtimeManager] Reconnecting subscription: ${key}`);
     
-    // Log stats periodically
-    if (this.subscriptions.size > 0) {
-      console.log(`[RealtimeManager] Health check - Active: ${this.subscriptions.size}, Healthy: ${healthyCount}, Hooks: ${this.mountedHooks.size}`);
+    // Store the hook IDs and setup function
+    const hookIds = Array.from(subscription.hookIds);
+    const { channelName, setup } = subscription;
+    
+    // Clean up the old subscription
+    await subscription.cleanup();
+    this.subscriptions.delete(key);
+    
+    // Update stats
+    this.connectionStats.totalSubscriptions = Math.max(0, this.connectionStats.totalSubscriptions - 1);
+    if (subscription.isHealthy) {
+      this.connectionStats.healthySubscriptions = Math.max(0, this.connectionStats.healthySubscriptions - 1);
+    }
+    
+    // Recreate the subscription for each hook
+    for (const hookId of hookIds) {
+      this.createSubscription(key, channelName, setup, hookId, 0);
     }
   }
 
   /**
-   * Enhanced channel subscription with proper error handling
-   * Note: Supabase handles connection events at the channel level, not globally
+   * Get active subscriptions
    */
-  private handleChannelEvents(channel: any, channelName: string) {
-    // Handle channel-specific events (this is the proper way with Supabase)
-    channel.on('system', { event: '*' }, (payload: any) => {
-      console.log(`[RealtimeManager] Channel ${channelName} system event:`, payload);
-      
-      if (payload.type === 'connected') {
-        console.log(`[RealtimeManager] Channel ${channelName} connected`);
-      } else if (payload.type === 'disconnected') {
-        console.log(`[RealtimeManager] Channel ${channelName} disconnected`);
-        // Mark subscription as potentially unhealthy
-        const subscription = this.subscriptions.get(channelName);
-        if (subscription) {
-          subscription.isHealthy = false;
-        }
-      }
-    });
+  getActiveSubscriptions(): Array<{ key: string; channelName: string; hookCount: number; isHealthy: boolean }> {
+    return Array.from(this.subscriptions.entries()).map(([key, sub]) => ({
+      key,
+      channelName: sub.channelName,
+      hookCount: sub.hookIds.size,
+      isHealthy: sub.isHealthy,
+    }));
   }
 
   /**
@@ -279,62 +306,18 @@ class RealtimeManager {
   }
 
   /**
-   * Get active subscription info
-   */
-  getActiveSubscriptions(): Array<{
-    key: string;
-    channelName: string;
-    hookCount: number;
-    isHealthy: boolean;
-    age: number;
-    lastActivity: Date;
-  }> {
-    return Array.from(this.subscriptions.entries()).map(([key, sub]) => ({
-      key,
-      channelName: sub.channelName,
-      hookCount: sub.hookIds.size,
-      isHealthy: sub.isHealthy,
-      age: Date.now() - sub.createdAt.getTime(),
-      lastActivity: sub.lastActivity,
-    }));
-  }
-
-  /**
-   * Force reconnect a specific subscription
-   */
-  async reconnectSubscription(key: string) {
-    const subscription = this.subscriptions.get(key);
-    if (!subscription) {
-      console.warn(`[RealtimeManager] Cannot reconnect - subscription not found: ${key}`);
-      return;
-    }
-
-    console.log(`[RealtimeManager] Force reconnecting subscription: ${key}`);
-    
-    // Store hook IDs before cleanup
-    const hookIds = Array.from(subscription.hookIds);
-    
-    // Cleanup current subscription
-    await subscription.cleanup();
-    this.subscriptions.delete(key);
-
-    // Recreate subscription for all hooks
-    // Note: This requires storing the original setup function, which would need architectural changes
-    // For now, we'll mark as unhealthy and let individual hooks handle reconnection
-    subscription.isHealthy = false;
-  }
-
-  /**
-   * Force cleanup of all subscriptions (for testing or emergency cleanup)
+   * Clean up all subscriptions and stop health monitoring
    */
   async cleanup() {
-    console.log('[RealtimeManager] Force cleanup of all subscriptions');
+    console.log('[RealtimeManager] Starting cleanup...');
     
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
     }
 
     const cleanupPromises = Array.from(this.subscriptions.values()).map(sub => sub.cleanup());
+    
     this.subscriptions.clear();
     this.mountedHooks.clear();
     
@@ -357,6 +340,13 @@ class RealtimeManager {
       subscription.lastActivity = new Date();
       subscription.isHealthy = true;
     }
+  }
+
+  /**
+   * Destroy the manager (for cleanup on app teardown)
+   */
+  destroy() {
+    this.cleanup();
   }
 }
 
