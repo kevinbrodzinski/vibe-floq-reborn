@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { realtimeManager } from '@/lib/realtime/manager';
@@ -30,7 +30,7 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
   const queryClient = useQueryClient();
   const currentUserId = useCurrentUserId();
   
-  const queryKey = ['message-reactions', surface, threadId];
+  const queryKey = ['message-reactions', surface, threadId] as const;
 
   // Fetch reactions for all messages in thread
   const { data: reactions = [], isLoading } = useQuery({
@@ -105,7 +105,10 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
     staleTime: 30_000, // 30 seconds
   });
 
-  // Real-time subscription for reaction changes
+  // ✅ FIX: Stable subscription with useRef hookId
+  const hookIdRef = useRef(`reactions-hook-${threadId ?? 'none'}-${Math.random().toString(36).slice(2)}`);
+
+  // Real-time subscription for reaction changes - FIXED: stable dependencies
   useEffect(() => {
     if (!threadId || !currentUserId) return;
 
@@ -127,13 +130,13 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
                 
                 queryClient.setQueryData(queryKey, (oldData: MessageReaction[] = []) => {
                   if (eventType === 'INSERT' && newReaction) {
-                    // Check if reaction is for a message in our thread
-                    const isRelevant = reactions.some(r => r.message_id === newReaction.message_id) ||
-                                     oldData.some(r => r.message_id === newReaction.message_id);
+                    // Check if reaction already exists to prevent duplicates
+                    if (oldData.some(r => r.id === newReaction.id)) return oldData;
                     
-                    if (isRelevant && !oldData.find(r => r.id === newReaction.id)) {
-                      return [...oldData, newReaction as MessageReaction];
-                    }
+                    // Only keep if it belongs to our thread:
+                    // (we don't have threadId on row, so gate by known message ids in cache)
+                    const relevant = oldData.some(r => r.message_id === newReaction.message_id);
+                    return relevant ? [...oldData, newReaction as MessageReaction] : oldData;
                   } else if (eventType === 'DELETE' && oldReaction) {
                     return oldData.filter(r => r.id !== oldReaction.id);
                   } else if (eventType === 'UPDATE' && newReaction) {
@@ -147,11 +150,12 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
               }
             )
           ),
-      `reactions-hook-${threadId}`
+      hookIdRef.current
     );
 
     return cleanup;
-  }, [threadId, currentUserId, queryClient, queryKey, reactions]);
+    // ✅ FIXED: Only depend on stable values - no reactions or queryKey
+  }, [threadId, currentUserId, queryClient]);
 
   // Toggle reaction mutation
   const toggleReaction = useMutation({

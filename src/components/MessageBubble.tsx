@@ -13,6 +13,7 @@ import { useMessageReactions } from '@/hooks/messaging/useMessageReactions';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { format, isToday, isYesterday } from 'date-fns';
 import { getAvatarUrl } from '@/lib/avatar';
+import { toast } from 'sonner';
 
 interface DirectMessage {
   id: string;
@@ -68,9 +69,17 @@ export function MessageBubble({
     }
   };
 
-  const handleReaction = (emoji: string) => {
-    toggleReaction({ messageId: message.id, emoji });
-    setShowReactionPicker(false);
+  const handleReaction = async (emoji: string) => {
+    try {
+      await toggleReaction.mutateAsync({ messageId: message.id, emoji });
+      setShowReactionPicker(false);
+    } catch (error: any) {
+      console.error('[MessageBubble] Reaction failed:', error);
+      // Show user-friendly error toast
+      toast.error('Failed to add reaction', {
+        description: error.message || 'Please try again'
+      });
+    }
   };
 
   const handleCopyMessage = () => {
