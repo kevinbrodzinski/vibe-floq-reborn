@@ -60,23 +60,41 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
 
       console.log('[useSendMessage] Sending message...');
       try {
-        // ✅ FIX: Use supabase.functions.invoke instead of supaFn to avoid CORS issues
-        const { data, error } = await supabase.functions.invoke('send-message', {
-          body: {
-            thread_id: threadId,
-            profile_id: user.id,
-            content,
-            reply_to: replyTo ?? null,
-            client_id,
-          }
-        });
-        
-        if (error) throw error;
-        
-        console.log('[useSendMessage] Edge Function success:', data);
-        return { message: data, client_id, threadId };
-      } catch (edgeError) {
-        console.warn('[useSendMessage] Edge Function failed, trying RPC fallback:', edgeError);
+        // ✅ FIX: Use direct RPC for DM messages, Edge Function for others
+        if (surface === 'dm') {
+          // ✅ DM: Use direct RPC to avoid CORS issues
+          const { data, error } = await supabase.rpc('send_dm_message_uuid', {
+            p_thread_id: threadId,
+            p_sender_id: user.id,
+            p_body: content,
+            p_reply_to: replyTo ?? null,
+            p_media: null,
+            p_type: 'text'
+          });
+          
+          if (error) throw error;
+          
+          console.log('[useSendMessage] RPC success:', data);
+          return { message: data, client_id, threadId };
+        } else {
+          // ✅ FLOQ/PLAN: Keep using Edge Function for now
+          const { data, error } = await supabase.functions.invoke('send-message', {
+            body: {
+              thread_id: threadId,
+              profile_id: user.id,
+              content,
+              reply_to: replyTo ?? null,
+              client_id,
+            }
+          });
+          
+          if (error) throw error;
+          
+          console.log('[useSendMessage] Edge Function success:', data);
+          return { message: data, client_id, threadId };
+        }
+      } catch (primaryError) {
+        console.warn('[useSendMessage] Primary method failed, trying RPC fallback:', primaryError);
         
         // ✅ FIX: Fallback to correct RPC function name
         try {
@@ -93,7 +111,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
           console.log('[useSendMessage] RPC fallback success:', data);
           return { message: data, client_id, threadId };
         } catch (rpcError) {
-          console.error('[useSendMessage] Both Edge Function and RPC failed:', { edgeError, rpcError });
+          console.error('[useSendMessage] Both primary and RPC fallback failed:', { primaryError, rpcError });
           throw rpcError; // Throw the RPC error as it's likely more informative
         }
       }

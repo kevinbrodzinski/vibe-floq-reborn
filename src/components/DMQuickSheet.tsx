@@ -291,8 +291,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       const optimisticMessage = {
         id: tempId,
         thread_id: threadId,
-        sender_id: currentProfileId,
-        profile_id: currentProfileId,
+        profile_id: currentProfileId, // ✅ FIX: Use profile_id to match database schema
         content: messageContent,
         created_at: new Date().toISOString(),
         metadata: { client_id: tempId },
@@ -312,7 +311,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
     try {
       console.log('[DMQuickSheet] Calling sendMessageRPC...');
-      const newId = await sendMessageRPC({
+      const newMessage = await sendMessageRPC({
         threadId,
         senderId: currentProfileId,
         body: messageContent,
@@ -321,7 +320,22 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         type: 'text',
       });
       
-      console.log('[DMQuickSheet] sendMessageRPC success, newId:', newId);
+      console.log('[DMQuickSheet] sendMessageRPC success, newMessage:', newMessage);
+      
+      // ✅ Replace optimistic message with real server data
+      queryClient.setQueryData(['messages', 'dm', threadId], (old: any) => {
+        if (!old) return old;
+        
+        const pages = old.pages || [];
+        const updatedPages = pages.map((page: any[]) => 
+          page.map(msg => msg.id === tempId ? newMessage : msg)
+        );
+        
+        return {
+          ...old,
+          pages: updatedPages
+        };
+      });
       
       // Clear input/reply after success
       setInput('');
