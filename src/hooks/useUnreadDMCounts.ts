@@ -17,15 +17,15 @@ export const useUnreadDMCounts = (selfId: string | null) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('direct_threads')
-        .select('id, member_a, member_b, unread_a, unread_b')
-        .or(`member_a.eq.${selfId},member_b.eq.${selfId}`);
+        .select('id, member_a_profile_id, member_b_profile_id, unread_a, unread_b')
+        .or(`member_a_profile_id.eq.${selfId},member_b_profile_id.eq.${selfId}`);
       
       if (error) throw error;
       
       return (data || [])
         .map(t => ({
           thread_id: t.id,
-          cnt: t.member_a === selfId ? t.unread_a : t.unread_b
+          cnt: t.member_a_profile_id === selfId ? t.unread_a : t.unread_b
         }))
         .filter(r => r.cnt > 0);
     },
@@ -67,7 +67,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_a=eq.${selfId}`
+        filter: `member_a_profile_id.eq.${selfId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
           if (!mounted) return;
@@ -84,7 +84,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_b=eq.${selfId}`
+        filter: `member_b_profile_id.eq.${selfId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
           if (!mounted) return;

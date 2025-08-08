@@ -46,9 +46,9 @@ export const getOrCreateThread = async (
     throw new Error('Cannot DM yourself');
   }
 
-  const { data, error } = await supabase.rpc('get_or_create_dm_thread', {
-    p_profile_a: me,     // Updated to match migration parameter names
-    p_profile_b: friend, // Updated to match migration parameter names
+  const { data, error } = await supabase.rpc('create_or_get_thread', {
+    p_member_a_profile_id: me,     // Updated to match our migration parameter names
+    p_member_b_profile_id: friend, // Updated to match our migration parameter names
   });
 
   if (error || !data) {

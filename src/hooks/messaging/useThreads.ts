@@ -61,7 +61,7 @@ export function useThreads() {
           member_a_profile:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
           member_b_profile:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
         `)
-        .or(`member_a.eq.${currentUserId},member_b.eq.${currentUserId}`)
+        .or(`member_a_profile_id.eq.${currentUserId},member_b_profile_id.eq.${currentUserId}`)
         .order('last_message_at', { ascending: false, nullsLast: true });
 
       if (error) {
@@ -92,7 +92,7 @@ export function useThreads() {
               event: '*',
               schema: 'public',
               table: 'direct_threads',
-              filter: `member_a_profile_id=eq.${currentUserId}`,
+              filter: `member_a_profile_id.eq.${currentUserId}`,
             },
             createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
               ({ eventType, new: newThread, old: oldThread }) => {
@@ -126,7 +126,7 @@ export function useThreads() {
               event: '*',
               schema: 'public',
               table: 'direct_threads',
-              filter: `member_b_profile_id=eq.${currentUserId}`,
+              filter: `member_b_profile_id.eq.${currentUserId}`,
             },
             createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
               ({ eventType, new: newThread, old: oldThread }) => {
@@ -215,7 +215,7 @@ export function useThreads() {
       queryClient.setQueryData(queryKey, (oldData: DirectThreadWithProfiles[] = []) => {
         return oldData.map(thread => {
           if (thread.id === threadId) {
-            const isMemberA = thread.member_a === currentUserId;
+            const isMemberA = thread.member_a_profile_id === currentUserId;
             return {
               ...thread,
               unread_a: isMemberA ? 0 : thread.unread_a,
@@ -239,9 +239,9 @@ export function useThreads() {
   // Process threads into summary format
   const threadSummaries: ThreadSummary[] = useMemo(() => {
     return threads.map(thread => {
-      const isMemberA = thread.member_a === currentUserId;
+      const isMemberA = thread.member_a_profile_id === currentUserId;
       const friendProfile = isMemberA ? thread.member_b_profile : thread.member_a_profile;
-      const friendId = isMemberA ? thread.member_b : thread.member_a;
+      const friendId = isMemberA ? thread.member_b_profile_id : thread.member_a_profile_id;
       const unreadCount = isMemberA ? (thread.unread_a || 0) : (thread.unread_b || 0);
 
       return {
