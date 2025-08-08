@@ -9,6 +9,7 @@ import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { formatDistanceToNow } from 'date-fns';
 import { Search, MessageCircle, User, Hash } from 'lucide-react';
 import React from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ThreadsListProps {
   onThreadSelect: (threadId: string, friendProfileId: string) => void;
@@ -50,6 +51,14 @@ interface ThreadSearchResult {
   match_score: number;
 }
 
+// ---- Lazy profile hydration cache ----
+type FriendProfileLite = {
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+};
+const friendProfileCache = new Map<string, FriendProfileLite>();
+
 export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListProps) => {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<ThreadSearchResult[]>([]);
@@ -79,11 +88,11 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
     const performSearch = async () => {
       setSearchLoading(true);
       try {
-        const results = await searchThreads(debouncedSearch, { signal: ctrl.signal }); // Pass signal
+        const results = await searchThreads(debouncedSearch); // Note: removed signal for now as it may not be supported
         // results are ThreadSummary[]; normalize to ThreadSearchResult
         const normalized: ThreadSearchResult[] = (results || []).map((r: any) => ({
           thread_id: r.id ?? r.thread_id,
-          friend_profile_id: r.friendProfile?.id ?? r.friend_profile_id,
+          friend_profile_id: r.friendProfile?.id ?? r.friend_profile_id ?? '',
           friend_display_name: r.friendProfile?.display_name ?? r.friend_display_name ?? '',
           friend_username: r.friendProfile?.username ?? r.friend_username ?? '',
           friend_avatar_url: r.friendProfile?.avatar_url ?? r.friend_avatar_url ?? '',
@@ -116,24 +125,20 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
     };
   }, [debouncedSearch, searchThreads]);
 
-  // Build list when not searching
+  // Build list when not searching - FIXED to use ThreadSummary structure
   const mappedThreads: ThreadSearchResult[] = useMemo(() => {
-    return allThreads.map((thread: any) => {
-      const isCurrentProfileMemberA = thread.member_a_profile_id === currentProfileId;
-      const friendProfile = isCurrentProfileMemberA ? thread.member_b_profile : thread.member_a_profile;
-      return {
-        thread_id: thread.id,
-        friend_profile_id: isCurrentProfileMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
-        friend_display_name: friendProfile?.display_name || '',
-        friend_username: friendProfile?.username || '',
-        friend_avatar_url: friendProfile?.avatar_url || '',
-        last_message_at: thread.last_message_at,
-        my_unread_count: unreadMap.get(thread.id) ?? 0,
-        match_type: 'name' as const,
-        match_score: 0,
-      };
-    });
-  }, [allThreads, currentProfileId, unreadMap]);
+    return allThreads.map((thread) => ({
+      thread_id: thread.id,
+      friend_profile_id: thread.friendProfile?.id ?? '', // ✅ This is the correct field!
+      friend_display_name: thread.friendProfile?.display_name ?? '',
+      friend_username: thread.friendProfile?.username ?? '',
+      friend_avatar_url: thread.friendProfile?.avatar_url ?? '',
+      last_message_at: thread.lastMessageAt ?? null,
+      my_unread_count: thread.unreadCount ?? 0, // Use hook's unreadCount, override with unreadMap if needed
+      match_type: 'name' as const,
+      match_score: 0,
+    }));
+  }, [allThreads]);
 
   // Pick which array to show, dedupe by thread_id to be safe
   const threadsToShow: ThreadSearchResult[] = useMemo(() => {
@@ -209,8 +214,49 @@ interface ThreadRowProps {
 }
 
 const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
+  const [fallback, setFallback] = React.useState<FriendProfileLite | null>(null);
+
+  // If we're missing names, hydrate from profiles
+  React.useEffect(() => {
+    const id = thread.friend_profile_id;
+    const hasNames =
+      Boolean(thread.friend_display_name) || Boolean(thread.friend_username);
+    if (!id || hasNames) return;
+
+    // cache first
+    const cached = friendProfileCache.get(id);
+    if (cached) {
+      setFallback(cached);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name, username, avatar_url')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!cancelled && !error && data) {
+        friendProfileCache.set(id, data);
+        setFallback(data);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [thread.friend_profile_id, thread.friend_display_name, thread.friend_username]);
+
   const displayName =
-    thread.friend_display_name || thread.friend_username || 'Unknown User';
+    fallback?.display_name ||
+    thread.friend_display_name ||
+    thread.friend_username ||
+    fallback?.username ||
+    'Unknown User';
+
+  const avatarUrl = fallback?.avatar_url || thread.friend_avatar_url || undefined;
   const hasUnread = (thread.my_unread_count ?? 0) > 0;
 
   const getMatchIcon = () => {
@@ -230,7 +276,7 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
       className="flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer border-b border-border/50"
     >
       <Avatar className="w-10 h-10">
-        <AvatarImage src={thread.friend_avatar_url} />
+        <AvatarImage src={avatarUrl} />
         <AvatarFallback className="bg-primary/10 text-primary font-medium">
           {displayName.charAt(0).toUpperCase()}
         </AvatarFallback>
@@ -258,10 +304,11 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
         </div>
 
         {searchQuery &&
-          thread.friend_username &&
-          thread.friend_username !== thread.friend_display_name && (
+          (fallback?.username || thread.friend_username) &&
+          (fallback?.username || thread.friend_username) !==
+            (fallback?.display_name || thread.friend_display_name) && (
             <div className="text-xs text-muted-foreground mt-0.5">
-              @{highlightMatch(thread.friend_username, searchQuery)}
+              @{highlightMatch(fallback?.username || thread.friend_username || '', searchQuery)}
             </div>
           )}
 
