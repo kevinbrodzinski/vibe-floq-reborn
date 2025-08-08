@@ -25,9 +25,11 @@ export const MessagesSheet = ({
   const { user } = useAuth();
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
   const [selectedFriendProfileId, setSelectedFriendProfileId] = useState<string | undefined>(undefined);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | undefined>(undefined);
 
   const handleThreadSelect = (threadId: string, friendProfileId: string) => {
     setSelectedFriendProfileId(friendProfileId);
+    setSelectedThreadId(threadId); // ✅ Keep this! Prevent resolution loop
     setDmSheetOpen(true);
     // Don't close the list immediately - let user navigate back
   };
@@ -65,6 +67,7 @@ export const MessagesSheet = ({
         open={dmSheetOpen}
         onOpenChange={setDmSheetOpen}
         friendId={selectedFriendProfileId}
+        threadId={selectedThreadId} // ✅ Pass both IDs to prevent loop
       />
     </>
   );

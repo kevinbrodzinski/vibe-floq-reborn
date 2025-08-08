@@ -39,16 +39,19 @@ interface DMQuickSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   friendId: string | null; // friend's profile_id
+  threadId?: string; // optional threadId from parent (when available)
 }
 
-export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
+export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: threadIdProp }: DMQuickSheetProps) => {
   // Debug parent props
-  console.log('[PARENT] DMQuickSheet props:', { open, friendId });
+  console.log('[PARENT] DMQuickSheet props:', { open, friendId, threadIdProp });
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [sending, setSending] = useState(false); // Local sending state as fallback
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null); // profile_id is the main user identifier
-  const [threadId, setThreadId] = useState<string | null | undefined>(undefined); // undefined = loading, null = error, string = success
+  const [threadId, setThreadId] = useState<string | undefined>(threadIdProp); // Local threadId state
+  const lastFriendRef = useRef<string | undefined>(undefined);
+  const reqRef = useRef(0);
   const { user } = useAuth(); // Use auth context instead of one-off getUser()
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -61,15 +64,22 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     return getOrCreateThread(me, friend);
   }, []);
 
-   // Auth guard and unified messaging hooks - guard queries until thread is ready
-   const enabled = !!threadId && !!currentProfileId;
-   const messages = useMessages(threadId || '', 'dm', { enabled });
-   const sendMut = useSendMessage('dm');
+  // Keep local state in sync if parent already knows the threadId
+  useEffect(() => {
+    if (threadIdProp) setThreadId(threadIdProp);
+  }, [threadIdProp]);
+
+  // Auth guard and unified messaging hooks - guard queries until thread is ready
+  const isValidUuid = !!threadId && /^[0-9a-f-]{36}$/i.test(threadId);
+  const enabled = isValidUuid && !!currentProfileId;
+  const messages = useMessages(isValidUuid ? threadId : undefined, 'dm', { enabled });
+  const sendMut = useSendMessage('dm');
 
   // Debug messages hook state
   useEffect(() => {
     console.log('[useMessages]', {
       threadId,
+      isValidUuid,
       enabled,
       isLoading: messages.isLoading,
       isFetching: messages.isFetching,
@@ -79,6 +89,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     });
   }, [
     threadId,
+    isValidUuid,
     enabled,
     messages.isLoading,
     messages.isFetching,
@@ -87,9 +98,11 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   ]);
   
 
-
-  // Enhanced typing indicators
-  const { typingUsers, handleTyping, handleMessageSent, hasTypingUsers } = useTypingIndicators(threadId, 'dm');
+  // Enhanced typing indicators - only subscribe with valid UUID
+  const { typingUsers, handleTyping, handleMessageSent, hasTypingUsers } = useTypingIndicators(
+    isValidUuid ? threadId : undefined, 
+    'dm'
+  );
   const typingText = useTypingIndicatorText(typingUsers);
 
   // Debug logging for overlay management
@@ -108,9 +121,11 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       currentProfileId,
       friendId,
       threadId,
+      threadIdProp,
+      isValidUuid,
       enabled
     });
-  }, [currentProfileId, friendId, threadId, enabled]);
+  }, [currentProfileId, friendId, threadId, threadIdProp, isValidUuid, enabled]);
 
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({
@@ -130,74 +145,92 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     setCurrentProfileId(profileId);
   }, [user]);
 
-   // Initialize thread when both user and friend are available AND sheet is open
-   useEffect(() => {
-     if (!open || !currentProfileId || !friendId) {
-       // Reset to null on sheet close to clear previous error state
-       setThreadId(open ? undefined : null);
-       return;
-     }
-     
-     // Add race condition protection with abort controller
-     const abortController = new AbortController();
-     
-     console.log('[DM_SHEET] Getting thread for:', { currentProfileId, friendId });
-     setThreadId(undefined); // show loading state
-     
-     threadIdFrom(currentProfileId, friendId)
-       .then(id => {
-         // Only apply result if this effect hasn't been superseded
-         if (!abortController.signal.aborted) {
-           console.log('[DM_SHEET] Thread resolved:', id);
-           setThreadId(id);
-         }
-       })
-       .catch(e => {
-         if (!abortController.signal.aborted) {
-           console.error('[DM_SHEET] Thread error:', e);
-           
-           // Provide specific error messages based on the error
-           let errorTitle = 'Chat error';
-           let errorDescription = 'Could not start chat';
-           
-           if (e.message && e.message.includes('not friends')) {
-             errorTitle = 'Cannot start conversation';
-             errorDescription = 'You can only send direct messages to your friends. Send them a friend request first!';
-           } else if (e.message && e.message.includes('yourself')) {
-             errorTitle = 'Cannot message yourself';
-             errorDescription = 'You cannot send direct messages to yourself.';
-           } else if (e.message) {
-             errorDescription = e.message;
-           }
-           
-           toast({ 
-             title: errorTitle, 
-             description: errorDescription, 
-             variant: 'destructive' 
-           });
-           setThreadId(null);
-         }
-       });
-       
-     // Cleanup function to abort on dependency change
-     return () => {
-       abortController.abort();
-     };
-   }, [open, currentProfileId, friendId, threadIdFrom, toast]);
+  // Resolve by friendId only when we DON'T have a threadId - FIXED LOOP
+  useEffect(() => {
+    if (!open) return;
+    if (!friendId) return;
+    if (!currentProfileId) return;
+    if (threadIdProp) return; // parent provided it
+    if (lastFriendRef.current === friendId && threadId) return; // already resolved
 
-      // Mark thread as read with proper auth guard
-    useEffect(() => {
-      if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
-        rpc_markThreadRead(threadId, 'dm').catch(error => {
-          console.error('Failed to mark thread as read:', error);
+    lastFriendRef.current = friendId;
+    const reqId = ++reqRef.current;
+    let aborted = false;
+
+    console.log('[DM_SHEET] Resolving thread for:', { currentProfileId, friendId, reqId });
+
+    (async () => {
+      try {
+        const resolvedThreadId = await threadIdFrom(currentProfileId, friendId);
+        if (aborted || reqRef.current !== reqId) {
+          console.log('[DM_SHEET] Ignoring stale thread resolution:', { reqId, current: reqRef.current });
+          return; // ignore stale
+        }
+        console.log('[DM_SHEET] Thread resolved:', resolvedThreadId);
+        setThreadId(resolvedThreadId);
+      } catch (e: any) {
+        if (aborted || reqRef.current !== reqId) return; // ignore stale
+        
+        console.error('[DM_SHEET] Thread error:', e);
+        
+        // Provide specific error messages based on the error
+        let errorTitle = 'Chat error';
+        let errorDescription = 'Could not start chat';
+        
+        if (e.message && e.message.includes('not friends')) {
+          errorTitle = 'Cannot start conversation';
+          errorDescription = 'You can only send direct messages to your friends. Send them a friend request first!';
+        } else if (e.message && e.message.includes('yourself')) {
+          errorTitle = 'Cannot message yourself';
+          errorDescription = 'You cannot send direct messages to yourself.';
+        } else if (e.message) {
+          errorDescription = e.message;
+        }
+        
+        toast({ 
+          title: errorTitle, 
+          description: errorDescription, 
+          variant: 'destructive' 
         });
-      
+        setThreadId(undefined); // Keep undefined for retry, don't set to null
+      }
+    })();
+
+    return () => { 
+      aborted = true; 
+    };
+  }, [open, friendId, threadIdProp, currentProfileId, threadId, threadIdFrom, toast]);
+
+  // IMPORTANT: Clear threadId only when sheet closes or friendId changes
+  useEffect(() => {
+    if (!open) {
+      setThreadId(undefined);
+      lastFriendRef.current = undefined;
+      reqRef.current = 0;
+    }
+  }, [open]);
+
+  // Clear threadId when friendId changes
+  useEffect(() => {
+    if (friendId !== lastFriendRef.current && lastFriendRef.current !== undefined) {
+      setThreadId(undefined);
+      lastFriendRef.current = undefined;
+    }
+  }, [friendId]);
+
+  // Mark thread as read with proper auth guard
+  useEffect(() => {
+    if (open && currentProfileId && friendId && isValidUuid) {
+      rpc_markThreadRead(threadId!, 'dm').catch(error => {
+        console.error('Failed to mark thread as read:', error);
+      });
+    
       // Optimistically clear unread badge with proper typing
       queryClient.setQueryData<Array<{thread_id: string}>>(['dm-unread', currentProfileId], 
         (old) => old?.filter(r => r.thread_id !== threadId) ?? []
       );
     }
-  }, [open, currentProfileId, friendId, threadId, queryClient]);
+  }, [open, currentProfileId, friendId, threadId, isValidUuid, queryClient]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
@@ -232,7 +265,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     }
     
     // Ensure we have a valid thread ID before sending
-    if (!threadId || typeof threadId !== 'string') {
+    if (!isValidUuid || typeof threadId !== 'string') {
       toast({
         title: "Cannot send message",
         description: "Thread not ready. Please try again.",
@@ -356,7 +389,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
             onReply={setReplyTo}
             className="flex-1"
           />
-        ) : threadId === null ? (
+        ) : threadId === undefined ? ( // Changed from null to undefined
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -435,17 +468,17 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder={
-                threadId === null 
+                threadId === undefined 
                   ? "Cannot send messages - not friends"
                   : "Type a message..."
               }
               className="flex-1 bg-background/50 border-border/50"
-              disabled={sending || threadId === null}
+              disabled={sending || threadId === undefined}
               aria-label="Direct message input"
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || sending || threadId === null}
+              disabled={!input.trim() || sending || threadId === undefined}
               size="icon"
               className="shrink-0"
             >
