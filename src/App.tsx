@@ -37,7 +37,7 @@ import SharedAfterglow from "./pages/SharedAfterglow";
 import SharedPlan from "./pages/SharedPlan";
 import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
-import P2PTestPage from "./pages/P2PTestPage";
+
 
 const App = () => {
   // Create a stable QueryClient instance using useMemo
@@ -111,7 +111,7 @@ const App = () => {
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
-                        <Route path="/p2p-test" element={<P2PTestPage />} />
+
                         <Route path="/*" element={<Index />} />
                       </Routes>
                     </BrowserRouter>
