@@ -30,6 +30,7 @@ class RealtimeManager {
   };
   private mountedHooks = new Set<string>();
   private healthCheckInterval?: ReturnType<typeof setInterval>; // Fixed typing
+  private creating = new Set<string>(); // Prevent double subscribe race conditions
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 2000;
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
@@ -59,14 +60,14 @@ class RealtimeManager {
       return () => this.unsubscribe(key, hookId);
     }
 
-    // Create new subscription
+    // Create new subscription (with race condition protection)
     this.createSubscription(key, channelName, setup, hookId, 0);
 
     return () => this.unsubscribe(key, hookId);
   }
 
   /**
-   * Create a new subscription with enhanced error handling
+   * Create a new subscription with enhanced error handling and race protection
    */
   private async createSubscription(
     key: string,
@@ -75,6 +76,14 @@ class RealtimeManager {
     hookId: string,
     retryCount: number
   ) {
+    // Prevent double subscription race conditions (React Strict Mode)
+    if (this.creating.has(key)) {
+      console.log(`[RealtimeManager] Subscription ${key} already being created, skipping`);
+      return;
+    }
+
+    this.creating.add(key);
+
     try {
       console.log(`[RealtimeManager] Creating subscription: ${key} (attempt ${retryCount + 1})`);
       
@@ -84,7 +93,7 @@ class RealtimeManager {
       const configuredChannel = setup(channel);
 
       // Only add presence handlers if this is actually a presence channel
-      // For postgres_changes channels, skip presence entirely
+      // For postgres_changes channels, skip presence entirely to avoid phantom errors
       const isPresenceChannel = channelName.includes('presence') || channelName.includes('typing');
       if (isPresenceChannel) {
         configuredChannel
@@ -102,7 +111,10 @@ class RealtimeManager {
           });
       }
 
-      // Subscribe with enhanced promise handling
+      // Add minimal channel event handling for health tracking
+      this.handleChannelEvents(configuredChannel, key);
+
+      // Subscribe with comprehensive status handling
       const subscriptionPromise = new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error(`Subscription timeout for ${key}`));
@@ -114,7 +126,7 @@ class RealtimeManager {
             if (status === 'SUBSCRIBED') {
               console.log(`[RealtimeManager] Successfully subscribed to ${key}`);
               resolve();
-            } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT' || error) {
+            } else if (['CHANNEL_ERROR', 'CLOSED', 'TIMED_OUT'].includes(status) || error) {
               console.error(`[RealtimeManager] Subscription error for ${key}:`, error || status);
               reject(error || new Error(`Subscription failed with status: ${status}`));
             }
@@ -168,7 +180,24 @@ class RealtimeManager {
         // Clean up failed subscription tracking
         this.mountedHooks.delete(hookId);
       }
+    } finally {
+      // Always remove from creating set
+      this.creating.delete(key);
     }
+  }
+
+  /**
+   * Minimal channel event handling for health tracking
+   */
+  private handleChannelEvents(channel: RealtimeChannel, key: string) {
+    // Use broadcast events for health tracking (works on all channel types)
+    channel.on('broadcast', { event: '*' }, () => {
+      const sub = this.subscriptions.get(key);
+      if (sub) {
+        sub.isHealthy = true;
+        sub.lastActivity = new Date();
+      }
+    });
   }
 
   /**
@@ -320,6 +349,7 @@ class RealtimeManager {
     
     this.subscriptions.clear();
     this.mountedHooks.clear();
+    this.creating.clear(); // Clear creation tracking
     
     this.connectionStats = {
       totalSubscriptions: 0,
