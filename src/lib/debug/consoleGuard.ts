@@ -1,14 +1,11 @@
 /**
  * Global safeguard against DataCloneError and enhanced logging
  * This prevents Request/Response objects from being cloned by the console proxy
- * and provides better error details for debugging
+ * and provides better error details for debugging in all environments
  */
 
-// Apply in both dev and production for better error visibility
-const shouldApplyGuard = import.meta.env.DEV || 
-                        (typeof window !== 'undefined' && 
-                         (window.location.hostname.includes('lovable') || 
-                          window.location.hostname.includes('localhost')));
+// Apply enhanced console logging in all environments for better debugging
+const shouldApplyGuard = true; // Always apply for better error visibility
 
 if (shouldApplyGuard) {
   const originalLog = console.log;
@@ -151,5 +148,12 @@ if (shouldApplyGuard) {
   console.warn = wrap(originalWarn);
   console.error = wrap(originalError);
 
-  console.log('[🔧 Enhanced Console Guard] Applied for better error visibility and WebSocket debugging');
+  // Determine environment for logging
+  const isDev = import.meta.env?.DEV || 
+               (typeof window !== 'undefined' && 
+                (window.location.hostname === 'localhost' || 
+                 window.location.hostname.includes('127.0.0.1') ||
+                 window.location.port !== ''));
+  
+  console.log(`[🔧 Enhanced Console Guard] Applied for ${isDev ? 'development' : 'production'} - WebSocket & PostgREST debugging enabled`);
 }
