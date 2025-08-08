@@ -41,7 +41,24 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
         throw new Error('Only DM reactions are currently supported');
       }
 
-      // Get all messages in thread first
+      // Try the safer RPC approach first (if migration is applied)
+      try {
+        const { data, error } = await supabase
+          .rpc('get_dm_reactions_by_thread', { p_thread_id: threadId })
+          .throwOnError();
+
+        if (error) throw error;
+        return data || [];
+      } catch (rpcError: any) {
+        // If RPC doesn't exist (PGRST202), fall back to the IN filter approach
+        if (rpcError.code === 'PGRST202' || rpcError.message?.includes('get_dm_reactions_by_thread')) {
+          console.log('[useMessageReactions] RPC not available, using fallback IN filter approach');
+        } else {
+          console.warn('[useMessageReactions] RPC failed, falling back:', rpcError.message);
+        }
+      }
+
+      // Fallback: Get all messages in thread first
       const { data: messages, error: messagesError } = await supabase
         .from('direct_messages')
         .select('id')
