@@ -64,7 +64,7 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
       if (surface === "dm") {
         console.log('[useMessages] Fetching DM messages for thread:', threadId);
         const { data, error } = await supabase
-          .from("direct_messages")
+          .from("v_dm_messages") // ✅ Use the new view with replies and reactions
           .select("*")
           .eq("thread_id", threadId)
           .order("created_at", { ascending: false })

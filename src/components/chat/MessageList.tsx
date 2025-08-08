@@ -8,18 +8,28 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { useProfile } from '@/hooks/useProfile';
 import { ChatMediaBubble } from './ChatMediaBubble';
 import { ReplySnippet } from './ReplySnippet';
+import { MessageReactions } from './MessageReactions';
 
 interface Message {
   id: string;
   thread_id: string;
   content?: string | null;
   metadata?: any;
-  reply_to?: string | null; // ✅ FIX: Match database column name
+  reply_to?: string | null;
+  reply_to_msg?: {
+    id: string;
+    profile_id: string;
+    content: string;
+    created_at: string;
+  } | null; // ✅ Parent message data for reply preview
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+  }>; // ✅ Aggregated reactions from the view
   created_at: string;
   sender_id?: string;
   profile_id: string;
   status?: 'sending' | 'sent' | 'delivered' | 'read';
-  reactions?: Record<string, string[]>;
 }
 
 interface MessageListProps {
@@ -90,6 +100,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             isOwn={isOwn}
             isConsecutive={isConsecutive}
             senderId={senderId}
+            onReact={onReact}
           />
         );
       })}
@@ -104,7 +115,8 @@ const MessageBubbleWrapper: React.FC<{
   isOwn: boolean;
   isConsecutive: boolean;
   senderId: string | undefined;
-}> = ({ message, isOwn, isConsecutive, senderId }) => {
+  onReact?: (messageId: string, emoji: string) => void;
+}> = ({ message, isOwn, isConsecutive, senderId, onReact }) => {
   const { data: senderProfile } = useProfile(senderId);
 
   // Handle media messages
@@ -129,29 +141,51 @@ const MessageBubbleWrapper: React.FC<{
   }
 
   // Handle reply context
-  if (message.reply_to) {
+  if (message.reply_to && message.reply_to_msg) {
     return (
       <div className="flex flex-col gap-2">
-        <ReplySnippet messageId={message.reply_to} />
-        <MessageBubble
-          message={message}
-          isOwn={isOwn}
-          showAvatar={!isOwn}
-          isConsecutive={isConsecutive}
-          senderProfile={senderProfile}
-        />
+        {/* ✅ Use reply_to_msg data directly for better performance */}
+        <div className="mx-4 px-3 py-2 bg-muted/30 rounded-lg border-l-2 border-muted-foreground/20">
+          <div className="text-xs text-muted-foreground mb-1">
+            Replying to {message.reply_to_msg.profile_id === senderId ? 'themselves' : 'message'}
+          </div>
+          <div className="text-sm text-muted-foreground line-clamp-2">
+            {message.reply_to_msg.content || '(no content)'}
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <MessageBubble
+            message={message}
+            isOwn={isOwn}
+            showAvatar={!isOwn}
+            isConsecutive={isConsecutive}
+            senderProfile={senderProfile}
+          />
+          <MessageReactions 
+            reactions={message.reactions || []} 
+            onReact={onReact ? (emoji) => onReact(message.id, emoji) : undefined}
+            className={isOwn ? "justify-end mr-4" : "ml-4"}
+          />
+        </div>
       </div>
     );
   }
 
   // Regular message
   return (
-    <MessageBubble
-      message={message}
-      isOwn={isOwn}
-      showAvatar={!isOwn}
-      isConsecutive={isConsecutive}
-      senderProfile={senderProfile}
-    />
+    <div className="flex flex-col">
+      <MessageBubble
+        message={message}
+        isOwn={isOwn}
+        showAvatar={!isOwn}
+        isConsecutive={isConsecutive}
+        senderProfile={senderProfile}
+      />
+      <MessageReactions 
+        reactions={message.reactions || []} 
+        onReact={onReact ? (emoji) => onReact(message.id, emoji) : undefined}
+        className={isOwn ? "justify-end mr-4" : "ml-4"}
+      />
+    </div>
   );
 };

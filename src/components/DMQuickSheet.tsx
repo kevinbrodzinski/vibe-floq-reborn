@@ -22,6 +22,7 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { sendMessageRPC } from '@/services/messages'; // ✅ Import direct RPC service
+import { useReactions } from '@/hooks/messaging/useReactions';
 
 import { useTypingIndicators, useTypingIndicatorText } from '@/hooks/messaging/useTypingIndicators';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
@@ -104,6 +105,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
     'dm'
   );
   const typingText = useTypingIndicatorText(typingUsers);
+
+  // Reactions hook for handling message reactions
+  const { toggleReaction } = useReactions(isValidUuid ? threadId : undefined);
 
   // Debug logging for overlay management
   useEffect(() => {
@@ -298,6 +302,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         status: "sending",
         message_type: "text",
         reply_to: replyTo,
+        reply_to_msg: null, // ✅ No parent data for optimistic message
+        reactions: [], // ✅ No reactions yet for optimistic message
       };
 
       const pages = old.pages || [];
@@ -461,6 +467,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
             messages={messages}
             currentUserId={currentProfileId}
             onReply={setReplyTo}
+            onReact={(messageId, emoji) => toggleReaction({ messageId, emoji })}
             className="flex-1"
           />
         ) : threadId === undefined ? ( // Changed from null to undefined
