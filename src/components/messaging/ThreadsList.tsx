@@ -16,6 +16,9 @@ interface ThreadsListProps {
   currentProfileId: string; // profile_id is the main user identifier
 }
 
+// Helper to detect email-like usernames
+const isEmailLike = (s?: string | null) => !!s && /.+@.+\..+/.test(s);
+
 // Helper function to highlight search matches — now with keys on ALL children.
 const highlightMatch = (text: string, query: string): React.ReactNode => {
   if (!query || !text) return text;
@@ -90,18 +93,28 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
       try {
         const results = await searchThreads(debouncedSearch); // Note: removed signal for now as it may not be supported
         // results are ThreadSummary[]; normalize to ThreadSearchResult
-        const normalized: ThreadSearchResult[] = (results || []).map((r: any) => ({
-          thread_id: r.id ?? r.thread_id,
-          friend_profile_id: r.friendProfile?.id ?? r.friend_profile_id ?? '',
-          friend_display_name: r.friendProfile?.display_name ?? r.friend_display_name ?? '',
-          friend_username: r.friendProfile?.username ?? r.friend_username ?? '',
-          friend_avatar_url: r.friendProfile?.avatar_url ?? r.friend_avatar_url ?? '',
-          last_message_at: r.lastMessageAt ?? r.last_message_at ?? null,
-          my_unread_count: r.unreadCount ?? r.my_unread_count ?? 0,
-          last_message_content: r.lastMessage?.content ?? r.last_message_content ?? '',
-          match_type: r.match_type ?? 'name',
-          match_score: r.match_score ?? 80,
-        }));
+        const normalized: ThreadSearchResult[] = (results || []).map((r: any) => {
+          // Filter out email-like usernames
+          const normHandle = !isEmailLike(r.friendProfile?.username ?? r.friend_username)
+            ? (r.friendProfile?.username ?? r.friend_username ?? '')
+            : '';
+
+          return {
+            thread_id: r.id ?? r.thread_id,
+            friend_profile_id: r.friendProfile?.id ?? r.friend_profile_id ?? '',
+            friend_display_name: 
+              r.friendProfile?.display_name ?? 
+              r.friend_display_name ?? 
+              (normHandle || 'New User'),
+            friend_username: normHandle,
+            friend_avatar_url: r.friendProfile?.avatar_url ?? r.friend_avatar_url ?? '',
+            last_message_at: r.lastMessageAt ?? r.last_message_at ?? null,
+            my_unread_count: r.unreadCount ?? r.my_unread_count ?? 0,
+            last_message_content: r.lastMessage?.content ?? r.last_message_content ?? '',
+            match_type: r.match_type ?? 'name',
+            match_score: r.match_score ?? 80,
+          };
+        });
 
         if (!ctrl.signal.aborted) { // Check if not aborted
           setSearchResults(normalized);
@@ -125,19 +138,29 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
     };
   }, [debouncedSearch, searchThreads]);
 
-  // Build list when not searching - FIXED to use ThreadSummary structure
+  // Build list when not searching - FIXED to use ThreadSummary structure with email filtering
   const mappedThreads: ThreadSearchResult[] = useMemo(() => {
-    return allThreads.map((thread) => ({
-      thread_id: thread.id,
-      friend_profile_id: thread.friendProfile?.id ?? '', // ✅ This is the correct field!
-      friend_display_name: thread.friendProfile?.display_name ?? '',
-      friend_username: thread.friendProfile?.username ?? '',
-      friend_avatar_url: thread.friendProfile?.avatar_url ?? '',
-      last_message_at: thread.lastMessageAt ?? null,
-      my_unread_count: thread.unreadCount ?? 0, // Use hook's unreadCount, override with unreadMap if needed
-      match_type: 'name' as const,
-      match_score: 0,
-    }));
+    return allThreads.map((thread) => {
+      // Choose safe name + handle, filtering out email-like usernames
+      const displayName =
+        thread.friendProfile?.display_name?.trim() ||
+        (!isEmailLike(thread.friendProfile?.username) ? thread.friendProfile?.username?.trim() : '') ||
+        'New User';
+
+      const handle = !isEmailLike(thread.friendProfile?.username) ? thread.friendProfile?.username?.trim() || '' : '';
+
+      return {
+        thread_id: thread.id,
+        friend_profile_id: thread.friendProfile?.id ?? '',
+        friend_display_name: displayName,
+        friend_username: handle, // <= no emails here
+        friend_avatar_url: thread.friendProfile?.avatar_url ?? '',
+        last_message_at: thread.lastMessageAt ?? null,
+        my_unread_count: thread.unreadCount ?? 0,
+        match_type: 'name' as const,
+        match_score: 0,
+      };
+    });
   }, [allThreads]);
 
   // Pick which array to show, dedupe by thread_id to be safe
@@ -249,15 +272,17 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
     };
   }, [thread.friend_profile_id, thread.friend_display_name, thread.friend_username]);
 
-  const displayName =
-    fallback?.display_name ||
-    thread.friend_display_name ||
-    thread.friend_username ||
-    fallback?.username ||
-    'Unknown User';
+  // Clean display logic - no more email fallbacks
+  const displayName = thread.friend_display_name || 'New User';
+  const handle = thread.friend_username; // we already filtered emails out
 
   const avatarUrl = fallback?.avatar_url || thread.friend_avatar_url || undefined;
   const hasUnread = (thread.my_unread_count ?? 0) > 0;
+
+  // Better avatar initials
+  const initial = 
+    (displayName && displayName[0]) ||
+    (handle && handle[0]) || 'U';
 
   const getMatchIcon = () => {
     switch (thread.match_type) {
@@ -278,7 +303,7 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
       <Avatar className="w-10 h-10">
         <AvatarImage src={avatarUrl} />
         <AvatarFallback className="bg-primary/10 text-primary font-medium">
-          {displayName.charAt(0).toUpperCase()}
+          {initial.toUpperCase()}
         </AvatarFallback>
       </Avatar>
 
@@ -303,14 +328,12 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
           )}
         </div>
 
-        {searchQuery &&
-          (fallback?.username || thread.friend_username) &&
-          (fallback?.username || thread.friend_username) !==
-            (fallback?.display_name || thread.friend_display_name) && (
-            <div className="text-xs text-muted-foreground mt-0.5">
-              @{highlightMatch(fallback?.username || thread.friend_username || '', searchQuery)}
-            </div>
-          )}
+        {/* Show @handle always if present (not just during search) */}
+        {handle && (
+          <div className="text-xs text-muted-foreground mt-0.5">
+            @{searchQuery ? highlightMatch(handle, searchQuery) : handle}
+          </div>
+        )}
 
         {searchQuery &&
           thread.match_type === 'message' &&
