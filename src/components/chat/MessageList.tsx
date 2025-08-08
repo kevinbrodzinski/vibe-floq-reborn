@@ -14,7 +14,7 @@ interface Message {
   thread_id: string;
   content?: string | null;
   metadata?: any;
-  reply_to_id?: string | null;
+  reply_to?: string | null; // ✅ FIX: Match database column name
   created_at: string;
   sender_id?: string;
   profile_id: string;
@@ -129,10 +129,10 @@ const MessageBubbleWrapper: React.FC<{
   }
 
   // Handle reply context
-  if (message.reply_to_id) {
+  if (message.reply_to) {
     return (
       <div className="flex flex-col gap-2">
-        <ReplySnippet messageId={message.reply_to_id} />
+        <ReplySnippet messageId={message.reply_to} />
         <MessageBubble
           message={message}
           isOwn={isOwn}

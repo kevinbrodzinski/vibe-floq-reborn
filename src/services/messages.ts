@@ -1,35 +1,33 @@
 import pLimit from 'p-limit'
 import pThrottle from 'p-throttle'
-import { supabase } from '@/integrations/supabase/client'
-import { supaFn } from '@/lib/supaFn'
+import { supabase } from '@/integrations/supabase/client';
 
-/** Edge function call – updated to handle reply_to_id */
-async function sendMessageRPC(payload: { 
-  surface: "dm" | "floq" | "plan"; 
-  thread_id: string; 
-  sender_id: string; 
-  content: string; 
-  client_id: string;
-  reply_to_id?: string | null; // ✅ FIX: Add reply_to_id parameter
+export async function sendMessageRPC({
+  threadId,
+  senderId,           // current user's profile_id
+  body,               // message text
+  replyTo,            // optional message id
+  media,              // optional json (or null)
+  type = 'text',      // dm_msg_type enum label (e.g. 'text')
+}: {
+  threadId: string;
+  senderId: string;
+  body: string;
+  replyTo?: string | null;
+  media?: any | null;
+  type?: 'text' | 'image' | 'video' | string;
 }) {
-  // Get session for auth token
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("No auth session");
-
-  // ✅ FIX: Pass reply_to_id through to Edge Function
-  const res = await supaFn("send-message", session.access_token, {
-    ...payload,
-    p_reply_to: payload.reply_to_id ?? null, // Map to Edge Function parameter name
+  const { data, error } = await supabase.rpc('send_dm_message', {
+    p_thread_id: threadId,
+    p_sender_id: senderId,
+    p_body: body,
+    p_reply_to: replyTo ?? null,
+    p_media: media ?? null,
+    p_type: type,          // PostgREST will cast to enum if label exists
   });
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    const error = new Error(`Failed to send message: ${res.status} ${errorText}`);
-    (error as any).status = res.status;
-    throw error;
-  }
-  
-  return res.json();
+
+  if (error) throw error;   // surface PostgREST errors to the caller
+  return data;              // usually the new message id (depends on your fn)
 }
 
 /** Allow only N concurrent calls & queue the rest */

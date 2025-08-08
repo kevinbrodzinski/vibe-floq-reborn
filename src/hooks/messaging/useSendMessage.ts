@@ -46,7 +46,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
           metadata: { client_id },
           status: "sending",
           message_type: "text",
-          reply_to_id: replyTo, // ✅ FIX: Use replyTo parameter name
+          reply_to: replyTo, // ✅ FIX: Use reply_to to match database column
         };
 
         const pages = old.pages || [];

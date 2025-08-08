@@ -21,7 +21,7 @@ import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useMessages } from '@/hooks/messaging/useMessages';
-import { useSendMessage } from '@/hooks/messaging/useSendMessage';
+import { sendMessageRPC } from '@/services/messages'; // ✅ Import direct RPC service
 
 import { useTypingIndicators, useTypingIndicatorText } from '@/hooks/messaging/useTypingIndicators';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
@@ -73,7 +73,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
   const isValidUuid = !!threadId && /^[0-9a-f-]{36}$/i.test(threadId);
   const enabled = isValidUuid && !!currentProfileId;
   const messages = useMessages(isValidUuid ? threadId : undefined, 'dm', { enabled });
-  const sendMut = useSendMessage('dm');
+  // const sendMut = useSendMessage('dm'); // This line is no longer needed
 
   // Debug messages hook state
   useEffect(() => {
@@ -111,9 +111,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
   }, [open, friendId]);
 
   // Debug mutation state
-  useEffect(() => {
-    console.log('[sendMut]', sendMut.status, sendMut.isPending, sendMut.data, sendMut.error);
-  }, [sendMut.status]);
+  // useEffect(() => { // This block is no longer needed
+  //   console.log('[sendMut]', sendMut.status, sendMut.isPending, sendMut.data, sendMut.error);
+  // }, [sendMut.status]);
 
   // Debug IDs to see if threadId is being set properly
   useEffect(() => {
@@ -253,28 +253,25 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
   const handleSend = async () => {
     if (!input.trim() || sending) return;
-    
-    // Auth guard: ensure we have a valid user
+
     if (!currentProfileId) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to send messages.",
-        variant: "destructive",
+      toast({ 
+        title: "Authentication required", 
+        description: "Please log in to send messages.", 
+        variant: "destructive" 
       });
       return;
     }
-    
-    // Ensure we have a valid thread ID before sending
     if (!isValidUuid || typeof threadId !== 'string') {
-      toast({
-        title: "Cannot send message",
-        description: "Thread not ready. Please try again.",
-        variant: "destructive",
+      toast({ 
+        title: "Cannot send message", 
+        description: "Thread not ready. Please try again.", 
+        variant: "destructive" 
       });
       return;
     }
 
-    console.log('[DMQuickSheet] Starting send with sending:', sending, 'isPending:', sendMut.isPending);
+    console.log('[DMQuickSheet] Starting send with sending:', sending, 'isPending:', sending);
     
     // Use local sending state as fallback
     setSending(true);
@@ -283,18 +280,22 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
     handleMessageSent();
 
     try {
-      console.log('[DMQuickSheet] Calling mutateAsync...');
-      await sendMut.mutateAsync({ 
+      console.log('[DMQuickSheet] Calling sendMessageRPC...');
+      await sendMessageRPC({
         threadId,
-        content: input.trim(),
-        replyTo, // ✅ FIX: Pass replyTo directly
+        senderId: currentProfileId,    // ✅ NOTE: p_sender_id
+        body: input.trim(),            // ✅ NOTE: p_body
+        replyTo,                       // ✅ NOTE: p_reply_to
+        media: null,                   // fill later if you add uploads
+        type: 'text',                  // must match dm_msg_type labels
       });
-      console.log('[DMQuickSheet] mutateAsync completed successfully');
+      console.log('[DMQuickSheet] sendMessageRPC completed successfully');
       setInput('');
       setReplyTo(null);
       
-      // Note: sendMut already invalidates queries optimistically, but keeping for safety
+      // Invalidate queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
+      // optionally also invalidate the message pages for this thread key if you have one
     } catch (error) {
       console.error('[DMQuickSheet] Send failed:', error);
       toast({
