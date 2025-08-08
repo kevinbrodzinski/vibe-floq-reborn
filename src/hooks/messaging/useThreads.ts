@@ -92,7 +92,7 @@ export function useThreads() {
               event: '*',
               schema: 'public',
               table: 'direct_threads',
-              filter: `member_a_profile_id.eq.${currentUserId}`,
+              filter: `member_a_profile_id=eq.${currentUserId}`,
             },
             createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
               ({ eventType, new: newThread, old: oldThread }) => {
@@ -126,7 +126,7 @@ export function useThreads() {
               event: '*',
               schema: 'public',
               table: 'direct_threads',
-              filter: `member_b_profile_id.eq.${currentUserId}`,
+              filter: `member_b_profile_id=eq.${currentUserId}`,
             },
             createSafeRealtimeHandler<Database["public"]["Tables"]["direct_threads"]["Row"]>(
               ({ eventType, new: newThread, old: oldThread }) => {

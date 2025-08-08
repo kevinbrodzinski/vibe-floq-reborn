@@ -67,7 +67,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_a_profile_id.eq.${selfId}`
+        filter: `member_a_profile_id=eq.${selfId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
           if (!mounted) return;
@@ -84,7 +84,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_b_profile_id.eq.${selfId}`
+        filter: `member_b_profile_id=eq.${selfId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
           if (!mounted) return;

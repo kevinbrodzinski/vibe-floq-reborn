@@ -36,7 +36,7 @@ export const useUnreadBadgeRealtime = (profileId?: string) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_a_profile_id.eq.${profileId}`
+        filter: `member_a_profile_id=eq.${profileId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
           if (!mounted) return;
@@ -53,7 +53,7 @@ export const useUnreadBadgeRealtime = (profileId?: string) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_b_profile_id.eq.${profileId}`
+        filter: `member_b_profile_id=eq.${profileId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
           if (!mounted) return;

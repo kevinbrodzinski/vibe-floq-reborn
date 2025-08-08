@@ -47,8 +47,8 @@ export const getOrCreateThread = async (
   }
 
   const { data, error } = await supabase.rpc('create_or_get_thread', {
-    p_member_a_profile_id: me,     // Updated to match our migration parameter names
-    p_member_b_profile_id: friend, // Updated to match our migration parameter names
+    p_user_a: me,     // Updated to match actual migration parameter names
+    p_user_b: friend, // Updated to match actual migration parameter names
   });
 
   if (error || !data) {
