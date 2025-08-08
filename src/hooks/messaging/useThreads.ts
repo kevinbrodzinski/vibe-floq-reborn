@@ -124,22 +124,8 @@ export function useThreads() {
               ({ eventType, new: newThread, old: oldThread }) => {
                 console.log('📨 Thread update (member_a):', { eventType, newThread, oldThread });
                 
-                queryClient.setQueryData(queryKey, (oldData: DirectThreadWithProfiles[] = []) => {
-                  if (eventType === 'INSERT' && newThread) {
-                    // Add new thread (will need to fetch profile data)
-                    queryClient.invalidateQueries({ queryKey });
-                    return oldData;
-                  } else if (eventType === 'UPDATE' && newThread) {
-                    return oldData.map(thread => 
-                      thread.id === newThread.id 
-                        ? { ...thread, ...newThread }
-                        : thread
-                    );
-                  } else if (eventType === 'DELETE' && oldThread) {
-                    return oldData.filter(thread => thread.id !== oldThread.id);
-                  }
-                  return oldData;
-                });
+                // Invalidate all thread queries for this user to avoid stale data
+                queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
               },
               (error, payload) => {
                 console.error('[useThreads] Realtime error (member_a):', error, payload);
@@ -158,33 +144,19 @@ export function useThreads() {
               ({ eventType, new: newThread, old: oldThread }) => {
                 console.log('📨 Thread update (member_b):', { eventType, newThread, oldThread });
                 
-                queryClient.setQueryData(queryKey, (oldData: DirectThreadWithProfiles[] = []) => {
-                  if (eventType === 'INSERT' && newThread) {
-                    // Add new thread (will need to fetch profile data)
-                    queryClient.invalidateQueries({ queryKey });
-                    return oldData;
-                  } else if (eventType === 'UPDATE' && newThread) {
-                    return oldData.map(thread => 
-                      thread.id === newThread.id 
-                        ? { ...thread, ...newThread }
-                        : thread
-                    );
-                  } else if (eventType === 'DELETE' && oldThread) {
-                    return oldData.filter(thread => thread.id !== oldThread.id);
-                  }
-                  return oldData;
-                });
+                // Invalidate all thread queries for this user to avoid stale data
+                queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
               },
               (error, payload) => {
                 console.error('[useThreads] Realtime error (member_b):', error, payload);
               }
             )
           ),
-      `threads-hook-${currentUserId}`
+      `threads-hook-${currentUserId}-${Math.random().toString(36).substr(2, 9)}`
     );
 
     return cleanup;
-  }, [currentUserId, queryClient, queryKey]);
+  }, [currentUserId, queryClient]);
 
   // Create or get existing thread using enhanced function
   const createThread = useMutation({
