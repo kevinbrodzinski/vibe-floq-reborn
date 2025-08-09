@@ -163,6 +163,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     }
   });
 
+  // Render mini trails for visible friends
+  const friendTrailInputs = filteredPeople.filter(p => p.isFriend).map(p => ({ id: p.id, lat: p.lat, lng: p.lng, vibe: p.vibe }));
+  // Lazy import to avoid circular deps
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { useFriendMiniTrails } = require('@/hooks/useFriendMiniTrails');
+    useFriendMiniTrails(mapRef.current, friendTrailInputs, {});
+  } catch {}
+
+
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
     condition: mapWeatherCondition((weatherData as any)?.condition ?? 'sunny'),
