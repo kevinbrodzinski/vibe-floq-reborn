@@ -74,12 +74,39 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
     return `messages-${surface}-${threadId}`;
   }, [surface, threadId]);
   
-  console.log('[useMessages hook]', { threadId, surface, isValidUuid: threadId ? isUuid(threadId) : false, enabled: opts?.enabled });
+  // Provide default options to avoid undefined issues
+  const options = opts || {};
+  const enabledOption = options.enabled;
+  
+  // Debug the options being passed
+  console.log('[useMessages hook]', { 
+    threadId, 
+    surface, 
+    isValidUuid: threadId ? isUuid(threadId) : false, 
+    optsEnabled: enabledOption,
+    optsEnabledType: typeof enabledOption,
+    opts: opts,
+    options: options
+  });
+
+  // Calculate enabled value step by step for debugging
+  const hasValidThreadId = Boolean(threadId);
+  const isValidThreadId = threadId ? isUuid(threadId) : false;
+  const enabledFromOpts = enabledOption !== false; // Default to true if not explicitly false
+  const finalEnabled = hasValidThreadId && isValidThreadId && enabledFromOpts;
+  
+  console.log('[useMessages enabled calculation]', {
+    hasValidThreadId,
+    isValidThreadId,
+    enabledFromOpts,
+    finalEnabled,
+    finalEnabledType: typeof finalEnabled
+  });
 
   // Paginated history fetch
   const history = useInfiniteQuery({
     queryKey: ["messages", surface, threadId],
-    enabled: Boolean(threadId && isUuid(threadId) && (opts?.enabled !== false)), // Ensure it's always a boolean
+    enabled: finalEnabled, // Use the calculated boolean
     queryFn: async ({ pageParam = 0 }): Promise<any[]> => {
       console.log('[useMessages queryFn]', { surface, threadId, pageParam });
       if (surface === "dm") {
