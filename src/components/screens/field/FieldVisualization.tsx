@@ -106,14 +106,15 @@ export const FieldVisualization = ({
   
   // Phase 1B Fix: Analytics de-dupe with persistent seenRef
   const seenRef = useRef<Set<string>>(new Set());
-  const friendIdsHash = useMemo(
-    () => people.filter(p => p.isFriend).map(p => p.id).sort().join(','),
-    [people]
-  );
+  const friendIdsHash = useMemo(() => {
+    const list = Array.isArray(people) ? people : [];
+    return list.filter(p => p?.isFriend).map(p => p?.id).filter(Boolean).sort().join(',');
+  }, [people]);
 
   useEffect(() => {
-    people.forEach(person => {
-      if (person.isFriend && !seenRef.current.has(person.id)) {
+    const list = Array.isArray(people) ? people : [];
+    list.forEach(person => {
+      if (person?.isFriend && person?.id && !seenRef.current.has(person.id)) {
         seenRef.current.add(person.id);
         track('friend_encounter', { 
           friend_id: person.id, 
