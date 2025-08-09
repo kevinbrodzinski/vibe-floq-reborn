@@ -146,9 +146,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
   // Get friend profile and presence
   const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
-  const presence = useFriendsPresence()[friendId || ''];
+  const presence = useFriendsPresence()[friendId || ''] || {};
   const online = presence?.status === 'online' && presence?.visible;
-  const lastSeenTs = useLastSeen(friendId || '');
+  const lastSeenTs = useLastSeen(friendId || undefined);
 
   // Get current profile_id from auth context (user.id is the profile_id)
   useEffect(() => {
