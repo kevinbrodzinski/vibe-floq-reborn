@@ -113,7 +113,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             isConsecutive={!!isConsecutive}
             currentUserId={currentUserId}
             onReply={onReply}
-            reactionsMap={byMessage}
+            byMessage={byMessage}
             toggleReaction={toggleReaction}
           />
         );
@@ -129,9 +129,9 @@ const MessageRow: React.FC<{
   isConsecutive: boolean;
   currentUserId: string | null;
   onReply?: (messageId: string, preview?: { content?: string; authorId?: string }) => void;
-  reactionsMap: Record<string, Array<{emoji: string; count: number; reactors: string[]}>>;
+  byMessage: Record<string, Array<{emoji: string; count: number; reactors: string[]}>>;
   toggleReaction: (messageId: string, emoji: string) => void;
-}> = ({ message, isOwn, isConsecutive, currentUserId, onReply, reactionsMap, toggleReaction }) => {
+}> = ({ message, isOwn, isConsecutive, currentUserId, onReply, byMessage, toggleReaction }) => {
   const { data: senderProfile } = useProfile(message.profile_id || message.sender_id);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -150,7 +150,7 @@ const MessageRow: React.FC<{
   };
 
   // Get reactions for this specific message from the map
-  const messageReactions = reactionsMap[message.id] || [];
+  const messageReactions = byMessage[message.id] || [];
 
   // MEDIA message
   if (message.metadata?.media) {
@@ -158,12 +158,12 @@ const MessageRow: React.FC<{
       <div className={cn('group relative flex w-full py-1', isOwn ? 'justify-end' : 'justify-start')} data-mid={message.id}>
         <div className="flex flex-col max-w-[72%]">
           <MessageBubble
-            message={message as any}
+            message={message}
             isOwn={isOwn}
             showAvatar={!isOwn}
             isConsecutive={isConsecutive}
             senderProfile={senderProfile}
-            reactions={messageReactions}
+            reactions={byMessage[message.id] || []}
             onReact={(emoji) => toggleReaction(message.id, emoji)}
           />
           <div className="max-w-[70%] mx-auto">
@@ -208,12 +208,12 @@ const MessageRow: React.FC<{
           </div>
 
           <MessageBubble
-            message={message as any}
+            message={message}
             isOwn={isOwn}
             showAvatar={!isOwn}
             isConsecutive={isConsecutive}
             senderProfile={senderProfile}
-            reactions={messageReactions}
+            reactions={byMessage[message.id] || []}
             onReact={(emoji) => toggleReaction(message.id, emoji)}
           />
         </div>
@@ -246,12 +246,12 @@ const MessageRow: React.FC<{
     >
       <div className="flex flex-col max-w-[72%]">
         <MessageBubble
-          message={message as any}
+          message={message}
           isOwn={isOwn}
           showAvatar={!isOwn}
           isConsecutive={isConsecutive}
           senderProfile={senderProfile}
-          reactions={messageReactions}
+          reactions={byMessage[message.id] || []}
           onReact={(emoji) => toggleReaction(message.id, emoji)}
         />
       </div>
