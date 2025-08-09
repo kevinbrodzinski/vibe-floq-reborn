@@ -61,8 +61,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   const channelRef = useRef<any>(null); // Shared ref for presence tracking
   const env = getEnvironmentConfig();
   
-  // Show mock data only in development
-  const showMockData = process.env.NODE_ENV === 'development';
+  // Show mock data only when explicitly enabled (allows testing real data in dev)
+  const showMockData = process.env.NODE_ENV === 'development' && 
+                      process.env.VITE_USE_MOCK_PRESENCE === 'true';
   
   if (env.debugPresence) {
     console.log('🔴 useBucketedPresence - WebSocket connections disabled in production');
@@ -75,14 +76,16 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
       return;
     }
 
-    // In development, show enhanced mock data with real friend IDs
+    // Only use mock data if explicitly enabled
     if (showMockData) {
       const mockPeople = generateMockPresenceData(lat, lng, friendIds);
-      console.log('[BucketedPresence] Generating enhanced mock presence data:', mockPeople);
+      console.log('[BucketedPresence] Using mock presence data (VITE_USE_MOCK_PRESENCE=true):', mockPeople);
       setPeople(mockPeople);
       setLastHeartbeat(Date.now());
       return;
     }
+
+    console.log('[BucketedPresence] Attempting to fetch real presence data...');
 
     // Production mode: Try to connect to real presence data
     const setupPresence = async () => {
@@ -219,12 +222,10 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
             console.warn('[BucketedPresence] Failed to fetch from vibes_now:', error);
           }
 
-          // Final fallback to enhanced mock data
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[BucketedPresence] No real presence data found, using enhanced mock data');
-          }
-          const mockPeople = generateMockPresenceData(lat, lng, friendIds);
-          setPeople(mockPeople);
+          // Final fallback to empty data (no more automatic mock data)
+          console.log('[BucketedPresence] No real presence data found, showing empty state');
+          console.log('[BucketedPresence] Tip: Set VITE_USE_MOCK_PRESENCE=true to enable mock data');
+          setPeople([]);
           setLastHeartbeat(Date.now());
         }, 2000);
 
@@ -234,9 +235,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         };
       } catch (error) {
         console.warn('[BucketedPresence] Failed to setup presence system:', error);
-        // Fallback to mock data
-        const mockPeople = generateMockPresenceData(lat, lng, friendIds);
-        setPeople(mockPeople);
+        // Fallback to empty data (no automatic mock data)
+        console.log('[BucketedPresence] Tip: Set VITE_USE_MOCK_PRESENCE=true to enable mock data');
+        setPeople([]);
         setLastHeartbeat(Date.now());
       }
     };

@@ -144,15 +144,24 @@ export function useLocationSharing(options: LocationSharingOptions = {}) {
 
         // Broadcast with privacy-filtered coordinates
         lastPresenceBroadcast.current = now;
+        const payload = { 
+          lat: privacyFiltered.lat, 
+          lng: privacyFiltered.lng, 
+          acc: privacyFiltered.accuracy, 
+          ts: now 
+        };
+        
+        console.log('[LocationSharing] Broadcasting location to friends:', {
+          originalCoords: { lat: tracking.coords.lat, lng: tracking.coords.lng },
+          filteredCoords: { lat: privacyFiltered.lat, lng: privacyFiltered.lng },
+          privacyLevel: liveSettings?.live_accuracy,
+          friendCount: shareTo.length
+        });
+        
         channelRef.current.send({
           type: 'broadcast',
           event: 'live_pos',
-          payload: { 
-            lat: privacyFiltered.lat, 
-            lng: privacyFiltered.lng, 
-            acc: privacyFiltered.accuracy, 
-            ts: now 
-          }
+          payload
         });
 
       } catch (error) {

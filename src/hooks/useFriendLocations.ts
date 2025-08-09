@@ -26,13 +26,19 @@ export function useFriendLocations(friendIds: string[], enhanceWithDistances = f
 
     if (!friendIds.length) return;
 
-    // Listen to each friend's presence channel
+    // Listen to each friend's broadcast channel (they broadcast on their own channel)
     channelsRef.current = friendIds.map(fid =>
       supabase.channel(`presence_${fid}`)
         .on('broadcast', { event: 'live_pos' }, ({ payload }) => {
-          setSpots(s => ({ ...s, [fid]: payload as FriendLocation }));
+          // Validate payload has required fields
+          if (payload && typeof payload.lat === 'number' && typeof payload.lng === 'number') {
+            setSpots(s => ({ ...s, [fid]: payload as FriendLocation }));
+            console.log(`[useFriendLocations] Received location for ${fid}:`, payload);
+          }
         })
-        .subscribe()
+        .subscribe((status) => {
+          console.log(`[useFriendLocations] Channel status for ${fid}:`, status);
+        })
     );
 
     return () => {
