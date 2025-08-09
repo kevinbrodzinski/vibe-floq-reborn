@@ -46,10 +46,12 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   let mockHelpers: any = null;
   try { mockHelpers = require('@/lib/mock/MockMode'); } catch {}
   const mockOn = !!mockHelpers?.isMockModeEnabled?.();
+  const [, setMockTick] = useState(0);
   const toggleMock = () => {
     if (!mockHelpers) return;
     if (mockHelpers.isMockModeEnabled()) mockHelpers.disableMockMode();
     else mockHelpers.enableMockModeForSeconds(15 * 60);
+    setMockTick(t => t + 1);
   };
 
   return (

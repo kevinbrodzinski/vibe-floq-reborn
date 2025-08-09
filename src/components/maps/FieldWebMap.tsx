@@ -109,7 +109,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     
     console.log('[FieldWebMap] 🎯 Filtered floqs:', filtered.length, 'total');
     return filtered;
-  }, [floqs, selectedVibe, selectedMyFloq]);
+  }, [floqs, selectedVibe, selectedMyFloq, mockModeNonce]);
 
   // TODO: Add real plans data from usePlansData or similar hook
   const filteredPlans = useMemo(() => {
@@ -175,7 +175,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       console.log('[FieldWebMap] people for map:', result);
     }
     return result;
-  }, [location?.coords, visibleFriends]);
+  }, [location?.coords, visibleFriends, mockModeNonce]);
 
   // Prepare context value for selected floq
   const selectedFloqContextValue = useMemo(() => ({
@@ -192,6 +192,14 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   // Quick sheet state for friend taps
   const [dmOpen, setDmOpen] = useState(false);
   const [dmFriendId, setDmFriendId] = useState<string | null>(null);
+
+  // Mock mode change tick for reactivity
+  const [mockModeNonce, setMockModeNonce] = useState(0);
+  useEffect(() => {
+    const handler = () => setMockModeNonce((n) => n + 1);
+    window.addEventListener('floq:mockModeChanged', handler as any);
+    return () => window.removeEventListener('floq:mockModeChanged', handler as any);
+  }, []);
 
   // Initialize unified map layers (preserves all existing functionality)
   const { layersReady } = useMapLayers({

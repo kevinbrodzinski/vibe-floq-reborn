@@ -3,10 +3,12 @@ const KEY = 'floq-mock-mode-expiry';
 export function enableMockModeForSeconds(seconds: number) {
   const until = Date.now() + Math.max(0, Math.floor(seconds)) * 1000;
   try { localStorage.setItem(KEY, String(until)); } catch {}
+  try { window.dispatchEvent(new CustomEvent('floq:mockModeChanged')); } catch {}
 }
 
 export function disableMockMode() {
   try { localStorage.removeItem(KEY); } catch {}
+  try { window.dispatchEvent(new CustomEvent('floq:mockModeChanged')); } catch {}
 }
 
 export function isMockModeEnabled(): boolean {
