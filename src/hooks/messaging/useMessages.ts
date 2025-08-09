@@ -32,10 +32,16 @@ type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
 type MessageRow = ExpandedMessage | ChatMessage; // ✅ Use ExpandedMessage for DMs
 type MessagesInfinite = { pages: MessageRow[][]; pageParams: unknown[] };
 
-const PAGE_SIZE = 40;
-const UUID_RE = /^[0-9a-f-]{36}$/i;
+type Surface = 'dm' | 'floq' | 'plan';
+type EnabledOpt = boolean | (() => boolean);
+type UseMessagesOpts = { enabled?: EnabledOpt };
 
-type Opts = { enabled?: boolean };
+const PAGE_SIZE = 40;
+
+type Page = {
+  rows: MessageRow[];
+  nextCursor?: string | null;
+};
 
 // Helper function to add message to pages
 function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
@@ -66,80 +72,112 @@ function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
   };
 }
 
+async function fetchPage(params: {
+  threadId: string;
+  surface: Surface;
+  pageParam?: string | null;
+}): Promise<Page> {
+  const { threadId, surface, pageParam } = params;
+  const offset = pageParam ? parseInt(pageParam, 10) : 0;
+
+  if (surface === "dm") {
+    console.log('[useMessages] Fetching DM messages for thread:', threadId);
+    const { data, error } = await supabase
+      .from("v_dm_messages_expanded") // ✅ Use the new view with replies and reactions
+      .select("*")
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('[useMessages] DM fetch error:', error);
+      throw error;
+    }
+    console.log('[useMessages] DM fetch success:', data?.length, 'messages');
+    const rows = (data || []).reverse(); // oldest → newest
+    const nextCursor = data && data.length === PAGE_SIZE ? String(offset + PAGE_SIZE) : null;
+    return { rows, nextCursor };
+  } else {
+    // Handle floq/plan messages
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .select("*")
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    const rows = (data || []).reverse();
+    const nextCursor = data && data.length === PAGE_SIZE ? String(offset + PAGE_SIZE) : null;
+    return { rows, nextCursor };
+  }
+}
+
 export function useMessages(
-  threadId?: string,
-  surface: 'dm' | 'floq' | 'plan' = 'dm',
-  opts: Opts = {}
+  threadIdRaw?: string,
+  surface: Surface = 'dm',
+  opts: UseMessagesOpts = {}
 ) {
   const queryClient = useQueryClient();
-  
-  // ---- compute safe flags once ----
-  const safeThreadId =
-    typeof threadId === 'string' && threadId.trim().length > 0 ? threadId : undefined;
 
-  const safeEnabled = Boolean(opts?.enabled); // <-- force to boolean (never '', null, etc.)
-  const uuidOk = !!safeThreadId && isUuid(safeThreadId);
-  
-  // Stable hookId across renders - only changes when threadId or surface changes
-  const hookId = useMemo(() => {
-    if (!safeThreadId) return `messages-${surface}-no-thread`;
-    return `messages-${surface}-${safeThreadId}`;
-  }, [surface, safeThreadId]);
-  
-  console.log('[useMessages hook]', { 
-    threadId, 
+  // 1) Normalize thread id - reject '', trim, and UUID-check
+  const safeThreadId = useMemo(() => {
+    const t = (threadIdRaw ?? '').trim();
+    return isUuid(t) ? t : undefined;
+  }, [threadIdRaw]);
+
+  // 2) Normalize enabled (boolean or callback only)
+  const enabledFromOpt: boolean =
+    typeof opts.enabled === 'function'
+      ? !!opts.enabled()
+      : typeof opts.enabled === 'boolean'
+      ? opts.enabled
+      : true; // default true when we have a valid thread
+
+  const enabled: boolean = !!safeThreadId && enabledFromOpt;
+
+  // 3) Stable key even when disabled (do NOT put '' in keys)
+  const key = ['messages', surface, safeThreadId ?? 'none'] as const;
+
+  console.log('[useMessages hook - hardened]', { 
+    threadIdRaw,
     safeThreadId,
     surface, 
-    uuidOk,
-    safeEnabled,
-    optsEnabled: opts?.enabled,
-    finalEnabled: uuidOk && (opts?.enabled === undefined ? true : safeEnabled)
+    enabledFromOpt,
+    enabled,
+    enabledType: typeof enabled
   });
 
-  // ---------------- queries ----------------
-  const history = useInfiniteQuery({
-    queryKey: ['messages', surface, safeThreadId],
-    queryFn: async ({ pageParam = 0 }): Promise<MessageRow[]> => {
+  const query = useInfiniteQuery({
+    queryKey: key,
+    initialPageParam: null as string | null,
+    enabled, // <-- always a real boolean now
+    queryFn: ({ pageParam }) => {
       console.log('[useMessages queryFn]', { surface, safeThreadId, pageParam });
-      if (surface === "dm") {
-        console.log('[useMessages] Fetching DM messages for thread:', safeThreadId);
-        const { data, error } = await supabase
-          .from("v_dm_messages_expanded") // ✅ Use the new view with replies and reactions
-          .select("*")
-          .eq("thread_id", safeThreadId!)
-          .order("created_at", { ascending: false })
-          .range(pageParam, pageParam + PAGE_SIZE - 1);
-
-        if (error) {
-          console.error('[useMessages] DM fetch error:', error);
-          throw error;
-        }
-        console.log('[useMessages] DM fetch success:', data?.length, 'messages');
-        return data.reverse(); // oldest → newest
-      } else {
-        // Handle floq/plan messages
-        const { data, error } = await supabase
-          .from("chat_messages")
-          .select("*")
-          .eq("thread_id", safeThreadId!)
-          .order("created_at", { ascending: false })
-          .range(pageParam, pageParam + PAGE_SIZE - 1);
-
-        if (error) throw error;
-        return data.reverse();
-      }
+      return fetchPage({ threadId: safeThreadId!, surface, pageParam });
     },
     getNextPageParam: (lastPage) => {
-      if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
-      return lastPage.length; // Use length as offset for next page
+      return lastPage?.nextCursor ?? undefined;
     },
-    enabled: uuidOk && (opts?.enabled === undefined ? true : safeEnabled), // <-- boolean only
+    select: (data) => {
+      // Optional: de-dupe across pages just in case
+      const seen = new Set<string>();
+      const pages = data.pages.map((p) => {
+        const rows = (p.rows ?? []).filter((m: any) => {
+          if (!m?.id || seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
+        return { ...p, rows };
+      });
+      return { ...data, pages };
+    },
     staleTime: 30_000,
   });
 
-  // Realtime subscription - use RealtimeManager to prevent duplicates
+  // 4) Realtime subscription only when enabled - use RealtimeManager to prevent duplicates
   useEffect(() => {
-    if (!safeThreadId || !uuidOk) return;
+    if (!enabled || !safeThreadId) return;
 
     console.log('[RealtimeManager] Setting up subscription for:', safeThreadId);
     const tableName = surface === "dm" ? "direct_messages" : "chat_messages";
@@ -158,28 +196,37 @@ export function useMessages(
           },
           createSafeRealtimeHandler<MessageRow>(
             ({ new: newMessage }) => {
-              if (!newMessage) return;
-              
-               console.log('📨 New message received:', newMessage);
+              if (!newMessage?.id) return;
+              console.log('📨 New message received:', newMessage);
               // Use functional update to prevent stale closures
               queryClient.setQueryData(
-                ["messages", surface, safeThreadId],
-                (old: MessagesInfinite | undefined) => {
+                key,
+                (old: any) => {
                   if (!old) return old;
-                  return addMessage(old, newMessage as MessageRow);
+                  // Convert to our expected format and add message
+                  const converted = {
+                    pages: old.pages.map((p: Page) => p.rows),
+                    pageParams: old.pageParams
+                  };
+                  return addMessage(converted, newMessage as MessageRow);
                 }
               );
             },
-            (error, payload) => {
-              console.error('[useMessages] Realtime error:', error, payload);
-            }
+            `${surface}_messages_realtime`
           )
-        ),
-      hookId
+        )
     );
       
     return cleanup;
-  }, [surface, safeThreadId, queryClient, hookId, uuidOk]);
+  }, [enabled, safeThreadId, surface, queryClient, key]);
 
-  return history;
+  return {
+    ...query,
+    // Re-expose a normalized shape for the list to consume
+    data: query.data
+      ? {
+          pages: query.data.pages.map((p: Page) => p.rows),
+        }
+      : undefined,
+  };
 }
