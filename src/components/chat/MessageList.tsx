@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Waypoint } from 'react-waypoint';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { useProfile } from '@/hooks/useProfile';
 import { ChatMediaBubble } from './ChatMediaBubble';
 import { ReplySnippet } from './ReplySnippet';
-import { MessageActions } from './MessageActions';
+import { MessageActionsTrigger, MessageActionsPopout } from './MessageActions';
 import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
 interface Message {
@@ -145,11 +145,28 @@ const MessageBubbleWrapper: React.FC<{
   onReply?: (messageId: string, preview?: {content?: string; authorId?: string}) => void;
 }> = ({ message, isOwn, isConsecutive, senderId, currentUserId, toggleReaction, onReply }) => {
   const { data: senderProfile } = useProfile(senderId);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const anchorRef = useRef<HTMLElement | null>(null);
+
+  const openActions = (btn: HTMLButtonElement) => {
+    anchorRef.current = btn;
+    setAnchorEl(btn);
+    setActionsOpen(true);
+  };
+
+  const handleReact = (emoji: string, messageId: string) => {
+    toggleReaction(messageId, emoji);
+  };
+
+  const handleReply = (messageId: string) => {
+    onReply?.(messageId, { content: message.content ?? '', authorId: message.profile_id });
+  };
 
   // Handle media messages
   if (message.metadata?.media) {
     return (
-      <div className="flex flex-col gap-2" data-mid={message.id}>
+      <div className="group relative px-3 py-1" data-mid={message.id}>
         <MessageBubble
           message={message}
           isOwn={isOwn}
@@ -163,6 +180,26 @@ const MessageBubbleWrapper: React.FC<{
             className="max-w-xs"
           />
         </div>
+
+        {/* Hover actions trigger */}
+        <div className={cn(
+          "absolute -top-3",
+          isOwn ? "right-1" : "left-1",
+          "hidden group-hover:flex"
+        )}>
+          <MessageActionsTrigger onOpen={openActions} />
+        </div>
+
+        {/* Portal popout */}
+        {actionsOpen && anchorEl && (
+          <MessageActionsPopout
+            messageId={message.id}
+            anchorRef={{ current: anchorEl }}
+            onReact={handleReact}
+            onReply={handleReply}
+            onClose={() => setActionsOpen(false)}
+          />
+        )}
       </div>
     );
   }
@@ -170,9 +207,9 @@ const MessageBubbleWrapper: React.FC<{
   // Handle reply context
   if (message.reply_to && message.reply_to_msg && message.reply_to_msg.id) {
     return (
-      <div className="flex flex-col gap-2 relative overflow-visible" data-mid={message.id}>
+      <div className="group relative px-3 py-1" data-mid={message.id}>
         {/* ✅ Inline reply preview using expanded view data */}
-        <div className={`max-w-[75%] text-xs rounded-md px-2 py-1 mb-1 border border-border/40 bg-muted/30 ${isOwn ? "self-end" : "self-start"}`}>
+        <div className={`max-w-[75%] text-xs rounded-md px-2 py-1 mb-1 border border-border/40 bg-muted/30 ${isOwn ? "ml-auto" : "mr-auto"}`}>
           <div className="opacity-70">Replying to</div>
           <div className="line-clamp-2">
             {message.reply_to_msg.content ?? '(deleted message)'}
@@ -187,7 +224,11 @@ const MessageBubbleWrapper: React.FC<{
             View context
           </button>
         </div>
-        <div className="flex flex-col overflow-visible">
+        
+        <div className={cn(
+          "inline-block max-w-[75%] rounded-2xl px-3 py-2",
+          isOwn ? "bg-primary text-primary-foreground ml-auto" : "bg-muted text-foreground mr-auto"
+        )}>
           <MessageBubble
             message={message}
             isOwn={isOwn}
@@ -195,61 +236,70 @@ const MessageBubbleWrapper: React.FC<{
             isConsecutive={isConsecutive}
             senderProfile={senderProfile}
           />
-          {/* Render reactions */}
-          <div className={`group mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
-            {/* Reaction picker (hidden until hover) */}
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <MessageActions 
-                onReply={() => onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id })} 
-                onReact={(emoji) => toggleReaction(message.id, emoji)} 
-              />
-            </div>
-
-            {/* Current reactions with "your reaction" highlighting */}
-            {message.reactions?.map(r => {
-              const isYourReaction = r.reactors.includes(currentUserId || '');
-              return (
-                <span
-                  key={r.emoji}
-                  className={`text-xs rounded px-1 border transition-colors cursor-pointer hover:bg-muted/50 ${
-                    isYourReaction 
-                      ? 'border-primary/50 bg-primary/10 ring-1 ring-primary/20' 
-                      : 'border-border/50 bg-background/40'
-                  }`}
-                  title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
-                  onClick={() => toggleReaction(message.id, r.emoji)}
-                >
-                  {r.emoji} {r.count}
-                </span>
-              );
-            })}
-          </div>
         </div>
+
+        {/* Current reactions with "your reaction" highlighting */}
+        <div className={`mt-1 flex gap-2 items-center ${isOwn ? "justify-end" : "justify-start"}`}>
+          {message.reactions?.map(r => {
+            const isYourReaction = r.reactors.includes(currentUserId || '');
+            return (
+              <span
+                key={r.emoji}
+                className={`text-xs rounded px-1 border transition-colors cursor-pointer hover:bg-muted/50 ${
+                  isYourReaction 
+                    ? 'border-primary/50 bg-primary/10 ring-1 ring-primary/20' 
+                    : 'border-border/50 bg-background/40'
+                }`}
+                title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
+                onClick={() => toggleReaction(message.id, r.emoji)}
+              >
+                {r.emoji} {r.count}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Hover actions trigger */}
+        <div className={cn(
+          "absolute -top-3",
+          isOwn ? "right-1" : "left-1",
+          "hidden group-hover:flex"
+        )}>
+          <MessageActionsTrigger onOpen={openActions} />
+        </div>
+
+        {/* Portal popout */}
+        {actionsOpen && anchorEl && (
+          <MessageActionsPopout
+            messageId={message.id}
+            anchorRef={{ current: anchorEl }}
+            onReact={handleReact}
+            onReply={handleReply}
+            onClose={() => setActionsOpen(false)}
+          />
+        )}
       </div>
     );
   }
 
   // Regular message
   return (
-    <div className="flex flex-col relative overflow-visible" data-mid={message.id}>
-      <MessageBubble
-        message={message}
-        isOwn={isOwn}
-        showAvatar={!isOwn}
-        isConsecutive={isConsecutive}
-        senderProfile={senderProfile}
-      />
-      {/* Reaction controls and display */}
-      <div className={`group mt-1 flex gap-2 items-center overflow-visible ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
-        {/* Reaction picker (hidden until hover) */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <MessageActions 
-            onReply={() => onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id })} 
-            onReact={(emoji) => toggleReaction(message.id, emoji)} 
-          />
-        </div>
+    <div className="group relative px-3 py-1" data-mid={message.id}>
+      <div className={cn(
+        "inline-block max-w-[75%] rounded-2xl px-3 py-2",
+        isOwn ? "bg-primary text-primary-foreground ml-auto" : "bg-muted text-foreground mr-auto"
+      )}>
+        <MessageBubble
+          message={message}
+          isOwn={isOwn}
+          showAvatar={!isOwn}
+          isConsecutive={isConsecutive}
+          senderProfile={senderProfile}
+        />
+      </div>
 
-        {/* Current reactions with "your reaction" highlighting */}
+      {/* Current reactions with "your reaction" highlighting */}
+      <div className={`mt-1 flex gap-2 items-center ${isOwn ? "justify-end" : "justify-start"}`}>
         {message.reactions?.map(r => {
           const isYourReaction = r.reactors.includes(currentUserId || '');
           return (
@@ -268,6 +318,26 @@ const MessageBubbleWrapper: React.FC<{
           );
         })}
       </div>
+
+      {/* Hover actions trigger */}
+      <div className={cn(
+        "absolute -top-3",
+        isOwn ? "right-1" : "left-1",
+        "hidden group-hover:flex"
+      )}>
+        <MessageActionsTrigger onOpen={openActions} />
+      </div>
+
+      {/* Portal popout */}
+      {actionsOpen && anchorEl && (
+        <MessageActionsPopout
+          messageId={message.id}
+          anchorRef={{ current: anchorEl }}
+          onReact={handleReact}
+          onReply={handleReply}
+          onClose={() => setActionsOpen(false)}
+        />
+      )}
     </div>
   );
 };
