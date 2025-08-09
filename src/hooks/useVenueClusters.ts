@@ -44,12 +44,31 @@ export function useVenueClusters(viewport: Viewport) {
       const eastD = Number.isFinite(east) ? Number(east) : parseFloat(String(east));
       const northD = Number.isFinite(north) ? Number(north) : parseFloat(String(north));
 
-      const { data, error } = await supabase.rpc('get_venues_in_bbox', {
-        west: westD,
-        south: southD,
-        east: eastD,
-        north: northD,
-      });
+      const params = { west: westD, south: southD, east: eastD, north: northD } as const;
+
+      const tryRpc = async (fn: string) => supabase.rpc(fn, params);
+
+      // Primary call
+      let { data, error } = await tryRpc('get_venues_in_bbox');
+
+      // Retry fallbacks if PostgREST reports overload ambiguity
+      if (error && (error as any).code === 'PGRST203') {
+        const fallbacks = [
+          'get_venues_in_bbox_double',
+          'get_venues_in_bbox_v2',
+          'get_venues_in_bbox_f64',
+        ];
+        for (const fn of fallbacks) {
+          try {
+            const res = await tryRpc(fn);
+            if (!res.error && res.data) {
+              data = res.data;
+              error = null as any;
+              break;
+            }
+          } catch {}
+        }
+      }
       
       if (error) {
         console.error('Error fetching venues:', error);
@@ -60,8 +79,8 @@ export function useVenueClusters(viewport: Viewport) {
       return (data as any[])?.map(item => ({
         id: item.id,
         name: item.name,
-        lat: item.lat,
-        lng: item.lng,
+        lat: +item.lat,
+        lng: +item.lng,
         source: item.source || 'manual',
         external_id: item.external_id || item.id,
         address: item.address || null,
@@ -112,8 +131,8 @@ export function useVenueClusters(viewport: Viewport) {
         properties: {
           id: venue.id,
           name: venue.name,
-          vibe: venue.vibe,
-          source: venue.source || 'database',
+          vibe: (venue as any).vibe,
+          source: (venue as any).source || 'database',
         },
       }));
 
