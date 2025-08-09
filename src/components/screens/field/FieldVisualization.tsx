@@ -100,19 +100,21 @@ export const FieldVisualization = ({
   // Cluster people (skip in constellation mode) - moved to top level to follow Rules of Hooks
   const clusters = useMemo(() => {
     if (constellationMode) return [];
-    return Object.values(groupByPosition(people));
+    const list = Array.isArray(people) ? people : [];
+    return Object.values(groupByPosition(list));
   }, [people, constellationMode]);
   
   // Phase 1B Fix: Analytics de-dupe with persistent seenRef
   const seenRef = useRef<Set<string>>(new Set());
-  const friendIdsHash = useMemo(
-    () => people.filter(p => p.isFriend).map(p => p.id).sort().join(','),
-    [people]
-  );
+  const friendIdsHash = useMemo(() => {
+    const list = Array.isArray(people) ? people : [];
+    return list.filter(p => p?.isFriend).map(p => p?.id).filter(Boolean).sort().join(',');
+  }, [people]);
 
   useEffect(() => {
-    people.forEach(person => {
-      if (person.isFriend && !seenRef.current.has(person.id)) {
+    const list = Array.isArray(people) ? people : [];
+    list.forEach(person => {
+      if (person?.isFriend && person?.id && !seenRef.current.has(person.id)) {
         seenRef.current.add(person.id);
         track('friend_encounter', { 
           friend_id: person.id, 
@@ -198,6 +200,9 @@ export const FieldVisualization = ({
     // You could enhance this to check if the bbox still contains clusters
   }, [venueClusters, activeClusterBbox, clusterSheetOpen]);
 
+  // Apply vibe filter if provided via people/friends arrays (assuming upstream filtered)
+  const activeVibe = undefined; // Upstream selection handled in map HUD; friends/people should be pre-filtered
+
   return (
     <div className={`relative h-full ${mini ? 'pt-2 pb-2' : 'pt-48 pb-32'} ${className}`}>
       {/* Scrollable field canvas for geographic elements */}
@@ -222,7 +227,7 @@ export const FieldVisualization = ({
           )}
 
           {/* People on the field with collision detection (when not in constellation mode) */}
-          {!constellationMode && clusters.map(cluster => {
+          {!constellationMode && (Array.isArray(clusters) ? clusters : []).map(cluster => {
               if (cluster.length === 0) return null;
 
               // Calculate canvas pixel coords from percentage coordinates
@@ -412,7 +417,7 @@ export const FieldVisualization = ({
             })}
 
           {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
-          {floqEvents.map((event, index) => {
+          {(Array.isArray(floqEvents) ? floqEvents : []).map((event, index) => {
             // Check if this floq is walkable
             const walkableFloq = walkableFloqs.find(wf => wf.id === event.id);
             const isWalkable = walkableFloq && walkableFloq.distance_meters <= 300;

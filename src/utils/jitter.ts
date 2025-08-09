@@ -20,10 +20,12 @@ export function groupByLocation<T extends { lat: number; lng: number }>(
 
 // Special grouping function for Person objects that use x/y instead of lat/lng
 export function groupByPosition<T extends { x: number; y: number; isFriend?: boolean }>(
-  items: T[],
+  items: T[] | undefined | null,
   precision = 1, // precision for percentage values (0-100)
 ): Record<string, T[]> {
-  return items.reduce<Record<string, T[]>>((acc, item) => {
+  const list = Array.isArray(items) ? items : [];
+  return list.reduce<Record<string, T[]>>((acc, item) => {
+    if (typeof item?.x !== 'number' || typeof item?.y !== 'number') return acc;
     const key = `${item.x.toFixed(precision)}|${item.y.toFixed(precision)}`;
     (acc[key] ||= []).push(item);
     return acc;

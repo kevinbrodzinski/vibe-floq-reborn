@@ -23,13 +23,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
+import { useVisibleFriendsOnMap } from '@/hooks/useVisibleFriendsOnMap';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
+import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { FieldHUD } from '@/components/field/FieldHUD';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
 import '@/lib/debug/friendsDebugger';
 import '@/lib/debug/floqPlanDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
+import DeckGL from '@deck.gl/react';
+import { createDensityLayer } from '@/components/map/DeckLayers';
+import { useClusters } from '@/hooks/useClusters';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -64,8 +70,13 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedVibe, setSelectedVibe] = useState<string>('all');
+  const [highlightedFriend, setHighlightedFriend] = useState<string | null>(null);
+  const highlightTimerRef = useRef<number>();
   const [selectedMyFloq, setSelectedMyFloq] = useState<string | null>(null);
   const { location, isLocationReady } = useFieldLocation();
+
+  // Density mode state
+  const [densityMode, setDensityMode] = useState(false);
 
   // Get user's active floqs
   const { data: myFloqs = [] } = useMyActiveFloqs();
@@ -78,10 +89,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
   // Filter floqs by selected vibe and selected floq
   const filteredFloqs = useMemo(() => {
-    // Add mock floqs in dev mode for testing
-    const mockFloqs = import.meta.env.DEV 
-      ? (typeof window !== 'undefined' && (window as any).getMockFloqs?.() || [])
-      : [];
+    // Inject mock floqs when mock mode is on
+    let mockFloqs: any[] = [];
+    try {
+      const { isMockModeEnabled, generateMockFloqs } = require('@/lib/mock/MockMode');
+      if (isMockModeEnabled()) {
+        const cLat = location?.coords?.lat ?? 37.7749;
+        const cLng = location?.coords?.lng ?? -122.4194;
+        mockFloqs = generateMockFloqs(cLat, cLng, 10);
+      }
+    } catch {}
     
     let filtered = [...floqs, ...mockFloqs];
     
@@ -92,7 +109,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     
     console.log('[FieldWebMap] 🎯 Filtered floqs:', filtered.length, 'total');
     return filtered;
-  }, [floqs, selectedVibe, selectedMyFloq]);
+  }, [floqs, selectedVibe, selectedMyFloq, mockModeNonce]);
 
   // TODO: Add real plans data from usePlansData or similar hook
   const filteredPlans = useMemo(() => {
@@ -106,57 +123,59 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     return mockPlans;
   }, []);
 
-  // Build people array with current user + any floq members
+  // Build people array with current user + visible friends
+  const { people: visibleFriends } = useVisibleFriendsOnMap();
   const filteredPeople = useMemo(() => {
-    // 🔧 DEBUG: Log location context state
-    console.log('[FieldWebMap] 🔧 Building filteredPeople with location:', {
-      hasLocationCoords: !!location?.coords,
-      locationCoords: location?.coords,
-      isLocationReady,
-      selectedMyFloq,
-      selectedFloqMembersCount: selectedFloqMembers.length
-    });
-    
-    // 🔧 CRITICAL FIX: ALWAYS include current user as a person with you: true
-    // This ensures usePeopleSource can find and render the "YOU" pin
     const currentUserPerson = location?.coords ? [{
-      id: 'current-user', // Use a fixed ID for current user
+      id: 'current-user',
       lng: location.coords.lng,
       lat: location.coords.lat,
       x: 0,
       y: 0,
-      you: true, // 🔧 CRITICAL: Mark as current user so usePeopleSource picks it up
+      you: true,
       isFriend: false
     }] : [];
-    
-    // Build people array with floq members if selected
-    const floqMembers = selectedMyFloq && selectedFloqMembers.length > 0 
-      ? selectedFloqMembers.map(member => ({
-          id: member.profile_id,
-          lng: 0, // Floq members don't have live coordinates yet
-          lat: 0,
+
+    // Real friends
+    const friendPeople = (visibleFriends || [])
+      .filter(fr => selectedVibe === 'all' || (fr.vibe ?? '') === selectedVibe)
+      .map(fr => ({
+        id: fr.id,
+        lng: fr.lng,
+        lat: fr.lat,
+        x: 0,
+        y: 0,
+        you: false,
+        isFriend: true,
+        vibe: fr.vibe ?? undefined
+      }));
+
+    // Mock people injection
+    let mockPeople: any[] = [];
+    try {
+      const { isMockModeEnabled, generateMockPeople } = require('@/lib/mock/MockMode');
+      if (isMockModeEnabled()) {
+        const cLat = location?.coords?.lat ?? 37.7749;
+        const cLng = location?.coords?.lng ?? -122.4194;
+        mockPeople = generateMockPeople(cLat, cLng, 16).map((p: any) => ({
+          id: p.id,
+          lng: p.lng,
+          lat: p.lat,
           x: 0,
           y: 0,
           you: false,
-          isFriend: true
-        }))
-      : [];
-    
-    // Add mock friends in dev mode for testing
-    const mockFriends = import.meta.env.DEV 
-      ? (typeof window !== 'undefined' && (window as any).getMockFriends?.() || [])
-      : [];
-    
-    const result = [...currentUserPerson, ...floqMembers, ...mockFriends];
-    
-    // 🔧 DEBUG: Log filteredPeople table for easy debugging (dev only)
+          isFriend: true,
+          vibe: p.vibe,
+        }));
+      }
+    } catch {}
+
+    const result = [...currentUserPerson, ...friendPeople, ...mockPeople];
     if (import.meta.env.DEV) {
-      console.log('[FieldWebMap] 🔧 filteredPeople result:');
-      console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you, friend: p.isFriend, vibe: p.vibe })));
+      console.log('[FieldWebMap] people for map:', result);
     }
-    
     return result;
-  }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
+  }, [location?.coords, visibleFriends, mockModeNonce]);
 
   // Prepare context value for selected floq
   const selectedFloqContextValue = useMemo(() => ({
@@ -170,6 +189,18 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   const [err,setErr]       = useState<string>();
   const [showWeather, setShowWeather] = useState(false);
 
+  // Quick sheet state for friend taps
+  const [dmOpen, setDmOpen] = useState(false);
+  const [dmFriendId, setDmFriendId] = useState<string | null>(null);
+
+  // Mock mode change tick for reactivity
+  const [mockModeNonce, setMockModeNonce] = useState(0);
+  useEffect(() => {
+    const handler = () => setMockModeNonce((n) => n + 1);
+    window.addEventListener('floq:mockModeChanged', handler as any);
+    return () => window.removeEventListener('floq:mockModeChanged', handler as any);
+  }, []);
+
   // Initialize unified map layers (preserves all existing functionality)
   const { layersReady } = useMapLayers({
     map: mapRef.current,
@@ -178,8 +209,57 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     plans: filteredPlans,
     onClusterClick: (clusterId, coordinates) => {
       console.log('Cluster clicked:', clusterId, coordinates);
-    }
+    },
+    onFriendClick: (friendId) => {
+      setHighlightedFriend(friendId);
+      setDmFriendId(friendId);
+      setDmOpen(true);
+      clearTimeout(highlightTimerRef.current!);
+      highlightTimerRef.current = window.setTimeout(() => setHighlightedFriend(null), 5000);
+    },
+    highlightFriendId: highlightedFriend
   });
+
+  // Deck.GL Density overlay in Field map when Density mode is on
+  const bounds = useMemo(() => {
+    if (!mapRef.current) return null;
+    const b = mapRef.current.getBounds();
+    return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()] as [number, number, number, number];
+  }, [status]);
+
+  const { clusters: densityClusters } = useClusters(bounds ?? [-118.5, 33.9, -118.0, 34.1], 6);
+  const filteredDensityClusters = useMemo(() => {
+    if (selectedVibe === 'all') return densityClusters;
+    return densityClusters.filter(c => !!c.vibe_counts && c.vibe_counts[selectedVibe] > 0);
+  }, [densityClusters, selectedVibe]);
+
+  const densityLayers = useMemo(() => {
+    if (!densityMode) return [] as any[];
+    const layer = createDensityLayer(filteredDensityClusters as any, {}, () => {});
+    return layer ? [layer] : [];
+  }, [densityMode, filteredDensityClusters]);
+
+  // Nearest cluster CTA when density mode is ON
+  const nearestCluster = useMemo(() => {
+    if (!densityMode || !location.coords || filteredDensityClusters.length === 0) return null;
+    const me = { lat: location.coords.lat, lng: location.coords.lng };
+    let best: any = null; let bestDist = Infinity;
+    for (const c of filteredDensityClusters) {
+      const [lng, lat] = c.centroid.coordinates;
+      const d = 111_320 * Math.hypot(
+        lat - me.lat,
+        (lng - me.lng) * Math.cos(me.lat * Math.PI / 180)
+      );
+      if (d < bestDist) { best = c; bestDist = d; }
+    }
+    return best ? { cluster: best, meters: bestDist } : null;
+  }, [densityMode, location.coords?.lat, location.coords?.lng, filteredDensityClusters]);
+
+  const centerToNearestCluster = useCallback(() => {
+    if (!mapRef.current || !nearestCluster) return;
+    const [lng, lat] = nearestCluster.cluster.centroid.coordinates as [number, number];
+    mapRef.current.easeTo({ center: [lng, lat], zoom: Math.max(13, mapRef.current.getZoom()), duration: 800 });
+  }, [nearestCluster]);
 
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
@@ -314,7 +394,6 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     };
   }, []);
 
-  
   // 🔧 DEBUG: Mount debugging effect  
   useEffect(() => {
     (window as any).__mountPing = true;
@@ -974,8 +1053,6 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     };
   },[onRegionChange]);
 
-  // Helper to safely access map source
-
   // Update user location when it changes - Use safe utility function
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
@@ -1067,7 +1144,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
-      <div className="absolute inset-0" style={{ height: '100vh', width: '100%', minHeight: '400px' }}>
+      <div className="absolute inset-0" style={{ height: '100svh', width: '100%', minHeight: '400px' }}>
+        {/* Reserve space for bottom HUD to avoid overlap with browser UI */}
+        <div className="pointer-events-none" style={{ position: 'absolute', inset: 0 }} />
         {/* Map container with explicit height to prevent zero-height issues */}
         <div 
           ref={mapContainerRef} 
@@ -1084,6 +1163,15 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             bottom: 0
           }}
         />
+        
+        {/* Deck.GL density overlay when enabled */}
+        {densityMode && densityLayers.length > 0 && (
+          <DeckGL
+            layers={densityLayers}
+            parameters={{ depthTest: false }}
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          />
+        )}
         
         {/* Vibe Filter Dropdown */}
         {status === 'ready' && vibeTypes.length > 0 && (
@@ -1246,6 +1334,17 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           </div>
         )}
 
+        {/* Nearest Cluster CTA (Density mode) */}
+        {densityMode && nearestCluster && (
+          <button
+            onClick={centerToNearestCluster}
+            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg hover:glow-active transition"
+            title={`Center to energy (~${Math.round(nearestCluster.meters)}m)`}
+          >
+            Center to energy · ~{Math.round(nearestCluster.meters)}m
+          </button>
+        )}
+
         {/* Location Debug Info */}
         {import.meta.env.DEV && isLocationReady && location.coords?.lat && location.coords?.lng && (
           <div className="absolute bottom-4 left-4 z-10 bg-black/70 text-white px-3 py-2 rounded text-xs font-mono">
@@ -1292,6 +1391,26 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
         {/* Timewarp Map Layer */}
         <TimewarpMapLayer map={mapRef.current} />
+
+        {/* Bottom HUD with vibe chips and right-rail quick actions */}
+        <FieldHUD
+          onOpenFilters={() => {
+            try {
+              const { useFloqUI } = require('@/contexts/FloqUIContext');
+              const ui = useFloqUI?.();
+              ui?.setShowFiltersModal?.(true);
+            } catch {}
+          }}
+          onCenterMap={centerOnUserLocation}
+          onToggleWeather={() => setShowWeather(v => !v)}
+          activeVibe={selectedVibe}
+          onSelectVibe={setSelectedVibe}
+          densityMode={densityMode}
+          onToggleDensity={() => setDensityMode(v => !v)}
+        />
+
+        {/* DM Quick Sheet for friend taps */}
+        <DMQuickSheet open={dmOpen} onOpenChange={setDmOpen} friendId={dmFriendId} />
 
         {children}
       </div>

@@ -198,8 +198,15 @@ export const FieldLayout = () => {
             isMotionAvailable={isMotionAvailable}
           />
 
-          {/* Base Map Layer - z-0 */}
-          <div {...gestureHandlers}>
+          {/* Top Header (avatar / notifications / ghost mode) - high z-index */}
+          <div className="fixed top-0 left-0 right-0 z-[70] pointer-events-none">
+            <div className="pointer-events-auto">
+              <FieldHeader />
+            </div>
+          </div>
+
+          {/* Base Map Layer - z-0 (gesture handlers temporarily disabled to restore native map interactions) */}
+          <div>
             <FieldMapLayer
               data={data}
               people={people}

@@ -47,14 +47,8 @@ export function usePeopleSource(
       },
     }));
 
-    if (userPos && user?.id) {
-      const selfFeature = buildSelfFeature([userPos.lng, userPos.lat], user.id);
-      features.push(selfFeature);
-      console.log('[usePeopleSource] Added self feature:', selfFeature);
-    } else {
-      console.log('[usePeopleSource] 🔧 NOT adding self feature - userPos:', userPos, 'user?.id:', user?.id);
-      console.log('[usePeopleSource] 🔧 Available people for self detection:', people.map(p => ({ id: p.id, you: p.you, lat: p.lat, lng: p.lng })));
-    }
+    // Self pin is rendered via user-location source/layer; do not duplicate via people source
+    // (If you prefer the selfLayer path, re-enable this block.)
 
     console.log('[usePeopleSource] Final GeoJSON features count:', features.length);
     return { type: 'FeatureCollection', features } as const;

@@ -38,24 +38,53 @@ export function useVenueClusters(viewport: Viewport) {
   const { data: venues = [] } = useQuery({
     queryKey: ['venues', viewport.bounds],
     queryFn: async (): Promise<Venue[]> => {
-      const { data, error } = await supabase.rpc('get_venues_in_bbox', {
-        west,
-        south,
-        east,
-        north,
-      });
-      
-      if (error) {
-        console.error('Error fetching venues:', error);
-        throw error;
+      // Explicitly coerce to double precision-compatible JS numbers to avoid PostgREST overload ambiguity
+      const westD = Number.isFinite(west) ? Number(west) : parseFloat(String(west));
+      const southD = Number.isFinite(south) ? Number(south) : parseFloat(String(south));
+      const eastD = Number.isFinite(east) ? Number(east) : parseFloat(String(east));
+      const northD = Number.isFinite(north) ? Number(north) : parseFloat(String(north));
+
+      const params = { west: westD, south: southD, east: eastD, north: northD } as const;
+
+      // 1) Try canonical RPC first
+      let data: any[] | null = null;
+      let rpcError: any = null;
+      try {
+        const res = await supabase.rpc('get_venues_in_bbox', params);
+        data = res.data as any[] | null;
+        rpcError = res.error;
+      } catch (e) {
+        rpcError = e;
+      }
+
+      // 2) If ambiguity/404, fall back to direct table select with bbox filters
+      if (rpcError && ((rpcError.code === 'PGRST203') || (rpcError.status === 404))) {
+        const sel = await supabase
+          .from('venues')
+          .select('id,name,lat,lng,source,external_id,address,categories,rating,photo_url,updated_at,created_at,description,radius_m,slug')
+          .gte('lng', westD)
+          .lte('lng', eastD)
+          .gte('lat', southD)
+          .lte('lat', northD)
+          .limit(1000);
+        if (sel.error) {
+          console.error('Fallback venues SELECT error:', sel.error);
+          throw sel.error;
+        }
+        data = (sel.data ?? []) as any[];
+      }
+
+      if (rpcError && !data) {
+        console.error('Error fetching venues:', rpcError);
+        throw rpcError;
       }
       
-      // The RPC returns a simplified format, so we cast it properly
-      return (data as any[])?.map(item => ({
+      // The RPC or SELECT returns a simplified format, so we cast it properly
+      return (data ?? []).map(item => ({
         id: item.id,
         name: item.name,
-        lat: item.lat,
-        lng: item.lng,
+        lat: +item.lat,
+        lng: +item.lng,
         source: item.source || 'manual',
         external_id: item.external_id || item.id,
         address: item.address || null,
@@ -64,12 +93,12 @@ export function useVenueClusters(viewport: Viewport) {
         photo_url: item.photo_url || null,
         updated_at: item.updated_at || new Date().toISOString(),
         geom: null,
-        vibe: item.vibe || null,
+        vibe: (item as any).vibe || null,
         created_at: item.created_at || new Date().toISOString(),
         description: item.description || null,
         radius_m: item.radius_m || 100,
         slug: item.slug || null,
-      } as Venue)) ?? [];
+      } as Venue));
     },
     staleTime: 60_000, // Cache for 1 minute
     enabled: true,
@@ -106,8 +135,8 @@ export function useVenueClusters(viewport: Viewport) {
         properties: {
           id: venue.id,
           name: venue.name,
-          vibe: venue.vibe,
-          source: venue.source || 'database',
+          vibe: (venue as any).vibe,
+          source: (venue as any).source || 'database',
         },
       }));
 
@@ -136,6 +165,7 @@ export function useVenueClusters(viewport: Viewport) {
             cluster_id: feature.properties.cluster_id,
             ...feature.properties,
           },
+          geometry: { coordinates: [lng, lat] as [number, number] },
         };
       } else {
         // This is a single venue
