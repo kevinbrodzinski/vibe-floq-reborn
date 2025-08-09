@@ -5,6 +5,7 @@ import { AvatarDropdown } from "@/components/AvatarDropdown"
 import { NotificationsSheet } from "@/components/notifications/NotificationsSheet"
 import { SafeModeButton } from "@/components/ui/SafeModeButton"
 import { useSafeMode } from "@/hooks/useSafeMode"
+import { useEventNotifications } from "@/providers/EventNotificationsProvider"
 
 import { cn } from "@/lib/utils"
 import { track } from "@/lib/analytics"
@@ -30,6 +31,8 @@ export const FieldHeader = ({
 }: FieldHeaderProps) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { isActive, toggleSafeMode } = useSafeMode()
+  const { unseen } = useEventNotifications()
+  const totalUnread = unseen.length
 
   return (
     <header
@@ -100,11 +103,15 @@ export const FieldHeader = ({
         {/* 🔔 Icon-only notifications button (replaces NotificationBell) */}
         <button
           onClick={() => setNotificationsOpen(true)}
-          aria-label="Open notifications"
+          aria-label={totalUnread > 0 ? `Open notifications (${totalUnread} unread)` : "Open notifications"}
           className="relative text-primary hover:text-primary/80 transition-colors p-2"
         >
           <Bell className="w-5 h-5" />
-          {/* add a badge here if you track unread count */}
+          {totalUnread > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive text-[10px] font-semibold leading-none text-destructive-foreground shadow">
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
         </button>
 
         <AvatarDropdown />
