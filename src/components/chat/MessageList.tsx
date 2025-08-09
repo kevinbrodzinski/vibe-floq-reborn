@@ -41,6 +41,8 @@ interface MessageListProps {
   className?: string;
 }
 
+const EMOJIS = ['👍','❤️','😂','🔥','😮','😢'];
+
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   currentUserId,
@@ -99,22 +101,16 @@ export const MessageList: React.FC<MessageListProps> = ({
       {allMessages.map((message, index) => {
         const senderId = message.profile_id || message.sender_id;
         const isOwn = senderId === currentUserId;
-        const previousMessage = allMessages[index - 1];
-        const isConsecutive =
-          previousMessage &&
-          (previousMessage.profile_id || previousMessage.sender_id) === senderId &&
-          dayjs(message.created_at).diff(dayjs(previousMessage.created_at), 'minute') < 5;
+        const reactions = byMessage[message.id] || [];
 
         return (
           <MessageRow
             key={message.id}
             message={message}
             isOwn={isOwn}
-            isConsecutive={!!isConsecutive}
-            currentUserId={currentUserId}
-            onReply={onReply}
-            byMessage={byMessage}
-            toggleReaction={toggleReaction}
+            reactions={reactions}
+            onReact={(emoji) => toggleReaction(message.id, emoji)}
+            onReply={() => onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id })}
           />
         );
       })}
@@ -123,152 +119,51 @@ export const MessageList: React.FC<MessageListProps> = ({
   );
 };
 
-const MessageRow: React.FC<{
-  message: Message;
+function MessageRow({
+  message, isOwn, reactions, onReact, onReply
+}: {
+  message: any;
   isOwn: boolean;
-  isConsecutive: boolean;
-  currentUserId: string | null;
-  onReply?: (messageId: string, preview?: { content?: string; authorId?: string }) => void;
-  byMessage: Record<string, Array<{emoji: string; count: number; reactors: string[]}>>;
-  toggleReaction: (messageId: string, emoji: string) => void;
-}> = ({ message, isOwn, isConsecutive, currentUserId, onReply, byMessage, toggleReaction }) => {
-  const { data: senderProfile } = useProfile(message.profile_id || message.sender_id);
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  reactions: Array<{emoji:string; count:number; reactors:string[]}>;
+  onReact: (emoji: string) => void;
+  onReply: () => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
-  const openActions = (btn: HTMLButtonElement) => {
-    setAnchorEl(btn);
-    setActionsOpen(true);
-  };
-
-  const handleReact = (emoji: string, messageId: string) => {
-    toggleReaction(messageId, emoji);
-  };
-
-  const handleReply = (messageId: string) => {
-    onReply?.(messageId, { content: message.content ?? '', authorId: message.profile_id });
-  };
-
-  // Get reactions for this specific message from the map
-  const messageReactions = byMessage[message.id] || [];
-
-  // MEDIA message
-  if (message.metadata?.media) {
-    return (
-      <div className={cn('group relative flex w-full py-1', isOwn ? 'justify-end' : 'justify-start')} data-mid={message.id}>
-        <div className="flex flex-col max-w-[72%]">
-          <MessageBubble
-            message={message}
-            isOwn={isOwn}
-            showAvatar={!isOwn}
-            isConsecutive={isConsecutive}
-            senderProfile={senderProfile}
-            reactions={byMessage[message.id] || []}
-            onReact={(emoji) => toggleReaction(message.id, emoji)}
-          />
-          <div className="max-w-[70%] mx-auto">
-            <ChatMediaBubble media={message.metadata.media} className="max-w-xs" />
-          </div>
-        </div>
-
-        <div className="absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
-          <MessageActionsTrigger onOpen={openActions} />
-        </div>
-
-        {actionsOpen && anchorEl && (
-          <MessageActionsPopout
-            messageId={message.id}
-            anchorRef={{ current: anchorEl }}
-            onReact={handleReact}
-            onReply={handleReply}
-            onClose={() => setActionsOpen(false)}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // Reply-context message (use expanded view)
-  if (message.reply_to && message.reply_to_msg && message.reply_to_msg.id) {
-    return (
-      <div className={cn('group relative flex w-full py-1', isOwn ? 'justify-end' : 'justify-start')} data-mid={message.id}>
-        <div className="flex flex-col max-w-[72%]">
-          <div className="text-xs rounded-md px-2 py-1 mb-1 border border-border/40 bg-muted/30">
-            <div className="opacity-70">Replying to</div>
-            <div className="line-clamp-2">{message.reply_to_msg.content ?? '(deleted message)'}</div>
-            <button
-              className="text-xs opacity-70 hover:opacity-100 underline mt-1"
-              onClick={() => {
-                const el = document.querySelector(`[data-mid="${message.reply_to_msg?.id}"]`);
-                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }}
-            >
-              View context
-            </button>
-          </div>
-
-          <MessageBubble
-            message={message}
-            isOwn={isOwn}
-            showAvatar={!isOwn}
-            isConsecutive={isConsecutive}
-            senderProfile={senderProfile}
-            reactions={byMessage[message.id] || []}
-            onReact={(emoji) => toggleReaction(message.id, emoji)}
-          />
-        </div>
-
-        <div className="absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
-          <MessageActionsTrigger onOpen={openActions} />
-        </div>
-
-        {actionsOpen && anchorEl && (
-          <MessageActionsPopout
-            messageId={message.id}
-            anchorRef={{ current: anchorEl }}
-            onReact={handleReact}
-            onReply={handleReply}
-            onClose={() => setActionsOpen(false)}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // Regular message
   return (
     <div
-      className={cn(
-        'group relative flex w-full py-1',
-        isOwn ? 'justify-end' : 'justify-start'
-      )}
+      className={cn('group relative flex w-full py-1', isOwn ? 'justify-end' : 'justify-start')}
       data-mid={message.id}
     >
-      <div className="flex flex-col max-w-[72%]">
-        <MessageBubble
-          message={message}
-          isOwn={isOwn}
-          showAvatar={!isOwn}
-          isConsecutive={isConsecutive}
-          senderProfile={senderProfile}
-          reactions={byMessage[message.id] || []}
-          onReact={(emoji) => toggleReaction(message.id, emoji)}
+      <MessageBubble
+        content={message.content}
+        isOwn={isOwn}
+        reply_to_id={message.reply_to}
+        created_at={message.created_at}
+        reactions={reactions}
+        onReact={onReact}
+        onReply={onReply}
+      />
+
+      {/* actions trigger: bottom-left of the bubble */}
+      <div className="absolute -bottom-2 left-2 z-[10000] hidden group-hover:flex">
+        <MessageActionsTrigger
+          onOpen={(btn) => { setAnchorEl(btn); setOpen(true); }}
+          className="h-7 w-7"
         />
       </div>
 
-      <div className="absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
-        <MessageActionsTrigger onOpen={openActions} />
-      </div>
-
-      {actionsOpen && anchorEl && (
+      {/* popout */}
+      {open && anchorEl && (
         <MessageActionsPopout
           messageId={message.id}
           anchorRef={{ current: anchorEl }}
-          onReact={handleReact}
-          onReply={handleReply}
-          onClose={() => setActionsOpen(false)}
+          onReact={(emoji) => { onReact(emoji); }}
+          onReply={() => { onReply(); }}
+          onClose={() => setOpen(false)}
         />
       )}
     </div>
   );
-};
+}
