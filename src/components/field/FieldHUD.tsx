@@ -34,7 +34,7 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   onToggleDensity,
 }) => {
   const { people } = useVisibleFriendsOnMap();
-  const { hasPermission, status } = useUnifiedLocation({ hookId: 'field-hud' });
+  const { hasPermission, status, coords } = useUnifiedLocation({ hookId: 'field-hud' });
   const liveCount = people.length;
 
   const { toggle: toggleFriends } = useFriendDrawer();
@@ -43,7 +43,7 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   const [openDial, setOpenDial] = useState(false);
 
   return (
-    <>
+    <div className="pointer-events-none">
       {/* Bottom action bar */}
       <div className="pointer-events-auto fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2 shadow-lg">
         <Button size="sm" variant="ghost" onClick={onOpenFilters} className="gap-2">
@@ -92,12 +92,17 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
         <span className={`pointer-events-auto text-xs px-2 py-1 rounded-full ${status==='success' && hasPermission ? 'bg-emerald-600/30 text-emerald-200' : 'bg-yellow-600/30 text-yellow-100'}`}>
           {hasPermission ? (status==='success' ? 'Live' : 'Locating…') : 'Permission'}
         </span>
+        {typeof coords?.accuracy === 'number' && (
+          <span className="pointer-events-auto text-xs px-2 py-1 rounded-full bg-white/10 text-white/80">
+            ±{Math.round(coords.accuracy)}m
+          </span>
+        )}
       </div>
 
       {/* Fullscreen FAB re-used */}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="pointer-events-auto fixed bottom-4 right-4 z-40">
         <FullscreenFab />
       </div>
-    </>
+    </div>
   );
 };
