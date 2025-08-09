@@ -6,6 +6,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { MessageBubble } from '@/components/MessageBubble';
 import { MessageActionsTrigger, MessageActionsPopout } from './MessageActions';
+import { ReplyPreview } from './ReplyPreview';
 import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
 type Message = {
@@ -104,6 +105,7 @@ export function MessageList({
             isConsecutive={isConsecutive}
             onReply={onReply}
             onReact={toggleReaction}
+            currentUserId={currentUserId}
           />
         );
       })}
@@ -117,24 +119,123 @@ function Row({
   isConsecutive,
   onReply,
   onReact,
+  currentUserId,
 }: {
   message: Message;
   isOwn: boolean;
   isConsecutive: boolean;
   onReply?: (messageId: string, preview?: { content?: string; authorId?: string }) => void;
   onReact: (messageId: string, emoji: string) => void;
+  currentUserId: string | null;
 }) {
   const { data: senderProfile } = useProfile(message.profile_id || message.sender_id);
-  const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const openActions = (btn: HTMLButtonElement) => {
-    setAnchor(btn);
-    setOpen(true);
+    setAnchorEl(btn);
+    setActionsOpen(true);
   };
+
+  const handleReact = (emoji: string) => onReact(message.id, emoji);
+  const handleReply = () =>
+    onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id });
 
   const time = dayjs(message.created_at).format('h:mm A');
 
+  // Reply message case - separate ReplyPreview
+  if (message.reply_to && message.reply_to_msg && message.reply_to_msg.id) {
+    const align = isOwn ? "right" : "left";
+    const scrollToParent = () => {
+      const el = document.querySelector(`[data-mid="${message.reply_to_msg?.id}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+
+    return (
+      <div
+        className={cn(
+          "group relative flex w-full py-1",
+          isOwn ? "justify-end" : "justify-start"
+        )}
+        data-mid={message.id}
+      >
+        <div className="flex flex-col max-w-[72%]">
+          {/* 🔹 Detached reply preview ABOVE the new bubble */}
+          <ReplyPreview
+            text={message.reply_to_msg.content ?? ""}
+            onClick={scrollToParent}
+            align={align}
+          />
+
+          {/* The actual message bubble */}
+          <div
+            className={cn(
+              "relative px-3 py-2 rounded-2xl shadow-sm",
+              "whitespace-pre-wrap break-words text-sm leading-relaxed",
+              isOwn
+                ? "bg-primary text-primary-foreground rounded-tr-md"
+                : "bg-muted text-foreground rounded-tl-md"
+            )}
+          >
+            {message.content}
+          </div>
+
+          {/* 🔹 Reactions under bubble, bottom-left of the bubble */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div className={cn("mt-1 flex gap-2", isOwn ? "justify-end" : "justify-start")}>
+              {message.reactions.map((r) => {
+                const isYourReaction = r.reactors.includes(currentUserId || "");
+                return (
+                  <span
+                    key={r.emoji}
+                    onClick={() => handleReact(r.emoji)}
+                    className={cn(
+                      "rounded-full px-2 py-[2px] text-xs",
+                      "border transition-colors cursor-pointer",
+                      isYourReaction
+                        ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20"
+                        : "border-border/50 bg-background/40 hover:bg-muted/50"
+                    )}
+                  >
+                    {r.emoji} {r.count > 1 ? r.count : ""}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Timestamp */}
+          <div
+            className={cn(
+              'mt-1 text-xs text-muted-foreground',
+              isOwn ? 'text-right pr-1' : 'text-left pl-1'
+            )}
+          >
+            {time}
+          </div>
+        </div>
+
+        {/* Actions button */}
+        <div className="pointer-events-none absolute -bottom-8 left-2 z-[10000] hidden group-hover:flex">
+          <div className="pointer-events-auto">
+            <MessageActionsTrigger onOpen={openActions} />
+          </div>
+        </div>
+
+        {actionsOpen && anchorEl && (
+          <MessageActionsPopout
+            messageId={message.id}
+            anchorRef={{ current: anchorEl }}
+            onReact={handleReact}
+            onReply={handleReply}
+            onClose={() => setActionsOpen(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Regular message case
   return (
     <div
       className={cn(
@@ -145,38 +246,44 @@ function Row({
       data-mid={message.id}
     >
       <div className="flex flex-col max-w-[72vw] sm:max-w-[72%]">
-        {/* Bubble + reactions anchored */}
-        <div className="relative w-fit max-w-full pb-5">
-          <MessageBubble
-            message={message}
-            isOwn={isOwn}
-            isConsecutive={isConsecutive}
-            senderProfile={senderProfile}
-          />
-
-          {/* Reactions: bottom-left of the bubble */}
-          {message.reactions && message.reactions.length > 0 && (
-            <div className="absolute -bottom-4 left-2 flex items-center gap-1">
-              {message.reactions.map((r) => (
-                <button
-                  key={r.emoji}
-                  className={cn(
-                    'h-6 rounded-full px-2 text-xs border',
-                    'bg-background/70 hover:bg-background/90',
-                    'border-border/50'
-                  )}
-                  onClick={() => onReact(message.id, r.emoji)}
-                  title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
-                >
-                  <span className="align-middle">{r.emoji}</span>
-                  {r.count > 1 && <span className="ml-1 align-middle">{r.count}</span>}
-                </button>
-              ))}
-            </div>
+        {/* Message bubble */}
+        <div
+          className={cn(
+            "relative px-3 py-2 rounded-2xl shadow-sm",
+            "whitespace-pre-wrap break-words text-sm leading-relaxed",
+            isOwn
+              ? "bg-primary text-primary-foreground rounded-tr-md"
+              : "bg-muted text-foreground rounded-tl-md"
           )}
+        >
+          {message.content}
         </div>
 
-        {/* Timestamp (stays tidy) */}
+        {/* Reactions under bubble, bottom-left */}
+        {message.reactions && message.reactions.length > 0 && (
+          <div className={cn("mt-1 flex gap-2", isOwn ? "justify-end" : "justify-start")}>
+            {message.reactions.map((r) => {
+              const isYourReaction = r.reactors.includes(currentUserId || "");
+              return (
+                <span
+                  key={r.emoji}
+                  onClick={() => handleReact(r.emoji)}
+                  className={cn(
+                    "rounded-full px-2 py-[2px] text-xs",
+                    "border transition-colors cursor-pointer",
+                    isYourReaction
+                      ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20"
+                      : "border-border/50 bg-background/40 hover:bg-muted/50"
+                  )}
+                >
+                  {r.emoji} {r.count > 1 ? r.count : ""}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Timestamp */}
         <div
           className={cn(
             'mt-1 text-xs text-muted-foreground',
@@ -187,29 +294,20 @@ function Row({
         </div>
       </div>
 
-      {/* Actions trigger anchored to bubble corner */}
-      <div
-        className={cn(
-          'absolute opacity-0 group-hover:opacity-100 transition-opacity',
-          isOwn ? 'right-2 -bottom-3' : 'left-2 -bottom-3'
-        )}
-        style={{ pointerEvents: 'none' }} // only the button is clickable
-      >
-        <div style={{ pointerEvents: 'auto' }}>
+      {/* Actions button hugging the bubble */}
+      <div className="pointer-events-none absolute -bottom-8 left-2 z-[10000] hidden group-hover:flex">
+        <div className="pointer-events-auto">
           <MessageActionsTrigger onOpen={openActions} />
         </div>
       </div>
 
-      {/* Portal popout */}
-      {open && anchor && (
+      {actionsOpen && anchorEl && (
         <MessageActionsPopout
           messageId={message.id}
-          anchorRef={{ current: anchor }}
-          onReact={(emoji) => onReact(message.id, emoji)}
-          onReply={(id) =>
-            onReply?.(id, { content: message.content ?? '', authorId: message.profile_id })
-          }
-          onClose={() => setOpen(false)}
+          anchorRef={{ current: anchorEl }}
+          onReact={handleReact}
+          onReply={handleReply}
+          onClose={() => setActionsOpen(false)}
         />
       )}
     </div>
