@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useVisibleFriendsOnMap } from '@/hooks/useVisibleFriendsOnMap';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
+import { useFriendDrawer } from '@/contexts/FriendDrawerContext';
+import { useTimewarpDrawer } from '@/contexts/TimewarpDrawerContext';
 
 interface FieldHUDProps {
   onOpenFilters: () => void;
-  onOpenTimewarp: () => void;
-  onOpenNearbyFriends: () => void;
+  onOpenTimewarp?: () => void;
+  onOpenNearbyFriends?: () => void;
   onCenterMap: () => void;
   onToggleWeather: () => void;
   activeVibe?: string;
@@ -30,6 +32,9 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   const { people } = useVisibleFriendsOnMap();
   const { hasPermission, status } = useUnifiedLocation({ hookId: 'field-hud' });
   const liveCount = people.length;
+
+  const { toggle: toggleFriends } = useFriendDrawer();
+  const { toggle: toggleTimewarp } = useTimewarpDrawer();
 
   return (
     <>
@@ -53,13 +58,13 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
           ))}
         </div>
         <div className="mx-2 h-6 w-px bg-white/10" />
-        <Button size="sm" variant="ghost" onClick={onOpenTimewarp}>Timewarp</Button>
+        <Button size="sm" variant="ghost" onClick={onOpenTimewarp ?? toggleTimewarp}>Timewarp</Button>
       </div>
 
       {/* Right-rail quick actions */}
       <div className="pointer-events-auto fixed right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
         <Button size="icon" variant="secondary" onClick={onCenterMap} title="Center on me">📍</Button>
-        <Button size="icon" variant="secondary" onClick={onOpenNearbyFriends} title="Nearby friends">🫂</Button>
+        <Button size="icon" variant="secondary" onClick={onOpenNearbyFriends ?? toggleFriends} title="Nearby friends">🫂</Button>
         <Button size="icon" variant="secondary" onClick={onToggleWeather} title="Weather">☼</Button>
       </div>
 
