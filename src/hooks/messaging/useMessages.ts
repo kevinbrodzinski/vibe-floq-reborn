@@ -79,7 +79,7 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
   // Paginated history fetch
   const history = useInfiniteQuery({
     queryKey: ["messages", surface, threadId],
-    enabled: threadId ? isUuid(threadId) && (opts?.enabled ?? true) : false, // Only run when threadId is valid and enabled
+    enabled: Boolean(threadId && isUuid(threadId) && (opts?.enabled !== false)), // Ensure it's always a boolean
     queryFn: async ({ pageParam = 0 }): Promise<any[]> => {
       console.log('[useMessages queryFn]', { surface, threadId, pageParam });
       if (surface === "dm") {
