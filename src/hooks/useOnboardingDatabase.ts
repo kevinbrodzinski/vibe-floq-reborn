@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type Vibe } from '@/lib/vibes';
+import { CURRENT_ONBOARDING_VERSION } from '@/constants/onboarding';
 
-export const ONBOARDING_VERSION = 'v2' as const;
 export const FINAL_STEP = 6 as const;
 
 export type ProfileData = {
@@ -63,7 +63,7 @@ export function useOnboardingDatabase() {
         .from('user_onboarding_progress')
         .select('*')
         .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2')
+        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
         .maybeSingle();
       
       if (fetchError) throw fetchError;
@@ -95,7 +95,7 @@ export function useOnboardingDatabase() {
     try {
       const progressData = {
         profile_id: user.id,
-        onboarding_version: 'v2' as const,
+        onboarding_version: CURRENT_ONBOARDING_VERSION,
         current_step: Math.min(state.currentStep, 10),
         completed_steps: state.completedSteps,
         selected_vibe: state.selectedVibe,
@@ -134,7 +134,7 @@ export function useOnboardingDatabase() {
           current_step: FINAL_STEP
         })
         .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2');
+        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (updateError) throw updateError;
       
@@ -158,7 +158,7 @@ export function useOnboardingDatabase() {
         .from('user_onboarding_progress')
         .delete()
         .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2');
+        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (deleteError) throw deleteError;
       
