@@ -9,7 +9,7 @@ export function applyPrivacyFilter(
   const privacyLevel = settings.live_accuracy || 'exact';
   
   // Apply coordinate snapping based on privacy level
-  const filtered = snapToGrid(lat, lng, privacyLevel as 'exact' | 'street' | 'area', accuracy);
+  const filtered = snapToGrid(lat, lng, privacyLevel as 'exact' | 'street' | 'area');
   
   // Ensure accuracy reflects the privacy level
   const finalAccuracy = Math.max(accuracy, filtered.accuracy);
@@ -26,13 +26,12 @@ export function applyPrivacyFilter(
 export function snapToGrid(
   lat: number, 
   lng: number, 
-  privacyLevel: 'exact' | 'street' | 'area',
-  originalAccuracy?: number
+  privacyLevel: 'exact' | 'street' | 'area'
 ): { lat: number; lng: number; accuracy: number } {
   switch (privacyLevel) {
     case 'exact':
-      // No filtering, return original coordinates with original accuracy
-      return { lat, lng, accuracy: originalAccuracy ?? 10 };
+      // No filtering, return original coordinates with no additional accuracy penalty
+      return { lat, lng, accuracy: 0 }; // 0 means "no additional accuracy penalty from privacy"
       
     case 'street':
       // Snap to ~100m grid for street-level privacy
@@ -49,7 +48,7 @@ export function snapToGrid(
       return { lat: areaSnappedLat, lng: areaSnappedLng, accuracy: 1000 };
       
     default:
-      return { lat, lng, accuracy: originalAccuracy ?? 50 };
+      return { lat, lng, accuracy: 0 };
   }
 }
 
@@ -66,12 +65,12 @@ export function applyPrivacySettings(
     case 'street':
       // Apply deterministic street-level obfuscation (not random)
       // Use grid snapping instead of random fuzzing for consistency
-      const streetResult = snapToGrid(lat, lng, 'street', 50);
+      const streetResult = snapToGrid(lat, lng, 'street');
       return { lat: streetResult.lat, lng: streetResult.lng };
       
     case 'area':
       // Apply deterministic area-level obfuscation
-      const areaResult = snapToGrid(lat, lng, 'area', 50);
+      const areaResult = snapToGrid(lat, lng, 'area');
       return { lat: areaResult.lat, lng: areaResult.lng };
       
     default:
