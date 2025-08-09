@@ -7,6 +7,7 @@ import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { MessageBubble } from '@/components/MessageBubble';
 import { MessageActionsTrigger, MessageActionsPopout } from './MessageActions';
 import { ReplyPreview } from './ReplyPreview';
+import { ReactionsRow } from './ReactionsRow';
 import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
 type Message = {
@@ -178,31 +179,27 @@ function Row({
             )}
           >
             {message.content}
+
+            {/* Action trigger pinned to bubble bottom-left/right */}
+            <div className="pointer-events-none absolute -bottom-8 z-[10000] hidden group-hover:flex">
+              <div
+                className={cn(
+                  "pointer-events-auto",
+                  isOwn ? "right-2" : "left-2"
+                )}
+              >
+                <MessageActionsTrigger onOpen={openActions} />
+              </div>
+            </div>
           </div>
 
-          {/* 🔹 Reactions under bubble, bottom-left of the bubble */}
-          {message.reactions && message.reactions.length > 0 && (
-            <div className={cn("mt-1 flex gap-2", isOwn ? "justify-end" : "justify-start")}>
-              {message.reactions.map((r) => {
-                const isYourReaction = r.reactors.includes(currentUserId || "");
-                return (
-                  <span
-                    key={r.emoji}
-                    onClick={() => handleReact(r.emoji)}
-                    className={cn(
-                      "rounded-full px-2 py-[2px] text-xs",
-                      "border transition-colors cursor-pointer",
-                      isYourReaction
-                        ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20"
-                        : "border-border/50 bg-background/40 hover:bg-muted/50"
-                    )}
-                  >
-                    {r.emoji} {r.count > 1 ? r.count : ""}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          {/* Reactions row lives OUTSIDE the bubble so it doesn't grow it */}
+          <ReactionsRow
+            list={message.reactions ?? []}
+            align={isOwn ? "right" : "left"}
+            onToggle={handleReact}
+            currentUserId={currentUserId || ""}
+          />
 
           {/* Timestamp */}
           <div
@@ -212,13 +209,6 @@ function Row({
             )}
           >
             {time}
-          </div>
-        </div>
-
-        {/* Actions button */}
-        <div className="pointer-events-none absolute -bottom-8 left-2 z-[10000] hidden group-hover:flex">
-          <div className="pointer-events-auto">
-            <MessageActionsTrigger onOpen={openActions} />
           </div>
         </div>
 
@@ -239,7 +229,7 @@ function Row({
   return (
     <div
       className={cn(
-        'group relative flex w-full',
+        'group relative flex w-full py-1',
         isOwn ? 'justify-end' : 'justify-start',
         isConsecutive ? 'mt-1' : 'mt-4'
       )}
@@ -257,31 +247,27 @@ function Row({
           )}
         >
           {message.content}
+
+          {/* Action trigger pinned to bubble bottom-left/right */}
+          <div className="pointer-events-none absolute -bottom-8 z-[10000] hidden group-hover:flex">
+            <div
+              className={cn(
+                "pointer-events-auto",
+                isOwn ? "right-2" : "left-2"
+              )}
+            >
+              <MessageActionsTrigger onOpen={openActions} />
+            </div>
+          </div>
         </div>
 
-        {/* Reactions under bubble, bottom-left */}
-        {message.reactions && message.reactions.length > 0 && (
-          <div className={cn("mt-1 flex gap-2", isOwn ? "justify-end" : "justify-start")}>
-            {message.reactions.map((r) => {
-              const isYourReaction = r.reactors.includes(currentUserId || "");
-              return (
-                <span
-                  key={r.emoji}
-                  onClick={() => handleReact(r.emoji)}
-                  className={cn(
-                    "rounded-full px-2 py-[2px] text-xs",
-                    "border transition-colors cursor-pointer",
-                    isYourReaction
-                      ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20"
-                      : "border-border/50 bg-background/40 hover:bg-muted/50"
-                  )}
-                >
-                  {r.emoji} {r.count > 1 ? r.count : ""}
-                </span>
-              );
-            })}
-          </div>
-        )}
+        {/* Reactions row lives OUTSIDE the bubble so it doesn't grow it */}
+        <ReactionsRow
+          list={message.reactions ?? []}
+          align={isOwn ? "right" : "left"}
+          onToggle={handleReact}
+          currentUserId={currentUserId || ""}
+        />
 
         {/* Timestamp */}
         <div
@@ -291,13 +277,6 @@ function Row({
           )}
         >
           {time}
-        </div>
-      </div>
-
-      {/* Actions button hugging the bubble */}
-      <div className="pointer-events-none absolute -bottom-8 left-2 z-[10000] hidden group-hover:flex">
-        <div className="pointer-events-auto">
-          <MessageActionsTrigger onOpen={openActions} />
         </div>
       </div>
 
