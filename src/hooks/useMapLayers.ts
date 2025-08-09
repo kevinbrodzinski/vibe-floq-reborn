@@ -22,6 +22,7 @@ interface UseMapLayersProps {
   floqs: MapFloq[];
   plans: MapPlan[];
   onClusterClick?: (clusterId: number, coordinates: [number, number]) => void;
+  onFriendClick?: (friendId: string, properties: any) => void;
 }
 
 export function useMapLayers({ 
@@ -275,7 +276,15 @@ export function useMapLayers({
     map.on('mouseleave' as any, 'floq-points', handleFloqLeave);
     
     // Friends event listeners
-    map.on('click', 'friends-pins', handleFriendsClick);
+    map.on('click', 'friends-pins', (e: mapboxgl.MapMouseEvent) => {
+      if (!map.getLayer('friends-pins')) return;
+      const features = map.queryRenderedFeatures(e.point, { layers: ['friends-pins'] });
+      if (features.length > 0) {
+        const friend = features[0];
+        const fid = friend.properties?.id as string;
+        onFriendClick?.(fid, friend.properties);
+      }
+    });
     map.on('mouseenter' as any, 'friends-pins', handleFriendsEnter);
     map.on('mouseleave' as any, 'friends-pins', handleFriendsLeave);
     

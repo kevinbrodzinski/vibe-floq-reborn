@@ -66,6 +66,8 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedVibe, setSelectedVibe] = useState<string>('all');
+  const [highlightedFriend, setHighlightedFriend] = useState<string | null>(null);
+  const highlightTimerRef = useRef<number>();
   const [selectedMyFloq, setSelectedMyFloq] = useState<string | null>(null);
   const { location, isLocationReady } = useFieldLocation();
 
@@ -160,6 +162,11 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     plans: filteredPlans,
     onClusterClick: (clusterId, coordinates) => {
       console.log('Cluster clicked:', clusterId, coordinates);
+    },
+    onFriendClick: (friendId) => {
+      setHighlightedFriend(friendId);
+      clearTimeout(highlightTimerRef.current!);
+      highlightTimerRef.current = window.setTimeout(() => setHighlightedFriend(null), 5000);
     }
   });
 
@@ -169,7 +176,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { useFriendMiniTrails } = require('@/hooks/useFriendMiniTrails');
-    useFriendMiniTrails(mapRef.current, friendTrailInputs, {});
+    useFriendMiniTrails(mapRef.current, friendTrailInputs, { highlightFriendId: highlightedFriend });
   } catch {}
 
 

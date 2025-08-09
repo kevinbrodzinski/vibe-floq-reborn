@@ -198,6 +198,9 @@ export const FieldVisualization = ({
     // You could enhance this to check if the bbox still contains clusters
   }, [venueClusters, activeClusterBbox, clusterSheetOpen]);
 
+  // Apply vibe filter if provided via people/friends arrays (assuming upstream filtered)
+  const activeVibe = undefined; // Upstream selection handled in map HUD; friends/people should be pre-filtered
+
   return (
     <div className={`relative h-full ${mini ? 'pt-2 pb-2' : 'pt-48 pb-32'} ${className}`}>
       {/* Scrollable field canvas for geographic elements */}
