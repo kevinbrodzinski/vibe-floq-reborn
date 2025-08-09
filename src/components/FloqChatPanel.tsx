@@ -196,25 +196,27 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="bg-muted/50 border-l-4 border-primary p-3 rounded-lg mb-3"
+        className="bg-muted/20 border-l-2 border-primary/50 p-3 rounded-lg mb-3"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Reply className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Replying to {replyingTo.sender?.display_name || replyingTo.sender?.username || 'Someone'}</span>
+            <Reply className="w-3 h-3 text-primary" />
+            <span className="text-xs font-medium text-primary">
+              Replying to {replyingTo.sender?.display_name || replyingTo.sender?.username || 'Someone'}
+            </span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={cancelReply}
-            className="h-6 w-6 p-0"
+            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground mt-1 truncate">
-          {replyingTo.body}
-        </p>
+        <div className="text-xs text-muted-foreground line-clamp-2 break-words">
+          {replyingTo.body || 'This message was deleted'}
+        </div>
       </motion.div>
     )
   }

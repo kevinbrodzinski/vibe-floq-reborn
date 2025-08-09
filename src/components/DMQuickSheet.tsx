@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -510,21 +510,26 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         {/* Input with reply preview */}
         <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           {replyTo && (
-            <div className="mb-2 bg-muted/30 p-2 rounded flex items-center justify-between">
-              <div className="text-xs text-muted-foreground line-clamp-1">
-                Replying to: {replyPreview?.content || 'message'}
+            <div className="mb-2 bg-muted/20 p-3 rounded-lg border-l-2 border-primary/50">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs font-medium text-primary">
+                  Replying to message
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { 
+                    setReplyTo(null); 
+                    setReplyPreview(null); 
+                  }}
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { 
-                  setReplyTo(null); 
-                  setReplyPreview(null); 
-                }}
-                className="h-6 w-6 p-0"
-              >
-                ✕
-              </Button>
+              <div className="text-xs text-muted-foreground line-clamp-2 break-words">
+                {replyPreview?.content || 'This message was deleted'}
+              </div>
             </div>
           )}
           <input

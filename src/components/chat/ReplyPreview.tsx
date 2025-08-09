@@ -1,14 +1,58 @@
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfileCache";
 
 export function ReplyPreview({
   text,
+  authorId,
+  authorName,
   onClick,
   align = "left",
+  integrated = false,
 }: {
   text: string;
+  authorId?: string;
+  authorName?: string;
   onClick?: () => void;
   align?: "left" | "right";
+  integrated?: boolean;
 }) {
+  // Fetch author profile if we have an authorId but no authorName
+  const { data: authorProfile } = useProfile(authorId || '');
+  
+  const displayName = authorName || 
+    authorProfile?.display_name || 
+    authorProfile?.username || 
+    "Someone";
+
+  if (integrated) {
+    // Instagram/WhatsApp style - integrated into message bubble
+    return (
+      <div
+        className={cn(
+          "mb-2 border-l-2 pl-2 cursor-pointer",
+          align === "right" ? "border-primary-foreground/30" : "border-primary/40"
+        )}
+        onClick={onClick}
+        role="button"
+        title="View replied message"
+      >
+        <div className={cn(
+          "text-xs font-medium mb-0.5",
+          align === "right" ? "text-primary-foreground/80" : "text-primary"
+        )}>
+          {displayName}
+        </div>
+        <div className={cn(
+          "text-xs opacity-80 line-clamp-2 break-words",
+          align === "right" ? "text-primary-foreground/70" : "text-foreground/70"
+        )}>
+          {text || "This message was deleted"}
+        </div>
+      </div>
+    );
+  }
+
+  // Legacy standalone style (for compatibility)
   return (
     <div
       className={cn(
