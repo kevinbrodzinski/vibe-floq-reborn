@@ -50,8 +50,8 @@ export const MessageList: React.FC<MessageListProps> = ({
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Get unified reactions system
-  const { byMessage: reactionsMap, toggle: toggleReaction } = threadId ? useDmReactions(threadId) : { byMessage: {}, toggle: () => {} };
+  // Get unified reactions system - ONLY source of truth
+  const { byMessage, toggle: toggleReaction } = threadId ? useDmReactions(threadId) : { byMessage: {}, toggle: () => {} };
 
   // dedupe + sort
   const allMessages = React.useMemo(() => {
@@ -113,7 +113,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             isConsecutive={!!isConsecutive}
             currentUserId={currentUserId}
             onReply={onReply}
-            reactionsMap={reactionsMap}
+            reactionsMap={byMessage}
             toggleReaction={toggleReaction}
           />
         );
@@ -149,7 +149,7 @@ const MessageRow: React.FC<{
     onReply?.(messageId, { content: message.content ?? '', authorId: message.profile_id });
   };
 
-  // Get reactions for this specific message
+  // Get reactions for this specific message from the map
   const messageReactions = reactionsMap[message.id] || [];
 
   // MEDIA message
@@ -171,10 +171,8 @@ const MessageRow: React.FC<{
           </div>
         </div>
 
-        <div className="pointer-events-none absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
-          <div className="pointer-events-auto">
-            <MessageActionsTrigger onOpen={openActions} />
-          </div>
+        <div className="absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
+          <MessageActionsTrigger onOpen={openActions} />
         </div>
 
         {actionsOpen && anchorEl && (
@@ -220,10 +218,8 @@ const MessageRow: React.FC<{
           />
         </div>
 
-        <div className="pointer-events-none absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
-          <div className="pointer-events-auto">
-            <MessageActionsTrigger onOpen={openActions} />
-          </div>
+        <div className="absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
+          <MessageActionsTrigger onOpen={openActions} />
         </div>
 
         {actionsOpen && anchorEl && (
@@ -260,10 +256,8 @@ const MessageRow: React.FC<{
         />
       </div>
 
-      <div className="pointer-events-none absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
-        <div className="pointer-events-auto">
-          <MessageActionsTrigger onOpen={openActions} />
-        </div>
+      <div className="absolute -top-3 -right-2 z-[10000] hidden group-hover:flex items-center gap-1">
+        <MessageActionsTrigger onOpen={openActions} />
       </div>
 
       {actionsOpen && anchorEl && (

@@ -79,7 +79,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
   // Auth guard and unified messaging hooks - guard queries until thread is ready
   const isValidUuid = !!threadId && /^[0-9a-f-]{36}$/i.test(threadId);
-  const enabled = isValidUuid && !!currentProfileId;
+  const enabled = Boolean(open && threadId && currentProfileId && isValidUuid);
   const messages = useMessages(isValidUuid ? threadId : undefined, 'dm', { enabled });
   // const sendMut = useSendMessage('dm'); // This line is no longer needed
 
@@ -209,20 +209,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
     };
   }, [open, friendId, threadIdProp, currentProfileId, threadId, threadIdFrom, toast]);
 
-  // IMPORTANT: Clear threadId only when sheet closes or friendId changes
-  useEffect(() => {
-    if (!open) {
-      setThreadId(undefined);
-      lastFriendRef.current = undefined;
-      reqRef.current = 0;
-    }
-  }, [open]);
-
-  // Clear threadId when friendId changes
+  // IMPORTANT: Only clear threadId when friendId changes, NOT when sheet closes
   useEffect(() => {
     if (friendId !== lastFriendRef.current && lastFriendRef.current !== undefined) {
       setThreadId(undefined);
       lastFriendRef.current = undefined;
+      reqRef.current = 0;
     }
   }, [friendId]);
 

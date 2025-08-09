@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
@@ -12,73 +12,54 @@ export function useDmReactions(threadId: string) {
   const byMessage = useMemo(() => {
     const data = qc.getQueryData<any>(key);
     const map: Record<string, Array<{emoji: string; count: number; reactors: string[]}>> = {};
-    
     for (const page of data?.pages ?? []) {
       for (const m of page ?? []) {
         if (!m) continue;
         map[m.id] = m.reactions ?? [];
       }
     }
-    
     return map;
   }, [qc, key]);
 
   const toggle = async (messageId: string, emoji: string) => {
     if (!profileId) return;
 
-    // Optimistic update
+    // optimistic update
     qc.setQueryData(key, (old: any) => {
       if (!old) return old;
-      
       const pages = old.pages?.map((page: any[]) =>
         page.map((m) => {
           if (m?.id !== messageId) return m;
-          
           const list = m.reactions ?? [];
           const idx = list.findIndex((r) => r.emoji === emoji);
-          
           if (idx === -1) {
-            // Add new reaction
-            return { 
-              ...m, 
-              reactions: [...list, { emoji, count: 1, reactors: [profileId] }] 
-            };
+            return { ...m, reactions: [...list, { emoji, count: 1, reactors: [profileId] }] };
           } else {
-            // Toggle existing reaction
             const r = list[idx];
-            const hasReacted = r.reactors.includes(profileId);
-            const reactors = hasReacted 
-              ? r.reactors.filter((x) => x !== profileId)
-              : [...r.reactors, profileId];
-            const count = Math.max(0, hasReacted ? r.count - 1 : r.count + 1);
-            
+            const mine = r.reactors.includes(profileId);
+            const reactors = mine ? r.reactors.filter(x => x !== profileId) : [...r.reactors, profileId];
+            const count = Math.max(0, mine ? r.count - 1 : r.count + 1);
             const next = [...list];
-            if (count === 0) {
-              // Remove reaction if count is 0
-              next.splice(idx, 1);
-            } else {
-              next[idx] = { ...r, reactors, count };
-            }
-            
+            if (count === 0) next.splice(idx, 1);
+            else next[idx] = { ...r, reactors, count };
             return { ...m, reactions: next };
           }
         })
       );
-      
       return { ...old, pages };
     });
 
     try {
-      // Server update
+      // try insert; if unique violation, delete (toggle)
       const { error: insErr } = await supabase
-        .from('direct_message_reactions')
+        .from('dm_message_reactions')
         .insert({ message_id: messageId, profile_id: profileId, emoji });
 
       if (insErr) {
-        // If duplicate, delete (toggle off)
+        // 23505 unique violation — toggle off
         if ((insErr as any).code === '23505') {
           await supabase
-            .from('direct_message_reactions')
+            .from('dm_message_reactions')
             .delete()
             .eq('message_id', messageId)
             .eq('profile_id', profileId)
@@ -88,33 +69,26 @@ export function useDmReactions(threadId: string) {
         }
       }
 
-      // Refresh from server to ensure consistency
+      // normalize from server
       qc.invalidateQueries({ queryKey: key });
-    } catch (error) {
-      console.error('Failed to toggle reaction:', error);
-      // Revert optimistic update on error
-      qc.invalidateQueries({ queryKey: key });
+    } catch (e) {
+      console.error('toggle reaction failed', e);
+      qc.invalidateQueries({ queryKey: key }); // revert via refetch
     }
   };
 
-  // Realtime: on any reaction change, refresh the page
+  // realtime: refresh on any reaction change
   useEffect(() => {
     if (!threadId) return;
-    
     const ch = supabase
-      .channel(`dmr:${threadId}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'direct_message_reactions' 
-      }, () => {
-        qc.invalidateQueries({ queryKey: key });
-      })
+      .channel(`dm_reactions:${threadId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'dm_message_reactions'
+      }, () => qc.invalidateQueries({ queryKey: key }))
       .subscribe();
-
-    return () => { 
-      supabase.removeChannel(ch); 
-    };
+    return () => { supabase.removeChannel(ch); };
   }, [threadId, qc, key]);
 
   return { byMessage, toggle };
