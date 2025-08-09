@@ -31,10 +31,18 @@ export const FieldHeader = ({
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { isActive, toggleSafeMode } = useSafeMode()
 
-  // Mock mode state (dev only)
+  // Mock mode state (dev or explicit flags)
   let mockHelpers: any = null;
   const isDev = (import.meta as any).env?.MODE !== 'production' && (import.meta as any).env?.DEV !== false;
-  if (isDev) {
+  const showMockToggle = (() => {
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      if (qs.get('mock') === '1') return true;
+      if (localStorage.getItem('floq-dev-tools') === '1') return true;
+    } catch {}
+    return isDev;
+  })();
+  if (showMockToggle) {
     try { mockHelpers = require('@/lib/mock/MockMode'); } catch {}
   }
 
@@ -99,12 +107,12 @@ export const FieldHeader = ({
         )}
 
         {/* Dev-only: Mock mode toggle */}
-        {isDev && mockHelpers && (
+        {showMockToggle && mockHelpers && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
-              const { isMockModeEnabled, enableMockModeForSeconds, disableMockMode, getMockModeRemainingSeconds } = mockHelpers;
+              const { isMockModeEnabled, enableMockModeForSeconds, disableMockMode } = mockHelpers;
               if (isMockModeEnabled()) {
                 disableMockMode();
               } else {
