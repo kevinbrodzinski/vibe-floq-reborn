@@ -25,6 +25,7 @@ import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
 import { useVisibleFriendsOnMap } from '@/hooks/useVisibleFriendsOnMap';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
+import { FieldHUD } from '@/components/field/FieldHUD';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
@@ -1273,6 +1274,17 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
         {/* Timewarp Map Layer */}
         <TimewarpMapLayer map={mapRef.current} />
+
+        {/* HUD overlays */}
+        <FieldHUD
+          onOpenFilters={() => {/* TODO: open filters drawer */}}
+          onOpenTimewarp={() => {/* TODO: open timewarp drawer */}}
+          onOpenNearbyFriends={() => {/* TODO: open nearby friends modal */}}
+          onCenterMap={centerOnUserLocation}
+          onToggleWeather={() => setShowWeather(v => !v)}
+          activeVibe={selectedVibe}
+          onSelectVibe={setSelectedVibe}
+        />
 
         {children}
       </div>
