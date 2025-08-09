@@ -52,14 +52,14 @@ export function useDmReactions(threadId: string) {
     try {
       // try insert; if unique violation, delete (toggle)
       const { error: insErr } = await supabase
-        .from('dm_message_reactions')
+        .from('direct_message_reactions')
         .insert({ message_id: messageId, profile_id: profileId, emoji });
 
       if (insErr) {
         // 23505 unique violation — toggle off
         if ((insErr as any).code === '23505') {
           await supabase
-            .from('dm_message_reactions')
+            .from('direct_message_reactions')
             .delete()
             .eq('message_id', messageId)
             .eq('profile_id', profileId)
@@ -85,7 +85,7 @@ export function useDmReactions(threadId: string) {
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'dm_message_reactions'
+        table: 'direct_message_reactions'
       }, () => qc.invalidateQueries({ queryKey: key }))
       .subscribe();
     return () => { supabase.removeChannel(ch); };

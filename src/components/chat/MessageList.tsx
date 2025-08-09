@@ -156,15 +156,11 @@ function MessageRow({
           onReply={onReply}
         />
 
-        {/* 👉 NEW: trigger anchored to the bubble */}
-        <div
-          className={cn(
-            'absolute z-[10000] opacity-0 group-hover:opacity-100 transition-opacity',
-            '-bottom-2',             // bump slightly below bubble
-            isOwn ? 'right-2' : 'left-2'
-          )}
-        >
-          <MessageActionsTrigger onOpen={openActions} className="h-7 w-7" />
+        {/* 👉 Fixed: trigger anchored to the bubble with correct pointer events */}
+        <div className="pointer-events-none absolute -bottom-2 left-2 z-[10000] hidden group-hover:flex">
+          <div className="pointer-events-auto">
+            <MessageActionsTrigger onOpen={openActions} className="h-7 w-7" />
+          </div>
         </div>
       </div>
 

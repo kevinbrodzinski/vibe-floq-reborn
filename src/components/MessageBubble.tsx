@@ -20,7 +20,7 @@ export function MessageBubble({
   onReply?: () => void;
 }) {
   return (
-    <div className="max-w-[72%]">
+    <div className="w-full">
       {/* reply preview (if any) */}
       {reply_to_id && (
         <div className={cn(
@@ -34,13 +34,13 @@ export function MessageBubble({
       {/* bubble */}
       <div
         className={cn(
-          'relative px-3 py-2 rounded-2xl shadow-sm break-words',
+          'inline-block px-3 py-2 rounded-2xl shadow-sm max-w-full',
           isOwn
             ? 'bg-primary text-primary-foreground rounded-tr-md'
             : 'bg-muted text-foreground rounded-tl-md'
         )}
       >
-        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
           {content}
         </div>
       </div>
