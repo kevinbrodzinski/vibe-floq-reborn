@@ -1132,9 +1132,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         {densityMode && (
           <DeckGL
             layers={densityLayers}
-            getTooltip={({ object }) =>
-              object && `${(object as any).member_count || (object as any).total} people · ${(object as any).vibe_mode?.toUpperCase() || 'UNKNOWN'}`
-            }
+            controller={false}
+            parameters={{ depthTest: false }}
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
           />
         )}
         
