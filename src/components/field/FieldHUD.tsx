@@ -42,6 +42,16 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
 
   const [openDial, setOpenDial] = useState(false);
 
+  // Mock mode helpers (loaded lazily to avoid bundle issues)
+  let mockHelpers: any = null;
+  try { mockHelpers = require('@/lib/mock/MockMode'); } catch {}
+  const mockOn = !!mockHelpers?.isMockModeEnabled?.();
+  const toggleMock = () => {
+    if (!mockHelpers) return;
+    if (mockHelpers.isMockModeEnabled()) mockHelpers.disableMockMode();
+    else mockHelpers.enableMockModeForSeconds(15 * 60);
+  };
+
   return (
     <div className="pointer-events-none">
       {/* Bottom action bar (responsive) */}
@@ -99,6 +109,10 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
               <Button size="sm" variant="ghost" onClick={onOpenNearbyFriends ?? toggleFriends} title="Nearby friends">Nearby</Button>
               <Button size="sm" variant="ghost" onClick={onToggleWeather} title="Weather">Weather</Button>
               <Button size="sm" variant="ghost" onClick={onOpenTimewarp ?? toggleTimewarp} title="Timewarp">Timewarp</Button>
+              {/* Demo / Mock data toggle */}
+              <Button size="sm" variant="ghost" onClick={toggleMock} title="Toggle demo data">
+                {mockOn ? 'Demo: On' : 'Demo: Off'}
+              </Button>
             </div>
           )}
         </div>
