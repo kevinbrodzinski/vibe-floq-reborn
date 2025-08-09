@@ -100,7 +100,8 @@ export const FieldVisualization = ({
   // Cluster people (skip in constellation mode) - moved to top level to follow Rules of Hooks
   const clusters = useMemo(() => {
     if (constellationMode) return [];
-    return Object.values(groupByPosition(people));
+    const list = Array.isArray(people) ? people : [];
+    return Object.values(groupByPosition(list));
   }, [people, constellationMode]);
   
   // Phase 1B Fix: Analytics de-dupe with persistent seenRef
