@@ -165,6 +165,7 @@ export function useVenueClusters(viewport: Viewport) {
             cluster_id: feature.properties.cluster_id,
             ...feature.properties,
           },
+          geometry: { coordinates: [lng, lat] as [number, number] },
         };
       } else {
         // This is a single venue

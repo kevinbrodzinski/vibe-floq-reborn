@@ -227,7 +227,7 @@ export const FieldVisualization = ({
           )}
 
           {/* People on the field with collision detection (when not in constellation mode) */}
-          {!constellationMode && clusters.map(cluster => {
+          {!constellationMode && (Array.isArray(clusters) ? clusters : []).map(cluster => {
               if (cluster.length === 0) return null;
 
               // Calculate canvas pixel coords from percentage coordinates
