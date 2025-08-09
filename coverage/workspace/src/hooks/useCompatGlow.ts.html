@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/76</span>
+                <span class='fraction'>0/82</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/76</span>
+                <span class='fraction'>0/82</span>
             </div>
         
             
@@ -181,7 +181,13 @@
 <a name='L116'></a><a href='#L116'>116</a>
 <a name='L117'></a><a href='#L117'>117</a>
 <a name='L118'></a><a href='#L118'>118</a>
-<a name='L119'></a><a href='#L119'>119</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -215,22 +221,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -243,8 +233,16 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -267,11 +265,25 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -321,22 +333,6 @@ export interface CompatGlowState {
   userCount: number;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >const fetcher = async (url: string): Promise&lt;CompatCluster[]&gt; =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  const { data, error } = await supabase.functions.invoke('compat_clusters', {</span>
-<span class="cstat-no" title="statement not covered" >    method: 'GET',</span>
-<span class="cstat-no" title="statement not covered" >    headers: {</span>
-<span class="cstat-no" title="statement not covered" >      'Content-Type': 'application/json',</span>
-<span class="cstat-no" title="statement not covered" >    },</span>
-<span class="cstat-no" title="statement not covered" >  });</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  if (error) {</span>
-<span class="cstat-no" title="statement not covered" >    console.error('compat_clusters error:', error);</span>
-<span class="cstat-no" title="statement not covered" >    throw new Error('Failed to fetch compatibility clusters');</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  return data || [];</span>
-<span class="cstat-no" title="statement not covered" >};</span>
-&nbsp;
 <span class="cstat-no" title="statement not covered" >export function useCompatGlow(): CompatGlowState {</span>
 <span class="cstat-no" title="statement not covered" >  const vibe = useCurrentVibe();</span>
 <span class="cstat-no" title="statement not covered" >  const { coords, status } = useUnifiedLocation({</span>
@@ -358,40 +354,62 @@ export interface CompatGlowState {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const { data, error } = useSWR&lt;CompatCluster[]&gt;(</span>
 <span class="cstat-no" title="statement not covered" >    fetchUrl,</span>
-<span class="cstat-no" title="statement not covered" >    () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      if (!fetchUrl) return Promise.resolve([]);</span>
+<span class="cstat-no" title="statement not covered" >    async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      if (!fetchUrl) return [];</span>
       
-      // Call the edge function directly
-<span class="cstat-no" title="statement not covered" >      const urlParams = new URLSearchParams({</span>
-<span class="cstat-no" title="statement not covered" >        lat: location!.coords.latitude.toString(),</span>
-<span class="cstat-no" title="statement not covered" >        lng: location!.coords.longitude.toString(),</span>
-<span class="cstat-no" title="statement not covered" >        vibe: String(vibe || 'chill'),</span>
-<span class="cstat-no" title="statement not covered" >      });</span>
-      
-<span class="cstat-no" title="statement not covered" >      return fetch(`https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/compat_clusters?${urlParams}`, {</span>
-<span class="cstat-no" title="statement not covered" >        headers: {</span>
-<span class="cstat-no" title="statement not covered" >          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck`,</span>
-<span class="cstat-no" title="statement not covered" >          'Content-Type': 'application/json',</span>
-<span class="cstat-no" title="statement not covered" >        },</span>
-<span class="cstat-no" title="statement not covered" >      }).then(res =&gt; res.json());</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+        // Call the edge function with JSON body (POST method)
+<span class="cstat-no" title="statement not covered" >        const { data, error } = await supabase.functions.invoke('compat_clusters', {</span>
+<span class="cstat-no" title="statement not covered" >          body: {</span>
+<span class="cstat-no" title="statement not covered" >            lat: location!.coords.latitude,</span>
+<span class="cstat-no" title="statement not covered" >            lng: location!.coords.longitude,  </span>
+<span class="cstat-no" title="statement not covered" >            vibe: String(vibe || 'chill'),</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
+<span class="cstat-no" title="statement not covered" >        });</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (error) {</span>
+<span class="cstat-no" title="statement not covered" >          console.warn('compat_clusters API error:', error);</span>
+<span class="cstat-no" title="statement not covered" >          return []; // Return empty array for graceful degradation</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+        
+<span class="cstat-no" title="statement not covered" >        return data || [];</span>
+<span class="cstat-no" title="statement not covered" >      } catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >        console.warn('compat_clusters network error:', err);</span>
+<span class="cstat-no" title="statement not covered" >        return []; // Return empty array for graceful degradation</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    },</span>
 <span class="cstat-no" title="statement not covered" >    { </span>
-<span class="cstat-no" title="statement not covered" >      refreshInterval: 10000, // 10 seconds</span>
+<span class="cstat-no" title="statement not covered" >      refreshInterval: 30000, // Increased to 30 seconds to reduce server load</span>
 <span class="cstat-no" title="statement not covered" >      revalidateOnFocus: false,</span>
-<span class="cstat-no" title="statement not covered" >      errorRetryCount: 2,</span>
+<span class="cstat-no" title="statement not covered" >      errorRetryCount: 1, // Reduced retry count</span>
+<span class="cstat-no" title="statement not covered" >      shouldRetryOnError: false, // Don't retry on errors to avoid spam</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (error) {</span>
-<span class="cstat-no" title="statement not covered" >      console.error('CompatGlow fetch error:', error);</span>
-<span class="cstat-no" title="statement not covered" >      setStrength(0);</span>
+<span class="cstat-no" title="statement not covered" >      console.warn('CompatGlow fetch error (using fallback):', error);</span>
+      // Fallback to current vibe color with low strength
+<span class="cstat-no" title="statement not covered" >      if (vibe &amp;&amp; VIBE_RGB[vibe as keyof typeof VIBE_RGB]) {</span>
+<span class="cstat-no" title="statement not covered" >        const [r, g, b] = VIBE_RGB[vibe as keyof typeof VIBE_RGB];</span>
+<span class="cstat-no" title="statement not covered" >        setHue(`rgb(${r}, ${g}, ${b})`);</span>
+<span class="cstat-no" title="statement not covered" >        setStrength(0.1); // Very low strength to indicate fallback</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+<span class="cstat-no" title="statement not covered" >        setStrength(0);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      setUserCount(0);</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!data?.length) {</span>
-<span class="cstat-no" title="statement not covered" >      setStrength(0);</span>
+      // No nearby compatible clusters - use current vibe with minimal glow
+<span class="cstat-no" title="statement not covered" >      if (vibe &amp;&amp; VIBE_RGB[vibe as keyof typeof VIBE_RGB]) {</span>
+<span class="cstat-no" title="statement not covered" >        const [r, g, b] = VIBE_RGB[vibe as keyof typeof VIBE_RGB];</span>
+<span class="cstat-no" title="statement not covered" >        setHue(`rgb(${r}, ${g}, ${b})`);</span>
+<span class="cstat-no" title="statement not covered" >        setStrength(0.05); // Very minimal glow</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+<span class="cstat-no" title="statement not covered" >        setStrength(0);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      setUserCount(0);</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
@@ -414,7 +432,7 @@ export interface CompatGlowState {
 <span class="cstat-no" title="statement not covered" >      const [r, g, b] = VIBE_RGB[dom_vibe as keyof typeof VIBE_RGB];</span>
 <span class="cstat-no" title="statement not covered" >      setHue(`rgb(${r}, ${g}, ${b})`);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }, [data, error]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [data, error, vibe]);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return { strength, hue, userCount };</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
@@ -424,7 +442,7 @@ export interface CompatGlowState {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-09T09:14:02.460Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

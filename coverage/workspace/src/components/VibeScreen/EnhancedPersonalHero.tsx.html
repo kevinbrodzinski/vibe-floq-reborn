@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/286</span>
+                <span class='fraction'>0/288</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/286</span>
+                <span class='fraction'>0/288</span>
             </div>
         
             
@@ -432,7 +432,20 @@
 <a name='L367'></a><a href='#L367'>367</a>
 <a name='L368'></a><a href='#L368'>368</a>
 <a name='L369'></a><a href='#L369'>369</a>
-<a name='L370'></a><a href='#L370'>370</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L370'></a><a href='#L370'>370</a>
+<a name='L371'></a><a href='#L371'>371</a>
+<a name='L372'></a><a href='#L372'>372</a>
+<a name='L373'></a><a href='#L373'>373</a>
+<a name='L374'></a><a href='#L374'>374</a>
+<a name='L375'></a><a href='#L375'>375</a>
+<a name='L376'></a><a href='#L376'>376</a>
+<a name='L377'></a><a href='#L377'>377</a>
+<a name='L378'></a><a href='#L378'>378</a>
+<a name='L379'></a><a href='#L379'>379</a>
+<a name='L380'></a><a href='#L380'>380</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -477,22 +490,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -502,12 +510,24 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -825,6 +845,9 @@ import { getVibeIcon } from '@/utils/vibeIcons';
 import { usePulseTime } from '@/hooks/usePulseTime';
 import { VibeSystemIntegration, type EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
 import { cn } from '@/lib/utils';
+import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
+import { useVibeContext } from '@/hooks/useVibeContext';
+import { useVibeDetection } from '@/store/useVibeDetection';
 &nbsp;
 interface EnhancedPersonalHeroProps {
   className?: string;
@@ -843,42 +866,49 @@ interface EnhancedPersonalHeroProps {
 <span class="cstat-no" title="statement not covered" >  const [showPredictions, setShowPredictions] = useState(false);</span>
 <span class="cstat-no" title="statement not covered" >  const [vibeSystem] = useState(() =&gt; new VibeSystemIntegration());</span>
   
+  // Get real sensor data and context
+<span class="cstat-no" title="statement not covered" >  const { autoMode } = useVibeDetection();</span>
+<span class="cstat-no" title="statement not covered" >  const { sensorData } = useSensorMonitoring(autoMode);</span>
+<span class="cstat-no" title="statement not covered" >  const contextData = useVibeContext();</span>
+  
   // Convert pulse time to smooth sine wave for animations
 <span class="cstat-no" title="statement not covered" >  const pulseScale = 1 + Math.sin(pulseTime * Math.PI) * 0.1;</span>
 <span class="cstat-no" title="statement not covered" >  const glowIntensity = Math.sin(pulseTime * Math.PI * 2) * 0.5 + 0.5;</span>
   
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-    // Simulate getting enhanced data from the vibe system
+    // Get enhanced data using real sensor data and context
 <span class="cstat-no" title="statement not covered" >    const fetchEnhancedData = async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
-        // Mock sensor data - in real implementation, this would come from sensors
-<span class="cstat-no" title="statement not covered" >        const mockSensorData = {</span>
-<span class="cstat-no" title="statement not covered" >          audioLevel: 45,</span>
-<span class="cstat-no" title="statement not covered" >          lightLevel: 60,</span>
-<span class="cstat-no" title="statement not covered" >          movement: { intensity: 20, pattern: 'still', frequency: 0 },</span>
-<span class="cstat-no" title="statement not covered" >          location: { context: 'indoor', density: 15 }</span>
-<span class="cstat-no" title="statement not covered" >        };</span>
+        // Only fetch if we have sensor data (when auto mode is enabled)
+<span class="cstat-no" title="statement not covered" >        if (!autoMode || !sensorData) {</span>
+<span class="cstat-no" title="statement not covered" >          setHeroData(null);</span>
+<span class="cstat-no" title="statement not covered" >          return;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
         
-<span class="cstat-no" title="statement not covered" >        const mockContext = {</span>
-<span class="cstat-no" title="statement not covered" >          timestamp: new Date(),</span>
-<span class="cstat-no" title="statement not covered" >          hourOfDay: new Date().getHours(),</span>
-<span class="cstat-no" title="statement not covered" >          timeOfDay: 'evening' as const,</span>
-<span class="cstat-no" title="statement not covered" >          isWeekend: false,</span>
-<span class="cstat-no" title="statement not covered" >          dayOfWeek: new Date().getDay()</span>
-<span class="cstat-no" title="statement not covered" >        };</span>
-        
-<span class="cstat-no" title="statement not covered" >        const data = await vibeSystem.getEnhancedPersonalHeroData(mockSensorData, mockContext);</span>
+<span class="cstat-no" title="statement not covered" >        const data = await vibeSystem.getEnhancedPersonalHeroData(sensorData, contextData);</span>
 <span class="cstat-no" title="statement not covered" >        setHeroData(data);</span>
 <span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.warn('Failed to fetch enhanced hero data:', error);</span>
+        // Clear data on error to prevent freeze
+<span class="cstat-no" title="statement not covered" >        setHeroData(null);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
     
-<span class="cstat-no" title="statement not covered" >    fetchEnhancedData();</span>
-<span class="cstat-no" title="statement not covered" >    const interval = setInterval(fetchEnhancedData, 10000); // Update every 10 seconds</span>
+    // Debounce to prevent rapid updates
+<span class="cstat-no" title="statement not covered" >    const timeoutId = setTimeout(fetchEnhancedData, 500);</span>
     
-<span class="cstat-no" title="statement not covered" >    return () =&gt; clearInterval(interval);</span>
-<span class="cstat-no" title="statement not covered" >  }, [vibeSystem]);</span>
+    // Cleanup interval if it exists
+<span class="cstat-no" title="statement not covered" >    const interval = setInterval(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      if (autoMode &amp;&amp; sensorData) {</span>
+<span class="cstat-no" title="statement not covered" >        fetchEnhancedData();</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }, 15000); // Reduced frequency to prevent overload</span>
+    
+<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      clearTimeout(timeoutId);</span>
+<span class="cstat-no" title="statement not covered" >      clearInterval(interval);</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >  }, [autoMode, sensorData?.timestamp]); // Simplified dependencies</span>
   
 <span class="cstat-no" title="statement not covered" >  if (!heroData) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
@@ -1177,7 +1207,7 @@ interface EnhancedPersonalHeroProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-09T09:14:02.460Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

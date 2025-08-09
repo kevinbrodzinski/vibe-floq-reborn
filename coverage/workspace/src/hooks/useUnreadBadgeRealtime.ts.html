@@ -232,15 +232,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const useUnreadBadgeRealtime = (userId?: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >export const useUnreadBadgeRealtime = (profileId?: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const queryClient = useQueryClient();</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!userId) return;</span>
+<span class="cstat-no" title="statement not covered" >    if (!profileId) return;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    let mounted = true;</span>
 <span class="cstat-no" title="statement not covered" >    const channel = supabase</span>
-<span class="cstat-no" title="statement not covered" >      .channel(`unread_realtime:${userId}`)</span>
+<span class="cstat-no" title="statement not covered" >      .channel(`unread_realtime:${profileId}`)</span>
 <span class="cstat-no" title="statement not covered" >      .on('postgres_changes', {</span>
 <span class="cstat-no" title="statement not covered" >        event: 'INSERT',</span>
 <span class="cstat-no" title="statement not covered" >        schema: 'public',</span>
@@ -250,9 +250,9 @@ import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 <span class="cstat-no" title="statement not covered" >        ({ new: msg }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          if (!mounted || !msg || !msg.sender_id) return;</span>
           
-<span class="cstat-no" title="statement not covered" >          if (msg.sender_id !== userId) {</span>
+<span class="cstat-no" title="statement not covered" >          if (msg.sender_id !== profileId) {</span>
 <span class="cstat-no" title="statement not covered" >            if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');</span>
-<span class="cstat-no" title="statement not covered" >            queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });</span>
+<span class="cstat-no" title="statement not covered" >            queryClient.invalidateQueries({ queryKey: ['dm-unread', profileId] });</span>
 <span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        },</span>
 <span class="cstat-no" title="statement not covered" >        (error, payload) =&gt; {</span>
@@ -265,12 +265,12 @@ import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 <span class="cstat-no" title="statement not covered" >        event: 'UPDATE',</span>
 <span class="cstat-no" title="statement not covered" >        schema: 'public',</span>
 <span class="cstat-no" title="statement not covered" >        table: 'direct_threads',</span>
-<span class="cstat-no" title="statement not covered" >        filter: `member_a=eq.${userId}`</span>
+<span class="cstat-no" title="statement not covered" >        filter: `member_a_profile_id=eq.${profileId}`</span>
 <span class="cstat-no" title="statement not covered" >      }, createSafeRealtimeHandler&lt;{}&gt;(</span>
 <span class="cstat-no" title="statement not covered" >        () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          if (!mounted) return;</span>
 <span class="cstat-no" title="statement not covered" >          if (import.meta.env.DEV) console.log('🔔 Thread updated (member_a)');</span>
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });</span>
+<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['dm-unread', profileId] });</span>
 <span class="cstat-no" title="statement not covered" >        },</span>
 <span class="cstat-no" title="statement not covered" >        (error, payload) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          if (mounted) {</span>
@@ -282,12 +282,12 @@ import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 <span class="cstat-no" title="statement not covered" >        event: 'UPDATE',</span>
 <span class="cstat-no" title="statement not covered" >        schema: 'public',</span>
 <span class="cstat-no" title="statement not covered" >        table: 'direct_threads',</span>
-<span class="cstat-no" title="statement not covered" >        filter: `member_b=eq.${userId}`</span>
+<span class="cstat-no" title="statement not covered" >        filter: `member_b_profile_id=eq.${profileId}`</span>
 <span class="cstat-no" title="statement not covered" >      }, createSafeRealtimeHandler&lt;{}&gt;(</span>
 <span class="cstat-no" title="statement not covered" >        () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          if (!mounted) return;</span>
 <span class="cstat-no" title="statement not covered" >          if (import.meta.env.DEV) console.log('🔔 Thread updated (member_b)');</span>
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });</span>
+<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['dm-unread', profileId] });</span>
 <span class="cstat-no" title="statement not covered" >        },</span>
 <span class="cstat-no" title="statement not covered" >        (error, payload) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          if (mounted) {</span>
@@ -302,12 +302,12 @@ import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 <span class="cstat-no" title="statement not covered" >      supabase.removeChannel(channel)</span>
 <span class="cstat-no" title="statement not covered" >        .catch(err =&gt; console.error('[useUnreadBadgeRealtime] Channel cleanup error:', err));</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [userId, queryClient]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [profileId, queryClient]);</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const useTotalUnread = (userId?: string) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >export const useTotalUnread = (profileId?: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const queryClient = useQueryClient();</span>
-<span class="cstat-no" title="statement not covered" >  const unreadData = queryClient.getQueryData&lt;Array&lt;{ thread_id: string; cnt: number }&gt;&gt;(['dm-unread', userId]);</span>
+<span class="cstat-no" title="statement not covered" >  const unreadData = queryClient.getQueryData&lt;Array&lt;{ thread_id: string; cnt: number }&gt;&gt;(['dm-unread', profileId]);</span>
 <span class="cstat-no" title="statement not covered" >  return unreadData?.reduce((sum, item) =&gt; sum + item.cnt, 0) ?? 0;</span>
 <span class="cstat-no" title="statement not covered" >};</span></pre></td></tr></table></pre>
 
@@ -316,7 +316,7 @@ import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-09T09:14:02.460Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

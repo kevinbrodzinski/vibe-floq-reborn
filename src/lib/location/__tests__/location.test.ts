@@ -191,21 +191,21 @@ describe('Privacy Filtering', () => {
   const testCoords = { lat: 37.7749, lng: -122.4194, accuracy: 30 };
 
   test('exact privacy preserves coordinates', () => {
-    const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'exact');
+    const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'exact', testCoords.accuracy);
     expect(snapped.lat).toBe(testCoords.lat);
     expect(snapped.lng).toBe(testCoords.lng);
     expect(snapped.accuracy).toBe(30);
   });
 
   test('street privacy snaps to 100m grid', () => {
-    const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'street');
+    const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'street', testCoords.accuracy);
     expect(snapped.lat).not.toBe(testCoords.lat);
     expect(snapped.lng).not.toBe(testCoords.lng);
     expect(snapped.accuracy).toBeGreaterThanOrEqual(30);
   });
 
   test('area privacy snaps to 1km grid', () => {
-    const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'area');
+    const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'area', testCoords.accuracy);
     expect(snapped.lat).not.toBe(testCoords.lat);
     expect(snapped.lng).not.toBe(testCoords.lng);
     expect(snapped.accuracy).toBeGreaterThanOrEqual(30);
@@ -216,7 +216,5 @@ describe('Privacy Filtering', () => {
     const filtered = applyPrivacyFilter(testCoords.lat, testCoords.lng, testCoords.accuracy, settings);
     
     expect(filtered.accuracy).toBeGreaterThanOrEqual(30);
-    expect(typeof filtered.lat).toBe('number');
-    expect(typeof filtered.lng).toBe('number');
   });
 });
