@@ -1,18 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Smile, Reply } from 'lucide-react';
+import { Reply, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type MessageActionsProps = {
-  /** The message id we act on */
   messageId: string;
-  /** Where to anchor the popout (usually the button ref) */
   anchorRef: React.RefObject<HTMLElement>;
-  /** Called when user picks a reaction */
   onReact: (emoji: string, messageId: string) => void;
-  /** Called when user taps reply */
   onReply: (messageId: string) => void;
-  /** Optional: close when done */
   onClose?: () => void;
 };
 
@@ -25,19 +20,22 @@ export function MessageActionsPopout({
   onReply,
   onClose
 }: MessageActionsProps) {
-  const [pos, setPos] = useState<{top:number; left:number}>({ top: 0, left: 0 });
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const popRef = useRef<HTMLDivElement>(null);
 
-  // Position next to the anchor
+  // Position the popout **below** the anchor, centered, clamped to viewport
   useEffect(() => {
     const el = anchorRef.current;
     if (!el) return;
+
     const rect = el.getBoundingClientRect();
-    // place above-right of anchor
-    setPos({
-      top: Math.max(8, rect.top - 56),            // 56px tall pop – adjust
-      left: Math.min(window.innerWidth - 220, rect.left - 8),
-    });
+    const w = popRef.current?.offsetWidth ?? 220;
+    const h = popRef.current?.offsetHeight ?? 44;
+
+    const left = Math.max(8, Math.min(rect.left + rect.width / 2 - w / 2, window.innerWidth - w - 8));
+    const top = Math.min(window.innerHeight - h - 8, rect.bottom + 8);
+
+    setPos({ top, left });
   }, [anchorRef]);
 
   // Close on click outside / ESC
@@ -71,15 +69,17 @@ export function MessageActionsPopout({
   const node = (
     <div
       ref={popRef}
-      style={{ top: pos.top, left: pos.left, zIndex: 9999, position: 'fixed' }}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 10050 }}
       className="rounded-2xl border border-border/60 bg-background/95 backdrop-blur shadow-lg px-2 py-1 flex items-center gap-1"
     >
-      {/* Reactions row */}
       {EMOJIS.map((e) => (
         <button
           key={e}
           className="h-8 w-8 rounded-full hover:bg-muted/70 flex items-center justify-center text-lg"
-          onClick={() => { onReact(e, messageId); onClose?.(); }}
+          onClick={() => {
+            onReact(e, messageId);
+            onClose?.();
+          }}
           aria-label={`React ${e}`}
         >
           {e}
@@ -88,10 +88,12 @@ export function MessageActionsPopout({
 
       <div className="w-px h-6 bg-border/60 mx-1" />
 
-      {/* Reply action */}
       <button
         className="h-8 w-8 rounded-full hover:bg-muted/70 flex items-center justify-center"
-        onClick={() => { onReply(messageId); onClose?.(); }}
+        onClick={() => {
+          onReply(messageId);
+          onClose?.();
+        }}
         aria-label="Reply"
         title="Reply"
       >
@@ -103,26 +105,28 @@ export function MessageActionsPopout({
   return createPortal(node, portalRoot);
 }
 
-/**
- * Small trigger button that shows the popout.
- * Place this inside each message row, positioned absolute.
- */
 export function MessageActionsTrigger({
   onOpen,
   className
-}: { onOpen: (btn: HTMLButtonElement) => void; className?: string }) {
+}: {
+  onOpen: (btn: HTMLButtonElement) => void;
+  className?: string;
+}) {
   const btnRef = useRef<HTMLButtonElement>(null);
   return (
     <button
       ref={btnRef}
-      onClick={(e) => { e.stopPropagation(); if (btnRef.current) onOpen(btnRef.current); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (btnRef.current) onOpen(btnRef.current);
+      }}
       className={cn(
-        "h-8 w-8 rounded-full bg-background/90 border border-border/50 shadow flex items-center justify-center",
+        'h-8 w-8 rounded-full bg-background/90 border border-border/50 shadow flex items-center justify-center',
         className
       )}
       aria-label="Message actions"
       title="Reactions & reply"
-      style={{ zIndex: 9999 }}
+      style={{ zIndex: 10050 }}
     >
       <Smile className="h-4 w-4" />
     </button>

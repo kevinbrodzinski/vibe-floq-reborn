@@ -2,18 +2,10 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Smile, Reply, Copy } from 'lucide-react';
 import { useMessageReactions } from '@/hooks/messaging/useMessageReactions';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { format, isToday, isYesterday } from 'date-fns';
 import { getAvatarUrl } from '@/lib/avatar';
-import { toast } from 'sonner';
 
 interface DirectMessage {
   id: string;
@@ -49,7 +41,6 @@ export function MessageBubble({
   senderProfile 
 }: MessageBubbleProps) {
   const currentUserId = useCurrentUserId();
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
   
   // Use profile_id as primary, fall back to sender_id for compatibility
   const senderId = message.profile_id || message.sender_id;
@@ -72,18 +63,13 @@ export function MessageBubble({
   const handleReaction = async (emoji: string) => {
     try {
       await toggleReaction.mutateAsync({ messageId: message.id, emoji });
-      setShowReactionPicker(false);
     } catch (error: any) {
       console.error('[MessageBubble] Reaction failed:', error);
       // Show user-friendly error toast
-      toast.error('Failed to add reaction', {
-        description: error.message || 'Please try again'
-      });
+      // toast.error('Failed to add reaction', {
+      //   description: error.message || 'Please try again'
+      // });
     }
-  };
-
-  const handleCopyMessage = () => {
-    navigator.clipboard.writeText(message.content);
   };
 
   const getStatusIcon = () => {
@@ -153,55 +139,6 @@ export function MessageBubble({
 
           {/* Message content */}
           <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
-
-          {/* Message actions (visible on hover) */}
-          <div className={cn(
-            "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity",
-            "flex items-center gap-1 bg-white shadow-lg rounded-full p-1",
-            isOwn ? "-left-20" : "-right-20"
-          )}>
-            <DropdownMenu open={showReactionPicker} onOpenChange={setShowReactionPicker}>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Smile className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-auto">
-                <div className="flex gap-1 p-1">
-                  {COMMON_REACTIONS.map((emoji) => (
-                    <Button
-                      key={emoji}
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-lg hover:bg-gray-100"
-                      onClick={() => handleReaction(emoji)}
-                      disabled={isToggling}
-                    >
-                      {emoji}
-                    </Button>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Reply className="h-4 w-4" />
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleCopyMessage}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy message
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
 
         {/* Reactions */}

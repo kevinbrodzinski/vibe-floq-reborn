@@ -167,19 +167,13 @@ const MessageBubbleWrapper: React.FC<{
   if (message.metadata?.media) {
     return (
       <div
-        key={message.id}
         className={cn(
           'group relative flex w-full py-1',
           isOwn ? 'justify-end' : 'justify-start'
         )}
         data-mid={message.id}
       >
-        <div className={cn(
-          'relative max-w-[72%] px-3 py-2 rounded-2xl shadow-sm',
-          isOwn
-            ? 'bg-primary text-primary-foreground rounded-tr-md'
-            : 'bg-muted text-foreground rounded-tl-md'
-        )}>
+        <div className="flex flex-col max-w-[72%]">
           <MessageBubble
             message={message}
             isOwn={isOwn}
@@ -244,20 +238,13 @@ const MessageBubbleWrapper: React.FC<{
             </button>
           </div>
           
-          <div className={cn(
-            'relative px-3 py-2 rounded-2xl shadow-sm',
-            isOwn
-              ? 'bg-primary text-primary-foreground rounded-tr-md'
-              : 'bg-muted text-foreground rounded-tl-md'
-          )}>
-            <MessageBubble
-              message={message}
-              isOwn={isOwn}
-              showAvatar={!isOwn}
-              isConsecutive={isConsecutive}
-              senderProfile={senderProfile}
-            />
-          </div>
+          <MessageBubble
+            message={message}
+            isOwn={isOwn}
+            showAvatar={!isOwn}
+            isConsecutive={isConsecutive}
+            senderProfile={senderProfile}
+          />
 
           {/* Current reactions with "your reaction" highlighting */}
           <div className="mt-1 flex gap-2 items-center flex-wrap">
@@ -312,20 +299,13 @@ const MessageBubbleWrapper: React.FC<{
       data-mid={message.id}
     >
       <div className="flex flex-col max-w-[72%]">
-        <div className={cn(
-          'relative px-3 py-2 rounded-2xl shadow-sm',
-          isOwn
-            ? 'bg-primary text-primary-foreground rounded-tr-md'
-            : 'bg-muted text-foreground rounded-tl-md'
-        )}>
-          <MessageBubble
-            message={message}
-            isOwn={isOwn}
-            showAvatar={!isOwn}
-            isConsecutive={isConsecutive}
-            senderProfile={senderProfile}
-          />
-        </div>
+        <MessageBubble
+          message={message}
+          isOwn={isOwn}
+          showAvatar={!isOwn}
+          isConsecutive={isConsecutive}
+          senderProfile={senderProfile}
+        />
 
         {/* Current reactions with "your reaction" highlighting */}
         <div className="mt-1 flex gap-2 items-center flex-wrap">
