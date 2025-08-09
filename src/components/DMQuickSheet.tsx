@@ -197,28 +197,26 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         }
         console.log('[DM_SHEET] Thread resolved:', resolvedThreadId);
         setThreadId(resolvedThreadId);
-      } catch (e: any) {
+      } catch (error: any) {
         if (aborted || reqRef.current !== reqId) return; // ignore stale
         
-        console.error('[DM_SHEET] Thread error:', e);
+        console.error('[DM_SHEET] Thread resolution failed:', error);
         
-        // Provide specific error messages based on the error
-        let errorTitle = 'Chat error';
-        let errorDescription = 'Could not start chat';
+        // Handle specific friendship-related errors
+        const errorMessage = error?.message || 'Unknown error';
+        let userFriendlyMessage = 'Unable to start conversation';
         
-        if (e.message && e.message.includes('not friends')) {
-          errorTitle = 'Cannot start conversation';
-          errorDescription = 'You can only send direct messages to your friends. Send them a friend request first!';
-        } else if (e.message && e.message.includes('yourself')) {
-          errorTitle = 'Cannot message yourself';
-          errorDescription = 'You cannot send direct messages to yourself.';
-        } else if (e.message) {
-          errorDescription = e.message;
+        if (errorMessage.includes('not friends')) {
+          userFriendlyMessage = 'You can only message people who are your friends';
+        } else if (errorMessage.includes('yourself')) {
+          userFriendlyMessage = 'You cannot message yourself';
+        } else if (errorMessage.includes('permission')) {
+          userFriendlyMessage = 'Permission denied - please check your friend status';
         }
         
         toast({ 
-          title: errorTitle, 
-          description: errorDescription, 
+          title: 'Cannot Start Conversation',
+          description: userFriendlyMessage, 
           variant: 'destructive' 
         });
         setThreadId(undefined); // Keep undefined for retry, don't set to null

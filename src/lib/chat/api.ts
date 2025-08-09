@@ -37,33 +37,37 @@ export const rpc_reactToMsg = (payload: {
  */
 export async function getOrCreateThread(profileIdA: string, profileIdB: string): Promise<string> {
   try {
-    // First try the new enhanced function
+    console.log('[getOrCreateThread] Creating thread between profiles:', { profileIdA, profileIdB });
+    
+    // Use the correct function name and parameters
     const { data: threadId, error: newError } = await supabase
-      .rpc('create_or_get_thread', {
-        p_user_a: profileIdA,
-        p_user_b: profileIdB
+      .rpc('get_or_create_dm_thread', {
+        p_profile_a: profileIdA,
+        p_profile_b: profileIdB
       });
 
     if (!newError && threadId) {
+      console.log('[getOrCreateThread] Success with new function:', threadId);
       return threadId;
     }
 
     console.warn('[getOrCreateThread] New function failed, trying fallback:', newError);
 
-    // Fallback: Try to find existing thread manually
+    // Fallback: Try to find existing thread manually using the correct column names
     const { data: existingThread, error: findError } = await supabase
       .from('direct_threads')
       .select('id')
-      .or(`member_a_profile_id.eq.${profileIdA},member_b_profile_id.eq.${profileIdA}`)
-      .or(`member_a_profile_id.eq.${profileIdB},member_b_profile_id.eq.${profileIdB}`)
+      .or(`and(member_a_profile_id.eq.${profileIdA},member_b_profile_id.eq.${profileIdB}),and(member_a_profile_id.eq.${profileIdB},member_b_profile_id.eq.${profileIdA})`)
       .limit(1)
       .single();
 
     if (!findError && existingThread) {
+      console.log('[getOrCreateThread] Found existing thread:', existingThread.id);
       return existingThread.id;
     }
 
-    // Last resort: Create thread manually (if we have the right permissions)
+    // Last resort: Create thread manually (this should fail if they're not friends)
+    console.log('[getOrCreateThread] Creating thread manually - this may fail if not friends');
     const { data: newThread, error: createError } = await supabase
       .from('direct_threads')
       .insert({
@@ -83,6 +87,7 @@ export async function getOrCreateThread(profileIdA: string, profileIdB: string):
       throw new Error(`Failed to create thread: ${createError.message}`);
     }
 
+    console.log('[getOrCreateThread] Created new thread:', newThread.id);
     return newThread.id;
 
   } catch (error) {
