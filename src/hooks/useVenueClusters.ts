@@ -46,37 +46,41 @@ export function useVenueClusters(viewport: Viewport) {
 
       const params = { west: westD, south: southD, east: eastD, north: northD } as const;
 
-      const tryRpc = async (fn: string) => supabase.rpc(fn, params);
+      // 1) Try canonical RPC first
+      let data: any[] | null = null;
+      let rpcError: any = null;
+      try {
+        const res = await supabase.rpc('get_venues_in_bbox', params);
+        data = res.data as any[] | null;
+        rpcError = res.error;
+      } catch (e) {
+        rpcError = e;
+      }
 
-      // Primary call
-      let { data, error } = await tryRpc('get_venues_in_bbox');
-
-      // Retry fallbacks if PostgREST reports overload ambiguity
-      if (error && (error as any).code === 'PGRST203') {
-        const fallbacks = [
-          'get_venues_in_bbox_double',
-          'get_venues_in_bbox_v2',
-          'get_venues_in_bbox_f64',
-        ];
-        for (const fn of fallbacks) {
-          try {
-            const res = await tryRpc(fn);
-            if (!res.error && res.data) {
-              data = res.data;
-              error = null as any;
-              break;
-            }
-          } catch {}
+      // 2) If ambiguity/404, fall back to direct table select with bbox filters
+      if (rpcError && ((rpcError.code === 'PGRST203') || (rpcError.status === 404))) {
+        const sel = await supabase
+          .from('venues')
+          .select('id,name,lat,lng,source,external_id,address,categories,rating,photo_url,updated_at,created_at,description,radius_m,slug')
+          .gte('lng', westD)
+          .lte('lng', eastD)
+          .gte('lat', southD)
+          .lte('lat', northD)
+          .limit(1000);
+        if (sel.error) {
+          console.error('Fallback venues SELECT error:', sel.error);
+          throw sel.error;
         }
+        data = (sel.data ?? []) as any[];
+      }
+
+      if (rpcError && !data) {
+        console.error('Error fetching venues:', rpcError);
+        throw rpcError;
       }
       
-      if (error) {
-        console.error('Error fetching venues:', error);
-        throw error;
-      }
-      
-      // The RPC returns a simplified format, so we cast it properly
-      return (data as any[])?.map(item => ({
+      // The RPC or SELECT returns a simplified format, so we cast it properly
+      return (data ?? []).map(item => ({
         id: item.id,
         name: item.name,
         lat: +item.lat,
@@ -89,12 +93,12 @@ export function useVenueClusters(viewport: Viewport) {
         photo_url: item.photo_url || null,
         updated_at: item.updated_at || new Date().toISOString(),
         geom: null,
-        vibe: item.vibe || null,
+        vibe: (item as any).vibe || null,
         created_at: item.created_at || new Date().toISOString(),
         description: item.description || null,
         radius_m: item.radius_m || 100,
         slug: item.slug || null,
-      } as Venue)) ?? [];
+      } as Venue));
     },
     staleTime: 60_000, // Cache for 1 minute
     enabled: true,
