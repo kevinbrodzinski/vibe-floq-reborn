@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/hooks/useProfileCache";
+import { useProfile } from "@/hooks/useProfile"; // Use the correct hook that handles undefined
 
 export function ReplyPreview({
   text,
@@ -17,7 +17,7 @@ export function ReplyPreview({
   integrated?: boolean;
 }) {
   // Fetch author profile if we have an authorId but no authorName
-  const { data: authorProfile } = useProfile(authorId || '');
+  const { data: authorProfile } = useProfile(authorId); // This hook handles undefined properly
   
   const displayName = authorName || 
     authorProfile?.display_name || 
