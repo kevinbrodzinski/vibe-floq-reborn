@@ -176,7 +176,8 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       setDmOpen(true);
       clearTimeout(highlightTimerRef.current!);
       highlightTimerRef.current = window.setTimeout(() => setHighlightedFriend(null), 5000);
-    }
+    },
+    highlightFriendId: highlightedFriend
   });
 
   // Render mini trails for visible friends

@@ -23,14 +23,17 @@ interface UseMapLayersProps {
   plans: MapPlan[];
   onClusterClick?: (clusterId: number, coordinates: [number, number]) => void;
   onFriendClick?: (friendId: string, properties: any) => void;
+  highlightFriendId?: string | null;
 }
 
-export function useMapLayers({ 
+  export function useMapLayers({ 
   map, 
   people, 
   floqs,
   plans,
-  onClusterClick 
+  onClusterClick,
+  onFriendClick,
+  highlightFriendId 
 }: UseMapLayersProps) {
   const layersInitialized = useRef(false);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
@@ -64,6 +67,20 @@ export function useMapLayers({
       // Add friends layer (vibe-colored friend dots)
       if (!map.getLayer('friends-pins')) {
         map.addLayer(friendsLayer);
+      }
+      // Add a glow overlay circle layer for highlighted friend
+      if (!map.getLayer('friend-glow')) {
+        map.addLayer({
+          id: 'friend-glow',
+          type: 'circle',
+          source: 'people',
+          filter: ['all', ['==', ['get', 'id'], '']],
+          paint: {
+            'circle-radius': 18,
+            'circle-color': '#ffffff',
+            'circle-opacity': 0.25,
+          }
+        });
       }
 
       // Add self layer (blue "YOU" pin) - preserve existing functionality  
@@ -106,6 +123,12 @@ export function useMapLayers({
 
     } catch (error) {
       console.error('[useMapLayers] Layer initialization error:', error);
+    }
+
+    // Update glow filter when highlight changes
+    if (map.getLayer('friend-glow')) {
+      const filter = highlightFriendId ? ['==', ['get', 'id'], highlightFriendId] : ['==', ['get', 'id'], ''];
+      map.setFilter('friend-glow', filter as any);
     }
 
     return () => {
