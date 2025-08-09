@@ -89,10 +89,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
   // Filter floqs by selected vibe and selected floq
   const filteredFloqs = useMemo(() => {
-    // Add mock floqs in dev mode for testing
-    const mockFloqs = import.meta.env.DEV 
-      ? (typeof window !== 'undefined' && (window as any).getMockFloqs?.() || [])
-      : [];
+    // Inject mock floqs when mock mode is on
+    let mockFloqs: any[] = [];
+    try {
+      const { isMockModeEnabled, generateMockFloqs } = require('@/lib/mock/MockMode');
+      if (isMockModeEnabled()) {
+        const cLat = location?.coords?.lat ?? 37.7749;
+        const cLng = location?.coords?.lng ?? -122.4194;
+        mockFloqs = generateMockFloqs(cLat, cLng, 10);
+      }
+    } catch {}
     
     let filtered = [...floqs, ...mockFloqs];
     
@@ -130,7 +136,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       isFriend: false
     }] : [];
 
-    // Only real friend coordinates from hook (no 0,0 placeholders)
+    // Real friends
     const friendPeople = (visibleFriends || [])
       .filter(fr => selectedVibe === 'all' || (fr.vibe ?? '') === selectedVibe)
       .map(fr => ({
@@ -144,7 +150,27 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         vibe: fr.vibe ?? undefined
       }));
 
-    const result = [...currentUserPerson, ...friendPeople];
+    // Mock people injection
+    let mockPeople: any[] = [];
+    try {
+      const { isMockModeEnabled, generateMockPeople } = require('@/lib/mock/MockMode');
+      if (isMockModeEnabled()) {
+        const cLat = location?.coords?.lat ?? 37.7749;
+        const cLng = location?.coords?.lng ?? -122.4194;
+        mockPeople = generateMockPeople(cLat, cLng, 16).map((p: any) => ({
+          id: p.id,
+          lng: p.lng,
+          lat: p.lat,
+          x: 0,
+          y: 0,
+          you: false,
+          isFriend: true,
+          vibe: p.vibe,
+        }));
+      }
+    } catch {}
+
+    const result = [...currentUserPerson, ...friendPeople, ...mockPeople];
     if (import.meta.env.DEV) {
       console.log('[FieldWebMap] people for map:', result);
     }

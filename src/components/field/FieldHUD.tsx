@@ -45,7 +45,8 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   return (
     <div className="pointer-events-none">
       {/* Bottom action bar */}
-      <div className="pointer-events-auto fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] flex items-center gap-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2 shadow-lg">
+      <div className="pointer-events-auto fixed left-1/2 -translate-x-1/2 z-[95] flex items-center gap-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2 shadow-lg"
+           style={{ bottom: 'calc(88px + env(safe-area-inset-bottom))' }}>
         <Button size="sm" variant="ghost" onClick={onOpenFilters} className="gap-2">
           <Filter className="h-4 w-4" />
           Filters
