@@ -31,6 +31,13 @@ export const FieldHeader = ({
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { isActive, toggleSafeMode } = useSafeMode()
 
+  // Mock mode state (dev only)
+  let mockHelpers: any = null;
+  const isDev = import.meta.env.DEV || process.env.NODE_ENV !== 'production';
+  if (isDev) {
+    try { mockHelpers = require('@/lib/mock/MockMode'); } catch {}
+  }
+
   return (
     <header
       className={cn(
@@ -89,6 +96,26 @@ export const FieldHeader = ({
               </span>
             )}
           </button>
+        )}
+
+        {/* Dev-only: Mock mode toggle */}
+        {isDev && mockHelpers && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const { isMockModeEnabled, enableMockModeForSeconds, disableMockMode, getMockModeRemainingSeconds } = mockHelpers;
+              if (isMockModeEnabled()) {
+                disableMockMode();
+              } else {
+                enableMockModeForSeconds(15 * 60); // 15 minutes by default
+              }
+            }}
+            title="Toggle mock data"
+            className="p-2 text-muted-foreground hover:text-primary"
+          >
+            {mockHelpers?.isMockModeEnabled?.() ? 'Mock: On' : 'Mock: Off'}
+          </Button>
         )}
 
         <SafeModeButton
