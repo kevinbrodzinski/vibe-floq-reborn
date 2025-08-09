@@ -81,7 +81,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className={cn("flex-1 overflow-y-auto p-4 space-y-4", className)}>
+    <div className={cn("flex-1 overflow-y-auto overflow-x-visible p-4 space-y-4", className)}>
       {/* Load more messages */}
       {messages.hasNextPage && (
         <Waypoint onEnter={() => messages.fetchNextPage()}>
@@ -154,7 +154,7 @@ const MessageBubbleWrapper: React.FC<{
   // Handle reply context
   if (message.reply_to && message.reply_to_msg && message.reply_to_msg.id) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 relative overflow-visible">
         {/* ✅ Inline reply preview using expanded view data */}
         <div className="mb-1 rounded border border-border/50 bg-muted/30 px-2 py-1 text-xs">
           <div className="opacity-70">Replying to</div>
@@ -162,7 +162,7 @@ const MessageBubbleWrapper: React.FC<{
             {message.reply_to_msg.content ?? '(deleted message)'}
           </div>
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-visible">
           <MessageBubble
             message={message}
             isOwn={isOwn}
@@ -206,7 +206,7 @@ const MessageBubbleWrapper: React.FC<{
 
   // Regular message
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative overflow-visible">
       <MessageBubble
         message={message}
         isOwn={isOwn}
@@ -215,7 +215,7 @@ const MessageBubbleWrapper: React.FC<{
         senderProfile={senderProfile}
       />
       {/* Reaction controls and display */}
-      <div className={`group mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
+      <div className={`group mt-1 flex gap-2 items-center overflow-visible ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
         {/* Reaction picker (hidden until hover) */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <MessageActions 

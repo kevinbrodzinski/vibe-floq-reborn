@@ -26,7 +26,13 @@ export function MessageActions({ onReply, onReact, size = 'sm' }: Props) {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent side="top" align="start" className="px-2 py-1 rounded-2xl">
+      <PopoverContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        avoidCollisions
+        className="z-[10050] px-2 py-1 rounded-2xl w-auto"  // > Sheet zIndex (9999), override width
+      >
         <div className="flex items-center gap-2">
           {/* Reply action */}
           <Button
