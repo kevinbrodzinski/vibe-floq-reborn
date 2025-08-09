@@ -1129,10 +1129,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         />
         
         {/* Deck.GL density overlay when enabled */}
-        {densityMode && (
+        {densityMode && densityLayers.length > 0 && (
           <DeckGL
             layers={densityLayers}
-            controller={false}
             parameters={{ depthTest: false }}
             style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
           />
@@ -1357,25 +1356,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         {/* Timewarp Map Layer */}
         <TimewarpMapLayer map={mapRef.current} />
 
-        {/* HUD overlays */}
-        <FieldHUD
-          onOpenFilters={() => {
-            try {
-              // Lazy access without import cycle
-              const { useFloqUI } = require('@/contexts/FloqUIContext');
-              const ui = useFloqUI?.();
-              ui?.setShowFiltersModal?.(true);
-            } catch {
-              // Fallback: toggle a local state or no-op
-            }
-          }}
-          onCenterMap={centerOnUserLocation}
-          onToggleWeather={() => setShowWeather(v => !v)}
-          activeVibe={selectedVibe}
-          onSelectVibe={setSelectedVibe}
-          densityMode={densityMode}
-          onToggleDensity={() => setDensityMode(v => !v)}
-        />
+        {/* HUD overlays disabled temporarily to declutter and restore map interactions */}
 
         {/* DM Quick Sheet for friend taps */}
         <DMQuickSheet open={dmOpen} onOpenChange={setDmOpen} friendId={dmFriendId} />

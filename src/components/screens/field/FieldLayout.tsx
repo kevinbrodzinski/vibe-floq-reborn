@@ -205,8 +205,8 @@ export const FieldLayout = () => {
             </div>
           </div>
 
-          {/* Base Map Layer - z-0 */}
-          <div {...gestureHandlers}>
+          {/* Base Map Layer - z-0 (gesture handlers temporarily disabled to restore native map interactions) */}
+          <div>
             <FieldMapLayer
               data={data}
               people={people}
