@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -79,8 +79,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
   // Auth guard and unified messaging hooks - guard queries until thread is ready
   const isValidUuid = !!threadId && /^[0-9a-f-]{36}$/i.test(threadId);
-  const enabled = Boolean(open && threadId && currentProfileId && isValidUuid);
-  const messages = useMessages(isValidUuid ? threadId : undefined, 'dm', { enabled });
+  const enabled = isValidUuid && !!currentProfileId;
+  const messages = useMessages(
+    isValidUuid ? threadId : undefined,   // ✅ undefined when invalid, never empty string
+    'dm',
+    { enabled }                           // ✅ boolean
+  );
   // const sendMut = useSendMessage('dm'); // This line is no longer needed
 
   // Debug messages hook state
@@ -142,9 +146,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
   // Get friend profile and presence
   const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
-  const presence = useFriendsPresence()[friendId || ''];
+  const presence = useFriendsPresence()[friendId || ''] || {};
   const online = presence?.status === 'online' && presence?.visible;
-  const lastSeenTs = useLastSeen(friendId || '');
+  const lastSeenTs = useLastSeen(friendId || undefined);
 
   // Get current profile_id from auth context (user.id is the profile_id)
   useEffect(() => {
@@ -152,6 +156,23 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
     console.log('[DM_SHEET] Auth profile_id changed:', profileId);
     setCurrentProfileId(profileId);
   }, [user]);
+
+  // ✅ Cleanup when sheet closes - never set empty strings
+  useEffect(() => {
+    if (!open) {
+      setThreadId(undefined);   // ✅ not ''
+      lastFriendRef.current = undefined;
+      reqRef.current = 0;
+    }
+  }, [open]);
+
+  // ✅ Reset when friend changes
+  useEffect(() => {
+    if (friendId !== lastFriendRef.current && lastFriendRef.current !== undefined) {
+      setThreadId(undefined);
+      lastFriendRef.current = undefined;
+    }
+  }, [friendId]);
 
   // Resolve by friendId only when we DON'T have a threadId - FIXED LOOP
   useEffect(() => {
@@ -176,28 +197,26 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         }
         console.log('[DM_SHEET] Thread resolved:', resolvedThreadId);
         setThreadId(resolvedThreadId);
-      } catch (e: any) {
+      } catch (error: any) {
         if (aborted || reqRef.current !== reqId) return; // ignore stale
         
-        console.error('[DM_SHEET] Thread error:', e);
+        console.error('[DM_SHEET] Thread resolution failed:', error);
         
-        // Provide specific error messages based on the error
-        let errorTitle = 'Chat error';
-        let errorDescription = 'Could not start chat';
+        // Handle specific friendship-related errors
+        const errorMessage = error?.message || 'Unknown error';
+        let userFriendlyMessage = 'Unable to start conversation';
         
-        if (e.message && e.message.includes('not friends')) {
-          errorTitle = 'Cannot start conversation';
-          errorDescription = 'You can only send direct messages to your friends. Send them a friend request first!';
-        } else if (e.message && e.message.includes('yourself')) {
-          errorTitle = 'Cannot message yourself';
-          errorDescription = 'You cannot send direct messages to yourself.';
-        } else if (e.message) {
-          errorDescription = e.message;
+        if (errorMessage.includes('not friends')) {
+          userFriendlyMessage = 'You can only message people who are your friends';
+        } else if (errorMessage.includes('yourself')) {
+          userFriendlyMessage = 'You cannot message yourself';
+        } else if (errorMessage.includes('permission')) {
+          userFriendlyMessage = 'Permission denied - please check your friend status';
         }
         
         toast({ 
-          title: errorTitle, 
-          description: errorDescription, 
+          title: 'Cannot Start Conversation',
+          description: userFriendlyMessage, 
           variant: 'destructive' 
         });
         setThreadId(undefined); // Keep undefined for retry, don't set to null
@@ -510,21 +529,26 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         {/* Input with reply preview */}
         <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           {replyTo && (
-            <div className="mb-2 bg-muted/30 p-2 rounded flex items-center justify-between">
-              <div className="text-xs text-muted-foreground line-clamp-1">
-                Replying to: {replyPreview?.content || 'message'}
+            <div className="mb-2 bg-muted/20 p-3 rounded-lg border-l-2 border-primary/50">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs font-medium text-primary">
+                  Replying to message
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { 
+                    setReplyTo(null); 
+                    setReplyPreview(null); 
+                  }}
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { 
-                  setReplyTo(null); 
-                  setReplyPreview(null); 
-                }}
-                className="h-6 w-6 p-0"
-              >
-                ✕
-              </Button>
+              <div className="text-xs text-muted-foreground line-clamp-2 break-words">
+                {replyPreview?.content || 'This message was deleted'}
+              </div>
             </div>
           )}
           <input

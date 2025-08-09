@@ -194,29 +194,36 @@ describe('Privacy Filtering', () => {
     const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'exact');
     expect(snapped.lat).toBe(testCoords.lat);
     expect(snapped.lng).toBe(testCoords.lng);
-    expect(snapped.accuracy).toBe(30);
+    expect(snapped.accuracy).toBe(0); // No additional accuracy penalty for exact privacy
   });
 
   test('street privacy snaps to 100m grid', () => {
     const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'street');
     expect(snapped.lat).not.toBe(testCoords.lat);
     expect(snapped.lng).not.toBe(testCoords.lng);
-    expect(snapped.accuracy).toBeGreaterThanOrEqual(30);
+    expect(snapped.accuracy).toBe(100); // Street privacy adds 100m accuracy penalty
   });
 
   test('area privacy snaps to 1km grid', () => {
     const snapped = snapToGrid(testCoords.lat, testCoords.lng, 'area');
     expect(snapped.lat).not.toBe(testCoords.lat);
     expect(snapped.lng).not.toBe(testCoords.lng);
-    expect(snapped.accuracy).toBeGreaterThanOrEqual(30);
+    expect(snapped.accuracy).toBe(1000); // Area privacy adds 1km accuracy penalty
   });
 
-  test('applies privacy filter with settings', () => {
+  test('applies privacy filter with settings - exact preserves original accuracy', () => {
+    const settings = { live_accuracy: 'exact' };
+    const filtered = applyPrivacyFilter(testCoords.lat, testCoords.lng, testCoords.accuracy, settings);
+    
+    expect(filtered.lat).toBe(testCoords.lat);
+    expect(filtered.lng).toBe(testCoords.lng);
+    expect(filtered.accuracy).toBe(30); // Original accuracy preserved
+  });
+
+  test('applies privacy filter with settings - street uses max accuracy', () => {
     const settings = { live_accuracy: 'street' };
     const filtered = applyPrivacyFilter(testCoords.lat, testCoords.lng, testCoords.accuracy, settings);
     
-    expect(filtered.accuracy).toBeGreaterThanOrEqual(30);
-    expect(typeof filtered.lat).toBe('number');
-    expect(typeof filtered.lng).toBe('number');
+    expect(filtered.accuracy).toBe(100); // Max of original (30) and street penalty (100)
   });
 });
