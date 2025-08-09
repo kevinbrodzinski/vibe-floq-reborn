@@ -1,15 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Waypoint } from 'react-waypoint';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
-import { MessageBubble } from '@/components/MessageBubble';
+import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
-import { ChatMediaBubble } from './ChatMediaBubble';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
+import { MessageBubble } from '@/components/MessageBubble';
 import { MessageActionsTrigger, MessageActionsPopout } from './MessageActions';
 import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
-interface Message {
+type Message = {
   id: string;
   thread_id: string;
   content?: string | null;
@@ -26,9 +25,15 @@ interface Message {
   sender_id?: string;
   profile_id: string;
   status?: 'sending' | 'sent' | 'delivered' | 'read';
-}
+};
 
-interface MessageListProps {
+export function MessageList({
+  messages,
+  currentUserId,
+  threadId,
+  onReply,
+  className
+}: {
   messages: {
     data?: { pages: Message[][] };
     hasNextPage?: boolean;
@@ -39,24 +44,11 @@ interface MessageListProps {
   threadId?: string;
   onReply?: (messageId: string, preview?: { content?: string; authorId?: string }) => void;
   className?: string;
-}
+}) {
+  const listRef = useRef<HTMLDivElement>(null);
 
-const EMOJIS = ['👍','❤️','😂','🔥','😮','😢'];
-
-export const MessageList: React.FC<MessageListProps> = ({
-  messages,
-  currentUserId,
-  threadId,
-  onReply,
-  className
-}) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  // Get unified reactions system - ONLY source of truth
-  const { byMessage, toggle: toggleReaction } = threadId ? useDmReactions(threadId) : { byMessage: {}, toggle: () => {} };
-
-  // dedupe + sort
-  const allMessages = React.useMemo(() => {
+  // De-dupe & sort (prevents duplicate keys + weird stacking)
+  const allMessages = useMemo(() => {
     const seen = new Set<string>();
     const out: Message[] = [];
     for (const page of messages.data?.pages ?? []) {
@@ -71,14 +63,14 @@ export const MessageList: React.FC<MessageListProps> = ({
     return out;
   }, [messages.data]);
 
+  // Auto scroll on new messages
   useEffect(() => {
-    if (allMessages.length > 0) {
-      const id = requestAnimationFrame(() =>
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-      );
-      return () => cancelAnimationFrame(id);
-    }
+    if (!listRef.current) return;
+    listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [allMessages.length]);
+
+  // Reactions (optimistic)
+  const { toggle: toggleReaction } = threadId ? useDmReactions(threadId) : { toggle: () => {} };
 
   if (messages.isLoading) {
     return (
@@ -89,88 +81,136 @@ export const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className={cn('flex-1 overflow-y-auto overflow-x-visible p-4 space-y-4', className)}>
-      {messages.hasNextPage && (
-        <Waypoint onEnter={() => messages.fetchNextPage()}>
-          <div className="flex justify-center p-4">
-            <Loader2 className="h-4 w-4 animate-spin" />
-          </div>
-        </Waypoint>
-      )}
-
-      {allMessages.map((message, index) => {
-        const senderId = message.profile_id || message.sender_id;
+    <div
+      ref={listRef}
+      className={cn('flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3', className)}
+    >
+      {allMessages.map((m, i) => {
+        const senderId = m.profile_id || m.sender_id;
         const isOwn = senderId === currentUserId;
-        const reactions = byMessage[message.id] || [];
+
+        const prev = allMessages[i - 1];
+        const isSameSender =
+          prev && (prev.profile_id || prev.sender_id) === senderId;
+        const closeInTime =
+          prev && dayjs(m.created_at).diff(dayjs(prev.created_at), 'minute') < 5;
+        const isConsecutive = Boolean(isSameSender && closeInTime);
 
         return (
-          <MessageRow
-            key={message.id}
-            message={message}
+          <Row
+            key={m.id}
             isOwn={isOwn}
-            reactions={reactions}
-            onReact={(emoji) => toggleReaction(message.id, emoji)}
-            onReply={() => onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id })}
+            message={m}
+            isConsecutive={isConsecutive}
+            onReply={onReply}
+            onReact={toggleReaction}
           />
         );
       })}
-      <div ref={bottomRef} />
     </div>
   );
-};
+}
 
-function MessageRow({
-  message, isOwn, reactions, onReact, onReply
+function Row({
+  message,
+  isOwn,
+  isConsecutive,
+  onReply,
+  onReact,
 }: {
-  message: any;
+  message: Message;
   isOwn: boolean;
-  reactions: Array<{emoji:string; count:number; reactors:string[]}>;
-  onReact: (emoji: string) => void;
-  onReply: () => void;
+  isConsecutive: boolean;
+  onReply?: (messageId: string, preview?: { content?: string; authorId?: string }) => void;
+  onReact: (messageId: string, emoji: string) => void;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const { data: senderProfile } = useProfile(message.profile_id || message.sender_id);
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
   const openActions = (btn: HTMLButtonElement) => {
-    setAnchorEl(btn);
+    setAnchor(btn);
     setOpen(true);
   };
+
+  const time = dayjs(message.created_at).format('h:mm A');
 
   return (
     <div
       className={cn(
-        'group flex w-full py-1',
-        isOwn ? 'justify-end' : 'justify-start'
+        'group relative flex w-full',
+        isOwn ? 'justify-end' : 'justify-start',
+        isConsecutive ? 'mt-1' : 'mt-4'
       )}
       data-mid={message.id}
     >
-      {/* Bubble container that we can position against */}
-      <div className="relative inline-flex max-w-[72%] flex-col">
+      <div className="flex flex-col max-w-[72vw] sm:max-w-[72%]">
+        {/* Bubble */}
         <MessageBubble
-          content={message.content}
+          message={message}
           isOwn={isOwn}
-          reply_to_id={message.reply_to}
-          created_at={message.created_at}
-          reactions={reactions}
-          onReact={onReact}
-          onReply={onReply}
+          isConsecutive={isConsecutive}
+          senderProfile={senderProfile}
         />
 
-        {/* 👉 Fixed: trigger anchored to the bubble with correct pointer events */}
-        <div className="pointer-events-none absolute -bottom-2 left-2 z-[10000] hidden group-hover:flex">
-          <div className="pointer-events-auto">
-            <MessageActionsTrigger onOpen={openActions} className="h-7 w-7" />
+        {/* Reactions row */}
+        {message.reactions && message.reactions.length > 0 && (
+          <div
+            className={cn(
+              'mt-1 flex gap-2 items-center flex-wrap',
+              isOwn ? 'justify-end pr-1' : 'justify-start pl-1'
+            )}
+          >
+            {message.reactions.map((r) => (
+              <button
+                key={r.emoji}
+                className={cn(
+                  'text-xs rounded-full h-6 px-2 border transition-colors',
+                  'hover:bg-muted/60',
+                  r.reactors.length ? 'border-border/60 bg-background/40' : 'border-border/40'
+                )}
+                onClick={() => onReact(message.id, r.emoji)}
+                title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
+              >
+                {r.emoji} {r.count > 1 ? r.count : ''}
+              </button>
+            ))}
           </div>
+        )}
+
+        {/* Timestamp */}
+        <div
+          className={cn(
+            'mt-1 text-xs text-muted-foreground',
+            isOwn ? 'text-right pr-1' : 'text-left pl-1'
+          )}
+        >
+          {time}
         </div>
       </div>
 
-      {/* 👉 Popout stays as-is */}
-      {open && anchorEl && (
+      {/* Actions trigger anchored to bubble corner */}
+      <div
+        className={cn(
+          'absolute opacity-0 group-hover:opacity-100 transition-opacity',
+          isOwn ? 'right-2 -bottom-3' : 'left-2 -bottom-3'
+        )}
+        style={{ pointerEvents: 'none' }} // only the button is clickable
+      >
+        <div style={{ pointerEvents: 'auto' }}>
+          <MessageActionsTrigger onOpen={openActions} />
+        </div>
+      </div>
+
+      {/* Portal popout */}
+      {open && anchor && (
         <MessageActionsPopout
           messageId={message.id}
-          anchorRef={{ current: anchorEl }}
-          onReact={(emoji) => { onReact(emoji); }}
-          onReply={() => { onReply(); }}
+          anchorRef={{ current: anchor }}
+          onReact={(emoji) => onReact(message.id, emoji)}
+          onReply={(id) =>
+            onReply?.(id, { content: message.content ?? '', authorId: message.profile_id })
+          }
           onClose={() => setOpen(false)}
         />
       )}
