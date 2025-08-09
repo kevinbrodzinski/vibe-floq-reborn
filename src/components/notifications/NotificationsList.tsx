@@ -133,10 +133,19 @@ const getNotificationSubtitle = (notification: any) => {
   }
 };
 
+const KIND_FILTERS = [
+  { id: 'all', label: 'All' },
+  { id: 'dm', label: 'Messages' },
+  { id: 'friend', label: 'Friends' },
+  { id: 'plan', label: 'Plans' },
+  { id: 'floq', label: 'Floqs' },
+] as const;
+
 export const NotificationsList = () => {
   const { toast } = useToast();
   const { unseen: notifications, markAsSeen, markAllSeen } = useEventNotifications();
   const { handleNotificationTap } = useNotificationActions();
+  const [activeFilter, setActiveFilter] = React.useState<(typeof KIND_FILTERS)[number]['id']>('all');
 
   const handleMarkAllAsRead = () => {
     markAllSeen();
@@ -163,8 +172,32 @@ export const NotificationsList = () => {
 
   const unreadNotifications = notifications.filter(n => !n.seen_at);
 
+  const filtered = React.useMemo(() => {
+    if (activeFilter === 'all') return notifications;
+    if (activeFilter === 'dm') return notifications.filter(n => n.kind === 'dm');
+    if (activeFilter === 'friend') return notifications.filter(n => n.kind.startsWith('friend_request'));
+    if (activeFilter === 'plan') return notifications.filter(n => n.kind.startsWith('plan_'));
+    if (activeFilter === 'floq') return notifications.filter(n => n.kind.startsWith('floq_'));
+    return notifications;
+  }, [notifications, activeFilter]);
+
   return (
     <div className="space-y-4">
+      {/* Filter controls */}
+      <div className="flex gap-2 px-4">
+        {KIND_FILTERS.map(f => (
+          <Button
+            key={f.id}
+            size="sm"
+            variant={activeFilter === f.id ? 'default' : 'outline'}
+            className="text-xs"
+            onClick={() => setActiveFilter(f.id)}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </div>
+
       {unreadNotifications.length > 0 && (
         <div className="flex items-center justify-between px-4 py-2 border-b">
           <div className="flex items-center gap-2">
@@ -188,7 +221,7 @@ export const NotificationsList = () => {
 
       <ScrollArea className="max-h-96">
         <div className="space-y-2 px-4">
-          {notifications.map((notification) => (
+          {filtered.map((notification) => (
             <div
               key={notification.id}
               className={cn(

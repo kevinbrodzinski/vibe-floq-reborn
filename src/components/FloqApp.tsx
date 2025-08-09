@@ -10,8 +10,6 @@ import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
 // import { useNotifications } from "@/hooks/useNotifications"; // Removed: handled by EventNotificationsProvider
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
 
 
 import { Button } from "./ui/button";
@@ -21,7 +19,6 @@ export const FloqApp = () => {
   // Notification system handled by EventNotificationsProvider in App.tsx
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -62,7 +59,10 @@ export const FloqApp = () => {
               </div>
             </div>
 
-
+            {/* Gently prompt for notification permission */}
+            <div className="px-4 pt-3">
+              <NotificationPermissionRequest />
+            </div>
 
             <div className="pb-20">
               <ErrorBoundary>
@@ -77,15 +77,11 @@ export const FloqApp = () => {
               open={commandPaletteOpen} 
               onOpenChange={setCommandPaletteOpen}
             />
-            
-            {/* Notifications Sheet */}
-            <NotificationsSheet 
-              open={notificationsOpen}
-              onOpenChange={setNotificationsOpen}
-            />
           </div>
         </FloqUIProvider>
       </TimeSyncProvider>
     </ErrorBoundary>
   );
 };
+
+export default FloqApp;
