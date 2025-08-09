@@ -41,6 +41,10 @@ export function MessageBubble({
     ? 'bg-primary text-primary-foreground rounded-tr-md'
     : 'bg-muted text-foreground rounded-tl-md';
 
+  // Reply preview snippet
+  const parentText = (message.reply_to_msg?.content || '(deleted message)').trim();
+  const snippet = parentText.length > 120 ? parentText.slice(0, 120) + '…' : parentText;
+
   return (
     <div
       className={cn(
@@ -51,17 +55,17 @@ export function MessageBubble({
       )}
       data-mid={message.id}
     >
-      {/* Reply preview (faded) */}
+      {/* Reply preview (distinct chip) */}
       {message.reply_to && message.reply_to_msg?.id && (
         <div
           className={cn(
-            'mb-2 text-xs pl-2 border-l-2',
-            isOwn ? 'border-primary/40' : 'border-foreground/20'
+            'mb-2 rounded-lg px-3 py-2 text-xs leading-snug',
+            'bg-background/40 backdrop-blur border',
+            isOwn ? 'border-primary/30' : 'border-foreground/15'
           )}
         >
-          <div className="opacity-70 line-clamp-2">
-            {message.reply_to_msg?.content ?? '(deleted message)'}
-          </div>
+          <span className="font-medium opacity-70">Replied to: </span>
+          <span className="opacity-80">{snippet}</span>
         </div>
       )}
 

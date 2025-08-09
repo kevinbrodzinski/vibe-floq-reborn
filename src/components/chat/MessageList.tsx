@@ -145,40 +145,38 @@ function Row({
       data-mid={message.id}
     >
       <div className="flex flex-col max-w-[72vw] sm:max-w-[72%]">
-        {/* Bubble */}
-        <MessageBubble
-          message={message}
-          isOwn={isOwn}
-          isConsecutive={isConsecutive}
-          senderProfile={senderProfile}
-        />
+        {/* Bubble + reactions anchored */}
+        <div className="relative w-fit max-w-full pb-5">
+          <MessageBubble
+            message={message}
+            isOwn={isOwn}
+            isConsecutive={isConsecutive}
+            senderProfile={senderProfile}
+          />
 
-        {/* Reactions row */}
-        {message.reactions && message.reactions.length > 0 && (
-          <div
-            className={cn(
-              'mt-1 flex gap-2 items-center flex-wrap',
-              isOwn ? 'justify-end pr-1' : 'justify-start pl-1'
-            )}
-          >
-            {message.reactions.map((r) => (
-              <button
-                key={r.emoji}
-                className={cn(
-                  'text-xs rounded-full h-6 px-2 border transition-colors',
-                  'hover:bg-muted/60',
-                  r.reactors.length ? 'border-border/60 bg-background/40' : 'border-border/40'
-                )}
-                onClick={() => onReact(message.id, r.emoji)}
-                title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
-              >
-                {r.emoji} {r.count > 1 ? r.count : ''}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Reactions: bottom-left of the bubble */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div className="absolute -bottom-4 left-2 flex items-center gap-1">
+              {message.reactions.map((r) => (
+                <button
+                  key={r.emoji}
+                  className={cn(
+                    'h-6 rounded-full px-2 text-xs border',
+                    'bg-background/70 hover:bg-background/90',
+                    'border-border/50'
+                  )}
+                  onClick={() => onReact(message.id, r.emoji)}
+                  title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
+                >
+                  <span className="align-middle">{r.emoji}</span>
+                  {r.count > 1 && <span className="ml-1 align-middle">{r.count}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Timestamp */}
+        {/* Timestamp (stays tidy) */}
         <div
           className={cn(
             'mt-1 text-xs text-muted-foreground',
