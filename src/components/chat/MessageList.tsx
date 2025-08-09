@@ -57,7 +57,23 @@ export const MessageList: React.FC<MessageListProps> = ({
   className
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const allMessages = messages.data?.pages?.flatMap(p => p) ?? [];
+  
+  // ✅ Deduplicate messages to prevent duplicate keys and overlapping pages
+  const allMessages = React.useMemo(() => {
+    const seen = new Set<string>();
+    const out: Message[] = [];
+    for (const page of messages.data?.pages ?? []) {
+      for (const m of page ?? []) {
+        if (m?.id && !seen.has(m.id)) {
+          seen.add(m.id);
+          out.push(m);
+        }
+      }
+    }
+    // Sort just in case pages overlap out of order
+    out.sort((a, b) => a.created_at.localeCompare(b.created_at));
+    return out;
+  }, [messages.data]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -133,7 +149,7 @@ const MessageBubbleWrapper: React.FC<{
   // Handle media messages
   if (message.metadata?.media) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" data-mid={message.id}>
         <MessageBubble
           message={message}
           isOwn={isOwn}
@@ -154,13 +170,22 @@ const MessageBubbleWrapper: React.FC<{
   // Handle reply context
   if (message.reply_to && message.reply_to_msg && message.reply_to_msg.id) {
     return (
-      <div className="flex flex-col gap-2 relative overflow-visible">
+      <div className="flex flex-col gap-2 relative overflow-visible" data-mid={message.id}>
         {/* ✅ Inline reply preview using expanded view data */}
-        <div className="mb-1 rounded border border-border/50 bg-muted/30 px-2 py-1 text-xs">
+        <div className={`max-w-[75%] text-xs rounded-md px-2 py-1 mb-1 border border-border/40 bg-muted/30 ${isOwn ? "self-end" : "self-start"}`}>
           <div className="opacity-70">Replying to</div>
           <div className="line-clamp-2">
             {message.reply_to_msg.content ?? '(deleted message)'}
           </div>
+          <button
+            className="text-xs opacity-70 hover:opacity-100 underline mt-1"
+            onClick={() => {
+              const el = document.querySelector(`[data-mid="${message.reply_to_msg?.id}"]`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+          >
+            View context
+          </button>
         </div>
         <div className="flex flex-col overflow-visible">
           <MessageBubble
@@ -206,7 +231,7 @@ const MessageBubbleWrapper: React.FC<{
 
   // Regular message
   return (
-    <div className="flex flex-col relative overflow-visible">
+    <div className="flex flex-col relative overflow-visible" data-mid={message.id}>
       <MessageBubble
         message={message}
         isOwn={isOwn}

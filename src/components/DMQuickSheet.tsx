@@ -50,6 +50,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
   const [sending, setSending] = useState(false); // Local sending state as fallback
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null); // profile_id is the main user identifier
   const [threadId, setThreadId] = useState<string | undefined>(threadIdProp); // Local threadId state
+  const inputRef = useRef<HTMLInputElement>(null);
   const lastFriendRef = useRef<string | undefined>(undefined);
   const reqRef = useRef(0);
   const { user } = useAuth(); // Use auth context instead of one-off getUser()
@@ -57,6 +58,13 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // ✅ Handle reply with input focus
+  const handleReply = useCallback((id: string, preview?: {content?: string; authorId?: string}) => {
+    setReplyTo(id); 
+    setReplyPreview(preview ?? null);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
 
   // Stable thread lookup using RPC - getOrCreateThread is imported (stable)
    
@@ -464,10 +472,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
             messages={messages}
             currentUserId={currentProfileId}
             threadId={threadId}
-            onReply={(id, preview) => { 
-              setReplyTo(id); 
-              setReplyPreview(preview ?? null); 
-            }}
+            onReply={handleReply}
             className="flex-1"
           />
         ) : threadId === undefined ? ( // Changed from null to undefined
@@ -548,6 +553,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
               <Paperclip className="h-4 w-4" />
             </Button>
             <Input
+              ref={inputRef}
               value={input}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
