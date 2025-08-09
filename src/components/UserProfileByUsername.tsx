@@ -1029,7 +1029,7 @@ export const UserProfileByUsername = () => {
         <DMQuickSheet
           open={dmOpen}
           onOpenChange={setDmOpen}
-          friendId={profile?.id || ''}
+          friendId={profile?.id || undefined}
         />
       </div>
     </motion.div>

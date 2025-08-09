@@ -30,27 +30,25 @@ export function snapToGrid(
 ): { lat: number; lng: number; accuracy: number } {
   switch (privacyLevel) {
     case 'exact':
-      // No filtering, return original coordinates with minimal accuracy buffer
-      return { lat, lng, accuracy: 10 };
+      // No filtering, return original coordinates with no additional accuracy penalty
+      return { lat, lng, accuracy: 0 }; // 0 means "no additional accuracy penalty from privacy"
       
     case 'street':
-      // Snap to ~50m grid (good for street-level privacy)
-      // At equator: 1 degree ≈ 111km, so 0.0005° ≈ 55m
-      const streetPrecision = 0.0005; // ~50m grid
-      const streetLat = Math.round(lat / streetPrecision) * streetPrecision;
-      const streetLng = Math.round(lng / streetPrecision) * streetPrecision;
-      return { lat: streetLat, lng: streetLng, accuracy: 75 };
+      // Snap to ~100m grid for street-level privacy
+      const gridSize = 0.001; // ~100m at equator
+      const snappedLat = Math.round(lat / gridSize) * gridSize;
+      const snappedLng = Math.round(lng / gridSize) * gridSize;
+      return { lat: snappedLat, lng: snappedLng, accuracy: 100 };
       
     case 'area':
-      // Snap to ~500m grid (good for area-level privacy)
-      // 0.005° ≈ 555m at equator
-      const areaPrecision = 0.005; // ~500m grid
-      const areaLat = Math.round(lat / areaPrecision) * areaPrecision;
-      const areaLng = Math.round(lng / areaPrecision) * areaPrecision;
-      return { lat: areaLat, lng: areaLng, accuracy: 750 };
+      // Snap to ~1km grid for area-level privacy  
+      const areaGridSize = 0.01; // ~1km at equator
+      const areaSnappedLat = Math.round(lat / areaGridSize) * areaGridSize;
+      const areaSnappedLng = Math.round(lng / areaGridSize) * areaGridSize;
+      return { lat: areaSnappedLat, lng: areaSnappedLng, accuracy: 1000 };
       
     default:
-      return { lat, lng, accuracy: 10 };
+      return { lat, lng, accuracy: 0 };
   }
 }
 

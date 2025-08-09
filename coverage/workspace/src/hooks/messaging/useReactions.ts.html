@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for workspace/src/hooks/useRealtimeFriends.ts</title>
+    <title>Code coverage report for workspace/src/hooks/messaging/useReactions.ts</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../../../prettify.css" />
-    <link rel="stylesheet" href="../../../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <link rel="stylesheet" href="../../../../prettify.css" />
+    <link rel="stylesheet" href="../../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../../../sort-arrow-sprite.png);
+            background-image: url(../../../../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">workspace/src/hooks</a> useRealtimeFriends.ts</h1>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">workspace/src/hooks/messaging</a> useReactions.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/43</span>
+                <span class='fraction'>0/47</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/43</span>
+                <span class='fraction'>0/47</span>
             </div>
         
             
@@ -120,35 +120,15 @@
 <a name='L55'></a><a href='#L55'>55</a>
 <a name='L56'></a><a href='#L56'>56</a>
 <a name='L57'></a><a href='#L57'>57</a>
-<a name='L58'></a><a href='#L58'>58</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -161,13 +141,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -176,64 +153,93 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useEffect } from 'react';</span></span></span>
-import { useQueryClient } from '@tanstack/react-query';
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { useMutation, useQueryClient } from '@tanstack/react-query';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function useRealtimeFriends() {</span>
-<span class="cstat-no" title="statement not covered" >  const { user } = useAuth();</span>
+<span class="cstat-no" title="statement not covered" >export function useReactions(threadId?: string) {</span>
 <span class="cstat-no" title="statement not covered" >  const queryClient = useQueryClient();</span>
-<span class="cstat-no" title="statement not covered" >  const { toast } = useToast();</span>
+<span class="cstat-no" title="statement not covered" >  const currentUserId = useCurrentUserId();</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!user?.id) return;</span>
+<span class="cstat-no" title="statement not covered" >  const addReaction = useMutation({</span>
+<span class="cstat-no" title="statement not covered" >    mutationFn: async ({ messageId, emoji }: { messageId: string; emoji: string }) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      if (!currentUserId) throw new Error('Not authenticated');</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    const channel = supabase</span>
-<span class="cstat-no" title="statement not covered" >      .channel('dashboard:friends-realtime')</span>
-<span class="cstat-no" title="statement not covered" >      .on(</span>
-<span class="cstat-no" title="statement not covered" >        'postgres_changes',</span>
-<span class="cstat-no" title="statement not covered" >        {</span>
-<span class="cstat-no" title="statement not covered" >          event: '*',</span>
-<span class="cstat-no" title="statement not covered" >          schema: 'public',</span>
-<span class="cstat-no" title="statement not covered" >          table: 'friends',</span>
-<span class="cstat-no" title="statement not covered" >          filter: `or=(user_low.eq.${user.id},user_high.eq.${user.id})`,</span>
-<span class="cstat-no" title="statement not covered" >        },</span>
-<span class="cstat-no" title="statement not covered" >        (payload) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          console.log('Friend change received:', payload);</span>
-          
-<span class="cstat-no" title="statement not covered" >          const row = (payload.new ?? payload.old) as any;</span>
-          
-          // Invalidate relevant queries
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['friends-list'] });</span>
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['friend-requests'] });</span>
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['friend-activity'] });</span>
+      // Check if reaction already exists
+<span class="cstat-no" title="statement not covered" >      const { data: existing } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >        .from('dm_message_reactions')</span>
+<span class="cstat-no" title="statement not covered" >        .select('id')</span>
+<span class="cstat-no" title="statement not covered" >        .eq('message_id', messageId)</span>
+<span class="cstat-no" title="statement not covered" >        .eq('profile_id', currentUserId)</span>
+<span class="cstat-no" title="statement not covered" >        .eq('emoji', emoji)</span>
+<span class="cstat-no" title="statement not covered" >        .maybeSingle();</span>
 &nbsp;
-          // Show toast for new friend requests
-<span class="cstat-no" title="statement not covered" >          if (payload.eventType === 'INSERT' &amp;&amp; row?.status === 'pending') {</span>
-<span class="cstat-no" title="statement not covered" >            toast({</span>
-<span class="cstat-no" title="statement not covered" >              title: "📬 New friend request",</span>
-<span class="cstat-no" title="statement not covered" >              description: "You have a new friend request!",</span>
-<span class="cstat-no" title="statement not covered" >            });</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
+<span class="cstat-no" title="statement not covered" >      if (existing) {</span>
+        // Remove existing reaction (toggle off)
+<span class="cstat-no" title="statement not covered" >        const { error } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >          .from('dm_message_reactions')</span>
+<span class="cstat-no" title="statement not covered" >          .delete()</span>
+<span class="cstat-no" title="statement not covered" >          .eq('id', existing.id);</span>
+        
+<span class="cstat-no" title="statement not covered" >        if (error) throw error;</span>
+<span class="cstat-no" title="statement not covered" >        return { action: 'removed' };</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+        // Add new reaction
+<span class="cstat-no" title="statement not covered" >        const { error } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >          .from('dm_message_reactions')</span>
+<span class="cstat-no" title="statement not covered" >          .insert({</span>
+<span class="cstat-no" title="statement not covered" >            message_id: messageId,</span>
+<span class="cstat-no" title="statement not covered" >            profile_id: currentUserId,</span>
+<span class="cstat-no" title="statement not covered" >            emoji</span>
+<span class="cstat-no" title="statement not covered" >          });</span>
+        
+<span class="cstat-no" title="statement not covered" >        if (error) throw error;</span>
+<span class="cstat-no" title="statement not covered" >        return { action: 'added' };</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    onSuccess: () =&gt; {</span>
+      // Invalidate messages to refresh reactions
+<span class="cstat-no" title="statement not covered" >      if (threadId) {</span>
+<span class="cstat-no" title="statement not covered" >        queryClient.invalidateQueries({ queryKey: ['messages', 'dm', threadId] });</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    onError: (error) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      console.error('Failed to toggle reaction:', error);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  });</span>
 &nbsp;
-          // Show toast for accepted requests
-<span class="cstat-no" title="statement not covered" >          if (payload.eventType === 'UPDATE' &amp;&amp; row?.status === 'accepted') {</span>
-<span class="cstat-no" title="statement not covered" >            toast({</span>
-<span class="cstat-no" title="statement not covered" >              title: "🎉 Friend request accepted",</span>
-<span class="cstat-no" title="statement not covered" >              description: "You are now friends!",</span>
-<span class="cstat-no" title="statement not covered" >            });</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      )</span>
-<span class="cstat-no" title="statement not covered" >      .subscribe();</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      supabase.removeChannel(channel);</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [user?.id, queryClient, toast]);</span>
+<span class="cstat-no" title="statement not covered" >  return {</span>
+<span class="cstat-no" title="statement not covered" >    toggleReaction: addReaction.mutate,</span>
+<span class="cstat-no" title="statement not covered" >    isLoading: addReaction.isPending</span>
+<span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -241,16 +247,16 @@ import { useToast } from '@/hooks/use-toast';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-09T09:17:00.506Z
             </div>
-        <script src="../../../prettify.js"></script>
+        <script src="../../../../prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../../../sorter.js"></script>
-        <script src="../../../block-navigation.js"></script>
+        <script src="../../../../sorter.js"></script>
+        <script src="../../../../block-navigation.js"></script>
     </body>
 </html>
     
