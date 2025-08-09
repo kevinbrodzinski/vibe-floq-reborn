@@ -79,8 +79,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
 
   // Auth guard and unified messaging hooks - guard queries until thread is ready
   const isValidUuid = !!threadId && /^[0-9a-f-]{36}$/i.test(threadId);
-  const enabled = Boolean(open && threadId && currentProfileId && isValidUuid);
-  const messages = useMessages(isValidUuid ? threadId : undefined, 'dm', { enabled });
+  const enabled = isValidUuid && !!currentProfileId;
+  const messages = useMessages(
+    isValidUuid ? threadId : undefined,   // ✅ undefined when invalid, never empty string
+    'dm',
+    { enabled }                           // ✅ boolean
+  );
   // const sendMut = useSendMessage('dm'); // This line is no longer needed
 
   // Debug messages hook state
@@ -152,6 +156,15 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
     console.log('[DM_SHEET] Auth profile_id changed:', profileId);
     setCurrentProfileId(profileId);
   }, [user]);
+
+  // ✅ Cleanup when sheet closes - never set empty strings
+  useEffect(() => {
+    if (!open) {
+      setThreadId(undefined);   // ✅ not ''
+      lastFriendRef.current = undefined;
+      reqRef.current = 0;
+    }
+  }, [open]);
 
   // Resolve by friendId only when we DON'T have a threadId - FIXED LOOP
   useEffect(() => {

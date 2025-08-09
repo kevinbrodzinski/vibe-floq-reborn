@@ -33,6 +33,9 @@ type MessageRow = ExpandedMessage | ChatMessage; // ✅ Use ExpandedMessage for 
 type MessagesInfinite = { pages: MessageRow[][]; pageParams: unknown[] };
 
 const PAGE_SIZE = 40;
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+
+type Opts = { enabled?: boolean };
 
 // Helper function to add message to pages
 function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
@@ -53,61 +56,65 @@ function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
     }
   }
   
-  // Check if message already exists (prevent duplicates)
-  const messageExists = pages.some(page =>
-    page.some(m => m.id === msg.id)
-  );
+  // Add new message to the last page
+  const updatedLastPage = [...lastPage, msg];
+  pages[pages.length - 1] = updatedLastPage;
   
-  if (!messageExists) {
-    const newLastPage = [...lastPage, msg];
-    pages[pages.length - 1] = newLastPage;
-  }
-  
-  return { ...old, pages };
+  return {
+    pages,
+    pageParams: old.pageParams
+  };
 }
 
-export function useMessages(threadId: string | undefined, surface: "dm" | "floq" | "plan" = "dm", opts?: { enabled?: boolean }) {
+export function useMessages(
+  threadId?: string,            // allow undefined, not ''
+  surface: 'dm' | 'floq' | 'plan' = 'dm',
+  opts: Opts = {}
+) {
   const queryClient = useQueryClient();
+  
+  // ✅ Harden the parameters - never let empty strings through
+  const hasId = typeof threadId === 'string' && threadId.length > 0;
+  const isValidUuid = hasId && UUID_RE.test(threadId!);   // boolean
+  const callerEnabled = opts.enabled ?? true;              // boolean
+  const enabled = Boolean(hasId && isValidUuid && callerEnabled);
+  
   // Stable hookId across renders - only changes when threadId or surface changes
   const hookId = useMemo(() => {
-    if (!threadId) return `messages-${surface}-null`;
+    if (!hasId) return `messages-${surface}-no-thread`;
     return `messages-${surface}-${threadId}`;
-  }, [surface, threadId]);
+  }, [surface, threadId, hasId]);
   
-  // Provide default options to avoid undefined issues
-  const options = opts || {};
-  const enabledOption = options.enabled;
-  
-  // Debug the options being passed
   console.log('[useMessages hook]', { 
     threadId, 
     surface, 
-    isValidUuid: threadId ? isUuid(threadId) : false, 
-    optsEnabled: enabledOption,
-    optsEnabledType: typeof enabledOption,
-    opts: opts,
-    options: options
+    hasId,
+    isValidUuid,
+    callerEnabled,
+    enabled,
+    enabledType: typeof enabled
   });
 
-  // Calculate enabled value step by step for debugging
-  const hasValidThreadId = Boolean(threadId);
-  const isValidThreadId = threadId ? isUuid(threadId) : false;
-  const enabledFromOpts = enabledOption !== false; // Default to true if not explicitly false
-  const finalEnabled = hasValidThreadId && isValidThreadId && enabledFromOpts;
-  
-  console.log('[useMessages enabled calculation]', {
-    hasValidThreadId,
-    isValidThreadId,
-    enabledFromOpts,
-    finalEnabled,
-    finalEnabledType: typeof finalEnabled
-  });
+  // ✅ Early return if not enabled - provide no-op shape
+  if (!enabled) {
+    return {
+      data: { pages: [] as MessageRow[][] },
+      fetchNextPage: () => Promise.resolve(),
+      hasNextPage: false,
+      isLoading: false,
+      isFetching: false,
+      error: null,
+      refetch: () => Promise.resolve(),
+      isSuccess: true,
+      isFetchingNextPage: false,
+    } as any;
+  }
 
   // Paginated history fetch
   const history = useInfiniteQuery({
-    queryKey: ["messages", surface, threadId],
-    enabled: finalEnabled, // Use the calculated boolean
-    queryFn: async ({ pageParam = 0 }): Promise<any[]> => {
+    queryKey: ["messages", surface, threadId ?? 'no-thread'],
+    enabled,                    // ✅ guaranteed boolean
+    queryFn: async ({ pageParam = 0 }): Promise<MessageRow[]> => {
       console.log('[useMessages queryFn]', { surface, threadId, pageParam });
       if (surface === "dm") {
         console.log('[useMessages] Fetching DM messages for thread:', threadId);
