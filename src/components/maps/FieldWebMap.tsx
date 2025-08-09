@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
+import { useVisibleFriendsOnMap } from '@/hooks/useVisibleFriendsOnMap';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
@@ -106,57 +107,37 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     return mockPlans;
   }, []);
 
-  // Build people array with current user + any floq members
+  // Build people array with current user + visible friends
+  const { people: visibleFriends } = useVisibleFriendsOnMap();
   const filteredPeople = useMemo(() => {
-    // 🔧 DEBUG: Log location context state
-    console.log('[FieldWebMap] 🔧 Building filteredPeople with location:', {
-      hasLocationCoords: !!location?.coords,
-      locationCoords: location?.coords,
-      isLocationReady,
-      selectedMyFloq,
-      selectedFloqMembersCount: selectedFloqMembers.length
-    });
-    
-    // 🔧 CRITICAL FIX: ALWAYS include current user as a person with you: true
-    // This ensures usePeopleSource can find and render the "YOU" pin
     const currentUserPerson = location?.coords ? [{
-      id: 'current-user', // Use a fixed ID for current user
+      id: 'current-user',
       lng: location.coords.lng,
       lat: location.coords.lat,
       x: 0,
       y: 0,
-      you: true, // 🔧 CRITICAL: Mark as current user so usePeopleSource picks it up
+      you: true,
       isFriend: false
     }] : [];
-    
-    // Build people array with floq members if selected
-    const floqMembers = selectedMyFloq && selectedFloqMembers.length > 0 
-      ? selectedFloqMembers.map(member => ({
-          id: member.profile_id,
-          lng: 0, // Floq members don't have live coordinates yet
-          lat: 0,
-          x: 0,
-          y: 0,
-          you: false,
-          isFriend: true
-        }))
-      : [];
-    
-    // Add mock friends in dev mode for testing
-    const mockFriends = import.meta.env.DEV 
-      ? (typeof window !== 'undefined' && (window as any).getMockFriends?.() || [])
-      : [];
-    
-    const result = [...currentUserPerson, ...floqMembers, ...mockFriends];
-    
-    // 🔧 DEBUG: Log filteredPeople table for easy debugging (dev only)
+
+    // Only real friend coordinates from hook (no 0,0 placeholders)
+    const friendPeople = (visibleFriends || []).map(fr => ({
+      id: fr.id,
+      lng: fr.lng,
+      lat: fr.lat,
+      x: 0,
+      y: 0,
+      you: false,
+      isFriend: true,
+      vibe: fr.vibe ?? undefined
+    }));
+
+    const result = [...currentUserPerson, ...friendPeople];
     if (import.meta.env.DEV) {
-      console.log('[FieldWebMap] 🔧 filteredPeople result:');
-      console.table(result.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, you: p.you, friend: p.isFriend, vibe: p.vibe })));
+      console.log('[FieldWebMap] people for map:', result);
     }
-    
     return result;
-  }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
+  }, [location?.coords, visibleFriends]);
 
   // Prepare context value for selected floq
   const selectedFloqContextValue = useMemo(() => ({

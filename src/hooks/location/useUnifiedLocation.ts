@@ -220,12 +220,13 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
           const h3Idx = BigInt('0x' + latLngToCell(locationCoords.lat, locationCoords.lng, 8));   // ▶️ BigInt always
 
           // Use V2 presence function with spatial indexing
-          const { data, error } = await supabase.rpc('upsert_presence_realtime_v2', {
+          const h3IdxDec = (BigInt('0x' + latLngToCell(locationCoords.lat, locationCoords.lng, 8))).toString();
+          const { data, error } = await supabase.rpc('upsert_presence_realtime_v2_text', {
             p_lat: locationCoords.lat,
             p_lng: locationCoords.lng,
             p_vibe: 'active', // Default vibe for presence
             p_accuracy: locationCoords.accuracy,
-            p_h3_idx: Number(h3Idx)
+            p_h3_idx_text: h3IdxDec
           });
 
           if (error) {
