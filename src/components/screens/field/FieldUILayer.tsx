@@ -16,9 +16,11 @@ export const FieldUILayer: React.FC<any> = (props) => {
   }, [props?.data?.friends, props?.friends, activeVibe]);
 
   return (
-    <FieldVisualization
-      {...props}
-      friends={filteredFriends}
-    />
+    <div className="pointer-events-none">
+      <FieldVisualization
+        {...props}
+        friends={filteredFriends}
+      />
+    </div>
   );
 };
