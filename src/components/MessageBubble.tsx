@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useMessageReactions } from '@/hooks/messaging/useMessageReactions';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { format, isToday, isYesterday } from 'date-fns';
 import { getAvatarUrl } from '@/lib/avatar';
@@ -19,6 +18,8 @@ interface DirectMessage {
   status?: 'sending' | 'sent' | 'delivered' | 'read';
 }
 
+type Reaction = { emoji: string; count: number; reactors: string[] };
+
 interface MessageBubbleProps {
   message: DirectMessage;
   isOwn: boolean;
@@ -29,6 +30,8 @@ interface MessageBubbleProps {
     username?: string;
     avatar_url?: string;
   };
+  reactions?: Reaction[];
+  onReact?: (emoji: string) => void;
 }
 
 const COMMON_REACTIONS = ['❤️', '😂', '😮', '😢', '😡', '👍', '👎'];
@@ -38,7 +41,9 @@ export function MessageBubble({
   isOwn, 
   showAvatar = true, 
   isConsecutive = false,
-  senderProfile 
+  senderProfile,
+  reactions = [],
+  onReact
 }: MessageBubbleProps) {
   const currentUserId = useCurrentUserId();
   
@@ -46,9 +51,6 @@ export function MessageBubble({
   const senderId = message.profile_id || message.sender_id;
   const threadId = message.thread_id;
   
-  const { reactionsByMessage, toggleReaction, isToggling } = useMessageReactions(threadId, 'dm');
-  const messageReactions = reactionsByMessage[message.id] || [];
-
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     if (isToday(date)) {
@@ -62,7 +64,7 @@ export function MessageBubble({
 
   const handleReaction = async (emoji: string) => {
     try {
-      await toggleReaction.mutateAsync({ messageId: message.id, emoji });
+      onReact?.(emoji);
     } catch (error: any) {
       console.error('[MessageBubble] Reaction failed:', error);
       // Show user-friendly error toast
@@ -142,31 +144,33 @@ export function MessageBubble({
         </div>
 
         {/* Reactions */}
-        {messageReactions.length > 0 && (
+        {reactions.length > 0 && (
           <div className={cn(
             "flex flex-wrap gap-1 mt-1 px-1",
             isOwn ? "justify-end" : "justify-start"
           )}>
-            {messageReactions.map((reaction) => (
-              <Button
-                key={reaction.emoji}
-                variant={reaction.hasReacted ? "default" : "outline"}
-                size="sm"
-                className={cn(
-                  "h-6 px-2 text-xs rounded-full",
-                  reaction.hasReacted 
-                    ? "bg-blue-100 text-blue-700 border-blue-200" 
-                    : "bg-gray-50 text-gray-700 border-gray-200"
-                )}
-                onClick={() => handleReaction(reaction.emoji)}
-                disabled={isToggling}
-              >
-                <span className="mr-1">{reaction.emoji}</span>
-                {reaction.count > 1 && (
-                  <span className="text-xs">{reaction.count}</span>
-                )}
-              </Button>
-            ))}
+            {reactions.map((reaction) => {
+              const hasReacted = reaction.reactors.includes(currentUserId || '');
+              return (
+                <Button
+                  key={reaction.emoji}
+                  variant={hasReacted ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "h-6 px-2 text-xs rounded-full",
+                    hasReacted 
+                      ? "bg-blue-100 text-blue-700 border-blue-200" 
+                      : "bg-gray-50 text-gray-700 border-gray-200"
+                  )}
+                  onClick={() => handleReaction(reaction.emoji)}
+                >
+                  <span className="mr-1">{reaction.emoji}</span>
+                  {reaction.count > 1 && (
+                    <span className="text-xs">{reaction.count}</span>
+                  )}
+                </Button>
+              );
+            })}
           </div>
         )}
 
