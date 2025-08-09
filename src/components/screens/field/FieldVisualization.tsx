@@ -417,7 +417,7 @@ export const FieldVisualization = ({
             })}
 
           {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
-          {floqEvents.map((event, index) => {
+          {(Array.isArray(floqEvents) ? floqEvents : []).map((event, index) => {
             // Check if this floq is walkable
             const walkableFloq = walkableFloqs.find(wf => wf.id === event.id);
             const isWalkable = walkableFloq && walkableFloq.distance_meters <= 300;
