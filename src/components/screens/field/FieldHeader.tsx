@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MapPin, Compass, Bell } from "lucide-react"          // ← Bell added
+import { MapPin, Compass, Bell, CheckCheck } from "lucide-react"          // ← Bell added
 import { AvatarDropdown } from "@/components/AvatarDropdown"
 import { NotificationsSheet } from "@/components/notifications/NotificationsSheet"
 import { SafeModeButton } from "@/components/ui/SafeModeButton"
@@ -31,7 +31,7 @@ export const FieldHeader = ({
 }: FieldHeaderProps) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { isActive, toggleSafeMode } = useSafeMode()
-  const { unseen } = useEventNotifications()
+  const { unseen, markAllSeen } = useEventNotifications()
   const totalUnread = unseen.length
 
   return (
@@ -112,6 +112,16 @@ export const FieldHeader = ({
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
+        </button>
+
+        {/* Quick action: Mark all read */}
+        <button
+          onClick={async () => { await markAllSeen(); setNotificationsOpen(true); }}
+          aria-label="Mark all notifications read and open"
+          className="text-muted-foreground hover:text-foreground transition-colors p-2"
+          title="Mark all read"
+        >
+          <CheckCheck className="w-5 h-5" />
         </button>
 
         <AvatarDropdown />
