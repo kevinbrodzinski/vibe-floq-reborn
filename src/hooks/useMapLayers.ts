@@ -208,21 +208,7 @@ export function useMapLayers({
       map.setPaintProperty('friends-pins', 'circle-stroke-width', 2);
     };
 
-    // Friends click handler (for future profile/chat integration)
-    const handleFriendsClick = (e: mapboxgl.MapMouseEvent) => {
-      if (!map.getLayer('friends-pins')) return;
-      
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['friends-pins']
-      });
-
-      if (features.length > 0) {
-        const friend = features[0];
-        console.log('🫂 Friend clicked:', friend.properties);
-        // TODO: Open friend profile or start chat
-        // This could trigger a modal, navigation, or other interaction
-      }
-    };
+    // Friends click handler removed; replaced with onFriendClick callback above
 
     // Plan hover effects
     const handlePlansEnter = () => {

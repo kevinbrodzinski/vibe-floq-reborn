@@ -25,6 +25,7 @@ import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
 import { useVisibleFriendsOnMap } from '@/hooks/useVisibleFriendsOnMap';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
+import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { FieldHUD } from '@/components/field/FieldHUD';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
@@ -156,6 +157,10 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   const [err,setErr]       = useState<string>();
   const [showWeather, setShowWeather] = useState(false);
 
+  // Quick sheet state for friend taps
+  const [dmOpen, setDmOpen] = useState(false);
+  const [dmFriendId, setDmFriendId] = useState<string | null>(null);
+
   // Initialize unified map layers (preserves all existing functionality)
   const { layersReady } = useMapLayers({
     map: mapRef.current,
@@ -167,6 +172,8 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     },
     onFriendClick: (friendId) => {
       setHighlightedFriend(friendId);
+      setDmFriendId(friendId);
+      setDmOpen(true);
       clearTimeout(highlightTimerRef.current!);
       highlightTimerRef.current = window.setTimeout(() => setHighlightedFriend(null), 5000);
     }
@@ -1311,6 +1318,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           activeVibe={selectedVibe}
           onSelectVibe={setSelectedVibe}
         />
+
+        {/* DM Quick Sheet for friend taps */}
+        <DMQuickSheet open={dmOpen} onOpenChange={setDmOpen} friendId={dmFriendId} />
 
         {children}
       </div>
