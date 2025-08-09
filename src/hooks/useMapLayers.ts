@@ -37,6 +37,7 @@ interface UseMapLayersProps {
 }: UseMapLayersProps) {
   const layersInitialized = useRef(false);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const glowAnimRef = useRef<number | null>(null);
 
   // Initialize all sources
   usePeopleSource(map, people);
@@ -76,9 +77,19 @@ interface UseMapLayersProps {
           source: 'people',
           filter: ['all', ['==', ['get', 'id'], '']],
           paint: {
+            // Base size/opacity; will be animated when highlighted
             'circle-radius': 18,
-            'circle-color': '#ffffff',
-            'circle-opacity': 0.25,
+            'circle-opacity': 0.22,
+            // Color by vibe for a subtle, on-brand glow
+            'circle-color': [
+              'match', ['get', 'vibe'],
+              'hype', '#ff3b81',
+              'social', '#3b82f6',
+              'chill', '#10b981',
+              'active', '#f59e0b',
+              'focus', '#8b5cf6',
+              /* default */ '#ffffff'
+            ]
           }
         });
       }
@@ -125,16 +136,65 @@ interface UseMapLayersProps {
       console.error('[useMapLayers] Layer initialization error:', error);
     }
 
-    // Update glow filter when highlight changes
-    if (map.getLayer('friend-glow')) {
-      const filter = highlightFriendId ? ['==', ['get', 'id'], highlightFriendId] : ['==', ['get', 'id'], ''];
-      map.setFilter('friend-glow', filter as any);
-    }
-
     return () => {
       map.off('styledata', handleStyleData);
     };
   }, [map]);
+
+  // Reactively update glow filter when the highlighted friend changes
+  useEffect(() => {
+    if (!map || !layersInitialized.current) return;
+    if (!map.getLayer('friend-glow')) return;
+
+    const filter = highlightFriendId ? ['==', ['get', 'id'], highlightFriendId] : ['==', ['get', 'id'], ''];
+    map.setFilter('friend-glow', filter as any);
+  }, [map, highlightFriendId, layersInitialized.current]);
+
+  // Pulse animation for highlighted friend glow
+  useEffect(() => {
+    if (!map || !layersInitialized.current) return;
+    if (!map.getLayer('friend-glow')) return;
+
+    const start = performance.now();
+
+    const animate = () => {
+      // sine pulse between 14 and 24px
+      const t = (performance.now() - start) / 1000;
+      const radius = 19 + Math.sin(t * 3.2) * 5; // base 19px, +/-5
+      const opacity = 0.18 + Math.max(0, Math.sin(t * 3.2)) * 0.22; // 0.18..0.40
+
+      try {
+        map.setPaintProperty('friend-glow', 'circle-radius', radius);
+        map.setPaintProperty('friend-glow', 'circle-opacity', opacity);
+      } catch {}
+
+      glowAnimRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start/stop based on highlight state
+    if (highlightFriendId) {
+      if (glowAnimRef.current == null) {
+        glowAnimRef.current = requestAnimationFrame(animate);
+      }
+    } else {
+      if (glowAnimRef.current != null) {
+        cancelAnimationFrame(glowAnimRef.current);
+        glowAnimRef.current = null;
+      }
+      // Reset to base visuals when not highlighted
+      try {
+        map.setPaintProperty('friend-glow', 'circle-radius', 18);
+        map.setPaintProperty('friend-glow', 'circle-opacity', 0.22);
+      } catch {}
+    }
+
+    return () => {
+      if (glowAnimRef.current != null) {
+        cancelAnimationFrame(glowAnimRef.current);
+        glowAnimRef.current = null;
+      }
+    };
+  }, [map, highlightFriendId, layersInitialized.current]);
 
   // Cluster click handler (preserve exact existing zoom functionality) - GUARDED
   const handleClusterClick = useCallback((e: mapboxgl.MapMouseEvent) => {
@@ -313,7 +373,6 @@ interface UseMapLayersProps {
       map.off('mouseleave' as any, 'floq-points', handleFloqLeave);
       
       // Cleanup friends event listeners
-      map.off('click', 'friends-pins', handleFriendsClick);
       map.off('mouseenter' as any, 'friends-pins', handleFriendsEnter);
       map.off('mouseleave' as any, 'friends-pins', handleFriendsLeave);
       
