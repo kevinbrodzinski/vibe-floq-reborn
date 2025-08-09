@@ -166,6 +166,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
     }
   }, [open]);
 
+  // ✅ Reset when friend changes
+  useEffect(() => {
+    if (friendId !== lastFriendRef.current && lastFriendRef.current !== undefined) {
+      setThreadId(undefined);
+      lastFriendRef.current = undefined;
+    }
+  }, [friendId]);
+
   // Resolve by friendId only when we DON'T have a threadId - FIXED LOOP
   useEffect(() => {
     if (!open) return;

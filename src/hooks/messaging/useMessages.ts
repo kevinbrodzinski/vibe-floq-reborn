@@ -67,61 +67,46 @@ function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
 }
 
 export function useMessages(
-  threadId?: string,            // allow undefined, not ''
+  threadId?: string,
   surface: 'dm' | 'floq' | 'plan' = 'dm',
   opts: Opts = {}
 ) {
   const queryClient = useQueryClient();
   
-  // ✅ Harden the parameters - never let empty strings through
-  const hasId = typeof threadId === 'string' && threadId.length > 0;
-  const isValidUuid = hasId && UUID_RE.test(threadId!);   // boolean
-  const callerEnabled = opts.enabled ?? true;              // boolean
-  const enabled = Boolean(hasId && isValidUuid && callerEnabled);
+  // ---- compute safe flags once ----
+  const safeThreadId =
+    typeof threadId === 'string' && threadId.trim().length > 0 ? threadId : undefined;
+
+  const safeEnabled = Boolean(opts?.enabled); // <-- force to boolean (never '', null, etc.)
+  const uuidOk = !!safeThreadId && isUuid(safeThreadId);
   
   // Stable hookId across renders - only changes when threadId or surface changes
   const hookId = useMemo(() => {
-    if (!hasId) return `messages-${surface}-no-thread`;
-    return `messages-${surface}-${threadId}`;
-  }, [surface, threadId, hasId]);
+    if (!safeThreadId) return `messages-${surface}-no-thread`;
+    return `messages-${surface}-${safeThreadId}`;
+  }, [surface, safeThreadId]);
   
   console.log('[useMessages hook]', { 
     threadId, 
+    safeThreadId,
     surface, 
-    hasId,
-    isValidUuid,
-    callerEnabled,
-    enabled,
-    enabledType: typeof enabled
+    uuidOk,
+    safeEnabled,
+    optsEnabled: opts?.enabled,
+    finalEnabled: uuidOk && (opts?.enabled === undefined ? true : safeEnabled)
   });
 
-  // ✅ Early return if not enabled - provide no-op shape
-  if (!enabled) {
-    return {
-      data: { pages: [] as MessageRow[][] },
-      fetchNextPage: () => Promise.resolve(),
-      hasNextPage: false,
-      isLoading: false,
-      isFetching: false,
-      error: null,
-      refetch: () => Promise.resolve(),
-      isSuccess: true,
-      isFetchingNextPage: false,
-    } as any;
-  }
-
-  // Paginated history fetch
+  // ---------------- queries ----------------
   const history = useInfiniteQuery({
-    queryKey: ["messages", surface, threadId ?? 'no-thread'],
-    enabled,                    // ✅ guaranteed boolean
+    queryKey: ['messages', surface, safeThreadId],
     queryFn: async ({ pageParam = 0 }): Promise<MessageRow[]> => {
-      console.log('[useMessages queryFn]', { surface, threadId, pageParam });
+      console.log('[useMessages queryFn]', { surface, safeThreadId, pageParam });
       if (surface === "dm") {
-        console.log('[useMessages] Fetching DM messages for thread:', threadId);
+        console.log('[useMessages] Fetching DM messages for thread:', safeThreadId);
         const { data, error } = await supabase
           .from("v_dm_messages_expanded") // ✅ Use the new view with replies and reactions
           .select("*")
-          .eq("thread_id", threadId)
+          .eq("thread_id", safeThreadId!)
           .order("created_at", { ascending: false })
           .range(pageParam, pageParam + PAGE_SIZE - 1);
 
@@ -132,32 +117,36 @@ export function useMessages(
         console.log('[useMessages] DM fetch success:', data?.length, 'messages');
         return data.reverse(); // oldest → newest
       } else {
+        // Handle floq/plan messages
         const { data, error } = await supabase
           .from("chat_messages")
           .select("*")
-          .eq("thread_id", threadId)
+          .eq("thread_id", safeThreadId!)
           .order("created_at", { ascending: false })
           .range(pageParam, pageParam + PAGE_SIZE - 1);
 
         if (error) throw error;
-        return data.reverse(); // oldest → newest
+        return data.reverse();
       }
     },
-    getNextPageParam: (last, all) =>
-      last.length < PAGE_SIZE ? undefined : all.length * PAGE_SIZE,
-    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
+      return lastPage.length; // Use length as offset for next page
+    },
+    enabled: uuidOk && (opts?.enabled === undefined ? true : safeEnabled), // <-- boolean only
+    staleTime: 30_000,
   });
 
   // Realtime subscription - use RealtimeManager to prevent duplicates
   useEffect(() => {
-    if (!threadId || !isUuid(threadId)) return;
+    if (!safeThreadId || !uuidOk) return;
 
-    console.log('[RealtimeManager] Setting up subscription for:', threadId);
+    console.log('[RealtimeManager] Setting up subscription for:', safeThreadId);
     const tableName = surface === "dm" ? "direct_messages" : "chat_messages";
     
     const cleanup = realtimeManager.subscribe(
-      `${surface}:${threadId}`, // key
-      `${surface}_messages_${threadId}`, // channel name
+      `${surface}:${safeThreadId}`, // key
+      `${surface}_messages_${safeThreadId}`, // channel name
       (channel) => 
         channel.on(
           'postgres_changes',
@@ -165,7 +154,7 @@ export function useMessages(
             event: 'INSERT',
             schema: 'public',
             table: tableName,
-            filter: `thread_id=eq.${threadId}`
+            filter: `thread_id=eq.${safeThreadId}`
           },
           createSafeRealtimeHandler<MessageRow>(
             ({ new: newMessage }) => {
@@ -174,7 +163,7 @@ export function useMessages(
                console.log('📨 New message received:', newMessage);
               // Use functional update to prevent stale closures
               queryClient.setQueryData(
-                ["messages", surface, threadId],
+                ["messages", surface, safeThreadId],
                 (old: MessagesInfinite | undefined) => {
                   if (!old) return old;
                   return addMessage(old, newMessage as MessageRow);
@@ -190,7 +179,7 @@ export function useMessages(
     );
       
     return cleanup;
-  }, [surface, threadId, queryClient, hookId]);
+  }, [surface, safeThreadId, queryClient, hookId, uuidOk]);
 
   return history;
 }
