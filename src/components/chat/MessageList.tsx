@@ -160,7 +160,7 @@ function Row({
         )}
         data-mid={message.id}
       >
-        <div className="flex flex-col max-w-[72%]">
+        <div className="flex flex-col w-full max-w-[72%]">
           {/* 🔹 Detached reply preview ABOVE the new bubble */}
           <ReplyPreview
             text={message.reply_to_msg.content ?? ""}

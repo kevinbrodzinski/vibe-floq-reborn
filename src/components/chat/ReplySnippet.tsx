@@ -56,11 +56,11 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
 
   return (
     <div className={cn(
-      "text-xs bg-muted/50 p-2 rounded mb-1 border-l-2 border-primary/50",
+      "text-xs bg-muted/50 p-2 rounded mb-1 border-l-2 border-primary/50 w-full",
       className
     )}>
       <div className="font-medium text-muted-foreground mb-1">Replying to:</div>
-      <div className="truncate">{getMessagePreview()}</div>
+      <div className="line-clamp-1 break-words overflow-hidden">{getMessagePreview()}</div>
     </div>
   );
 };
