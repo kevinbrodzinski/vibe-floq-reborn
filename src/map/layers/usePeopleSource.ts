@@ -47,8 +47,9 @@ export function usePeopleSource(
       },
     }));
 
-    if (userPos && user?.id) {
-      const selfFeature = buildSelfFeature([userPos.lng, userPos.lat], user.id);
+    if (userPos) {
+      const selfId = user?.id ?? 'current-user';
+      const selfFeature = buildSelfFeature([userPos.lng, userPos.lat], selfId);
       features.push(selfFeature);
       console.log('[usePeopleSource] Added self feature:', selfFeature);
     } else {
