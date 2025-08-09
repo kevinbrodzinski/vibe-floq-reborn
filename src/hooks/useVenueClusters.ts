@@ -38,11 +38,17 @@ export function useVenueClusters(viewport: Viewport) {
   const { data: venues = [] } = useQuery({
     queryKey: ['venues', viewport.bounds],
     queryFn: async (): Promise<Venue[]> => {
+      // Explicitly coerce to double precision-compatible JS numbers to avoid PostgREST overload ambiguity
+      const westD = Number.isFinite(west) ? Number(west) : parseFloat(String(west));
+      const southD = Number.isFinite(south) ? Number(south) : parseFloat(String(south));
+      const eastD = Number.isFinite(east) ? Number(east) : parseFloat(String(east));
+      const northD = Number.isFinite(north) ? Number(north) : parseFloat(String(north));
+
       const { data, error } = await supabase.rpc('get_venues_in_bbox', {
-        west,
-        south,
-        east,
-        north,
+        west: westD,
+        south: southD,
+        east: eastD,
+        north: northD,
       });
       
       if (error) {
