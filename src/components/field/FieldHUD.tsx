@@ -1,5 +1,5 @@
-import React from 'react';
-import { Filter } from 'lucide-react';
+import React, { useState } from 'react';
+import { Filter, MoreVertical } from 'lucide-react';
 import { FullscreenFab } from '@/components/map/FullscreenFab';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,8 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   const { toggle: toggleFriends } = useFriendDrawer();
   const { toggle: toggleTimewarp } = useTimewarpDrawer();
 
+  const [openDial, setOpenDial] = useState(false);
+
   return (
     <>
       {/* Bottom action bar */}
@@ -61,11 +63,21 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
         <Button size="sm" variant="ghost" onClick={onOpenTimewarp ?? toggleTimewarp}>Timewarp</Button>
       </div>
 
-      {/* Right-rail quick actions */}
+      {/* Right-rail consolidated speed-dial */}
       <div className="pointer-events-auto fixed right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
-        <Button size="icon" variant="secondary" onClick={onCenterMap} title="Center on me">📍</Button>
-        <Button size="icon" variant="secondary" onClick={onOpenNearbyFriends ?? toggleFriends} title="Nearby friends">🫂</Button>
-        <Button size="icon" variant="secondary" onClick={onToggleWeather} title="Weather">☼</Button>
+        <div className="relative">
+          <Button size="icon" variant="secondary" onClick={() => setOpenDial(o => !o)} aria-haspopup title="Actions">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+          {openDial && (
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-black/70 backdrop-blur-md border border-white/10 rounded-xl p-2 shadow-lg">
+              <Button size="sm" variant="ghost" onClick={onCenterMap} title="Center on me">Center</Button>
+              <Button size="sm" variant="ghost" onClick={onOpenNearbyFriends ?? toggleFriends} title="Nearby friends">Nearby</Button>
+              <Button size="sm" variant="ghost" onClick={onToggleWeather} title="Weather">Weather</Button>
+              <Button size="sm" variant="ghost" onClick={onOpenTimewarp ?? toggleTimewarp} title="Timewarp">Timewarp</Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Top-left system chips */}

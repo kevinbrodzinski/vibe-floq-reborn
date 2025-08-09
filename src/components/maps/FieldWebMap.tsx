@@ -1277,9 +1277,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
         {/* HUD overlays */}
         <FieldHUD
-          onOpenFilters={() => {/* TODO: open filters drawer */}}
-          onOpenTimewarp={() => {/* TODO: open timewarp drawer */}}
-          onOpenNearbyFriends={() => {/* TODO: open nearby friends modal */}}
+          onOpenFilters={() => {
+            try {
+              // Lazy access without import cycle
+              const { useFloqUI } = require('@/contexts/FloqUIContext');
+              const ui = useFloqUI?.();
+              ui?.setShowFiltersModal?.(true);
+            } catch {
+              // Fallback: toggle a local state or no-op
+            }
+          }}
           onCenterMap={centerOnUserLocation}
           onToggleWeather={() => setShowWeather(v => !v)}
           activeVibe={selectedVibe}
