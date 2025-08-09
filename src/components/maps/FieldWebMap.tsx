@@ -26,7 +26,7 @@ import { useMapLayers } from '@/hooks/useMapLayers';
 import { useVisibleFriendsOnMap } from '@/hooks/useVisibleFriendsOnMap';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
-import { FieldHUD } from '@/components/field/FieldHUD';
+import { FieldMiniHUD } from '@/components/field/FieldMiniHUD';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
@@ -1356,7 +1356,34 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         {/* Timewarp Map Layer */}
         <TimewarpMapLayer map={mapRef.current} />
 
-        {/* HUD overlays disabled temporarily to declutter and restore map interactions */}
+        {/* Minimal HUD */}
+        <FieldMiniHUD
+          onCenterMap={centerOnUserLocation}
+          onOpenFilters={() => {
+            try {
+              const { useFloqUI } = require('@/contexts/FloqUIContext');
+              const ui = useFloqUI?.();
+              ui?.setShowFiltersModal?.(true);
+            } catch {}
+          }}
+          onOpenNearbyFriends={() => {
+            try {
+              const { useFriendDrawer } = require('@/contexts/FriendDrawerContext');
+              const fd = useFriendDrawer?.();
+              fd?.toggle?.();
+            } catch {}
+          }}
+          onOpenTimewarp={() => {
+            try {
+              const { useTimewarpDrawer } = require('@/contexts/TimewarpDrawerContext');
+              const tw = useTimewarpDrawer?.();
+              tw?.toggle?.();
+            } catch {}
+          }}
+          onToggleWeather={() => setShowWeather(v => !v)}
+          densityMode={densityMode}
+          onToggleDensity={() => setDensityMode(v => !v)}
+        />
 
         {/* DM Quick Sheet for friend taps */}
         <DMQuickSheet open={dmOpen} onOpenChange={setDmOpen} friendId={dmFriendId} />
