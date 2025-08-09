@@ -30,6 +30,7 @@ import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
+import { LocationPinDiagnosticPage } from "@/components/LocationPinDiagnosticPage";
 
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -111,6 +112,7 @@ const App = () => {
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
+                        <Route path="/debug/location" element={<LocationPinDiagnosticPage />} />
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
