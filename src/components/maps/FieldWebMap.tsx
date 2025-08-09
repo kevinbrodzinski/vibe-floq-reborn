@@ -124,16 +124,18 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     }] : [];
 
     // Only real friend coordinates from hook (no 0,0 placeholders)
-    const friendPeople = (visibleFriends || []).map(fr => ({
-      id: fr.id,
-      lng: fr.lng,
-      lat: fr.lat,
-      x: 0,
-      y: 0,
-      you: false,
-      isFriend: true,
-      vibe: fr.vibe ?? undefined
-    }));
+    const friendPeople = (visibleFriends || [])
+      .filter(fr => selectedVibe === 'all' || (fr.vibe ?? '') === selectedVibe)
+      .map(fr => ({
+        id: fr.id,
+        lng: fr.lng,
+        lat: fr.lat,
+        x: 0,
+        y: 0,
+        you: false,
+        isFriend: true,
+        vibe: fr.vibe ?? undefined
+      }));
 
     const result = [...currentUserPerson, ...friendPeople];
     if (import.meta.env.DEV) {
