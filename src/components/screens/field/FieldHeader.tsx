@@ -33,7 +33,7 @@ export const FieldHeader = ({
 
   // Mock mode state (dev only)
   let mockHelpers: any = null;
-  const isDev = import.meta.env.DEV || process.env.NODE_ENV !== 'production';
+  const isDev = (import.meta as any).env?.MODE !== 'production' && (import.meta as any).env?.DEV !== false;
   if (isDev) {
     try { mockHelpers = require('@/lib/mock/MockMode'); } catch {}
   }
@@ -114,7 +114,7 @@ export const FieldHeader = ({
             title="Toggle mock data"
             className="p-2 text-muted-foreground hover:text-primary"
           >
-            {mockHelpers?.isMockModeEnabled?.() ? 'Mock: On' : 'Mock: Off'}
+            {(mockHelpers?.isMockModeEnabled?.() ? 'Mock: On' : 'Mock: Off') as string}
           </Button>
         )}
 
