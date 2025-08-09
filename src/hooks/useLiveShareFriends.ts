@@ -8,8 +8,9 @@ export function useLiveShareFriends() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('friend_share_pref')
-        // ⬇️ new column name
+        // ✅ Correct column name based on migration
         .select('other_profile_id')
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
         .eq('is_live', true);
 
       if (error) throw error;
