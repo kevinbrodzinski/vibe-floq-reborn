@@ -174,7 +174,7 @@ function Row({
             {/* Integrated reply preview inside the bubble */}
             <ReplyPreview
               text={message.reply_to_msg.content ?? ""}
-              authorId={message.reply_to_msg.profile_id ?? undefined}
+              profileId={message.reply_to_msg.profile_id}
               onClick={scrollToParent}
               align={align}
               integrated={true}

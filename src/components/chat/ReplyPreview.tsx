@@ -3,21 +3,21 @@ import { useProfile } from "@/hooks/useProfile"; // Use the correct hook that ha
 
 export function ReplyPreview({
   text,
-  authorId,
+  profileId,
   authorName,
   onClick,
   align = "left",
   integrated = false,
 }: {
   text: string;
-  authorId?: string;
+  profileId?: string | null;
   authorName?: string;
   onClick?: () => void;
   align?: "left" | "right";
   integrated?: boolean;
 }) {
-  // Fetch author profile if we have an authorId but no authorName
-  const { data: authorProfile } = useProfile(authorId); // This hook handles undefined properly
+  // Fetch author profile if we have a profileId but no authorName
+  const { data: authorProfile } = useProfile(profileId || undefined); // This hook handles undefined properly
   
   const displayName = authorName || 
     authorProfile?.display_name || 

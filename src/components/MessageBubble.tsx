@@ -41,7 +41,7 @@ export const MessageBubble = ({ message, isOwn = false, className }: MessageBubb
       {message.reply_to && message.reply_to_msg?.id && (
         <ReplyPreview
           text={message.reply_to_msg.content ?? ""}
-          authorId={message.reply_to_msg.profile_id ?? undefined}
+          profileId={message.reply_to_msg.profile_id}
           onClick={scrollToParent}
           align={align}
           integrated={true}
