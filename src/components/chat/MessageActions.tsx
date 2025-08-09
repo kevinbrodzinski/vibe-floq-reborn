@@ -57,10 +57,16 @@ export function MessageActionsPopout({
   }, [onClose, anchorRef]);
 
   const portalRoot = useMemo(() => {
-    let node = document.getElementById('ui-portal-root');
+    let node = document.getElementById('ui-portal-root') as HTMLDivElement | null;
     if (!node) {
       node = document.createElement('div');
       node.id = 'ui-portal-root';
+      Object.assign(node.style, {
+        position: 'fixed',
+        inset: '0',
+        zIndex: '100000',        // above your Sheet (9999)
+        pointerEvents: 'none',   // the container ignores clicks
+      });
       document.body.appendChild(node);
     }
     return node;
@@ -69,13 +75,20 @@ export function MessageActionsPopout({
   const node = (
     <div
       ref={popRef}
-      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 10050 }}
-      className="rounded-2xl border border-border/60 bg-background/95 backdrop-blur shadow-lg px-2 py-1 flex items-center gap-1"
+      onMouseDown={(e) => e.stopPropagation()} // don't bubble to sheet/draggers
+      style={{
+        top: pos.top,
+        left: pos.left,
+        position: 'fixed',
+        zIndex: 100001,         // higher than the portal root just in case
+        pointerEvents: 'auto',  // THIS grabs the cursor
+      }}
+      className="rounded-2xl border border-border/60 bg-background/95 backdrop-blur shadow-lg px-2 py-1 flex items-center gap-1 select-none"
     >
       {EMOJIS.map((e) => (
         <button
           key={e}
-          className="h-8 w-8 rounded-full hover:bg-muted/70 flex items-center justify-center text-lg"
+          className="h-8 w-8 rounded-full hover:bg-muted/70 flex items-center justify-center text-lg cursor-pointer"
           onClick={() => {
             onReact(e, messageId);
             onClose?.();
@@ -89,7 +102,7 @@ export function MessageActionsPopout({
       <div className="w-px h-6 bg-border/60 mx-1" />
 
       <button
-        className="h-8 w-8 rounded-full hover:bg-muted/70 flex items-center justify-center"
+        className="h-8 w-8 rounded-full hover:bg-muted/70 flex items-center justify-center cursor-pointer"
         onClick={() => {
           onReply(messageId);
           onClose?.();
@@ -121,7 +134,7 @@ export function MessageActionsTrigger({
         if (btnRef.current) onOpen(btnRef.current);
       }}
       className={cn(
-        'h-8 w-8 rounded-full bg-background/90 border border-border/50 shadow flex items-center justify-center',
+        'h-8 w-8 rounded-full bg-background/90 border border-border/50 shadow flex items-center justify-center cursor-pointer',
         className
       )}
       aria-label="Message actions"

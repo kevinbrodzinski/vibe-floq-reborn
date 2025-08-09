@@ -131,30 +131,44 @@ function MessageRow({
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
+  const openActions = (btn: HTMLButtonElement) => {
+    setAnchorEl(btn);
+    setOpen(true);
+  };
+
   return (
     <div
-      className={cn('group relative flex w-full py-1', isOwn ? 'justify-end' : 'justify-start')}
+      className={cn(
+        'group flex w-full py-1',
+        isOwn ? 'justify-end' : 'justify-start'
+      )}
       data-mid={message.id}
     >
-      <MessageBubble
-        content={message.content}
-        isOwn={isOwn}
-        reply_to_id={message.reply_to}
-        created_at={message.created_at}
-        reactions={reactions}
-        onReact={onReact}
-        onReply={onReply}
-      />
-
-      {/* actions trigger: bottom-left of the bubble */}
-      <div className="absolute -bottom-2 left-2 z-[10000] hidden group-hover:flex">
-        <MessageActionsTrigger
-          onOpen={(btn) => { setAnchorEl(btn); setOpen(true); }}
-          className="h-7 w-7"
+      {/* Bubble container that we can position against */}
+      <div className="relative inline-flex max-w-[72%] flex-col">
+        <MessageBubble
+          content={message.content}
+          isOwn={isOwn}
+          reply_to_id={message.reply_to}
+          created_at={message.created_at}
+          reactions={reactions}
+          onReact={onReact}
+          onReply={onReply}
         />
+
+        {/* 👉 NEW: trigger anchored to the bubble */}
+        <div
+          className={cn(
+            'absolute z-[10000] opacity-0 group-hover:opacity-100 transition-opacity',
+            '-bottom-2',             // bump slightly below bubble
+            isOwn ? 'right-2' : 'left-2'
+          )}
+        >
+          <MessageActionsTrigger onOpen={openActions} className="h-7 w-7" />
+        </div>
       </div>
 
-      {/* popout */}
+      {/* 👉 Popout stays as-is */}
       {open && anchorEl && (
         <MessageActionsPopout
           messageId={message.id}
