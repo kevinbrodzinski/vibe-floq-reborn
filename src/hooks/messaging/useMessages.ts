@@ -6,9 +6,30 @@ import isUuid from "@/lib/utils/isUuid";
 import { createSafeRealtimeHandler } from "@/lib/realtime/validation";
 import { realtimeManager } from "@/lib/realtime/manager";
 
+// ✅ Updated types for the new expanded view
+type ExpandedMessage = {
+  id: string;
+  thread_id: string;
+  profile_id: string;
+  content: string | null;
+  created_at: string;
+  reply_to: string | null;
+  reply_to_msg: { 
+    id: string | null; 
+    content: string | null; 
+    created_at: string | null; 
+    profile_id: string | null 
+  } | null;
+  reactions: Array<{ 
+    emoji: string; 
+    count: number; 
+    reactors: string[] 
+  }>;
+};
+
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
-type MessageRow = DirectMessage | ChatMessage;
+type MessageRow = ExpandedMessage | ChatMessage; // ✅ Use ExpandedMessage for DMs
 type MessagesInfinite = { pages: MessageRow[][]; pageParams: unknown[] };
 
 const PAGE_SIZE = 40;
@@ -64,7 +85,7 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
       if (surface === "dm") {
         console.log('[useMessages] Fetching DM messages for thread:', threadId);
         const { data, error } = await supabase
-          .from("direct_messages")
+          .from("v_dm_messages_expanded") // ✅ Use the new view with replies and reactions
           .select("*")
           .eq("thread_id", threadId)
           .order("created_at", { ascending: false })

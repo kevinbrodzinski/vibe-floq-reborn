@@ -1088,3 +1088,11 @@ All colors MUST be HSL.
 .mapboxgl-canvas-container:hover {
   cursor: default;
 }
+
+/* Ensure message actions popout appears above everything */
+#ui-portal-root { 
+  position: fixed; 
+  inset: 0; 
+  z-index: 100000; 
+  pointer-events: none; 
+}

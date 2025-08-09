@@ -11,8 +11,12 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ threadId, content }: { threadId: string; content: string }) => {
-      console.log('[useSendMessage] Starting mutation:', { threadId, content });
+    mutationFn: async ({ threadId, content, replyTo }: { 
+      threadId: string; 
+      content: string; 
+      replyTo?: string | null; 
+    }) => {
+      console.log('[useSendMessage] Starting mutation:', { threadId, content, replyTo });
       
       // Validate required parameters
       if (!threadId || threadId === 'null') {
@@ -42,7 +46,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
           metadata: { client_id },
           status: "sending",
           message_type: "text",
-          reply_to_id: null,
+          reply_to: replyTo, // ✅ FIX: Use reply_to to match database column
         };
 
         const pages = old.pages || [];
@@ -54,21 +58,62 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
         };
       });
 
-      console.log('[useSendMessage] Calling limitedSendMessage...');
+      console.log('[useSendMessage] Sending message...');
       try {
-        const data = await limitedSendMessage({
-          surface, 
-          thread_id: threadId, 
-          sender_id: user.id, 
-          content, 
-          client_id 
-        });
+        // ✅ FIX: Use direct RPC for DM messages, Edge Function for others
+        if (surface === 'dm') {
+          // ✅ DM: Use direct RPC to avoid CORS issues
+          const { data, error } = await supabase.rpc('send_dm_message_uuid', {
+            p_thread_id: threadId,
+            p_sender_id: user.id,
+            p_body: content,
+            p_reply_to: replyTo ?? null,
+            p_media: null,
+            p_type: 'text'
+          });
+          
+          if (error) throw error;
+          
+          console.log('[useSendMessage] RPC success:', data);
+          return { message: data, client_id, threadId };
+        } else {
+          // ✅ FLOQ/PLAN: Keep using Edge Function for now
+          const { data, error } = await supabase.functions.invoke('send-message', {
+            body: {
+              thread_id: threadId,
+              profile_id: user.id,
+              content,
+              reply_to: replyTo ?? null,
+              client_id,
+            }
+          });
+          
+          if (error) throw error;
+          
+          console.log('[useSendMessage] Edge Function success:', data);
+          return { message: data, client_id, threadId };
+        }
+      } catch (primaryError) {
+        console.warn('[useSendMessage] Primary method failed, trying RPC fallback:', primaryError);
         
-        console.log('[useSendMessage] Success data:', data);
-        return { ...data, client_id, threadId };
-      } catch (error) {
-        console.error('[useSendMessage] limitedSendMessage error:', error);
-        throw error; // Make sure we re-throw so the mutation fails properly
+        // ✅ FIX: Fallback to correct RPC function name
+        try {
+          const { data, error } = await supabase.rpc('send_dm_message', {
+            p_thread_id: threadId,
+            p_profile_id: user.id,
+            p_content: content,
+            p_reply_to: replyTo ?? null,
+            p_client_id: client_id,
+          });
+          
+          if (error) throw error;
+          
+          console.log('[useSendMessage] RPC fallback success:', data);
+          return { message: data, client_id, threadId };
+        } catch (rpcError) {
+          console.error('[useSendMessage] Both primary and RPC fallback failed:', { primaryError, rpcError });
+          throw rpcError; // Throw the RPC error as it's likely more informative
+        }
       }
     },
 

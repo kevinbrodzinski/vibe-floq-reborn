@@ -1,48 +1,64 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
 
-const DELETED_USER_PROFILE = {
-  display_name: '(Deleted User)',
-  username: null,
-  avatar_url: null
-} as const;
+type ThreadRow = {
+  id: string;
+  member_a_profile_id: string;
+  member_b_profile_id: string;
+  last_message_at: string | null;
 
-export type DirectThreadWithProfiles = Database["public"]["Tables"]["direct_threads"]["Row"] & {
-  member_a_profile: {
-    display_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  } | null;
-  member_b_profile: {
-    display_name: string | null;
-    username: string | null; 
-    avatar_url: string | null;
-  } | null;
+  // aliased profile joins (names must match your constraints)
+  member_a_profile: { id: string; display_name: string | null; username: string | null; avatar_url: string | null } | null;
+  member_b_profile: { id: string; display_name: string | null; username: string | null; avatar_url: string | null } | null;
 };
 
-export const useThreads = () => {
+export function useThreads() {
+  const currentProfileId = useCurrentUserId(); // returns profile_id (same as user.id in your app)
+  const enabled = !!currentProfileId;
+
   return useQuery({
-    queryKey: ["dm-threads"],
-    queryFn: async (): Promise<DirectThreadWithProfiles[]> => {
+    queryKey: ['dm-threads', currentProfileId],                 // ✅ stable key
+    enabled,
+    staleTime: 30_000,
+    queryFn: async () => {
+      // ✅ Only fetch threads where I'm a member (by profile_id)
       const { data, error } = await supabase
-        .from("direct_threads")
+        .from('direct_threads')
         .select(`
-          *,
-          member_a_profile:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
-          member_b_profile:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
+          id,
+          member_a_profile_id,
+          member_b_profile_id,
+          last_message_at,
+          member_a_profile:profiles!fk_member_a (
+            id, display_name, username, avatar_url
+          ),
+          member_b_profile:profiles!fk_member_b (
+            id, display_name, username, avatar_url
+          )
         `)
-        .order("last_message_at", { ascending: false });
+        .or(`member_a_profile_id.eq.${currentProfileId},member_b_profile_id.eq.${currentProfileId}`)
+        .order('last_message_at', { ascending: false })
+        .limit(100);
+
       if (error) throw error;
-      
-      // Transform the response and add safety guards for deleted profiles
-      const threads = (data || []).map(thread => ({
-        ...thread,
-        member_a_profile: thread.member_a_profile || DELETED_USER_PROFILE,
-        member_b_profile: thread.member_b_profile || DELETED_USER_PROFILE,
-      }));
-      
-      return threads as DirectThreadWithProfiles[];
+
+      // ✅ map the "friend" side for the UI
+      const rows = (data ?? []) as ThreadRow[];
+      return rows.map((t) => {
+        const amA = t.member_a_profile_id === currentProfileId;
+        const friend =
+          amA ? t.member_b_profile : t.member_a_profile;
+
+        return {
+          id: t.id,
+          friend_profile_id: amA ? t.member_b_profile_id : t.member_a_profile_id,
+          friend_display_name: friend?.display_name ?? '',
+          friend_username: friend?.username ?? '',
+          friend_avatar_url: friend?.avatar_url ?? '',
+          last_message_at: t.last_message_at,
+        };
+      });
     },
   });
-};
+}

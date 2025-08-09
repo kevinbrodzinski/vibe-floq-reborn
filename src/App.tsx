@@ -38,6 +38,7 @@ import SharedPlan from "./pages/SharedPlan";
 import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 
+
 const App = () => {
   // Create a stable QueryClient instance using useMemo
   const queryClient = useMemo(() => new QueryClient(), []);
@@ -110,6 +111,7 @@ const App = () => {
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
+
                         <Route path="/*" element={<Index />} />
                       </Routes>
                     </BrowserRouter>

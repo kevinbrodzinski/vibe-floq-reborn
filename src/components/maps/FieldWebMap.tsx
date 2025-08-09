@@ -988,32 +988,49 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       return;
     }
     
-    // Use the safe setUserLocation utility
-    setUserLocation(
-      map,
-      location.coords.lat,
-      location.coords.lng,
-      location.coords.accuracy
-    );
+    // ✅ FIX: Ensure user location source is attached first
+    const updateLocation = () => {
+      // Check if the user location source is ready (attached by attachUserLocationSource)
+      const isSourceReady = (map as any).__userLocationSourceReady?.();
+      if (!isSourceReady) {
+        console.warn('[FieldWebMap] User location source not ready, skipping location update');
+        return;
+      }
+      
+      // Use the safe setUserLocation utility
+      setUserLocation(
+        map,
+        location.coords!.lat,
+        location.coords!.lng,
+        location.coords!.accuracy
+      );
+      
+      // Don't jumpTo if coords are still the SF demo
+      const isDemo = location.coords?.lat === 37.7749 && location.coords?.lng === -122.4194;
+      if (!isDemo && firstPosRef.current) {
+        firstPosRef.current = false;
+        console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
+        map.jumpTo({ 
+          center: [location.coords!.lng, location.coords!.lat], 
+          zoom: 14 
+        });
+      } else if (!map.isMoving()) {
+        console.log('[FieldWebMap] 🔧 Subsequent position update - using flyTo');
+        map.flyTo({
+          center: [location.coords!.lng, location.coords!.lat],
+          zoom: 14,
+          duration: 2000
+        });
+      } else {
+        console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
+      }
+    };
     
-    // Don't jumpTo if coords are still the SF demo
-    const isDemo = location.coords?.lat === 37.7749 && location.coords?.lng === -122.4194;
-    if (!isDemo && firstPosRef.current) {
-      firstPosRef.current = false;
-      console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
-      map.jumpTo({ 
-        center: [location.coords.lng, location.coords.lat], 
-        zoom: 14 
-      });
-    } else if (!map.isMoving()) {
-      console.log('[FieldWebMap] 🔧 Subsequent position update - using flyTo');
-      map.flyTo({
-        center: [location.coords.lng, location.coords.lat],
-        zoom: 14,
-        duration: 2000
-      });
+    // ✅ FIX: Use map.load event for proper timing
+    if (map.loaded()) {
+      updateLocation();
     } else {
-      console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
+      map.once('load', updateLocation);
     }
   }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady]);
 

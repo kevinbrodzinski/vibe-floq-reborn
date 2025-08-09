@@ -1,12 +1,12 @@
 import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
-import { useAuth } from "@/hooks/useAuth";
+import { useCurrentProfileId } from "@/hooks/useCurrentUser";
 
 export const AppProviders = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const currentProfileId = useCurrentProfileId();
   
   // Enable global realtime subscription for unread badges
-  // Hook already guards against undefined userId internally
-  useUnreadBadgeRealtime(user?.id);
+  // Hook already guards against undefined profileId internally
+  useUnreadBadgeRealtime(currentProfileId);
 
   return <>{children}</>;
 };

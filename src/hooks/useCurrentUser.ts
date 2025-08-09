@@ -1,25 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
-export const useCurrentUser = () => {
-  return useQuery({
-    queryKey: ['current-user'],
-    queryFn: async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      return user;
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    retry: 1,
-  });
-};
-
-export const useCurrentUserId = () => {
-  const { data: user } = useCurrentUser();
+export function useCurrentUserId(): string | undefined {
+  const { user } = useAuth();
   return user?.id;
-};
+}
 
 export const useCurrentProfileId = () => {
-  const { data: user } = useCurrentUser();
+  const { user } = useAuth();
   return user?.id; // This is the profile_id in our database
 };
