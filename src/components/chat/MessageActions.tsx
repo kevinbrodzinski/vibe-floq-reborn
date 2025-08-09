@@ -121,25 +121,21 @@ export function MessageActionsPopout({
 export function MessageActionsTrigger({
   onOpen,
   className
-}: {
-  onOpen: (btn: HTMLButtonElement) => void;
-  className?: string;
-}) {
+}: { onOpen: (btn: HTMLButtonElement) => void; className?: string }) {
   const btnRef = useRef<HTMLButtonElement>(null);
   return (
     <button
       ref={btnRef}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (btnRef.current) onOpen(btnRef.current);
-      }}
+      onClick={(e) => { e.stopPropagation(); if (btnRef.current) onOpen(btnRef.current); }}
       className={cn(
-        'h-8 w-8 rounded-full bg-background/90 border border-border/50 shadow flex items-center justify-center cursor-pointer',
+        "h-8 w-8 rounded-full border shadow flex items-center justify-center transition-colors",
+        "bg-white/10 hover:bg-white/20",  // <-- light translucent background
+        "text-white hover:text-white",     // <-- icon stays light
         className
       )}
       aria-label="Message actions"
       title="Reactions & reply"
-      style={{ zIndex: 10050 }}
+      style={{ zIndex: 9999 }}
     >
       <Smile className="h-4 w-4" />
     </button>
