@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { MessageBubble } from '@/components/MessageBubble';
+import { MessageActionsTrigger, MessageActionsPopout } from './MessageActions';
+import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
 type Message = {
   id: string;
@@ -67,6 +69,9 @@ export function MessageList({
     listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [allMessages.length]);
 
+  // Reactions (optimistic)
+  const { toggle: toggleReaction } = threadId ? useDmReactions(threadId) : { toggle: () => {} };
+
   if (messages.isLoading) {
     return (
       <div className={cn('flex items-center justify-center py-8', className)}>
@@ -78,7 +83,7 @@ export function MessageList({
   return (
     <div
       ref={listRef}
-      className={cn('flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 flex flex-col gap-1', className)}
+      className={cn('flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3', className)}
     >
       {allMessages.map((m, i) => {
         const senderId = m.profile_id || m.sender_id;
@@ -92,26 +97,121 @@ export function MessageList({
         const isConsecutive = Boolean(isSameSender && closeInTime);
 
         return (
-          <MessageBubble
+          <Row
             key={m.id}
-            message={{
-              id: m.id,
-              thread_id: m.thread_id,
-              profile_id: m.profile_id,
-              sender_id: m.sender_id,
-              content: m.content || '',
-              created_at: m.created_at,
-              reply_to: m.reply_to,
-              reply_to_msg: m.reply_to_msg,
-              reactions: m.reactions,
-              status: m.status,
-            }}
             isOwn={isOwn}
+            message={m}
             isConsecutive={isConsecutive}
             onReply={onReply}
+            onReact={toggleReaction}
           />
         );
       })}
+    </div>
+  );
+}
+
+function Row({
+  message,
+  isOwn,
+  isConsecutive,
+  onReply,
+  onReact,
+}: {
+  message: Message;
+  isOwn: boolean;
+  isConsecutive: boolean;
+  onReply?: (messageId: string, preview?: { content?: string; authorId?: string }) => void;
+  onReact: (messageId: string, emoji: string) => void;
+}) {
+  const { data: senderProfile } = useProfile(message.profile_id || message.sender_id);
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+
+  const openActions = (btn: HTMLButtonElement) => {
+    setAnchor(btn);
+    setOpen(true);
+  };
+
+  const time = dayjs(message.created_at).format('h:mm A');
+
+  return (
+    <div
+      className={cn(
+        'group relative flex w-full',
+        isOwn ? 'justify-end' : 'justify-start',
+        isConsecutive ? 'mt-1' : 'mt-4'
+      )}
+      data-mid={message.id}
+    >
+      <div className="flex flex-col max-w-[72vw] sm:max-w-[72%]">
+        {/* Bubble + reactions anchored */}
+        <div className="relative w-fit max-w-full pb-5">
+          <MessageBubble
+            message={message}
+            isOwn={isOwn}
+            isConsecutive={isConsecutive}
+            senderProfile={senderProfile}
+          />
+
+          {/* Reactions: bottom-left of the bubble */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div className="absolute -bottom-4 left-2 flex items-center gap-1">
+              {message.reactions.map((r) => (
+                <button
+                  key={r.emoji}
+                  className={cn(
+                    'h-6 rounded-full px-2 text-xs border',
+                    'bg-background/70 hover:bg-background/90',
+                    'border-border/50'
+                  )}
+                  onClick={() => onReact(message.id, r.emoji)}
+                  title={`${r.count} reaction${r.count === 1 ? '' : 's'}`}
+                >
+                  <span className="align-middle">{r.emoji}</span>
+                  {r.count > 1 && <span className="ml-1 align-middle">{r.count}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Timestamp (stays tidy) */}
+        <div
+          className={cn(
+            'mt-1 text-xs text-muted-foreground',
+            isOwn ? 'text-right pr-1' : 'text-left pl-1'
+          )}
+        >
+          {time}
+        </div>
+      </div>
+
+      {/* Actions trigger anchored to bubble corner */}
+      <div
+        className={cn(
+          'absolute opacity-0 group-hover:opacity-100 transition-opacity',
+          isOwn ? 'right-2 -bottom-3' : 'left-2 -bottom-3'
+        )}
+        style={{ pointerEvents: 'none' }} // only the button is clickable
+      >
+        <div style={{ pointerEvents: 'auto' }}>
+          <MessageActionsTrigger onOpen={openActions} />
+        </div>
+      </div>
+
+      {/* Portal popout */}
+      {open && anchor && (
+        <MessageActionsPopout
+          messageId={message.id}
+          anchorRef={{ current: anchor }}
+          onReact={(emoji) => onReact(message.id, emoji)}
+          onReply={(id) =>
+            onReply?.(id, { content: message.content ?? '', authorId: message.profile_id })
+          }
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }
