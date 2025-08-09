@@ -205,6 +205,28 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     return layer ? [layer] : [];
   }, [densityMode, filteredDensityClusters]);
 
+  // Nearest cluster CTA when density mode is ON
+  const nearestCluster = useMemo(() => {
+    if (!densityMode || !location.coords || filteredDensityClusters.length === 0) return null;
+    const me = { lat: location.coords.lat, lng: location.coords.lng };
+    let best: any = null; let bestDist = Infinity;
+    for (const c of filteredDensityClusters) {
+      const [lng, lat] = c.centroid.coordinates;
+      const d = 111_320 * Math.hypot(
+        lat - me.lat,
+        (lng - me.lng) * Math.cos(me.lat * Math.PI / 180)
+      );
+      if (d < bestDist) { best = c; bestDist = d; }
+    }
+    return best ? { cluster: best, meters: bestDist } : null;
+  }, [densityMode, location.coords?.lat, location.coords?.lng, filteredDensityClusters]);
+
+  const centerToNearestCluster = useCallback(() => {
+    if (!mapRef.current || !nearestCluster) return;
+    const [lng, lat] = nearestCluster.cluster.centroid.coordinates as [number, number];
+    mapRef.current.easeTo({ center: [lng, lat], zoom: Math.max(13, mapRef.current.getZoom()), duration: 800 });
+  }, [nearestCluster]);
+
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
     condition: mapWeatherCondition((weatherData as any)?.condition ?? 'sunny'),
@@ -1275,6 +1297,17 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
               )}
             </div>
           </div>
+        )}
+
+        {/* Nearest Cluster CTA (Density mode) */}
+        {densityMode && nearestCluster && (
+          <button
+            onClick={centerToNearestCluster}
+            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg hover:glow-active transition"
+            title={`Center to energy (~${Math.round(nearestCluster.meters)}m)`}
+          >
+            Center to energy · ~{Math.round(nearestCluster.meters)}m
+          </button>
         )}
 
         {/* Location Debug Info */}

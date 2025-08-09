@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { debounce } from 'lodash-es';
 import { supabase } from '@/integrations/supabase/client';
+import { useClustersLiveBus } from '@/contexts/ClustersLiveContext';
 
 /* ------------------------------------------------------------------ */
 /* types                                                               */
@@ -34,7 +35,8 @@ export const useClusters = (
   const [realtime, setRealtime] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
-  const chanRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const liveUnsubRef = useRef<(() => void) | null>(null);
+  const bus = useClustersLiveBus();
 
   /* ----------------------------- fetch ----------------------------- */
   const fetchClusters = useCallback(
@@ -79,7 +81,7 @@ export const useClusters = (
                 coordinates
               },
               vibe_counts: cluster.vibe_counts as Record<string, number>
-            };
+            } as Cluster;
           });
           setClusters(transformedData);
         }
@@ -100,34 +102,38 @@ export const useClusters = (
     debouncedFetch(bbox);
   }, [bbox, debouncedFetch]);
 
-  /* realtime channel (broadcast → refetch) */
+  /* realtime via shared bus (broadcast → refetch) */
   const chanKey = useMemo(
     () => `${precision}:${bbox.map((n) => n.toFixed(3)).join(',')}`,
     [bbox, precision],
   );
 
   useEffect(() => {
-    if (chanRef.current) supabase.removeChannel(chanRef.current);
-    setRealtime(false);
+    // Unsubscribe previous
+    if (liveUnsubRef.current) {
+      liveUnsubRef.current();
+      liveUnsubRef.current = null;
+    }
 
-    const ch = supabase
-      .channel(`clusters-${chanKey}`)
-      .on('broadcast', { event: 'clusters_updated' }, () => debouncedFetch(bbox))
-      .subscribe((status) => setRealtime(status === 'SUBSCRIBED'));
+    // Ensure a single shared subscription per key
+    liveUnsubRef.current = bus.ensureSubscription(chanKey, () => debouncedFetch(bbox));
+    setRealtime(true);
 
-    chanRef.current = ch;
     return () => {
-      supabase.removeChannel(ch);
+      if (liveUnsubRef.current) {
+        liveUnsubRef.current();
+        liveUnsubRef.current = null;
+      }
       setRealtime(false);
     };
-  }, [chanKey, bbox, debouncedFetch]);
+  }, [chanKey, bbox, debouncedFetch, bus]);
 
   /* cleanup */
   useEffect(
     () => () => {
       debouncedFetch.cancel();
       abortRef.current?.abort();
-      if (chanRef.current) supabase.removeChannel(chanRef.current);
+      if (liveUnsubRef.current) liveUnsubRef.current();
     },
     [debouncedFetch],
   );
