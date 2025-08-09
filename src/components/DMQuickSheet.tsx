@@ -46,6 +46,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
   console.log('[PARENT] DMQuickSheet props:', { open, friendId, threadIdProp });
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyPreview, setReplyPreview] = useState<{content?: string; authorId?: string} | null>(null);
   const [sending, setSending] = useState(false); // Local sending state as fallback
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null); // profile_id is the main user identifier
   const [threadId, setThreadId] = useState<string | undefined>(threadIdProp); // Local threadId state
@@ -341,6 +342,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       // Clear input/reply after success
       setInput('');
       setReplyTo(null);
+      setReplyPreview(null);
       
       // ✅ Invalidate queries to refresh with server data
       queryClient.invalidateQueries({ queryKey: ['messages', 'dm', threadId] });
@@ -462,7 +464,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
             messages={messages}
             currentUserId={currentProfileId}
             threadId={threadId}
-            onReply={setReplyTo}
+            onReply={(id, preview) => { 
+              setReplyTo(id); 
+              setReplyPreview(preview ?? null); 
+            }}
             className="flex-1"
           />
         ) : threadId === undefined ? ( // Changed from null to undefined
@@ -509,13 +514,16 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
         <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           {replyTo && (
             <div className="mb-2 bg-muted/30 p-2 rounded flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
-                Replying to message
+              <div className="text-xs text-muted-foreground line-clamp-1">
+                Replying to: {replyPreview?.content || 'message'}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setReplyTo(null)}
+                onClick={() => { 
+                  setReplyTo(null); 
+                  setReplyPreview(null); 
+                }}
                 className="h-6 w-6 p-0"
               >
                 ✕

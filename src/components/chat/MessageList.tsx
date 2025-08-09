@@ -8,7 +8,7 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { useProfile } from '@/hooks/useProfile';
 import { ChatMediaBubble } from './ChatMediaBubble';
 import { ReplySnippet } from './ReplySnippet';
-import { ReactionPicker } from './ReactionPicker';
+import { MessageActions } from './MessageActions';
 import { useDmReactions } from '@/hooks/messaging/useDmReactions';
 
 interface Message {
@@ -43,7 +43,7 @@ interface MessageListProps {
   };
   currentUserId: string | null;
   threadId?: string; // ✅ Add threadId prop
-  onReply?: (messageId: string) => void;
+  onReply?: (messageId: string, preview?: {content?: string; authorId?: string}) => void;
   onReact?: (messageId: string, emoji: string) => void;
   className?: string;
 }
@@ -126,7 +126,7 @@ const MessageBubbleWrapper: React.FC<{
   senderId: string | undefined;
   currentUserId: string | null;
   toggleReaction: (messageId: string, emoji: string) => void;
-  onReply?: (messageId: string) => void;
+  onReply?: (messageId: string, preview?: {content?: string; authorId?: string}) => void;
 }> = ({ message, isOwn, isConsecutive, senderId, currentUserId, toggleReaction, onReply }) => {
   const { data: senderProfile } = useProfile(senderId);
 
@@ -174,7 +174,10 @@ const MessageBubbleWrapper: React.FC<{
           <div className={`group mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
             {/* Reaction picker (hidden until hover) */}
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <ReactionPicker onPick={(emoji) => toggleReaction(message.id, emoji)} />
+              <MessageActions 
+                onReply={() => onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id })} 
+                onReact={(emoji) => toggleReaction(message.id, emoji)} 
+              />
             </div>
 
             {/* Current reactions with "your reaction" highlighting */}
@@ -215,7 +218,10 @@ const MessageBubbleWrapper: React.FC<{
       <div className={`group mt-1 flex gap-2 items-center ${isOwn ? "justify-end mr-4" : "ml-4"}`}>
         {/* Reaction picker (hidden until hover) */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <ReactionPicker onPick={(emoji) => toggleReaction(message.id, emoji)} />
+          <MessageActions 
+            onReply={() => onReply?.(message.id, { content: message.content ?? '', authorId: message.profile_id })} 
+            onReact={(emoji) => toggleReaction(message.id, emoji)} 
+          />
         </div>
 
         {/* Current reactions with "your reaction" highlighting */}
