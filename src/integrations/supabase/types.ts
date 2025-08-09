@@ -1941,6 +1941,84 @@ export type Database = {
           },
         ]
       }
+      direct_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          message_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          message_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          message_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_messages: {
         Row: {
           content: string | null
@@ -1949,6 +2027,7 @@ export type Database = {
           message_type: Database["public"]["Enums"]["dm_msg_type"]
           metadata: Json | null
           profile_id: string
+          reply_to: string | null
           reply_to_id: string | null
           status: string
           thread_id: string
@@ -1960,6 +2039,7 @@ export type Database = {
           message_type?: Database["public"]["Enums"]["dm_msg_type"]
           metadata?: Json | null
           profile_id: string
+          reply_to?: string | null
           reply_to_id?: string | null
           status?: string
           thread_id: string
@@ -1971,16 +2051,52 @@ export type Database = {
           message_type?: Database["public"]["Enums"]["dm_msg_type"]
           metadata?: Json | null
           profile_id?: string
+          reply_to?: string | null
           reply_to_id?: string | null
           status?: string
           thread_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "direct_messages_reply_to_id_fkey"
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
             referencedColumns: ["id"]
           },
           {
@@ -2227,6 +2343,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dm_media_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_media_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dm_media_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
@@ -2295,6 +2425,20 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
             referencedColumns: ["id"]
           },
           {
@@ -11563,13 +11707,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -11579,8 +11716,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -11593,8 +11730,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -11607,7 +11744,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -11620,13 +11757,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -11659,6 +11803,198 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_dm_messages: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string | null
+          message_type: Database["public"]["Enums"]["dm_msg_type"] | null
+          profile_id: string | null
+          reactions: Json | null
+          reply_to: string | null
+          reply_to_id: string | null
+          reply_to_msg: Json | null
+          status: string | null
+          thread_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "direct_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_dm_messages_expanded: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string | null
+          profile_id: string | null
+          reactions: Json | null
+          reply_to: string | null
+          reply_to_msg: Json | null
+          thread_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "v_dm_messages_expanded"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "direct_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -12405,13 +12741,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -12421,8 +12750,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -12435,8 +12764,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -12449,7 +12778,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12462,13 +12791,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -12534,13 +12870,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -12550,8 +12879,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -12564,8 +12893,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -12578,7 +12907,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12591,13 +12920,20 @@ export type Database = {
           {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -13881,6 +14217,15 @@ export type Database = {
         Args: { p_days?: number }
         Returns: Json
       }
+      get_dm_reactions_by_thread: {
+        Args: { p_thread_id: string }
+        Returns: {
+          emoji: string
+          message_id: string
+          profile_id: string
+          reacted_at: string
+        }[]
+      }
       get_enhanced_vibe_clusters: {
         Args: {
           p_bounds?: unknown
@@ -15149,10 +15494,33 @@ export type Database = {
           message_type: Database["public"]["Enums"]["dm_msg_type"]
           metadata: Json | null
           profile_id: string
+          reply_to: string | null
           reply_to_id: string | null
           status: string
           thread_id: string
         }[]
+      }
+      send_dm_message_uuid: {
+        Args: {
+          p_thread_id: string
+          p_sender_id: string
+          p_body: string
+          p_reply_to?: string
+          p_media?: Json
+          p_type?: Database["public"]["Enums"]["dm_msg_type"]
+        }
+        Returns: {
+          content: string | null
+          created_at: string | null
+          id: string
+          message_type: Database["public"]["Enums"]["dm_msg_type"]
+          metadata: Json | null
+          profile_id: string
+          reply_to: string | null
+          reply_to_id: string | null
+          status: string
+          thread_id: string
+        }
       }
       send_friend_request: {
         Args: { _target: string }
@@ -16850,72 +17218,6 @@ export type Database = {
         }
         Relationships: []
       }
-      messages_2025_08_04: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_05: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       messages_2025_08_06: {
         Row: {
           event: string | null
@@ -17049,6 +17351,72 @@ export type Database = {
         Relationships: []
       }
       messages_2025_08_10: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_11: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_12: {
         Row: {
           event: string | null
           extension: string
