@@ -33,6 +33,9 @@ import '@/lib/debug/canvasMonitor';
 import '@/lib/debug/friendsDebugger';
 import '@/lib/debug/floqPlanDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
+import DeckGL from '@deck.gl/react';
+import { createDensityLayer } from '@/components/map/DeckLayers';
+import { useClusters } from '@/hooks/useClusters';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -71,6 +74,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
   const highlightTimerRef = useRef<number>();
   const [selectedMyFloq, setSelectedMyFloq] = useState<string | null>(null);
   const { location, isLocationReady } = useFieldLocation();
+
+  // Density mode state
+  const [densityMode, setDensityMode] = useState(false);
 
   // Get user's active floqs
   const { data: myFloqs = [] } = useMyActiveFloqs();
@@ -180,15 +186,24 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     highlightFriendId: highlightedFriend
   });
 
-  // Render mini trails for visible friends
-  const friendTrailInputs = filteredPeople.filter(p => p.isFriend).map(p => ({ id: p.id, lat: p.lat, lng: p.lng, vibe: p.vibe }));
-  // Lazy import to avoid circular deps
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { useFriendMiniTrails } = require('@/hooks/useFriendMiniTrails');
-    useFriendMiniTrails(mapRef.current, friendTrailInputs, { highlightFriendId: highlightedFriend });
-  } catch {}
+  // Deck.GL Density overlay in Field map when Density mode is on
+  const bounds = useMemo(() => {
+    if (!mapRef.current) return null;
+    const b = mapRef.current.getBounds();
+    return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()] as [number, number, number, number];
+  }, [status]);
 
+  const { clusters: densityClusters } = useClusters(bounds ?? [-118.5, 33.9, -118.0, 34.1], 6);
+  const filteredDensityClusters = useMemo(() => {
+    if (selectedVibe === 'all') return densityClusters;
+    return densityClusters.filter(c => !!c.vibe_counts && c.vibe_counts[selectedVibe] > 0);
+  }, [densityClusters, selectedVibe]);
+
+  const densityLayers = useMemo(() => {
+    if (!densityMode) return [] as any[];
+    const layer = createDensityLayer(filteredDensityClusters as any, {}, () => {});
+    return layer ? [layer] : [];
+  }, [densityMode, filteredDensityClusters]);
 
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
@@ -323,7 +338,6 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     };
   }, []);
 
-  
   // 🔧 DEBUG: Mount debugging effect  
   useEffect(() => {
     (window as any).__mountPing = true;
@@ -983,8 +997,6 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     };
   },[onRegionChange]);
 
-  // Helper to safely access map source
-
   // Update user location when it changes - Use safe utility function
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
@@ -1093,6 +1105,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             bottom: 0
           }}
         />
+        
+        {/* Deck.GL density overlay when enabled */}
+        {densityMode && (
+          <DeckGL
+            layers={densityLayers}
+            getTooltip={({ object }) =>
+              object && `${(object as any).member_count || (object as any).total} people · ${(object as any).vibe_mode?.toUpperCase() || 'UNKNOWN'}`
+            }
+          />
+        )}
         
         {/* Vibe Filter Dropdown */}
         {status === 'ready' && vibeTypes.length > 0 && (
@@ -1318,6 +1340,8 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           onToggleWeather={() => setShowWeather(v => !v)}
           activeVibe={selectedVibe}
           onSelectVibe={setSelectedVibe}
+          densityMode={densityMode}
+          onToggleDensity={() => setDensityMode(v => !v)}
         />
 
         {/* DM Quick Sheet for friend taps */}

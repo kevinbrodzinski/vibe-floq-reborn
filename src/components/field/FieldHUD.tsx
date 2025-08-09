@@ -16,6 +16,8 @@ interface FieldHUDProps {
   onToggleWeather: () => void;
   activeVibe?: string;
   onSelectVibe?: (vibe: string) => void;
+  densityMode?: boolean;
+  onToggleDensity?: () => void;
 }
 
 const VIBE_OPTIONS = ['social','hype','chill','curious','solo','romantic','weird','down','flowing','open'];
@@ -28,6 +30,8 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
   onToggleWeather,
   activeVibe,
   onSelectVibe,
+  densityMode = false,
+  onToggleDensity,
 }) => {
   const { people } = useVisibleFriendsOnMap();
   const { hasPermission, status } = useUnifiedLocation({ hookId: 'field-hud' });
@@ -60,6 +64,9 @@ export const FieldHUD: React.FC<FieldHUDProps> = ({
           ))}
         </div>
         <div className="mx-2 h-6 w-px bg-white/10" />
+        <Button size="sm" variant={densityMode ? 'default' : 'ghost'} onClick={onToggleDensity} aria-pressed={densityMode} className="gap-2">
+          {densityMode ? 'Density On' : 'Density'}
+        </Button>
         <Button size="sm" variant="ghost" onClick={onOpenTimewarp ?? toggleTimewarp}>Timewarp</Button>
       </div>
 
