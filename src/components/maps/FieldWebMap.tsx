@@ -1110,7 +1110,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
-      <div className="absolute inset-0" style={{ height: '100vh', width: '100%', minHeight: '400px' }}>
+      <div className="absolute inset-0" style={{ height: '100svh', width: '100%', minHeight: '400px' }}>
+        {/* Reserve space for bottom HUD to avoid overlap with browser UI */}
+        <div className="pointer-events-none" style={{ position: 'absolute', inset: 0 }} />
         {/* Map container with explicit height to prevent zero-height issues */}
         <div 
           ref={mapContainerRef} 
