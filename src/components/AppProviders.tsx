@@ -1,5 +1,6 @@
 import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
 import { useCurrentProfileId } from "@/hooks/useCurrentUser";
+import { ClustersLiveProvider } from "@/contexts/ClustersLiveContext";
 
 export const AppProviders = ({ children }: { children: React.ReactNode }) => {
   const currentProfileId = useCurrentProfileId();
@@ -8,5 +9,9 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
   // Hook already guards against undefined profileId internally
   useUnreadBadgeRealtime(currentProfileId);
 
-  return <>{children}</>;
+  return (
+    <ClustersLiveProvider>
+      {children}
+    </ClustersLiveProvider>
+  );
 };
