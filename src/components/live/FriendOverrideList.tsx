@@ -30,9 +30,10 @@ export const FriendOverrideList = () => {
                 .from('friend_share_pref')
                 .select('other_profile_id,is_live');
 
-            if (!data) return {};
+            if (!data) return {} as Record<string, boolean>;
 
-            return Object.fromEntries(data.map(r => [r.other_profile_id, r.is_live]));
+            const rows = (data as any[]) || [];
+            return Object.fromEntries(rows.map((r: any) => [r.other_profile_id, r.is_live]));
         }
     });
 

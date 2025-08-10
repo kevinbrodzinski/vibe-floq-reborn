@@ -28,7 +28,7 @@ export const NotificationTestPanel = () => {
             sender_id: 'test-sender-789',
             preview: 'This is a test notification!'
           }
-        });
+        } as any);
 
       if (error) {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });

@@ -128,8 +128,8 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       const { error } = await supabase
         .from('floq_participants')
         .delete()
-        .eq('floq_id', floqDetails.id)
-        .eq('profile_id', profileId);
+        .eq('floq_id', floqDetails.id as any)
+        .eq('profile_id', profileId as any);
 
       if (error) throw error;
 
@@ -160,9 +160,9 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       // Instead of updating status to 'pending', update created_at to trigger resend
       await supabase
         .from('floq_invitations')
-        .update({ created_at: new Date().toISOString() })
-        .eq('floq_id', floqDetails.id)
-        .eq('invitee_id', invitation.invitee_id);
+        .update({ created_at: new Date().toISOString() } as any)
+        .eq('floq_id', floqDetails.id as any)
+        .eq('invitee_id', invitation.invitee_id as any);
       toast.success('Invitation resent');
       queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
     } catch (error) {
@@ -178,9 +178,9 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       const { error } = await supabase
         .from('floq_invitations')
         .delete()
-        .eq('floq_id', floqDetails.id)
-        .eq('invitee_id', selectedInvitation.invitee_id)
-        .eq('status', 'pending');
+        .eq('floq_id', floqDetails.id as any)
+        .eq('invitee_id', selectedInvitation.invitee_id as any)
+        .eq('status', 'pending' as any);
 
       if (error) throw error;
 

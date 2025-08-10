@@ -81,8 +81,9 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
       const { data, error } = await supabase.rpc('get_friends_with_presence')
       if (error) throw error
 
+      const rows = (data as any[]) ?? []
       return (
-        data?.map((r: any) => ({
+        rows.map((r: any) => ({
           id          : r.friend_id,
           username    : r.username ?? '',
           display_name: r.display_name ?? '',

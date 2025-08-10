@@ -235,12 +235,12 @@ const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
       const { data, error } = await supabase
         .from('profiles')
         .select('display_name, username, avatar_url')
-        .eq('id', id)
+        .eq('id', id as any)
         .maybeSingle();
 
       if (!cancelled && !error && data) {
-        friendProfileCache.set(id, data);
-        setFallback(data);
+        friendProfileCache.set(id, data as any);
+        setFallback(data as any);
       }
     })();
 

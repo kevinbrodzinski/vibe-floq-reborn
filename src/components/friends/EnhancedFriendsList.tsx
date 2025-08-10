@@ -392,9 +392,9 @@ export function EnhancedFriendsList({
               showConfidence={true}
               showPrivacyStatus={true}
               // Additional props from unified friends
-              isOnline={unifiedFriend?.online}
-              vibeTag={unifiedFriend?.vibe_tag}
-              username={unifiedFriend?.username}
+              // isOnline removed (prop not supported)
+              // vibeTag removed (prop not supported)
+              // username removed (prop handled internally)
             />
           );
         })}

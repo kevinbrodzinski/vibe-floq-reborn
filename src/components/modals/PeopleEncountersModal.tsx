@@ -98,10 +98,10 @@ export function PeopleEncountersModal({
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .in('id', profileIds)
+        .in('id', profileIds as any)
 
       if (error) throw error
-      setUserProfiles(data || [])
+      setUserProfiles((data as any[]) || [])
     } catch (err) {
       console.error('Error fetching user profiles:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to load user profiles'
