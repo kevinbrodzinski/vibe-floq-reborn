@@ -44,11 +44,11 @@ export const PlanDetailsView: React.FC = () => {
       const { data, error } = await supabase
         .from('floq_plans')
         .select('*')
-        .eq('id', planId)
+        .eq('id', planId as any)
         .single();
 
       if (error) throw error;
-      return data as Plan;
+      return data as unknown as Plan;
     },
     enabled: !!planId,
   });
@@ -89,16 +89,16 @@ export const PlanDetailsView: React.FC = () => {
             plan_id: planId,
             profile_id: session.user.id,
             role: 'participant'
-          }, {
-            onConflict: 'plan_id,profile_id'
+          } as any, {
+            onConflict: 'plan_id,profile_id' as any
           });
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('plan_participants')
           .delete()
-          .eq('plan_id', planId)
-          .eq('profile_id', session.user.id);
+          .eq('plan_id', planId as any)
+          .eq('profile_id', session.user.id as any);
         if (error) throw error;
       }
     },
@@ -125,8 +125,8 @@ export const PlanDetailsView: React.FC = () => {
       
       const { error } = await supabase
         .from('floq_plans')
-        .update({ status })
-        .eq('id', planId);
+        .update({ status } as any)
+        .eq('id', planId as any);
 
       if (error) throw error;
     },

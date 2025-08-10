@@ -67,8 +67,8 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
           max_participants: updates.max_participants || null,
           status: updates.status,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', plan.id);
+        } as any)
+        .eq('id', plan.id as any);
 
       if (error) throw error;
     },

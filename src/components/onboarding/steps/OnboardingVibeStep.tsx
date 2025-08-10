@@ -46,14 +46,14 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
       <div className="grid grid-cols-2 gap-3">
         {vibeOptions.map((vibe) => (
           <motion.button
-            key={vibe.id}
+            key={vibe.vibe}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => {
-              if (selectedVibe !== vibe.id) onVibeSelect(vibe.id);
+              if (selectedVibe !== vibe.vibe) onVibeSelect(vibe.vibe);
             }}
             className={`p-4 rounded-lg border-2 transition-all ${
-              selectedVibe === vibe.id
+              selectedVibe === vibe.vibe
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50'
             }`}
@@ -61,7 +61,7 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
             <div className="text-2xl mb-2">{vibe.emoji}</div>
             <div className="font-semibold">{vibe.label}</div>
             <div className="text-xs text-muted-foreground capitalize">
-              {getVibeMeta(vibe.id).energy} energy • {getVibeMeta(vibe.id).social}
+              {getVibeMeta(vibe.vibe).energy} energy • {getVibeMeta(vibe.vibe).social}
             </div>
           </motion.button>
         ))}

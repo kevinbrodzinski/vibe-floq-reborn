@@ -141,7 +141,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   /* ------------------------------------------------------------------ */
   const deletePlan = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('floq_plans').delete().eq('id', plan.id);
+      const { error } = await supabase.from('floq_plans').delete().eq('id', plan.id as any);
       if (error) throw error;
     },
     onSuccess: () => {

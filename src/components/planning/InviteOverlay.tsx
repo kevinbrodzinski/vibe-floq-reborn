@@ -109,11 +109,17 @@ export function InviteOverlay({
           .eq('id', profileId)
           .maybeSingle();
 
-        if (profile) {
+        if (profile && (profile as any).id) {
+          const p = profile as any;
           setAcceptedFriends(prev => {
             // Avoid duplicates
-            if (prev.find(f => f.id === profile.id)) return prev;
-            return [...prev, profile];
+            if (prev.find(f => f.id === p.id)) return prev;
+            return [...prev, {
+              id: p.id,
+              username: p.username,
+              display_name: p.display_name,
+              avatar_url: p.avatar_url
+            }];
           });
         }
       })
@@ -139,19 +145,20 @@ export function InviteOverlay({
             avatar_url
           )
         `)
-        .eq('floq_id', floqId);
+        .eq('floq_id', floqId as any);
 
       if (error) throw error;
 
-      const members = data
-        ?.map(p => p.profiles)
+      const rows = (data as any[]) || [];
+      const members = rows
+        .map((p: any) => p.profiles)
         .filter(Boolean)
-        .map(profile => ({
+        .map((profile: any) => ({
           id: profile.id,
           username: profile.username,
           display_name: profile.display_name,
           avatar_url: profile.avatar_url
-        })) || [];
+        }));
 
       setFloqMembers(members);
     } catch (error) {
@@ -269,12 +276,12 @@ export function InviteOverlay({
 
   const filteredFloqMembers = floqMembers.filter(member =>
     member.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    (member.display_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredFriends = friends.filter(friend =>
     friend.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    friend.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    (friend.display_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Calculate mutual friends already going to the plan

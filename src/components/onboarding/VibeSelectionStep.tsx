@@ -33,18 +33,18 @@ export function VibeSelectionStep({ onNext, onBack }: VibeSelectionStepProps) {
 
       <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
         {vibeOptions.map((vibe) => {
-          const isSelected = selectedVibe === vibe.id;
-          const meta = getVibeMeta(vibe.id);
+          const isSelected = selectedVibe === vibe.vibe;
+          const meta = getVibeMeta(vibe.vibe);
           
           return (
             <Card
-              key={vibe.id}
+              key={vibe.vibe}
               className={`cursor-pointer transition-all hover:scale-105 ${
                 isSelected 
                   ? 'ring-2 ring-primary border-primary bg-primary/5' 
                   : 'hover:border-primary/50'
               }`}
-              onClick={() => handleVibeSelect(vibe.id)}
+              onClick={() => handleVibeSelect(vibe.vibe)}
             >
               <CardContent className="p-4 text-center">
                 <div className="text-2xl mb-2">{vibe.emoji}</div>

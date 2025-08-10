@@ -31,14 +31,13 @@ export function VoteButtons({
   const [optimisticVote, setOptimisticVote] = useState<'up' | 'down' | null>(null)
   const { canVoteOnStops } = usePlanStatusValidation()
 
-  // Find user's existing vote
   const userVote = user 
-    ? votes.find(v => (v as any).profile_id === user.id)?.vote_type 
+    ? (votes.find(v => (v as any).profile_id === user.id) as any)?.vote_type 
     : null
 
   // Calculate vote counts
-  const upVotes = votes.filter(v => v.vote_type === 'up').length
-  const downVotes = votes.filter(v => v.vote_type === 'down').length
+  const upVotes = votes.filter(v => (v as any).vote_type === 'up').length
+  const downVotes = votes.filter(v => (v as any).vote_type === 'down').length
 
   const handleVote = (voteType: 'up' | 'down') => {
     if (!user) return

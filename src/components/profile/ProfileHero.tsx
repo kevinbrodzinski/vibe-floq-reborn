@@ -40,7 +40,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
       const { data } = await supabase
         .from('vibes_now')
         .select('vibe, expires_at')
-        .eq('profile_id', targetUserId)
+        .eq('profile_id', targetUserId as any)
         .maybeSingle();
       
       return data;
@@ -58,7 +58,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
       const { data } = await supabase
         .from('user_settings')
         .select('available_until')
-        .eq('profile_id', targetUserId)
+        .eq('profile_id', targetUserId as any)
         .maybeSingle();
       
       return data;
@@ -69,7 +69,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
   // Update countdown timer
   useEffect(() => {
     const updateTimer = () => {
-      const availableUntil = userSettings?.available_until || currentVibe?.expires_at;
+      const availableUntil = (userSettings as any)?.available_until || (currentVibe as any)?.expires_at;
       if (!availableUntil) {
         setTimeLeft('');
         return;
@@ -98,7 +98,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [userSettings?.available_until, currentVibe?.expires_at]);
+  }, [(userSettings as any)?.available_until, (currentVibe as any)?.expires_at]);
 
   // Initialize status value when profile loads
   useEffect(() => {
@@ -113,8 +113,8 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ custom_status: statusValue.trim() || null })
-        .eq('id', targetUserId);
+        .update({ custom_status: statusValue.trim() || null } as any)
+        .eq('id', targetUserId as any);
 
       if (error) throw error;
 
@@ -167,7 +167,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
     }
   };
 
-  const vibeColor = getVibeColor(currentVibe?.vibe || 'social');
+  const vibeColor = getVibeColor(((currentVibe as any)?.vibe) || 'social');
   const displayName = profile?.display_name || profile?.username || 'Anonymous';
   const customStatus = profile?.custom_status;
   const isLoading = profileLoading || settingsLoading;
@@ -216,7 +216,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
             </Avatar>
             
             {/* Current vibe indicator */}
-            {currentVibe?.vibe && (
+            {((currentVibe as any)?.vibe) && (
               <div className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-2 border-background ${vibeColor.replace('text-', 'bg-')} shadow-lg`}>
                 <div className="h-full w-full rounded-full animate-pulse opacity-50" />
               </div>
@@ -295,10 +295,10 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
             {/* Current Vibe & Availability */}
             <div className="space-y-2">
               <div className="flex flex-wrap gap-2">
-                {currentVibe?.vibe && (
+                {((currentVibe as any)?.vibe) && (
                   <Badge variant="outline" className={`${vibeColor} border-current/20 bg-current/5`}>
                     <div className="h-2 w-2 rounded-full bg-current mr-1.5" />
-                    {currentVibe.vibe}
+                    {(currentVibe as any).vibe}
                   </Badge>
                 )}
                 
@@ -316,7 +316,7 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
                   {isEditingAvailability ? (
                     <div className="flex-1">
                       <SimpleDateTimePicker
-                        date={userSettings?.available_until ? new Date(userSettings.available_until) : undefined}
+                        date={((userSettings as any)?.available_until) ? new Date((userSettings as any).available_until) : undefined}
                         onDateChange={handleAvailabilityUpdate}
                         placeholder="Set availability"
                         className="text-xs h-8"
@@ -328,9 +328,9 @@ export function ProfileHero({ profileId }: ProfileHeroProps) {
                       size="sm"
                       onClick={() => setIsEditingAvailability(true)}
                       className="text-xs h-6 text-muted-foreground hover:text-foreground"
-                    >
-                      {userSettings?.available_until ? 'Update availability' : 'Set availability'}
-                    </Button>
+                      >
+                        {(userSettings as any)?.available_until ? 'Update availability' : 'Set availability'}
+                      </Button>
                   )}
                 </div>
               )}

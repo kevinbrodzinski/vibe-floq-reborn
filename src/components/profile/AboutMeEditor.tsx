@@ -97,8 +97,8 @@ export function AboutMeEditor() {
         .update({
           bio: formData.bio || null,
           interests: formData.interests.length > 0 ? formData.interests : null,
-        })
-        .eq('id', user.id);
+        } as any)
+        .eq('id', user.id as any);
 
       if (error) throw error;
       
@@ -132,8 +132,8 @@ export function AboutMeEditor() {
         .update({
           bio: data.bio || null,
           interests: data.interests.length > 0 ? data.interests : null,
-        })
-        .eq('id', user.id);
+        } as any)
+        .eq('id', user.id as any);
 
       if (error) throw error;
       

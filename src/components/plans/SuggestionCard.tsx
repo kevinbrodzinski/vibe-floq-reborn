@@ -30,7 +30,7 @@ export function SuggestionCard({ suggestion, planId }: SuggestionCardProps) {
           description: suggestion.body,
           created_by: session.user.id,
           stop_order: 999 // Add at end
-        })
+        } as any)
 
       if (error) throw error
 

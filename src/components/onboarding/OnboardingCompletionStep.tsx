@@ -198,8 +198,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
-        }, {
-          onConflict: ONBOARDING_CONFLICT_COLUMNS,
+        } as any, {
+          onConflict: ONBOARDING_CONFLICT_COLUMNS as any,
           ignoreDuplicates: false
         });
 
@@ -236,8 +236,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           favorite_locations: [],
           declined_plan_types: null,
           feedback_sentiment: null,
-        }, {
-          onConflict: 'profile_id',
+        } as any, {
+          onConflict: 'profile_id' as any,
           ignoreDuplicates: false
         });
 
