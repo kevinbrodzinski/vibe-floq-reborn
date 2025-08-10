@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type Vibe } from '@/lib/vibes';
+import { CURRENT_ONBOARDING_VERSION } from '@/constants/onboarding';
 
-export const ONBOARDING_VERSION = 'v2' as const;
 export const FINAL_STEP = 6 as const;
 
 export type ProfileData = {
@@ -59,12 +59,12 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const { data, error: fetchError } = await supabase
-        .from('user_onboarding_progress')
-        .select('*')
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2')
-        .maybeSingle();
+              const { data, error: fetchError } = await supabase
+          .from('user_onboarding_progress')
+          .select('*')
+          .eq('profile_id', user.id)
+          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
+          .maybeSingle();
       
       if (fetchError) throw fetchError;
       
@@ -93,23 +93,35 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
+      // Validate and clean the data before sending  
       const progressData = {
-        profile_id: user.id,
-        onboarding_version: 'v2' as const,
-        current_step: Math.min(state.currentStep, 10),
-        completed_steps: state.completedSteps,
-        selected_vibe: state.selectedVibe,
-        profile_data: state.profileData as ProfileData,
-        avatar_url: state.avatarUrl,
+        profile_id: user.id, // Using profile_id as per the actual database schema
+        onboarding_version: CURRENT_ONBOARDING_VERSION,
+        current_step: Math.min(Math.max(state.currentStep || 0, 0), 10),
+        completed_steps: Array.isArray(state.completedSteps) ? state.completedSteps.filter(n => typeof n === 'number') : [],
+        selected_vibe: state.selectedVibe || null,
+        profile_data: state.profileData ? state.profileData as ProfileData : null,
+        avatar_url: state.avatarUrl || null,
       };
 
-      const { error: upsertError } = await supabase
-        .from('user_onboarding_progress')
-        .upsert(progressData, {
-          onConflict: 'profile_id,onboarding_version'
-        });
+                  console.log('🔍 Attempting to save onboarding progress:', progressData);
       
-      if (upsertError) throw upsertError;
+                            const { error: upsertError } = await supabase
+          .from('user_onboarding_progress')
+          .upsert(progressData);
+      
+      if (upsertError) {
+        console.error('❌ Database error details:', {
+          message: upsertError.message,
+          details: upsertError.details,
+          hint: upsertError.hint,
+          code: upsertError.code
+        });
+        console.error('📊 Data that failed:', progressData);
+        throw upsertError;
+      }
+      
+      console.log('✅ Successfully saved onboarding progress');
       
       return true;
     } catch (err) {
@@ -127,14 +139,14 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const { error: updateError } = await supabase
-        .from('user_onboarding_progress')
-        .update({ 
-          completed_at: new Date().toISOString(),
-          current_step: FINAL_STEP
-        })
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2');
+              const { error: updateError } = await supabase
+          .from('user_onboarding_progress')
+          .update({ 
+            completed_at: new Date().toISOString(),
+            current_step: FINAL_STEP
+          })
+          .eq('profile_id', user.id)
+          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (updateError) throw updateError;
       
@@ -154,11 +166,11 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const { error: deleteError } = await supabase
-        .from('user_onboarding_progress')
-        .delete()
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2');
+              const { error: deleteError } = await supabase
+          .from('user_onboarding_progress')
+          .delete()
+          .eq('profile_id', user.id)
+          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (deleteError) throw deleteError;
       

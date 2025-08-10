@@ -112,6 +112,7 @@ const App = () => {
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
 
+
                         <Route path="/*" element={<Index />} />
                       </Routes>
                     </BrowserRouter>

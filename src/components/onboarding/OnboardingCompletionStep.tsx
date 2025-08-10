@@ -198,9 +198,6 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
-        }, {
-          onConflict: ONBOARDING_CONFLICT_COLUMNS,
-          ignoreDuplicates: false
         });
 
       if (progressError) {

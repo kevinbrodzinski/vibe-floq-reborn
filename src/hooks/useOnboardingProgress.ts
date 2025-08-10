@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { type Vibe } from '@/lib/vibes';
-import { useOnboardingDatabase, ONBOARDING_VERSION } from './useOnboardingDatabase';
+import { useOnboardingDatabase } from './useOnboardingDatabase';
 import { useAuth } from '@/hooks/useAuth';
 import { storage } from '@/lib/storage';
 
