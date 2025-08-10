@@ -81,7 +81,6 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
               }
             }
           ),
-          ),
       `typing-hook-${threadId}`
     );
 
