@@ -59,12 +59,12 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const { data, error: fetchError } = await supabase
-        .from('user_onboarding_progress')
-        .select('*')
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
-        .maybeSingle();
+              const { data, error: fetchError } = await supabase
+          .from('user_onboarding_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
+          .maybeSingle();
       
       if (fetchError) throw fetchError;
       
@@ -93,21 +93,22 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
+      // Validate and clean the data before sending
       const progressData = {
-        profile_id: user.id,
+        user_id: user.id, // Try user_id first in case the migration hasn't been applied
         onboarding_version: CURRENT_ONBOARDING_VERSION,
-        current_step: Math.min(state.currentStep, 10),
-        completed_steps: state.completedSteps,
-        selected_vibe: state.selectedVibe,
-        profile_data: state.profileData as ProfileData,
-        avatar_url: state.avatarUrl,
+        current_step: Math.min(Math.max(state.currentStep || 0, 0), 10),
+        completed_steps: Array.isArray(state.completedSteps) ? state.completedSteps.filter(n => typeof n === 'number') : [],
+        selected_vibe: state.selectedVibe || null,
+        profile_data: state.profileData ? state.profileData as ProfileData : null,
+        avatar_url: state.avatarUrl || null,
       };
 
-      const { error: upsertError } = await supabase
-        .from('user_onboarding_progress')
-        .upsert(progressData, {
-          onConflict: 'profile_id,onboarding_version'
-        });
+            const { error: upsertError } = await supabase
+          .from('user_onboarding_progress')
+          .upsert(progressData, {
+            onConflict: 'user_id,onboarding_version'
+          });
       
       if (upsertError) throw upsertError;
       
@@ -127,14 +128,14 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const { error: updateError } = await supabase
-        .from('user_onboarding_progress')
-        .update({ 
-          completed_at: new Date().toISOString(),
-          current_step: FINAL_STEP
-        })
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
+              const { error: updateError } = await supabase
+          .from('user_onboarding_progress')
+          .update({ 
+            completed_at: new Date().toISOString(),
+            current_step: FINAL_STEP
+          })
+          .eq('user_id', user.id)
+          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (updateError) throw updateError;
       
@@ -154,11 +155,11 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const { error: deleteError } = await supabase
-        .from('user_onboarding_progress')
-        .delete()
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
+              const { error: deleteError } = await supabase
+          .from('user_onboarding_progress')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (deleteError) throw deleteError;
       

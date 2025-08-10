@@ -244,7 +244,8 @@
 <a name='L179'></a><a href='#L179'>179</a>
 <a name='L180'></a><a href='#L180'>180</a>
 <a name='L181'></a><a href='#L181'>181</a>
-<a name='L182'></a><a href='#L182'>182</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -339,6 +340,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -486,12 +488,12 @@ interface OnboardingState {
 <span class="cstat-no" title="statement not covered" >    setError(null);</span>
     
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      const { data, error: fetchError } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('user_onboarding_progress')</span>
-<span class="cstat-no" title="statement not covered" >        .select('*')</span>
-<span class="cstat-no" title="statement not covered" >        .eq('profile_id', user.id)</span>
-<span class="cstat-no" title="statement not covered" >        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)</span>
-<span class="cstat-no" title="statement not covered" >        .maybeSingle();</span>
+<span class="cstat-no" title="statement not covered" >              const { data, error: fetchError } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >          .from('user_onboarding_progress')</span>
+<span class="cstat-no" title="statement not covered" >          .select('*')</span>
+<span class="cstat-no" title="statement not covered" >          .eq('user_id', user.id)</span>
+<span class="cstat-no" title="statement not covered" >          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)</span>
+<span class="cstat-no" title="statement not covered" >          .maybeSingle();</span>
       
 <span class="cstat-no" title="statement not covered" >      if (fetchError) throw fetchError;</span>
       
@@ -520,21 +522,22 @@ interface OnboardingState {
 <span class="cstat-no" title="statement not covered" >    setError(null);</span>
     
 <span class="cstat-no" title="statement not covered" >    try {</span>
+      // Validate and clean the data before sending
 <span class="cstat-no" title="statement not covered" >      const progressData = {</span>
-<span class="cstat-no" title="statement not covered" >        profile_id: user.id,</span>
+<span class="cstat-no" title="statement not covered" >        user_id: user.id, // Try user_id first in case the migration hasn't been applied</span>
 <span class="cstat-no" title="statement not covered" >        onboarding_version: CURRENT_ONBOARDING_VERSION,</span>
-<span class="cstat-no" title="statement not covered" >        current_step: Math.min(state.currentStep, 10),</span>
-<span class="cstat-no" title="statement not covered" >        completed_steps: state.completedSteps,</span>
-<span class="cstat-no" title="statement not covered" >        selected_vibe: state.selectedVibe,</span>
-<span class="cstat-no" title="statement not covered" >        profile_data: state.profileData as ProfileData,</span>
-<span class="cstat-no" title="statement not covered" >        avatar_url: state.avatarUrl,</span>
+<span class="cstat-no" title="statement not covered" >        current_step: Math.min(Math.max(state.currentStep || 0, 0), 10),</span>
+<span class="cstat-no" title="statement not covered" >        completed_steps: Array.isArray(state.completedSteps) ? state.completedSteps.filter(n =&gt; typeof n === 'number') : [],</span>
+<span class="cstat-no" title="statement not covered" >        selected_vibe: state.selectedVibe || null,</span>
+<span class="cstat-no" title="statement not covered" >        profile_data: state.profileData ? state.profileData as ProfileData : null,</span>
+<span class="cstat-no" title="statement not covered" >        avatar_url: state.avatarUrl || null,</span>
 <span class="cstat-no" title="statement not covered" >      };</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      const { error: upsertError } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('user_onboarding_progress')</span>
-<span class="cstat-no" title="statement not covered" >        .upsert(progressData, {</span>
-<span class="cstat-no" title="statement not covered" >          onConflict: 'profile_id,onboarding_version'</span>
-<span class="cstat-no" title="statement not covered" >        });</span>
+<span class="cstat-no" title="statement not covered" >            const { error: upsertError } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >          .from('user_onboarding_progress')</span>
+<span class="cstat-no" title="statement not covered" >          .upsert(progressData, {</span>
+<span class="cstat-no" title="statement not covered" >            onConflict: 'user_id,onboarding_version'</span>
+<span class="cstat-no" title="statement not covered" >          });</span>
       
 <span class="cstat-no" title="statement not covered" >      if (upsertError) throw upsertError;</span>
       
@@ -554,14 +557,14 @@ interface OnboardingState {
 <span class="cstat-no" title="statement not covered" >    setError(null);</span>
     
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      const { error: updateError } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('user_onboarding_progress')</span>
-<span class="cstat-no" title="statement not covered" >        .update({ </span>
-<span class="cstat-no" title="statement not covered" >          completed_at: new Date().toISOString(),</span>
-<span class="cstat-no" title="statement not covered" >          current_step: FINAL_STEP</span>
-<span class="cstat-no" title="statement not covered" >        })</span>
-<span class="cstat-no" title="statement not covered" >        .eq('profile_id', user.id)</span>
-<span class="cstat-no" title="statement not covered" >        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);</span>
+<span class="cstat-no" title="statement not covered" >              const { error: updateError } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >          .from('user_onboarding_progress')</span>
+<span class="cstat-no" title="statement not covered" >          .update({ </span>
+<span class="cstat-no" title="statement not covered" >            completed_at: new Date().toISOString(),</span>
+<span class="cstat-no" title="statement not covered" >            current_step: FINAL_STEP</span>
+<span class="cstat-no" title="statement not covered" >          })</span>
+<span class="cstat-no" title="statement not covered" >          .eq('user_id', user.id)</span>
+<span class="cstat-no" title="statement not covered" >          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);</span>
       
 <span class="cstat-no" title="statement not covered" >      if (updateError) throw updateError;</span>
       
@@ -581,11 +584,11 @@ interface OnboardingState {
 <span class="cstat-no" title="statement not covered" >    setError(null);</span>
     
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      const { error: deleteError } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('user_onboarding_progress')</span>
-<span class="cstat-no" title="statement not covered" >        .delete()</span>
-<span class="cstat-no" title="statement not covered" >        .eq('profile_id', user.id)</span>
-<span class="cstat-no" title="statement not covered" >        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);</span>
+<span class="cstat-no" title="statement not covered" >              const { error: deleteError } = await supabase</span>
+<span class="cstat-no" title="statement not covered" >          .from('user_onboarding_progress')</span>
+<span class="cstat-no" title="statement not covered" >          .delete()</span>
+<span class="cstat-no" title="statement not covered" >          .eq('user_id', user.id)</span>
+<span class="cstat-no" title="statement not covered" >          .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);</span>
       
 <span class="cstat-no" title="statement not covered" >      if (deleteError) throw deleteError;</span>
       
@@ -613,7 +616,7 @@ interface OnboardingState {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-10T01:35:29.842Z
+                at 2025-08-10T01:41:43.894Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
