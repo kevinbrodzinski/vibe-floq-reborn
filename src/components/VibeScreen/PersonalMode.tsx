@@ -89,7 +89,7 @@ export const PersonalMode: React.FC = () => {
     // Debounce the update to prevent rapid re-renders
     const timeoutId = setTimeout(updateHeroData, 300);
     return () => clearTimeout(timeoutId);
-  }, [autoMode, isEnhancedMode, sensorData?.timestamp]); // Only depend on essential values
+  }, [autoMode, isEnhancedMode, Date.now()]); // Use Date.now() instead of sensorData?.timestamp
 
   // Stabilize feedback button visibility to prevent glitching
   useEffect(() => {

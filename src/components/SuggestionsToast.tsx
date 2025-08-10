@@ -34,7 +34,7 @@ export function SuggestionsToast({
   };
 
   useEffect(() => {
-    if (!suggestions.length) return;
+    if (!Array.isArray(suggestions) || suggestions.length === 0) return;
 
     const now = Date.now();
     const cooldownMs = cooldownMinutes * 60 * 1000;
@@ -43,10 +43,10 @@ export function SuggestionsToast({
     if (now - lastShownTime < cooldownMs) return;
 
     // Find high-confidence suggestion that hasn't been dismissed
-    const highConfidenceSuggestion = suggestions.find(
+    const highConfidenceSuggestion = Array.isArray(suggestions) ? suggestions.find(
       s => s.confidence_score >= minimumConfidence && 
            !dismissedFloqs.includes(s.floq_id)
-    );
+    ) : undefined;
 
     if (!highConfidenceSuggestion) return;
 

@@ -279,7 +279,7 @@ export const UserProfileByUsername = () => {
     );
   }
 
-  if (error || !profiles || profiles.length === 0) {
+  if (error || !profiles || !Array.isArray(profiles) || profiles.length === 0) {
     return (
       <motion.div 
         initial={{ opacity: 0 }}

@@ -101,7 +101,7 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
           inviter_id: user.id,
           invitee_email: emailInput.trim(),
           invitation_type: 'email'
-        });
+        } as any);
 
       if (error) throw error;
 

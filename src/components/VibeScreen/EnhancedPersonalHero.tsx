@@ -85,7 +85,7 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
       clearTimeout(timeoutId);
       clearInterval(interval);
     };
-  }, [autoMode, sensorData?.timestamp]); // Simplified dependencies
+  }, [autoMode, Date.now()]); // Use Date.now() instead of sensorData?.timestamp
   
   if (!heroData) {
     return (

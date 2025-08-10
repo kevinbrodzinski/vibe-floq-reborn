@@ -151,7 +151,7 @@ export function RecommendationsStrip({
     console.log('Dismissed suggestion:', floqId);
   };
 
-  if (!geo || isLoading || suggestions.length === 0) {
+  if (!geo || isLoading || !Array.isArray(suggestions) || suggestions.length === 0) {
     return null;
   }
 
@@ -166,7 +166,7 @@ export function RecommendationsStrip({
       
       <ScrollArea className="w-full">
         <div className="flex gap-4 pb-2">
-          {suggestions.map((floq) => (
+          {Array.isArray(suggestions) && suggestions.map((floq) => (
             <SuggestionCard
               key={floq.floq_id}
               floq={floq}
