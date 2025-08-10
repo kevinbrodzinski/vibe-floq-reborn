@@ -31,10 +31,10 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
       const { data: user, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', usernameInput.trim())
-        .single();
+        .eq('username' as any, usernameInput.trim() as any)
+        .maybeSingle();
 
-      if (userError || !user) {
+      if (userError || !user?.id) {
         toast({
           title: "User not found",
           description: `No user found with username "${usernameInput}"`,
@@ -43,14 +43,16 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
         return;
       }
 
+      const profileId = (user as any).id as string;
+
       // Add to plan participants
       const { error: inviteError } = await supabase
         .from('plan_participants')
         .insert({
           plan_id: planId,
-          profile_id: user.id,
-          invite_type: 'username'
-        });
+          profile_id: profileId,
+          role: 'member'
+        } as any);
 
       if (inviteError) {
         if (inviteError.code === '23505') { // Unique constraint violation

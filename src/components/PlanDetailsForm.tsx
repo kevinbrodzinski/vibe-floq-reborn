@@ -153,12 +153,12 @@ export const PlanDetailsForm = ({ onSubmit, onCancel, initialData }: PlanDetails
         <div className="grid grid-cols-3 gap-2">
           {vibeOptions.map((option) => (
             <button
-              key={option.id}
+              key={option.vibe}
               type="button"
-              onClick={() => setVibe(option.id)}
+              onClick={() => setVibe(option.vibe)}
               className={cn(
                 "p-3 rounded-xl border text-sm font-medium transition-all",
-                vibe === option.id
+                vibe === option.vibe
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border hover:border-border/60 hover:bg-card/50"
               )}

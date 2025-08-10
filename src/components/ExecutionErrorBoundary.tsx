@@ -61,7 +61,7 @@ export class ExecutionErrorBoundary extends Component<Props, State> {
           timestamp: new Date().toISOString(),
           userAgent: navigator.userAgent
         }
-      });
+      } as any);
     } catch (logError) {
       console.error('Failed to log error to Supabase:', logError);
     }

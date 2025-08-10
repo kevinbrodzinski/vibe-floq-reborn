@@ -270,7 +270,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           </section>
 
           {/* AI Recommendations */}
-          {suggestions.length > 0 && <section>
+          {Array.isArray(suggestions) && suggestions.length > 0 && <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-foreground">
                   Recommended for You

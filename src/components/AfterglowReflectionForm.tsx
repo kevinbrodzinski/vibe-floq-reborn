@@ -118,7 +118,7 @@ export const AfterglowReflectionForm = ({
 
       const { error } = await supabase
         .from('plan_afterglow')
-        .insert(afterglowData);
+        .insert(afterglowData as any);
 
       if (error) throw error;
 
