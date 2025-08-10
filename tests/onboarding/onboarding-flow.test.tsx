@@ -49,7 +49,7 @@ vi.mock('@/hooks/useDeepLinkRedirect', () => ({
 
 vi.mock('@/hooks/useSafeStorage', () => ({
   useSafeStorage: () => ({
-    getItem: vi.fn().mockResolvedValue(null),
+    getItem: vi.fn().mockResolvedValue('true'), // Mock splash as already seen
     setItem: vi.fn().mockResolvedValue(undefined)
   })
 }));
@@ -168,9 +168,9 @@ describe('AppAccessGuard - Onboarding Flow', () => {
 
   it('shows loading state when auth or onboarding status is loading', async () => {
     mockUseAuth.mockReturnValue({
-      user: null,
-      loading: true,
-      session: null,
+      user: { id: 'test-user', email: 'test@example.com' } as any,
+      loading: false,
+      session: {} as any,
       signOut: vi.fn(),
       refreshSession: vi.fn(),
       networkError: false
@@ -178,7 +178,7 @@ describe('AppAccessGuard - Onboarding Flow', () => {
 
     mockUseOnboardingStatus.mockReturnValue({
       needsOnboarding: false,
-      isLoading: false,
+      isLoading: true, // This triggers the loading text
       currentVersion: 'v2',
       markCompleted: vi.fn()
     });

@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/477</span>
+                <span class='fraction'>0/478</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/477</span>
+                <span class='fraction'>0/478</span>
             </div>
         
             
@@ -842,11 +842,21 @@
 <a name='L777'></a><a href='#L777'>777</a>
 <a name='L778'></a><a href='#L778'>778</a>
 <a name='L779'></a><a href='#L779'>779</a>
-<a name='L780'></a><a href='#L780'>780</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L780'></a><a href='#L780'>780</a>
+<a name='L781'></a><a href='#L781'>781</a>
+<a name='L782'></a><a href='#L782'>782</a>
+<a name='L783'></a><a href='#L783'>783</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -894,6 +904,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1091,8 +1103,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1105,7 +1115,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1369,9 +1378,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1621,8 +1627,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Vibe } from '@/lib/vibes';
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import type { Vibe } from '@/lib/vibes';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+import { VIBES } from '@/lib/vibes';
 import type { AnalysisContext, SensorData } from './VibeAnalysisEngine';
+&nbsp;
+// Helper function to create a zero-filled vibe count object
+<span class="cstat-no" title="statement not covered" >const createEmptyVibeCounts = (): Record&lt;Vibe, number&gt; =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  return VIBES.reduce((acc, vibe) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    acc[vibe] = 0;</span>
+<span class="cstat-no" title="statement not covered" >    return acc;</span>
+<span class="cstat-no" title="statement not covered" >  }, {} as Record&lt;Vibe, number&gt;);</span>
+<span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;
 export interface UserCorrection {
   originalSuggestion: Vibe;
@@ -1880,10 +1895,7 @@ export interface PersonalFactors {
 <span class="cstat-no" title="statement not covered" >      flowing: [0.6, 0.5, 0.5, 0.7],</span>
 <span class="cstat-no" title="statement not covered" >      open: [0.5, 0.7, 0.6, 0.8],</span>
 <span class="cstat-no" title="statement not covered" >      curious: [0.4, 0.4, 0.8, 0.6],</span>
-<span class="cstat-no" title="statement not covered" >      weird: [0.8, 0.3, 0.7, 0.4],</span>
-<span class="cstat-no" title="statement not covered" >      energetic: [0.9, 0.6, 0.4, 0.8],</span>
-<span class="cstat-no" title="statement not covered" >      excited: [0.8, 0.7, 0.3, 0.9],</span>
-<span class="cstat-no" title="statement not covered" >      focused: [0.3, 0.2, 0.9, 0.6]</span>
+<span class="cstat-no" title="statement not covered" >      weird: [0.8, 0.3, 0.7, 0.4]</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
     
 <span class="cstat-no" title="statement not covered" >    const originalEmb = vibeEmbeddings[original] || [0, 0, 0, 0];</span>
@@ -2149,10 +2161,7 @@ export interface PersonalFactors {
    * Extract preferred vibe from a pattern
    */
 <span class="cstat-no" title="statement not covered" >  private extractPreferredVibe(context: string, corrections: UserCorrection[]): Vibe {</span>
-<span class="cstat-no" title="statement not covered" >    const vibeCounts: Record&lt;any, number&gt; = {</span>
-<span class="cstat-no" title="statement not covered" >      social: 0, chill: 0, hype: 0, curious: 0, solo: 0, romantic: 0,</span>
-<span class="cstat-no" title="statement not covered" >      weird: 0, down: 0, flowing: 0, open: 0, energetic: 0, excited: 0, focused: 0</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >    const vibeCounts: Record&lt;Vibe, number&gt; = createEmptyVibeCounts();</span>
 <span class="cstat-no" title="statement not covered" >    const totalConfidence = corrections.length;</span>
     
 <span class="cstat-no" title="statement not covered" >    corrections.forEach(correction =&gt; {</span>
@@ -2407,7 +2416,7 @@ export interface PersonalFactors {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-10T01:35:29.842Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

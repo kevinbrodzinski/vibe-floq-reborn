@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/82</span>
+                <span class='fraction'>0/83</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/82</span>
+                <span class='fraction'>0/83</span>
             </div>
         
             
@@ -165,13 +165,17 @@
 <a name='L100'></a><a href='#L100'>100</a>
 <a name='L101'></a><a href='#L101'>101</a>
 <a name='L102'></a><a href='#L102'>102</a>
-<a name='L103'></a><a href='#L103'>103</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -191,16 +195,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -218,7 +212,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -272,11 +276,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
+import { useAtomicFriendships } from '@/hooks/useAtomicFriendships';
 import { useAuth } from '@/hooks/useAuth';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function FriendsTab() {</span>
 <span class="cstat-no" title="statement not covered" >  const { user } = useAuth();</span>
-<span class="cstat-no" title="statement not covered" >  const { rows, pendingIn, accept, updating, friendIds } = useUnifiedFriends();</span>
+<span class="cstat-no" title="statement not covered" >  const { rows, pendingIn, friendIds } = useUnifiedFriends();</span>
+<span class="cstat-no" title="statement not covered" >  const { acceptFriendRequest, rejectFriendRequest, isAccepting, isRejecting } = useAtomicFriendships();</span>
 &nbsp;
   // Filter for accepted friends
 <span class="cstat-no" title="statement not covered" >  const friends = rows.filter(r =&gt; r.friend_state === 'accepted');</span>
@@ -309,18 +315,18 @@ import { useAuth } from '@/hooks/useAuth';
 <span class="cstat-no" title="statement not covered" >                &lt;div className="flex gap-2"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;Button</span>
 <span class="cstat-no" title="statement not covered" >                    size="sm"</span>
-<span class="cstat-no" title="statement not covered" >                    onClick={() =&gt; accept(request.id)}</span>
-<span class="cstat-no" title="statement not covered" >                    disabled={updating}</span>
-<span class="cstat-no" title="statement not covered" >                  &gt;</span>
-                    Accept
+<span class="cstat-no" title="statement not covered" >                    onClick={() =&gt; acceptFriendRequest(request.id)}</span>
+<span class="cstat-no" title="statement not covered" >                    disabled={isAccepting || isRejecting}</span>
+                  &gt;
+<span class="cstat-no" title="statement not covered" >                    {isAccepting ? 'Accepting...' : 'Accept'}</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;/Button&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;Button</span>
 <span class="cstat-no" title="statement not covered" >                    size="sm"</span>
 <span class="cstat-no" title="statement not covered" >                    variant="outline"</span>
-<span class="cstat-no" title="statement not covered" >                    onClick={() =&gt; accept(request.id)}</span>
-<span class="cstat-no" title="statement not covered" >                    disabled={updating}</span>
-<span class="cstat-no" title="statement not covered" >                  &gt;</span>
-                    Decline
+<span class="cstat-no" title="statement not covered" >                    onClick={() =&gt; rejectFriendRequest({ profileId: request.id, isIncoming: true })}</span>
+<span class="cstat-no" title="statement not covered" >                    disabled={isAccepting || isRejecting}</span>
+                  &gt;
+<span class="cstat-no" title="statement not covered" >                    {isRejecting ? 'Declining...' : 'Decline'}</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;/Button&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
@@ -376,7 +382,7 @@ import { useAuth } from '@/hooks/useAuth';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-10T01:35:29.842Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

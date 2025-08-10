@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for workspace/src/hooks/useRealtimeFriends.ts</title>
+    <title>Code coverage report for workspace/src/hooks/useVibeContext.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../prettify.css" />
     <link rel="stylesheet" href="../../../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">workspace/src/hooks</a> useRealtimeFriends.ts</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">workspace/src/hooks</a> useVibeContext.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/43</span>
+                <span class='fraction'>0/33</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/43</span>
+                <span class='fraction'>0/33</span>
             </div>
         
             
@@ -118,41 +118,20 @@
 <a name='L53'></a><a href='#L53'>53</a>
 <a name='L54'></a><a href='#L54'>54</a>
 <a name='L55'></a><a href='#L55'>55</a>
-<a name='L56'></a><a href='#L56'>56</a>
-<a name='L57'></a><a href='#L57'>57</a>
-<a name='L58'></a><a href='#L58'>58</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L56'></a><a href='#L56'>56</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -171,77 +150,92 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useEffect } from 'react';</span></span></span>
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { useMemo } from 'react';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function useRealtimeFriends() {</span>
-<span class="cstat-no" title="statement not covered" >  const { user } = useAuth();</span>
-<span class="cstat-no" title="statement not covered" >  const queryClient = useQueryClient();</span>
-<span class="cstat-no" title="statement not covered" >  const { toast } = useToast();</span>
+export interface VibeContextData {
+  timestamp: Date;
+  hourOfDay: number;
+  timeOfDay: 'early-morning' | 'morning' | 'afternoon' | 'evening' | 'night' | 'late-night';
+  isWeekend: boolean;
+  dayOfWeek: number;
+  season: 'spring' | 'summer' | 'fall' | 'winter';
+  isHoliday?: boolean;
+}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!user?.id) return;</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    const channel = supabase</span>
-<span class="cstat-no" title="statement not covered" >      .channel('dashboard:friends-realtime')</span>
-<span class="cstat-no" title="statement not covered" >      .on(</span>
-<span class="cstat-no" title="statement not covered" >        'postgres_changes',</span>
-<span class="cstat-no" title="statement not covered" >        {</span>
-<span class="cstat-no" title="statement not covered" >          event: '*',</span>
-<span class="cstat-no" title="statement not covered" >          schema: 'public',</span>
-<span class="cstat-no" title="statement not covered" >          table: 'friends',</span>
-<span class="cstat-no" title="statement not covered" >          filter: `or=(user_low.eq.${user.id},user_high.eq.${user.id})`,</span>
-<span class="cstat-no" title="statement not covered" >        },</span>
-<span class="cstat-no" title="statement not covered" >        (payload) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          console.log('Friend change received:', payload);</span>
-          
-<span class="cstat-no" title="statement not covered" >          const row = (payload.new ?? payload.old) as any;</span>
-          
-          // Invalidate relevant queries
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['friends-list'] });</span>
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['friend-requests'] });</span>
-<span class="cstat-no" title="statement not covered" >          queryClient.invalidateQueries({ queryKey: ['friend-activity'] });</span>
-&nbsp;
-          // Show toast for new friend requests
-<span class="cstat-no" title="statement not covered" >          if (payload.eventType === 'INSERT' &amp;&amp; row?.status === 'pending') {</span>
-<span class="cstat-no" title="statement not covered" >            toast({</span>
-<span class="cstat-no" title="statement not covered" >              title: "📬 New friend request",</span>
-<span class="cstat-no" title="statement not covered" >              description: "You have a new friend request!",</span>
-<span class="cstat-no" title="statement not covered" >            });</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-&nbsp;
-          // Show toast for accepted requests
-<span class="cstat-no" title="statement not covered" >          if (payload.eventType === 'UPDATE' &amp;&amp; row?.status === 'accepted') {</span>
-<span class="cstat-no" title="statement not covered" >            toast({</span>
-<span class="cstat-no" title="statement not covered" >              title: "🎉 Friend request accepted",</span>
-<span class="cstat-no" title="statement not covered" >              description: "You are now friends!",</span>
-<span class="cstat-no" title="statement not covered" >            });</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      )</span>
-<span class="cstat-no" title="statement not covered" >      .subscribe();</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      supabase.removeChannel(channel);</span>
+/**
+ * Provides real contextual data for vibe analysis
+ * Replaces mock context data with actual time-based calculations
+ */
+<span class="cstat-no" title="statement not covered" >export const useVibeContext = (): VibeContextData =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  return useMemo(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const now = new Date();</span>
+<span class="cstat-no" title="statement not covered" >    const hour = now.getHours();</span>
+<span class="cstat-no" title="statement not covered" >    const dayOfWeek = now.getDay();</span>
+<span class="cstat-no" title="statement not covered" >    const month = now.getMonth();</span>
+    
+    // Determine time of day based on hour
+<span class="cstat-no" title="statement not covered" >    const getTimeOfDay = (hour: number): VibeContextData['timeOfDay'] =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      if (hour &gt;= 0 &amp;&amp; hour &lt; 6) return 'late-night';</span>
+<span class="cstat-no" title="statement not covered" >      if (hour &gt;= 6 &amp;&amp; hour &lt; 8) return 'early-morning';</span>
+<span class="cstat-no" title="statement not covered" >      if (hour &gt;= 8 &amp;&amp; hour &lt; 12) return 'morning';</span>
+<span class="cstat-no" title="statement not covered" >      if (hour &gt;= 12 &amp;&amp; hour &lt; 17) return 'afternoon';</span>
+<span class="cstat-no" title="statement not covered" >      if (hour &gt;= 17 &amp;&amp; hour &lt; 21) return 'evening';</span>
+<span class="cstat-no" title="statement not covered" >      return 'night';</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [user?.id, queryClient, toast]);</span>
-<span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
+    
+    // Determine season based on month (Northern Hemisphere)
+<span class="cstat-no" title="statement not covered" >    const getSeason = (month: number): VibeContextData['season'] =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      if (month &gt;= 2 &amp;&amp; month &lt;= 4) return 'spring';</span>
+<span class="cstat-no" title="statement not covered" >      if (month &gt;= 5 &amp;&amp; month &lt;= 7) return 'summer';</span>
+<span class="cstat-no" title="statement not covered" >      if (month &gt;= 8 &amp;&amp; month &lt;= 10) return 'fall';</span>
+<span class="cstat-no" title="statement not covered" >      return 'winter';</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+    
+    // Check if it's weekend (Saturday = 6, Sunday = 0)
+<span class="cstat-no" title="statement not covered" >    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;</span>
+    
+<span class="cstat-no" title="statement not covered" >    return {</span>
+<span class="cstat-no" title="statement not covered" >      timestamp: now,</span>
+<span class="cstat-no" title="statement not covered" >      hourOfDay: hour,</span>
+<span class="cstat-no" title="statement not covered" >      timeOfDay: getTimeOfDay(hour),</span>
+<span class="cstat-no" title="statement not covered" >      isWeekend,</span>
+<span class="cstat-no" title="statement not covered" >      dayOfWeek,</span>
+<span class="cstat-no" title="statement not covered" >      season: getSeason(month),</span>
+      // Could add holiday detection here with a holiday API or static list
+<span class="cstat-no" title="statement not covered" >      isHoliday: false</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >  }, []); // Recalculate only when component mounts or hour changes</span>
+<span class="cstat-no" title="statement not covered" >};</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-10T01:35:29.842Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/155</span>
+                <span class='fraction'>0/147</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/155</span>
+                <span class='fraction'>0/147</span>
             </div>
         
             
@@ -269,10 +269,7 @@
 <a name='L204'></a><a href='#L204'>204</a>
 <a name='L205'></a><a href='#L205'>205</a>
 <a name='L206'></a><a href='#L206'>206</a>
-<a name='L207'></a><a href='#L207'>207</a>
-<a name='L208'></a><a href='#L208'>208</a>
-<a name='L209'></a><a href='#L209'>209</a>
-<a name='L210'></a><a href='#L210'>210</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L207'></a><a href='#L207'>207</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -293,6 +290,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -306,6 +305,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -315,26 +316,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -402,6 +383,19 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -491,12 +485,14 @@ import { VenueRecommendationsModal } from '@/components/social/VenueRecommendati
 import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 import { NearbyFloqsModal } from '@/components/social/NearbyFloqsModal';
 import { NearbyPeopleModal } from '@/components/social/NearbyPeopleModal';
+import { LocationFallback } from '@/components/LocationFallback';
 import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
 import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
 import { useVibe } from '@/lib/store/useVibe';
 import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
 import { useVibeDetection } from '@/store/useVibeDetection';
 import type { EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
+import { useRealProximityData } from '@/hooks/useRealProximityData';
 &nbsp;
 /**
  * SocialMode - Real social features with proximity intelligence
@@ -515,7 +511,9 @@ import type { EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemInt
 <span class="cstat-no" title="statement not covered" >  const enhancedLocation = useEnhancedLocationSharing();</span>
 <span class="cstat-no" title="statement not covered" >  const [vibeSystem] = useState(() =&gt; new LocationEnhancedVibeSystem());</span>
 <span class="cstat-no" title="statement not covered" >  const [socialData, setSocialData] = useState&lt;EnhancedSocialContextData | null&gt;(null);</span>
-<span class="cstat-no" title="statement not covered" >  const [proximityInsights, setProximityInsights] = useState&lt;any&gt;(null);</span>
+  
+  // Get real proximity data instead of mock data
+<span class="cstat-no" title="statement not covered" >  const { proximityFriends, proximityInsights, isLoading: proximityLoading } = useRealProximityData();</span>
 &nbsp;
   // Update social context data when location or vibe changes
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
@@ -523,40 +521,20 @@ import type { EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemInt
 <span class="cstat-no" title="statement not covered" >      if (!enhancedLocation.location || !currentVibe) return;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      try {</span>
-        // Get enhanced social context data
-<span class="cstat-no" title="statement not covered" >        const mockFriends = enhancedLocation.proximityEvents?.map((event: any) =&gt; ({</span>
-<span class="cstat-no" title="statement not covered" >          id: event.id || 'test-friend',</span>
-<span class="cstat-no" title="statement not covered" >          distance: 150,</span>
-<span class="cstat-no" title="statement not covered" >          confidence: 0.8,</span>
-<span class="cstat-no" title="statement not covered" >          vibe: 'unknown'</span>
-<span class="cstat-no" title="statement not covered" >        })) || [];</span>
-&nbsp;
+        // Get enhanced social context data using real proximity friends
 <span class="cstat-no" title="statement not covered" >        const data = await vibeSystem.getLocationEnhancedSocialContextData(</span>
 <span class="cstat-no" title="statement not covered" >          enhancedLocation.location,</span>
 <span class="cstat-no" title="statement not covered" >          currentVibe as any,</span>
-<span class="cstat-no" title="statement not covered" >          mockFriends</span>
+<span class="cstat-no" title="statement not covered" >          proximityFriends</span>
 <span class="cstat-no" title="statement not covered" >        );</span>
 <span class="cstat-no" title="statement not covered" >        setSocialData(data);</span>
-&nbsp;
-        // Get proximity insights if we have recent events
-<span class="cstat-no" title="statement not covered" >        if (enhancedLocation.proximityEvents &amp;&amp; enhancedLocation.proximityEvents.length &gt; 0) {</span>
-<span class="cstat-no" title="statement not covered" >          const insights = {</span>
-<span class="cstat-no" title="statement not covered" >            nearbyFriendsCount: mockFriends.length,</span>
-<span class="cstat-no" title="statement not covered" >            averageDistance: mockFriends.reduce((sum, f) =&gt; sum + f.distance, 0) / mockFriends.length,</span>
-<span class="cstat-no" title="statement not covered" >            highConfidenceConnections: mockFriends.filter(f =&gt; f.confidence &gt; 0.8).length,</span>
-<span class="cstat-no" title="statement not covered" >            recentActivity: enhancedLocation.proximityEvents.filter(</span>
-<span class="cstat-no" title="statement not covered" >              (event: any) =&gt; new Date().getTime() - new Date(event.timestamp || Date.now()).getTime() &lt; 15 * 60 * 1000</span>
-<span class="cstat-no" title="statement not covered" >            ).length</span>
-<span class="cstat-no" title="statement not covered" >          };</span>
-<span class="cstat-no" title="statement not covered" >          setProximityInsights(insights);</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Failed to update social data:', error);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    updateSocialData();</span>
-<span class="cstat-no" title="statement not covered" >  }, [vibeSystem, enhancedLocation, currentVibe]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [vibeSystem, enhancedLocation, currentVibe, proximityFriends]);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const handleMapPress = () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    setShowDensityMap(true);</span>
@@ -611,6 +589,19 @@ import type { EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemInt
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;div className="overflow-y-auto pb-8"&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;VibeContextHeader /&gt;</span>
+      
+      {/* Show location fallback if there are location errors */}
+<span class="cstat-no" title="statement not covered" >      {enhancedLocation.error &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >        &lt;LocationFallback </span>
+<span class="cstat-no" title="statement not covered" >          error={enhancedLocation.error}</span>
+<span class="cstat-no" title="statement not covered" >          onRetry={() =&gt; {</span>
+            // Trigger location refresh if available
+<span class="cstat-no" title="statement not covered" >            if (enhancedLocation.requestLocation) {</span>
+<span class="cstat-no" title="statement not covered" >              enhancedLocation.requestLocation();</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >          }}</span>
+<span class="cstat-no" title="statement not covered" >        /&gt;</span>
+      )}
       
       {/* Enhanced Friend Carousel with Proximity Data */}
 <span class="cstat-no" title="statement not covered" >      &lt;InlineFriendCarousel </span>
@@ -697,7 +688,7 @@ import type { EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemInt
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-10T01:35:29.842Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

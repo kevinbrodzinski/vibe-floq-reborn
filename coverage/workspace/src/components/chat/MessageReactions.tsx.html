@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for workspace/src/hooks/messaging/useMarkThreadRead.ts</title>
+    <title>Code coverage report for workspace/src/components/chat/MessageReactions.tsx</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../../prettify.css" />
     <link rel="stylesheet" href="../../../../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">workspace/src/hooks/messaging</a> useMarkThreadRead.ts</h1>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">workspace/src/components/chat</a> MessageReactions.tsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
@@ -99,24 +99,21 @@
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -130,55 +127,61 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { useMutation } from "@tanstack/react-query";</span></span></span>
-import { supabase } from "@/integrations/supabase/client";
-import { supaFn } from "@/lib/supaFn";
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React from 'react';</span></span></span>
+import { cn } from '@/lib/utils';
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function useMarkThreadRead() {</span>
-<span class="cstat-no" title="statement not covered" >  return useMutation({</span>
-<span class="cstat-no" title="statement not covered" >    mutationFn: async (params: { </span>
-      surface: "dm" | "floq" | "plan"; 
-      threadId: string;
-<span class="cstat-no" title="statement not covered" >    }) =&gt; {</span>
-      // Get current user
-<span class="cstat-no" title="statement not covered" >      const { data: { user }, error: authError } = await supabase.auth.getUser();</span>
-<span class="cstat-no" title="statement not covered" >      if (authError || !user) throw new Error("Authentication required");</span>
+interface Reaction {
+  emoji: string;
+  count: number;
+}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      const { data: { session } } = await supabase.auth.getSession();</span>
-<span class="cstat-no" title="statement not covered" >      if (!session?.access_token) throw new Error("No auth session");</span>
+interface MessageReactionsProps {
+  reactions: Reaction[];
+  onReact?: (emoji: string) =&gt; void;
+  className?: string;
+}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      const res = await supaFn(</span>
-<span class="cstat-no" title="statement not covered" >        'mark-thread-read',</span>
-<span class="cstat-no" title="statement not covered" >        session.access_token,</span>
-<span class="cstat-no" title="statement not covered" >        {</span>
-<span class="cstat-no" title="statement not covered" >          p_surface: params.surface,</span>
-<span class="cstat-no" title="statement not covered" >          p_thread_id: params.threadId,</span>
-<span class="cstat-no" title="statement not covered" >          p_profile_id: user.id,</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      );</span>
+<span class="cstat-no" title="statement not covered" >export const MessageReactions: React.FC&lt;MessageReactionsProps&gt; = ({</span>
+<span class="cstat-no" title="statement not covered" >  reactions,</span>
+<span class="cstat-no" title="statement not covered" >  onReact,</span>
+<span class="cstat-no" title="statement not covered" >  className</span>
+<span class="cstat-no" title="statement not covered" >}) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  if (!reactions || reactions.length === 0) {</span>
+<span class="cstat-no" title="statement not covered" >    return null;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (!res.ok) {</span>
-<span class="cstat-no" title="statement not covered" >        const errorText = await res.text();</span>
-<span class="cstat-no" title="statement not covered" >        throw new Error(`Failed to mark thread read: ${res.status} ${errorText}`);</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-      
-<span class="cstat-no" title="statement not covered" >      const data = await res.json();</span>
-<span class="cstat-no" title="statement not covered" >      return data;</span>
-<span class="cstat-no" title="statement not covered" >    },</span>
-<span class="cstat-no" title="statement not covered" >  });</span>
-<span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >  return (</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className={cn("flex flex-wrap gap-1 mt-1", className)}&gt;</span>
+<span class="cstat-no" title="statement not covered" >      {reactions.map((reaction) =&gt; (</span>
+<span class="cstat-no" title="statement not covered" >        &lt;button</span>
+<span class="cstat-no" title="statement not covered" >          key={reaction.emoji}</span>
+<span class="cstat-no" title="statement not covered" >          onClick={() =&gt; onReact?.(reaction.emoji)}</span>
+<span class="cstat-no" title="statement not covered" >          className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-muted/50 hover:bg-muted text-xs transition-colors"</span>
+        &gt;
+<span class="cstat-no" title="statement not covered" >          &lt;span&gt;{reaction.emoji}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;span className="text-muted-foreground"&gt;{reaction.count}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >      ))}</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
+  );
+<span class="cstat-no" title="statement not covered" >};</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-10T01:35:29.842Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

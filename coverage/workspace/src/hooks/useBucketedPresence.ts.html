@@ -387,7 +387,8 @@
 <a name='L322'></a><a href='#L322'>322</a>
 <a name='L323'></a><a href='#L323'>323</a>
 <a name='L324'></a><a href='#L324'>324</a>
-<a name='L325'></a><a href='#L325'>325</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -452,6 +453,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -465,12 +467,14 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -609,8 +613,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -774,8 +776,9 @@ interface PresenceUser {
 <span class="cstat-no" title="statement not covered" >  const channelRef = useRef&lt;any&gt;(null); // Shared ref for presence tracking</span>
 <span class="cstat-no" title="statement not covered" >  const env = getEnvironmentConfig();</span>
   
-  // Show mock data only in development
-<span class="cstat-no" title="statement not covered" >  const showMockData = process.env.NODE_ENV === 'development';</span>
+  // Show mock data only when explicitly enabled (allows testing real data in dev)
+<span class="cstat-no" title="statement not covered" >  const showMockData = process.env.NODE_ENV === 'development' &amp;&amp; </span>
+<span class="cstat-no" title="statement not covered" >                      process.env.VITE_USE_MOCK_PRESENCE === 'true';</span>
   
 <span class="cstat-no" title="statement not covered" >  if (env.debugPresence) {</span>
 <span class="cstat-no" title="statement not covered" >    console.log('🔴 useBucketedPresence - WebSocket connections disabled in production');</span>
@@ -788,14 +791,16 @@ interface PresenceUser {
 <span class="cstat-no" title="statement not covered" >      return;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 &nbsp;
-    // In development, show enhanced mock data with real friend IDs
+    // Only use mock data if explicitly enabled
 <span class="cstat-no" title="statement not covered" >    if (showMockData) {</span>
 <span class="cstat-no" title="statement not covered" >      const mockPeople = generateMockPresenceData(lat, lng, friendIds);</span>
-<span class="cstat-no" title="statement not covered" >      console.log('[BucketedPresence] Generating enhanced mock presence data:', mockPeople);</span>
+<span class="cstat-no" title="statement not covered" >      console.log('[BucketedPresence] Using mock presence data (VITE_USE_MOCK_PRESENCE=true):', mockPeople);</span>
 <span class="cstat-no" title="statement not covered" >      setPeople(mockPeople);</span>
 <span class="cstat-no" title="statement not covered" >      setLastHeartbeat(Date.now());</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    console.log('[BucketedPresence] Attempting to fetch real presence data...');</span>
 &nbsp;
     // Production mode: Try to connect to real presence data
 <span class="cstat-no" title="statement not covered" >    const setupPresence = async () =&gt; {</span>
@@ -932,12 +937,10 @@ interface PresenceUser {
 <span class="cstat-no" title="statement not covered" >            console.warn('[BucketedPresence] Failed to fetch from vibes_now:', error);</span>
 <span class="cstat-no" title="statement not covered" >          }</span>
 &nbsp;
-          // Final fallback to enhanced mock data
-<span class="cstat-no" title="statement not covered" >          if (process.env.NODE_ENV === 'development') {</span>
-<span class="cstat-no" title="statement not covered" >            console.log('[BucketedPresence] No real presence data found, using enhanced mock data');</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >          const mockPeople = generateMockPresenceData(lat, lng, friendIds);</span>
-<span class="cstat-no" title="statement not covered" >          setPeople(mockPeople);</span>
+          // Final fallback to empty data (no more automatic mock data)
+<span class="cstat-no" title="statement not covered" >          console.log('[BucketedPresence] No real presence data found, showing empty state');</span>
+<span class="cstat-no" title="statement not covered" >          console.log('[BucketedPresence] Tip: Set VITE_USE_MOCK_PRESENCE=true to enable mock data');</span>
+<span class="cstat-no" title="statement not covered" >          setPeople([]);</span>
 <span class="cstat-no" title="statement not covered" >          setLastHeartbeat(Date.now());</span>
 <span class="cstat-no" title="statement not covered" >        }, 2000);</span>
 &nbsp;
@@ -947,9 +950,9 @@ interface PresenceUser {
 <span class="cstat-no" title="statement not covered" >        };</span>
 <span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.warn('[BucketedPresence] Failed to setup presence system:', error);</span>
-        // Fallback to mock data
-<span class="cstat-no" title="statement not covered" >        const mockPeople = generateMockPresenceData(lat, lng, friendIds);</span>
-<span class="cstat-no" title="statement not covered" >        setPeople(mockPeople);</span>
+        // Fallback to empty data (no automatic mock data)
+<span class="cstat-no" title="statement not covered" >        console.log('[BucketedPresence] Tip: Set VITE_USE_MOCK_PRESENCE=true to enable mock data');</span>
+<span class="cstat-no" title="statement not covered" >        setPeople([]);</span>
 <span class="cstat-no" title="statement not covered" >        setLastHeartbeat(Date.now());</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
@@ -1042,7 +1045,7 @@ interface PresenceUser {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-07T08:47:56.428Z
+                at 2025-08-10T01:35:29.842Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
