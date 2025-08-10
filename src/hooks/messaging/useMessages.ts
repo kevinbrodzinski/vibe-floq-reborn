@@ -13,6 +13,7 @@ type ExpandedMessage = {
   profile_id: string;
   content: string | null;
   created_at: string;
+  metadata?: any;
   reply_to: string | null;
   reply_to_msg: { 
     id: string | null; 
@@ -87,7 +88,7 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
         const { data, error } = await supabase
           .from("v_dm_messages_expanded") // ✅ Use the new view with replies and reactions
           .select("*")
-          .eq("thread_id", threadId)
+          .eq("thread_id", threadId as any)
           .order("created_at", { ascending: false })
           .range(pageParam, pageParam + PAGE_SIZE - 1);
 
@@ -101,7 +102,7 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
         const { data, error } = await supabase
           .from("chat_messages")
           .select("*")
-          .eq("thread_id", threadId)
+          .eq("thread_id", threadId as any)
           .order("created_at", { ascending: false })
           .range(pageParam, pageParam + PAGE_SIZE - 1);
 

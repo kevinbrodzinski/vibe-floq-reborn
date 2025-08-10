@@ -8,7 +8,7 @@ export function useAfterglowByPlan(planId: string) {
       const { data, error } = await supabase
         .from('plan_afterglow')
         .select('*')
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
         .maybeSingle()
 
       if (error) {

@@ -51,24 +51,8 @@ export const useChatTimeline = (
           return rows.map(mapFloqRow).reverse();
         }
 
-        try {
-          const rows = Array.isArray(rx) ? (rx as any[]) : [];
-          const grouped = rows.reduce<Record<string, Record<string,string[]>>>(
-            (acc, r: any) => {
-              (acc[r.message_id] ??= {})[r.emoji] ??= [];
-              acc[r.message_id][r.emoji].push(r.profile_id);
-              return acc;
-            }, {},
-          );
-
-          return rows.map(r => ({
-            ...r,
-            reactions: grouped[r.id] ?? {},
-          }) as ChatMessage).reverse();
-
-        } catch {
-          return rows.map(mapFloqRow).reverse();
-        }
+        // Fallback: skip reaction enrichment for now
+        return rows.map(mapFloqRow).reverse();
       };
 
       return withReactions(data ?? []);

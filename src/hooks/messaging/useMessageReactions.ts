@@ -7,7 +7,7 @@ import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 import { supaFn } from '@/lib/supaFn';
 import { toast } from 'sonner';
 
-interface MessageReaction {
+interface MessageReaction extends Record<string, unknown> {
   id: string;
   message_id: string;
   profile_id: string;
@@ -305,14 +305,14 @@ export function useMessageReactionsSingle(messageId: string) {
       const { data, error } = await supabase
         .from('dm_message_reactions')
         .select('emoji, profile_id')
-        .eq('message_id', messageId);
+        .eq('message_id', messageId as any);
 
       if (error) throw error;
 
       // Aggregate reactions
       const reactionMap = new Map<string, ReactionSummary>();
       
-      data?.forEach(({ emoji, profile_id }) => {
+      (data as any[])?.forEach(({ emoji, profile_id }: any) => {
         if (!reactionMap.has(emoji)) {
           reactionMap.set(emoji, {
             emoji,

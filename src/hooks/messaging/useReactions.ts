@@ -14,9 +14,9 @@ export function useReactions(threadId?: string) {
       const { data: existing } = await supabase
         .from('dm_message_reactions')
         .select('id')
-        .eq('message_id', messageId)
-        .eq('profile_id', currentUserId)
-        .eq('emoji', emoji)
+        .eq('message_id', messageId as any)
+        .eq('profile_id', currentUserId as any)
+        .eq('emoji', emoji as any)
         .maybeSingle();
 
       if (existing) {
@@ -24,7 +24,7 @@ export function useReactions(threadId?: string) {
         const { error } = await supabase
           .from('dm_message_reactions')
           .delete()
-          .eq('id', existing.id);
+          .eq('id', (existing as any).id as any);
         
         if (error) throw error;
         return { action: 'removed' };
@@ -36,7 +36,7 @@ export function useReactions(threadId?: string) {
             message_id: messageId,
             profile_id: currentUserId,
             emoji
-          });
+          } as any);
         
         if (error) throw error;
         return { action: 'added' };

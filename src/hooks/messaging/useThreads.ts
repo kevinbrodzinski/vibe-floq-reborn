@@ -44,7 +44,7 @@ export function useThreads() {
       if (error) throw error;
 
       // ✅ map the "friend" side for the UI
-      const rows = (data ?? []) as ThreadRow[];
+      const rows = (data ?? []) as unknown as ThreadRow[];
       return rows.map((t) => {
         const amA = t.member_a_profile_id === currentProfileId;
         const friend =

@@ -12,12 +12,12 @@ export function useActiveFloqPlan(floqId?: string) {
       const { data, error } = await supabase
         .from('floq_plans')
         .select('*')
-        .eq('floq_id', floqId!)
-        .eq('status', 'draft') // assuming active plans are in draft status
+        .eq('floq_id', floqId! as any)
+        .eq('status', 'draft' as any) // assuming active plans are in draft status
         .maybeSingle()
 
       if (error) throw error
-      return data
+      return data as any
     },
     staleTime: 30_000,
   })

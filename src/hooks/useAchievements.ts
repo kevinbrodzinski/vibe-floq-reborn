@@ -75,37 +75,37 @@ export function useAchievements() {
                 metadata
               )
             `)
-            .eq('profile_id', user.id),
+            .eq('profile_id', user.id as any),
           getCachedCatalogue()
         ]);
 
         if (userProgressResult.error) throw userProgressResult.error;
 
-        const data = userProgressResult.data;
+        const data = (userProgressResult.data as any[]) || [];
 
         // Merge user progress with full catalogue
-        const userAchievementCodes = new Set(data?.map(a => a.code) || []);
+        const userAchievementCodes = new Set((data as any[])?.map((a: any) => a.code) || []);
         const achievements: Achievement[] = [];
 
         // Add achievements with progress
-        data?.forEach(userAchievement => {
-        const catalogue = userAchievement.achievement_catalogue;
-        if (catalogue) {
-          achievements.push({
-            code: catalogue.code,
-            family: catalogue.family,
-            name: catalogue.name,
-            description: catalogue.description,
-            icon: catalogue.icon || '',
-            goal: catalogue.goal || 0,
-            metadata: (catalogue.metadata as Record<string, any>) || {},
-            progress: userAchievement.progress,
-            earned_at: userAchievement.earned_at,
-            is_earned: !!userAchievement.earned_at,
-            progress_percentage: Math.min(100, (userAchievement.progress / (catalogue.goal || 1)) * 100),
-          });
-        }
-      });
+        (data as any[])?.forEach((userAchievement: any) => {
+          const catalogue = userAchievement.achievement_catalogue as any;
+          if (catalogue) {
+            achievements.push({
+              code: catalogue.code,
+              family: catalogue.family,
+              name: catalogue.name,
+              description: catalogue.description,
+              icon: catalogue.icon || '',
+              goal: catalogue.goal || 0,
+              metadata: (catalogue.metadata as Record<string, any>) || {},
+              progress: userAchievement.progress,
+              earned_at: userAchievement.earned_at,
+              is_earned: !!userAchievement.earned_at,
+              progress_percentage: Math.min(100, (userAchievement.progress / (catalogue.goal || 1)) * 100),
+            });
+          }
+        });
 
       // Add achievements not yet started
       allCatalogue?.forEach(catalogue => {

@@ -44,52 +44,43 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
           .on(
             'broadcast',
             { event: 'typing' },
-            createSafeRealtimeHandler<{
-              user_id: string;
-              thread_id: string;
-              is_typing: boolean;
-              display_name?: string;
-              username?: string;
-              avatar_url?: string;
-            }>(
-              ({ user_id, thread_id, is_typing, display_name, username, avatar_url }) => {
-                // Ignore our own typing events
-                if (user_id === currentUserId || thread_id !== threadId) return;
+            (evt: any) => {
+              const payload = (evt && (evt.payload || evt)) as any;
+              const { user_id, thread_id, is_typing, display_name, username, avatar_url } = payload || {};
+              // Ignore our own typing events
+              if (user_id === currentUserId || thread_id !== threadId) return;
 
-                console.log('👀 Typing event:', { user_id, is_typing, display_name });
+              console.log('👀 Typing event:', { user_id, is_typing, display_name });
 
-                setTypingUsers(prev => {
-                  const newMap = new Map(prev);
-                  
-                  if (is_typing) {
-                    newMap.set(user_id, {
-                      userId: user_id,
-                      displayName: display_name,
-                      username,
-                      avatarUrl: avatar_url,
-                    });
-                  } else {
-                    newMap.delete(user_id);
-                  }
-                  
-                  return newMap;
-                });
-
-                // Auto-cleanup typing state after timeout
+              setTypingUsers(prev => {
+                const newMap = new Map(prev);
+                
                 if (is_typing) {
-                  setTimeout(() => {
-                    setTypingUsers(prev => {
-                      const newMap = new Map(prev);
-                      newMap.delete(user_id);
-                      return newMap;
-                    });
-                  }, TYPING_TIMEOUT);
+                  newMap.set(user_id, {
+                    userId: user_id,
+                    displayName: display_name,
+                    username,
+                    avatarUrl: avatar_url,
+                  });
+                } else {
+                  newMap.delete(user_id);
                 }
-              },
-              (error, payload) => {
-                console.error('[useTypingIndicators] Realtime error:', error, payload);
+                
+                return newMap;
+              });
+
+              // Auto-cleanup typing state after timeout
+              if (is_typing) {
+                setTimeout(() => {
+                  setTypingUsers(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(user_id);
+                    return newMap;
+                  });
+                }, TYPING_TIMEOUT);
               }
-            )
+            }
+          ),
           ),
       `typing-hook-${threadId}`
     );
@@ -106,7 +97,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
       const { data: profile } = await supabase
         .from('profiles')
         .select('display_name, username, avatar_url')
-        .eq('id', currentUserId)
+        .eq('id', currentUserId as any)
         .single();
 
       await supabase.channel(`typing_${surface}_${threadId}`)
@@ -117,9 +108,9 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
             user_id: currentUserId,
             thread_id: threadId,
             is_typing: isTypingNow,
-            display_name: profile?.display_name,
-            username: profile?.username,
-            avatar_url: profile?.avatar_url,
+            display_name: (profile as any)?.display_name,
+            username: (profile as any)?.username,
+            avatar_url: (profile as any)?.avatar_url,
           },
         });
     } catch (error) {
