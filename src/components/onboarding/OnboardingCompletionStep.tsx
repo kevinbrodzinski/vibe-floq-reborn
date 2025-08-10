@@ -193,7 +193,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       const { error: progressError } = await supabase
         .from('user_onboarding_progress')
         .upsert({
-          user_id: session.user.id,
+          profile_id: session.user.id,
           onboarding_version: CURRENT_ONBOARDING_VERSION,
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],

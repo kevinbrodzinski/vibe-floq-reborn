@@ -62,7 +62,7 @@ export function useOnboardingDatabase() {
               const { data, error: fetchError } = await supabase
           .from('user_onboarding_progress')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
           .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
           .maybeSingle();
       
@@ -95,7 +95,7 @@ export function useOnboardingDatabase() {
     try {
       // Validate and clean the data before sending  
       const progressData = {
-        user_id: user.id, // Using user_id as per the original migration
+        profile_id: user.id, // Using profile_id as per the actual database schema
         onboarding_version: CURRENT_ONBOARDING_VERSION,
         current_step: Math.min(Math.max(state.currentStep || 0, 0), 10),
         completed_steps: Array.isArray(state.completedSteps) ? state.completedSteps.filter(n => typeof n === 'number') : [],
@@ -109,7 +109,7 @@ export function useOnboardingDatabase() {
                             const { error: upsertError } = await supabase
           .from('user_onboarding_progress')
           .upsert(progressData, {
-            onConflict: 'user_id,onboarding_version'
+            onConflict: 'profile_id,onboarding_version'
           });
       
       if (upsertError) {
@@ -147,7 +147,7 @@ export function useOnboardingDatabase() {
             completed_at: new Date().toISOString(),
             current_step: FINAL_STEP
           })
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
           .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (updateError) throw updateError;
@@ -171,7 +171,7 @@ export function useOnboardingDatabase() {
               const { error: deleteError } = await supabase
           .from('user_onboarding_progress')
           .delete()
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
           .eq('onboarding_version', CURRENT_ONBOARDING_VERSION);
       
       if (deleteError) throw deleteError;
