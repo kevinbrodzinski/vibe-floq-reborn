@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface EventNotification {
   id: string;
-  user_id: string;
+  profile_id: string;
   kind: string;
   payload: { plan_id?: string };
   created_at: string;

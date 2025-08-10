@@ -6,7 +6,7 @@ interface NotificationPayload {
   kind: 'dm' | 'friend_request' | 'friend_request_accepted' | 'friend_request_declined' | 'plan_invite' | 'plan_invite_accepted' | 'plan_invite_declined' | 'floq_invite' | 'floq_invite_accepted' | 'floq_invite_declined';
   payload: any;
   id: string;
-  user_id: string;
+  profile_id: string;
   created_at: string;
   seen_at?: string;
   accepted_at?: string;

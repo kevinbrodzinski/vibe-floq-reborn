@@ -24,32 +24,20 @@ export const useNotificationActions = () => {
         break;
       
       case 'plan_invite':
-        // Navigate to plan invitation
-        if (notification.payload?.plan_id) {
-          navigate(`/plans/${notification.payload.plan_id}/invite`);
-        }
-        break;
-      
-      case 'floq_invite':
-        // Navigate to floq invitation
-        if (notification.payload?.floq_id) {
-          navigate(`/floqs/${notification.payload.floq_id}/invite`);
-        }
-        break;
-      
       case 'plan_comment_new':
       case 'plan_checkin':
         // Navigate to plan
         if (notification.payload?.plan_id) {
-          navigate(`/plans/${notification.payload.plan_id}`);
+          navigate(`/plan/${notification.payload.plan_id}`);
         }
         break;
       
+      case 'floq_invite':
       case 'floq_reaction':
       case 'floq_reply':
         // Navigate to floq
         if (notification.payload?.floq_id) {
-          navigate(`/floqs/${notification.payload.floq_id}`);
+          navigate(`/floq/${notification.payload.floq_id}`);
         }
         break;
       
