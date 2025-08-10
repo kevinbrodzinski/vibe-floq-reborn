@@ -108,9 +108,7 @@ export function useOnboardingDatabase() {
       
                             const { error: upsertError } = await supabase
           .from('user_onboarding_progress')
-          .upsert(progressData, {
-            onConflict: 'profile_id,onboarding_version'
-          });
+          .upsert(progressData);
       
       if (upsertError) {
         console.error('❌ Database error details:', {
