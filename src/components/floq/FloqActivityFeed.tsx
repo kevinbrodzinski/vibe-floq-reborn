@@ -89,7 +89,7 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
           metadata,
           profiles:profiles!profile_id(display_name, username, avatar_url)
         `)
-        .eq('floq_id', floqId)
+        .eq('floq_id', floqId as any)
         .order('created_at', { ascending: false })
         .limit(50)
         .throwOnError();

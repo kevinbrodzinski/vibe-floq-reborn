@@ -56,7 +56,7 @@ export function OnboardingDashboard() {
       const { data: progressData, error: progressError } = await supabase
         .from('user_onboarding_progress')
         .select('*')
-        .eq('onboarding_version', 'v2');
+        .eq('onboarding_version', 'v2' as any);
 
       if (progressError) throw progressError;
 
@@ -75,15 +75,15 @@ export function OnboardingDashboard() {
 
       // Calculate step dropoffs
       const stepDropoffs: Record<number, number> = {};
-      progressData?.forEach(progress => {
-        const currentStep = progress.current_step;
-        if (currentStep < 6) { // Not completed
+      progressData?.forEach((progress: any) => {
+        const currentStep = progress?.current_step;
+        if (currentStep && currentStep < 6) { // Not completed
           stepDropoffs[currentStep] = (stepDropoffs[currentStep] || 0) + 1;
         }
       });
 
       // Calculate average completion time
-      const completedWithTime = prefsData?.filter(p => p.onboarding_completed_at);
+      const completedWithTime = prefsData?.filter((p: any) => p?.onboarding_completed_at);
       const avgTime = completedWithTime?.length > 0 ? 180000 : 0; // 3 minutes default
 
       setStats({
@@ -93,10 +93,10 @@ export function OnboardingDashboard() {
         avgCompletionTime: avgTime,
         stepDropoffs,
         usernameFailures: 0, // Would need to track this separately
-        recentCompletions: prefsData?.slice(-10).map(p => ({
-          id: p.profile_id,
-          profile_id: p.profile_id,
-          completed_at: p.onboarding_completed_at!,
+        recentCompletions: prefsData?.slice(-10).map((p: any) => ({
+          id: p?.profile_id || '',
+          profile_id: p?.profile_id || '',
+          completed_at: p?.onboarding_completed_at || '',
           time_taken_minutes: 3 // Would calculate from actual data
         })) || []
       });

@@ -43,24 +43,24 @@ export const DataRecordingStatus = () => {
           supabase
             .from('venue_live_presence')
             .select('profile_id', { count: 'exact' })
-            .eq('profile_id', user.id),
+            .eq('profile_id', user.id as any),
           supabase
             .from('user_vibe_states')
             .select('profile_id', { count: 'exact' })
-            .eq('profile_id', user.id),
+            .eq('profile_id', user.id as any),
           supabase
             .from('floq_participants')
             .select('floq_id', { count: 'exact' })
-            .eq('profile_id', user.id),
+            .eq('profile_id', user.id as any),
           supabase
             .from('plan_participants')
             .select('plan_id', { count: 'exact' })
-            .eq('profile_id', user.id),
+            .eq('profile_id', user.id as any),
           supabase
             .from('daily_afterglow')
             .select('is_stale')
-            .eq('profile_id', user.id)
-            .eq('date', new Date().toISOString().split('T')[0])
+            .eq('profile_id', user.id as any)
+            .eq('date', new Date().toISOString().split('T')[0] as any)
             .maybeSingle(),
           supabase
             .from('venues')
@@ -72,7 +72,7 @@ export const DataRecordingStatus = () => {
           vibeStates: vibeResult.count || 0,
           floqParticipants: floqResult.count || 0,
           planParticipants: planResult.count || 0,
-          isStale: stalenessResult.data?.is_stale || false,
+          isStale: (stalenessResult.data as any)?.is_stale || false,
           realtimeActive: realtimeChannels > 0 && connectionStatus === 'connected',
           totalVenues: venueCountResult.count || 0,
         });

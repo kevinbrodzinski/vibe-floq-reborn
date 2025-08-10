@@ -170,8 +170,8 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
 
       const { error } = await supabase
         .from('floqs')
-        .update(updateData)
-        .eq('id', floqDetails.id);
+        .update(updateData as any)
+        .eq('id', floqDetails.id as any);
 
       if (error) throw error;
 

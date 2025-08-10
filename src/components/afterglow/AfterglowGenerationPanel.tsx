@@ -43,9 +43,9 @@ export const AfterglowGenerationPanel = () => {
       // Manually mark today's afterglow as stale to test the pipeline
       const { error } = await supabase
         .from('daily_afterglow')
-        .update({ is_stale: true })
-        .eq('profile_id', user.id)
-        .eq('date', today);
+        .update({ is_stale: true } as any)
+        .eq('profile_id', user.id as any)
+        .eq('date', today as any);
 
       if (error) throw error;
       

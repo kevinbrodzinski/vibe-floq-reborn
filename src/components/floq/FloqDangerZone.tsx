@@ -61,26 +61,26 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
       // Update creator_id in floqs table
       const { error: floqError } = await supabase
         .from('floqs')
-        .update({ creator_id: selectedNewOwner })
-        .eq('id', floqDetails.id);
+        .update({ creator_id: selectedNewOwner } as any)
+        .eq('id', floqDetails.id as any);
 
       if (floqError) throw floqError;
 
       // Update roles in participants table
       const { error: roleError } = await supabase
         .from('floq_participants')
-        .update({ role: 'creator' })
-        .eq('floq_id', floqDetails.id)
-        .eq('profile_id', selectedNewOwner);
+        .update({ role: 'creator' } as any)
+        .eq('floq_id', floqDetails.id as any)
+        .eq('profile_id', selectedNewOwner as any);
 
       if (roleError) throw roleError;
 
       // Update old creator to co-admin
       const { error: oldRoleError } = await supabase
         .from('floq_participants')
-        .update({ role: 'co-admin' })
-        .eq('floq_id', floqDetails.id)
-        .eq('profile_id', floqDetails.creator_id);
+        .update({ role: 'co-admin' } as any)
+        .eq('floq_id', floqDetails.id as any)
+        .eq('profile_id', floqDetails.creator_id as any);
 
       if (oldRoleError) throw oldRoleError;
 
@@ -107,8 +107,8 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
         .update({ 
           ends_at: new Date().toISOString(),
           flock_type: 'momentary'
-        })
-        .eq('id', floqDetails.id);
+        } as any)
+        .eq('id', floqDetails.id as any);
 
       if (error) throw error;
 

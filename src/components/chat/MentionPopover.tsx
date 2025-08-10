@@ -24,13 +24,13 @@ export const MentionPopover: React.FC<Props> = ({ target, onClose }) => {
       const { data, error } = await supabase
         .from('profiles')
         .select('avatar_url,display_name,username,bio')
-        .eq('username', target.tag)      // tag is already "username" w/out @
+        .eq('username', target.tag as any)      // tag is already "username" w/out @
         .maybeSingle(); // ✅ Fixed: use maybeSingle to avoid 406 errors
       
       if (error) {
         console.error('[MentionPopover] Error loading profile:', error);
       }
-      setProfile(data ?? null); // graceful fallback
+      setProfile((data as any) ?? null); // graceful fallback
     };
     load().catch(console.error);
   }, [target?.tag]);

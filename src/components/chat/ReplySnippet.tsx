@@ -15,7 +15,7 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
       const { data, error } = await supabase
         .from('direct_messages')
         .select('id, content, profile_id, metadata')
-        .eq('id', messageId)
+        .eq('id', messageId as any)
         .maybeSingle();
       
       if (error) throw error;
@@ -41,9 +41,9 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
 
   const getMessagePreview = () => {
     try {
-      const metadata = typeof message.metadata === 'string' 
-        ? JSON.parse(message.metadata) 
-        : message.metadata;
+      const metadata = typeof (message as any)?.metadata === 'string' 
+        ? JSON.parse((message as any).metadata) 
+        : (message as any)?.metadata;
       
       if (metadata?.media) {
         return '📷 Media';
@@ -51,7 +51,7 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
     } catch (e) {
       // Ignore JSON parse errors
     }
-    return message.content || '[No content]';
+    return (message as any)?.content || '[No content]';
   };
 
   return (

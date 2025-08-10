@@ -99,6 +99,7 @@ export function useEnhancedLocationSharing() {
     isTracking: isSharing,
     startSharing: () => { setIsSharing(true); return Promise.resolve(); },
     stopSharing: () => { setIsSharing(false); return Promise.resolve(); },
+    requestLocation: () => Promise.resolve(), // Added missing method
     accuracy: location?.accuracy || 0,
     geofenceMatches: [],
     privacyFiltered: false,
@@ -111,6 +112,5 @@ export function useEnhancedLocationSharing() {
     hasNearbyUsers: proximityData.length > 0,
     currentVenueConfidence: venueDetections[0]?.confidence || 0,
     isLocationHidden: false,
-    // Remove duplicate venueDetections key
   };
 }

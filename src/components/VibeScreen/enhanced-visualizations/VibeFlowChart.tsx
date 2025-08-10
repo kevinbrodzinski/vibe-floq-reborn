@@ -62,7 +62,7 @@ export const VibeFlowChart: React.FC<VibeFlowChartProps> = ({
         intensity,
         confidence,
         duration: interval,
-        vibeIndex: VIBE_ORDER.indexOf(vibe) + 1,
+        vibeIndex: VIBE_ORDER.indexOf(vibe as any) + 1,
         formattedTime: format(new Date(timestamp), 'MMM d, HH:mm'),
         transitionScore: Math.random() * 100
       });

@@ -60,8 +60,8 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
         const { data: progressData, error: progressError } = await supabase
           .from('user_onboarding_progress')
           .select('completed_at, onboarding_version')
-          .eq('profile_id', user.id)
-          .eq('onboarding_version', ONBOARDING_VERSION)
+          .eq('profile_id', user.id as any)
+          .eq('onboarding_version', ONBOARDING_VERSION as any)
           .maybeSingle();
 
         if (progressError) {
@@ -71,8 +71,8 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
         }
 
         // Check if onboarding is marked as completed in progress table
-        if (progressData?.completed_at) {
-          console.log('✅ Onboarding completed in progress table at:', progressData.completed_at);
+        if ((progressData as any)?.completed_at) {
+          console.log('✅ Onboarding completed in progress table at:', (progressData as any).completed_at);
           await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
           return true;
         }

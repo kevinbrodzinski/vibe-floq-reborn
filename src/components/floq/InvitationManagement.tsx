@@ -72,13 +72,13 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
             avatar_url
           )
         `)
-        .eq('floq_id', floqDetails.id)
-        .eq('status', 'pending')
+        .eq('floq_id', floqDetails.id as any)
+        .eq('status', 'pending' as any)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const invitations = data?.map(inv => ({
+      const invitations = data?.map((inv: any) => ({
         id: inv.id,
         invitee_id: inv.invitee_id,
         invitee_username: inv.profiles?.username,
@@ -193,7 +193,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
       const { error } = await supabase
         .from('floq_invitations')
         .delete()
-        .eq('id', invitationId);
+        .eq('id', invitationId as any);
 
       if (error) throw error;
 
