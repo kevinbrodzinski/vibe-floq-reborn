@@ -168,8 +168,8 @@ export const PulseScreen: React.FC = () => {
   const { data: activeFloqsPages } = useActiveFloqs();
   const activeFloqs = activeFloqsPages?.pages?.flatMap(page => page.data) ?? [];
   const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.3);
+  const nearbyVenuesArr = Array.isArray(nearbyVenues) ? (nearbyVenues as any[]) : [];
   const { data: myFloqs = [] } = useMyActiveFloqs();
-  // const { suggestion: aiSuggestion, loading: aiLoading, refetch: refetchAI, source: aiSource } = useWeeklyAI();
   const { suggestions: socialSuggestions = [] } = useSocialSuggestions(1000);
   
   // Real-time Pulse data
@@ -190,7 +190,7 @@ export const PulseScreen: React.FC = () => {
   );
 
   // Loading and error states
-  const isLoading = !activeFloqs.length && !nearbyVenues.length;
+  const isLoading = !activeFloqs.length && !nearbyVenuesArr.length;
   const hasError = false; // Add error handling if needed
 
   // Use real weather data or fallback to mock
@@ -268,7 +268,7 @@ export const PulseScreen: React.FC = () => {
 
   // Transform data into recommendations
   const recommendations = useMemo(() => {
-    const venueRecommendations: PulseRecommendation[] = nearbyVenues.map(venue => ({
+    const venueRecommendations: PulseRecommendation[] = nearbyVenuesArr.map((venue: any) => ({
       id: venue.id,
       title: venue.name,
       type: 'venue' as const,
@@ -368,7 +368,7 @@ export const PulseScreen: React.FC = () => {
     }
 
     return suggestions;
-  }, [liveActivity.length, nearbyVenues.length, myFloqs.length, socialSuggestions.length]);
+  }, [liveActivity.length, nearbyVenuesArr.length, myFloqs.length, socialSuggestions.length]);
 
   // Get vibe match data for all recommendations
   const { vibeMatch: globalVibeMatch } = useVibeMatch();

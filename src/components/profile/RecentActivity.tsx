@@ -40,7 +40,7 @@ export function RecentActivity() {
       const { data: vibeChanges } = await supabase
         .from('vibes_log')
         .select('vibe, ts, venue_id')
-        .eq('profile_id', user.id)
+        .eq('profile_id', user.id as any)
         .gte('ts', yesterday.toISOString())
         .order('ts', { ascending: false })
         .limit(5);
@@ -54,13 +54,13 @@ export function RecentActivity() {
           created_at
         `)
         .or(`user_low.eq.${user.id},user_high.eq.${user.id}`)
-        .eq('friend_state', 'accepted')
+        .eq('friend_state', 'accepted' as any)
         .gte('created_at', yesterday.toISOString())
         .order('created_at', { ascending: false })
         .limit(3);
 
-      // Add vibe changes
-      vibeChanges?.forEach((change) => {
+      const vibeChangesArr = Array.isArray(vibeChanges) ? (vibeChanges as any[]) : [];
+      vibeChangesArr.forEach((change: any) => {
         activities.push({
           id: `vibe-${change.ts}`,
           type: 'vibe_change',
@@ -70,8 +70,8 @@ export function RecentActivity() {
         });
       });
 
-      // Add new friends
-      recentFriends?.forEach((friendship) => {
+      const recentFriendsArr = Array.isArray(recentFriends) ? (recentFriends as any[]) : [];
+      recentFriendsArr.forEach((friendship: any) => {
         // Get the other user's ID
         const friendId = friendship.user_low === user.id ? friendship.user_high : friendship.user_low;
         activities.push({

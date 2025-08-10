@@ -30,7 +30,7 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
             checked_in_at,
             venues!inner(name)
           `)
-          .eq('profile_id', profileId)
+          .eq('profile_id', profileId as any)
           .order('checked_in_at', { ascending: false });
 
         if (error) {
@@ -38,7 +38,9 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
           return [];
         }
 
-        if (!venueData || venueData.length === 0) return [];
+        if (!venueData || (Array.isArray(venueData) && venueData.length === 0)) return [];
+
+        const visits = Array.isArray(venueData) ? (venueData as any[]) : [];
 
         // Group by venue and calculate insights
         const venueMap = new Map<string, {
@@ -46,8 +48,8 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
           visits: { checkedIn: string; checkedOut: string | null }[];
         }>();
 
-        venueData.forEach(visit => {
-          const venueId = visit.venue_id;
+        visits.forEach((visit: any) => {
+          const venueId = visit.venue_id as string;
           const venueName = (visit.venues as any)?.name || 'Unknown Venue';
           
           if (!venueMap.has(venueId)) {
@@ -55,7 +57,7 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
           }
           
           venueMap.get(venueId)!.visits.push({
-            checkedIn: visit.checked_in_at,
+            checkedIn: visit.checked_in_at as string,
             checkedOut: null // Set to null since checked_out_at column doesn't exist
           });
         });

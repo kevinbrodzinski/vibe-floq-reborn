@@ -270,7 +270,7 @@ export const FloqsScreen = () => {
     getStoredRadius().then(setRadiusKm);
   }, []);
   const { data: floqsData, isLoading, error } = useActiveFloqs();
-  const { items: floqs, length: floqsCount, isEmpty: noFloqs } = useInfiniteQueryData(floqsData);
+  const { items: floqs, length: floqsCount, isEmpty: noFloqs } = useInfiniteQueryData(floqsData as any);
   const { join, isPending } = useFloqJoin();
 
   // Add debug logging

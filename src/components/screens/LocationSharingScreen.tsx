@@ -35,7 +35,8 @@ export const LocationSharingScreen: React.FC = () => {
 
       if (!data) return {};
 
-      return Object.fromEntries(data.map(r => [r.other_profile_id, r.is_live]));
+      const rows = Array.isArray(data) ? (data as any[]) : [];
+      return Object.fromEntries(rows.map(r => [r.other_profile_id, r.is_live]));
     }
   });
 

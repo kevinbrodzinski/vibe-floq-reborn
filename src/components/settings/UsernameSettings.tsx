@@ -77,7 +77,7 @@ export default function UsernameSettings() {
       
       if (error) throw error;
       
-      setIsAvailable(data); // username_available returns true if available
+      setIsAvailable(!!data); // username_available returns true if available
     } catch (error) {
       setIsAvailable(false);
     } finally {

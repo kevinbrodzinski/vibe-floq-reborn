@@ -21,11 +21,15 @@ export const IdeasForYouTwo: React.FC<Props> = (ctx) => {
       emoji: '☕',
       title: `Coffee at ${ctx.topCommonVenues[0]?.name ?? 'a favorite café'}`,
       body: 'Low-key catch-up aligned with your shared chill vibe.',
+      venue_id: undefined,
+      vibe: undefined,
     },
     {
       emoji: '🎵',
       title: 'Live-music night',
       body: 'You both love music venues – check local open-mic listings.',
+      venue_id: undefined,
+      vibe: undefined,
     },
   ];
 

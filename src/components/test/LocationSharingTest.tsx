@@ -37,8 +37,8 @@ export const LocationSharingTest: React.FC = () => {
 
   // Calculate sharing count
   React.useEffect(() => {
-    if (sharePrefs) {
-      const count = sharePrefs.filter(pref => pref.is_live).length;
+    if (Array.isArray(sharePrefs)) {
+      const count = (sharePrefs as any[]).filter((pref: any) => pref.is_live).length;
       setSharingCount(count);
       console.log('📊 Sharing count updated:', count);
     }
