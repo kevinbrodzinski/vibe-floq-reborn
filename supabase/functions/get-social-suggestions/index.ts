@@ -2,34 +2,22 @@
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
-/* ------------------------------------------------------------------ */
-/*  Simple, per-request CORS helper                                   */
-/* ------------------------------------------------------------------ */
-function buildCors(origin = "*") {
-  return {
-    "Access-Control-Allow-Origin" : origin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Content-Type"               : "application/json"
-  };
-}
+// Use shared CORS helper with full allowed headers
+import { corsHeaders, respondWithCorsOptions } from "../_shared/cors.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Edge entry point                                                  */
 /* ------------------------------------------------------------------ */
 serve(async req => {
-  const cors = buildCors(req.headers.get("Origin") ?? "*");
-
   /* CORS pre-flight ------------------------------------------------- */
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: cors });
+    return respondWithCorsOptions();
   }
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "POST only" }), {
       status : 405,
-      headers: cors
+      headers: corsHeaders
     });
   }
 
@@ -59,7 +47,7 @@ serve(async req => {
         JSON.stringify({ error: "lat and lng are required parameters" }), 
         {
           status: 400,
-          headers: cors
+          headers: corsHeaders
         }
       );
     }
@@ -106,19 +94,19 @@ serve(async req => {
       console.error("[get-social-suggestions] RPC error", error);
       return new Response(JSON.stringify({ error: error.message }), {
         status : 500,
-        headers: cors
+        headers: corsHeaders
       });
     }
 
     return new Response(JSON.stringify(data), {
       status : 200,
-      headers: { ...cors, "Cache-Control": "max-age=10" }
+      headers: { ...corsHeaders, "Cache-Control": "max-age=10", "Content-Type": "application/json" }
     });
   } catch (e) {
     console.error("[get-social-suggestions] fatal", e);
     return new Response(JSON.stringify({ error: "internal" }), {
       status : 500,
-      headers: cors
+      headers: corsHeaders
     });
   }
 });
