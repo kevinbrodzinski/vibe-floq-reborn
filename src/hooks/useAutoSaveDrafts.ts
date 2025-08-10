@@ -42,7 +42,7 @@ export function useAutoSaveDrafts(planId: string) {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('plan_drafts')
         .upsert({
           plan_id: planId,
@@ -50,7 +50,7 @@ export function useAutoSaveDrafts(planId: string) {
           draft_data: draftData as any, // Cast to satisfy JSON type
           last_saved_at: new Date().toISOString(),
           version: currentVersion + 1,
-        })
+        } as any) as any)
 
       if (error) {
         console.error('Draft save failed:', error)
@@ -71,19 +71,20 @@ export function useAutoSaveDrafts(planId: string) {
     }
 
     try {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from('plan_drafts')
         .select('*')
-        .eq('plan_id', planId)
-        .eq('profile_id', currentUser.id)
+        .eq('plan_id', planId as any)
+        .eq('profile_id', currentUser.id as any)
         .order('last_saved_at', { ascending: false })
         .limit(1)
-        .maybeSingle()
+        .maybeSingle() as any);
 
-      if (data?.draft_data) {
+      const row = data as any;
+      if (row?.draft_data) {
         // Safely parse the JSON data
         try {
-          return typeof data.draft_data === 'object' ? data.draft_data as unknown as DraftData : JSON.parse(data.draft_data as string)
+          return typeof row.draft_data === 'object' ? row.draft_data as unknown as DraftData : JSON.parse(row.draft_data as string)
         } catch {
           return null
         }
@@ -98,19 +99,20 @@ export function useAutoSaveDrafts(planId: string) {
   const { data: existingDraft } = useQuery({
     queryKey: ['plan-draft', planId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from('plan_drafts')
         .select('*')
-        .eq('plan_id', planId)
-        .eq('profile_id', currentUser?.id)
+        .eq('plan_id', planId as any)
+        .eq('profile_id', currentUser?.id as any)
         .order('last_saved_at', { ascending: false })
         .limit(1)
-        .maybeSingle()
+        .maybeSingle() as any);
 
-      if (data?.draft_data) {
+      const row = data as any;
+      if (row?.draft_data) {
         // Safely parse the JSON data
         try {
-          return typeof data.draft_data === 'object' ? data.draft_data as unknown as DraftData : JSON.parse(data.draft_data as string)
+          return typeof row.draft_data === 'object' ? row.draft_data as unknown as DraftData : JSON.parse(row.draft_data as string)
         } catch {
           return null
         }

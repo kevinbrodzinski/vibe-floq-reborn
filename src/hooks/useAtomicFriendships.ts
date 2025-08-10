@@ -20,30 +20,32 @@ export function useAtomicFriendships() {
       if (currentUserId === targetUserId) throw new Error('Cannot send request to yourself');
 
       // Use the enhanced rate-limited function
-      const { data, error } = await supabase.rpc('send_friend_request_with_rate_limit', {
+      const { data, error } = await (supabase.rpc('send_friend_request_with_rate_limit', {
         p_from_profile: currentUserId,
         p_to_profile: targetUserId,
-      });
+      }) as any);
 
       if (error) {
         throw error;
       }
 
+      const res = data as any;
+
       // Handle function response
-      if (data && !data.success) {
-        if (data.error === 'rate_limit') {
-          throw new Error(data.message || 'Too many friend requests sent. Please wait before sending more.');
+      if (res && !res.success) {
+        if (res.error === 'rate_limit') {
+          throw new Error(res.message || 'Too many friend requests sent. Please wait before sending more.');
         }
-        if (data.error === 'already_friends') {
-          throw new Error(data.message || 'You are already friends with this user.');
+        if (res.error === 'already_friends') {
+          throw new Error(res.message || 'You are already friends with this user.');
         }
-        if (data.error === 'request_exists') {
-          throw new Error(data.message || 'Friend request already sent.');
+        if (res.error === 'request_exists') {
+          throw new Error(res.message || 'Friend request already sent.');
         }
-        throw new Error(data.message || 'Failed to send friend request.');
+        throw new Error(res.message || 'Failed to send friend request.');
       }
 
-      return data;
+      return res;
     },
     onMutate: async (targetUserId) => {
       // Cancel outgoing queries to prevent optimistic updates from being overwritten
@@ -97,24 +99,26 @@ export function useAtomicFriendships() {
       if (!fromUserId) throw new Error('Requester user ID is required');
 
       // Use enhanced atomic accept function to prevent race conditions
-      const { data, error } = await supabase.rpc('accept_friend_request_atomic', {
+      const { data, error } = await (supabase.rpc('accept_friend_request_atomic', {
         p_requester_id: fromUserId,
         p_accepter_id: currentUserId,
-      });
+      }) as any);
 
       if (error) {
         throw error;
       }
 
+      const res = data as any;
+
       // Handle function response
-      if (data && !data.success) {
-        if (data.error === 'no_request') {
-          throw new Error(data.message || 'Friend request not found or already processed.');
+      if (res && !res.success) {
+        if (res.error === 'no_request') {
+          throw new Error(res.message || 'Friend request not found or already processed.');
         }
-        throw new Error(data.message || 'Failed to accept friend request.');
+        throw new Error(res.message || 'Failed to accept friend request.');
       }
 
-      return data;
+      return res;
     },
     onMutate: async (fromUserId) => {
       await queryClient.cancelQueries({ queryKey: ['friends', currentUserId] });
@@ -169,15 +173,15 @@ export function useAtomicFriendships() {
 
       if (isIncoming) {
         // Rejecting an incoming request
-        const { error } = await supabase
+        const { error } = await (supabase
           .from('friend_requests')
           .update({ 
             status: 'rejected',
             responded_at: new Date().toISOString(),
-          })
-          .eq('profile_id', profileId)
-          .eq('other_profile_id', currentUserId)
-          .eq('status', 'pending');
+          } as any)
+          .eq('profile_id', profileId as any)
+          .eq('other_profile_id', currentUserId as any)
+          .eq('status', 'pending' as any) as any);
 
         if (error) throw error;
       } else {

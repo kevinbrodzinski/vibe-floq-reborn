@@ -11,7 +11,7 @@ export const useActiveFloqs = () => {
     initialPageParam: 0,
     getNextPageParam: (lastPage: { data: any[], nextCursor: number | null }) => lastPage.nextCursor,
     queryFn : async ({ pageParam = 0 }) => {
-      const { data, error } = await supabase.rpc(
+      const { data, error } = await (supabase.rpc(
         'get_visible_floqs_with_members',
         {
           p_lat: coords!.lat,
@@ -19,11 +19,13 @@ export const useActiveFloqs = () => {
           p_limit: 20,
           p_offset: pageParam,
         },
-      );
+      ) as any);
       if (error) throw error;
+
+      const items = Array.isArray(data) ? (data as any[]) : [];
       return {
-        data: data || [],
-        nextCursor: (data && data.length < 20) ? null : (pageParam as number) + 20,
+        data: items,
+        nextCursor: (items.length < 20) ? null : (pageParam as number) + 20,
       };
     },
     staleTime: 30 * 1000,

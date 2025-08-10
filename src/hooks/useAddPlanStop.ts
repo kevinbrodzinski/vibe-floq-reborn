@@ -43,7 +43,7 @@ export async function deletePlanStopRPC(stopId: string) {
   const { error } = await supabase
     .from('plan_stops')
     .delete()
-    .eq('id', stopId)
+    .eq('id', stopId as any)
 
   if (error) {
     console.error('Delete Error:', error)

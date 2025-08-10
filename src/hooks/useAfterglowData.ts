@@ -17,12 +17,12 @@ export function useAfterglowData(date?: string) {
         setIsLoading(true)
         setError(null)
 
-        const { data, error: fetchError } = await supabase
+        const { data, error: fetchError } = await (supabase
           .from('daily_afterglow')
           .select('*')
-          .eq('date', date)
-          .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
-          .maybeSingle()
+          .eq('date', date as any)
+          .eq('profile_id', (await supabase.auth.getUser()).data.user?.id as any)
+          .maybeSingle() as any)
 
         if (fetchError) throw fetchError
 
