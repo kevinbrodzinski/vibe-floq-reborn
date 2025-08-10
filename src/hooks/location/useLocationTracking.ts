@@ -85,7 +85,7 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
 
       // Start flush interval
       if (!flushIntervalRef.current) {
-        flushIntervalRef.current = setInterval(flushBuffer, trackingOpts.flushIntervalMs);
+        flushIntervalRef.current = window.setInterval(flushBuffer, trackingOpts.flushIntervalMs) as unknown as number;
       }
 
     } catch (err) {
@@ -102,7 +102,7 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
 
     // Clear flush interval
     if (flushIntervalRef.current) {
-      clearInterval(flushIntervalRef.current);
+      window.clearInterval(flushIntervalRef.current as number);
       flushIntervalRef.current = null;
     }
 

@@ -53,7 +53,7 @@ export function useDmReactions(threadId: string) {
       // try insert; if unique violation, delete (toggle)
       const { error: insErr } = await supabase
         .from('direct_message_reactions')
-        .insert({ message_id: messageId, profile_id: profileId, emoji });
+        .insert({ message_id: messageId, profile_id: profileId, emoji } as any);
 
       if (insErr) {
         // 23505 unique violation — toggle off
@@ -61,9 +61,9 @@ export function useDmReactions(threadId: string) {
           await supabase
             .from('direct_message_reactions')
             .delete()
-            .eq('message_id', messageId)
-            .eq('profile_id', profileId)
-            .eq('emoji', emoji);
+            .eq('message_id', messageId as any)
+            .eq('profile_id', profileId as any)
+            .eq('emoji', emoji as any);
         } else {
           throw insErr;
         }

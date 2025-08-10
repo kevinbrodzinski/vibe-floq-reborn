@@ -9,5 +9,6 @@ export const VIBE_DESCRIPTIONS: Record<Vibe, string> = {
   solo: "Enjoying solitude and personal space",
   social: "Ready to connect and hang with others",
   open: "Curious and receptive to new experiences",
+  curious: "Exploring with an open, inquisitive mindset",
   down: "Feeling low, needing comfort and understanding",
 };

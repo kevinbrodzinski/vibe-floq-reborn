@@ -36,7 +36,7 @@ export const useChatTimeline = (
           : 'id, thread_id, sender_id, body, metadata, reply_to_id, message_type, delivery_status, created_at';
 
       let q = supabase.from(table).select(select)
-        .eq('thread_id', threadId)
+        .eq('thread_id', threadId as any)
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
 
@@ -52,13 +52,9 @@ export const useChatTimeline = (
         }
 
         try {
-          const { data: rx } = await supabase
-            .from('dm_message_reactions')
-            .select('message_id, emoji, profile_id')
-            .in('message_id', rows.map(r => r.id));
-
-          const grouped = (rx ?? []).reduce<Record<string, Record<string,string[]>>>(
-            (acc, r) => {
+          const rows = Array.isArray(rx) ? (rx as any[]) : [];
+          const grouped = rows.reduce<Record<string, Record<string,string[]>>>(
+            (acc, r: any) => {
               (acc[r.message_id] ??= {})[r.emoji] ??= [];
               acc[r.message_id][r.emoji].push(r.profile_id);
               return acc;

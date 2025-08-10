@@ -84,30 +84,32 @@ export function SplashScreen({
     
     if (prefersReduced) {
       // Reduced motion - quick transition
-      const timer = setTimeout(() => {
+      const timer = window.setTimeout(() => {
         setShowWordmark(true);
         setShowButton(true);
       }, 500);
       timersRef.current.push(timer);
       return () => {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
         timersRef.current = [];
       };
     }
 
-    // Phase 1: Show wordmark
-    timersRef.current.push(setTimeout(() => setShowWordmark(true), 1000));
+    const t1 = window.setTimeout(() => setShowWordmark(true), 1000);
+    timersRef.current.push(t1);
 
     // Phase 2: Show enter button
-    timersRef.current.push(setTimeout(() => setShowButton(true), 2000));
+    const t2 = window.setTimeout(() => setShowButton(true), 2000);
+    timersRef.current.push(t2);
 
     // Auto transition if enabled
     if (autoTransition && !isInteracted) {
-      timersRef.current.push(setTimeout(() => startTransition(), duration - 3000));
+      const t3 = window.setTimeout(() => startTransition(), duration - 3000);
+      timersRef.current.push(t3);
     }
 
     return () => {
-      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current.forEach(timer => window.clearTimeout(timer));
       timersRef.current = [];
     };
   }, [autoTransition, duration, isInteracted, prefersReduced]);
@@ -133,7 +135,7 @@ export function SplashScreen({
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
-      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current.forEach(timer => window.clearTimeout(timer));
     };
   }, []);
 

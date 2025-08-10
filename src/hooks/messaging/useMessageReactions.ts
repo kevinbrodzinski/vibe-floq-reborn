@@ -50,8 +50,7 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
           .rpc('get_dm_reactions_by_thread', { p_thread_id: threadId })
           .throwOnError();
 
-        if (error) throw error;
-        return data || [];
+        return (data as any[]) || [];
       } catch (rpcError: any) {
         // If RPC doesn't exist (PGRST202), fall back to the IN filter approach
         if (rpcError.code === 'PGRST202' || rpcError.message?.includes('get_dm_reactions_by_thread')) {
@@ -65,12 +64,12 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
       const { data: messages, error: messagesError } = await supabase
         .from('direct_messages')
         .select('id')
-        .eq('thread_id', threadId);
+        .eq('thread_id', threadId as any);
 
       if (messagesError) throw messagesError;
       if (!messages?.length) return [];
 
-      const messageIds = messages.map(m => m.id).filter(Boolean);
+      const messageIds = (messages as any[]).map((m: any) => m.id).filter(Boolean);
 
       // 👇 Ensure *all* ids are valid UUIDs to prevent 400 errors
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -95,15 +94,7 @@ export function useMessageReactions(threadId: string | undefined, surface: 'dm' 
         .order('created_at', { ascending: true })
         .throwOnError(); // helps expose the real error in console
 
-      if (error) {
-        // Handle case where database table doesn't exist yet
-        if (error.code === 'PGRST116' || error.message?.includes('dm_message_reactions')) {
-          console.warn('[useMessageReactions] Database table not found - returning empty reactions');
-          return [];
-        }
-        throw error;
-      }
-      return data || [];
+      return (data as any[]) || [];
     },
     staleTime: 30_000, // 30 seconds
   });

@@ -122,15 +122,16 @@ export function OnboardingTestSuite() {
     const { data: profile } = await supabase
       .from('profiles')
       .select('username')
-      .eq('id', user.id)
-      .single();
+      .eq('id', user.id as any)
+      .maybeSingle();
     
-    if (!profile?.username) {
+    const username = (profile as any)?.username;
+    if (!username) {
       throw new Error('User has no username - enforcement failed');
     }
     
     // Check if username meets format requirements
-    if (!/^[A-Za-z0-9_.-]+$/.test(profile.username)) {
+    if (!/^[A-Za-z0-9_.-]+$/.test(username)) {
       throw new Error('Username format validation failed');
     }
     
@@ -189,8 +190,8 @@ export function OnboardingTestSuite() {
     
     const { error } = await supabase
       .from('profiles')
-      .update(testUpdate)
-      .eq('id', user.id);
+      .update(testUpdate as any)
+      .eq('id', user.id as any);
     
     if (error) throw error;
     
