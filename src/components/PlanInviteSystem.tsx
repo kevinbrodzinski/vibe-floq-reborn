@@ -28,13 +28,14 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
     setIsInviting(true);
     try {
       // Find user by username
-      const { data: user, error: userError } = await supabase
+      const { data: userRow, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username' as any, usernameInput.trim() as any)
+        .eq('username', usernameInput.trim() as any)
         .maybeSingle();
 
-      if (userError || !user?.id) {
+      const foundId = (userRow as any)?.id as string | undefined;
+      if (userError || !foundId) {
         toast({
           title: "User not found",
           description: `No user found with username "${usernameInput}"`,
@@ -43,7 +44,7 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
         return;
       }
 
-      const profileId = (user as any).id as string;
+      const profileId = foundId;
 
       // Add to plan participants
       const { error: inviteError } = await supabase
@@ -51,7 +52,7 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
         .insert({
           plan_id: planId,
           profile_id: profileId,
-          role: 'member'
+          role: 'participant'
         } as any);
 
       if (inviteError) {
@@ -90,11 +91,14 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
 
     setIsInviting(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('plan_invitations')
         .insert({
           plan_id: planId,
-          inviter_id: (await supabase.auth.getUser()).data.user?.id,
+          inviter_id: user.id,
           invitee_email: emailInput.trim(),
           invitation_type: 'email'
         });

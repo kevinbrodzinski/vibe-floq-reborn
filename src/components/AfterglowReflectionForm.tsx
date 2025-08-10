@@ -91,34 +91,34 @@ export const AfterglowReflectionForm = ({
         plan_id: planId,
         profile_id: user.id,
         date: new Date().toISOString().split('T')[0],
-        overall_rating: reflection.overall_rating[0],
-        energy_level: reflection.energy_level[0],
-        social_connection: reflection.social_connection[0],
         would_repeat_score: reflection.would_repeat[0],
-        overall_vibe: selectedVibeEmoji,
-        moments: {
+        shared_moments: {
           best: reflection.best_moment,
           worst: reflection.worst_moment,
           discovery: reflection.new_discovery,
           quote: reflection.memorable_quote,
           photo_worthy: reflection.photo_worthy_moments,
           spontaneous: reflection.spontaneous_moments,
-          moment_types: selectedMoments
+          moment_types: selectedMoments,
+          overall_vibe: selectedVibeEmoji
         },
-        ratings: {
+        group_vibe_arc: {
+          overall_rating: reflection.overall_rating[0],
+          energy_level: reflection.energy_level[0],
+          social_connection: reflection.social_connection[0],
           group_chemistry: reflection.group_chemistry[0],
           plan_execution: reflection.plan_execution[0],
           budget_satisfaction: reflection.budget_satisfaction[0],
-          time_satisfaction: reflection.time_satisfaction[0]
+          time_satisfaction: reflection.time_satisfaction[0],
+          weather_impact: reflection.weather_impact,
+          venue_feedback: reflection.venue_ratings
         },
-        final_thoughts: reflection.final_thoughts,
-        weather_impact: reflection.weather_impact,
-        venue_feedback: reflection.venue_ratings
+        ending_sentiment: reflection.final_thoughts || null
       };
 
       const { error } = await supabase
         .from('plan_afterglow')
-        .insert(afterglowData as any);
+        .insert(afterglowData);
 
       if (error) throw error;
 
