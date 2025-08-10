@@ -31,7 +31,7 @@ export function useOnboardingStatus(): OnboardingStatus {
       const { data, error } = await supabase
         .from('user_onboarding_progress')
         .select('completed_at, onboarding_version')
-        .eq('profile_id', user.id)
+        .eq('user_id', user.id)
         .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
         .maybeSingle();
       
@@ -66,13 +66,13 @@ export function useOnboardingStatus(): OnboardingStatus {
       // Update both tables for consistency
       const [progressResult, preferencesResult] = await Promise.allSettled([
         supabase.from('user_onboarding_progress').upsert({
-          profile_id: user.id,
+          user_id: user.id,
           onboarding_version: CURRENT_ONBOARDING_VERSION,
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
         }, {
-          onConflict: ONBOARDING_CONFLICT_COLUMNS
+          onConflict: 'user_id,onboarding_version'
         }),
         
         updatePreferences({

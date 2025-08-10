@@ -62,7 +62,7 @@ export function useOnboardingDatabase() {
               const { data, error: fetchError } = await supabase
           .from('user_onboarding_progress')
           .select('*')
-          .eq('profile_id', user.id)
+          .eq('user_id', user.id)
           .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
           .maybeSingle();
       
@@ -93,9 +93,9 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      // Validate and clean the data before sending
+      // Validate and clean the data before sending  
       const progressData = {
-        profile_id: user.id, // Using profile_id as per the types file
+        user_id: user.id, // Using user_id as per the original migration
         onboarding_version: CURRENT_ONBOARDING_VERSION,
         current_step: Math.min(Math.max(state.currentStep || 0, 0), 10),
         completed_steps: Array.isArray(state.completedSteps) ? state.completedSteps.filter(n => typeof n === 'number') : [],
@@ -106,10 +106,10 @@ export function useOnboardingDatabase() {
 
                   console.log('🔍 Attempting to save onboarding progress:', progressData);
       
-              const { error: upsertError } = await supabase
+                            const { error: upsertError } = await supabase
           .from('user_onboarding_progress')
           .upsert(progressData, {
-            onConflict: 'profile_id,onboarding_version'
+            onConflict: 'user_id,onboarding_version'
           });
       
       if (upsertError) {
