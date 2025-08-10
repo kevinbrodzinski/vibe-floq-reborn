@@ -28,7 +28,6 @@ import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
-import { OnboardingTestSuite } from "@/components/testing/OnboardingTestSuite";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
 
@@ -112,7 +111,7 @@ const App = () => {
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
-                        {import.meta.env.DEV && <Route path="/test/onboarding" element={<OnboardingTestSuite />} />}
+
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
