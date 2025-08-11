@@ -23,11 +23,11 @@ export function useCheckInStatus(planId: string, stopId: string) {
       if (!profileId) return null
 
       const { data, error } = await supabase
-        .from('plan_check_ins' as any)
+        .from('plan_check_ins')
         .select('*')
-        .eq('plan_id', planId as any)
-        .eq('stop_id', stopId as any)
-        .eq('participant_id', profileId as any)
+        .eq('plan_id', planId)
+        .eq('stop_id', stopId)
+        .eq('profile_id', profileId)
         .maybeSingle()
 
       if (error) {

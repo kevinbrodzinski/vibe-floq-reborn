@@ -20,11 +20,11 @@ export function useAvatarManager() {
       if (!user) throw new Error('No user found');
       
       // Get current avatar for cleanup
-      const { data: currentProfile } = await (supabase
+      const { data: currentProfile } = await supabase
         .from('profiles')
         .select('avatar_url')
-        .eq('id', user.id as any)
-        .single() as any);
+        .eq('id', user.id)
+        .single();
       
       const { path, error: uploadError } = await uploadAvatar(file);
       if (uploadError) throw new Error(uploadError);
@@ -32,8 +32,8 @@ export function useAvatarManager() {
       // Update profile with public URL (path now contains the public URL)
       await supabase
         .from('profiles')
-        .update({ avatar_url: path } as any)
-        .eq('id', user.id as any);
+        .update({ avatar_url: path })
+        .eq('id', user.id);
 
       // Clean up old avatar if it exists
       if (currentProfile?.avatar_url && currentProfile.avatar_url !== path) {
@@ -62,11 +62,11 @@ export function useAvatarManager() {
     try {
       if (!user) throw new Error('No user found');
       
-      const { data: profile } = await (supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('avatar_url')
-        .eq('id', user.id as any)
-        .single() as any);
+        .eq('id', user.id)
+        .single();;
       
       if (profile?.avatar_url) {
         await deleteAvatar(profile.avatar_url);
@@ -76,8 +76,8 @@ export function useAvatarManager() {
       
       await supabase
         .from('profiles')
-        .update({ avatar_url: null } as any)
-        .eq('id', user.id as any);
+        .update({ avatar_url: null })
+        .eq('id', user.id);
         
       toast({ title: 'Avatar removed' });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
