@@ -23,8 +23,8 @@ export function useAvatarManager() {
       const { data: currentProfile } = await supabase
         .from('profiles')
         .select('avatar_url')
-        .eq('id', user.id)
-        .single();
+        .eq('id', user.id as any)
+        .maybeSingle();
       
       const { path, error: uploadError } = await uploadAvatar(file);
       if (uploadError) throw new Error(uploadError);
@@ -32,11 +32,11 @@ export function useAvatarManager() {
       // Update profile with public URL (path now contains the public URL)
       await supabase
         .from('profiles')
-        .update({ avatar_url: path })
-        .eq('id', user.id);
+        .update({ avatar_url: path } as any)
+        .eq('id', user.id as any);
 
       // Clean up old avatar if it exists
-      if (currentProfile?.avatar_url && currentProfile.avatar_url !== path) {
+      if (currentProfile && 'avatar_url' in currentProfile && currentProfile.avatar_url && currentProfile.avatar_url !== path) {
         // Don't await this - let it run in background
         deleteAvatar(currentProfile.avatar_url).catch(console.warn);
         clearAvatarUrlCache(currentProfile.avatar_url);
@@ -65,10 +65,10 @@ export function useAvatarManager() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('avatar_url')
-        .eq('id', user.id)
-        .single();;
+        .eq('id', user.id as any)
+        .maybeSingle();
       
-      if (profile?.avatar_url) {
+      if (profile && 'avatar_url' in profile && profile.avatar_url) {
         await deleteAvatar(profile.avatar_url);
         // Clear cache for deleted avatar
         clearAvatarUrlCache(profile.avatar_url);
@@ -76,8 +76,8 @@ export function useAvatarManager() {
       
       await supabase
         .from('profiles')
-        .update({ avatar_url: null })
-        .eq('id', user.id);
+        .update({ avatar_url: null } as any)
+        .eq('id', user.id as any);
         
       toast({ title: 'Avatar removed' });
       queryClient.invalidateQueries({ queryKey: ['profile'] });

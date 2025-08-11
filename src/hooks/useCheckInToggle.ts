@@ -33,10 +33,10 @@ export function useCheckInToggle() {
           .from('plan_check_ins')
           .update({ 
             checked_out_at: new Date().toISOString()
-          })
-          .eq('plan_id', planId)
-          .eq('stop_id', stopId)
-          .eq('participant_id', user.id)
+          } as any)
+          .eq('plan_id', planId as any)
+          .eq('stop_id', stopId as any)
+          .eq('profile_id', user.id as any)
 
         if (error) throw error
 
@@ -48,7 +48,7 @@ export function useCheckInToggle() {
           entity_id: stopId,
           entity_type: 'stop',
           metadata: { device: getDeviceInfo().device_id }
-        })
+        } as any)
 
         return { action: 'checked_out' }
       } else {
@@ -58,10 +58,10 @@ export function useCheckInToggle() {
           .insert({
             plan_id: planId,
             stop_id: stopId,
-            participant_id: user.id,
+            profile_id: user.id,
             checked_in_at: new Date().toISOString(),
             device_id: getDeviceInfo().device_id,
-          })
+          } as any)
 
         if (error) throw error
 
@@ -73,7 +73,7 @@ export function useCheckInToggle() {
           entity_id: stopId,
           entity_type: 'stop',
           metadata: { device: getDeviceInfo().device_id }
-        })
+        } as any)
 
         return { action: 'checked_in' }
       }
