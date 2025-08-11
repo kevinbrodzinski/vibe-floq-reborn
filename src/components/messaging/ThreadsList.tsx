@@ -171,28 +171,33 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b space-y-3">
-        {/* Create New Message Button */}
-        <Button
-          onClick={() => setCreateDialogOpen(true)}
-          className="w-full flex items-center gap-2"
-          variant="default"
-        >
-          <Plus className="w-4 h-4" />
-          New Message
-        </Button>
-
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search conversations..."
-            className="pl-10 bg-background/60"
-          />
+        {/* Search and Create Message Row */}
+        <div className="flex items-center gap-2">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search conversations..."
+              className="pl-10 bg-background/60"
+            />
+          </div>
+          
+          {/* Create New Message Button */}
+          <Button
+            onClick={() => setCreateDialogOpen(true)}
+            className="flex items-center gap-2 shrink-0"
+            variant="default"
+            size="default"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">New</span>
+          </Button>
         </div>
+
         {debouncedSearch && threadsToShow.length > 0 && (
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             Found {threadsToShow.length} result{threadsToShow.length !== 1 ? 's' : ''}
           </div>
         )}
