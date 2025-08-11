@@ -189,9 +189,9 @@ export function useAtomicFriendships() {
         const { error } = await supabase
           .from('friend_requests')
           .delete()
-          .eq('profile_id', currentUserId)
-          .eq('other_profile_id', profileId)
-          .eq('status', 'pending');
+          .eq('profile_id', currentUserId as any)
+          .eq('other_profile_id', profileId as any)
+          .eq('status', 'pending' as any)
 
         if (error) throw error;
       }
@@ -312,9 +312,9 @@ export function useAtomicFriendships() {
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .eq('user_low', userLow)
-        .eq('user_high', userHigh)
-        .eq('friend_state', 'blocked');
+        .eq('user_low', userLow as any)
+        .eq('user_high', userHigh as any)
+        .eq('friend_state', 'blocked' as any)
 
       if (error) throw error;
     },
@@ -366,9 +366,9 @@ export function useAtomicFriendships() {
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .eq('user_low', userLow)
-        .eq('user_high', userHigh)
-        .eq('friend_state', 'accepted');
+        .eq('user_low', userLow as any)
+        .eq('user_high', userHigh as any)
+        .eq('friend_state', 'accepted' as any)
 
       if (error) throw error;
     },
