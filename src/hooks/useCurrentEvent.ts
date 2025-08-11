@@ -26,8 +26,8 @@ export function useCurrentEvent(
       });
 
       if (error) throw error;
-      
-      return data && data.length > 0 ? data[0] : null;
+      const arr = Array.isArray(data) ? (data as any[]) : [];
+      return arr.length > 0 ? (arr[0] as any) : null;
     },
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
   });

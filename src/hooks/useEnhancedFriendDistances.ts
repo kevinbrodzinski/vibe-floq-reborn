@@ -503,16 +503,16 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
    */
   useEffect(() => {
     if (updateTimerRef.current) {
-      clearInterval(updateTimerRef.current);
+      window.clearInterval(updateTimerRef.current);
     }
 
-    updateTimerRef.current = setInterval(() => {
+    updateTimerRef.current = window.setInterval(() => {
       calculateFriendDistances();
     }, updateInterval);
 
     return () => {
       if (updateTimerRef.current) {
-        clearInterval(updateTimerRef.current);
+        window.clearInterval(updateTimerRef.current);
       }
     };
   }, [calculateFriendDistances, updateInterval]);

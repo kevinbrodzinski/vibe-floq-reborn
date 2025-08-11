@@ -27,12 +27,12 @@ export function useCreatePlanStop() {
 
       // Get current count first
       const { count } = await supabase
-        .from('plan_stops')
-        .select('*', { count: 'exact', head: true })
-        .eq('plan_id', payload.plan_id)
+        .from('plan_stops' as any)
+        .select('*', { count: 'exact', head: true } as any)
+        .eq('plan_id', payload.plan_id as any)
 
       const { data, error } = await supabase
-        .from('plan_stops')
+        .from('plan_stops' as any)
         .insert({
           plan_id: payload.plan_id,
           created_by: session?.user?.id || localStorage.getItem('guest_participant_id'),
@@ -44,7 +44,7 @@ export function useCreatePlanStop() {
           venue_id: payload.venue_id,
           estimated_cost_per_person: payload.estimated_cost_per_person,
           stop_order: (count || 0) + 1,
-        })
+        } as any)
         .select()
         .single()
 

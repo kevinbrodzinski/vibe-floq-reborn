@@ -32,11 +32,12 @@ export const useFavorites = () => {
           description,
           image_url
         `)
-        .eq('profile_id', user.id)
+        .eq('profile_id', user.id as any)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data?.map(item => ({
+      const rows = Array.isArray(data) ? (data as any[]) : [];
+      return rows.map((item: any) => ({
         user_id: user.id,
         item_id: item.item_id,
         item_type: item.item_type as 'venue' | 'plan',
@@ -44,7 +45,7 @@ export const useFavorites = () => {
         title: item.title,
         description: item.description,
         image_url: item.image_url,
-      })) || [];
+      }));
     },
     enabled: !!user?.id,
   });
@@ -60,7 +61,7 @@ export const useFavorites = () => {
       if (!user?.id) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
-        .from('user_favorites')
+        .from('user_favorites' as any)
         .insert({
           profile_id: user.id,
           item_id: itemId,
@@ -68,7 +69,7 @@ export const useFavorites = () => {
           title,
           description,
           image_url: imageUrl,
-        })
+        } as any)
         .select()
         .single();
 
@@ -98,10 +99,10 @@ export const useFavorites = () => {
       if (!user?.id) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('user_favorites')
+        .from('user_favorites' as any)
         .delete()
-        .eq('profile_id', user.id)
-        .eq('item_id', itemId);
+        .eq('profile_id', user.id as any)
+        .eq('item_id', itemId as any);
 
       if (error) throw error;
     },

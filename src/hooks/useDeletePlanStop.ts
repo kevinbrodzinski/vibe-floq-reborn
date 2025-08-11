@@ -16,7 +16,7 @@ export function useDeletePlanStop() {
       const { error } = await supabase
         .from('plan_stops')
         .delete()
-        .eq('id', id)
+        .eq('id', id as any)
 
       if (error) throw error
       return { id }

@@ -13,8 +13,8 @@ export function useDeleteStop() {
       const { error } = await supabase
         .from('plan_stops')
         .delete()
-        .eq('id', stopId)
-        .eq('plan_id', planId)
+        .eq('id', stopId as any)
+        .eq('plan_id', planId as any)
 
       if (error) throw error
     },

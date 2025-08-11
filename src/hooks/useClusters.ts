@@ -60,7 +60,8 @@ export const useClusters = (
           setClusters([]);
         } else {
           // Transform PostGIS geometry to GeoJSON format
-          const transformedData = (data ?? []).map(cluster => {
+          const rows = Array.isArray(data) ? (data as any[]) : [];
+          const transformedData = rows.map((cluster: any) => {
             // Parse PostGIS geometry - it could be in WKB format or already parsed
             let coordinates: [number, number];
             if (typeof cluster.centroid === 'string') {

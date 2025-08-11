@@ -34,7 +34,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
   const { toast } = useToast();
   const location = useGeo();
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const updateIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateIntervalRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
   const isUpdatingRef = useRef<boolean>(false);
 
@@ -127,7 +127,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
 
     // Clear any existing interval before starting a new one
     if (updateIntervalRef.current) {
-      clearInterval(updateIntervalRef.current);
+      window.clearInterval(updateIntervalRef.current);
       updateIntervalRef.current = null;
     }
 
@@ -142,18 +142,18 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         p_radius_m: 1000, 
         p_limit: 50 
       })
-      .then(({ data }) => console.log('Nearby positions from PostGIS ->', data?.length || 0));
+      .then(({ data }) => console.log('Nearby positions from PostGIS ->', Array.isArray(data) ? data.length : 0));
 
     // Set up interval for automatic updates (reduced frequency)
-    updateIntervalRef.current = setInterval(() => {
+    updateIntervalRef.current = window.setInterval(() => {
       updatePresence();
     }, 15000); // 15 seconds instead of 10
 
     return () => {
-      if (updateIntervalRef.current) {
-        clearInterval(updateIntervalRef.current);
-        updateIntervalRef.current = null;
-      }
+    if (updateIntervalRef.current) {
+      window.clearInterval(updateIntervalRef.current);
+      updateIntervalRef.current = null;
+    }
     };
   }, [session, location.coords?.lat, location.coords?.lng]); // Remove updatePresence from deps to prevent recreation
 
@@ -212,7 +212,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
   useEffect(() => {
     return () => {
       if (updateIntervalRef.current) {
-        clearInterval(updateIntervalRef.current);
+        window.clearInterval(updateIntervalRef.current);
       }
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);

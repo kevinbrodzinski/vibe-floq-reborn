@@ -75,7 +75,7 @@ export function useCreatePlan() {
         .toISOString()
 
       const { data: planRow, error: planErr } = await supabase
-        .from('floq_plans')
+        .from('floq_plans' as any)
         .insert({
           title: payload.title,
           description: payload.description,
@@ -85,12 +85,12 @@ export function useCreatePlan() {
           end_time: isoToPgTime(endISO),
           creator_id: session.user.id,
           plan_mode: 'draft',
-        })
+        } as any)
         .select('id')
         .single()
 
       if (planErr) throw planErr
-      const planId = planRow.id as string
+      const planId = (planRow as any).id as string
 
       /* 2 ─ call finalize_plan RPC (Phase 2) ------------------------------ */
       const { data: rpcResult, error: finalizeErr } = await supabase.rpc('finalize_plan', {
@@ -108,11 +108,11 @@ export function useCreatePlan() {
       if (payload.invitedUserIds.length) {
         // 1) Collect every floq_id we just linked:
         const { data: linked } = await supabase
-          .from('plan_floqs')
+          .from('plan_floqs' as any)
           .select('floq_id')
-          .eq('plan_id', planId);
+          .eq('plan_id', planId as any);
 
-        const linkedFloqIds: string[] = linked?.map(r => r.floq_id) ?? [];
+        const linkedFloqIds: string[] = (linked as any[])?.map((r: any) => r.floq_id) ?? [];
 
         // 2) Bulk-insert all invited users into every linked floq:
         if (linkedFloqIds.length) {
@@ -134,8 +134,8 @@ export function useCreatePlan() {
           );
 
           const { error: inviteErr } = await supabase
-            .from('floq_participants')
-            .insert(rows);
+            .from('floq_participants' as any)
+            .insert(rows as any);
 
           if (inviteErr) {
             // non-fatal – plan is finalised, only invites failed

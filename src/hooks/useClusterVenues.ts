@@ -43,7 +43,8 @@ export function useClusterVenues(
         throw error;
       }
 
-      return (data ?? []).map(v => ({
+      const items = Array.isArray(data) ? (data as any[]) : [];
+      return items.map((v: any) => ({
         ...v,
         lat: +v.lat,
         lng: +v.lng,

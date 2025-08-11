@@ -77,8 +77,9 @@ export const useETASharing = () => {
           travel_mode: eta.mode
         }));
 
-        const { error: etaError } = await supabase.from('eta_shares')
-          .upsert(etaEntries, { onConflict: 'sharer_id,other_profile_id' });
+        const { error: etaError } = await supabase
+          .from('eta_shares' as any)
+          .upsert(etaEntries as any, { onConflict: 'sharer_id,other_profile_id' } as any);
         
         if (etaError) {
           console.error('Error storing ETA shares:', etaError);
@@ -102,23 +103,23 @@ export const useETASharing = () => {
 
   // Set up interval for ETA updates
   useEffect(() => {
-    if (liveSettings?.live_smart_flags?.share_eta && pos && shareTo.length > 0) {
-      intervalRef.current = setInterval(updateETAs, ETA_UPDATE_INTERVAL);
-      // Run initial calculation
-      updateETAs();
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      if (liveSettings?.live_smart_flags?.share_eta && pos && shareTo.length > 0) {
+        intervalRef.current = window.setInterval(updateETAs, ETA_UPDATE_INTERVAL);
+        // Run initial calculation
+        updateETAs();
+      } else {
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        etaMapRef.current.clear();
       }
-      etaMapRef.current.clear();
-    }
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
+      return () => {
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+        }
+      };
   }, [liveSettings?.live_smart_flags?.share_eta, pos, shareTo.length, updateETAs]);
 
   return {

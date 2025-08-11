@@ -46,7 +46,7 @@ export function useEnhancedFloqPlans(floqId?: string) {
         throw error;
       }
 
-      return data || [];
+      return (Array.isArray(data) ? (data as any[]) : []) as any;
     },
     enabled: !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -100,42 +100,42 @@ export function useEnhancedFloqPlans(floqId?: string) {
     mutationFn: async (planId: string) => {
       // First, get the plan details to find the floq_id
       const { data: planData, error: planError } = await supabase
-        .from('floq_plans')
+        .from('floq_plans' as any)
         .select('floq_id')
-        .eq('id', planId)
+        .eq('id', planId as any)
         .single();
 
       if (planError) throw planError;
 
       // Join the plan
       const { error: joinPlanError } = await supabase
-        .from('plan_participants')
+        .from('plan_participants' as any)
         .upsert({
           plan_id: planId,
           profile_id: user!.id,
           rsvp_status: 'attending',
           joined_at: new Date().toISOString()
-        });
+        } as any);
 
       if (joinPlanError) throw joinPlanError;
 
       // If there's a floq, join it too
-      if (planData.floq_id) {
+      if ((planData as any).floq_id) {
         const { error: joinFloqError } = await supabase
-          .from('floq_participants')
+          .from('floq_participants' as any)
           .upsert({
-            floq_id: planData.floq_id,
+            floq_id: (planData as any).floq_id,
             profile_id: user!.id,
             role: 'member',
             joined_at: new Date().toISOString()
-          });
+          } as any);
 
         if (joinFloqError) {
           console.warn('Failed to join floq, but plan join succeeded:', joinFloqError);
         }
       }
 
-      return { planId, floqId: planData.floq_id };
+      return { planId, floqId: (planData as any).floq_id };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['enhanced-floq-plans'] });
@@ -161,41 +161,41 @@ export function useEnhancedFloqPlans(floqId?: string) {
     mutationFn: async (planId: string) => {
       // First, get the plan details to find the floq_id
       const { data: planData, error: planError } = await supabase
-        .from('floq_plans')
+        .from('floq_plans' as any)
         .select('floq_id, creator_id')
-        .eq('id', planId)
+        .eq('id', planId as any)
         .single();
 
       if (planError) throw planError;
 
       // Don't allow creator to leave
-      if (planData.creator_id === user!.id) {
+      if ((planData as any).creator_id === user!.id) {
         throw new Error('Plan creators cannot leave their own plans');
       }
 
       // Leave the plan
       const { error: leavePlanError } = await supabase
-        .from('plan_participants')
+        .from('plan_participants' as any)
         .delete()
-        .eq('plan_id', planId)
-        .eq('profile_id', user!.id);
+        .eq('plan_id', planId as any)
+        .eq('profile_id', user!.id as any);
 
       if (leavePlanError) throw leavePlanError;
 
       // If there's a floq, leave it too (unless it's auto-created)
-      if (planData.floq_id) {
+      if ((planData as any).floq_id) {
         const { error: leaveFloqError } = await supabase
-          .from('floq_participants')
+          .from('floq_participants' as any)
           .delete()
-          .eq('floq_id', planData.floq_id)
-          .eq('profile_id', user!.id);
+          .eq('floq_id', (planData as any).floq_id as any)
+          .eq('profile_id', user!.id as any);
 
         if (leaveFloqError) {
           console.warn('Failed to leave floq, but plan leave succeeded:', leaveFloqError);
         }
       }
 
-      return { planId, floqId: planData.floq_id };
+      return { planId, floqId: (planData as any).floq_id };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['enhanced-floq-plans'] });
