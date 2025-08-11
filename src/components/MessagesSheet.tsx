@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { ThreadsList } from '@/components/messaging/ThreadsList';
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MessagesSheetProps {
   open: boolean;
@@ -23,6 +24,7 @@ export const MessagesSheet = ({
   onFriendsSheetOpen,
 }: MessagesSheetProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
   const [selectedFriendProfileId, setSelectedFriendProfileId] = useState<string | undefined>(undefined);
   const [selectedThreadId, setSelectedThreadId] = useState<string | undefined>(undefined);
@@ -31,6 +33,9 @@ export const MessagesSheet = ({
     setSelectedFriendProfileId(friendProfileId);
     setSelectedThreadId(threadId); // ✅ Keep this! Prevent resolution loop
     setDmSheetOpen(true);
+    
+    // Refresh threads list to ensure new threads appear
+    queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
     // Don't close the list immediately - let user navigate back
   };
 

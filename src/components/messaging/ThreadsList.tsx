@@ -3,13 +3,15 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useThreads } from '@/hooks/messaging/useThreads';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { formatDistanceToNow } from 'date-fns';
-import { Search, MessageCircle, User, Hash } from 'lucide-react';
+import { Search, MessageCircle, User, Hash, Plus } from 'lucide-react';
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { CreateMessageDialog } from './CreateMessageDialog';
 
 interface ThreadsListProps {
   onThreadSelect: (threadId: string, friendProfileId: string) => void;
@@ -69,6 +71,7 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ThreadSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -160,9 +163,25 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
     onThreadSelect(thread.thread_id, thread.friend_profile_id);
   };
 
+  const handleCreateNewMessage = (threadId: string, friendProfileId: string) => {
+    // When a new thread is created, select it immediately
+    onThreadSelect(threadId, friendProfileId);
+  };
+
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+      <div className="p-4 border-b space-y-3">
+        {/* Create New Message Button */}
+        <Button
+          onClick={() => setCreateDialogOpen(true)}
+          className="w-full flex items-center gap-2"
+          variant="default"
+        >
+          <Plus className="w-4 h-4" />
+          New Message
+        </Button>
+
+        {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -203,6 +222,14 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
           />
         ))}
       </ScrollArea>
+
+      {/* Create Message Dialog */}
+      <CreateMessageDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        currentProfileId={currentProfileId}
+        onThreadCreated={handleCreateNewMessage}
+      />
     </div>
   );
 };
