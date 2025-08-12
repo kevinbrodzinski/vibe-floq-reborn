@@ -96,57 +96,61 @@ export function usePersonalizedVenuesRPC(params: UsePersonalizedVenuesParams) {
 export function useTrackInteraction() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
 
   return useMutation({
-    mutationFn: async ({
-      venueId,
-      interactionType,
-      context,
-    }: {
-      venueId: string;
-      interactionType: 'view' | 'tap' | 'bookmark' | 'checkin' | 'plan' | 'share' | 'dismiss' | 'like' | 'dislike';
-      context?: {
-        lat?: number;
-        lng?: number;
-        vibe?: string;
-        tags?: string[];
-        radiusM?: number;
-        tz?: string;
-      };
+    mutationFn: async ({ 
+      venue_id, 
+      interaction_type, 
+      context 
+    }: { 
+      venue_id: string; 
+      interaction_type: string;
+      context?: { lat?: number; lng?: number; vibe?: string; radius_m?: number };
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // For strong signals, call the online learning function
-      const strongSignals = new Set(['like', 'bookmark', 'checkin', 'plan', 'dismiss', 'dislike']);
-      if (strongSignals.has(interactionType)) {
-        await supabase.functions.invoke('on-interaction', {
+      const strongSignals = ['like', 'bookmark', 'check_in', 'plan', 'dismiss', 'dislike'];
+      
+      if (strongSignals.includes(interaction_type)) {
+        // Call on_interaction Edge Function for strong signals
+        const { data, error } = await supabase.functions.invoke('on_interaction', {
           body: {
             profile_id: user.id,
-            venue_id: venueId,
-            interaction_type: interactionType,
+            venue_id,
+            interaction_type,
             context: {
-              ...context,
-              tz: context?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-              now: new Date().toISOString(),
-            },
+              lat: context?.lat,
+              lng: context?.lng,
+              tz,
+              vibe: context?.vibe,
+              radius_m: context?.radius_m || 3000,
+              ...context
+            }
           }
         });
+
+        if (error) throw error;
+        return data;
       } else {
-        // For weak signals, just track the interaction
-        await supabase.rpc('track_interaction', {
+        // Call track_interaction RPC for weak signals (view, etc.)
+        const { data, error } = await supabase.rpc('track_interaction', {
           p_profile_id: user.id,
-          p_venue_id: venueId,
-          p_type: interactionType,
-          p_weight: 0,
-          p_context: context ?? {},
+          p_venue_id: venue_id,
+          p_interaction_type: interaction_type,
+          p_context: context || {}
         });
+
+        if (error) throw error;
+        return data;
       }
     },
     onSuccess: () => {
-      // Invalidate venue recommendations to get fresh results
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['personalizedVenues'] });
       queryClient.invalidateQueries({ queryKey: ['personalizedVenuesRPC'] });
-    },
+      queryClient.invalidateQueries({ queryKey: ['venues'] });
+    }
   });
 }
 
