@@ -7,12 +7,15 @@ export const USER_LOC_SRC   = 'user-location';
 export const USER_LOC_LAYER = 'user-location-dot';
 
 export function attachUserLocationSource(map: mapboxgl.Map): () => void {
+  console.log('[attachUserLocationSource] 🚀 Starting attachment process');
+  
   // Guard against invalid map reference
   if (!map || typeof map.isStyleLoaded !== 'function') {
     console.error('[attachUserLocationSource] Invalid map reference:', map);
     return () => {}; // Return no-op cleanup function
   }
   
+  console.log('[attachUserLocationSource] Map reference valid, proceeding...');
   let isSourceReady = false;
   
   const ensure = () => {

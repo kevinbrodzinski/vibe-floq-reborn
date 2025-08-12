@@ -1126,8 +1126,35 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       });
       
       if (!isSourceReady) {
-        console.warn('[FieldWebMap] User location source not ready, skipping location update');
-        return;
+        console.warn('[FieldWebMap] User location source not ready, attempting to force update anyway...');
+        // Try to force create the source/layer if missing
+        try {
+          if (!map.getSource('user-location')) {
+            map.addSource('user-location', {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] }
+            });
+            console.log('[FieldWebMap] ✅ Force-created user location source');
+          }
+          
+          if (!map.getLayer('user-location-dot')) {
+            map.addLayer({
+              id: 'user-location-dot',
+              type: 'circle',
+              source: 'user-location',
+              paint: {
+                'circle-color': '#3B82F6',
+                'circle-radius': 8,
+                'circle-stroke-color': '#fff',
+                'circle-stroke-width': 2
+              }
+            });
+            console.log('[FieldWebMap] ✅ Force-created user location layer');
+          }
+        } catch (error) {
+          console.error('[FieldWebMap] Failed to force-create user location source/layer:', error);
+          return;
+        }
       }
       
       // Use the safe setUserLocation utility
