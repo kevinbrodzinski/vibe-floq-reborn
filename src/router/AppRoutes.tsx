@@ -9,7 +9,7 @@ const FieldScreen = lazy(() => import('@/components/screens/FieldScreen').then(m
 const FlocksHome = lazy(() => import('@/components/FlocksHome').then(m => ({ default: m.FlocksHome })));
 const FloqDetail = lazy(() => import('@/pages/FloqDetail'));
 const FloqManage = lazy(() => import('@/pages/FloqManage'));
-const PulseScreen = lazy(() => import('@/components/screens/PulseScreen').then(m => ({ default: m.PulseScreen })));
+const PulseScreen = lazy(() => import('@/components/screens/pulse/PulseScreenRedesigned').then(m => ({ default: m.PulseScreenRedesigned })));
 const VibeScreen = lazy(() => import('@/screens/VibeScreen').then(m => ({ default: m.VibeScreen })));
 const AfterglowRoutes = lazy(() => import('@/routes/AfterglowRoutes'));
 const CollaborativePlanningScreen = lazy(() => import('@/components/screens/CollaborativePlanningScreen').then(m => ({ default: m.CollaborativePlanningScreen })));
