@@ -121,7 +121,12 @@ export function attachFieldPixiBridge(
 
     // Convert current data + push points
     const snap = getFieldOverlaySnapshot();
+    console.log('[pixiBridge] Raw overlay snapshot:', snap.length, 'items');
     const pts = glPointsConvertDynamic(snap, controls);
+    console.log('[pixiBridge] Converted to GL points:', pts.length, 'points');
+    if (pts.length > 0) {
+      console.log('[pixiBridge] Sample GL point:', pts[0]);
+    }
     layer.setPoints(pts);
 
     // Extra style hook

@@ -927,6 +927,26 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           // Expose map to window for test scripts (dev only)
           if (import.meta.env.DEV) {
             (window as any).__fieldMap = map;
+            
+            // Quick test function to inject a point at map center
+            (window as any).testFieldOverlay = () => {
+              const center = map.getCenter();
+              console.log('🧪 Injecting test point at map center:', center);
+              
+              // Test via overlay bridge
+              const { setFieldOverlayProvider, notifyFieldOverlayChanged } = require('@/lib/field/overlayBridge');
+              setFieldOverlayProvider(() => [{
+                id: 'test-point',
+                lat: center.lat,
+                lng: center.lng,
+                vibe: 'hype',
+                isFriend: true,
+                isYou: true
+              }]);
+              notifyFieldOverlayChanged();
+              
+              console.log('✅ Test point injected - you should see a pin at map center');
+            };
           }
           
           // Attach Field PIXI GL layer (with better error handling)

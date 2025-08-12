@@ -297,6 +297,11 @@ export function createFieldPixiLayer(
     if (!renderer || !stage || !map) return;   // <— add !map guard too
     ensureRendererSize();
     
+    // Debug: Log render attempts
+    if (points.length > 0) {
+      console.log('[FieldPixiLayer] Rendering frame with', points.length, 'points');
+    }
+    
     // Update animation time
     animationTime += 16; // ~60fps
     
@@ -412,6 +417,10 @@ export function createFieldPixiLayer(
     },
 
     setPoints(pts: FieldPoint[]) {
+      console.log('[FieldPixiLayer] Received points:', pts.length);
+      if (pts.length > 0) {
+        console.log('[FieldPixiLayer] Sample point:', pts[0]);
+      }
       points = pts;
       map?.triggerRepaint();
     },

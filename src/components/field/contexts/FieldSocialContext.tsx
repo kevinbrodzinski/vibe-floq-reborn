@@ -170,6 +170,10 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
   // Publish glPoints to the overlay bridge (safely)
   useEffect(() => {
     try {
+      console.log('[FieldSocialContext] Publishing glPoints to overlay bridge:', glPoints.length, 'points');
+      if (glPoints.length > 0) {
+        console.log('[FieldSocialContext] Sample point:', glPoints[0]);
+      }
       setFieldOverlayProvider(() => glPoints);
       notifyFieldOverlayChanged();
     } catch (error) {
