@@ -58,6 +58,11 @@ export function createFieldPixiLayer(
 
   // Pool of graphics keyed by point id
   const pool = new Map<string, PIXI.Graphics>();
+  
+  // Advanced features state
+  let animationTime = 0;
+  let lastViewport = { bounds: null as any, zoom: 0 };
+  const clusters = new Map<string, { points: FieldPoint[], center: { x: number, y: number }, size: number }>();
 
   const ensureRendererSize = () => {
     if (!renderer || !map) return;
@@ -74,6 +79,55 @@ export function createFieldPixiLayer(
     return { x: p.x, y: p.y };
   };
 
+  // Spatial culling: only render points in viewport + margin
+  const isInViewport = (x: number, y: number, margin = 100) => {
+    if (!renderer) return true;
+    return x >= -margin && x <= renderer.width + margin && 
+           y >= -margin && y <= renderer.height + margin;
+  };
+
+  // Simple clustering: group nearby points at low zoom levels
+  const buildClusters = () => {
+    clusters.clear();
+    const zoom = map?.getZoom() || 15;
+    
+    if (zoom > 12) return; // No clustering at high zoom
+    
+    const clusterDistance = Math.max(50, 200 - zoom * 10);
+    const processed = new Set<string>();
+    
+    for (const point of points) {
+      if (processed.has(point.id)) continue;
+      
+      const screenPos = project(point.lng, point.lat);
+      const cluster = {
+        points: [point],
+        center: screenPos,
+        size: 1
+      };
+      
+      // Find nearby points
+      for (const other of points) {
+        if (processed.has(other.id) || other.id === point.id) continue;
+        
+        const otherPos = project(other.lng, other.lat);
+        const distance = Math.sqrt(
+          Math.pow(screenPos.x - otherPos.x, 2) + 
+          Math.pow(screenPos.y - otherPos.y, 2)
+        );
+        
+        if (distance < clusterDistance) {
+          cluster.points.push(other);
+          cluster.size++;
+          processed.add(other.id);
+        }
+      }
+      
+      processed.add(point.id);
+      clusters.set(point.id, cluster);
+    }
+  };
+
   const materializePoint = (pt: FieldPoint) => {
     let g = pool.get(pt.id);
     if (!g) {
@@ -83,6 +137,13 @@ export function createFieldPixiLayer(
     }
 
     const { x, y } = project(pt.lng, pt.lat);
+    
+    // Spatial culling optimization
+    if (!isInViewport(x, y)) {
+      g.visible = false;
+      return;
+    }
+    g.visible = true;
 
     // Alpha & size from intensity + global style dim
     const baseAlpha = clamp(style.coreAlpha, 0.05, 1);
@@ -131,17 +192,24 @@ export function createFieldPixiLayer(
       g.drawCircle(x, y, baseRadius * 2.0);
       g.endFill();
 
-      // Friend ring
+      // Animated friend ring
       if (pt.halo) {
         const ringRadius = (pt.haloScale ?? 2.4) * baseRadius;
-        const ringAlpha = clamp(style.haloAlpha * style.dimFactor, 0.05, 1);
+        const baseRingAlpha = clamp(style.haloAlpha * style.dimFactor, 0.05, 1);
+        
+        // Animated pulsing effect
+        const pulseSpeed = 0.002;
+        const pulseIntensity = 0.3;
+        const animatedAlpha = baseRingAlpha + Math.sin(animationTime * pulseSpeed) * pulseIntensity * baseRingAlpha;
+        const animatedRadius = ringRadius + Math.sin(animationTime * pulseSpeed * 1.2) * 2;
+        
         g.lineStyle({
           width: Math.max(1.5, baseRadius * 0.25),
           color: (typeof pt.haloColor === 'number' ? pt.haloColor : drawColor),
-          alpha: ringAlpha,
+          alpha: clamp(animatedAlpha, 0.1, 1),
           alignment: 0.5,
         });
-        g.drawCircle(x, y, ringRadius);
+        g.drawCircle(x, y, animatedRadius);
         g.lineStyle(0, 0, 0);
       }
 
@@ -153,19 +221,102 @@ export function createFieldPixiLayer(
   };
 
   const prunePool = () => {
-    const ids = new Set(points.map(p => p.id));
+    const activeIds = new Set([
+      ...points.map(p => p.id),
+      ...Array.from(clusters.keys()).map(k => `cluster-${k}`)
+    ]);
+    
     for (const [pid, g] of pool.entries()) {
-      if (!ids.has(pid)) {
+      if (!activeIds.has(pid)) {
         g.destroy();
         pool.delete(pid);
       }
     }
   };
 
+  const materializeCluster = (clusterId: string, cluster: any) => {
+    let g = pool.get(`cluster-${clusterId}`);
+    if (!g) {
+      g = new PIXI.Graphics();
+      stage!.addChild(g);
+      pool.set(`cluster-${clusterId}`, g);
+    }
+
+    const { x, y } = cluster.center;
+    if (!isInViewport(x, y)) {
+      g.visible = false;
+      return;
+    }
+    g.visible = true;
+
+    const size = cluster.size;
+    const radius = Math.min(30, 12 + size * 2);
+    const alpha = clamp(style.coreAlpha * style.dimFactor, 0.3, 0.9);
+
+    g.clear();
+    
+    // Cluster background
+    g.beginFill(0x1a1a1a, alpha);
+    g.drawCircle(x, y, radius);
+    g.endFill();
+    
+    // Cluster border with animation
+    const borderPulse = 1 + Math.sin(animationTime * 0.003) * 0.1;
+    g.lineStyle({
+      width: 2 * borderPulse,
+      color: 0xffffff,
+      alpha: alpha * 0.8,
+    });
+    g.drawCircle(x, y, radius);
+    g.lineStyle(0, 0, 0);
+
+    // Count text (simplified - in real app you'd use PIXI.Text)
+    g.beginFill(0xffffff, alpha + 0.2);
+    const textRadius = Math.min(radius * 0.3, 6);
+    g.drawCircle(x, y, textRadius);
+    g.endFill();
+  };
+
   const renderFrame = () => {
     if (!renderer || !stage) return;
     ensureRendererSize();
-    for (const pt of points) materializePoint(pt);
+    
+    // Update animation time
+    animationTime += 16; // ~60fps
+    
+    // Check if viewport changed significantly for clustering
+    const currentBounds = map?.getBounds();
+    const currentZoom = map?.getZoom() || 15;
+    const viewportChanged = !lastViewport.bounds || 
+      Math.abs(currentZoom - lastViewport.zoom) > 0.5 ||
+      !currentBounds?.equals?.(lastViewport.bounds);
+    
+    if (viewportChanged) {
+      buildClusters();
+      lastViewport = { bounds: currentBounds, zoom: currentZoom };
+    }
+    
+    // Render clusters at low zoom, individual points at high zoom
+    if (currentZoom <= 12 && clusters.size > 0) {
+      // Render clusters
+      for (const [clusterId, cluster] of clusters) {
+        materializeCluster(clusterId, cluster);
+      }
+      // Hide individual points
+      for (const pt of points) {
+        const g = pool.get(pt.id);
+        if (g) g.visible = false;
+      }
+    } else {
+      // Render individual points
+      for (const pt of points) materializePoint(pt);
+      // Hide clusters
+      for (const clusterId of clusters.keys()) {
+        const g = pool.get(`cluster-${clusterId}`);
+        if (g) g.visible = false;
+      }
+    }
+    
     prunePool();
     renderer.render(stage);
   };
@@ -196,6 +347,11 @@ export function createFieldPixiLayer(
 
     render() {
       renderFrame();
+      // Continuous animation only when halos are visible
+      const hasAnimatedElements = points.some(p => p.halo) || clusters.size > 0;
+      if (hasAnimatedElements) {
+        map?.triggerRepaint();
+      }
     },
 
     onRemove() {
