@@ -1,5 +1,4 @@
 
-import { FullscreenFab } from "@/components/map/FullscreenFab";
 import { Z, zIndex } from "@/constants/z";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useAutoCheckIn } from "@/hooks/useAutoCheckIn";
@@ -17,13 +16,6 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
 
   return (
     <>
-      {/* ——— Fullscreen-map FAB —————————————— */}
-      <div 
-        className="fixed bottom-24 right-4 pointer-events-auto"
-        {...zIndex('system')}
-      >
-        <FullscreenFab />
-      </div>
 
       {/* ——— Auto Check-in Status (Development Only) —————————————— */}
       {process.env.NODE_ENV === 'development' && (
