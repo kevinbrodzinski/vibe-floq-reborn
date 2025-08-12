@@ -1118,11 +1118,15 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     const updateLocation = () => {
       // Check if the user location source is ready (attached by attachUserLocationSource)
       const isSourceReady = (map as any).__userLocationSourceReady?.();
+      console.log('[FieldWebMap] Location update check:', {
+        isSourceReady,
+        hasCoords: !!location.coords,
+        lat: location.coords?.lat,
+        lng: location.coords?.lng
+      });
+      
       if (!isSourceReady) {
-        // Debug-level logging - this is expected during early initialization
-        if (import.meta.env.DEV) {
-          console.debug('[FieldWebMap] User location source not ready, skipping location update');
-        }
+        console.warn('[FieldWebMap] User location source not ready, skipping location update');
         return;
       }
       
