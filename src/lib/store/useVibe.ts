@@ -40,7 +40,9 @@ export const useVibe = create<VibeState>()(
         // Update in database (but don't block UI if it fails)
         try {
           const { data, error } = await supabase.rpc('set_user_vibe', {
-            new_vibe: vibe
+            new_vibe: vibe,
+            lat: null,
+            lng: null
           });
           
           if (error) {
