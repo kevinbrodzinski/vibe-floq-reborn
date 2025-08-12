@@ -20,11 +20,10 @@ import type { LocationError } from "@/types/overrides";
 import { useGeo } from "@/hooks/useGeo";
 
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
-import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
 import { TimewarpDrawerProvider } from "@/contexts/TimewarpDrawerContext";
-import { TimewarpFab } from "@/components/field/TimewarpFab";
 import { TimewarpDrawer } from "@/components/field/TimewarpDrawer";
+import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
@@ -221,11 +220,8 @@ export const FieldLayout = () => {
             <TimewarpDrawer />
           </BottomHud>
 
-          {/* Friend FAB - z-65 */}
-          <FriendFab />
-
-          {/* Timewarp FAB - z-65 */}
-          <TimewarpFab />
+          {/* Layer Selection FAB - consolidated controls - z-65 */}
+          <LayerSelectionFab />
 
           {/* Proximity Notifications - z-50 */}
           <ProximityNotifications />
