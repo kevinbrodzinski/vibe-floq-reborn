@@ -417,17 +417,51 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           console.log('[FieldWebMap] 🔧 DEV: Initializing map without location for development');
         }
 
-        // Use actual location or dev fallback
-        const initialCenter: [number, number] = isLocationReady 
-          ? [location.coords.lng, location.coords.lat]
-          : [-122.4194, 37.7749]; // SF fallback for dev
+        // Use actual location, last known location from localStorage, or dev fallback
+        let initialCenter: [number, number];
+        
+        if (isLocationReady && location.coords) {
+          // Use current location
+          initialCenter = [location.coords.lng, location.coords.lat];
+          // Save to localStorage for next time
+          localStorage.setItem('fieldMap_lastLocation', JSON.stringify({
+            lng: location.coords.lng,
+            lat: location.coords.lat,
+            timestamp: Date.now()
+          }));
+        } else {
+          // Try to use last known location from localStorage
+          try {
+            const saved = localStorage.getItem('fieldMap_lastLocation');
+            if (saved) {
+              const { lng, lat, timestamp } = JSON.parse(saved);
+              // Use saved location if it's less than 24 hours old
+              if (timestamp && (Date.now() - timestamp) < 24 * 60 * 60 * 1000) {
+                initialCenter = [lng, lat];
+                console.log('[FieldWebMap] Using saved location:', { lat, lng });
+              } else {
+                throw new Error('Saved location too old');
+              }
+            } else {
+              throw new Error('No saved location');
+            }
+          } catch (error) {
+            // Fallback to SF for dev, or user's approximate area
+            initialCenter = [-122.4194, 37.7749]; // SF fallback for dev
+            console.log('[FieldWebMap] Using fallback location');
+          }
+        }
 
         // Create map with singleton protection to prevent WebGL context leaks
         console.log('[FieldWebMap] Creating map with singleton protection...');
+        // Get last zoom level if available
+        const savedZoom = localStorage.getItem('fieldMap_lastZoom');
+        const initialZoom = savedZoom ? parseFloat(savedZoom) : 11;
+
         const map = createMapSafely(mapContainerRef.current!, {
           style: 'mapbox://styles/mapbox/dark-v11',
           center: initialCenter,
-          zoom: 11,
+          zoom: initialZoom,
           preserveDrawingBuffer: true,
           antialias: true
         });
@@ -924,6 +958,20 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           setMapInstance(map);
           fire();
           map.on('moveend',fire);
+          
+          // Save map state when user moves/zooms for next session
+          map.on('moveend', () => {
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            
+            // Save current view for next time (debounced by moveend)
+            localStorage.setItem('fieldMap_lastLocation', JSON.stringify({
+              lng: center.lng,
+              lat: center.lat,
+              timestamp: Date.now()
+            }));
+            localStorage.setItem('fieldMap_lastZoom', zoom.toString());
+          });
           
           // Expose map to window for test scripts (dev only)
           if (import.meta.env.DEV) {
