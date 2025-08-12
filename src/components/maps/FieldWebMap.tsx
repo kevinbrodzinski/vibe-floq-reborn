@@ -468,7 +468,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         mapRef.current = map;
 
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
+        console.log('[FieldWebMap] Attaching user location source...');
         detachUserLocationSourceRef.current = attachUserLocationSource(map);
+        console.log('[FieldWebMap] User location source attached');
         
         // Wait for style to fully load before continuing
         if (!map.isStyleLoaded()) {
@@ -1114,34 +1116,26 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       return;
     }
     
-    // ✅ FIX: Ensure user location source is attached first
+    // ✅ Robust user location update with fallback source creation
     const updateLocation = () => {
       // Check if the user location source is ready (attached by attachUserLocationSource)
       const isSourceReady = (map as any).__userLocationSourceReady?.();
-      console.log('[FieldWebMap] Location update check:', {
-        isSourceReady,
-        hasCoords: !!location.coords,
-        lat: location.coords?.lat,
-        lng: location.coords?.lng
-      });
       
       if (!isSourceReady) {
-        console.warn('[FieldWebMap] User location source not ready, attempting to force update anyway...');
-        // Try to force create the source/layer if missing
+        // Fallback: Ensure source and layer exist even if attachment failed
         try {
-          if (!map.getSource('user-location')) {
-            map.addSource('user-location', {
+          if (!map.getSource(USER_LOC_SRC)) {
+            map.addSource(USER_LOC_SRC, {
               type: 'geojson',
               data: { type: 'FeatureCollection', features: [] }
             });
-            console.log('[FieldWebMap] ✅ Force-created user location source');
           }
           
-          if (!map.getLayer('user-location-dot')) {
+          if (!map.getLayer(USER_LOC_LAYER)) {
             map.addLayer({
-              id: 'user-location-dot',
+              id: USER_LOC_LAYER,
               type: 'circle',
-              source: 'user-location',
+              source: USER_LOC_SRC,
               paint: {
                 'circle-color': '#3B82F6',
                 'circle-radius': 8,
@@ -1149,10 +1143,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
                 'circle-stroke-width': 2
               }
             });
-            console.log('[FieldWebMap] ✅ Force-created user location layer');
           }
         } catch (error) {
-          console.error('[FieldWebMap] Failed to force-create user location source/layer:', error);
+          console.warn('[FieldWebMap] Could not create user location source/layer:', error);
           return;
         }
       }

@@ -7,20 +7,19 @@ export const USER_LOC_SRC   = 'user-location';
 export const USER_LOC_LAYER = 'user-location-dot';
 
 export function attachUserLocationSource(map: mapboxgl.Map): () => void {
-  console.log('[attachUserLocationSource] 🚀 Starting attachment process');
-  
   // Guard against invalid map reference
   if (!map || typeof map.isStyleLoaded !== 'function') {
     console.error('[attachUserLocationSource] Invalid map reference:', map);
     return () => {}; // Return no-op cleanup function
   }
   
-  console.log('[attachUserLocationSource] Map reference valid, proceeding...');
   let isSourceReady = false;
   
   const ensure = () => {
-    console.log('[attachUserLocationSource] Ensure called, style loaded:', map.isStyleLoaded());
-    if (!map.isStyleLoaded()) return; // wait for style
+    if (!map.isStyleLoaded()) {
+      console.log('[attachUserLocationSource] Style not loaded, waiting...');
+      return; // wait for style
+    }
 
     // add missing source
     if (!map.getSource(USER_LOC_SRC)) {
@@ -29,8 +28,6 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
         data: { type: 'FeatureCollection', features: [] }
       });
       console.log('[attachUserLocationSource] ✅ Source added');
-    } else {
-      console.log('[attachUserLocationSource] Source already exists');
     }
 
     // add missing layer
@@ -47,25 +44,20 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
         }
       });
       console.log('[attachUserLocationSource] ✅ Layer added');
-    } else {
-      console.log('[attachUserLocationSource] Layer already exists');
     }
     
     isSourceReady = true;
-    console.log('[attachUserLocationSource] ✅ Source ready set to true');
+    console.log('[attachUserLocationSource] ✅ Setup complete, source ready');
   };
 
   // first run + subscribe
+  console.log('[attachUserLocationSource] Running initial ensure...');
   ensure();
   map.on('style.load',  ensure);
   map.on('styledata',   ensure);
 
   // Expose readiness check
-  (map as any).__userLocationSourceReady = () => {
-    const ready = isSourceReady && map.getSource(USER_LOC_SRC);
-    console.log('[attachUserLocationSource] Readiness check:', { isSourceReady, hasSource: !!map.getSource(USER_LOC_SRC), ready });
-    return ready;
-  };
+  (map as any).__userLocationSourceReady = () => isSourceReady && map.getSource(USER_LOC_SRC);
 
   return () => {
     map.off('style.load',  ensure);
@@ -82,10 +74,9 @@ export function setUserLocation(
   lat: number,
   lng: number,
   accuracy = 15,
-  attempt = 0                // ← new
+  attempt = 0
 ) {
-  console.log(`[setUserLocation] Called with:`, { lat, lng, accuracy, attempt });
-  const MAX_RETRY = 10;      // Increased retries for better reliability
+  const MAX_RETRY = 10;
 
   const push = () => {
     // Guard against invalid map reference
@@ -129,8 +120,6 @@ export function setUserLocation(
           geometry: { type: 'Point', coordinates: [lng, lat] }
         }]
       });
-      
-      console.log(`[setUserLocation] ✅ Updated user location:`, { lat, lng, accuracy, attempt });
       
       if (attempt > 0) {
         console.log(`[setUserLocation] ✅ Success after ${attempt + 1} attempts`);
