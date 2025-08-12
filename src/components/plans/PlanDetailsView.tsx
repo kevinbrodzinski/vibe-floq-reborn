@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, Calendar, Clock, Users, MapPin } from 'lucide-react';
 import { PlanEditModal } from './PlanEditModal';
 import { PlanTimelinePreview } from './PlanTimelinePreview';
+import { LivePlanTimeline } from '@/components/planning/LivePlanTimeline';
 import { PlanSummaryStats } from './PlanSummaryStats';
 import { PlanParticipantsList } from './PlanParticipantsList';
 import { PlanQuickActions } from './PlanQuickActions';
@@ -319,10 +320,14 @@ export const PlanDetailsView: React.FC = () => {
             <Clock className="w-4 h-4" />
             Timeline
           </h3>
-          <PlanTimelinePreview 
-            stops={stops} 
-            isLoading={stopsLoading}
-          />
+          {plan.status === 'executing' ? (
+            <LivePlanTimeline planId={planId!} className="mt-2" />
+          ) : (
+            <PlanTimelinePreview 
+              stops={stops} 
+              isLoading={stopsLoading}
+            />
+          )}
         </div>
 
         {/* Participants */}
