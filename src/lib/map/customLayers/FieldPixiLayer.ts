@@ -154,6 +154,18 @@ export function createFieldPixiLayer(
 
     const { x, y } = project(pt.lng, pt.lat);
     
+    // Debug: Log rendering attempts
+    if (pt.isYou) {
+      console.log('[FieldPixiLayer] Rendering YOU pin:', {
+        id: pt.id,
+        lat: pt.lat,
+        lng: pt.lng,
+        screenX: x,
+        screenY: y,
+        isYou: pt.isYou
+      });
+    }
+    
     // Spatial culling optimization
     if (!isInViewport(x, y)) {
       g.visible = false;
@@ -179,8 +191,12 @@ export function createFieldPixiLayer(
       // --- "YOU" PIN ---
       // Teardrop: head circle + pointer body
       const r = baseRadius * 1.2;
-      // soft glow
-      g.beginFill(drawColor, alpha * 0.20);
+      console.log('[FieldPixiLayer] Drawing YOU pin with:', {
+        x, y, r, alpha, drawColor: drawColor.toString(16), baseRadius
+      });
+      
+      // soft glow - make more visible for debugging
+      g.beginFill(drawColor, Math.max(alpha * 0.20, 0.3));
       g.drawCircle(x, y - r * 0.55, r * 1.8);
       g.endFill();
 
