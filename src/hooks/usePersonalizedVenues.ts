@@ -303,3 +303,66 @@ export function useTrainUserModel() {
     }
   });
 }
+
+// New verbose hook with badges support
+export interface VerbosePersonalizedVenue {
+  venue_id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  dist_m: number;
+  walk_min: number;
+  price_tier: PriceTier | null;
+  rating: number | null;
+  popularity: number | null;
+  categories: string[] | null;
+  score: number;
+  components: any; // JSONB object with scoring components
+  weights: any; // JSONB object with applied weights
+  badges: string[]; // NEW: Array of badges like ["Walkable", "Top rated", "In budget"]
+  reason: string;
+  provider: string | null;
+  provider_id: string | null;
+  photo_url: string | null;
+  external_id: string | null;
+  geohash5: string | null;
+}
+
+export function usePersonalizedVenuesVerbose(params: {
+  lat: number;
+  lng: number;
+  vibe?: string;
+  tags?: string[];
+  radiusM?: number;
+  limit?: number;
+  ab?: string;
+}) {
+  const { user } = useAuth();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
+
+  return useQuery({
+    queryKey: ['personalizedVenuesVerbose', { ...params, tz, profileId: user?.id }],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.rpc('get_personalized_recs_verbose', {
+        p_profile_id: user.id,
+        p_lat: params.lat,
+        p_lng: params.lng,
+        p_vibe: params.vibe ?? null,
+        p_tags: params.tags ?? null,
+        p_radius_m: params.radiusM ?? 3000,
+        p_limit: params.limit ?? 20,
+        p_tz: tz,
+        p_ab: params.ab ?? 'verbose',
+        p_log: true,
+      });
+
+      if (error) throw error;
+      return (data || []) as VerbosePersonalizedVenue[];
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
