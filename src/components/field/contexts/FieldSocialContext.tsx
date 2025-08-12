@@ -56,7 +56,13 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     const fieldLocation = useFieldLocation();
     location = fieldLocation.location;
     presenceData = fieldLocation.presenceData;
-    console.log('[FieldSocialProvider] Successfully got field location:', { location, presenceData });
+    console.log('[FieldSocialProvider] Successfully got field location:', { 
+      location: location?.coords ? `${location.coords.lat}, ${location.coords.lng}` : 'no coords', 
+      presenceData: presenceData?.length || 0 
+    });
+    if (presenceData && presenceData.length > 0) {
+      console.log('[FieldSocialProvider] Sample presence data:', presenceData[0]);
+    }
   } catch (error) {
     console.error('[FieldSocialProvider] Failed to get field location context:', error);
     // Provide fallback values
