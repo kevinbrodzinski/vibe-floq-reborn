@@ -71,6 +71,7 @@ export function setUserLocation(
   accuracy = 15,
   attempt = 0                // ← new
 ) {
+  console.log(`[setUserLocation] Called with:`, { lat, lng, accuracy, attempt });
   const MAX_RETRY = 10;      // Increased retries for better reliability
 
   const push = () => {
@@ -115,6 +116,8 @@ export function setUserLocation(
           geometry: { type: 'Point', coordinates: [lng, lat] }
         }]
       });
+      
+      console.log(`[setUserLocation] ✅ Updated user location:`, { lat, lng, accuracy, attempt });
       
       if (attempt > 0) {
         console.log(`[setUserLocation] ✅ Success after ${attempt + 1} attempts`);
