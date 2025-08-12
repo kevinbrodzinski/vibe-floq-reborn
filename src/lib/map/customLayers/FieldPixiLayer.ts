@@ -329,13 +329,28 @@ export function createFieldPixiLayer(
     onAdd(m: mapboxgl.Map, gl: WebGLRenderingContext) {
       map = m;
 
-      renderer = new PIXI.Renderer({
-        context: gl,
-        antialias: true,
-        premultipliedAlpha: true,
-        clearBeforeRender: false, // Mapbox clears
-        powerPreference: 'high-performance',
-      });
+      // PIXI v8 compatibility: Use WebGLRenderer directly for Mapbox integration
+      try {
+        renderer = new PIXI.WebGLRenderer({
+          context: gl,
+          antialias: true,
+          premultipliedAlpha: true,
+          clearBeforeRender: false, // Mapbox clears
+          powerPreference: 'high-performance',
+          backgroundAlpha: 0, // Transparent background
+        });
+      } catch (error) {
+        console.error('Failed to create WebGLRenderer, trying fallback:', error);
+        // Fallback to autoDetectRenderer for non-WebGL contexts
+        renderer = PIXI.autoDetectRenderer({
+          context: gl,
+          antialias: true,
+          premultipliedAlpha: true,
+          clearBeforeRender: false,
+          powerPreference: 'high-performance',
+          backgroundAlpha: 0,
+        }) as PIXI.Renderer;
+      }
 
       stage = new PIXI.Container();
 
