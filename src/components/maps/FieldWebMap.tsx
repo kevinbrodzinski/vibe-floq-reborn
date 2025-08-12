@@ -31,6 +31,7 @@ import '@/lib/debug/canvasMonitor';
 import '@/lib/debug/friendsDebugger';
 import '@/lib/debug/floqPlanDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
+import '@/lib/debug/fieldOverlayTestData';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -920,6 +921,11 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           fire();
           map.on('moveend',fire);
           
+          // Expose map to window for test scripts (dev only)
+          if (import.meta.env.DEV) {
+            (window as any).__fieldMap = map;
+          }
+          
           // Attach Field PIXI GL layer
           try {
             const findFirstSymbolLayerId = (m: mapboxgl.Map): string | undefined => {
@@ -935,6 +941,9 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             (map as any).__fieldPixiDetach = detach;
             
             console.log('🎯 Field PIXI GL layer attached successfully');
+            if (import.meta.env.DEV) {
+              console.log('🧪 Test functions available: window.fieldOverlayTest');
+            }
           } catch (error) {
             console.error('❌ Failed to attach Field PIXI GL layer:', error);
           }
