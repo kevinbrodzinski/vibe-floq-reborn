@@ -8,6 +8,7 @@ interface PulseFilterPillsProps extends UsePulseFiltersParams {
   onToggle?: (key: string, selected: boolean) => void;
   maxVisible?: number;
   showPriority?: boolean;
+  onShowMore?: () => void;
   className?: string;
 }
 
@@ -41,6 +42,7 @@ export const PulseFilterPills: React.FC<PulseFilterPillsProps> = ({
   onToggle,
   maxVisible,
   showPriority = true,
+  onShowMore,
   className,
   ...filterParams
 }) => {
@@ -89,9 +91,12 @@ export const PulseFilterPills: React.FC<PulseFilterPillsProps> = ({
       {visibleChips.map((chip, index) => renderChip(chip, index))}
       
       {maxVisible && chips.length > maxVisible && (
-        <span className="px-3 py-1.5 rounded-full text-xs font-medium text-white/50 bg-white/5 border border-white/10">
+        <button
+          onClick={onShowMore}
+          className="px-3 py-1.5 rounded-full text-xs font-medium text-white/50 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white/70 transition-colors cursor-pointer"
+        >
           +{chips.length - maxVisible} more
-        </span>
+        </button>
       )}
     </div>
   );

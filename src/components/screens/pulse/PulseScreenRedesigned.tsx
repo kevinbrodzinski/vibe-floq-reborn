@@ -40,6 +40,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [selectedFilterKeys, setSelectedFilterKeys] = useState<string[]>([]);
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [showLiveActivitySheet, setShowLiveActivitySheet] = useState(false);
+  const [showAllFilters, setShowAllFilters] = useState(false);
 
   // Data hooks
   const { data: weatherData } = useWeather();
@@ -67,21 +68,23 @@ export const PulseScreenRedesigned: React.FC = () => {
         tempF: 70,
         condition: 'sunny' as const,
         precipChancePct: 0,
-        isGoodWeather: true
+        isGoodWeather: true,
+        fetchedAt: new Date().toISOString()
       };
     }
 
-    const condition = weatherData.condition === 'clear' ? 'sunny' :
-                     weatherData.condition === 'clouds' ? 'cloudy' :
+    const condition = weatherData.condition === 'clear' || weatherData.condition === 'sunny' ? 'sunny' :
+                     weatherData.condition === 'clouds' || weatherData.condition === 'cloudy' ? 'cloudy' :
                      weatherData.condition === 'rain' ? 'rain' :
                      weatherData.condition === 'snow' ? 'snow' :
                      weatherData.condition === 'mist' || weatherData.condition === 'fog' ? 'fog' :
                      'mixed';
 
     const weather = {
-      tempF: Math.round(weatherData.tempF),
+      tempF: Math.round(weatherData.temperatureF || weatherData.tempF || 70),
       condition,
-      precipChancePct: weatherData.precipChancePct || 0
+      precipChancePct: weatherData.precipChancePct || 0,
+      fetchedAt: weatherData.created_at || new Date().toISOString()
     };
 
     return {
@@ -135,20 +138,39 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform data for recommendations
   const recommendations = useMemo((): RecommendationItem[] => {
-    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue: any) => ({
-      id: venue.id,
-      title: venue.name,
-      type: 'venue' as const,
-      distance: venue.distance_m,
-      category: venue.categories?.[0] || 'Venue',
-      description: venue.description,
-      rating: venue.rating,
-      isOpen: venue.is_open,
-      vibeMatch: Math.floor(Math.random() * 40) + 60, // TODO: Real vibe matching
-      overallScore: Math.floor(Math.random() * 40) + 60,
-      imageUrl: venue.photo_url,
-      tags: venue.canonical_tags || venue.categories
-    }));
+    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue: any, index: number) => {
+      // Enhanced mock data for better presentation
+      const mockDescriptions = [
+        "A cozy spot perfect for catching up with friends",
+        "Trendy atmosphere with craft cocktails and live music",
+        "Popular local hangout with great vibes",
+        "Intimate setting with excellent food and drinks",
+        "Vibrant venue known for its energetic crowd"
+      ];
+      
+      const mockRatings = [4.2, 4.5, 4.1, 4.7, 4.3, 4.6, 4.4];
+      
+      return {
+        id: venue.id,
+        title: venue.name,
+        type: 'venue' as const,
+        distance: venue.distance_m,
+        category: venue.categories?.[0] || 'Venue',
+        description: venue.description || mockDescriptions[index % mockDescriptions.length],
+        rating: venue.rating || mockRatings[index % mockRatings.length],
+        priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
+        isOpen: venue.is_open !== undefined ? venue.is_open : Math.random() > 0.2, // 80% open
+        vibeMatch: Math.floor(Math.random() * 40) + 60, // TODO: Real vibe matching
+        weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 50,
+        overallScore: Math.floor(Math.random() * 40) + 60,
+        imageUrl: venue.photo_url,
+        tags: venue.canonical_tags || venue.categories,
+        friendsGoing: Math.random() > 0.7 ? [
+          { name: 'Alex', avatar: undefined },
+          { name: 'Sam', avatar: undefined }
+        ] : undefined
+      };
+    });
 
     const floqRecs: RecommendationItem[] = myFloqs.map((floq: any) => ({
       id: floq.id,
@@ -168,18 +190,58 @@ export const PulseScreenRedesigned: React.FC = () => {
     return [...venueRecs, ...floqRecs];
   }, [nearbyVenues, myFloqs]);
 
-  // Filter recommendations by search
+  // Filter recommendations by search and selected filters
   const filteredRecommendations = useMemo(() => {
-    if (!searchQuery.trim()) return recommendations;
+    let filtered = recommendations;
     
-    const query = searchQuery.toLowerCase();
-    return recommendations.filter(rec =>
-      rec.title.toLowerCase().includes(query) ||
-      rec.category?.toLowerCase().includes(query) ||
-      rec.description?.toLowerCase().includes(query) ||
-      rec.tags?.some(tag => tag.toLowerCase().includes(query))
-    );
-  }, [recommendations, searchQuery]);
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(rec =>
+        rec.title.toLowerCase().includes(query) ||
+        rec.category?.toLowerCase().includes(query) ||
+        rec.description?.toLowerCase().includes(query) ||
+        rec.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    
+    // Apply selected filter keys
+    if (selectedFilterKeys.length > 0) {
+      // For now, implement basic filtering - in production this would use the venue's canonical_tags
+      filtered = filtered.filter(rec => {
+        // Mock filter matching based on venue properties and selected filters
+        const hasRelevantTags = rec.tags?.some(tag => {
+          const tagLower = tag.toLowerCase();
+          return selectedFilterKeys.some(filterKey => {
+            // Map filter keys to searchable terms
+            const filterMappings: Record<string, string[]> = {
+              'coffee_spots': ['coffee', 'cafe', 'espresso'],
+              'brunch': ['brunch', 'breakfast', 'morning'],
+              'dinner_spots': ['dinner', 'restaurant', 'dining'],
+              'bars_clubs': ['bar', 'club', 'nightlife', 'drinks'],
+              'outdoor_dining': ['outdoor', 'patio', 'terrace'],
+              'rooftop_bars': ['rooftop', 'roof', 'skybar'],
+              'cozy_lounges': ['lounge', 'cozy', 'intimate'],
+              'live_music': ['music', 'live', 'concert', 'band'],
+              'happy_hour': ['happy', 'drinks', 'bar'],
+              'karaoke': ['karaoke', 'sing', 'music']
+            };
+            
+            const searchTerms = filterMappings[filterKey] || [filterKey.replace('_', ' ')];
+            return searchTerms.some(term => tagLower.includes(term));
+          });
+        });
+        
+        // If no tags match, include venue if it's a basic filter like 'distance' or 'smart'
+        const basicFilters = ['distance', 'energy', 'venue_type', 'vibe_type', 'floqs', 'smart'];
+        const hasBasicFilter = selectedFilterKeys.some(key => basicFilters.includes(key));
+        
+        return hasRelevantTags || hasBasicFilter;
+      });
+    }
+    
+    return filtered;
+  }, [recommendations, searchQuery, selectedFilterKeys]);
 
   // Handlers
   const handleProfileClick = () => {
@@ -203,11 +265,17 @@ export const PulseScreenRedesigned: React.FC = () => {
     });
   };
 
+  const handleCalendarClick = () => {
+    // For now, show an alert - in production this would open a date picker modal
+    alert('Calendar functionality coming soon! This will allow you to select specific dates and times for discovery.');
+    setSelectedTime('custom');
+  };
+
   const handleRecommendationClick = (item: RecommendationItem) => {
     if (item.type === 'venue') {
-      navigate(`/venue/${item.id}`);
+      navigate(`/venues/${item.id}`);
     } else if (item.type === 'floq') {
-      navigate(`/floq/${item.id}`);
+      navigate(`/floqs/${item.id}`);
     }
   };
 
@@ -239,10 +307,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       <DateTimeSelector
         value={selectedTime}
         onChange={setSelectedTime}
-        onCalendarClick={() => {
-          // TODO: Open calendar modal
-          console.log('Calendar clicked');
-        }}
+        onCalendarClick={handleCalendarClick}
       />
 
       {/* Weather Card */}
@@ -279,7 +344,8 @@ export const PulseScreenRedesigned: React.FC = () => {
                 : prev.filter(k => k !== key)
             );
           }}
-          maxVisible={12}
+          maxVisible={showAllFilters ? undefined : 12}
+          onShowMore={() => setShowAllFilters(true)}
           className="mb-2"
         />
       </div>

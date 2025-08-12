@@ -104,7 +104,7 @@ const RecommendationCard: React.FC<{
 
   return (
     <div
-      className="p-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer"
+      className="p-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-white/5 hover:scale-[1.02] transition-all duration-200 cursor-pointer group"
       onClick={handleClick}
     >
       <div className="flex items-start gap-3">
@@ -114,11 +114,11 @@ const RecommendationCard: React.FC<{
             <img
               src={item.imageUrl}
               alt={item.title}
-              className="w-12 h-12 rounded-lg object-cover border border-white/20"
+              className="w-14 h-14 rounded-xl object-cover border border-white/20 group-hover:border-white/30 transition-colors"
             />
           ) : (
             <div className={cn(
-              'w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br',
+              'w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br border border-white/10 group-hover:border-white/20 transition-colors',
               item.type === 'venue' ? 'from-green-500/20 to-emerald-500/20' :
               item.type === 'event' ? 'from-blue-500/20 to-cyan-500/20' :
               'from-purple-500/20 to-pink-500/20'
@@ -133,9 +133,9 @@ const RecommendationCard: React.FC<{
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-medium text-white truncate">{item.title}</h3>
+            <h3 className="font-semibold text-white truncate group-hover:text-white/90 transition-colors text-base">{item.title}</h3>
             {showScores && item.vibeMatch && (
-              <div className="flex items-center gap-1 text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-full">
+              <div className="flex items-center gap-1 text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-full border border-yellow-400/20 group-hover:bg-yellow-400/15 transition-colors">
                 <Zap className="w-3 h-3" />
                 {formatMatchScore(item.vibeMatch)}
               </div>
@@ -160,6 +160,12 @@ const RecommendationCard: React.FC<{
                   <Star className="w-3 h-3 text-yellow-400 fill-current" />
                   <span>{item.rating.toFixed(1)}</span>
                 </div>
+              </>
+            )}
+            {item.priceLevel && (
+              <>
+                <span>•</span>
+                <span className="text-green-400 font-medium">{item.priceLevel}</span>
               </>
             )}
           </div>
