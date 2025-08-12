@@ -65,19 +65,24 @@ export function createFieldPixiLayer(
   const clusters = new Map<string, { points: FieldPoint[], center: { x: number, y: number }, size: number }>();
 
   const ensureRendererSize = () => {
+    // Hard guards – early out if anything isn't ready
     if (!renderer || !map) return;
-    const canvas = map.getCanvas();
-    const w = canvas.width;
-    const h = canvas.height;
-    // PIXI v8 compatibility: Check renderer screen dimensions safely
-    const rendererWidth = renderer.screen?.width ?? renderer.width ?? 0;
-    const rendererHeight = renderer.screen?.height ?? renderer.height ?? 0;
-    if (rendererWidth !== w || rendererHeight !== h) {
-      try {
-        renderer.resize(w, h);
-      } catch (error) {
-        console.warn('[FieldPixiLayer] Renderer resize failed:', error);
-      }
+
+    const cvs = map.getCanvas();
+    // Prefer actual backing-store size if Mapbox already set it
+    const w = cvs.width || Math.max(1, Math.floor(cvs.clientWidth * window.devicePixelRatio || 1));
+    const h = cvs.height || Math.max(1, Math.floor(cvs.clientHeight * window.devicePixelRatio || 1));
+
+    // Some PIXI builds don't expose `renderer.screen`; rely on view size
+    // @ts-expect-error – view is present at runtime
+    const viewW: number | undefined = (renderer as any).view?.width;
+    // @ts-expect-error – view is present at runtime
+    const viewH: number | undefined = (renderer as any).view?.height;
+
+    // Resize only when needed to avoid perf spikes
+    if (viewW !== w || viewH !== h) {
+      // `resize` exists on both PIXI v7/v8 renderers
+      (renderer as any).resize?.(w, h);
     }
   };
 
@@ -88,10 +93,11 @@ export function createFieldPixiLayer(
 
   // Spatial culling: only render points in viewport + margin
   const isInViewport = (x: number, y: number, margin = 100) => {
-    if (!renderer) return true;
-    // PIXI v8 compatibility: Use screen dimensions safely
-    const w = renderer.screen?.width ?? renderer.width ?? 1000;
-    const h = renderer.screen?.height ?? renderer.height ?? 1000;
+    if (!renderer || !map) return true;
+    // Use map canvas dimensions instead of renderer internals
+    const cvs = map.getCanvas();
+    const w = cvs.width || cvs.clientWidth || 1000;
+    const h = cvs.height || cvs.clientHeight || 1000;
     return x >= -margin && x <= w + margin && 
            y >= -margin && y <= h + margin;
   };
@@ -288,7 +294,7 @@ export function createFieldPixiLayer(
   };
 
   const renderFrame = () => {
-    if (!renderer || !stage) return;
+    if (!renderer || !stage || !map) return;   // <— add !map guard too
     ensureRendererSize();
     
     // Update animation time
@@ -362,6 +368,13 @@ export function createFieldPixiLayer(
         }) as PIXI.Renderer;
       }
 
+      // Some builds expose renderer.view – make it non-interactive just in case
+      // @ts-expect-error runtime only
+      if ((renderer as any).view) {
+        // @ts-expect-error runtime only
+        (renderer as any).view.style.pointerEvents = 'none';
+      }
+
       stage = new PIXI.Container();
 
       gl.disable(gl.DEPTH_TEST);
@@ -371,11 +384,17 @@ export function createFieldPixiLayer(
     },
 
     render() {
-      renderFrame();
-      // Continuous animation only when halos are visible
-      const hasAnimatedElements = points.some(p => p.halo) || clusters.size > 0;
-      if (hasAnimatedElements) {
-        map?.triggerRepaint();
+      try {
+        renderFrame();
+        // Continuous animation only when halos are visible
+        const hasAnimatedElements = points.some(p => p.halo) || clusters.size > 0;
+        if (hasAnimatedElements) {
+          map?.triggerRepaint();
+        }
+      } catch (err) {
+        // Swallow first-frame races gracefully; Mapbox will call us again next tick
+        // eslint-disable-next-line no-console
+        if (import.meta?.env?.DEV) console.warn('[FieldPixiLayer] render skipped:', err);
       }
     },
 
