@@ -16,6 +16,7 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
   let isSourceReady = false;
   
   const ensure = () => {
+    console.log('[attachUserLocationSource] Ensure called, style loaded:', map.isStyleLoaded());
     if (!map.isStyleLoaded()) return; // wait for style
 
     // add missing source
@@ -25,6 +26,8 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
         data: { type: 'FeatureCollection', features: [] }
       });
       console.log('[attachUserLocationSource] ✅ Source added');
+    } else {
+      console.log('[attachUserLocationSource] Source already exists');
     }
 
     // add missing layer
@@ -41,9 +44,12 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
         }
       });
       console.log('[attachUserLocationSource] ✅ Layer added');
+    } else {
+      console.log('[attachUserLocationSource] Layer already exists');
     }
     
     isSourceReady = true;
+    console.log('[attachUserLocationSource] ✅ Source ready set to true');
   };
 
   // first run + subscribe
@@ -52,7 +58,11 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
   map.on('styledata',   ensure);
 
   // Expose readiness check
-  (map as any).__userLocationSourceReady = () => isSourceReady && map.getSource(USER_LOC_SRC);
+  (map as any).__userLocationSourceReady = () => {
+    const ready = isSourceReady && map.getSource(USER_LOC_SRC);
+    console.log('[attachUserLocationSource] Readiness check:', { isSourceReady, hasSource: !!map.getSource(USER_LOC_SRC), ready });
+    return ready;
+  };
 
   return () => {
     map.off('style.load',  ensure);
