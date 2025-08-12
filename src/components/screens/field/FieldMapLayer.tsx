@@ -9,7 +9,6 @@ import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
 
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { useVenueSync } from '@/hooks/useVenueSync';
-import { getMapInstance } from '@/lib/geo/project';
 import type { FieldData } from '../field/FieldDataProvider';
 
 interface FieldMapLayerProps {
@@ -40,9 +39,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
   
-  // Check if map is ready to prevent projection errors
-  const isMapReady = Boolean(getMapInstance());
-  
   // Auto-enable constellation mode for night hours
   const handleConstellationAutoToggle = useCallback(() => {
     const currentHour = new Date().getHours();
@@ -71,7 +67,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   }, []);
 
   return (
-    <div className="absolute inset-0">
+    <div className="relative h-full w-full">
       {/* Layer 1: Unified Map System (Mapbox + coordinated layers) */}
       <FieldWebMap 
         key="field-web-map" // Stable key to prevent unnecessary re-mounts
@@ -79,23 +75,23 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         floqs={walkableFloqs} 
         realtime={realtime}
         onRegionChange={handleRegionChange} // Stable callback reference
-      />
+      >
+        {/* Layer 2: PIXI Canvas Overlay - now mounted as child of FieldWebMap */}
+        <div className="pointer-events-none absolute inset-0 z-20">
+          <FieldCanvasLayer
+            canvasRef={canvasRef}
+            people={actualPeople}
+            floqs={floqs}
+            data={data}
+            onRipple={onRipple}
+            isConstellationMode={isConstellationMode}
+            showDebugVisuals={isDebugVisible}
+          />
+        </div>
+      </FieldWebMap>
       
       {/* Venue Loading Overlay */}
       <VenueLoadingOverlay show={isVenueSyncing} />
-      
-      {/* Layer 2: PIXI Canvas Overlay - only render when map is ready */}
-      {isMapReady && (
-        <FieldCanvasLayer
-          canvasRef={canvasRef}
-          people={actualPeople}
-          floqs={floqs}
-          data={data}
-          onRipple={onRipple}
-          isConstellationMode={isConstellationMode}
-          showDebugVisuals={isDebugVisible}
-        />
-      )}
       
       {/* Layer 3: UI Controls */}
       <FieldUILayer data={data} />

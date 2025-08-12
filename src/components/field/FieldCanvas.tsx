@@ -149,6 +149,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       try {
         if (cancelled) return; // Check cancellation before async work
         
+        // Performance mark: Start of Field overlay initialization
+        performance.mark('field_overlay_init_start');
+        
         await app.init({
           canvas: actualRef.current!,
           width: window.innerWidth,
@@ -399,6 +402,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     let lastFloqsHash = '';
     let lastPeopleHash = '';
     let lastFieldTilesHash = '';
+    let firstRenderCompleted = false;
     
     // HSL to RGB conversion (lifted out of loop for performance)
     const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
@@ -680,6 +684,15 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // ---- USER LOCATION DOT ----
       // Now handled separately in useEffect hooks for better reactivity
+
+      // Performance mark: First successful render completed
+      if (!firstRenderCompleted) {
+        performance.mark('field_overlay_first_render_end');
+        if (performance.getEntriesByName('field_overlay_init_start').length > 0) {
+          performance.measure('field_overlay_first_render_ms', 'field_overlay_init_start', 'field_overlay_first_render_end');
+        }
+        firstRenderCompleted = true;
+      }
 
       animationId = requestAnimationFrame(animate);
     };
