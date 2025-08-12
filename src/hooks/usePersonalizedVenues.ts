@@ -1,96 +1,213 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-
-const bucket = (n: number) => Math.round(n * 1e4) / 1e4; // 4 dp ≈ 11 m
-
-export type PriceTier = '$' | '$$' | '$$$' | '$$$$';
 
 export interface PersonalizedVenue {
   venue_id: string;
   name: string;
-  distance_m: number;
-  rating: number | null;
-  categories: string[] | null;
-  description: string | null;
-  address: string | null;
-  photo_url: string | null;
-  live_count: number;
-  price_tier: PriceTier;
-  personalized_score: number;
+  dist_m: number;
+  score: number;
+  reason: string;
 }
 
-export const usePersonalizedVenues = (
-  lat: number | null,
-  lng: number | null,
-  options: {
-    radius?: number;
-    limit?: number;
-    categories?: string[];
-    maxPriceTier?: PriceTier;
-    vibe?: string;
-  } = {}
-) => {
+export interface UsePersonalizedVenuesParams {
+  lat: number;
+  lng: number;
+  vibe?: string;
+  tags?: string[];
+  radiusM?: number;
+  limit?: number;
+  ab?: string; // A/B test bucket
+  useLLM?: boolean; // Enable LLM re-ranking
+  llmTopK?: number; // How many to re-rank with LLM
+}
+
+export function usePersonalizedVenues(params: UsePersonalizedVenuesParams) {
   const { user } = useAuth();
-  const {
-    radius = 1000,
-    limit = 20,
-    categories,
-    maxPriceTier = '$$$$',
-    vibe
-  } = options;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
 
-  return useQuery<PersonalizedVenue[]>({
-    enabled: lat !== null && lng !== null,
-    queryKey: [
-      'personalized-venues',
-      lat && bucket(lat),
-      lng && bucket(lng),
-      radius,
-      limit,
-      user?.id,
-      categories,
-      maxPriceTier,
-      vibe
-    ],
-    staleTime: 30_000,   // 30 seconds
-    gcTime: 300_000,     // 5 minutes
-    retry: 2,
+  return useQuery({
+    queryKey: ['personalizedVenues', { ...params, tz, profileId: user?.id }],
     queryFn: async () => {
-      if (lat == null || lng == null) return [];
+      if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase.rpc('venues_within_radius', {
-        p_lat: lat,
-        p_lng: lng,
-        p_radius_m: radius,
-        p_limit: limit,
-        p_profile_id: user?.id || null,
-        p_categories: categories || null,
-        p_price_tier_max: maxPriceTier ?? '$$$$',
-        p_vibe: vibe || null
+      // Call the recommend edge function
+      const { data, error } = await supabase.functions.invoke('recommend', {
+        body: {
+          profile_id: user.id,
+          lat: params.lat,
+          lng: params.lng,
+          vibe: params.vibe ?? null,
+          tags: params.tags ?? null,
+          radius_m: params.radiusM ?? 3000,
+          limit: params.limit ?? 20,
+          tz,
+          ab: params.ab ?? null,
+          use_llm: params.useLLM ?? false,
+          llm_top_k: params.llmTopK ?? 30,
+        }
       });
 
-      if (error) {
-        console.error('Personalized venues fetch error:', error);
-        throw new Error(error.message ?? 'Failed to fetch venues');
-      }
+      if (error) throw error;
+      if (!data.ok) throw new Error(data.error || 'Failed to get recommendations');
 
-      // Map the response to match our interface
-      const venues: PersonalizedVenue[] = (data || []).map((venue: any) => ({
-        venue_id: venue.venue_id,
-        name: venue.name,
-        distance_m: venue.distance_m,
-        rating: venue.rating,
-        categories: venue.categories,
-        description: venue.description,
-        address: venue.address,
-        photo_url: venue.photo_url,
-        live_count: venue.live_count,
-        price_tier: venue.price_tier,
-        personalized_score: venue.personalized_score
-      }));
-
-      return venues;
-    }
+      return {
+        items: data.items as PersonalizedVenue[],
+        llm: data.llm as boolean,
+      };
+    },
+    enabled: Boolean(user?.id && params.lat && params.lng),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-};
+}
+
+// Hook for direct RPC call (alternative to edge function)
+export function usePersonalizedVenuesRPC(params: UsePersonalizedVenuesParams) {
+  const { user } = useAuth();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
+
+  return useQuery({
+    queryKey: ['personalizedVenuesRPC', { ...params, tz, profileId: user?.id }],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.rpc('get_personalized_recs', {
+        p_profile_id: user.id,
+        p_lat: params.lat,
+        p_lng: params.lng,
+        p_radius_m: params.radiusM ?? 3000,
+        p_vibe: params.vibe ?? null,
+        p_tags: params.tags ?? null,
+        p_tz: tz,
+        p_limit: params.limit ?? 20,
+        p_ab: params.ab ?? null,
+        p_log: true,
+      });
+
+      if (error) throw error;
+      return data as PersonalizedVenue[];
+    },
+    enabled: Boolean(user?.id && params.lat && params.lng),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Hook for tracking interactions
+export function useTrackInteraction() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      venueId,
+      interactionType,
+      context,
+    }: {
+      venueId: string;
+      interactionType: 'view' | 'tap' | 'bookmark' | 'checkin' | 'plan' | 'share' | 'dismiss' | 'like' | 'dislike';
+      context?: {
+        lat?: number;
+        lng?: number;
+        vibe?: string;
+        tags?: string[];
+        radiusM?: number;
+        tz?: string;
+      };
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // For strong signals, call the online learning function
+      const strongSignals = new Set(['like', 'bookmark', 'checkin', 'plan', 'dismiss', 'dislike']);
+      if (strongSignals.has(interactionType)) {
+        await supabase.functions.invoke('on-interaction', {
+          body: {
+            profile_id: user.id,
+            venue_id: venueId,
+            interaction_type: interactionType,
+            context: {
+              ...context,
+              tz: context?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+              now: new Date().toISOString(),
+            },
+          }
+        });
+      } else {
+        // For weak signals, just track the interaction
+        await supabase.rpc('track_interaction', {
+          p_profile_id: user.id,
+          p_venue_id: venueId,
+          p_type: interactionType,
+          p_weight: 0,
+          p_context: context ?? {},
+        });
+      }
+    },
+    onSuccess: () => {
+      // Invalidate venue recommendations to get fresh results
+      queryClient.invalidateQueries({ queryKey: ['personalizedVenues'] });
+      queryClient.invalidateQueries({ queryKey: ['personalizedVenuesRPC'] });
+    },
+  });
+}
+
+// Hook for updating user tastes
+export function useUpdateUserTastes() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (tastes: {
+      preferred_cuisines?: string[];
+      disliked_cuisines?: string[];
+      preferred_tags?: string[];
+      disliked_tags?: string[];
+      dietary?: string[];
+      vibe_preference?: string[];
+      price_min?: number;
+      price_max?: number;
+      distance_max_m?: number;
+      open_now_only?: boolean;
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      await supabase.rpc('upsert_user_tastes', {
+        p_profile_id: user.id,
+        p_json: tastes,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate venue recommendations to get fresh results
+      queryClient.invalidateQueries({ queryKey: ['personalizedVenues'] });
+      queryClient.invalidateQueries({ queryKey: ['personalizedVenuesRPC'] });
+    },
+  });
+}
+
+// Hook for training user model (admin/debug use)
+export function useTrainUserModel() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (options?: {
+      lookback_days?: number;
+      top_k?: number;
+      engage_window_min?: number;
+      min_samples?: number;
+      lr?: number;
+      l2?: number;
+      iters?: number;
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('train-user-model', {
+        body: {
+          profile_id: user.id,
+          ...options,
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+}
