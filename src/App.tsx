@@ -37,6 +37,7 @@ import SharedAfterglow from "./pages/SharedAfterglow";
 import SharedPlan from "./pages/SharedPlan";
 import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
+import AdminRecWeights from "./pages/AdminRecWeights";
 
 
 const App = () => {
@@ -111,6 +112,7 @@ const App = () => {
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
+                        <Route path="/admin/rec-weights" element={<AdminRecWeights />} />
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
