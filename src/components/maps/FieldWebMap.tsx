@@ -967,7 +967,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             
             const detach = attachFieldPixiBridge(map, {
               layerId: 'field-pixi',
-              beforeId: findFirstSymbolLayerId(map),
+              beforeId: undefined, // Add to top of layer stack
             });
             (map as any).__fieldPixiDetach = detach;
             

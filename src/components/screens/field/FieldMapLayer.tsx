@@ -77,7 +77,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         onRegionChange={handleRegionChange} // Stable callback reference
       >
         {/* Layer 2: PIXI Canvas Overlay - now mounted as child of FieldWebMap */}
-        <div className="pointer-events-none absolute inset-0 z-20">
+        <div className="pointer-events-none absolute inset-0 z-30">
           <FieldCanvasLayer
             canvasRef={canvasRef}
             people={actualPeople}
