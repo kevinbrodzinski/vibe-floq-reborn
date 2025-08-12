@@ -20,6 +20,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AnimatedBadge } from '@/components/ui/animated-badge';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
+import { VibeGlowRing } from '@/components/ui/VibeGlowRing';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { FriendsSheet } from './FriendsSheet';
 import { AddFriendModal } from './AddFriendModal';
@@ -63,11 +64,13 @@ export const AvatarDropdown = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="relative">
-            <AvatarWithFallback
-              src={profile?.avatar_url ? getAvatarUrl(profile.avatar_url, 64) : null}
-              fallbackText={profile?.display_name || 'U'}
-              className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
-            />
+            <VibeGlowRing>
+              <AvatarWithFallback
+                src={profile?.avatar_url ? getAvatarUrl(profile.avatar_url, 64) : null}
+                fallbackText={profile?.display_name || 'U'}
+                className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
+              />
+            </VibeGlowRing>
             {totalNotifications > 0 && (
               <AnimatedBadge
                 count={totalNotifications}
