@@ -31,7 +31,10 @@ import '@/lib/debug/canvasMonitor';
 import '@/lib/debug/friendsDebugger';
 import '@/lib/debug/floqPlanDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
-import '@/lib/debug/fieldOverlayTestData';
+// Debug imports - only in development
+if (import.meta.env.DEV) {
+  import('@/lib/debug/fieldOverlayTestData');
+}
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{

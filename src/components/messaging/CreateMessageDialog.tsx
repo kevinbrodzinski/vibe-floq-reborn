@@ -100,11 +100,15 @@ export const CreateMessageDialog: React.FC<CreateMessageDialogProps> = ({
       });
 
       if (error) throw error;
-      if (!threadId) throw new Error('No thread ID returned');
-      
+      const raw = threadId as any;
+      const threadIdStr =
+        typeof raw === 'string' ? raw :
+        raw?.id ?? raw?.thread_id ?? null;
+      if (!threadIdStr) throw new Error('No thread ID returned');
+
       // Close dialog and open the thread
       onOpenChange(false);
-      onThreadCreated(threadId, user.id);
+      onThreadCreated(threadIdStr, user.id);
       
       // Reset state
       setSearchQuery('');

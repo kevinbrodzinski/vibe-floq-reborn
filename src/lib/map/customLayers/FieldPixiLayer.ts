@@ -69,8 +69,15 @@ export function createFieldPixiLayer(
     const canvas = map.getCanvas();
     const w = canvas.width;
     const h = canvas.height;
-    if (renderer.width !== w || renderer.height !== h) {
-      renderer.resize(w, h);
+    // PIXI v8 compatibility: Check renderer screen dimensions safely
+    const rendererWidth = renderer.screen?.width ?? renderer.width ?? 0;
+    const rendererHeight = renderer.screen?.height ?? renderer.height ?? 0;
+    if (rendererWidth !== w || rendererHeight !== h) {
+      try {
+        renderer.resize(w, h);
+      } catch (error) {
+        console.warn('[FieldPixiLayer] Renderer resize failed:', error);
+      }
     }
   };
 
@@ -82,8 +89,11 @@ export function createFieldPixiLayer(
   // Spatial culling: only render points in viewport + margin
   const isInViewport = (x: number, y: number, margin = 100) => {
     if (!renderer) return true;
-    return x >= -margin && x <= renderer.width + margin && 
-           y >= -margin && y <= renderer.height + margin;
+    // PIXI v8 compatibility: Use screen dimensions safely
+    const w = renderer.screen?.width ?? renderer.width ?? 1000;
+    const h = renderer.screen?.height ?? renderer.height ?? 1000;
+    return x >= -margin && x <= w + margin && 
+           y >= -margin && y <= h + margin;
   };
 
   // Simple clustering: group nearby points at low zoom levels
