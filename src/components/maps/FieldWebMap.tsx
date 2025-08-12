@@ -24,6 +24,7 @@ import {
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
+import { attachFieldPixiBridge } from '@/lib/field/pixiBridge';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
@@ -918,6 +919,26 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           setMapInstance(map);
           fire();
           map.on('moveend',fire);
+          
+          // Attach Field PIXI GL layer
+          try {
+            const findFirstSymbolLayerId = (m: mapboxgl.Map): string | undefined => {
+              const layers = m.getStyle()?.layers ?? [];
+              const symbol = layers.find((l) => l.type === 'symbol' && (l.layout as any)?.['text-field']);
+              return symbol?.id;
+            };
+            
+            const detach = attachFieldPixiBridge(map, {
+              layerId: 'field-pixi',
+              beforeId: findFirstSymbolLayerId(map),
+            });
+            (map as any).__fieldPixiDetach = detach;
+            
+            console.log('🎯 Field PIXI GL layer attached successfully');
+          } catch (error) {
+            console.error('❌ Failed to attach Field PIXI GL layer:', error);
+          }
+          
           setStatus('ready');
         });
 
@@ -956,6 +977,18 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         if (detachUserLocationSourceRef.current) {
           detachUserLocationSourceRef.current();
           detachUserLocationSourceRef.current = null;
+        }
+        
+        // Cleanup Field PIXI GL layer
+        const detach = (mapRef.current as any).__fieldPixiDetach as (() => void) | undefined;
+        if (detach) {
+          try {
+            detach();
+            (mapRef.current as any).__fieldPixiDetach = undefined;
+            console.log('🎯 Field PIXI GL layer cleaned up');
+          } catch (error) {
+            console.warn('❌ Field PIXI GL layer cleanup error:', error);
+          }
         }
         
         try {
