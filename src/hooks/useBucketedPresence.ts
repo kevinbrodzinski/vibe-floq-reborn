@@ -4,6 +4,7 @@ import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 import { deterministicRandom } from '@/lib/geo/random';
 import { latLngToCell as geoToH3 } from 'h3-js'; // Use consistent naming
+import { VIBES } from '@/lib/vibes';
 import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
@@ -23,7 +24,7 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
   
   const mockUsers = realFriendIds.map((friendId, index) => ({
     profile_id: friendId,
-    vibe: ['social', 'chill', 'hype', 'flowing'][index % 4],
+    vibe: VIBES[index % VIBES.length],
     isFriend: true
   }));
 

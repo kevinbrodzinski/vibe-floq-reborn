@@ -1,7 +1,8 @@
-import { memo, useMemo } from "react";
+import { memo, useState } from "react";
 import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { VibeSummaryCard } from "@/components/vibe/VibeSummaryCard";
+import { VibeSelectionSheet } from "@/components/vibe/VibeSelectionSheet";
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
 import { zIndex } from "@/constants/z";
@@ -29,13 +30,11 @@ export const FieldOverlay = memo(({
   onVibeChange,
   children
 }: FieldOverlayProps) => {
-  // Memoize vibe cycling to prevent recreation on every render
-  const changeVibe = useMemo(() => () => {
-    const vibes: Vibe[] = ['social', 'chill', 'hype', 'flowing', 'open'];
-    const currentIndex = vibes.indexOf(currentVibe);
-    const nextVibe = vibes[(currentIndex + 1) % vibes.length];
-    onVibeChange(nextVibe);
-  }, [currentVibe, onVibeChange]);
+  const [vibeSheetOpen, setVibeSheetOpen] = useState(false);
+
+  const openVibeSelector = () => {
+    setVibeSheetOpen(true);
+  };
 
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -53,7 +52,7 @@ export const FieldOverlay = memo(({
           currentVibe={currentVibe}
           nearbyUsersCount={nearbyUsersCount}
           walkableFloqsCount={walkableFloqsCount}
-          onOpenVibeSelector={changeVibe}
+          onOpenVibeSelector={openVibeSelector}
           isLocationReady={isLocationReady}
           updating={updating}
           error={error}
@@ -64,6 +63,14 @@ export const FieldOverlay = memo(({
       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-auto w-12" {...zIndex('uiInteractive')}>
         {children}
       </div>
+
+      {/* Vibe Selection Sheet */}
+      <VibeSelectionSheet
+        open={vibeSheetOpen}
+        onOpenChange={setVibeSheetOpen}
+        currentVibe={currentVibe}
+        onVibeSelect={onVibeChange}
+      />
     </div>
   );
 }, isEqual);

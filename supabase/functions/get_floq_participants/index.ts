@@ -9,8 +9,13 @@ import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 // Main handler
 // ────────────────────────────────────────────────────────────
 serve(async (req) => {
-  const preflight = handleOptions(req);
-  if (preflight) return preflight;
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
+  }
 
   try {
     // 2. Parse body (guard against empty / malformed JSON)

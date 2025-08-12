@@ -100,7 +100,9 @@ export function usePresencePublisher(
     const setUserVibe = async () => {
       try {
         const { error: vibeError } = await supabase.rpc('set_user_vibe', {
-          new_vibe: vibe
+          new_vibe: vibe,
+          lat: null,
+          lng: null
         });
         
         if (vibeError) {

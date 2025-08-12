@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { VIBE_COLORS, type VibeEnum } from '@/constants/vibes';
+import { VIBE_COLORS } from '@/lib/vibes';
 import { safeVibe } from '@/lib/vibes';
 import type { Vibe } from '@/types';
 import { useVibe } from '@/lib/store/useVibe';       
