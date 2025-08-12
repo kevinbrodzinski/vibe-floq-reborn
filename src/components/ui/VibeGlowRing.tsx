@@ -26,35 +26,45 @@ export const VibeGlowRing = ({ className, children }: VibeGlowRingProps) => {
     const vibeRgb = VIBE_RGB[currentVibe as Vibe] || VIBE_RGB.chill;
     const [r, g, b] = vibeRgb;
 
-    // Calculate opacity based on animation phase (subtle wave motion)
-    const baseOpacity = 0.15; // Very subtle base opacity
-    const pulseIntensity = 0.1; // Gentle pulse variation
+    // Calculate opacity based on animation phase (stronger glow)
+    const baseOpacity = 0.4; // Much stronger base opacity
+    const pulseIntensity = 0.2; // More pronounced pulse variation
     const waveOpacity = baseOpacity + (Math.sin(animationPhase * 0.1) * pulseIntensity);
 
     return {
       primary: `rgba(${r}, ${g}, ${b}, ${waveOpacity})`,
-      secondary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.3})`,
-      tertiary: `rgba(${r}, ${g}, ${b}, 0)`,
+      secondary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.5})`,
+      tertiary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.1})`,
     };
   }, [currentVibe, animationPhase]);
 
   return (
     <div className={cn("relative", className)}>
-      {/* Outer glow ring */}
+      {/* Outer glow ring - stronger and thicker */}
       <div 
         className="absolute inset-0 rounded-full pointer-events-none transition-all duration-300 ease-in-out"
         style={{
-          background: `radial-gradient(circle, ${colors.tertiary} 30%, ${colors.secondary} 70%, ${colors.primary} 100%)`,
-          transform: `scale(${1.15 + Math.sin(animationPhase * 0.08) * 0.05})`, // Very subtle scale variation
+          background: `radial-gradient(circle, ${colors.tertiary} 20%, ${colors.secondary} 60%, ${colors.primary} 100%)`,
+          transform: `scale(${1.25 + Math.sin(animationPhase * 0.08) * 0.08})`, // Larger scale with more variation
+          filter: 'blur(2px)',
+        }}
+      />
+      
+      {/* Middle glow layer */}
+      <div 
+        className="absolute inset-0 rounded-full pointer-events-none transition-all duration-400 ease-in-out"
+        style={{
+          background: `radial-gradient(circle, transparent 40%, ${colors.secondary} 80%, ${colors.primary} 100%)`,
+          transform: `scale(${1.2 + Math.sin(animationPhase * 0.1) * 0.06})`,
           filter: 'blur(1px)',
         }}
       />
       
-      {/* Inner subtle ring */}
+      {/* Inner strong ring */}
       <div 
         className="absolute inset-0 rounded-full pointer-events-none transition-all duration-500 ease-in-out"
         style={{
-          boxShadow: `0 0 ${8 + Math.sin(animationPhase * 0.12) * 2}px ${colors.primary}, inset 0 0 ${4 + Math.sin(animationPhase * 0.1) * 1}px ${colors.secondary}`,
+          boxShadow: `0 0 ${12 + Math.sin(animationPhase * 0.12) * 4}px ${colors.primary}, 0 0 ${6 + Math.sin(animationPhase * 0.1) * 2}px ${colors.secondary}, inset 0 0 ${6 + Math.sin(animationPhase * 0.1) * 2}px ${colors.secondary}`,
           borderRadius: '50%',
         }}
       />
