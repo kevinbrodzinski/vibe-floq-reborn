@@ -28,16 +28,19 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
   
   // Get personalized recommendations
   const { 
-    data: personalizedVenues, 
+    data: personalizedVenues = [], 
     isLoading: personalizedLoading 
-  } = usePersonalizedVenues({
-    lat: lat || 0,
-    lng: lng || 0,
-    vibe: currentVibe || undefined,
-    radiusM: 3000,
-    limit: 6, // Top 6 picks
-    useLLM: false, // Start with baseline
-  });
+  } = usePersonalizedVenues(
+    lat,
+    lng,
+    {
+      radius: 3000,
+      limit: 6, // Top 6 picks
+      vibe: currentVibe || undefined,
+      useLLM: true, // Enable LLM for top picks
+      llmTopK: 24
+    }
+  );
 
   // Get all nearby venues
   const { 
@@ -135,7 +138,7 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
                                 {venue.name}
                               </h4>
                               <span className="text-xs text-muted-foreground">
-                                {Math.round(venue.dist_m)}m
+                                {Math.round(venue.distance_m)}m
                               </span>
                             </div>
                             {venue.reason && (
@@ -145,7 +148,7 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
                             )}
                           </div>
                           <div className="text-xs font-medium text-primary ml-2">
-                            {Math.round(venue.score * 100)}%
+                            {venue.personalized_score ? Math.round(venue.personalized_score * 100) : '—'}%
                           </div>
                         </div>
                       ))}

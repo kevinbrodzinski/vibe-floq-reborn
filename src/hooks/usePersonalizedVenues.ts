@@ -2,67 +2,152 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+const bucket = (n: number) => Math.round(n * 1e4) / 1e4; // ~11 m
+
+export type PriceTier = '$' | '$$' | '$$$' | '$$$$';
+
 export interface PersonalizedVenue {
   venue_id: string;
   name: string;
-  dist_m: number;
-  score: number;
-  reason: string;
+  distance_m: number;
+  rating: number | null;
+  categories: string[] | null;
+  description: string | null;
+  address: string | null;
+  photo_url: string | null;
+  live_count: number | null;
+  price_tier: PriceTier | null;
+  personalized_score: number | null;
+  reason?: string | null; // from LLM re-rank (optional)
 }
 
-export interface UsePersonalizedVenuesParams {
+type Options = {
+  radius?: number;
+  limit?: number;
+  categories?: string[];
+  maxPriceTier?: PriceTier;
+  vibe?: string;
+  tags?: string[];              // optional tag filters for LLM rerank
+  useLLM?: boolean;             // toggle rerank
+  llmTopK?: number;             // how many candidates to rerank
+  tz?: string;                  // timezone override
+};
+
+export const usePersonalizedVenues = (
+  lat: number | null,
+  lng: number | null,
+  options: Options = {}
+) => {
+  const { user } = useAuth();
+  const {
+    radius = 1000,
+    limit = 20,
+    categories,
+    maxPriceTier = '$$$$',
+    vibe,
+    tags,
+    useLLM = false,
+    llmTopK = 30,
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  } = options;
+
+  return useQuery<PersonalizedVenue[]>({
+    enabled: lat !== null && lng !== null,
+    queryKey: [
+      'personalized-venues',
+      lat && bucket(lat),
+      lng && bucket(lng),
+      radius,
+      limit,
+      user?.id,
+      categories,
+      maxPriceTier,
+      vibe,
+      tags,
+      useLLM ? 'llm' : 'base'
+    ],
+    staleTime: 30_000,
+    gcTime: 300_000,
+    retry: 2,
+    queryFn: async () => {
+      if (lat == null || lng == null) return [];
+
+      // Prefer the new recommend function when LLM is requested
+      if (useLLM) {
+        const { data, error } = await supabase.functions.invoke('recommend', {
+          body: {
+            profile_id: user?.id ?? null,
+            lat,
+            lng,
+            radius_m: radius,
+            limit,
+            vibe,
+            tags,
+            tz,
+            use_llm: true,
+            llm_top_k: llmTopK,
+            ab: 'llm_v1'
+          }
+        });
+
+        if (error) throw new Error(error.message ?? 'recommend failed');
+
+        const items = (data?.items ?? []) as any[];
+        return items.map((v) => ({
+          venue_id: v.venue_id,
+          name: v.name,
+          distance_m: v.distance_m,
+          rating: v.rating ?? null,
+          categories: v.categories ?? null,
+          description: v.description ?? null,
+          address: v.address ?? null,
+          photo_url: v.photo_url ?? null,
+          live_count: v.live_count ?? null,
+          price_tier: (v.price_tier as PriceTier) ?? null,
+          personalized_score: v.score ?? v.personalized_score ?? null,
+          reason: v.reason ?? null
+        }));
+      }
+
+      // Baseline: keep your existing RPC (DB-scored)
+      const { data, error } = await supabase.rpc('venues_within_radius', {
+        p_lat: lat,
+        p_lng: lng,
+        p_radius_m: radius,
+        p_limit: limit,
+        p_profile_id: user?.id || null,
+        p_categories: categories || null,
+        p_price_tier_max: maxPriceTier ?? '$$$$',
+        p_vibe: vibe || null
+      });
+      if (error) throw new Error(error.message ?? 'venues_within_radius failed');
+
+      return (data || []).map((venue: any) => ({
+        venue_id: venue.venue_id,
+        name: venue.name,
+        distance_m: venue.distance_m,
+        rating: venue.rating,
+        categories: venue.categories,
+        description: venue.description,
+        address: venue.address,
+        photo_url: venue.photo_url,
+        live_count: venue.live_count,
+        price_tier: venue.price_tier,
+        personalized_score: venue.personalized_score,
+      }));
+    }
+  });
+};
+
+// Keep the remaining existing hooks for backwards compatibility
+export function usePersonalizedVenuesRPC(params: {
   lat: number;
   lng: number;
   vibe?: string;
   tags?: string[];
   radiusM?: number;
   limit?: number;
-  ab?: string; // A/B test bucket
-  useLLM?: boolean; // Enable LLM re-ranking
-  llmTopK?: number; // How many to re-rank with LLM
-}
-
-export function usePersonalizedVenues(params: UsePersonalizedVenuesParams) {
-  const { user } = useAuth();
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
-
-  return useQuery({
-    queryKey: ['personalizedVenues', { ...params, tz, profileId: user?.id }],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      // Call the recommend edge function
-      const { data, error } = await supabase.functions.invoke('recommend', {
-        body: {
-          profile_id: user.id,
-          lat: params.lat,
-          lng: params.lng,
-          vibe: params.vibe ?? null,
-          tags: params.tags ?? null,
-          radius_m: params.radiusM ?? 3000,
-          limit: params.limit ?? 20,
-          tz,
-          ab: params.ab ?? null,
-          use_llm: params.useLLM ?? false,
-          llm_top_k: params.llmTopK ?? 30,
-        }
-      });
-
-      if (error) throw error;
-      if (!data.ok) throw new Error(data.error || 'Failed to get recommendations');
-
-      return {
-        items: data.items as PersonalizedVenue[],
-        llm: data.llm as boolean,
-      };
-    },
-    enabled: Boolean(user?.id && params.lat && params.lng),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-// Hook for direct RPC call (alternative to edge function)
-export function usePersonalizedVenuesRPC(params: UsePersonalizedVenuesParams) {
+}) {
   const { user } = useAuth();
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles';
 
@@ -75,24 +160,23 @@ export function usePersonalizedVenuesRPC(params: UsePersonalizedVenuesParams) {
         p_profile_id: user.id,
         p_lat: params.lat,
         p_lng: params.lng,
-        p_radius_m: params.radiusM ?? 3000,
         p_vibe: params.vibe ?? null,
         p_tags: params.tags ?? null,
-        p_tz: tz,
+        p_radius_m: params.radiusM ?? 3000,
         p_limit: params.limit ?? 20,
-        p_ab: params.ab ?? null,
+        p_tz: tz,
+        p_ab: 'baseline',
         p_log: true,
       });
 
       if (error) throw error;
-      return data as PersonalizedVenue[];
+      return data || [];
     },
-    enabled: Boolean(user?.id && params.lat && params.lng),
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-// Hook for tracking interactions
 export function useTrackInteraction() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -154,7 +238,6 @@ export function useTrackInteraction() {
   });
 }
 
-// Hook for updating user tastes
 export function useUpdateUserTastes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -165,53 +248,58 @@ export function useUpdateUserTastes() {
       disliked_cuisines?: string[];
       preferred_tags?: string[];
       disliked_tags?: string[];
-      dietary?: string[];
-      vibe_preference?: string[];
       price_min?: number;
       price_max?: number;
-      distance_max_m?: number;
+      max_distance_km?: number;
       open_now_only?: boolean;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      await supabase.rpc('upsert_user_tastes', {
+      const { data, error } = await supabase.rpc('upsert_user_tastes', {
         p_profile_id: user.id,
-        p_json: tastes,
-      });
-    },
-    onSuccess: () => {
-      // Invalidate venue recommendations to get fresh results
-      queryClient.invalidateQueries({ queryKey: ['personalizedVenues'] });
-      queryClient.invalidateQueries({ queryKey: ['personalizedVenuesRPC'] });
-    },
-  });
-}
-
-// Hook for training user model (admin/debug use)
-export function useTrainUserModel() {
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async (options?: {
-      lookback_days?: number;
-      top_k?: number;
-      engage_window_min?: number;
-      min_samples?: number;
-      lr?: number;
-      l2?: number;
-      iters?: number;
-    }) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase.functions.invoke('train-user-model', {
-        body: {
-          profile_id: user.id,
-          ...options,
-        }
+        p_preferred_cuisines: tastes.preferred_cuisines ?? null,
+        p_disliked_cuisines: tastes.disliked_cuisines ?? null,
+        p_preferred_tags: tastes.preferred_tags ?? null,
+        p_disliked_tags: tastes.disliked_tags ?? null,
+        p_price_min: tastes.price_min ?? null,
+        p_price_max: tastes.price_max ?? null,
+        p_max_distance_km: tastes.max_distance_km ?? null,
+        p_open_now_only: tastes.open_now_only ?? null,
       });
 
       if (error) throw error;
       return data;
     },
+    onSuccess: () => {
+      // Invalidate recommendation queries to get fresh results
+      queryClient.invalidateQueries({ queryKey: ['personalizedVenues'] });
+      queryClient.invalidateQueries({ queryKey: ['personalizedVenuesRPC'] });
+    }
+  });
+}
+
+export function useTrainUserModel() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (params: {
+      lookback_days?: number;
+      top_k?: number;
+      engage_window_min?: number;
+    } = {}) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('train_user_model', {
+        body: {
+          profile_id: user.id,
+          lookback_days: params.lookback_days ?? 60,
+          top_k: params.top_k ?? 10,
+          engage_window_min: params.engage_window_min ?? 90,
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    }
   });
 }

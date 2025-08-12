@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentVibe } from '@/lib/store/useVibe';
+import { useGeo } from '@/hooks/useGeo';
 import { useTrackInteraction } from '@/hooks/usePersonalizedVenues';
 import { devLog, devError } from '@/lib/devLog';
 
@@ -24,6 +25,7 @@ export const useVenueInteractions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const currentVibe = useCurrentVibe();
+  const { coords } = useGeo(); // { lat, lng } if available
   const trackInteractionMutation = useTrackInteraction();
 
   const trackInteraction = useMutation({
@@ -35,17 +37,21 @@ export const useVenueInteractions = () => {
       
       devLog(`🎯 Tracking ${interaction_type} interaction for venue ${venue_id} by user ${user.id}`);
       
-      // Use the new tracking system that handles strong vs weak signals
-      const result = await trackInteractionMutation.mutateAsync({
-        venue_id,
-        interaction_type,
-        context: {
-          ...context,
-          vibe: context?.vibe || currentVibe || 'social'
-        }
+      // 1) Your existing bump_interaction call (unchanged)
+      const { error } = await supabase.rpc('bump_interaction', {
+        p_profile_id: user.id,
+        p_venue_id: venue_id,
+        p_type: interaction_type
       });
+      
+      if (error) {
+        devError(`❌ Failed to track ${interaction_type} interaction:`, error);
+        throw error;
+      }
 
-      // Legacy: If this is a check-in, also record to venue_live_presence for afterglow
+      devLog(`✅ Successfully tracked ${interaction_type} interaction for venue ${venue_id}`);
+
+      // 2) Legacy: If this is a check-in, also record to venue_live_presence for afterglow
       if (interaction_type === 'check_in') {
         devLog(`📍 Recording venue presence for check-in at ${venue_id}`);
         const { error: presenceError } = await supabase
@@ -67,7 +73,45 @@ export const useVenueInteractions = () => {
         }
       }
 
-      return result;
+      // 3) NEW: kick online update for strong signals
+      const strongMap: Record<string, 'like' | 'check_in' | 'dislike' | 'dismiss' | null> = {
+        favorite: 'like',
+        check_in: 'check_in',
+        share: null,  // neutral
+        view: null,   // neutral
+        like: 'like',
+        bookmark: 'like', // treat bookmark as like
+        dismiss: 'dismiss',
+        dislike: 'dislike',
+        plan: 'like' // treat plan as positive signal
+      };
+      
+      const mapped = strongMap[interaction_type];
+      if (mapped) {
+        try {
+          devLog(`🧠 Triggering online learning for ${interaction_type} → ${mapped}`);
+          await supabase.functions.invoke('on_interaction', {
+            body: {
+              profile_id: user.id,
+              venue_id,
+              interaction_type: mapped,
+              context: {
+                lat: coords?.lat ?? null,
+                lng: coords?.lng ?? null,
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                vibe: currentVibe || null,
+                radius_m: 2500
+              }
+            }
+          });
+          devLog(`✅ Online learning update completed for ${mapped}`);
+        } catch (e) {
+          // non-blocking
+          devError('[on_interaction] failed', e);
+        }
+      }
+
+      return { venue_id, interaction_type };
     },
     onSuccess: (data, variables) => {
       devLog(`🔄 Invalidating queries after ${variables.interaction_type} interaction`);
