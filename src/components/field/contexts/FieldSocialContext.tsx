@@ -167,13 +167,21 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     }).filter(Boolean) as Array<{ id: string; lat: number; lng: number; isFriend?: boolean; vibe?: string | null }>;
   }, [presenceData, selectedFloqMembers]);
 
-  // Publish glPoints to the overlay bridge
+  // Publish glPoints to the overlay bridge (safely)
   useEffect(() => {
-    setFieldOverlayProvider(() => glPoints);
-    notifyFieldOverlayChanged();
-    return () => {
-      clearFieldOverlayProvider();
+    try {
+      setFieldOverlayProvider(() => glPoints);
       notifyFieldOverlayChanged();
+    } catch (error) {
+      console.warn('[FieldSocialContext] Failed to publish overlay data:', error);
+    }
+    return () => {
+      try {
+        clearFieldOverlayProvider();
+        notifyFieldOverlayChanged();
+      } catch (error) {
+        console.warn('[FieldSocialContext] Failed to clear overlay data:', error);
+      }
     };
   }, [glPoints]);
 

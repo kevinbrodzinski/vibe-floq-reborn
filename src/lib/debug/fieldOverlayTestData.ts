@@ -1,7 +1,12 @@
 // src/lib/debug/fieldOverlayTestData.ts
 // Test data script for Field GL overlay - run in browser console
 
-import { setFieldOverlayProvider, notifyFieldOverlayChanged } from '@/lib/field/overlayBridge';
+let overlayBridge: any = null;
+try {
+  overlayBridge = require('@/lib/field/overlayBridge');
+} catch (error) {
+  console.warn('[FieldOverlayTest] Overlay bridge not available:', error);
+}
 
 export function injectFieldTestData() {
   console.log('🎯 Injecting Field GL overlay test data...');
@@ -68,8 +73,13 @@ export function injectFieldTestData() {
   
   // Inject the test data
   const testPoints = generateTestPoints();
-  setFieldOverlayProvider(() => testPoints);
-  notifyFieldOverlayChanged();
+  if (overlayBridge) {
+    overlayBridge.setFieldOverlayProvider(() => testPoints);
+    overlayBridge.notifyFieldOverlayChanged();
+  } else {
+    console.error('❌ Overlay bridge not available - cannot inject test data');
+    return null;
+  }
   
   console.log('🎯 Test data injected! You should see:');
   console.log('- Colored dots representing people');
@@ -83,9 +93,13 @@ export function injectFieldTestData() {
 
 export function clearFieldTestData() {
   console.log('🧹 Clearing Field GL overlay test data...');
-  setFieldOverlayProvider(() => []);
-  notifyFieldOverlayChanged();
-  console.log('✅ Test data cleared');
+  if (overlayBridge) {
+    overlayBridge.setFieldOverlayProvider(() => []);
+    overlayBridge.notifyFieldOverlayChanged();
+    console.log('✅ Test data cleared');
+  } else {
+    console.error('❌ Overlay bridge not available - cannot clear test data');
+  }
 }
 
 export function addRandomPoint() {
@@ -102,12 +116,16 @@ export function addRandomPoint() {
   };
   
   // Get current data and add new point
-  const currentProvider = (window as any).__fieldOverlayProvider;
-  if (currentProvider) {
-    const currentPoints = currentProvider();
-    setFieldOverlayProvider(() => [...currentPoints, newPoint]);
-    notifyFieldOverlayChanged();
-    console.log('➕ Added random point:', newPoint);
+  if (overlayBridge) {
+    const currentProvider = (window as any).__fieldOverlayProvider;
+    if (currentProvider) {
+      const currentPoints = currentProvider();
+      overlayBridge.setFieldOverlayProvider(() => [...currentPoints, newPoint]);
+      overlayBridge.notifyFieldOverlayChanged();
+      console.log('➕ Added random point:', newPoint);
+    }
+  } else {
+    console.error('❌ Overlay bridge not available - cannot add point');
   }
   
   return newPoint;

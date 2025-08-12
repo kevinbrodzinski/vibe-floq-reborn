@@ -926,12 +926,16 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             (window as any).__fieldMap = map;
           }
           
-          // Attach Field PIXI GL layer
+          // Attach Field PIXI GL layer (with better error handling)
           try {
             const findFirstSymbolLayerId = (m: mapboxgl.Map): string | undefined => {
-              const layers = m.getStyle()?.layers ?? [];
-              const symbol = layers.find((l) => l.type === 'symbol' && (l.layout as any)?.['text-field']);
-              return symbol?.id;
+              try {
+                const layers = m.getStyle()?.layers ?? [];
+                const symbol = layers.find((l) => l.type === 'symbol' && (l.layout as any)?.['text-field']);
+                return symbol?.id;
+              } catch {
+                return undefined;
+              }
             };
             
             const detach = attachFieldPixiBridge(map, {
@@ -946,6 +950,8 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             }
           } catch (error) {
             console.error('❌ Failed to attach Field PIXI GL layer:', error);
+            console.error('This is likely due to missing dependencies or WebGL issues');
+            // Continue without GL layer - the app should still work with 2D canvas fallback
           }
           
           setStatus('ready');
@@ -1344,10 +1350,22 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 // Memoize the component to prevent unnecessary re-renders
 export const FieldWebMap = React.memo(FieldWebMapComponent, (prevProps, nextProps) => {
   // Custom comparison to prevent re-renders from reference changes
-  return (
+  const propsEqual = (
     prevProps.visible === nextProps.visible &&
     prevProps.realtime === nextProps.realtime &&
-    prevProps.floqs.length === nextProps.floqs.length &&
-    prevProps.onRegionChange === nextProps.onRegionChange // This should now be stable
+    prevProps.floqs?.length === nextProps.floqs?.length &&
+    prevProps.onRegionChange === nextProps.onRegionChange
   );
+  
+  // Debug excessive re-renders in development
+  if (!propsEqual && import.meta.env.DEV) {
+    console.log('[FieldWebMap] Re-render caused by:', {
+      visible: prevProps.visible !== nextProps.visible,
+      realtime: prevProps.realtime !== nextProps.realtime,
+      floqs: prevProps.floqs?.length !== nextProps.floqs?.length,
+      onRegionChange: prevProps.onRegionChange !== nextProps.onRegionChange,
+    });
+  }
+  
+  return propsEqual;
 });

@@ -17,12 +17,35 @@ import type { Database } from '@/integrations/supabase/types';
 import { VIBE_RGB, type Vibe as UiVibe } from '@/lib/vibes';
 // Grayscale tokens
 import { GRAY_RGB, type UiGrayToken } from '@/lib/tokens/grayscale';
-// Live controls bus
-import {
-  getOverlayControls,
-  subscribeOverlayControls,
-  type OverlayControls,
-} from '@/lib/field/overlayStyleBus';
+// Live controls bus (optional for basic functionality)
+let overlayStyleBus: any = null;
+try {
+  overlayStyleBus = require('@/lib/field/overlayStyleBus');
+} catch {
+  // Overlay style bus not available, use basic mode
+}
+
+// Basic overlay controls type (compatible with style bus)
+type OverlayControls = {
+  monochrome: boolean;
+  monochromeToken: UiGrayToken;
+  colorize: boolean;
+  dim: boolean;
+  dimFactor: number;
+  friendHalo: boolean;
+  youId?: string;
+};
+
+// Default controls for basic mode
+const DEFAULT_CONTROLS: OverlayControls = {
+  monochrome: false,
+  monochromeToken: 'gray-12',
+  colorize: true,
+  dim: false,
+  dimFactor: 0.68,
+  friendHalo: true,
+  youId: undefined,
+};
 
 export type PixiBridgeOptions = {
   layerId?: string;
@@ -43,6 +66,22 @@ export type PixiBridgeOptions = {
 
 type DbVibe = Database['public']['Enums']['vibe_enum'];
 
+// Safe wrappers for overlay style bus (work with or without it)
+function getOverlayControlsSafe(): OverlayControls {
+  if (overlayStyleBus?.getOverlayControls) {
+    return overlayStyleBus.getOverlayControls();
+  }
+  return DEFAULT_CONTROLS;
+}
+
+function subscribeOverlayControlsSafe(callback: () => void): () => void {
+  if (overlayStyleBus?.subscribeOverlayControls) {
+    return overlayStyleBus.subscribeOverlayControls(callback);
+  }
+  // Return no-op unsubscribe function for basic mode
+  return () => {};
+}
+
 export function attachFieldPixiBridge(
   map: mapboxgl.Map,
   opts: PixiBridgeOptions = {}
@@ -51,7 +90,7 @@ export function attachFieldPixiBridge(
 
   // Create + add layer if missing
   if (!map.getLayer(layerId)) {
-    const initControls = mergeControlsWithOptions(getOverlayControls(), opts);
+    const initControls = mergeControlsWithOptions(getOverlayControlsSafe(), opts);
     const layer = createFieldPixiLayer({
       id: layerId,
       style: {
@@ -68,7 +107,7 @@ export function attachFieldPixiBridge(
 
   const push = () => {
     // Read live controls (UI) merged with any static opts
-    const controls = mergeControlsWithOptions(getOverlayControls(), opts);
+    const controls = mergeControlsWithOptions(getOverlayControlsSafe(), opts);
 
     // Style update (color enable + dim factor)
     layer.setStyle({
@@ -93,7 +132,7 @@ export function attachFieldPixiBridge(
 
   // React to data AND to live control changes
   const unsubData = subscribeFieldOverlay(push);
-  const unsubUi = subscribeOverlayControls(push);
+  const unsubUi = subscribeOverlayControlsSafe(push);
 
   // Refresh on map transforms
   const refresh = () => push();
