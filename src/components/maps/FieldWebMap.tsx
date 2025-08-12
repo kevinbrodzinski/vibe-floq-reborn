@@ -25,6 +25,7 @@ import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
 import { attachFieldPixiBridge } from '@/lib/field/pixiBridge';
+import { setFieldOverlayProvider, notifyFieldOverlayChanged } from '@/lib/field/overlayBridge';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
@@ -933,19 +934,22 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
               const center = map.getCenter();
               console.log('🧪 Injecting test point at map center:', center);
               
-              // Test via overlay bridge
-              const { setFieldOverlayProvider, notifyFieldOverlayChanged } = require('@/lib/field/overlayBridge');
-              setFieldOverlayProvider(() => [{
-                id: 'test-point',
-                lat: center.lat,
-                lng: center.lng,
-                vibe: 'hype',
-                isFriend: true,
-                isYou: true
-              }]);
-              notifyFieldOverlayChanged();
-              
-              console.log('✅ Test point injected - you should see a pin at map center');
+              try {
+                // Test via overlay bridge
+                setFieldOverlayProvider(() => [{
+                  id: 'test-point',
+                  lat: center.lat,
+                  lng: center.lng,
+                  vibe: 'hype',
+                  isFriend: true,
+                  isYou: true
+                }]);
+                notifyFieldOverlayChanged();
+                
+                console.log('✅ Test point injected - you should see a pin at map center');
+              } catch (error) {
+                console.error('❌ Failed to inject test point:', error);
+              }
             };
           }
           
@@ -969,7 +973,10 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             
             console.log('🎯 Field PIXI GL layer attached successfully');
             if (import.meta.env.DEV) {
-              console.log('🧪 Test functions available: window.fieldOverlayTest');
+              console.log('🧪 Test functions available:');
+              console.log('  - window.testFieldOverlay() - inject point at map center');
+              console.log('  - window.fieldOverlayTest?.inject() - inject multiple test points');
+              console.log('  - window.fieldOverlayTest?.clear() - clear test data');
             }
           } catch (error) {
             console.error('❌ Failed to attach Field PIXI GL layer:', error);
