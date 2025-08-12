@@ -17,13 +17,12 @@ import type { Database } from '@/integrations/supabase/types';
 import { VIBE_RGB, type Vibe as UiVibe } from '@/lib/vibes';
 // Grayscale tokens
 import { GRAY_RGB, type UiGrayToken } from '@/lib/tokens/grayscale';
-// Live controls bus (optional for basic functionality)
-let overlayStyleBus: any = null;
-try {
-  overlayStyleBus = require('@/lib/field/overlayStyleBus');
-} catch {
-  // Overlay style bus not available, use basic mode
-}
+// Import style bus directly - it exists in the codebase
+import {
+  getOverlayControls,
+  subscribeOverlayControls,
+  type OverlayControls as StyleBusControls,
+} from '@/lib/field/overlayStyleBus';
 
 // Basic overlay controls type (compatible with style bus)
 type OverlayControls = {
@@ -66,20 +65,25 @@ export type PixiBridgeOptions = {
 
 type DbVibe = Database['public']['Enums']['vibe_enum'];
 
-// Safe wrappers for overlay style bus (work with or without it)
+// Use the style bus functions directly
 function getOverlayControlsSafe(): OverlayControls {
-  if (overlayStyleBus?.getOverlayControls) {
-    return overlayStyleBus.getOverlayControls();
+  try {
+    const controls = getOverlayControls();
+    // Map StyleBusControls to our OverlayControls if needed
+    return controls as OverlayControls;
+  } catch (error) {
+    console.warn('[pixiBridge] Failed to get overlay controls, using defaults:', error);
+    return DEFAULT_CONTROLS;
   }
-  return DEFAULT_CONTROLS;
 }
 
 function subscribeOverlayControlsSafe(callback: () => void): () => void {
-  if (overlayStyleBus?.subscribeOverlayControls) {
-    return overlayStyleBus.subscribeOverlayControls(callback);
+  try {
+    return subscribeOverlayControls(callback);
+  } catch (error) {
+    console.warn('[pixiBridge] Failed to subscribe to overlay controls:', error);
+    return () => {}; // No-op unsubscribe
   }
-  // Return no-op unsubscribe function for basic mode
-  return () => {};
 }
 
 export function attachFieldPixiBridge(
