@@ -24,12 +24,18 @@ import {
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
 import { useMapLayers } from '@/hooks/useMapLayers';
 import { TimewarpMapLayer } from '@/components/field/TimewarpMapLayer';
+import { attachFieldPixiBridge } from '@/lib/field/pixiBridge';
+import { setFieldOverlayProvider, notifyFieldOverlayChanged } from '@/lib/field/overlayBridge';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
 import '@/lib/debug/friendsDebugger';
 import '@/lib/debug/floqPlanDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
+// Debug imports - only in development
+if (import.meta.env.DEV) {
+  import('@/lib/debug/fieldOverlayTestData');
+}
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -411,24 +417,60 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           console.log('[FieldWebMap] 🔧 DEV: Initializing map without location for development');
         }
 
-        // Use actual location or dev fallback
-        const initialCenter: [number, number] = isLocationReady 
-          ? [location.coords.lng, location.coords.lat]
-          : [-122.4194, 37.7749]; // SF fallback for dev
+        // Use actual location, last known location from localStorage, or dev fallback
+        let initialCenter: [number, number];
+        
+        if (isLocationReady && location.coords) {
+          // Use current location
+          initialCenter = [location.coords.lng, location.coords.lat];
+          // Save to localStorage for next time
+          localStorage.setItem('fieldMap_lastLocation', JSON.stringify({
+            lng: location.coords.lng,
+            lat: location.coords.lat,
+            timestamp: Date.now()
+          }));
+        } else {
+          // Try to use last known location from localStorage
+          try {
+            const saved = localStorage.getItem('fieldMap_lastLocation');
+            if (saved) {
+              const { lng, lat, timestamp } = JSON.parse(saved);
+              // Use saved location if it's less than 24 hours old
+              if (timestamp && (Date.now() - timestamp) < 24 * 60 * 60 * 1000) {
+                initialCenter = [lng, lat];
+                console.log('[FieldWebMap] Using saved location:', { lat, lng });
+              } else {
+                throw new Error('Saved location too old');
+              }
+            } else {
+              throw new Error('No saved location');
+            }
+          } catch (error) {
+            // Fallback to SF for dev, or user's approximate area
+            initialCenter = [-122.4194, 37.7749]; // SF fallback for dev
+            console.log('[FieldWebMap] Using fallback location');
+          }
+        }
 
         // Create map with singleton protection to prevent WebGL context leaks
         console.log('[FieldWebMap] Creating map with singleton protection...');
+        // Get last zoom level if available
+        const savedZoom = localStorage.getItem('fieldMap_lastZoom');
+        const initialZoom = savedZoom ? parseFloat(savedZoom) : 11;
+
         const map = createMapSafely(mapContainerRef.current!, {
           style: 'mapbox://styles/mapbox/dark-v11',
           center: initialCenter,
-          zoom: 11,
+          zoom: initialZoom,
           preserveDrawingBuffer: true,
           antialias: true
         });
         mapRef.current = map;
 
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
+        console.log('[FieldWebMap] Attaching user location source...');
         detachUserLocationSourceRef.current = attachUserLocationSource(map);
+        console.log('[FieldWebMap] User location source attached');
         
         // Wait for style to fully load before continuing
         if (!map.isStyleLoaded()) {
@@ -918,6 +960,80 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           setMapInstance(map);
           fire();
           map.on('moveend',fire);
+          
+          // Save map state when user moves/zooms for next session
+          map.on('moveend', () => {
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            
+            // Save current view for next time (debounced by moveend)
+            localStorage.setItem('fieldMap_lastLocation', JSON.stringify({
+              lng: center.lng,
+              lat: center.lat,
+              timestamp: Date.now()
+            }));
+            localStorage.setItem('fieldMap_lastZoom', zoom.toString());
+          });
+          
+          // Expose map to window for test scripts (dev only)
+          if (import.meta.env.DEV) {
+            (window as any).__fieldMap = map;
+            
+            // Quick test function to inject a point at map center
+            (window as any).testFieldOverlay = () => {
+              const center = map.getCenter();
+              console.log('🧪 Injecting test point at map center:', center);
+              
+              try {
+                // Test via overlay bridge
+                setFieldOverlayProvider(() => [{
+                  id: 'test-point',
+                  lat: center.lat,
+                  lng: center.lng,
+                  vibe: 'hype',
+                  isFriend: true,
+                  isYou: true
+                }]);
+                notifyFieldOverlayChanged();
+                
+                console.log('✅ Test point injected - you should see a pin at map center');
+              } catch (error) {
+                console.error('❌ Failed to inject test point:', error);
+              }
+            };
+          }
+          
+          // Attach Field PIXI GL layer (with better error handling)
+          try {
+            const findFirstSymbolLayerId = (m: mapboxgl.Map): string | undefined => {
+              try {
+                const layers = m.getStyle()?.layers ?? [];
+                const symbol = layers.find((l) => l.type === 'symbol' && (l.layout as any)?.['text-field']);
+                return symbol?.id;
+              } catch {
+                return undefined;
+              }
+            };
+            
+            const detach = attachFieldPixiBridge(map, {
+              layerId: 'field-pixi',
+              beforeId: undefined, // Add to top of layer stack
+            });
+            (map as any).__fieldPixiDetach = detach;
+            
+            console.log('🎯 Field PIXI GL layer attached successfully');
+            if (import.meta.env.DEV) {
+              console.log('🧪 Test functions available:');
+              console.log('  - window.testFieldOverlay() - inject point at map center');
+              console.log('  - window.fieldOverlayTest?.inject() - inject multiple test points');
+              console.log('  - window.fieldOverlayTest?.clear() - clear test data');
+            }
+          } catch (error) {
+            console.error('❌ Failed to attach Field PIXI GL layer:', error);
+            console.error('This is likely due to missing dependencies or WebGL issues');
+            // Continue without GL layer - the app should still work with 2D canvas fallback
+          }
+          
           setStatus('ready');
         });
 
@@ -958,6 +1074,18 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           detachUserLocationSourceRef.current = null;
         }
         
+        // Cleanup Field PIXI GL layer
+        const detach = (mapRef.current as any).__fieldPixiDetach as (() => void) | undefined;
+        if (detach) {
+          try {
+            detach();
+            (mapRef.current as any).__fieldPixiDetach = undefined;
+            console.log('🎯 Field PIXI GL layer cleaned up');
+          } catch (error) {
+            console.warn('❌ Field PIXI GL layer cleanup error:', error);
+          }
+        }
+        
         try {
           mapRef.current.remove(); // This frees WebGL context
           mapRef.current = null;
@@ -988,13 +1116,38 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
       return;
     }
     
-    // ✅ FIX: Ensure user location source is attached first
+    // ✅ Robust user location update with fallback source creation
     const updateLocation = () => {
       // Check if the user location source is ready (attached by attachUserLocationSource)
       const isSourceReady = (map as any).__userLocationSourceReady?.();
+      
       if (!isSourceReady) {
-        console.warn('[FieldWebMap] User location source not ready, skipping location update');
-        return;
+        // Fallback: Ensure source and layer exist even if attachment failed
+        try {
+          if (!map.getSource(USER_LOC_SRC)) {
+            map.addSource(USER_LOC_SRC, {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] }
+            });
+          }
+          
+          if (!map.getLayer(USER_LOC_LAYER)) {
+            map.addLayer({
+              id: USER_LOC_LAYER,
+              type: 'circle',
+              source: USER_LOC_SRC,
+              paint: {
+                'circle-color': '#3B82F6',
+                'circle-radius': 8,
+                'circle-stroke-color': '#fff',
+                'circle-stroke-width': 2
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('[FieldWebMap] Could not create user location source/layer:', error);
+          return;
+        }
       }
       
       // Use the safe setUserLocation utility
@@ -1302,10 +1455,22 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 // Memoize the component to prevent unnecessary re-renders
 export const FieldWebMap = React.memo(FieldWebMapComponent, (prevProps, nextProps) => {
   // Custom comparison to prevent re-renders from reference changes
-  return (
+  const propsEqual = (
     prevProps.visible === nextProps.visible &&
     prevProps.realtime === nextProps.realtime &&
-    prevProps.floqs.length === nextProps.floqs.length &&
-    prevProps.onRegionChange === nextProps.onRegionChange // This should now be stable
+    prevProps.floqs?.length === nextProps.floqs?.length &&
+    prevProps.onRegionChange === nextProps.onRegionChange
   );
+  
+  // Debug excessive re-renders in development
+  if (!propsEqual && import.meta.env.DEV) {
+    console.log('[FieldWebMap] Re-render caused by:', {
+      visible: prevProps.visible !== nextProps.visible,
+      realtime: prevProps.realtime !== nextProps.realtime,
+      floqs: prevProps.floqs?.length !== nextProps.floqs?.length,
+      onRegionChange: prevProps.onRegionChange !== nextProps.onRegionChange,
+    });
+  }
+  
+  return propsEqual;
 });

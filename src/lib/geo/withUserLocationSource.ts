@@ -16,7 +16,10 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
   let isSourceReady = false;
   
   const ensure = () => {
-    if (!map.isStyleLoaded()) return; // wait for style
+    if (!map.isStyleLoaded()) {
+      console.log('[attachUserLocationSource] Style not loaded, waiting...');
+      return; // wait for style
+    }
 
     // add missing source
     if (!map.getSource(USER_LOC_SRC)) {
@@ -44,9 +47,11 @@ export function attachUserLocationSource(map: mapboxgl.Map): () => void {
     }
     
     isSourceReady = true;
+    console.log('[attachUserLocationSource] ✅ Setup complete, source ready');
   };
 
   // first run + subscribe
+  console.log('[attachUserLocationSource] Running initial ensure...');
   ensure();
   map.on('style.load',  ensure);
   map.on('styledata',   ensure);
@@ -69,9 +74,9 @@ export function setUserLocation(
   lat: number,
   lng: number,
   accuracy = 15,
-  attempt = 0                // ← new
+  attempt = 0
 ) {
-  const MAX_RETRY = 10;      // Increased retries for better reliability
+  const MAX_RETRY = 10;
 
   const push = () => {
     // Guard against invalid map reference

@@ -3,6 +3,11 @@ import { getVibeColor } from '@/utils/getVibeColor';
 import { useFieldLocation } from './FieldLocationContext';
 import { useSelectedFloq } from '@/components/maps/FieldWebMap';
 import { projectToScreen, onMapReady } from '@/lib/geo/project';
+import {
+  setFieldOverlayProvider,
+  notifyFieldOverlayChanged,
+  clearFieldOverlayProvider,
+} from '@/lib/field/overlayBridge';
 
 export interface ProfileRow {
   id: string;
@@ -51,7 +56,13 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     const fieldLocation = useFieldLocation();
     location = fieldLocation.location;
     presenceData = fieldLocation.presenceData;
-    console.log('[FieldSocialProvider] Successfully got field location:', { location, presenceData });
+    console.log('[FieldSocialProvider] Successfully got field location:', { 
+      location: location?.coords ? `${location.coords.lat}, ${location.coords.lng}` : 'no coords', 
+      presenceData: presenceData?.length || 0 
+    });
+    if (presenceData && presenceData.length > 0) {
+      console.log('[FieldSocialProvider] Sample presence data:', presenceData[0]);
+    }
   } catch (error) {
     console.error('[FieldSocialProvider] Failed to get field location context:', error);
     // Provide fallback values
@@ -127,6 +138,62 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
       };
     }).filter(Boolean); // Remove null entries
   }, [presenceData, profilesMap, location?.coords?.lat, location?.coords?.lng, selectedFloqMembers, mapReadyFlag]);
+
+  // Create GL points (raw lat/lng) for the Mapbox+PIXI layer
+  const glPoints = useMemo(() => {
+    let filteredPresenceData = presenceData;
+    if (selectedFloqMembers && selectedFloqMembers.length > 0) {
+      filteredPresenceData = presenceData.filter(presence => {
+        const profileId = presence.profile_id || presence.user_id;
+        return profileId && selectedFloqMembers.includes(profileId);
+      });
+    }
+    return filteredPresenceData.map((presence) => {
+      const profileId = presence.profile_id || presence.user_id;
+      if (!profileId) return null;
+
+      let lat: number | undefined, lng: number | undefined;
+      if (presence.location?.coordinates) {
+        lng = presence.location.coordinates[0];
+        lat = presence.location.coordinates[1];
+      } else if (presence.lat && presence.lng) {
+        lat = presence.lat;
+        lng = presence.lng;
+      } else {
+        return null;
+      }
+
+      return {
+        id: profileId,
+        lat,
+        lng,
+        isFriend: Boolean(presence.isFriend),
+        vibe: presence.vibe || null,
+      };
+    }).filter(Boolean) as Array<{ id: string; lat: number; lng: number; isFriend?: boolean; vibe?: string | null }>;
+  }, [presenceData, selectedFloqMembers]);
+
+  // Publish glPoints to the overlay bridge (safely)
+  useEffect(() => {
+    try {
+      console.log('[FieldSocialContext] Publishing glPoints to overlay bridge:', glPoints.length, 'points');
+      if (glPoints.length > 0) {
+        console.log('[FieldSocialContext] Sample point:', glPoints[0]);
+      }
+      setFieldOverlayProvider(() => glPoints);
+      notifyFieldOverlayChanged();
+    } catch (error) {
+      console.warn('[FieldSocialContext] Failed to publish overlay data:', error);
+    }
+    return () => {
+      try {
+        clearFieldOverlayProvider();
+        notifyFieldOverlayChanged();
+      } catch (error) {
+        console.warn('[FieldSocialContext] Failed to clear overlay data:', error);
+      }
+    };
+  }, [glPoints]);
 
   const value = {
     people,
