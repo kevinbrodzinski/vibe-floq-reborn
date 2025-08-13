@@ -20,11 +20,12 @@ export function AppHeader() {
     return 'floq';
   }, [pathname]);
 
-  const isFieldPage = pathname === '/field' || pathname === '/';
+  const isFieldPage = pathname === '/field' || pathname === '/' || pathname.startsWith('/field');
 
   // Exit fullscreen when navigating away from field page
   useEffect(() => {
     if (mode === 'full' && !isFieldPage) {
+      console.log('[AppHeader] Exiting fullscreen - not on field page', { pathname, isFieldPage });
       setMode('map');
     }
   }, [mode, isFieldPage, setMode]);
