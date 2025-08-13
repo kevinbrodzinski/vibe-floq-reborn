@@ -17,6 +17,9 @@ import { PulseLocationWeatherBar } from '@/components/pulse/PulseLocationWeather
 import { DateTimeSelector, TimeOption } from '@/components/pulse/DateTimeSelector';
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
 import { ContextualFilterSuggestions } from '@/components/pulse/ContextualFilterSuggestions';
+import { VenueCarousel, VenueCarouselItem } from '@/components/pulse/VenueCarousel';
+import { VenueList } from '@/components/pulse/VenueList';
+import { ViewToggle, ViewMode } from '@/components/pulse/ViewToggle';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
 import { filterGooglePlacesUrl, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
@@ -40,6 +43,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState<TimeOption>('now');
   const [customDate, setCustomDate] = useState<Date>();
   const [selectedFilterKeys, setSelectedFilterKeys] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>('carousel'); // Default to carousel
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
@@ -242,6 +246,29 @@ export const PulseScreenRedesigned: React.FC = () => {
     }
   }, [weatherAnalysis, selectedFilterKeys.length]);
 
+  // Transform recommendations for carousel/list view
+  const venueCarouselItems: VenueCarouselItem[] = useMemo(() => {
+    return filteredRecommendations
+      .filter(item => item.type === 'venue')
+      .map(item => ({
+        id: item.id,
+        name: item.title,
+        subtitle: item.subtitle,
+        photoUrl: item.photoUrl,
+        distance: item.distance,
+        rating: item.rating,
+        vibeMatch: item.vibeMatch,
+        weatherMatch: item.weatherMatch,
+        liveCount: item.liveCount,
+        tags: item.tags
+      }));
+  }, [filteredRecommendations]);
+
+  // Get non-venue recommendations for separate display
+  const otherRecommendations = useMemo(() => {
+    return filteredRecommendations.filter(item => item.type !== 'venue');
+  }, [filteredRecommendations]);
+
   const handleRecommendationClick = useCallback((item: RecommendationItem) => {
     // Navigate to item detail page
     console.log('Navigate to:', item);
@@ -369,15 +396,48 @@ export const PulseScreenRedesigned: React.FC = () => {
 
         {/* Main Recommendations */}
         <div className="px-6">
-          <RecommendationsList
-            recommendations={filteredRecommendations}
-            title="Recommended for you"
-            onItemClick={handleRecommendationClick}
-            onBookmark={handleBookmark}
-            onShare={handleShare}
-            onDirections={handleDirections}
-            maxVisible={10}
-          />
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Recommended for you</h2>
+            <ViewToggle mode={viewMode} onModeChange={setViewMode} />
+          </div>
+
+          {viewMode === 'carousel' ? (
+            <div className="-mx-6">
+              <VenueCarousel
+                items={venueCarouselItems}
+                loading={nearbyLoading || trendingLoading}
+                onOpen={(id) => {
+                  const item = filteredRecommendations.find(r => r.id === id);
+                  if (item) handleRecommendationClick(item);
+                }}
+                className="px-2"
+              />
+            </div>
+          ) : (
+            <VenueList
+              items={venueCarouselItems}
+              loading={nearbyLoading || trendingLoading}
+              onOpen={(id) => {
+                const item = filteredRecommendations.find(r => r.id === id);
+                if (item) handleRecommendationClick(item);
+              }}
+            />
+          )}
+
+          {/* Other recommendations (Floqs, Events) */}
+          {otherRecommendations.length > 0 && (
+            <div className="mt-8">
+              <RecommendationsList
+                recommendations={otherRecommendations}
+                title="Events & Floqs"
+                onItemClick={handleRecommendationClick}
+                onBookmark={handleBookmark}
+                onShare={handleShare}
+                onDirections={handleDirections}
+                maxVisible={6}
+              />
+            </div>
+          )}
         </div>
 
         {/* Context-aware messages */}
