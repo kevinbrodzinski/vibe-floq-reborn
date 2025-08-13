@@ -74,39 +74,46 @@ export const usePersonalizedVenues = (
 
       // Prefer the new recommend function when LLM is requested
       if (useLLM) {
-        const { data, error } = await supabase.functions.invoke('recommend', {
-          body: {
-            profile_id: user?.id ?? null,
-            lat,
-            lng,
-            radius_m: radius,
-            limit,
-            vibe,
-            tags,
-            tz,
-            use_llm: true,
-            llm_top_k: llmTopK,
-            ab: 'ui+llm'
+        try {
+          const { data, error } = await supabase.functions.invoke('recommend', {
+            body: {
+              profile_id: user?.id ?? null,
+              lat,
+              lng,
+              radius_m: radius,
+              limit,
+              vibe,
+              tags,
+              tz,
+              use_llm: true,
+              llm_top_k: llmTopK,
+              ab: 'ui+llm'
+            }
+          });
+
+          if (!error && data?.items) {
+            const items = (data?.items ?? []) as any[];
+            return items.map((v) => ({
+              venue_id: v.venue_id,
+              name: v.name,
+              distance_m: v.distance_m,
+              rating: v.rating ?? null,
+              categories: v.categories ?? null,
+              description: v.description ?? null,
+              address: v.address ?? null,
+              photo_url: v.photo_url ?? null,
+              live_count: v.live_count ?? null,
+              price_tier: (v.price_tier as PriceTier) ?? null,
+              personalized_score: v.score ?? v.personalized_score ?? null,
+              reason: v.reason ?? null
+            }));
           }
-        });
-
-        if (error) throw new Error(error.message ?? 'recommend failed');
-
-        const items = (data?.items ?? []) as any[];
-        return items.map((v) => ({
-          venue_id: v.venue_id,
-          name: v.name,
-          distance_m: v.distance_m,
-          rating: v.rating ?? null,
-          categories: v.categories ?? null,
-          description: v.description ?? null,
-          address: v.address ?? null,
-          photo_url: v.photo_url ?? null,
-          live_count: v.live_count ?? null,
-          price_tier: (v.price_tier as PriceTier) ?? null,
-          personalized_score: v.score ?? v.personalized_score ?? null,
-          reason: v.reason ?? null
-        }));
+          
+          // Fall through to RPC if edge function fails
+          console.warn('Edge function failed, falling back to RPC:', error);
+        } catch (err) {
+          console.warn('Edge function error, falling back to RPC:', err);
+        }
       }
 
       // Baseline: keep your existing RPC (DB-scored)
