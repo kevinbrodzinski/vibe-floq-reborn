@@ -30,6 +30,7 @@ import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
 import { GOOD_WEATHER, type Vibe } from '@/hooks/usePulseFilters';
 import { cn } from '@/lib/utils';
 import { getPulseWindow } from '@/utils/timeWindow';
+import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch';
 
 export const PulseScreenRedesigned: React.FC = () => {
   const navigate = useNavigate();
@@ -45,10 +46,16 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showAllFilters, setShowAllFilters] = useState(false);
   const [distanceMaxM, setDistanceMaxM] = useState<number>(2000); // 2km default
   const [priceTiers, setPriceTiers] = useState<string[]>(['$', '$$', '$$$']); // All price levels
-  const [customLocation, setCustomLocation] = useState<string>(''); // For location override
+  const [selectedCity, setSelectedCity] = useState<CityLocation | null>(null); // For location override
 
   // Get time window for selected time filter
   const timeWindow = useMemo(() => getPulseWindow(selectedTime), [selectedTime]);
+  
+  // Reverse geocode current location to get city/state
+  const { data: currentCity } = useReverseGeocode(coords?.lat, coords?.lng);
+  
+  // Use selected city or current city
+  const activeCity = selectedCity || currentCity;
   
   // Data hooks - pass dateTime to weather for future forecasts
   const { data: weatherData } = useWeather(timeWindow.start.toISOString());
@@ -291,18 +298,17 @@ export const PulseScreenRedesigned: React.FC = () => {
   };
 
   const getCurrentLocationDisplay = () => {
-    if (customLocation) return customLocation;
-    if (coords) {
-      // In production, you'd reverse geocode coords to get a readable address
-      return `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`;
-    }
-    return 'Getting location...';
+    if (selectedCity) return selectedCity.name;
+    if (currentCity) return currentCity.name;
+    if (coords) return 'Getting location...';
+    return 'Location unavailable';
   };
 
-  const handleLocationChange = (newLocation: string) => {
-    setCustomLocation(newLocation);
-    // In production, you'd geocode the new location and update coords
-    console.log('Location changed to:', newLocation);
+  const handleLocationChange = (city: CityLocation) => {
+    setSelectedCity(city);
+    // In production, you might want to update the coords to the new city's coordinates
+    // This would trigger new venue queries for the selected city
+    console.log('Location changed to:', city.name);
   };
 
   const handleRecommendationClick = (item: RecommendationItem) => {
