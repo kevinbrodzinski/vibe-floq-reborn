@@ -100,27 +100,27 @@ export const useVenueRecommendations = () => {
       imageUrl: venue.photo_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
       
       vibeMatch: {
-        score: venue.personalized_score || 0.75,
-        explanation: venue.reason || `Great match for your ${currentVibe || 'current'} vibe`,
+        score: venue.explain?.confidence || venue.personalized_score || 0.75,
+        explanation: venue.explain?.why || venue.reason || `Great match for your ${currentVibe || 'current'} vibe`,
         userVibes: currentVibe ? [currentVibe] : ['social'],
         venueVibes: categories.slice(0, 3),
-        synergy: venue.reason || "This venue aligns well with your current preferences and location"
+        synergy: venue.explain?.why || venue.reason || "This venue aligns well with your current preferences and location"
       },
       
       crowdIntelligence: {
-        currentCapacity: venue.live_count ? Math.min(venue.live_count * 10, 90) : 50,
-        predictedPeak: "7:00-9:00pm (typical dinner rush)",
+        currentCapacity: venue.explain?.crowd.currentCapacityPct ? Math.round(venue.explain.crowd.currentCapacityPct * 100) : (venue.live_count ? Math.min(venue.live_count * 10, 90) : 50),
+        predictedPeak: venue.explain?.crowd.predictedPeakWindow || "7:00-9:00pm (typical dinner rush)",
         typicalCrowd: categories.includes('bar') ? "Young professionals, social groups" : "Diverse crowd, families and friends",
-        friendCompatibility: `${Math.round((venue.personalized_score || 0.7) * 100)}% match based on your preferences`,
+        friendCompatibility: venue.explain?.social.compatibilityPct ? `${Math.round(venue.explain.social.compatibilityPct * 100)}% compatibility with friends` : `${Math.round((venue.personalized_score || 0.7) * 100)}% match based on your preferences`,
         busyTimes: { '17': 40, '18': 60, '19': 80, '20': 85, '21': 70, '22': 50 }
       },
       
       socialProof: {
-        friendVisits: venue.live_count || 0,
-        recentVisitors: [],
-        networkRating: venue.rating || 4.0,
+        friendVisits: venue.explain?.social.friendsVisitedCount || venue.live_count || 0,
+        recentVisitors: venue.explain?.social.friendsRecent?.map(f => f.name) || [],
+        networkRating: venue.explain?.social.friendRating || venue.rating || 4.0,
         popularWith: "People with similar tastes",
-        testimonials: venue.reason ? [venue.reason] : undefined
+        testimonials: venue.explain?.topReasons || (venue.reason ? [venue.reason] : undefined)
       },
       
       context: {
@@ -133,13 +133,17 @@ export const useVenueRecommendations = () => {
       
       realTime: {
         liveEvents: [],
-        waitTime: venue.live_count && venue.live_count > 5 ? "15-20 min wait expected" : "No wait expected",
+        waitTime: venue.explain?.crowd.currentWaitMins ? `${venue.explain.crowd.currentWaitMins} min wait expected` : (venue.live_count && venue.live_count > 5 ? "15-20 min wait expected" : "No wait expected"),
         specialOffers: [],
-        atmosphereLevel: venue.live_count && venue.live_count > 10 ? 'high' : 'moderate',
+        atmosphereLevel: venue.explain?.crowd.currentCapacityPct ? 
+          (venue.explain.crowd.currentCapacityPct > 0.8 ? 'peak' : 
+           venue.explain.crowd.currentCapacityPct > 0.6 ? 'high' : 
+           venue.explain.crowd.currentCapacityPct > 0.3 ? 'moderate' : 'low') : 
+          (venue.live_count && venue.live_count > 10 ? 'high' : 'moderate'),
       },
       
-      confidence: venue.personalized_score || 0.75,
-      topReasons: [
+      confidence: venue.explain?.confidence || venue.personalized_score || 0.75,
+      topReasons: venue.explain?.topReasons || [
         venue.reason || "Good match for your preferences",
         `${distanceKm < 1 ? 'Very close' : 'Convenient'} location`,
         `${venue.rating ? `${venue.rating.toFixed(1)} star rating` : 'Well-rated venue'}`,

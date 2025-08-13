@@ -19,6 +19,28 @@ export interface PersonalizedVenue {
   price_tier: PriceTier | null;
   personalized_score: number | null;
   reason?: string | null; // from LLM re-rank (optional)
+  explain?: {
+    why: string;
+    badges: string[];
+    components: Record<string, number>;
+    weights: Record<string, number>;
+    weighted: Record<string, number>;
+    confidence: number;
+    crowd: {
+      currentCapacityPct?: number;
+      predictedPeakWindow?: string;
+      predictedPeakReason?: string;
+      currentWaitMins?: number;
+    };
+    social: {
+      friendsVisitedCount?: number;
+      friendsRecent?: { name: string; when: string }[];
+      friendRating?: number | null;
+      compatibilityPct?: number;
+    };
+    context: { walkMin: number; openNow?: boolean; inBudget?: boolean };
+    topReasons: string[];
+  };
 }
 
 type Options = {
@@ -96,7 +118,7 @@ export const usePersonalizedVenues = (
             return items.map((v) => ({
               venue_id: v.venue_id,
               name: v.name,
-              distance_m: v.distance_m,
+              distance_m: v.dist_m, // edge function returns dist_m, not distance_m
               rating: v.rating ?? null,
               categories: v.categories ?? null,
               description: v.description ?? null,
@@ -105,7 +127,9 @@ export const usePersonalizedVenues = (
               live_count: v.live_count ?? null,
               price_tier: (v.price_tier as PriceTier) ?? null,
               personalized_score: v.score ?? v.personalized_score ?? null,
-              reason: v.reason ?? null
+              reason: v.explain?.why ?? v.reason ?? null, // Use explain.why if available
+              // Preserve the full explain data for rich UI components
+              explain: v.explain
             }));
           }
           
