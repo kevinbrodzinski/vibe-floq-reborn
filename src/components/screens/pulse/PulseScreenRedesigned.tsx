@@ -24,6 +24,7 @@ import { VenueList } from '@/components/pulse/VenueList';
 import { ViewToggle, ViewMode } from '@/components/pulse/ViewToggle';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
+import { VenueDetailSheet, type VenueLite } from '@/components/VenueDetailSheet';
 // Image utilities no longer needed - VenueImage component handles all fallback logic
 import { applyContextualFiltering, sortByContextualRelevance, getVenueStatus, type VenueData, type ContextualFilterOptions } from '@/lib/utils/contextualFiltering';
 
@@ -45,6 +46,8 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [activeVenue, setActiveVenue] = useState<VenueLite | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Core state (using selectedTime from above)
   const { user } = useAuth();
@@ -292,8 +295,52 @@ export const PulseScreenRedesigned: React.FC = () => {
   }, [filteredRecommendations]);
 
   const handleRecommendationClick = useCallback((item: RecommendationItem) => {
-    // Navigate to item detail page
-    console.log('Navigate to:', item);
+    if (item.type === 'venue') {
+      // Convert RecommendationItem to VenueLite for the sheet
+      const venue: VenueLite = {
+        id: item.id,
+        name: item.title,
+        photo_url: item.photoUrl,
+        categories: item.tags || [],
+        canonical_tags: item.tags || [],
+        distance_m: item.distance,
+        // Note: lat/lng not available from RecommendationItem
+        // Would need to be fetched or stored differently
+      };
+      setActiveVenue(venue);
+      setSheetOpen(true);
+    } else {
+      // TODO: Handle floq clicks
+      console.log('Clicked floq:', item);
+    }
+  }, []);
+
+  const handleVenueClick = useCallback((venueId: string) => {
+    // Find venue in our data and open sheet
+    const venue = [...(nearbyVenues || []), ...(trendingVenues || [])]
+      .find((v: any) => v.id === venueId);
+    
+    if (venue) {
+      const venueLite: VenueLite = {
+        id: venue.id,
+        name: venue.name || 'Unknown Venue',
+        photo_url: venue.photo_url,
+        categories: venue.categories || [],
+        canonical_tags: venue.canonical_tags || [],
+        distance_m: venue.distance_m || venue.dist_m,
+        lat: venue.lat,
+        lng: venue.lng,
+        website: venue.website,
+        reservation_url: venue.reservation_url,
+      };
+      setActiveVenue(venueLite);
+      setSheetOpen(true);
+    }
+  }, [nearbyVenues, trendingVenues]);
+
+  const handleCreatePlan = useCallback((venue: VenueLite) => {
+    // Navigate to plan/floq creation with venue pre-selected
+    window.location.href = `/plans/new?venue_id=${venue.id}`;
   }, []);
 
   const handleActivityClick = useCallback((activity: any) => {
@@ -477,10 +524,7 @@ export const PulseScreenRedesigned: React.FC = () => {
               <VenueCarousel
                 items={venueCarouselItems}
                 loading={nearbyLoading || trendingLoading}
-                onOpen={(id) => {
-                  const item = filteredRecommendations.find(r => r.id === id);
-                  if (item) handleRecommendationClick(item);
-                }}
+                onOpen={handleVenueClick}
                 className="px-2"
               />
             </div>
@@ -488,10 +532,7 @@ export const PulseScreenRedesigned: React.FC = () => {
             <VenueList
               items={venueCarouselItems}
               loading={nearbyLoading || trendingLoading}
-              onOpen={(id) => {
-                const item = filteredRecommendations.find(r => r.id === id);
-                if (item) handleRecommendationClick(item);
-              }}
+              onOpen={handleVenueClick}
             />
           )}
 
@@ -546,6 +587,16 @@ export const PulseScreenRedesigned: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Venue Detail Sheet */}
+      <VenueDetailSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        venue={activeVenue}
+        userLat={coords?.lat}
+        userLng={coords?.lng}
+        onCreatePlan={handleCreatePlan}
+      />
     </div>
   );
 };
