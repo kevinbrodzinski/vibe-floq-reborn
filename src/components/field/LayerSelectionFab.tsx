@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin } from 'lucide-react';
+import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin, Zap } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,11 @@ import { useFullscreenMap } from '@/store/useFullscreenMap';
 import { useSafeMode } from '@/hooks/useSafeMode';
 import { NearbyVenuesSheet } from '@/components/NearbyVenuesSheet';
 
-export const LayerSelectionFab = () => {
+type LayerSelectionFabProps = {
+  onOpenDebug?: () => void;
+};
+
+export const LayerSelectionFab = ({ onOpenDebug }: LayerSelectionFabProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   
@@ -69,6 +73,14 @@ export const LayerSelectionFab = () => {
           {isFull ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           <span>{isFull ? 'Exit Fullscreen' : 'Enter Fullscreen'}</span>
         </DropdownMenuItem>
+
+        {/* Debug (dev/flag only) */}
+        {(import.meta.env.DEV || import.meta.env.VITE_DEBUG_UI === 'true') && (
+          <DropdownMenuItem onSelect={() => onOpenDebug?.()} className="flex items-center gap-3 h-10">
+            <Zap className="h-4 w-4" />
+            <span>Debug tools</span>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
     <NearbyVenuesSheet isOpen={nearbyOpen} onClose={() => setNearbyOpen(false)} onVenueTap={() => {}} />
