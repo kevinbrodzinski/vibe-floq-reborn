@@ -15,6 +15,7 @@ import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 // New Components
 import { PulseHeader } from '@/components/pulse/PulseHeader';
 import { PulseSearchBar } from '@/components/pulse/PulseSearchBar';
+import { LocationWeatherBar } from '@/components/pulse/LocationWeatherBar';
 import { DateTimeSelector, type TimeFilter } from '@/components/pulse/DateTimeSelector';
 import { PulseWeatherCard } from '@/components/pulse/PulseWeatherCard';
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
@@ -44,6 +45,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showAllFilters, setShowAllFilters] = useState(false);
   const [distanceMaxM, setDistanceMaxM] = useState<number>(2000); // 2km default
   const [priceTiers, setPriceTiers] = useState<string[]>(['$', '$$', '$$$']); // All price levels
+  const [customLocation, setCustomLocation] = useState<string>(''); // For location override
 
   // Get time window for selected time filter
   const timeWindow = useMemo(() => getPulseWindow(selectedTime), [selectedTime]);
@@ -288,6 +290,21 @@ export const PulseScreenRedesigned: React.FC = () => {
     setSelectedTime('custom');
   };
 
+  const getCurrentLocationDisplay = () => {
+    if (customLocation) return customLocation;
+    if (coords) {
+      // In production, you'd reverse geocode coords to get a readable address
+      return `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`;
+    }
+    return 'Getting location...';
+  };
+
+  const handleLocationChange = (newLocation: string) => {
+    setCustomLocation(newLocation);
+    // In production, you'd geocode the new location and update coords
+    console.log('Location changed to:', newLocation);
+  };
+
   const handleRecommendationClick = (item: RecommendationItem) => {
     if (item.type === 'venue') {
       navigate(`/venues/${item.id}`);
@@ -320,6 +337,17 @@ export const PulseScreenRedesigned: React.FC = () => {
         placeholder="Search venues, vibes, or floqs..."
       />
 
+      {/* Location & Weather Status Bar */}
+      <LocationWeatherBar
+        currentLocation={getCurrentLocationDisplay()}
+        onLocationChange={handleLocationChange}
+        weather={{
+          tempF: normalizedWeather.tempF,
+          condition: normalizedWeather.condition,
+          precipChancePct: normalizedWeather.precipChancePct
+        }}
+      />
+
       {/* Date/Time Selector */}
       <DateTimeSelector
         value={selectedTime}
@@ -327,8 +355,8 @@ export const PulseScreenRedesigned: React.FC = () => {
         onCalendarClick={handleCalendarClick}
       />
 
-      {/* Weather Card */}
-      <div className="px-6 mb-6">
+      {/* Weather Card - Compact */}
+      <div className="px-6 mb-4">
         <PulseWeatherCard
           weather={{
             tempF: normalizedWeather.tempF,
@@ -340,6 +368,7 @@ export const PulseScreenRedesigned: React.FC = () => {
           selectedTime={selectedTime}
           onOutdoorCta={normalizedWeather.isGoodWeather ? handleWeatherCta : undefined}
           onIndoorCta={!normalizedWeather.isGoodWeather ? handleWeatherCta : undefined}
+          className="py-3" // Reduced padding for more compact display
         />
       </div>
 
