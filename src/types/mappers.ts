@@ -1,6 +1,6 @@
 
 import type { PlanStop } from '@/types/plan'
-import type { PlanStopRow, DailyAfterglowRow, JsonArray, JsonObject } from '@/types/database'
+import type { PlanStopRow, DailyAfterglowRow, JsonArray, JsonObject } from '@/integrations/supabase/types'
 
 // Enhanced plan stop mapper
 export function mapPlanStopFromDb(row: PlanStopRow): PlanStop {

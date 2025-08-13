@@ -57,7 +57,9 @@ export function mapToVenue(p: RawPlace) {
       return null;
     }
     
-    const categories = (r.types ?? []).slice(0, 5);
+    const categories = (r.types ?? r.categories ?? [])
+      .map((t: string) => String(t).toLowerCase())
+      .slice(0, 5);
     
     return {
       ...baseVenue,
@@ -72,10 +74,13 @@ export function mapToVenue(p: RawPlace) {
       address: r.vicinity ?? null,
       categories,
       rating: r.rating ?? null,
+      rating_count: typeof r.user_ratings_total === 'number' ? r.user_ratings_total : null,
       photo_url: r.photos?.[0]
         ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=640&photo_reference=${r.photos[0].photo_reference}&key=${Deno.env.get("GOOGLE_PLACES_KEY")}`
         : null,
       price_tier: r.price_level ? "$".repeat(r.price_level) : "$",
+      price_level: typeof r.price_level === 'number' ? r.price_level : null,
+      hours: r.opening_hours ?? r.hours ?? null,
       vibe: vibeFrom(categories),
       geohash5: ngeohash.encode(lat, lng, 5),
       description: null,
@@ -95,7 +100,9 @@ export function mapToVenue(p: RawPlace) {
     return null;
   }
   
-  const categories = r.categories?.map((c: any) => c.name).slice(0, 5) ?? [];
+  const categories = (r.categories ?? [])
+    .map((c: any) => String(c.name || c).toLowerCase())
+    .slice(0, 5);
   
   // Guard brittle photo reference extraction
   const photoUrl = r.photos?.[0]?.prefix && r.photos?.[0]?.suffix 
@@ -115,8 +122,11 @@ export function mapToVenue(p: RawPlace) {
     address: r.location?.formatted_address ?? null,
     categories,
     rating: r.rating ?? null,
+    rating_count: typeof r.rating_count === 'number' ? r.rating_count : null,
     photo_url: photoUrl,
     price_tier: r.price ?? "$",
+    price_level: typeof r.price_level === 'number' ? r.price_level : null,
+    hours: r.opening_hours ?? r.hours ?? null,
     vibe: vibeFrom(categories),
     geohash5: ngeohash.encode(lat, lng, 5),
     description: null,

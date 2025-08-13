@@ -1,3 +1,7 @@
+import { usePersonalizedVenues } from '@/hooks/usePersonalizedVenues';
+import { useGeo } from '@/hooks/useGeo';
+import { useCurrentVibe } from '@/lib/store/useVibe';
+
 export interface VenueRecommendation {
   id: string;
   name: string;
@@ -61,203 +65,100 @@ export interface VenueRecommendation {
 }
 
 export const useVenueRecommendations = () => {
-  const data: VenueRecommendation[] = [
+  const { coords } = useGeo();
+  const currentVibe = useCurrentVibe();
+  
+  // Get personalized venues with LLM enabled for rich recommendations
+  const { data: venues = [], isLoading, error } = usePersonalizedVenues(
+    coords?.lat || null,
+    coords?.lng || null,
     {
-      id: 'cafe-gratitude',
-      name: 'Café Gratitude',
-      category: 'Café & Wellness',
-      address: '639 N Larchmont Blvd',
-      rating: 4.3,
-      priceLevel: '$$',
-      distance: '0.8 mi',
-      travelTime: '12 min walk',
-      imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
-      
-      vibeMatch: {
-        score: 0.92,
-        explanation: "Perfect match for your 'flowing + social' vibe combination",
-        userVibes: ['flowing', 'social'],
-        venueVibes: ['mindful', 'creative', 'community'],
-        synergy: "Your flowing energy pairs beautifully with their mindful atmosphere, while the communal tables support your social side"
-      },
-      
-      crowdIntelligence: {
-        currentCapacity: 65,
-        predictedPeak: "7:30-8:30pm (post-work creative crowd)",
-        typicalCrowd: "Creative professionals, wellness enthusiasts, digital nomads",
-        friendCompatibility: "92% of your friend network enjoys venues like this",
-        busyTimes: { '17': 45, '18': 75, '19': 85, '20': 70, '21': 40 }
-      },
-      
-      socialProof: {
-        friendVisits: 7,
-        recentVisitors: ['Maya (2 days ago)', 'Alex (1 week ago)', 'Jordan (2 weeks ago)'],
-        networkRating: 4.5,
-        popularWith: "Your creative friend circle - especially those into wellness",
-        testimonials: [
-          "Perfect for deep conversations over amazing bowls - Maya",
-          "Love the community vibe here - Alex"
-        ]
-      },
-      
-      context: {
-        dayOfWeek: "Perfect Friday energy - creative but not too intense",
-        timeRelevance: "Ideal timing for sunset dinner with good conversation",
-        weatherSuitability: "Great for today's mild weather with outdoor seating",
-        eventContext: "Post-work transition from day to evening socializing",
-        moodAlignment: "Matches your need for meaningful connection + good food"
-      },
-      
-      realTime: {
-        liveEvents: ['Acoustic session starting at 7pm', 'Community gratitude circle at 8pm'],
-        waitTime: 'No wait currently, 15min expected by 7:30pm',
-        specialOffers: ['Happy hour bowls until 7pm', '20% off smoothies for groups'],
-        atmosphereLevel: 'moderate',
-        nextEventTime: '7:00 PM - Live acoustic music begins'
-      },
-      
-      confidence: 0.92,
-      topReasons: [
-        "Vibe alignment is exceptional (92% match)",
-        "7 friends have visited recently with positive feedback",
-        "Perfect timing for your energy transition",
-        "Live music creates ideal social atmosphere",
-        "Healthy options align with your wellness preferences"
-      ]
-    },
-    
-    {
-      id: 'the-roosevelt',
-      name: 'The Roosevelt',
-      category: 'Cocktail Lounge',
-      address: '7000 Hollywood Blvd',
-      rating: 4.1,
-      priceLevel: '$$$',
-      distance: '2.1 mi',
-      travelTime: '25 min metro',
-      imageUrl: 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400',
-      
-      vibeMatch: {
-        score: 0.85,
-        explanation: "Your social energy + venue's sophisticated atmosphere = perfect evening evolution",
-        userVibes: ['social', 'flowing'],
-        venueVibes: ['sophisticated', 'energetic', 'historic'],
-        synergy: "As your energy builds through the evening, this venue provides the perfect escalation from casual to elevated social"
-      },
-      
-      crowdIntelligence: {
-        currentCapacity: 40,
-        predictedPeak: "9:00-11:00pm (prime cocktail hours)",
-        typicalCrowd: "Young professionals, creatives, date night couples",
-        friendCompatibility: "78% match - your friend group loves elevated cocktail experiences",
-        busyTimes: { '18': 35, '19': 50, '20': 70, '21': 90, '22': 85, '23': 60 }
-      },
-      
-      socialProof: {
-        friendVisits: 12,
-        recentVisitors: ['Kai (last Friday)', 'Sam (2 weeks ago)', 'Chris (1 month ago)'],
-        networkRating: 4.2,
-        popularWith: "Your social butterflies and cocktail enthusiasts",
-        testimonials: [
-          "Amazing cocktails and perfect for groups - Kai",
-          "The rooftop view is incredible for photos - Sam"
-        ]
-      },
-      
-      context: {
-        dayOfWeek: "Friday night energy - perfect for cocktails and socializing",
-        timeRelevance: "Ideal for evening escalation after dinner elsewhere",
-        weatherSuitability: "Rooftop perfect for tonight's clear skies",
-        eventContext: "Great for continuing the night with style",
-        moodAlignment: "Elevates your social energy to sophisticated evening vibes"
-      },
-      
-      realTime: {
-        liveEvents: ['DJ set starts at 9pm', 'Rooftop opens at sunset (6:45pm)'],
-        waitTime: 'Walk-ins welcome until 8pm, reservations recommended after',
-        specialOffers: ['Friday happy hour cocktails until 7pm'],
-        atmosphereLevel: 'high',
-        nextEventTime: '6:45 PM - Rooftop opens for sunset views'
-      },
-      
-      confidence: 0.85,
-      topReasons: [
-        "Strong match for your evening social escalation",
-        "12 friends have been here with great experiences", 
-        "Perfect timing for rooftop sunset views",
-        "DJ creates ideal Friday night atmosphere",
-        "Sophisticated setting matches your elevated mood"
-      ],
-      warnings: [
-        "Gets quite busy after 9pm - arrive earlier for best experience",
-        "Higher price point - budget accordingly"
-      ]
-    },
-
-    {
-      id: 'grand-central-market',
-      name: 'Grand Central Market',
-      category: 'Food Hall & Market',
-      address: '317 S Broadway',
-      rating: 4.4,
-      priceLevel: '$$',
-      distance: '1.5 mi',
-      travelTime: '18 min metro',
-      imageUrl: 'https://images.unsplash.com/photo-1567521464027-f7c65d1454bb?w=400',
-      
-      vibeMatch: {
-        score: 0.88,
-        explanation: "Your flowing + social vibes thrive in this diverse, exploratory environment",
-        userVibes: ['flowing', 'social', 'exploratory'],
-        venueVibes: ['diverse', 'casual', 'community', 'authentic'],
-        synergy: "Perfect for your flowing nature - move between vendors, try different foods, and meet interesting people naturally"
-      },
-      
-      crowdIntelligence: {
-        currentCapacity: 55,
-        predictedPeak: "6:30-7:30pm (dinner rush with variety seekers)",
-        typicalCrowd: "Food lovers, tourists, local families, young professionals",
-        friendCompatibility: "85% of your network enjoys diverse food experiences",
-        busyTimes: { '17': 50, '18': 80, '19': 85, '20': 60, '21': 30 }
-      },
-      
-      socialProof: {
-        friendVisits: 15,
-        recentVisitors: ['Jo (yesterday)', 'Riley (3 days ago)', 'Morgan (1 week ago)'],
-        networkRating: 4.6,
-        popularWith: "Your foodie friends and adventure seekers",
-        testimonials: [
-          "So many options, never boring - Jo",
-          "Great for groups with different tastes - Riley"
-        ]
-      },
-      
-      context: {
-        dayOfWeek: "Friday exploration - perfect for food discovery",
-        timeRelevance: "Great for early evening fuel before other plans",
-        weatherSuitability: "Indoor market perfect regardless of weather",
-        eventContext: "Ideal starting point for a night of exploration",
-        moodAlignment: "Satisfies your curiosity and social hunger simultaneously"
-      },
-      
-      realTime: {
-        liveEvents: ['Live mariachi band until 7:30pm', 'Weekend vendor pop-ups'],
-        waitTime: 'Most vendors have short lines, popular spots 5-10min wait',
-        specialOffers: ['Weekend happy hour at several vendors', '$5 off $25+ at select stalls'],
-        atmosphereLevel: 'moderate',
-        nextEventTime: '7:30 PM - Mariachi performance finale'
-      },
-      
-      confidence: 0.88,
-      topReasons: [
-        "Exceptional variety matches your exploratory spirit",
-        "15 friends love this spot for group dining",
-        "Live music adds perfect social energy",
-        "Great value with many price points",
-        "Central location makes it easy to continue plans elsewhere"
-      ]
+      radius: 5000, // 5km radius for broader recommendations
+      limit: 10,
+      vibe: currentVibe || undefined,
+      useLLM: true, // Enable LLM for rich reasoning
+      llmTopK: 15
     }
-  ];
+  );
 
-  return { data };
+  // Transform PersonalizedVenue[] to VenueRecommendation[]
+  const data: VenueRecommendation[] = venues.map((venue, index) => {
+    const categories = venue.categories || [];
+    const primaryCategory = categories[0] || 'Restaurant';
+    const distanceKm = venue.distance_m / 1000;
+    const walkTimeMin = Math.round(distanceKm * 12); // ~12 min per km walking
+    
+    return {
+      id: venue.venue_id,
+      name: venue.name,
+      category: primaryCategory,
+      address: venue.address || 'Address not available',
+      rating: venue.rating || 4.0,
+      priceLevel: venue.price_tier || '$$',
+      distance: distanceKm < 1 ? `${venue.distance_m}m` : `${distanceKm.toFixed(1)}km`,
+      travelTime: walkTimeMin < 15 ? `${walkTimeMin} min walk` : `${Math.round(walkTimeMin / 3)} min drive`,
+      imageUrl: venue.photo_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+      
+      vibeMatch: {
+        score: venue.explain?.confidence || venue.personalized_score || 0.75,
+        explanation: venue.explain?.why || venue.reason || `Great match for your ${currentVibe || 'current'} vibe`,
+        userVibes: currentVibe ? [currentVibe] : ['social'],
+        venueVibes: categories.slice(0, 3),
+        synergy: venue.explain?.why || venue.reason || "This venue aligns well with your current preferences and location"
+      },
+      
+      crowdIntelligence: {
+        currentCapacity: venue.explain?.crowd.currentCapacityPct ? Math.round(venue.explain.crowd.currentCapacityPct * 100) : (venue.live_count ? Math.min(venue.live_count * 10, 90) : 50),
+        predictedPeak: venue.explain?.crowd.predictedPeakWindow || "7:00-9:00pm (typical dinner rush)",
+        typicalCrowd: categories.includes('bar') ? "Young professionals, social groups" : "Diverse crowd, families and friends",
+        friendCompatibility: venue.explain?.social.compatibilityPct ? `${Math.round(venue.explain.social.compatibilityPct * 100)}% compatibility with friends` : `${Math.round((venue.personalized_score || 0.7) * 100)}% match based on your preferences`,
+        busyTimes: { '17': 40, '18': 60, '19': 80, '20': 85, '21': 70, '22': 50 }
+      },
+      
+      socialProof: {
+        friendVisits: venue.explain?.social.friendsVisitedCount || venue.live_count || 0,
+        recentVisitors: venue.explain?.social.friendsRecent?.map(f => f.name) || [],
+        networkRating: venue.explain?.social.friendRating || venue.rating || 4.0,
+        popularWith: "People with similar tastes",
+        testimonials: venue.explain?.topReasons || (venue.reason ? [venue.reason] : undefined)
+      },
+      
+      context: {
+        dayOfWeek: "Perfect for today's energy",
+        timeRelevance: "Great timing for your current plans",
+        weatherSuitability: "Good choice regardless of weather",
+        eventContext: "Fits well with your current vibe",
+        moodAlignment: venue.reason || "Matches your preferences"
+      },
+      
+      realTime: {
+        liveEvents: [],
+        waitTime: venue.explain?.crowd.currentWaitMins ? `${venue.explain.crowd.currentWaitMins} min wait expected` : (venue.live_count && venue.live_count > 5 ? "15-20 min wait expected" : "No wait expected"),
+        specialOffers: [],
+        atmosphereLevel: venue.explain?.crowd.currentCapacityPct ? 
+          (venue.explain.crowd.currentCapacityPct > 0.8 ? 'peak' : 
+           venue.explain.crowd.currentCapacityPct > 0.6 ? 'high' : 
+           venue.explain.crowd.currentCapacityPct > 0.3 ? 'moderate' : 'low') : 
+          (venue.live_count && venue.live_count > 10 ? 'high' : 'moderate'),
+      },
+      
+      confidence: venue.explain?.confidence || venue.personalized_score || 0.75,
+      topReasons: venue.explain?.topReasons || [
+        venue.reason || "Good match for your preferences",
+        `${distanceKm < 1 ? 'Very close' : 'Convenient'} location`,
+        `${venue.rating ? `${venue.rating.toFixed(1)} star rating` : 'Well-rated venue'}`,
+        ...(venue.live_count ? [`${venue.live_count} people currently here`] : [])
+      ].filter(Boolean),
+      
+      warnings: venue.live_count && venue.live_count > 15 ? ["Quite busy right now - expect crowds"] : undefined
+    };
+  });
+
+  return { 
+    data, 
+    isLoading, 
+    error,
+    // Keep compatibility with existing usage
+    venues: data 
+  };
 };

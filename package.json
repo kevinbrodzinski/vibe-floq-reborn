@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "ROLLUP_BUNDLE=true vite build",
     "build:dev": "ROLLUP_BUNDLE=true vite build --mode development",
-    "gen:types": "supabase gen types typescript --linked --schema public,storage > src/integrations/supabase/types.ts",
+    "supabase:gen-types": "supabase gen types typescript --project-id $SUPABASE_REF --schema public > integrations/supabase/types.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",

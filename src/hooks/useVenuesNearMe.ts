@@ -68,13 +68,10 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
       const { popularity: cursorPop, id: cursorId } = pageParam;
       
       const { data, error } = await supabase.rpc('get_cluster_venues', {
-        min_lng: lng! - degreeOffsetLng,
-        min_lat: lat! - degreeOffsetLat,
-        max_lng: lng! + degreeOffsetLng,
-        max_lat: lat! + degreeOffsetLat,
-        cursor_popularity: cursorPop,
-        cursor_id: cursorId,
-        limit_rows: 10,
+        p_lat: lat!,
+        p_lng: lng!,
+        p_radius_m: Math.round(radius_km * 1000), // convert km to meters
+        p_limit: 10,
       } as any);
       
       // Check for abort signal
@@ -83,55 +80,49 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
       }
       
       if (error) {
-        // Only return empty for out of range, otherwise surface error
-        if (error.code === 'PGRST116') {
+        console.error('Failed to load nearby venues:', error);
+        
+        // Handle specific error codes gracefully
+        if (error.code === 'PGRST116' || // out of range
+            error.code === '42883' ||   // function does not exist (PostGIS)
+            error.code === '404') {     // function not found
           return { venues: [], nextCursor: undefined, hasMore: false };
         }
-        console.error('Failed to load nearby venues:', error);
+        
+        // For network/CORS errors, return empty instead of crashing
+        if (error.message?.includes('CORS') || 
+            error.message?.includes('Failed to fetch') ||
+            error.message?.includes('NetworkError')) {
+          console.warn('Network error, returning empty venues list');
+          return { venues: [], nextCursor: undefined, hasMore: false };
+        }
+        
         throw error;
       }
       
-      // Transform data with distance calculation - guard against invalid coordinates
+      // Transform data - the RPC already calculates distance
       const venues: VenueNearMe[] = (data || [])
         .filter(venue => Number.isFinite(+venue.lat) && Number.isFinite(+venue.lng))
-        .map(venue => {
-          const venueLat = +venue.lat;
-          const venueLng = +venue.lng;
-          // Memoize distance calculation to avoid re-computing on every render
-          const distance = haversine([lat!, lng!], [venueLat, venueLng]);
-          
-          return {
-            id: venue.id,
-            name: venue.name,
-            lat: venueLat,
-            lng: venueLng,
-            vibe: venue.vibe || 'mixed',
-            source: venue.source || 'database',
-            distance_m: Math.round(distance),
-            live_count: venue.live_count || 0,
-            vibe_score: venue.vibe_score || 50,
-            popularity: venue.popularity || 0
-          };
-        });
-      
-      // Compound cursor for reliable pagination
-      const nextCursor = venues.length === 10 && venues.length > 0
-        ? { 
-            popularity: venues[venues.length - 1].popularity,
-            id: venues[venues.length - 1].id
-          }
-        : undefined;
+        .map(venue => ({
+          id: venue.id,
+          name: venue.name,
+          lat: +venue.lat,
+          lng: +venue.lng,
+          vibe: venue.categories?.[0] || 'mixed', // use first category as vibe
+          source: 'database',
+          distance_m: venue.dist_m, // use calculated distance from RPC
+          live_count: 0, // not available in this RPC
+          vibe_score: 50, // default
+          popularity: venue.popularity || 0
+        }));
       
       return {
         venues,
-        nextCursor,
-        hasMore: venues.length === 10
+        nextCursor: undefined, // simplified - no pagination for now
+        hasMore: false
       };
     },
-    getNextPageParam: (last) =>
-      last.venues.length === 10
-        ? { popularity: last.venues.at(-1)!.popularity, id: last.venues.at(-1)!.id }
-        : undefined,
+    getNextPageParam: () => undefined, // no pagination for simplified version
     staleTime: 30_000, // 30 seconds
     refetchInterval: 60_000, // 1 minute for live count updates
   });
