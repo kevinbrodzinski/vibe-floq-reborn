@@ -25,6 +25,8 @@ import { AISummaryCollapsible } from '@/components/ui/AISummaryCollapsible';
 import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
 
 export const PulseScreenRedesigned: React.FC = () => {
+  console.log('🎯 PulseScreenRedesigned is rendering!');
+  
   // Core state
   const { user } = useAuth();
   const { coords } = useGeo();
@@ -210,7 +212,12 @@ export const PulseScreenRedesigned: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-field">
+    <div className="min-h-screen gradient-field">
+      {/* Debug indicator */}
+      <div className="fixed top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold z-50">
+        🎯 NEW PULSE REDESIGN ACTIVE
+      </div>
+      
       {/* Header */}
       <PulseHeader
         location={location}
