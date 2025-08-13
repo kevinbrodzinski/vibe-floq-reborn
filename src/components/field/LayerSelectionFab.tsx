@@ -65,7 +65,10 @@ export const LayerSelectionFab = () => {
           <span>{ghostEnabled ? 'Disable Ghost mode' : 'Enable Ghost mode'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuItem onSelect={() => toggleFull()} className="flex items-center gap-3 h-10">
+        <DropdownMenuItem onSelect={() => {
+          console.log('[LayerSelectionFab] Toggling fullscreen', { currentMode: fullscreenMode, isFull });
+          toggleFull();
+        }} className="flex items-center gap-3 h-10">
           {isFull ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           <span>{isFull ? 'Exit Fullscreen' : 'Enter Fullscreen'}</span>
         </DropdownMenuItem>
