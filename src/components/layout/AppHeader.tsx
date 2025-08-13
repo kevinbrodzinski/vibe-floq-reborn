@@ -36,6 +36,7 @@ export function AppHeader() {
     <header
       className={cn(
         'sticky top-0 h-16 sm:h-[68px] w-full px-4',
+        'bg-transparent',
         'flex items-center justify-between'
       )}
       style={{ zIndex: Z.navigation, paddingTop: 'env(safe-area-inset-top)' }}
