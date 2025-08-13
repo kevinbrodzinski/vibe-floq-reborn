@@ -20,7 +20,7 @@ import { DateTimeSelector, type TimeFilter } from '@/components/pulse/DateTimeSe
 
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
-import { RecommendationsList, type RecommendationItem } from '@/components/pulse/RecommendationsList';
+import { type RecommendationItem } from '@/components/pulse/RecommendationsList';
 
 // Existing Components
 import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
@@ -34,6 +34,8 @@ import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch'
 import { estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
 import { calculateVibeMatch, getTimeOfDay } from '@/utils/vibeMatching';
 import { FilterLogicToggle, type FilterLogic } from '@/components/filters/FilterLogicToggle';
+import VenueCarousel, { type VenueCarouselItem } from '@/components/venue/VenueCarousel';
+import { DistanceRadiusPicker } from '@/components/filters/DistanceRadiusPicker';
 
 export const PulseScreenRedesigned: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +49,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [showLiveActivitySheet, setShowLiveActivitySheet] = useState(false);
   const [showAllFilters, setShowAllFilters] = useState(false);
-  const [distanceMaxM, setDistanceMaxM] = useState<number>(2000); // 2km default
+  const [radiusKm, setRadiusKm] = useState<number>(0.5); // 500m default
   const [selectedCity, setSelectedCity] = useState<CityLocation | null>(null); // For location override
   const [filterLogic, setFilterLogic] = useState<FilterLogic>('any'); // AND/OR filter logic
 
@@ -75,7 +77,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     venueLat,
     venueLng, 
     {
-      radiusKm: distanceMaxM / 1000, // Convert to km
+      radiusKm: radiusKm,
       limit: 25,
       pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
       filterLogic: filterLogic
@@ -85,7 +87,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     venueLat,
     venueLng,
     {
-      radiusM: distanceMaxM,
+      radiusM: radiusKm * 1000, // Convert km to meters
       limit: 10,
       pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
       filterLogic: filterLogic
@@ -342,6 +344,22 @@ export const PulseScreenRedesigned: React.FC = () => {
     return allRecs;
   }, [nearbyVenues, trendingVenues, myFloqs, normalizedWeather.isGoodWeather]);
 
+  // Transform venue data for carousel
+  const carouselItems: VenueCarouselItem[] = useMemo(() => {
+    // Prefer trending venues if available, otherwise use nearby
+    const sourceVenues = trendingVenues.length > 0 ? trendingVenues : nearbyVenues;
+    
+    return sourceVenues.map((venue) => ({
+      id: 'venue_id' in venue ? venue.venue_id : venue.id,
+      name: venue.name,
+      photo_url: venue.photo_url,
+      distance_m: venue.distance_m,
+      match_score_pct: venue.vibe_score ? Math.round(venue.vibe_score * 100) : undefined,
+      rating: Math.random() > 0.5 ? 4.0 + Math.random() * 1 : undefined, // Mock ratings
+      canonical_tags: venue.canonical_tags || venue.categories || []
+    }));
+  }, [nearbyVenues, trendingVenues]);
+
   // Filter recommendations by search and selected filters
   const filteredRecommendations = useMemo(() => {
     let filtered = recommendations;
@@ -488,9 +506,12 @@ export const PulseScreenRedesigned: React.FC = () => {
               />
             )}
           </div>
-          <span className="text-xs text-white/50">
-            ({selectedFilterKeys.length} selected)
-          </span>
+          <div className="flex items-center gap-3">
+            <DistanceRadiusPicker valueKm={radiusKm} onChangeKm={setRadiusKm} />
+            <span className="text-xs text-white/50">
+              ({selectedFilterKeys.length} selected)
+            </span>
+          </div>
         </div>
         <PulseFilterPills
           {...filterContext}
@@ -529,30 +550,37 @@ export const PulseScreenRedesigned: React.FC = () => {
           />
         </div>
 
-        {/* Recommendations */}
-        <div className="px-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`recommendations-${selectedFilterKeys.join('-')}-${searchQuery}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <RecommendationsList
-                items={filteredRecommendations}
-                title="Discover" // Future rename placeholder
-                maxItems={8}
-                onItemClick={handleRecommendationClick}
-                onViewMore={() => {
-                  // TODO: Navigate to full recommendations view
-                  console.log('View more recommendations');
-                }}
-                loading={false}
-              />
-            </motion.div>
-          </AnimatePresence>
+        {/* Venue Carousel */}
+        <div className="px-0">
+          <div className="px-6 mb-4">
+            <h3 className="text-lg font-semibold text-white">
+              {trendingVenues.length > 0 ? 'Trending near you' : 'Nearby venues'}
+            </h3>
+          </div>
+          <VenueCarousel
+            items={carouselItems}
+            loading={nearbyLoading || trendingLoading}
+            onOpen={(id) => {
+              console.log('Opening venue:', id);
+              // TODO: Navigate to venue detail page
+            }}
+          />
         </div>
+
+        {/* Floqs Section (if any) */}
+        {myFloqs.length > 0 && (
+          <div className="px-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Active Floqs</h3>
+            <div className="space-y-3">
+              {myFloqs.slice(0, 3).map((floq) => (
+                <div key={floq.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <h4 className="font-medium text-white">{floq.title || floq.name || 'Unnamed Floq'}</h4>
+                  <p className="text-sm text-white/70">{floq.member_count || 0} members active</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Empty State */}
         {filteredRecommendations.length === 0 && (
