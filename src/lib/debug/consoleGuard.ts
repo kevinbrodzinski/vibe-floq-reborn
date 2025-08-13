@@ -18,15 +18,17 @@ if (shouldApplyGuard) {
   // Optional: small de-dupe to cut spam (same line repeated fast)
   let lastLogKey = '';
   let lastLogTime = 0;
-  const dedupe = (args: any[]) => {
+  function dedupe(args: any[]): any[] | null {
     try {
       const key = JSON.stringify(args, (_, v) => (v instanceof Error ? v.message : v));
       const now = Date.now();
       if (key === lastLogKey && now - lastLogTime < 200) return null; // drop burst
       lastLogKey = key; lastLogTime = now;
-    } catch {}
-    return args;
-  };
+      return args;
+    } catch {
+      return args;
+    }
+  }
 
   const safeClone = (arg: any): any => {
     if (arg == null) return arg;
@@ -153,14 +155,24 @@ if (shouldApplyGuard) {
   // Wrap the methods
   const wrap = (fn: (...a: any[]) => void) => (...args: any[]) => {
     const safeArgs = args.map(safeClone);
-    if (shouldSilence(safeArgs)) return;      // 🚫 swallow spam
-    const deduped = dedupe(safeArgs);
-    if (deduped) fn.apply(console, deduped);
+    if (shouldSilence(safeArgs)) return;
+
+    const deduped = dedupe(safeArgs); // <- should be any[] | null
+    if (Array.isArray(deduped) && deduped.length) {
+      // Avoid "illegal invocation" in some browsers:
+      Reflect.apply(fn as any, console, deduped);
+    }
   };
 
-  console.log = wrap(originalLog);
-  console.warn = wrap(originalWarn);
-  console.error = wrap(originalError);
+  // Capture originals to avoid accidental recursion
+  const orig = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error,
+  };
+  console.log = wrap(orig.log);
+  console.warn = wrap(orig.warn);
+  console.error = wrap(orig.error);
 
   // Determine environment for logging
   const isDev = import.meta.env?.DEV || 
