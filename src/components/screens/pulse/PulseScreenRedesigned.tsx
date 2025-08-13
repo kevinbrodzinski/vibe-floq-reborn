@@ -177,7 +177,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60); // ~30 km/h city driving
       
       return {
-        id: venue.id,
+        id: `nearby-${venue.id}`, // Prefix to ensure uniqueness
         title: venue.name,
         type: 'venue' as const,
         distance: distanceM,
@@ -201,35 +201,39 @@ export const PulseScreenRedesigned: React.FC = () => {
       };
     });
 
-    // Add trending venues to the mix
-    const trendingRecs: RecommendationItem[] = trendingVenues.slice(0, 5).map((venue, index: number) => {
-      const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
-      const walkMin = Math.max(1, Math.round((distanceM || 0) / 80));
-      const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60);
-      
-      return {
-        id: venue.venue_id,
-        title: venue.name,
-        type: 'venue' as const,
-        distance: distanceM,
-        walkTime: walkMin,
-        driveTime: driveMin,
-        category: venue.categories?.[0] || 'Trending',
-        description: `Trending now with ${venue.people_now || 0} people`,
-        rating: 4.0 + Math.random() * 1, // 4.0-5.0 for trending venues
-        priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
-        isOpen: true, // Assume trending venues are open
-        vibeMatch: venue.vibe_score ? Math.round(venue.vibe_score * 100) : Math.floor(Math.random() * 20) + 80, // Higher for trending
-        weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 30) + 60,
-        overallScore: venue.trend_score ? Math.round(venue.trend_score * 100) : Math.floor(Math.random() * 20) + 80,
-        imageUrl: venue.photo_url,
-        tags: venue.canonical_tags || venue.categories || [],
-        regularsCount: venue.people_now || Math.floor(Math.random() * 10) + 5 // Use people_now for trending
-      };
-    });
+    // Add trending venues to the mix, but avoid duplicates with nearby venues
+    const nearbyVenueIds = new Set(nearbyVenues.map(v => v.id));
+    const trendingRecs: RecommendationItem[] = trendingVenues
+      .filter(venue => !nearbyVenueIds.has(venue.venue_id)) // Filter out venues already in nearby
+      .slice(0, 5)
+      .map((venue, index: number) => {
+        const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
+        const walkMin = Math.max(1, Math.round((distanceM || 0) / 80));
+        const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60);
+        
+        return {
+          id: `trending-${venue.venue_id}`, // Prefix to ensure uniqueness
+          title: venue.name,
+          type: 'venue' as const,
+          distance: distanceM,
+          walkTime: walkMin,
+          driveTime: driveMin,
+          category: venue.categories?.[0] || 'Trending',
+          description: `Trending now with ${venue.people_now || 0} people`,
+          rating: 4.0 + Math.random() * 1, // 4.0-5.0 for trending venues
+          priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
+          isOpen: true, // Assume trending venues are open
+          vibeMatch: venue.vibe_score ? Math.round(venue.vibe_score * 100) : Math.floor(Math.random() * 20) + 80, // Higher for trending
+          weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 30) + 60,
+          overallScore: venue.trend_score ? Math.round(venue.trend_score * 100) : Math.floor(Math.random() * 20) + 80,
+          imageUrl: venue.photo_url,
+          tags: venue.canonical_tags || venue.categories || [],
+          regularsCount: venue.people_now || Math.floor(Math.random() * 10) + 5 // Use people_now for trending
+        };
+      });
 
     const floqRecs: RecommendationItem[] = myFloqs.map((floq) => ({
-      id: floq.id,
+      id: `floq-${floq.id}`, // Prefix to ensure uniqueness
       title: floq.title || floq.name || 'Unnamed Floq',
       type: 'floq' as const,
       distance: undefined, // Floqs don't have distance in this context
