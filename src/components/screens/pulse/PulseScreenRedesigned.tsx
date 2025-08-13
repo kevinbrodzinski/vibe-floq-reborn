@@ -353,6 +353,16 @@ export const PulseScreenRedesigned: React.FC = () => {
         isLoading={weatherLoading}
       />
 
+      {/* Live Activity */}
+      <div className="px-6 mb-6">
+        <LiveActivity
+          activities={liveActivity}
+          maxVisible={3}
+          onViewMore={() => setActivitySheetOpen(true)}
+          onActivityClick={handleActivityClick}
+        />
+      </div>
+
       {/* Date/Time Selector */}
       <div className="px-6 mb-6">
         <DateTimeSelector
@@ -386,16 +396,6 @@ export const PulseScreenRedesigned: React.FC = () => {
 
       {/* Content Sections */}
       <div className="space-y-6 pb-8">
-        {/* Live Activity */}
-        <div className="px-6">
-          <LiveActivity
-            activities={liveActivity}
-            maxVisible={3}
-            onViewMore={() => setActivitySheetOpen(true)}
-            onActivityClick={handleActivityClick}
-          />
-        </div>
-
         {/* Main Recommendations */}
         <div className="px-6">
           <div className="flex items-center justify-between mb-6">
