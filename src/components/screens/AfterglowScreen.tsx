@@ -64,8 +64,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   );
   const { mutate: togglePinned } = useTogglePinned();
   
-  // Get current moment for ambient background - disable for now due to type issues
-  useAmbientBackground(undefined);
+  // Ambient background now managed globally in FloqApp
   
   const [nightEvents] = useState<NightEvent[]>([
     {

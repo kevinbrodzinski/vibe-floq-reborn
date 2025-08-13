@@ -12,6 +12,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { AppHeader } from "@/components/layout/AppHeader";
 // import { useNotifications } from "@/hooks/useNotifications"; // Removed: handled by EventNotificationsProvider
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
+import { useAmbientBackground } from "@/hooks/useAmbientBackground";
 
 
 import { Button } from "./ui/button";
@@ -23,6 +24,13 @@ export const FloqApp = () => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const { pathname } = useLocation();
   const isFieldPage = pathname === '/field' || pathname === '/';
+
+  // Manage ambient background per route
+  const ambient = pathname.startsWith('/afterglow') || pathname.startsWith('/ripple')
+    ? 'linear-gradient(180deg, hsl(262 83% 58%) 0%, hsl(240 10% 10%) 100%)'
+    : 'hsl(var(--background))'; // default neutral
+
+  useAmbientBackground(ambient);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
   useEffect(() => {
