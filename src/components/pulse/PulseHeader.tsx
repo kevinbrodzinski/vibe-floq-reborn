@@ -208,10 +208,10 @@ export const PulseHeader: React.FC<PulseHeaderProps> = ({
           Discovering around you
         </motion.p>
 
-        {/* User's Current Vibe - Neon Style */}
+        {/* User's Current Vibe - Compact Neon Style */}
         <motion.div
-          className="flex items-center justify-center mt-3 z-10"
-          initial={{ opacity: 0, y: 10 }}
+          className="flex items-center justify-center mt-2 z-10"
+          initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
         >
@@ -219,44 +219,43 @@ export const PulseHeader: React.FC<PulseHeaderProps> = ({
             const vibeColors = getVibeNeonColor(currentVibe as VibeEnum);
             return (
               <div 
-                className="relative px-6 py-3 rounded-lg bg-black/40 backdrop-blur-sm border"
+                className="relative px-3 py-1.5 rounded-md bg-black/30 backdrop-blur-sm border"
                 style={{ 
                   borderColor: vibeColors.primary,
                   boxShadow: `
+                    0 0 5px ${vibeColors.shadow},
                     0 0 10px ${vibeColors.shadow},
-                    0 0 20px ${vibeColors.shadow},
-                    0 0 40px ${vibeColors.shadow},
-                    inset 0 0 10px rgba(0,0,0,0.3)
+                    0 0 20px ${vibeColors.shadow}
                   `
                 }}
               >
                 {/* Neon glow effect */}
                 <div 
-                  className="absolute inset-0 rounded-lg opacity-20"
+                  className="absolute inset-0 rounded-md opacity-15"
                   style={{ 
-                    background: `linear-gradient(45deg, ${vibeColors.primary}10, transparent, ${vibeColors.primary}10)`,
+                    background: `linear-gradient(45deg, ${vibeColors.primary}08, transparent, ${vibeColors.primary}08)`,
                   }}
                 />
                 
-                <div className="relative flex items-center space-x-2">
-                  <span className="text-white/80 text-sm font-medium tracking-wide">
+                <div className="relative flex items-center space-x-1.5">
+                  <span className="text-white/70 text-xs font-medium">
                     current vibe:
                   </span>
                   <motion.span 
-                    className="text-lg font-bold tracking-wider uppercase"
+                    className="text-sm font-bold tracking-wide uppercase"
                     style={{ 
                       color: vibeColors.primary,
                       textShadow: `
-                        0 0 5px ${vibeColors.glow},
-                        0 0 10px ${vibeColors.glow},
-                        0 0 15px ${vibeColors.glow}
+                        0 0 3px ${vibeColors.glow},
+                        0 0 6px ${vibeColors.glow},
+                        0 0 10px ${vibeColors.glow}
                       `
                     }}
                     animate={{ 
                       textShadow: [
+                        `0 0 3px ${vibeColors.glow}, 0 0 6px ${vibeColors.glow}, 0 0 10px ${vibeColors.glow}`,
                         `0 0 5px ${vibeColors.glow}, 0 0 10px ${vibeColors.glow}, 0 0 15px ${vibeColors.glow}`,
-                        `0 0 8px ${vibeColors.glow}, 0 0 15px ${vibeColors.glow}, 0 0 25px ${vibeColors.glow}`,
-                        `0 0 5px ${vibeColors.glow}, 0 0 10px ${vibeColors.glow}, 0 0 15px ${vibeColors.glow}`
+                        `0 0 3px ${vibeColors.glow}, 0 0 6px ${vibeColors.glow}, 0 0 10px ${vibeColors.glow}`
                       ]
                     }}
                     transition={{ 
