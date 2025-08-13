@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Zap, Settings } from 'lucide-react';
 import { useVibe } from '@/lib/store/useVibe';
-import { VIBE_COLORS } from '@/lib/vibes';
+import type { Database } from '@/integrations/supabase/types';
 
 interface PulseHeaderProps {
   location?: {
@@ -16,36 +16,96 @@ interface PulseHeaderProps {
   className?: string;
 }
 
-const getVibeDisplayName = (vibe: string): string => {
-  const vibeNames: Record<string, string> = {
-    chill: 'Chill',
-    flowing: 'Flowing',
-    romantic: 'Romantic',
-    hype: 'Hype',
-    weird: 'Weird',
-    solo: 'Solo',
-    social: 'Social',
-    open: 'Open',
-    down: 'Down',
-    curious: 'Curious'
+type VibeEnum = Database['public']['Enums']['vibe_enum'];
+
+const getVibeDisplayName = (vibe: VibeEnum): string => {
+  const vibeNames: Record<VibeEnum, string> = {
+    chill: 'chill',
+    hype: 'hype',
+    curious: 'curious',
+    social: 'social',
+    solo: 'solo',
+    romantic: 'romantic',
+    weird: 'weird',
+    down: 'down',
+    flowing: 'flowing',
+    open: 'open',
+    energetic: 'energetic',
+    excited: 'excited',
+    focused: 'focused'
   };
-  return vibeNames[vibe] || 'Chill';
+  return vibeNames[vibe] || 'chill';
 };
 
-const getVibeEmoji = (vibe: string): string => {
-  const vibeEmojis: Record<string, string> = {
-    chill: '😌',
-    flowing: '🌊',
-    romantic: '💕',
-    hype: '🔥',
-    weird: '🤪',
-    solo: '🧘',
-    social: '🎉',
-    open: '✨',
-    down: '🌙',
-    curious: '🤔'
+const getVibeNeonColor = (vibe: VibeEnum): { primary: string; glow: string; shadow: string } => {
+  const neonColors: Record<VibeEnum, { primary: string; glow: string; shadow: string }> = {
+    chill: { 
+      primary: '#00D4FF', 
+      glow: '#00D4FF', 
+      shadow: 'rgba(0, 212, 255, 0.5)' 
+    },
+    hype: { 
+      primary: '#FF0080', 
+      glow: '#FF0080', 
+      shadow: 'rgba(255, 0, 128, 0.5)' 
+    },
+    curious: { 
+      primary: '#FFD700', 
+      glow: '#FFD700', 
+      shadow: 'rgba(255, 215, 0, 0.5)' 
+    },
+    social: { 
+      primary: '#00FF88', 
+      glow: '#00FF88', 
+      shadow: 'rgba(0, 255, 136, 0.5)' 
+    },
+    solo: { 
+      primary: '#B19CD9', 
+      glow: '#B19CD9', 
+      shadow: 'rgba(177, 156, 217, 0.5)' 
+    },
+    romantic: { 
+      primary: '#FF69B4', 
+      glow: '#FF69B4', 
+      shadow: 'rgba(255, 105, 180, 0.5)' 
+    },
+    weird: { 
+      primary: '#9D4EDD', 
+      glow: '#9D4EDD', 
+      shadow: 'rgba(157, 78, 221, 0.5)' 
+    },
+    down: { 
+      primary: '#6366F1', 
+      glow: '#6366F1', 
+      shadow: 'rgba(99, 102, 241, 0.5)' 
+    },
+    flowing: { 
+      primary: '#00CED1', 
+      glow: '#00CED1', 
+      shadow: 'rgba(0, 206, 209, 0.5)' 
+    },
+    open: { 
+      primary: '#FF6B6B', 
+      glow: '#FF6B6B', 
+      shadow: 'rgba(255, 107, 107, 0.5)' 
+    },
+    energetic: { 
+      primary: '#FF4500', 
+      glow: '#FF4500', 
+      shadow: 'rgba(255, 69, 0, 0.5)' 
+    },
+    excited: { 
+      primary: '#FF1493', 
+      glow: '#FF1493', 
+      shadow: 'rgba(255, 20, 147, 0.5)' 
+    },
+    focused: { 
+      primary: '#32CD32', 
+      glow: '#32CD32', 
+      shadow: 'rgba(50, 205, 50, 0.5)' 
+    }
   };
-  return vibeEmojis[vibe] || '😌';
+  return neonColors[vibe] || neonColors.chill;
 };
 
 export const PulseHeader: React.FC<PulseHeaderProps> = ({
@@ -148,54 +208,69 @@ export const PulseHeader: React.FC<PulseHeaderProps> = ({
           Discovering around you
         </motion.p>
 
-        {/* User's Current Vibe */}
+        {/* User's Current Vibe - Neon Style */}
         <motion.div
-          className="flex items-center justify-center mt-2 z-10"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "backOut" }}
+          className="flex items-center justify-center mt-3 z-10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
         >
-          <div 
-            className="flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-xl border border-white/20"
-            style={{ 
-              background: `linear-gradient(135deg, ${VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS]}20, ${VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS]}10)`,
-              boxShadow: `0 0 20px ${VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS]}40`
-            }}
-          >
-            <motion.span 
-              className="text-lg"
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              {getVibeEmoji(currentVibe)}
-            </motion.span>
-            <div className="flex flex-col items-center">
-              <span 
-                className="text-sm font-bold"
-                style={{ color: VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS] }}
+          {(() => {
+            const vibeColors = getVibeNeonColor(currentVibe as VibeEnum);
+            return (
+              <div 
+                className="relative px-6 py-3 rounded-lg bg-black/40 backdrop-blur-sm border"
+                style={{ 
+                  borderColor: vibeColors.primary,
+                  boxShadow: `
+                    0 0 10px ${vibeColors.shadow},
+                    0 0 20px ${vibeColors.shadow},
+                    0 0 40px ${vibeColors.shadow},
+                    inset 0 0 10px rgba(0,0,0,0.3)
+                  `
+                }}
               >
-                {getVibeDisplayName(currentVibe)}
-              </span>
-              <span className="text-xs text-white/60">vibe</span>
-            </div>
-            <motion.div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS] }}
-              animate={{ 
-                scale: [1, 1.5, 1],
-                opacity: [0.7, 1, 0.7]
-              }}
-              transition={{ 
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-          </div>
+                {/* Neon glow effect */}
+                <div 
+                  className="absolute inset-0 rounded-lg opacity-20"
+                  style={{ 
+                    background: `linear-gradient(45deg, ${vibeColors.primary}10, transparent, ${vibeColors.primary}10)`,
+                  }}
+                />
+                
+                <div className="relative flex items-center space-x-2">
+                  <span className="text-white/80 text-sm font-medium tracking-wide">
+                    current vibe:
+                  </span>
+                  <motion.span 
+                    className="text-lg font-bold tracking-wider uppercase"
+                    style={{ 
+                      color: vibeColors.primary,
+                      textShadow: `
+                        0 0 5px ${vibeColors.glow},
+                        0 0 10px ${vibeColors.glow},
+                        0 0 15px ${vibeColors.glow}
+                      `
+                    }}
+                    animate={{ 
+                      textShadow: [
+                        `0 0 5px ${vibeColors.glow}, 0 0 10px ${vibeColors.glow}, 0 0 15px ${vibeColors.glow}`,
+                        `0 0 8px ${vibeColors.glow}, 0 0 15px ${vibeColors.glow}, 0 0 25px ${vibeColors.glow}`,
+                        `0 0 5px ${vibeColors.glow}, 0 0 10px ${vibeColors.glow}, 0 0 15px ${vibeColors.glow}`
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    "{getVibeDisplayName(currentVibe as VibeEnum)}"
+                  </motion.span>
+                </div>
+              </div>
+            );
+          })()}
         </motion.div>
       </div>
 
