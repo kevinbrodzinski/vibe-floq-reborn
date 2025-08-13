@@ -28,6 +28,7 @@ import { useVibeMatch } from '@/hooks/useVibeMatch';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { SmartFilterPill } from '@/components/filters/SmartFilterPill';
 import { PersonalizedVenueSection } from '@/components/pulse/PersonalizedVenueSection';
+import { NearbyVenuesSheet } from '@/components/NearbyVenuesSheet';
 import { useNovaSnap } from '@/hooks/useNovaSnap';
 import { PulseFilter, WALKING_THRESHOLD_M, HIGH_ENERGY_SCORE } from '@/pages/pulse/filters';
 import { useLiveActivityRealtime } from '@/hooks/useLiveActivityRealtime';
@@ -89,6 +90,7 @@ export const PulseScreen: React.FC = () => {
   const [modalFriends, setModalFriends] = useState<{name: string, avatar?: string}[]>([]);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
   const [personalizationSheetOpen, setPersonalizationSheetOpen] = useState(false);
+  const [nearbyVenuesSheetOpen, setNearbyVenuesSheetOpen] = useState(false);
   
   // Smart suggestions state
   const { preferSmartSuggestions } = useNovaSnap();
@@ -108,6 +110,16 @@ export const PulseScreen: React.FC = () => {
     // Replace with real analytics: posthog.capture('smart_browse_open') or analytics.track('smart_browse_open')
     console.log('Analytics: smart_browse_open');
     setPersonalizationSheetOpen(true);
+  };
+
+  const handleVenueTap = (venueId: string) => {
+    // Handle venue tap - could navigate to venue detail or perform other actions
+    console.log('Venue tapped:', venueId);
+    navigate(`/venue/${venueId}`);
+  };
+
+  const handleViewAllVenues = () => {
+    setNearbyVenuesSheetOpen(true);
   };
 
   // Realtime live activity updates
@@ -459,6 +471,13 @@ export const PulseScreen: React.FC = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Nearby Venues Sheet */}
+      <NearbyVenuesSheet
+        isOpen={nearbyVenuesSheetOpen}
+        onClose={() => setNearbyVenuesSheetOpen(false)}
+        onVenueTap={handleVenueTap}
+      />
+
       {/* AI Summary Collapsible (controlled) */}
       <div className="px-6">
         {showAISummary && <AISummaryCollapsible />}
@@ -646,10 +665,20 @@ export const PulseScreen: React.FC = () => {
               transition={{ duration: 0.15 }}
               className="px-6"
             >
-              <PersonalizedVenueSection 
-                maxResults={5} 
-                onConfigureClick={handleSmartBrowseOpen}
-              />
+              <div>
+                <PersonalizedVenueSection 
+                  maxResults={3} 
+                  onConfigureClick={handleSmartBrowseOpen}
+                />
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={handleViewAllVenues}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/20 text-sm font-medium"
+                  >
+                    View All Nearby Venues
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ) : (
             filteredRecommendations.length > 0 && (
