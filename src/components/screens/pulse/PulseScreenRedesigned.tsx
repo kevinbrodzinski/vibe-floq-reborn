@@ -25,7 +25,7 @@ import { AISummaryCollapsible } from '@/components/ui/AISummaryCollapsible';
 import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
 
 export const PulseScreenRedesigned: React.FC = () => {
-  console.log('🎯 PulseScreenRedesigned is rendering!');
+  console.log('🎯 Pulse Redesign Active - Enhanced filtering & weather integration loaded');
   
   // Core state
   const { user } = useAuth();
@@ -102,7 +102,9 @@ export const PulseScreenRedesigned: React.FC = () => {
       vibe: venue.categories?.[0] || 'venue',
       rating: venue.rating || undefined,
       priceRange: venue.price_range as any,
-      photoUrl: venue.photo_url,
+      photoUrl: venue.photo_url && !venue.photo_url.includes('googleusercontent.com') 
+        ? venue.photo_url 
+        : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop',
       liveCount: venue.live_count || 0,
       vibeMatch: Math.floor(Math.random() * 40) + 60, // Mock vibe match
       weatherMatch: weatherAnalysis?.isGoodWeather ? 85 : 65, // Weather-based scoring
@@ -213,11 +215,6 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   return (
     <div className="min-h-screen gradient-field">
-      {/* Debug indicator */}
-      <div className="fixed top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold z-50">
-        🎯 NEW PULSE REDESIGN ACTIVE
-      </div>
-      
       {/* Header */}
       <PulseHeader
         location={location}

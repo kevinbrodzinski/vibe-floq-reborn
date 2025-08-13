@@ -15,6 +15,7 @@ import {
   Sun,
   Zap
 } from 'lucide-react';
+import { VenueImage } from './VenueImage';
 
 export interface RecommendationItem {
   id: string;
@@ -233,17 +234,12 @@ export const RecommendationsList: React.FC<RecommendationsListProps> = ({
               <div className="flex gap-4">
                 {/* Image/Icon */}
                 <div className="relative flex-shrink-0">
-                  {item.photoUrl ? (
-                    <img
-                      src={item.photoUrl}
-                      alt={item.title}
-                      className="w-16 h-16 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                      {getTypeIcon(item.type)}
-                    </div>
-                  )}
+                  <VenueImage
+                    src={item.photoUrl}
+                    alt={item.title}
+                    type={item.type}
+                    className="w-16 h-16 rounded-xl object-cover"
+                  />
                   
                   {/* Match score badge */}
                   <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
