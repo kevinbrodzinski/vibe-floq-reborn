@@ -103,10 +103,10 @@ export default function VenueCarousel({
                     aria-label={v.name || 'venue'}
                     className={cx(
                       'relative w-full',
-                      `aspect-[${aspect}]`,
                       'rounded-3xl overflow-hidden text-left',
                       'bg-white/5 border border-white/10'
                     )}
+                    style={{ aspectRatio: aspect }}
                     animate={cardAnim(active)}
                     disabled={!v.name}
                   >
