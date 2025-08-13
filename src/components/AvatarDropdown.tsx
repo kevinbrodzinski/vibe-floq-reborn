@@ -84,7 +84,7 @@ export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => 
           </div>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent className="pointer-events-auto w-56 bg-black/90 border-white/20">
+        <DropdownMenuContent className="pointer-events-auto w-56">
           <DropdownMenuItem
             onSelect={() => onOpenNotifications?.()}
             className="h-11"

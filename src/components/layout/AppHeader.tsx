@@ -38,11 +38,15 @@ export function AppHeader() {
         // On field page: absolute positioning to float over map
         // On other pages: sticky positioning with background
         isFieldPage 
-          ? 'absolute top-0 h-16 sm:h-[68px] w-full px-4 bg-transparent'
+          ? 'absolute top-0 h-16 sm:h-[68px] w-full px-4'
           : 'sticky top-0 h-16 sm:h-[68px] w-full px-4 bg-background/80 backdrop-blur border-b border-white/5',
         'flex items-center justify-between'
       )}
-      style={{ zIndex: Z.navigation, paddingTop: 'env(safe-area-inset-top)' }}
+      style={{ 
+        zIndex: Z.navigation, 
+        paddingTop: 'env(safe-area-inset-top)',
+        ...(isFieldPage && { backgroundColor: 'transparent' })
+      }}
     >
       <button
         onClick={() => nav('/field')}
