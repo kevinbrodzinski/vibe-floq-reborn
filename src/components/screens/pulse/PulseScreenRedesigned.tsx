@@ -35,13 +35,7 @@ import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
 export const PulseScreenRedesigned: React.FC = () => {
   console.log('🎯 Pulse Redesign Active - Enhanced filtering & weather integration loaded');
   
-  // Core state
-  const { user } = useAuth();
-  const { coords } = useGeo();
-  const { data: weatherData, isLoading: weatherLoading } = useWeather();
-  const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime);
-  
-  // UI state
+  // UI state (declared first so they can be used in hooks)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTime, setSelectedTime] = useState<TimeOption>('now');
   const [customDate, setCustomDate] = useState<Date>();
@@ -51,6 +45,12 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Core state (using selectedTime from above)
+  const { user } = useAuth();
+  const { coords } = useGeo();
+  const { data: weatherData, isLoading: weatherLoading } = useWeather();
+  const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime);
 
     // Data hooks with enhanced filtering
   const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
