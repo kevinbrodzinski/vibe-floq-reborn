@@ -262,12 +262,12 @@ export const PulseScreenRedesigned: React.FC = () => {
         rating: mockRatings[index % mockRatings.length],
         priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
         isOpen: Math.random() > 0.2, // 80% open - mock data
-        vibeMatch: calculateVibeMatch(
+        vibeMatch: Math.round(calculateVibeMatch(
           userVibe?.vibe || 'chill',
           venue.vibe_tag,
           venue.vibe_score,
           getTimeOfDay(timeWindow.start)
-        ),
+        ) * 100), // Convert 0-1 to 0-100 percentage
         weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 50,
         overallScore: Math.floor(Math.random() * 40) + 60,
         imageUrl: venue.photo_url,
@@ -302,12 +302,12 @@ export const PulseScreenRedesigned: React.FC = () => {
           rating: 4.0 + Math.random() * 1, // 4.0-5.0 for trending venues
           priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
           isOpen: true, // Assume trending venues are open
-          vibeMatch: calculateVibeMatch(
+          vibeMatch: Math.round(calculateVibeMatch(
             userVibe?.vibe || 'chill',
             venue.vibe_tag,
             venue.vibe_score,
             getTimeOfDay(timeWindow.start)
-          ),
+          ) * 100), // Convert 0-1 to 0-100 percentage
           weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 30) + 60,
           overallScore: venue.trend_score ? Math.round(venue.trend_score * 100) : Math.floor(Math.random() * 20) + 80,
           imageUrl: venue.photo_url,
