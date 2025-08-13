@@ -18,8 +18,8 @@ export const LayerSelectionFab = () => {
   const [nearbyOpen, setNearbyOpen] = useState(false);
   
   // Hook into existing functionality
-  const { open: openTimewarp } = useTimewarpDrawer();
-  const { open: openFriend } = useFriendDrawer();
+  const { open: timewarpOpen, toggle: toggleTimewarp } = useTimewarpDrawer();
+  const { open: friendOpen, toggle: toggleFriend } = useFriendDrawer();
   const { mode: fullscreenMode, toggleFull } = useFullscreenMap();
   const { enabled: ghostEnabled, toggle: toggleGhost } = useSafeMode();
   
@@ -52,11 +52,11 @@ export const LayerSelectionFab = () => {
           <MapPin className="h-4 w-4" />
           <span>Nearby venues</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => openFriend()} className="flex items-center gap-3 h-10">
+        <DropdownMenuItem onSelect={() => toggleFriend()} className="flex items-center gap-3 h-10">
           <Users className="h-4 w-4" />
           <span>Friend layer</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => openTimewarp()} className="flex items-center gap-3 h-10">
+        <DropdownMenuItem onSelect={() => toggleTimewarp()} className="flex items-center gap-3 h-10">
           <Rewind className="h-4 w-4" />
           <span>Timewarp layer</span>
         </DropdownMenuItem>
