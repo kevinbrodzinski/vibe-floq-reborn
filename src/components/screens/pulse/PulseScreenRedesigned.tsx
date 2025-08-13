@@ -16,9 +16,11 @@ import { PulseSearchBar } from '@/components/pulse/PulseSearchBar';
 import { PulseLocationWeatherBar } from '@/components/pulse/PulseLocationWeatherBar';
 import { DateTimeSelector, TimeOption } from '@/components/pulse/DateTimeSelector';
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
+import { ContextualFilterSuggestions } from '@/components/pulse/ContextualFilterSuggestions';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
 import { filterGooglePlacesUrl, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
+import { applyContextualFiltering, sortByContextualRelevance, getVenueStatus, type VenueData, type ContextualFilterOptions } from '@/lib/utils/contextualFiltering';
 
 // UI Components
 import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
@@ -86,23 +88,78 @@ export const PulseScreenRedesigned: React.FC = () => {
     };
   }, [weatherData]);
 
-  // Transform data into recommendations
+  // Transform data into recommendations with contextual filtering
   const recommendations: RecommendationItem[] = useMemo(() => {
-    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue: any) => ({
-      id: venue.id,
-      title: venue.name,
-      type: 'venue' as const,
-      distance: venue.distance_m || venue.dist_m || 0,
-      vibe: venue.categories?.[0] || 'venue',
-      rating: venue.rating || undefined,
-      priceRange: venue.price_range as any,
-      photoUrl: filterGooglePlacesUrl(venue.photo_url, DEFAULT_VENUE_IMAGE),
-      liveCount: venue.live_count || 0,
-      vibeMatch: Math.floor(Math.random() * 40) + 60, // Mock vibe match
-      weatherMatch: weatherAnalysis?.isGoodWeather ? 85 : 65, // Weather-based scoring
-      tags: venue.canonical_tags || [],
-      friends: [], // TODO: Connect to friends data
-    }));
+    // Apply contextual filtering to venues if context is available
+    let filteredVenues = nearbyVenues;
+    
+    if (filterContext) {
+      // Convert to VenueData format for contextual filtering
+      const venues: VenueData[] = nearbyVenues.map((venue: any) => ({
+        id: venue.id,
+        name: venue.name,
+        categories: venue.categories,
+        canonical_tags: venue.canonical_tags,
+        hours: venue.hours, // Assuming hours data is available
+        price_level: venue.price_level,
+        rating: venue.rating,
+        live_count: venue.live_count,
+        distance_m: venue.distance_m || venue.dist_m || 0
+      }));
+      
+      // Apply contextual filtering and sorting
+      const filterOptions: ContextualFilterOptions = {
+        context: filterContext,
+        selectedPillKeys: selectedFilterKeys,
+        currentTime: new Date(),
+        userPreferences: {
+          minimumRating: 2.5, // Show venues with 2.5+ stars
+          maxDistance: 10000 // Max 10km distance
+        }
+      };
+      
+             const contextuallyFiltered = applyContextualFiltering(venues, filterOptions);
+       const contextuallysorted = sortByContextualRelevance(contextuallyFiltered, filterOptions);
+       
+       console.log('🎯 Contextual Filtering Applied:', {
+         originalCount: venues.length,
+         filteredCount: contextuallyFiltered.length,
+         context: filterContext,
+         selectedFilters: selectedFilterKeys
+       });
+      
+      // Convert back to original format
+      filteredVenues = contextuallysorted.map(venue => 
+        nearbyVenues.find((v: any) => v.id === venue.id)
+      ).filter(Boolean);
+    }
+
+    const venueRecs: RecommendationItem[] = filteredVenues.map((venue: any) => {
+      const venueStatus = venue.hours ? getVenueStatus({
+        id: venue.id,
+        name: venue.name,
+        hours: venue.hours,
+        categories: venue.categories,
+        canonical_tags: venue.canonical_tags
+      }) : { isOpen: null, status: 'unknown' as const };
+
+      return {
+        id: venue.id,
+        title: venue.name,
+        type: 'venue' as const,
+        subtitle: `${venue.categories?.[0] || 'Venue'}${venueStatus.isOpen === true ? ' • Open' : venueStatus.isOpen === false ? ' • Closed' : ''}`,
+        distance: venue.distance_m || venue.dist_m || 0,
+        vibe: venue.categories?.[0] || 'venue',
+        rating: venue.rating || undefined,
+        priceRange: venue.price_range as any,
+        photoUrl: filterGooglePlacesUrl(venue.photo_url, DEFAULT_VENUE_IMAGE),
+        liveCount: venue.live_count || 0,
+        vibeMatch: Math.floor(Math.random() * 40) + 60, // Mock vibe match
+        weatherMatch: weatherAnalysis?.isGoodWeather ? 85 : 65, // Weather-based scoring
+        tags: venue.canonical_tags || [],
+        friends: [], // TODO: Connect to friends data
+      };
+    });
 
     const floqRecs: RecommendationItem[] = myFloqs.map((floq: any) => ({
       id: floq.id,
@@ -122,7 +179,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     }));
 
     return [...venueRecs, ...floqRecs];
-  }, [nearbyVenues, myFloqs, weatherAnalysis]);
+  }, [nearbyVenues, myFloqs, weatherAnalysis, filterContext, selectedFilterKeys]);
 
   // Filter recommendations based on search and selected filters
   const filteredRecommendations = useMemo(() => {
@@ -276,6 +333,17 @@ export const PulseScreenRedesigned: React.FC = () => {
           onCustomDateChange={setCustomDate}
         />
       </div>
+
+      {/* Contextual Filter Suggestions */}
+      {filterContext && (
+        <div className="px-6">
+          <ContextualFilterSuggestions
+            context={filterContext}
+            onFilterSelect={handleFilterToggle}
+            selectedFilters={selectedFilterKeys}
+          />
+        </div>
+      )}
 
       {/* Filter Pills */}
       <div className="px-6 mb-6">

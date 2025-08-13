@@ -107,7 +107,15 @@ export const PulseLocationWeatherBar: React.FC<PulseLocationWeatherBarProps> = (
 
   // Debug logging
   React.useEffect(() => {
-    console.log('Location status:', { coords, status, hasPermission, locationText });
+    if (coords) {
+      console.log('📍 Location updated:', { 
+        coords, 
+        status, 
+        hasPermission, 
+        locationText,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    }
   }, [coords, status, hasPermission, locationText]);
 
   if (isLoading && locationLoading) {
