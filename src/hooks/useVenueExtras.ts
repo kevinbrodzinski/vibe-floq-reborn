@@ -18,11 +18,31 @@ export function useVenueExtras(venueId: string | null) {
   const { user } = useAuth();
   const profileId = user?.id;
 
-  const { data = {}, isLoading } = useQuery({
+  // Always call useState hooks in the same order
+  const [favorite, setFavorite] = React.useState(false);
+  const [watch, setWatch] = React.useState(false);
+  const [reviewOpen, setReviewOpen] = React.useState(false);
+  const [reviewText, setReviewText] = React.useState('');
+  const [photoOpen, setPhotoOpen] = React.useState(false);
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  // Main data query - always called in the same position
+  const queryResult = useQuery({
     queryKey: ["venue-extras", venueId, profileId],
     enabled: !!venueId,
     queryFn: async () => {
-      if (!venueId) return {};
+      if (!venueId) return {
+        openNow: null,
+        nextOpenText: null,
+        hoursToday: null,
+        deals: [],
+        friends: [],
+        hasVisited: false,
+        aiSummary: null,
+        isFav: false,
+        inWatchlist: false,
+      };
 
       const now = new Date();
       const day = (now.getDay() + 6) % 7; // Mon=0 … Sun=6
@@ -205,24 +225,30 @@ export function useVenueExtras(venueId: string | null) {
       };
     },
     staleTime: 30_000,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
-  // State for toggles
-  const [favorite, setFavorite] = React.useState(data.isFav || false);
-  const [watch, setWatch] = React.useState(data.inWatchlist || false);
-  const [reviewOpen, setReviewOpen] = React.useState(false);
-  const [reviewText, setReviewText] = React.useState('');
-  const [photoOpen, setPhotoOpen] = React.useState(false);
-  const photoInputRef = React.useRef<HTMLInputElement>(null);
-  const [submitting, setSubmitting] = React.useState(false);
+  // Extract data with fallbacks
+  const data = queryResult.data || {
+    openNow: null,
+    nextOpenText: null,
+    hoursToday: null,
+    deals: [],
+    friends: [],
+    hasVisited: false,
+    aiSummary: null,
+    isFav: false,
+    inWatchlist: false,
+  };
 
-  // Update local state when query data changes
+  // Update local state when query data changes - use useEffect to avoid hooks order issues
   React.useEffect(() => {
     setFavorite(data.isFav || false);
     setWatch(data.inWatchlist || false);
   }, [data.isFav, data.inWatchlist]);
 
-  const toggleFavorite = async () => {
+  const toggleFavorite = React.useCallback(async () => {
     if (!venueId || !profileId) return;
     try {
       if (favorite) {
@@ -246,9 +272,9 @@ export function useVenueExtras(venueId: string | null) {
         // Silently fail
       }
     }
-  };
+  }, [venueId, profileId, favorite]);
 
-  const toggleWatch = async () => {
+  const toggleWatch = React.useCallback(async () => {
     if (!venueId || !profileId) return;
     try {
       if (watch) {
@@ -272,9 +298,9 @@ export function useVenueExtras(venueId: string | null) {
         // Silently fail
       }
     }
-  };
+  }, [venueId, profileId, watch]);
 
-  const submitReview = async () => {
+  const submitReview = React.useCallback(async () => {
     if (!venueId || !profileId || !reviewText.trim()) return;
     setSubmitting(true);
     try {
@@ -286,9 +312,9 @@ export function useVenueExtras(venueId: string | null) {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [venueId, profileId, reviewText]);
 
-  const uploadPhoto = async (file: File) => {
+  const uploadPhoto = React.useCallback(async (file: File) => {
     if (!venueId || !profileId) return;
     setSubmitting(true);
     try {
@@ -302,7 +328,7 @@ export function useVenueExtras(venueId: string | null) {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [venueId, profileId]);
 
   return {
     data,
