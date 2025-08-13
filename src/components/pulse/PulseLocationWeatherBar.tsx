@@ -107,7 +107,7 @@ export const PulseLocationWeatherBar: React.FC<PulseLocationWeatherBarProps> = (
   if (isLoading) {
     return (
       <div className={`px-6 mb-4 ${className}`}>
-        <div className="flex items-center justify-between bg-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/20">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 animate-pulse">
             <div className="w-4 h-4 bg-white/20 rounded"></div>
             <div className="w-32 h-4 bg-white/20 rounded"></div>
@@ -123,7 +123,7 @@ export const PulseLocationWeatherBar: React.FC<PulseLocationWeatherBarProps> = (
 
   return (
     <div className={`px-6 mb-4 ${className}`}>
-      <div className="flex items-center justify-between bg-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/20">
+      <div className="flex items-center justify-between">
         {/* Location (Left Side) */}
         <div className="flex items-center gap-2 text-white/90 flex-shrink min-w-0">
           <MapPin className="w-4 h-4 text-white/70 flex-shrink-0" />
