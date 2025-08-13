@@ -141,10 +141,16 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
                                 {Math.round(venue.distance_m)}m
                               </span>
                             </div>
-                            {venue.reason && (
-                              <p className="text-xs text-muted-foreground mt-1 truncate">
-                                {venue.reason}
-                              </p>
+                            {((venue as any).badges || venue.reason) && (
+                              <div className="flex gap-1 flex-wrap mt-1">
+                                {((venue as any).badges ?? (venue.reason ? venue.reason.split(' · ') : []))
+                                  .filter(Boolean)
+                                  .map((badge: string) => (
+                                    <span key={badge} className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded">
+                                      {badge}
+                                    </span>
+                                  ))}
+                              </div>
                             )}
                           </div>
                           <div className="text-xs font-medium text-primary ml-2">

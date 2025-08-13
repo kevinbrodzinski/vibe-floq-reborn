@@ -8,6 +8,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_ANON_KEY")!, // anon is fine for read RPC
 );
 
+const DO_RERANK = (Deno.env.get("LLM_RERANK") || "").toLowerCase() === "true";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const DEFAULT_MODEL = Deno.env.get("OPENAI_RERANK_MODEL") ?? "gpt-4o-mini"; // change if you prefer
 
@@ -46,14 +47,14 @@ serve(async (req) => {
       p_tags: tags ?? null,
       p_tz: tz,
       p_limit: Math.max(limit, use_llm ? llm_top_k : limit),
-      p_ab: ab,
+      p_ab: ab ?? ((DO_RERANK && OPENAI_API_KEY) ? 'edge+llm' : 'edge'),
       p_log: !use_llm, // if LLM, we'll log after re-rank
     });
     if (error) throw error;
     const candidates = Array.isArray(base) ? base : [];
 
     // 2) LLM re-rank (optional, graceful fallback)
-    if (use_llm && OPENAI_API_KEY && candidates.length) {
+    if (DO_RERANK && OPENAI_API_KEY && Array.isArray(candidates) && candidates.length && use_llm) {
       const topK = candidates.slice(0, llm_top_k);
       const prompt = {
         role: "user",

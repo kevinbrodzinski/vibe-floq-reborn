@@ -86,7 +86,7 @@ export const usePersonalizedVenues = (
             tz,
             use_llm: true,
             llm_top_k: llmTopK,
-            ab: 'llm_v1'
+            ab: 'ui+llm'
           }
         });
 
@@ -166,7 +166,7 @@ export function usePersonalizedVenuesRPC(params: {
         p_limit: params.limit ?? 20,
         p_tz: tz,
         p_ab: 'baseline',
-        p_log: true,
+        p_log: false, // Don't log on base RPC - use verbose RPC for logging
       });
 
       if (error) throw error;

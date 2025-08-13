@@ -28,6 +28,9 @@ const supabaseAdmin = createClient(
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY");
 const FSQ_KEY = Deno.env.get("FOURSQUARE_API_KEY");
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+const SLEEP_MS = 200; // tiny backoff between upstream calls
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY"); // optional embeddings
 const SYNC_SECRET = Deno.env.get("SYNC_VENUES_SECRET"); // REQUIRED for access
 
@@ -361,6 +364,9 @@ serve(async (req) => {
       } else {
         results.push({ name: m.name, decision: "skip", provider: m.provider, provider_id: m.provider_id });
       }
+      
+      // Gentle backoff between upstream calls
+      await sleep(SLEEP_MS);
     }
 
     // mark run done
