@@ -12,8 +12,6 @@ export function AppHeader() {
   const { mode } = useFullscreenMap();
   const [notifOpen, setNotifOpen] = useState(false);
 
-  if (mode === 'full') return null;
-
   const title = useMemo(() => {
     if (pathname.startsWith('/pulse')) return 'pulse';
     if (pathname.startsWith('/vibe')) return 'vibe';
@@ -21,6 +19,8 @@ export function AppHeader() {
     if (pathname.startsWith('/floqs')) return 'floqs';
     return 'floq';
   }, [pathname]);
+
+  if (mode === 'full') return null;
 
   return (
     <header
