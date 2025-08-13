@@ -8,10 +8,9 @@ import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { AppHeader } from "@/components/layout/AppHeader";
 // import { useNotifications } from "@/hooks/useNotifications"; // Removed: handled by EventNotificationsProvider
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
 
 
 import { Button } from "./ui/button";
@@ -21,7 +20,6 @@ export const FloqApp = () => {
   // Notification system handled by EventNotificationsProvider in App.tsx
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -54,20 +52,10 @@ export const FloqApp = () => {
     <ErrorBoundary>
       <TimeSyncProvider>
         <FloqUIProvider>
-          <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
-            {/* Header with search and notifications */}
-            <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2" {...zIndex('uiHeader')}>
-              <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold">Floq</h1>
-              </div>
-            </div>
-
-
-
-            <div className="pb-20">
-              <ErrorBoundary>
-                <AppRoutes />
-              </ErrorBoundary>
+          <div className="min-h-screen flex flex-col">
+            <AppHeader />
+            <div className="flex-1 min-h-0">
+              <AppRoutes />
             </div>
             
             <FloqNavigation />
@@ -78,11 +66,7 @@ export const FloqApp = () => {
               onOpenChange={setCommandPaletteOpen}
             />
             
-            {/* Notifications Sheet */}
-            <NotificationsSheet 
-              open={notificationsOpen}
-              onOpenChange={setNotificationsOpen}
-            />
+
           </div>
         </FloqUIProvider>
       </TimeSyncProvider>

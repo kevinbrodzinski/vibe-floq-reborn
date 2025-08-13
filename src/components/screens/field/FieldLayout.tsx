@@ -2,7 +2,7 @@ import React, { Suspense, useCallback, useMemo } from "react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
 import { MotionPermissionBanner } from "@/components/ui/MotionPermissionBanner";
-import { FieldHeader } from "./FieldHeader";
+
 import { FieldMapLayer } from "./FieldMapLayer";
 import { FieldUILayer } from "./FieldUILayer";
 import { FieldModalLayer } from "./FieldModalLayer";

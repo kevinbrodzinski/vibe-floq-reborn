@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines, Share2, Search } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines, Share2, Search, Bell } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -35,7 +35,11 @@ import { DiscoverSheet } from './friends/DiscoverSheet';
 // Type for tracking which sheet is currently open
 type ActiveSheet = 'friends' | 'discover' | 'messages' | 'favorites' | 'watchlist' | null
 
-export const AvatarDropdown = () => {
+type AvatarDropdownProps = {
+  onOpenNotifications?: () => void;
+};
+
+export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => {
   const [debug, setDebug] = useDebug();
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
@@ -81,6 +85,15 @@ export const AvatarDropdown = () => {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="pointer-events-auto w-56">
+          <DropdownMenuItem
+            onSelect={() => onOpenNotifications?.()}
+            className="h-11"
+            aria-label="Open notifications"
+          >
+            <Bell className="w-6 h-6 mr-3" />
+            Notifications
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           {/* Core Identity Section */}
           <DropdownMenuItem onSelect={() => navigate('/profile')} className="h-11">
             <User className="w-6 h-6 mr-3" />

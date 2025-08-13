@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import { FieldHeader } from "./FieldHeader";
+
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
@@ -59,21 +59,6 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       <AnimatePresence initial={false}>
         {!isFull && (
           <>
-            {/* Header */}
-            <motion.div
-              key="field-header"
-              {...zIndex("uiHeader")}
-              className="absolute inset-x-0 top-0 pointer-events-auto"
-              initial={{ y: -64, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -64, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 32 }}
-            >
-              <FieldHeader
-                venueCount={data.nearbyVenues?.length ?? 0}
-                onOpenVenues={() => setVenuesSheetOpen(true)}
-              />
-            </motion.div>
           </>
         )}
       </AnimatePresence>
