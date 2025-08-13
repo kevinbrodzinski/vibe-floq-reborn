@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Z } from '@/constants/z';
@@ -9,7 +9,7 @@ import { NotificationsSheet } from '@/components/notifications/NotificationsShee
 export function AppHeader() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { mode } = useFullscreenMap();
+  const { mode, setMode } = useFullscreenMap();
   const [notifOpen, setNotifOpen] = useState(false);
 
   const title = useMemo(() => {
@@ -20,7 +20,17 @@ export function AppHeader() {
     return 'floq';
   }, [pathname]);
 
-  if (mode === 'full') return null;
+  const isFieldPage = pathname === '/field' || pathname === '/';
+
+  // Exit fullscreen when navigating away from field page
+  useEffect(() => {
+    if (mode === 'full' && !isFieldPage) {
+      setMode('map');
+    }
+  }, [mode, isFieldPage, setMode]);
+
+  // Only hide header when in fullscreen mode AND on field page
+  if (mode === 'full' && isFieldPage) return null;
 
   return (
     <header
