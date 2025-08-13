@@ -18,11 +18,9 @@ import { VoiceSearchButton } from '@/components/ui/VoiceSearchButton';
 import { WeatherAwareSuggestion } from '@/components/ui/WeatherAwareSuggestion';
 import { AISuggestionCard } from '@/components/ui/AISuggestionCard';
 import { AISummaryCollapsible } from '@/components/ui/AISummaryCollapsible';
-import { HeartbeatPulseIcon } from '@/components/ui/HeartbeatPulseIcon';
 import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
 import { useNavigate } from 'react-router-dom';
 import { EnhancedRecommendationCard } from '@/components/ui/EnhancedRecommendationCard';
-import { AvatarStack } from '@/components/ui/AvatarStack';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useVibeMatch } from '@/hooks/useVibeMatch';
 import { FilterChip } from '@/components/ui/FilterChip';
@@ -37,13 +35,6 @@ import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { PersonalizationSettings } from '@/components/planning/PersonalizationSettings';
 
-// Minimal brain outline SVG
-const BrainOutlineIcon = ({ className = '', size = 24, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 4a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4m0-16v16m0-16a4 4 0 0 1 4-4 4 4 0 0 1 4 4v16a4 4 0 0 1-4 4 4 4 0 0 1-4-4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M16 4a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
 
 
 interface PulseRecommendation {
@@ -280,17 +271,20 @@ export const PulseScreen: React.FC = () => {
 
   // Transform data into recommendations
   const recommendations = useMemo(() => {
-    const venueRecommendations: PulseRecommendation[] = nearbyVenuesArr.map((venue: any) => ({
-      id: venue.id,
-      title: venue.name,
-      type: 'venue' as const,
-      distance: venue.distance_m ? `${(venue.distance_m / 1000).toFixed(1)}km` : 'Nearby',
-      vibe: venue.categories?.[0] || 'Venue',
-      category: venue.categories?.[0],
-      // rating: venue.rating, // Not available in new venue type
-      // address: venue.address, // Not available in new venue type
-      live_count: 0, // Default live count since it's not in the new venue type
-      venue_id: venue.id
+      const venueRecommendations: PulseRecommendation[] = nearbyVenuesArr.map((venue: any) => ({
+    id: venue.id,
+    title: venue.name,
+    type: 'venue' as const,
+    distance_meters: typeof venue.distance_m === 'number' ? venue.distance_m : (venue.dist_m ?? 0),
+    distance: typeof venue.distance_m === 'number'
+      ? `${(venue.distance_m / 1000).toFixed(1)}km`
+      : (typeof venue.dist_m === 'number' ? `${(venue.dist_m / 1000).toFixed(1)}km` : 'Nearby'),
+    vibe: venue.categories?.[0] || 'Venue',
+    category: venue.categories?.[0],
+    // rating: venue.rating, // Not available in new venue type
+    // address: venue.address, // Not available in new venue type
+    live_count: 0, // Default live count since it's not in the new venue type
+    venue_id: venue.id
     }));
 
     const floqRecommendations: PulseRecommendation[] = visibleFloqs.map(floq => ({
@@ -316,14 +310,14 @@ export const PulseScreen: React.FC = () => {
       filtered = filtered.filter(rec => 
         rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         rec.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rec.vibe.toLowerCase().includes(searchQuery.toLowerCase())
+        (rec.vibe ?? '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Selected filters
     if (selectedFilters.length > 0) {
       filtered = filtered.filter(rec => {
-        if (selectedFilters.includes('Walking distance') && parseFloat(String(rec.distance)) > 1) return false;
+        if (selectedFilters.includes('Walking distance') && (rec.distance_meters ?? 1e9) > WALKING_THRESHOLD_M) return false;
         if (selectedFilters.includes('High energy') && (rec.live_count || 0) < 10) return false;
         if (selectedFilters.includes('Social vibes') && !['social', 'hype', 'open'].includes(rec.vibe)) return false;
         if (selectedFilters.includes('My floqs') && rec.type === 'floq' && !myFloqs.some(f => f.id === rec.id)) return false;
@@ -376,6 +370,13 @@ export const PulseScreen: React.FC = () => {
       suggestions.push({
         label: `${socialSuggestions.length} friends nearby`,
         filter: 'Friends nearby'
+      });
+    }
+
+    if (liveActivity.length > 0) {
+      suggestions.push({
+        label: `${liveActivity.length} live check-ins nearby`,
+        filter: 'Live activity'
       });
     }
 
@@ -656,7 +657,7 @@ export const PulseScreen: React.FC = () => {
         {/* Main Recommendations List with Smooth Transitions & Consistent Height */}
         <div className="min-h-[500px]"> {/* Prevent layout shift between different list lengths */}
           <AnimatePresence mode="wait">
-          {preferSmartSuggestions ? (
+          {(preferSmartSuggestions && (import.meta.env.VITE_USE_EDGE_RECS ?? 'true') === 'true') ? (
             <motion.div 
               key="smart-recommendations"
               initial={{ opacity: 0, y: 20 }}
@@ -694,6 +695,13 @@ export const PulseScreen: React.FC = () => {
                   <TrendingUp className="w-5 h-5 text-white" />
                   <h2 className="font-bold text-white text-lg">Recommended for you</h2>
                 </div>
+                {preferSmartSuggestions && (import.meta.env.VITE_USE_EDGE_RECS ?? 'true') === 'false' && (
+                  <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <p className="text-amber-200 text-sm">
+                      🔧 Smart recommendations temporarily unavailable - showing nearby venues instead
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-4">
                   {filteredRecommendations.map((rec, index) => {
                     // Mock host and vibe match for demo
