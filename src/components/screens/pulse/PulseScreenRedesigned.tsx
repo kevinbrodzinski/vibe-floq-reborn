@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useGeo } from '@/hooks/useGeo';
 import { useAuth } from '@/hooks/useAuth';
 import { useWeather } from '@/hooks/useWeather';
@@ -47,6 +48,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     // Data hooks with enhanced filtering
   const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
@@ -373,25 +375,72 @@ export const PulseScreenRedesigned: React.FC = () => {
         />
       </div>
 
-      {/* Contextual Filter Suggestions */}
-      {filterContext && (
-        <div className="px-6">
-          <ContextualFilterSuggestions
-            context={filterContext}
-            onFilterSelect={handleFilterToggle}
-            selectedFilters={selectedFilterKeys}
-          />
-        </div>
-      )}
-
-      {/* Filter Pills */}
+      {/* Collapsible Filters Section */}
       <div className="px-6 mb-6">
-        <PulseFilterPills
-          availableFilters={availableFilters}
-          selectedFilterKeys={selectedFilterKeys}
-          onToggleFilter={handleFilterToggle}
-          maxVisible={8}
-        />
+        {/* Filter Toggle Button */}
+        <motion.button
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          className="flex items-center justify-between w-full p-3 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 mb-4 hover:bg-white/15 transition-colors"
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <Filter className="w-4 h-4 text-white flex-shrink-0" />
+            <span className="text-white font-medium">
+              Filters {selectedFilterKeys.length > 0 && `(${selectedFilterKeys.length})`}
+            </span>
+            {/* Show preview of active filters when collapsed */}
+            {!filtersExpanded && selectedFilterKeys.length > 0 && (
+              <div className="flex items-center space-x-1 ml-2 overflow-hidden">
+                <span className="text-white/60 text-sm">•</span>
+                <span className="text-white/80 text-sm truncate">
+                  {selectedFilterKeys.slice(0, 2).join(', ')}
+                  {selectedFilterKeys.length > 2 && '...'}
+                </span>
+              </div>
+            )}
+          </div>
+          {filtersExpanded ? (
+            <ChevronUp className="w-4 h-4 text-white" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-white" />
+          )}
+        </motion.button>
+
+        {/* Collapsible Filter Content */}
+        <AnimatePresence>
+          {filtersExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-4">
+                {/* Contextual Filter Suggestions */}
+                {filterContext && (
+                  <div>
+                    <ContextualFilterSuggestions
+                      context={filterContext}
+                      onFilterSelect={handleFilterToggle}
+                      selectedFilters={selectedFilterKeys}
+                    />
+                  </div>
+                )}
+
+                {/* Filter Pills */}
+                <div>
+                  <PulseFilterPills
+                    availableFilters={availableFilters}
+                    selectedFilterKeys={selectedFilterKeys}
+                    onToggleFilter={handleFilterToggle}
+                    maxVisible={8}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Content Sections */}
