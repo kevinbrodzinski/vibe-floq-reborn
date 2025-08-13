@@ -181,7 +181,7 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
       keyboardAware={true}
     >
       {/* Header with progress and logout */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50 pt-safe-top">
+      <div className="sticky top-0 z-50 bg-transparent pt-safe-top">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">

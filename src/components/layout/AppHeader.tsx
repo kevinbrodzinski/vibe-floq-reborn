@@ -35,12 +35,10 @@ export function AppHeader() {
   return (
     <header
       className={cn(
-        // On field page: absolute positioning to float over map
-        // On other pages: sticky positioning with background
-        isFieldPage 
-          ? 'absolute top-0 h-16 sm:h-[68px] w-full px-4'
-          : 'sticky top-0 h-16 sm:h-[68px] w-full px-4 bg-background/80 backdrop-blur border-b border-white/5',
-        'flex items-center justify-between'
+        'sticky top-0 h-16 sm:h-[68px] w-full px-4',
+        'bg-transparent border-0',                // no background, no border
+        'flex items-center justify-between',
+        'pointer-events-none'                     // let map receive drags under header
       )}
       style={{ 
         zIndex: Z.navigation, 
@@ -49,7 +47,7 @@ export function AppHeader() {
     >
       <button
         onClick={() => nav('/field')}
-        className="font-semibold text-lg text-white select-none"
+        className="font-semibold text-lg text-white select-none pointer-events-auto"
         aria-label="Go to Field"
       >
         floq
@@ -59,7 +57,7 @@ export function AppHeader() {
         <span className="text-sm text-muted-foreground">{title}</span>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pointer-events-auto drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)]">
         <AvatarDropdown onOpenNotifications={() => setNotifOpen(true)} />
       </div>
 
