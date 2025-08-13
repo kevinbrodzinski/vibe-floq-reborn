@@ -67,7 +67,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const { data: myFloqs = [] } = useMyActiveFloqs();
   
   // Enhanced filter system
-  const { availableFilters, context } = usePulseFilters();
+  const { availableFilters, context: filterContext } = usePulseFilters();
   
   // Enable realtime updates
   useLiveActivityRealtime();

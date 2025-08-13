@@ -45,7 +45,6 @@ export const VenueImage: React.FC<VenueImageProps> = ({
   const [showFallbackImage, setShowFallbackImage] = useState(false);
 
   const handleImageError = () => {
-    console.warn('Image failed to load:', src);
     if (!showFallbackImage && src && !isGooglePlacesImageUrl(src)) {
       // First try fallback image if original wasn't from Google
       setShowFallbackImage(true);

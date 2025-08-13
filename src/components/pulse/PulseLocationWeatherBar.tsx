@@ -105,18 +105,12 @@ export const PulseLocationWeatherBar: React.FC<PulseLocationWeatherBarProps> = (
     geoError
   );
 
-  // Debug logging
+  // Debug logging (only log when location changes significantly)
   React.useEffect(() => {
-    if (coords) {
-      console.log('📍 Location updated:', { 
-        coords, 
-        status, 
-        hasPermission, 
-        locationText,
-        timestamp: new Date().toLocaleTimeString()
-      });
+    if (coords && locationText && !locationText.includes('Getting') && !locationText.includes('unavailable')) {
+      console.log('📍 Location resolved:', locationText);
     }
-  }, [coords, status, hasPermission, locationText]);
+  }, [locationText]);
 
   if (isLoading && locationLoading) {
     return (
