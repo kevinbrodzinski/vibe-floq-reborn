@@ -10,16 +10,17 @@ export interface ActiveFloq {
   member_count?: number;
 }
 
-export function useMyActiveFloqs() {
+export function useMyActiveFloqs(timeWindow?: { start: Date; end: Date }) {
   const session = useSession();
   
   return useQuery({
-    queryKey: ['my-active-floqs', session?.user?.id],
+    queryKey: ['my-active-floqs', session?.user?.id, timeWindow?.start?.toISOString(), timeWindow?.end?.toISOString()],
     queryFn: async (): Promise<ActiveFloq[]> => {
       if (!session?.user?.id) return [];
 
-      // ISO string *once* – avoids drifting between async calls
-      const nowISO = new Date().toISOString();
+      // Use provided time window or default to now
+      const startISO = timeWindow?.start?.toISOString() || new Date().toISOString();
+      const endISO = timeWindow?.end?.toISOString() || new Date().toISOString();
 
       // ① Get the floq ids the user belongs to
       const { data: ids, error: idErr } = await supabase
@@ -43,8 +44,10 @@ export function useMyActiveFloqs() {
         .in('id', ids.map(r => r.floq_id))
         .is('deleted_at', null)
         .is('archived_at', null)                // new guard for archived floqs
-        // ends_at is either NULL **or** in the future (floqs use ends_at, not disband_at)
-        .or(`ends_at.is.null,ends_at.gt.${nowISO}`);
+        // ends_at is either NULL **or** overlaps with our time window
+        .or(`ends_at.is.null,ends_at.gte.${startISO}`)
+        // Optional: also filter by start time if floqs have start times
+        // .or(`starts_at.is.null,starts_at.lte.${endISO}`);
 
       if (floqErr) throw floqErr;
       

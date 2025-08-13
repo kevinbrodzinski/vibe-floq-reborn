@@ -41,6 +41,7 @@ export type PulseFilterKey =
   | 'venue_type'
   | 'vibe_type'
   | 'floqs'
+  | 'trending'
   | 'smart'
   // Time‑based
   | 'coffee_spots'
@@ -156,6 +157,7 @@ const LABELS: Record<PulseFilterKey, string> = {
   venue_type: 'Venue type',
   vibe_type: 'Vibe',
   floqs: 'Floqs',
+  trending: 'Trending',
   smart: 'Smart',
   // Time‑based
   coffee_spots: 'Coffee spots',
@@ -225,11 +227,12 @@ const LABELS: Record<PulseFilterKey, string> = {
 function coreFilters(): PulseFilterChip[] {
   return [
     { key: 'distance', label: LABELS.distance, priority: 1 },
+    { key: 'trending', label: LABELS.trending, priority: 2 },
     { key: 'energy', label: LABELS.energy },
     { key: 'venue_type', label: LABELS.venue_type },
     { key: 'vibe_type', label: LABELS.vibe_type },
     { key: 'floqs', label: LABELS.floqs },
-    { key: 'smart', label: LABELS.smart, priority: 2 },
+    { key: 'smart', label: LABELS.smart, priority: 3 },
   ];
 }
 

@@ -28,6 +28,7 @@ import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
 // Utils and Types
 import { GOOD_WEATHER, type Vibe } from '@/hooks/usePulseFilters';
 import { cn } from '@/lib/utils';
+import { getPulseWindow } from '@/utils/timeWindow';
 
 export const PulseScreenRedesigned: React.FC = () => {
   const navigate = useNavigate();
@@ -41,25 +42,34 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [showLiveActivitySheet, setShowLiveActivitySheet] = useState(false);
   const [showAllFilters, setShowAllFilters] = useState(false);
+  const [distanceMaxM, setDistanceMaxM] = useState<number>(2000); // 2km default
+  const [priceTiers, setPriceTiers] = useState<string[]>(['$', '$$', '$$$']); // All price levels
 
-  // Data hooks
-  const { data: weatherData } = useWeather();
+  // Get time window for selected time filter
+  const timeWindow = useMemo(() => getPulseWindow(selectedTime), [selectedTime]);
+  
+  // Data hooks - pass dateTime to weather for future forecasts
+  const { data: weatherData } = useWeather(timeWindow.start.toISOString());
   const { data: userVibe } = useUserVibe(profile?.id || null);
   const { data: nearbyVenues = [] } = useNearbyVenues(
     coords?.lat ?? 0, 
     coords?.lng ?? 0, 
-    2, // 2km radius
+    distanceMaxM / 1000, // Convert to km
     { 
       pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : undefined,
-      filterLogic: 'any' 
+      filterLogic: 'any',
+      distanceMaxM,
+      priceTiers
     }
   );
-  const { data: trendingVenues = [] } = useTrendingVenues(2000, 10, {
+  const { data: trendingVenues = [] } = useTrendingVenues(distanceMaxM, 10, {
     pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : undefined,
-    filterLogic: 'any'
+    filterLogic: 'any',
+    distanceMaxM,
+    priceTiers
   });
   const { data: liveActivity = [] } = useLiveActivity();
-  const { data: myFloqs = [] } = useMyActiveFloqs();
+  const { data: myFloqs = [] } = useMyActiveFloqs(timeWindow);
 
   // Weather normalization
   const normalizedWeather = useMemo(() => {
@@ -150,11 +160,17 @@ export const PulseScreenRedesigned: React.FC = () => {
       
       const mockRatings = [4.2, 4.5, 4.1, 4.7, 4.3, 4.6, 4.4];
       
+      // Calculate walk and drive times
+      const walkMin = Math.max(1, Math.round((venue.distance_m || 0) / 80)); // ~80 m/min walking speed
+      const driveMin = Math.round(((venue.distance_m || 0) / 1000) / 30 * 60); // ~30 km/h city driving
+      
       return {
         id: venue.id,
         title: venue.name,
         type: 'venue' as const,
         distance: venue.distance_m,
+        walkTime: walkMin,
+        driveTime: driveMin,
         category: venue.categories?.[0] || 'Venue',
         description: venue.description || mockDescriptions[index % mockDescriptions.length],
         rating: venue.rating || mockRatings[index % mockRatings.length],
@@ -168,7 +184,8 @@ export const PulseScreenRedesigned: React.FC = () => {
         friendsGoing: Math.random() > 0.7 ? [
           { name: 'Alex', avatar: undefined },
           { name: 'Sam', avatar: undefined }
-        ] : undefined
+        ] : undefined,
+        regularsCount: Math.floor(Math.random() * 5) + 1 // Mock regulars count
       };
     });
 

@@ -9,6 +9,8 @@ export interface RecommendationItem {
   title: string;
   type: RecommendationType;
   distance?: number; // meters
+  walkTime?: number; // minutes
+  driveTime?: number; // minutes
   category?: string;
   description?: string;
   location?: string;
@@ -43,6 +45,9 @@ export interface RecommendationItem {
   // Media
   imageUrl?: string;
   tags?: string[];
+  
+  // Social proof
+  regularsCount?: number; // Number of regulars/frequent visitors
 }
 
 interface RecommendationsListProps {
@@ -142,7 +147,7 @@ const RecommendationCard: React.FC<{
             )}
           </div>
 
-          {/* Category and Distance */}
+          {/* Category, Distance, and Time */}
           <div className="flex items-center gap-2 text-sm text-white/60 mb-2">
             {item.category && (
               <span>{item.category}</span>
@@ -151,6 +156,18 @@ const RecommendationCard: React.FC<{
               <>
                 <span>•</span>
                 <span>{formatDistance(item.distance)}</span>
+              </>
+            )}
+            {item.walkTime && (
+              <>
+                <span>•</span>
+                <span>{item.walkTime} min walk</span>
+              </>
+            )}
+            {item.driveTime && item.driveTime > 0 && (
+              <>
+                <span>•</span>
+                <span>{item.driveTime} min drive</span>
               </>
             )}
             {item.rating && (
@@ -193,27 +210,37 @@ const RecommendationCard: React.FC<{
               )}
             </div>
 
-            {/* Friends going */}
-            {item.friendsGoing && item.friendsGoing.length > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="flex -space-x-1">
-                  {item.friendsGoing.slice(0, 3).map((friend, index) => (
-                    <div key={index} className="w-6 h-6 rounded-full border border-white/20 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-xs text-white font-medium">
-                      {friend.avatar ? (
-                        <img src={friend.avatar} alt={friend.name} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        friend.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                  ))}
+            <div className="flex items-center gap-3">
+              {/* Regulars badge */}
+              {item.regularsCount && item.regularsCount > 0 && (
+                <div className="flex items-center gap-1 text-xs text-orange-400 bg-orange-400/10 px-2 py-1 rounded-full border border-orange-400/20">
+                  <Users className="w-3 h-3" />
+                  <span>{item.regularsCount} regulars</span>
                 </div>
-                {item.friendsGoing.length > 3 && (
-                  <span className="text-xs text-white/50 ml-1">
-                    +{item.friendsGoing.length - 3}
-                  </span>
-                )}
-              </div>
-            )}
+              )}
+              
+              {/* Friends going */}
+              {item.friendsGoing && item.friendsGoing.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="flex -space-x-1">
+                    {item.friendsGoing.slice(0, 3).map((friend, index) => (
+                      <div key={index} className="w-6 h-6 rounded-full border border-white/20 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-xs text-white font-medium">
+                        {friend.avatar ? (
+                          <img src={friend.avatar} alt={friend.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          friend.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {item.friendsGoing.length > 3 && (
+                    <span className="text-xs text-white/50 ml-1">
+                      +{item.friendsGoing.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

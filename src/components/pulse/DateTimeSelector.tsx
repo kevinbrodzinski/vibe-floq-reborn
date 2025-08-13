@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getDynamicTimeLabel } from '@/utils/timeWindow';
 
 export type TimeFilter = 'now' | 'tonight' | 'tomorrow' | 'weekend' | 'custom';
 
@@ -15,18 +16,10 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   onChange,
   onCalendarClick
 }) => {
-  // Dynamic label logic based on current time
+  // Dynamic label logic based on current time (7pm-2am = Tomorrow, otherwise Tonight)
   const getDynamicLabel = (): string => {
-    const now = new Date();
-    const hour = now.getHours();
-    const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
-    
-    // If it's after 5 PM, show "Tonight", otherwise show "Tomorrow"
-    if (hour >= 17) {
-      return 'Tonight';
-    } else {
-      return 'Tomorrow';
-    }
+    const dynamicLabel = getDynamicTimeLabel();
+    return dynamicLabel === 'tonight' ? 'Tonight' : 'Tomorrow';
   };
 
   const getWeekendLabel = (): string => {
@@ -45,7 +38,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
 
   const timeOptions = [
     { key: 'now' as const, label: 'Now', icon: Clock },
-    { key: (dynamicLabel === 'Tonight' ? 'tonight' : 'tomorrow') as const, label: dynamicLabel, icon: Clock },
+    { key: getDynamicTimeLabel() as const, label: dynamicLabel, icon: Clock },
     { key: 'weekend' as const, label: weekendLabel, icon: Calendar },
   ];
 

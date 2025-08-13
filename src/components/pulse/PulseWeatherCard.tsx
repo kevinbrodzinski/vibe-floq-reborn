@@ -41,6 +41,10 @@ const getConditionLabel = (condition: WeatherData['condition']) => {
   return condition.charAt(0).toUpperCase() + condition.slice(1);
 };
 
+const formatWeatherSummary = (tempF: number, condition: string, precipChancePct: number) => {
+  return `${tempF}° | ${getConditionLabel(condition)} | ${Math.round(precipChancePct)}%`;
+};
+
 const getTimeLabel = (selectedTime?: PulseWeatherCardProps['selectedTime']) => {
   switch (selectedTime) {
     case 'now':
@@ -95,7 +99,7 @@ export const PulseWeatherCard: React.FC<PulseWeatherCardProps> = ({
           {getWeatherIcon(condition, 'w-6 h-6')}
           <div>
             <div className="text-lg font-semibold text-white">
-              {tempF}°F • {getConditionLabel(condition)}
+              {formatWeatherSummary(tempF, condition, precipChancePct)}
             </div>
             <div className="text-sm text-white/70">
               {timeLabel}
