@@ -40,7 +40,9 @@ export function AppHeader() {
         isFieldPage 
           ? 'absolute top-0 h-16 sm:h-[68px] w-full px-4'
           : 'sticky top-0 h-16 sm:h-[68px] w-full px-4 bg-background/80 backdrop-blur border-b border-white/5',
-        'flex items-center justify-between'
+        'flex items-center justify-between',
+        // Isolate from vibe-based styling
+        'isolate'
       )}
       style={{ 
         zIndex: Z.navigation, 
