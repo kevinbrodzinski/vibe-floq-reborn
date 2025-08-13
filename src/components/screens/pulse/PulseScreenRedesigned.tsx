@@ -31,6 +31,7 @@ import { GOOD_WEATHER, type Vibe } from '@/hooks/usePulseFilters';
 import { cn } from '@/lib/utils';
 import { getPulseWindow } from '@/utils/timeWindow';
 import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch';
+import { estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
 
 export const PulseScreenRedesigned: React.FC = () => {
   const navigate = useNavigate();
@@ -233,10 +234,10 @@ export const PulseScreenRedesigned: React.FC = () => {
       
       const mockRatings = [4.2, 4.5, 4.1, 4.7, 4.3, 4.6, 4.4];
       
-      // Calculate walk and drive times - handle both string and number distance
+      // Calculate walk and drive times using proper utilities
       const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
-      const walkMin = Math.max(1, Math.round((distanceM || 0) / 80)); // ~80 m/min walking speed
-      const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60); // ~30 km/h city driving
+      const walkMin = estimateWalkMinutes(distanceM);
+      const driveMin = estimateDriveMinutes(distanceM);
       
       return {
         id: `nearby-${venue.id}`, // Prefix to ensure uniqueness
@@ -270,8 +271,8 @@ export const PulseScreenRedesigned: React.FC = () => {
       .slice(0, 5)
       .map((venue, index: number) => {
         const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
-        const walkMin = Math.max(1, Math.round((distanceM || 0) / 80));
-        const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60);
+        const walkMin = estimateWalkMinutes(distanceM);
+        const driveMin = estimateDriveMinutes(distanceM);
         
         return {
           id: `trending-${venue.venue_id}`, // Prefix to ensure uniqueness

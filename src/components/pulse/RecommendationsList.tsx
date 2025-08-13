@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, MapPin, Clock, Users, Star, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { VenueCard } from '@/components/venue/VenueCard';
-import { normalizeScoreToPercent } from '@/utils/venueMetrics';
+import { normalizeScoreToPercent, formatDistance as formatDistanceUtil, estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
 
 export type RecommendationType = 'venue' | 'event' | 'floq';
 
@@ -64,14 +63,13 @@ interface RecommendationsListProps {
 }
 
 const formatDistance = (meters?: number): string => {
-  if (!meters) return '';
-  if (meters < 1000) return `${Math.round(meters)}m`;
-  return `${(meters / 1000).toFixed(1)}km`;
+  return formatDistanceUtil(meters);
 };
 
 const formatMatchScore = (score?: number): string => {
   if (!score) return '';
-  return `${Math.round(score)}% match`;
+  const normalizedScore = normalizeScoreToPercent(score);
+  return `${normalizedScore}% match`;
 };
 
 const getTypeIcon = (type: RecommendationType) => {
@@ -109,29 +107,6 @@ const RecommendationCard: React.FC<{
     onClick?.(item);
   };
 
-  // Use the new VenueCard for venue types
-  if (item.type === 'venue') {
-    return (
-      <div onClick={handleClick} className="cursor-pointer">
-        <VenueCard
-          row={{
-            name: item.title,
-            photo_url: item.imageUrl || null,
-            distance_m: item.distance || null,
-            categories: item.category ? [item.category] : null,
-            canonical_tags: item.tags || null,
-            rating: item.rating || null,
-            price_tier: item.priceLevel || null,
-            regulars_count: item.regularsCount || null,
-          }}
-          matchScore={item.vibeMatch}
-          tagline={item.description}
-        />
-      </div>
-    );
-  }
-
-  // Keep the original card for events and floqs
   return (
     <div
       className="p-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-white/5 hover:scale-[1.02] transition-all duration-200 cursor-pointer group"
