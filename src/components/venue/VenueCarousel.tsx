@@ -1,212 +1,229 @@
-import * as React from 'react'
-import useEmblaCarousel from 'embla-carousel-react'
-import { ChevronLeft, ChevronRight, MapPin, Star } from 'lucide-react'
-import { motion } from 'framer-motion'
+import * as React from 'react';
+import useEmblaCarousel, { UseEmblaCarouselType } from 'embla-carousel-react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 
-// Minimal pill — replace with shadcn Badge if you have it in your design system
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="px-2.5 py-1 rounded-full text-[10px] leading-none font-medium bg-white/15 text-white/90 border border-white/20">
-      {children}
-    </span>
-  )
-}
+type Item = {
+  id: string;
+  name: string;
+  photo_url?: string | null;
+  distance_m?: number | null;
+  rating?: number | null;
+  match_score_pct?: number | null;
+  canonical_tags?: string[] | null;
+};
 
-export type VenueCarouselItem = {
-  id: string
-  name: string
-  photo_url?: string | null
-  distance_m?: number | string | null
-  match_score_pct?: number | null // 0-100 expected; format upstream
-  rating?: number | null
-  canonical_tags?: string[] | null
-}
+const cx = (...xs: Array<string | false | null | undefined>) => xs.filter(Boolean).join(' ');
+
+const metersToMiles = (m?: number | null, dp = 1) => {
+  if (m == null) return null;
+  const mi = Number(m) / 1609.344;
+  const k = Math.pow(10, dp);
+  return Math.round(mi * k) / k;
+};
+
+type Props = {
+  items: Item[];
+  loading?: boolean;
+  onOpen?: (id: string) => void;
+  className?: string;
+  /** Make cards a bit taller/shorter */
+  aspect?: `${number}/${number}`;
+};
 
 export default function VenueCarousel({
   items,
-  onOpen,
   loading,
+  onOpen,
   className,
-}: {
-  items: VenueCarouselItem[]
-  onOpen?: (id: string) => void
-  loading?: boolean
-  className?: string
-}) {
+  aspect = '4/5',
+}: Props) {
+  // IMPORTANT: snap center after fling
   const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: true,
-    align: 'center',
-    skipSnaps: false,
-    dragFree: false,
-  })
-  const [selected, setSelected] = React.useState(0)
+    loop: false,
+    dragFree: false,            // <- snap after drag
+    align: 'center',            // <- center active card
+    containScroll: 'trimSnaps',
+    inViewThreshold: 0.75,
+  });
+
+  const [selected, setSelected] = React.useState(0);
+  const [count, setCount] = React.useState(0);
 
   React.useEffect(() => {
-    if (!emblaApi) return
-    const onSelect = () => setSelected(emblaApi.selectedScrollSnap())
-    emblaApi.on('select', onSelect)
-    onSelect()
-  }, [emblaApi])
+    if (!emblaApi) return;
+    const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
+    onSelect();
+    emblaApi.on('select', onSelect);
+    setCount(emblaApi.scrollSnapList().length);
+  }, [emblaApi]);
 
-  const scrollPrev = React.useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi])
-  const scrollNext = React.useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi])
+  const scrollPrev = React.useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = React.useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollTo   = React.useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
 
-  const size = items.length
+  // Subtle coverflow: scale & lift center; lower sides slightly
+  const cardAnim = (active: boolean) => ({
+    scale: active ? 1 : 0.9,
+    y: active ? 0 : 12,
+    boxShadow: active
+      ? '0 16px 40px rgba(0,0,0,0.38)'
+      : '0 10px 24px rgba(0,0,0,0.28)',
+    transition: { type: 'spring', stiffness: 240, damping: 22 },
+  });
 
-  const diffWrap = (i: number, j: number) => {
-    // minimal circular distance between slide i and j
-    const d = Math.abs(i - j)
-    return Math.min(d, size - d)
-  }
-
-  if (loading) {
-    return (
-      <div className={`relative w-full ${className ?? ''}`}>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-white/70 text-sm">Loading venues...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className={`relative w-full ${className ?? ''}`}>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-white/60 text-sm">No venues found. Try adjusting your filters.</div>
-        </div>
-      </div>
-    )
-  }
+  const data = loading
+    ? Array.from({ length: 5 }).map((_, i) => ({ id: `s-${i}`, name: '' }))
+    : items;
 
   return (
-    <div className={`relative w-full ${className ?? ''}`}>
-      {/* Arrows */}
-      <button
-        type="button"
-        aria-label="Previous"
-        onClick={scrollPrev}
-        className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-white/15 border border-white/20 backdrop-blur hover:bg-white/25 text-white flex items-center justify-center transition-all duration-200"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        aria-label="Next"
-        onClick={scrollNext}
-        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-white/15 border border-white/20 backdrop-blur hover:bg-white/25 text-white flex items-center justify-center transition-all duration-200"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
+    <div className={cx('relative', className)}>
+      {/* edge fade mask */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#0B0F1A] to-transparent z-10" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#0B0F1A] to-transparent z-10" />
 
-      {/* Viewport */}
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex touch-pan-y -ml-4">
-          {items.map((v, i) => {
-            const d = diffWrap(i, selected)
-            const isActive = d === 0
-            const scale = isActive ? 1 : d === 1 ? 0.9 : 0.85
-            const y = isActive ? 0 : d === 1 ? 10 : 22
-            const opacity = isActive ? 1 : 0.75
+      <div className="px-2 sm:px-4">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-4 sm:gap-5">
+            {data.map((v, i) => {
+              const active = i === selected;
+              return (
+                <div
+                  key={v.id}
+                  className={cx(
+                    // responsive slide widths: large center, smaller sides
+                    'basis-[80%] sm:basis-[58%] md:basis-[46%] lg:basis-[36%] xl:basis-[30%]',
+                    'shrink-0'
+                  )}
+                >
+                  <motion.button
+                    type="button"
+                    onClick={() => v.name && onOpen?.(v.id)}
+                    whileTap={{ scale: 0.98 }}
+                    aria-label={v.name || 'venue'}
+                    className={cx(
+                      'relative w-full',
+                      `aspect-[${aspect}]`,
+                      'rounded-3xl overflow-hidden text-left',
+                      'bg-white/5 border border-white/10'
+                    )}
+                    animate={cardAnim(active)}
+                    disabled={!v.name}
+                  >
+                    {/* Photo */}
+                    <div className="absolute inset-0">
+                      {v.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={v.photo_url}
+                          alt={v.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-[radial-gradient(120%_120%_at_10%_0%,#273049_0%,#0b0f1a_60%)]" />
+                      )}
+                      {/* top + bottom gradients */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/60" />
+                    </div>
 
-            return (
-              <motion.div
-                key={v.id}
-                className="pl-4 flex-[0_0_80%] sm:flex-[0_0_420px]"
-                animate={{ scale, y, opacity }}
-                transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-              >
-                <Card v={v} onOpen={onOpen} active={isActive} />
-              </motion.div>
-            )
-          })}
+                    {/* Glass info bar (single-line everything) */}
+                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                      <div className="backdrop-blur-md bg-white/10 border border-white/15 rounded-2xl px-3.5 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-white font-semibold text-sm sm:text-base truncate">
+                              {v.name || '\u00A0'}
+                            </div>
+                            <div className="flex items-center gap-2 text-white/80 text-xs sm:text-sm truncate">
+                              {typeof v.distance_m === 'number' && (
+                                <span className="inline-flex items-center gap-1 truncate">
+                                  <MapPin className="w-3.5 h-3.5 opacity-80" />
+                                  {metersToMiles(v.distance_m)} mi
+                                </span>
+                              )}
+                              {typeof v.rating === 'number' && (
+                                <span className="truncate">· ⭐ {v.rating.toFixed(1)}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Right-side chips in one line */}
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {typeof v.match_score_pct === 'number' && (
+                              <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-300/30 whitespace-nowrap">
+                                ⚡ {Math.round(v.match_score_pct)}%
+                              </span>
+                            )}
+                            <div className="flex gap-1 max-w-[160px] sm:max-w-[200px] overflow-hidden">
+                              {(v.canonical_tags ?? []).slice(0, 3).map((t) => (
+                                <span
+                                  key={t}
+                                  className="text-[10px] sm:text-[11px] px-2 py-[3px] rounded-full bg-white/12 border border-white/15 text-white/90 whitespace-nowrap truncate"
+                                  title={t}
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.button>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      </div>
+
+      {/* Nav buttons */}
+      <div className="pointer-events-none">
+        <button
+          type="button"
+          onClick={scrollPrev}
+          className={cx(
+            'pointer-events-auto absolute left-3 sm:left-4 top-1/2 -translate-y-1/2',
+            'h-10 w-10 rounded-full bg-white/10 border border-white/15',
+            'backdrop-blur hover:bg-white/20 transition shadow-lg'
+          )}
+          aria-label="Previous"
+        >
+          <ChevronLeft className="m-auto h-5 w-5 text-white" />
+        </button>
+        <button
+          type="button"
+          onClick={scrollNext}
+          className={cx(
+            'pointer-events-auto absolute right-3 sm:right-4 top-1/2 -translate-y-1/2',
+            'h-10 w-10 rounded-full bg-white/10 border border-white/15',
+            'backdrop-blur hover:bg-white/20 transition shadow-lg'
+          )}
+          aria-label="Next"
+        >
+          <ChevronRight className="m-auto h-5 w-5 text-white" />
+        </button>
       </div>
 
       {/* Dots */}
-      <div className="mt-3 flex items-center justify-center gap-1.5">
-        {items.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => emblaApi?.scrollTo(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            className={`h-1.5 rounded-full transition-all ${
-              i === selected ? 'w-5 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'
-            }`}
-          />
-        ))}
-      </div>
+      {count > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {Array.from({ length: count }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollTo(i)}
+              className={cx(
+                'h-1.5 rounded-full transition-all',
+                i === selected ? 'w-6 bg-white' : 'w-2.5 bg-white/35'
+              )}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-function Card({ v, onOpen, active }: { v: VenueCarouselItem; onOpen?: (id: string) => void; active: boolean }) {
-  const distance = React.useMemo(() => {
-    const m = Number(v.distance_m ?? 0)
-    if (!Number.isFinite(m) || m <= 0) return null
-    if (m < 1000) return `${Math.round(m)} m`
-    return `${(m / 1000).toFixed(1)} km`
-  }, [v.distance_m])
-
-  const bg = v.photo_url || 'https://images.unsplash.com/photo-1541534401786-2077eed87a72?q=80&w=1200&auto=format&fit=crop'
-
-  return (
-    <div
-      role="button"
-      onClick={() => onOpen?.(v.id)}
-      className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-xl cursor-pointer group transition-all duration-300 hover:border-white/25"
-      style={{ aspectRatio: '3/4' }}
-    >
-      {/* Photo */}
-      <img
-        src={bg}
-        alt={v.name}
-        className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-        draggable={false}
-        loading="lazy"
-      />
-
-      {/* Darken edges */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-black/20" />
-
-      {/* Content at bottom */}
-      <div className="absolute inset-x-0 bottom-0 p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3
-            className={`truncate font-semibold ${active ? 'text-white text-[17px]' : 'text-white/95 text-[16px]'}`}
-            title={v.name}
-          >
-            {v.name}
-          </h3>
-          {typeof v.match_score_pct === 'number' && (
-            <Pill>
-              ⚡ {Math.max(0, Math.min(100, Math.round(v.match_score_pct)))}%
-            </Pill>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 text-[11px] text-white/85">
-          {typeof v.rating === 'number' && (
-            <span className="inline-flex items-center gap-1">
-              <Star className="h-[12px] w-[12px] fill-current" /> {v.rating.toFixed(1)}
-            </span>
-          )}
-          {distance && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="h-[12px] w-[12px]" /> {distance}
-            </span>
-          )}
-        </div>
-
-        {/* Tags */}
-        {v.canonical_tags && v.canonical_tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {(v.canonical_tags.slice(0, 3)).map((t) => (
-              <Pill key={t}>{t.replaceAll('_', ' ')}</Pill>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}

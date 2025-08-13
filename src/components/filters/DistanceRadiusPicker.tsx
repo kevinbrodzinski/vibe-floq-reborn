@@ -5,6 +5,9 @@ type Props = {
   valueKm: number;
   onChangeKm: (km: number) => void;
   className?: string;
+  minKm?: number;
+  maxKm?: number;
+  stepKm?: number;
 };
 
 const DISTANCE_OPTIONS = [
@@ -15,7 +18,7 @@ const DISTANCE_OPTIONS = [
   { value: 5, label: '5km' },
 ];
 
-export function DistanceRadiusPicker({ valueKm, onChangeKm, className }: Props) {
+export function DistanceRadiusPicker({ valueKm, onChangeKm, className, minKm = 0.2, maxKm = 5, stepKm = 0.1 }: Props) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 

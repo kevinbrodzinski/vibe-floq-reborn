@@ -34,7 +34,7 @@ import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch'
 import { estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
 import { calculateVibeMatch, getTimeOfDay } from '@/utils/vibeMatching';
 import { FilterLogicToggle, type FilterLogic } from '@/components/filters/FilterLogicToggle';
-import VenueCarousel, { type VenueCarouselItem } from '@/components/venue/VenueCarousel';
+import VenueCarousel from '@/components/venue/VenueCarousel';
 import { DistanceRadiusPicker } from '@/components/filters/DistanceRadiusPicker';
 
 export const PulseScreenRedesigned: React.FC = () => {
@@ -345,7 +345,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   }, [nearbyVenues, trendingVenues, myFloqs, normalizedWeather.isGoodWeather]);
 
   // Transform venue data for carousel
-  const carouselItems: VenueCarouselItem[] = useMemo(() => {
+  const carouselItems = useMemo(() => {
     // Prefer trending venues if available, otherwise use nearby
     const sourceVenues = trendingVenues.length > 0 ? trendingVenues : nearbyVenues;
     
@@ -353,7 +353,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       id: 'venue_id' in venue ? venue.venue_id : venue.id,
       name: venue.name,
       photo_url: venue.photo_url,
-      distance_m: venue.distance_m,
+      distance_m: typeof venue.distance_m === 'number' ? venue.distance_m : Number(venue.distance_m ?? 0),
       match_score_pct: venue.vibe_score ? Math.round(venue.vibe_score * 100) : undefined,
       rating: Math.random() > 0.5 ? 4.0 + Math.random() * 1 : undefined, // Mock ratings
       canonical_tags: venue.canonical_tags || venue.categories || []
