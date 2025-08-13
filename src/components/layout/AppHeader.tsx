@@ -36,14 +36,13 @@ export function AppHeader() {
     <header
       className={cn(
         'sticky top-0 h-16 sm:h-[68px] w-full px-4',
-        'bg-background/80 backdrop-blur border-b border-white/5',
         'flex items-center justify-between'
       )}
       style={{ zIndex: Z.navigation, paddingTop: 'env(safe-area-inset-top)' }}
     >
       <button
         onClick={() => nav('/field')}
-        className="font-semibold text-lg text-primary select-none"
+        className="font-semibold text-lg text-white select-none"
         aria-label="Go to Field"
       >
         floq
