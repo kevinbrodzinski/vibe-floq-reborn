@@ -12,6 +12,9 @@ export type VenueSnapshot = {
   last_seen_at?: string;
   dominant_vibe?: string | null;
   updated_at?: string;
+  photo_url?: string | null;
+  rating?: number | null;
+  categories?: string[] | null;
 };
 
 /* ---------- 1. fast list for map / trending ---------- */
@@ -30,7 +33,7 @@ export async function fetchTrendingVenues(
     south: lat - latDegrees,
     east: lng + lngDegrees,
     north: lat + latDegrees
-  }).select('id,name,lat,lng,vibe,source,external_id,vibe_score,live_count,updated_at');
+  }).select('id,name,lat,lng,vibe,source,external_id,vibe_score,live_count,updated_at,photo_url,rating,categories');
 
   if (error) throw error;
   
@@ -45,7 +48,10 @@ export async function fetchTrendingVenues(
       trend_score: venue.vibe_score || 50,
       people_now: venue.live_count || 0,
       dominant_vibe: venue.vibe,
-      updated_at: venue.updated_at
+      updated_at: venue.updated_at,
+      photo_url: venue.photo_url,
+      rating: venue.rating,
+      categories: venue.categories
     }));
 }
 

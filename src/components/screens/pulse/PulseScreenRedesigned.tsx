@@ -22,7 +22,7 @@ import { VenueList } from '@/components/pulse/VenueList';
 import { ViewToggle, ViewMode } from '@/components/pulse/ViewToggle';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
-import { filterGooglePlacesUrl, filterGooglePlacesUrlWithContext, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
+import { filterGooglePlacesUrl, filterGooglePlacesUrlWithContext, getContextualVenueImage, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
 import { applyContextualFiltering, sortByContextualRelevance, getVenueStatus, type VenueData, type ContextualFilterOptions } from '@/lib/utils/contextualFiltering';
 
 // UI Components
@@ -94,6 +94,40 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform data into recommendations with contextual filtering
   const recommendations: RecommendationItem[] = useMemo(() => {
+    // Debug logging for venue data
+    console.log('🔍 Raw nearby venues:', nearbyVenues);
+    console.log('🔍 Raw trending venues:', trendingVenues);
+    
+    // Debug photo URLs specifically
+    if (nearbyVenues?.length > 0) {
+      console.log('🖼️ Nearby venue photo URLs:', nearbyVenues.map(v => ({ 
+        name: v.name, 
+        photo_url: v.photo_url,
+        categories: v.categories,
+        canonical_tags: v.canonical_tags 
+      })));
+    }
+    if (trendingVenues?.length > 0) {
+      console.log('🖼️ Trending venue photo URLs:', trendingVenues.map(v => ({ 
+        name: v.name, 
+        photo_url: v.photo_url,
+        categories: v.categories 
+      })));
+    }
+    
+    // Test contextual image system with mock data
+    console.log('🧪 Testing contextual image system:');
+    const testVenues = [
+      { id: '1', name: 'Test Restaurant', categories: ['restaurant'], canonical_tags: ['dining'] },
+      { id: '2', name: 'Test Bar', categories: ['bar'], canonical_tags: ['nightlife'] },
+      { id: '3', name: 'Test Cafe', categories: ['cafe'], canonical_tags: ['coffee'] },
+      { id: '4', name: 'Test Rooftop', categories: ['venue'], canonical_tags: ['outdoor', 'rooftop'] }
+    ];
+    testVenues.forEach(venue => {
+      const contextualImage = getContextualVenueImage(venue);
+      console.log(`🖼️ ${venue.name} -> ${contextualImage.substring(0, 60)}...`);
+    });
+    
     // Apply contextual filtering to venues if context is available
     let filteredVenues = nearbyVenues;
     
