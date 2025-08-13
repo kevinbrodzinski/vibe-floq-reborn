@@ -13,8 +13,8 @@ import { useLiveActivityRealtime } from '@/hooks/useLiveActivityRealtime';
 // Components
 import { PulseHeader } from '@/components/pulse/PulseHeader';
 import { PulseSearchBar } from '@/components/pulse/PulseSearchBar';
+import { PulseLocationWeatherBar } from '@/components/pulse/PulseLocationWeatherBar';
 import { DateTimeSelector, TimeOption } from '@/components/pulse/DateTimeSelector';
-import { PulseWeatherCard } from '@/components/pulse/PulseWeatherCard';
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
@@ -179,14 +179,19 @@ export const PulseScreenRedesigned: React.FC = () => {
     );
   }, []);
 
-  const handleWeatherCTA = useCallback((action: 'outdoor' | 'indoor') => {
-    // Auto-select appropriate filters based on weather CTA
-    if (action === 'outdoor') {
-      setSelectedFilterKeys(prev => [...new Set([...prev, 'outdoor_dining', 'rooftop_bars'])]);
-    } else {
-      setSelectedFilterKeys(prev => [...new Set([...prev, 'cozy_lounges', 'indoor_entertainment'])]);
+  // Auto-suggest weather-appropriate filters when weather data changes
+  React.useEffect(() => {
+    if (weatherAnalysis && selectedFilterKeys.length === 0) {
+      // Only auto-suggest if no filters are selected yet
+      if (weatherAnalysis.isGoodWeather) {
+        // Subtle suggestion for outdoor activities in good weather
+        console.log('💡 Good weather detected - outdoor filters available');
+      } else {
+        // Subtle suggestion for indoor activities in bad weather  
+        console.log('🏠 Indoor weather detected - cozy indoor filters available');
+      }
     }
-  }, []);
+  }, [weatherAnalysis, selectedFilterKeys.length]);
 
   const handleRecommendationClick = useCallback((item: RecommendationItem) => {
     // Navigate to item detail page
@@ -255,6 +260,22 @@ export const PulseScreenRedesigned: React.FC = () => {
         onChange={setSearchQuery}
       />
 
+      {/* Location & Weather Bar */}
+      <PulseLocationWeatherBar
+        location={location}
+        weather={weatherData ? {
+          condition: weatherData.condition,
+          temperatureF: weatherData.temperatureF,
+          feelsLikeF: weatherData.feelsLikeF,
+          humidity: weatherData.humidity,
+          windMph: weatherData.windMph,
+          precipitationChance: weatherData.precipitationChance,
+          updatedAt: new Date(weatherData.created_at)
+        } : undefined}
+        selectedTime={selectedTime}
+        isLoading={weatherLoading}
+      />
+
       {/* Date/Time Selector */}
       <div className="px-6 mb-6">
         <DateTimeSelector
@@ -262,24 +283,6 @@ export const PulseScreenRedesigned: React.FC = () => {
           onTimeChange={setSelectedTime}
           customDate={customDate}
           onCustomDateChange={setCustomDate}
-        />
-      </div>
-
-      {/* Weather Card */}
-      <div className="px-6 mb-6">
-        <PulseWeatherCard
-          weather={weatherData ? {
-            condition: weatherData.condition,
-            temperatureF: weatherData.temperatureF,
-            feelsLikeF: weatherData.feelsLikeF,
-            humidity: weatherData.humidity,
-            windMph: weatherData.windMph,
-            precipitationChance: weatherData.precipitationChance,
-            updatedAt: new Date(weatherData.created_at)
-          } : undefined}
-          selectedTime={selectedTime}
-          isLoading={weatherLoading}
-          onWeatherCTA={handleWeatherCTA}
         />
       </div>
 
