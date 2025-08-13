@@ -10462,6 +10462,27 @@ export type Database = {
           },
         ]
       }
+      venue_category_map: {
+        Row: {
+          canonical: Database["public"]["Enums"]["canonical_tag"]
+          created_at: string
+          provider: string
+          raw: string
+        }
+        Insert: {
+          canonical: Database["public"]["Enums"]["canonical_tag"]
+          created_at?: string
+          provider: string
+          raw: string
+        }
+        Update: {
+          canonical?: Database["public"]["Enums"]["canonical_tag"]
+          created_at?: string
+          provider?: string
+          raw?: string
+        }
+        Relationships: []
+      }
       venue_clusters: {
         Row: {
           active_hours: unknown | null
@@ -11071,6 +11092,7 @@ export type Database = {
       venues: {
         Row: {
           address: string | null
+          canonical_tags: Database["public"]["Enums"]["canonical_tag"][] | null
           categories: string[] | null
           created_at: string | null
           cuisines: string[] | null
@@ -11106,6 +11128,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          canonical_tags?: Database["public"]["Enums"]["canonical_tag"][] | null
           categories?: string[] | null
           created_at?: string | null
           cuisines?: string[] | null
@@ -11141,6 +11164,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          canonical_tags?: Database["public"]["Enums"]["canonical_tag"][] | null
           categories?: string[] | null
           created_at?: string | null
           cuisines?: string[] | null
@@ -11944,6 +11968,24 @@ export type Database = {
           id: string | null
         }
         Relationships: []
+      }
+      mv_trending_venues: {
+        Row: {
+          last_seen_at: string | null
+          people_now: number | null
+          trend_score: number | null
+          venue_id: string | null
+          visits_15m: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       presence_view: {
         Row: {
@@ -13172,6 +13214,32 @@ export type Database = {
           },
         ]
       }
+      v_trending_venues_enriched: {
+        Row: {
+          canonical_tags: Database["public"]["Enums"]["canonical_tag"][] | null
+          categories: string[] | null
+          last_seen_at: string | null
+          live_count: number | null
+          name: string | null
+          people_now: number | null
+          photo_url: string | null
+          provider: string | null
+          trend_score: number | null
+          venue_id: string | null
+          vibe_score: number | null
+          vibe_tag: string | null
+          visits_15m: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_user_plans: {
         Row: {
           ends_at: string | null
@@ -13401,13 +13469,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -13417,8 +13478,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -13431,8 +13492,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -13445,7 +13506,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -13458,13 +13519,20 @@ export type Database = {
           {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -13927,6 +13995,10 @@ export type Database = {
       can_user_access_floq: {
         Args: { p_floq_id: string; p_user_id: string }
         Returns: boolean
+      }
+      canonicalize_venue_enum: {
+        Args: { p_provider: string; p_raw: string[]; p_name: string }
+        Returns: Database["public"]["Enums"]["canonical_tag"][]
       }
       check_floq_admin_role: {
         Args: { p_floq_id: string; p_profile_id?: string }
@@ -15113,17 +15185,23 @@ export type Database = {
         Args: {
           p_lat: number
           p_lng: number
-          p_radius_m?: number
-          p_limit?: number
+          p_radius_m: number
+          p_any_tags?: string[]
+          p_all_tags?: string[]
         }
         Returns: {
           id: string
           name: string
+          distance_m: number
           lat: number
           lng: number
-          distance_m: number
           categories: string[]
+          provider: string
+          photo_url: string
+          vibe_tag: string
+          vibe_score: number
           live_count: number
+          canonical_tags: string[]
         }[]
       }
       get_nearest_venue: {
@@ -15295,8 +15373,8 @@ export type Database = {
         Args: {
           p_lat: number
           p_lng: number
-          p_radius_m?: number
-          p_limit?: number
+          p_radius_m: number
+          p_limit: number
         }
         Returns: {
           venue_id: string
@@ -15305,6 +15383,32 @@ export type Database = {
           vibe_tag: string
           trend_score: number
           people_now: number
+        }[]
+      }
+      get_trending_venues_enriched: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_m: number
+          p_limit?: number
+          p_any_tags?: string[]
+          p_all_tags?: string[]
+        }
+        Returns: {
+          venue_id: string
+          name: string
+          distance_m: number
+          people_now: number
+          visits_15m: number
+          trend_score: number
+          last_seen_at: string
+          provider: string
+          categories: string[]
+          vibe_tag: string
+          vibe_score: number
+          live_count: number
+          photo_url: string
+          canonical_tags: string[]
         }[]
       }
       get_unread_counts: {
@@ -15806,6 +15910,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: string
       }
+      pill_keys_to_canonical_tags: {
+        Args: { p_keys: string[] }
+        Returns: Database["public"]["Enums"]["canonical_tag"][]
+      }
       point: {
         Args: { "": unknown }
         Returns: unknown
@@ -16026,6 +16134,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_leaderboard_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_mv_trending_venues: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -17857,6 +17969,40 @@ export type Database = {
         | "social_boost"
         | "solo_moment"
       auto_when_enum: "always" | "in_floq" | "at_venue" | "walking"
+      canonical_tag:
+        | "outdoor"
+        | "patio"
+        | "rooftop"
+        | "waterfront"
+        | "park"
+        | "beach"
+        | "cozy"
+        | "lounge"
+        | "speakeasy"
+        | "board_games"
+        | "cinema"
+        | "arcade"
+        | "bowling"
+        | "live_music"
+        | "music_venue"
+        | "dance_club"
+        | "night_club"
+        | "karaoke"
+        | "sports_bar"
+        | "bar"
+        | "pub"
+        | "brewery"
+        | "winery"
+        | "cafe"
+        | "coffee"
+        | "brunch"
+        | "bakery"
+        | "restaurant"
+        | "games"
+        | "communal_seating"
+        | "group_friendly"
+        | "date_spot"
+        | "open_air_event"
       chat_surface_enum: "dm" | "floq" | "plan"
       cluster_type_enum:
         | "nightlife"
@@ -18866,6 +19012,41 @@ export const Constants = {
         "solo_moment",
       ],
       auto_when_enum: ["always", "in_floq", "at_venue", "walking"],
+      canonical_tag: [
+        "outdoor",
+        "patio",
+        "rooftop",
+        "waterfront",
+        "park",
+        "beach",
+        "cozy",
+        "lounge",
+        "speakeasy",
+        "board_games",
+        "cinema",
+        "arcade",
+        "bowling",
+        "live_music",
+        "music_venue",
+        "dance_club",
+        "night_club",
+        "karaoke",
+        "sports_bar",
+        "bar",
+        "pub",
+        "brewery",
+        "winery",
+        "cafe",
+        "coffee",
+        "brunch",
+        "bakery",
+        "restaurant",
+        "games",
+        "communal_seating",
+        "group_friendly",
+        "date_spot",
+        "open_air_event",
+      ],
       chat_surface_enum: ["dm", "floq", "plan"],
       cluster_type_enum: [
         "nightlife",
