@@ -229,61 +229,7 @@ export const FieldLayout = () => {
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
 
-          {/* Enhanced Location Status Indicators - z-80 (development only) */}
-          {process.env.NODE_ENV !== 'production' && (
-            <div className="fixed top-4 right-4 z-80 space-y-2">
-              {/* Enhanced Location System Status */}
-              {enhancedLocation.isTracking && (
-                <div className="bg-primary text-primary-foreground px-3 py-2 rounded-lg shadow-lg text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full animate-pulse ${
-                      enhancedLocation.error ? 'bg-red-400' : 
-                      isLocationHidden ? 'bg-yellow-400' : 'bg-green-400'
-                    }`}></div>
-                    <div>
-                      <div className="font-medium">Enhanced Location Active</div>
-                      <div className="text-xs opacity-90">
-                        Privacy: {enhancedLocation.privacyLevel} • 
-                        {hasActiveGeofences && ` ${enhancedLocation.geofenceMatches.length} geofences`}
-                        {enhancedLocation.currentVenue && ` • Venue: ${Math.round(currentVenueConfidence * 100)}%`}
-                        {hasNearbyUsers && ` • ${enhancedLocation.nearbyUsers.filter(u => u.isNear).length} nearby`}
-                      </div>
-                      <div className="text-xs opacity-75">
-                        Background Processing: Active • Last: {new Date(enhancedLocation.lastUpdate).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Enhanced Friend Distance Indicator */}
-              {enhancedFriends.totalFriends > 0 && (
-                <div className="bg-secondary text-secondary-foreground px-3 py-2 rounded-lg shadow-lg text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                    <div>
-                      <div className="font-medium">Enhanced Friends: {enhancedFriends.totalFriends}</div>
-                      <div className="text-xs opacity-90">
-                        {enhancedFriends.nearbyCount} nearby • {enhancedFriends.highConfidenceFriends.length} high accuracy
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Proximity Events (last 3) */}
-              {enhancedLocation.proximityEvents.length > 0 && (
-                <div className="bg-accent text-accent-foreground px-3 py-2 rounded-lg shadow-lg text-sm max-w-xs">
-                  <div className="font-medium mb-1">Recent Proximity Events</div>
-                  {enhancedLocation.proximityEvents.slice(-3).map((event, i) => (
-                    <div key={i} className="text-xs opacity-90 truncate">
-                      {typeof event === 'string' ? event : JSON.stringify(event)}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+
 
           {/* Debug Layer (development only) - z-200+ */}
           {/* Debug visuals disabled for production */}
