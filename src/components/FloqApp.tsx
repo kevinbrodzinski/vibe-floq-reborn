@@ -16,7 +16,6 @@ import { useAmbientBackground } from "@/hooks/useAmbientBackground";
 import { cn } from "@/lib/utils";
 
 import { Button } from "./ui/button";
-import { zIndex } from "@/constants/z";
 
 export const FloqApp = () => {
   // Notification system handled by EventNotificationsProvider in App.tsx
