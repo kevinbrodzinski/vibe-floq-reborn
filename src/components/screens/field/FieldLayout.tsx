@@ -190,7 +190,7 @@ export const FieldLayout = () => {
     <ErrorBoundary>
       <FriendDrawerProvider>
         <TimewarpDrawerProvider>
-          <div className="relative h-svh w-full bg-background">
+          <div className="relative h-svh w-full">
           {/* Motion Permission Banner - Global Level */}
           <MotionPermissionBanner
             requestMotionPermission={requestMotionPermission}

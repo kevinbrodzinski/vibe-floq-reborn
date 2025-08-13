@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
@@ -20,6 +21,8 @@ export const FloqApp = () => {
   // Notification system handled by EventNotificationsProvider in App.tsx
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const { pathname } = useLocation();
+  const isFieldPage = pathname === '/field' || pathname === '/';
 
   // Global keyboard listener for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -52,7 +55,7 @@ export const FloqApp = () => {
     <ErrorBoundary>
       <TimeSyncProvider>
         <FloqUIProvider>
-          <div className="min-h-screen flex flex-col bg-black">
+          <div className="min-h-screen flex flex-col">
             <AppHeader />
             <div className="flex-1 min-h-0">
               <AppRoutes />
