@@ -55,13 +55,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
     <>
       <SocialToastProvider />
 
-      {/* ——— Header & Location —————————————— */}
-      <AnimatePresence initial={false}>
-        {!isFull && (
-          <>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ——— Header now handled by universal AppHeader —————————————— */}
 
       {/* ——— Field overlay ———————————————— */}
       {!isFull && route !== "/vibe" && (
