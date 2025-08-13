@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Zap, Settings } from 'lucide-react';
+import { useVibe } from '@/lib/store/useVibe';
+import { VIBE_COLORS } from '@/lib/vibes';
 
 interface PulseHeaderProps {
   location?: {
@@ -14,6 +16,38 @@ interface PulseHeaderProps {
   className?: string;
 }
 
+const getVibeDisplayName = (vibe: string): string => {
+  const vibeNames: Record<string, string> = {
+    chill: 'Chill',
+    flowing: 'Flowing',
+    romantic: 'Romantic',
+    hype: 'Hype',
+    weird: 'Weird',
+    solo: 'Solo',
+    social: 'Social',
+    open: 'Open',
+    down: 'Down',
+    curious: 'Curious'
+  };
+  return vibeNames[vibe] || 'Chill';
+};
+
+const getVibeEmoji = (vibe: string): string => {
+  const vibeEmojis: Record<string, string> = {
+    chill: '😌',
+    flowing: '🌊',
+    romantic: '💕',
+    hype: '🔥',
+    weird: '🤪',
+    solo: '🧘',
+    social: '🎉',
+    open: '✨',
+    down: '🌙',
+    curious: '🤔'
+  };
+  return vibeEmojis[vibe] || '😌';
+};
+
 export const PulseHeader: React.FC<PulseHeaderProps> = ({
   location,
   onLocationClick,
@@ -22,6 +56,7 @@ export const PulseHeader: React.FC<PulseHeaderProps> = ({
   showAIInsights = false,
   className = ''
 }) => {
+  const { currentVibe } = useVibe();
   const locationText = location?.neighborhood 
     ? `${location.neighborhood}, ${location.city || 'Unknown'}`
     : location?.city || 'Current location';
@@ -113,17 +148,55 @@ export const PulseHeader: React.FC<PulseHeaderProps> = ({
           Discovering around you
         </motion.p>
 
-        {/* Location indicator */}
-        {location && (
-          <motion.div
-            className="text-xs text-white/50 mt-1 z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+        {/* User's Current Vibe */}
+        <motion.div
+          className="flex items-center justify-center mt-2 z-10"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.4, ease: "backOut" }}
+        >
+          <div 
+            className="flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-xl border border-white/20"
+            style={{ 
+              background: `linear-gradient(135deg, ${VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS]}20, ${VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS]}10)`,
+              boxShadow: `0 0 20px ${VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS]}40`
+            }}
           >
-            {locationText}
-          </motion.div>
-        )}
+            <motion.span 
+              className="text-lg"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              {getVibeEmoji(currentVibe)}
+            </motion.span>
+            <div className="flex flex-col items-center">
+              <span 
+                className="text-sm font-bold"
+                style={{ color: VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS] }}
+              >
+                {getVibeDisplayName(currentVibe)}
+              </span>
+              <span className="text-xs text-white/60">vibe</span>
+            </div>
+            <motion.div
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: VIBE_COLORS[currentVibe as keyof typeof VIBE_COLORS] }}
+              animate={{ 
+                scale: [1, 1.5, 1],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ 
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
+        </motion.div>
       </div>
 
       {/* AI Insights / Settings Button */}
