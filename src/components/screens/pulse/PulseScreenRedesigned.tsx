@@ -17,7 +17,7 @@ import { PulseHeader } from '@/components/pulse/PulseHeader';
 import { PulseSearchBar } from '@/components/pulse/PulseSearchBar';
 import { LocationWeatherBar } from '@/components/pulse/LocationWeatherBar';
 import { DateTimeSelector, type TimeFilter } from '@/components/pulse/DateTimeSelector';
-import { PulseWeatherCard } from '@/components/pulse/PulseWeatherCard';
+
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, type RecommendationItem } from '@/components/pulse/RecommendationsList';
@@ -274,22 +274,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     navigate('/profile');
   };
 
-  const handleWeatherCta = () => {
-    // Auto-select appropriate filters based on weather
-    const weatherFilters = normalizedWeather.isGoodWeather
-      ? ['outdoor_dining', 'rooftop_bars', 'open_air_events']
-      : ['cozy_lounges', 'indoor_entertainment', 'movie_nights'];
-    
-    setSelectedFilterKeys(prev => {
-      const newKeys = [...prev];
-      weatherFilters.forEach(filter => {
-        if (!newKeys.includes(filter)) {
-          newKeys.push(filter);
-        }
-      });
-      return newKeys;
-    });
-  };
+
 
   const handleCalendarClick = () => {
     // For now, show an alert - in production this would open a date picker modal
@@ -361,22 +346,7 @@ export const PulseScreenRedesigned: React.FC = () => {
         onCalendarClick={handleCalendarClick}
       />
 
-      {/* Weather Card - Compact */}
-      <div className="px-6 mb-4">
-        <PulseWeatherCard
-          weather={{
-            tempF: normalizedWeather.tempF,
-            condition: normalizedWeather.condition,
-            precipChancePct: normalizedWeather.precipChancePct,
-            isGoodWeather: normalizedWeather.isGoodWeather,
-            fetchedAt: weatherData?.fetchedAt
-          }}
-          selectedTime={selectedTime}
-          onOutdoorCta={normalizedWeather.isGoodWeather ? handleWeatherCta : undefined}
-          onIndoorCta={!normalizedWeather.isGoodWeather ? handleWeatherCta : undefined}
-          className="py-3" // Reduced padding for more compact display
-        />
-      </div>
+
 
       {/* Dynamic Filter Pills */}
       <div className="px-6 mb-6">
