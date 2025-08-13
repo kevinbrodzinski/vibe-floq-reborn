@@ -77,18 +77,18 @@ export const usePersonalizedVenues = (
         try {
           const { data, error } = await supabase.functions.invoke('recommend', {
             body: {
-              profile_id: user?.id ?? null,
+              profileId: user?.id ?? null,
               lat,
               lng,
-              radius_m: radius,
+              radiusM: radius,
               limit,
               vibe,
               tags,
               tz,
-              use_llm: true,
-              llm_top_k: llmTopK,
-              ab: 'ui+llm'
-            }
+              useLLM: true,
+              llmTopK,
+              ab: 'ui+llm',
+            },
           });
 
           if (!error && data?.items) {
