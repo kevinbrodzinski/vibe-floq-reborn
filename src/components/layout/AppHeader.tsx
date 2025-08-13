@@ -35,7 +35,7 @@ export function AppHeader() {
   return (
     <header
       className={cn(
-        'sticky top-0 h-16 sm:h-[68px] w-full px-4',
+        'fixed top-0 inset-x-0 h-16 sm:h-[68px] px-4',
         'bg-transparent border-0',                // no background, no border
         'flex items-center justify-between',
         'pointer-events-none'                     // let map receive drags under header

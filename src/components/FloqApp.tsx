@@ -13,7 +13,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 // import { useNotifications } from "@/hooks/useNotifications"; // Removed: handled by EventNotificationsProvider
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
 import { useAmbientBackground } from "@/hooks/useAmbientBackground";
-
+import { cn } from "@/lib/utils";
 
 import { Button } from "./ui/button";
 import { zIndex } from "@/constants/z";
@@ -65,7 +65,7 @@ export const FloqApp = () => {
         <FloqUIProvider>
           <div className="min-h-screen flex flex-col">
             <AppHeader />
-            <div className="flex-1 min-h-0">
+            <div className={cn('flex-1 min-h-0', isFieldPage ? '' : 'pt-[calc(env(safe-area-inset-top)+4rem)]')}>
               <AppRoutes />
             </div>
             
