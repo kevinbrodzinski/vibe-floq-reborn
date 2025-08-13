@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -75,6 +75,12 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[92vh] p-0 overflow-hidden">
+        <SheetHeader className="sr-only">
+          <SheetTitle>{venue?.name ?? "Venue"}</SheetTitle>
+          <SheetDescription>
+            Venue details, hours, friends, quick actions, and planning for {venue?.name ?? "this venue"}.
+          </SheetDescription>
+        </SheetHeader>
         {venue && (
           <div className="flex flex-col h-full">
             {/* HERO */}
