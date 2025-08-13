@@ -18,6 +18,7 @@ import { DateTimeSelector, TimeOption } from '@/components/pulse/DateTimeSelecto
 import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
+import { filterGooglePlacesUrl, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
 
 // UI Components
 import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
@@ -102,9 +103,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       vibe: venue.categories?.[0] || 'venue',
       rating: venue.rating || undefined,
       priceRange: venue.price_range as any,
-      photoUrl: venue.photo_url && !venue.photo_url.includes('googleusercontent.com') 
-        ? venue.photo_url 
-        : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop',
+      photoUrl: filterGooglePlacesUrl(venue.photo_url, DEFAULT_VENUE_IMAGE),
       liveCount: venue.live_count || 0,
       vibeMatch: Math.floor(Math.random() * 40) + 60, // Mock vibe match
       weatherMatch: weatherAnalysis?.isGoodWeather ? 85 : 65, // Weather-based scoring

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, Calendar, Users } from 'lucide-react';
+import { isGooglePlacesImageUrl } from '@/lib/utils/images';
 
 interface VenueImageProps {
   src?: string;
@@ -44,7 +45,8 @@ export const VenueImage: React.FC<VenueImageProps> = ({
   const [showFallbackImage, setShowFallbackImage] = useState(false);
 
   const handleImageError = () => {
-    if (!showFallbackImage && src && !src.includes('googleusercontent.com')) {
+    console.warn('Image failed to load:', src);
+    if (!showFallbackImage && src && !isGooglePlacesImageUrl(src)) {
       // First try fallback image if original wasn't from Google
       setShowFallbackImage(true);
     } else {
@@ -58,7 +60,7 @@ export const VenueImage: React.FC<VenueImageProps> = ({
   };
 
   // If no src provided or error occurred, show icon
-  if (!src || imageError) {
+  if (!src || imageError || isGooglePlacesImageUrl(src)) {
     return (
       <div className={`${className.replace('object-cover', '')} bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center`}>
         {getTypeIcon(type)}

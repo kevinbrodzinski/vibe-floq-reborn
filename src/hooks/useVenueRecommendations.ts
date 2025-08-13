@@ -1,6 +1,7 @@
 import { usePersonalizedVenues } from '@/hooks/usePersonalizedVenues';
 import { useGeo } from '@/hooks/useGeo';
 import { useCurrentVibe } from '@/lib/store/useVibe';
+import { filterGooglePlacesUrl, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
 
 export interface VenueRecommendation {
   id: string;
@@ -97,7 +98,7 @@ export const useVenueRecommendations = () => {
       priceLevel: venue.price_tier || '$$',
       distance: distanceKm < 1 ? `${venue.distance_m}m` : `${distanceKm.toFixed(1)}km`,
       travelTime: walkTimeMin < 15 ? `${walkTimeMin} min walk` : `${Math.round(walkTimeMin / 3)} min drive`,
-      imageUrl: venue.photo_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+      imageUrl: filterGooglePlacesUrl(venue.photo_url, DEFAULT_VENUE_IMAGE),
       
       vibeMatch: {
         score: venue.explain?.confidence || venue.personalized_score || 0.75,
