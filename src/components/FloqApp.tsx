@@ -22,7 +22,7 @@ export const FloqApp = () => {
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const { pathname } = useLocation();
-  const onField = pathname.startsWith('/field');
+  const onField = pathname === '/field' || pathname === '/' || pathname === '/home' || pathname.startsWith('/field');
 
   // Manage ambient background per route
   const ambient = pathname.startsWith('/afterglow') || pathname.startsWith('/ripple')
