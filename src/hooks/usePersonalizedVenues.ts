@@ -334,6 +334,28 @@ export interface VerbosePersonalizedVenue {
   photo_url: string | null;
   external_id: string | null;
   geohash5: string | null;
+  explain?: {
+    why: string;
+    badges: string[];
+    components: Record<string, number>;
+    weights: Record<string, number>;
+    weighted: Record<string, number>;
+    confidence: number;
+    crowd: {
+      currentCapacityPct?: number;
+      predictedPeakWindow?: string;
+      predictedPeakReason?: string;
+      currentWaitMins?: number;
+    };
+    social: {
+      friendsVisitedCount?: number;
+      friendsRecent?: { name: string; when: string }[];
+      friendRating?: number | null;
+      compatibilityPct?: number;
+    };
+    context: { walkMin: number; openNow?: boolean; inBudget?: boolean };
+    topReasons: string[];
+  };
 }
 
 export function usePersonalizedVenuesVerbose(params: {
