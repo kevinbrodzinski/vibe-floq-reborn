@@ -21,7 +21,7 @@ export const LayerSelectionFab = () => {
   const { open: timewarpOpen, toggle: toggleTimewarp } = useTimewarpDrawer();
   const { open: friendOpen, toggle: toggleFriend } = useFriendDrawer();
   const { mode: fullscreenMode, toggleFull } = useFullscreenMap();
-  const { enabled: ghostEnabled, toggle: toggleGhost } = useSafeMode();
+  const { isActive: ghostEnabled, toggleSafeMode } = useSafeMode();
   
   const isFull = fullscreenMode === 'full';
 
@@ -60,7 +60,7 @@ export const LayerSelectionFab = () => {
           <Rewind className="h-4 w-4" />
           <span>Timewarp layer</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => toggleGhost()} className="flex items-center gap-3 h-10">
+        <DropdownMenuItem onSelect={() => toggleSafeMode(!ghostEnabled)} className="flex items-center gap-3 h-10">
           <Shield className="h-4 w-4" />
           <span>{ghostEnabled ? 'Disable Ghost mode' : 'Enable Ghost mode'}</span>
         </DropdownMenuItem>
