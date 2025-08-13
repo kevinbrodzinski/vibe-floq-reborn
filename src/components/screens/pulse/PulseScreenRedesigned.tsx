@@ -45,7 +45,6 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showLiveActivitySheet, setShowLiveActivitySheet] = useState(false);
   const [showAllFilters, setShowAllFilters] = useState(false);
   const [distanceMaxM, setDistanceMaxM] = useState<number>(2000); // 2km default
-  const [priceTiers, setPriceTiers] = useState<string[]>(['$', '$$', '$$$']); // All price levels
   const [selectedCity, setSelectedCity] = useState<CityLocation | null>(null); // For location override
 
   // Get time window for selected time filter
@@ -63,20 +62,23 @@ export const PulseScreenRedesigned: React.FC = () => {
   const { data: nearbyVenues = [] } = useNearbyVenues(
     coords?.lat ?? 0, 
     coords?.lng ?? 0, 
-    distanceMaxM / 1000, // Convert to km
-    { 
-      pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : undefined,
-      filterLogic: 'any',
-      distanceMaxM,
-      priceTiers
+    {
+      radiusKm: distanceMaxM / 1000, // Convert to km
+      limit: 25,
+      pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
+      filterLogic: 'any'
     }
   );
-  const { data: trendingVenues = [] } = useTrendingVenues(distanceMaxM, 10, {
-    pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : undefined,
-    filterLogic: 'any',
-    distanceMaxM,
-    priceTiers
-  });
+  const { data: trendingVenues = [] } = useTrendingVenues(
+    coords?.lat ?? 0,
+    coords?.lng ?? 0,
+    {
+      radiusM: distanceMaxM,
+      limit: 10,
+      pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
+      filterLogic: 'any'
+    }
+  );
   const { data: liveActivity = [] } = useLiveActivity();
   const { data: myFloqs = [] } = useMyActiveFloqs(timeWindow);
 
@@ -157,7 +159,7 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform data for recommendations
   const recommendations = useMemo((): RecommendationItem[] => {
-    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue: any, index: number) => {
+    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue, index: number) => {
       // Enhanced mock data for better presentation
       const mockDescriptions = [
         "A cozy spot perfect for catching up with friends",
@@ -169,52 +171,80 @@ export const PulseScreenRedesigned: React.FC = () => {
       
       const mockRatings = [4.2, 4.5, 4.1, 4.7, 4.3, 4.6, 4.4];
       
-      // Calculate walk and drive times
-      const walkMin = Math.max(1, Math.round((venue.distance_m || 0) / 80)); // ~80 m/min walking speed
-      const driveMin = Math.round(((venue.distance_m || 0) / 1000) / 30 * 60); // ~30 km/h city driving
+      // Calculate walk and drive times - handle both string and number distance
+      const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
+      const walkMin = Math.max(1, Math.round((distanceM || 0) / 80)); // ~80 m/min walking speed
+      const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60); // ~30 km/h city driving
       
       return {
         id: venue.id,
         title: venue.name,
         type: 'venue' as const,
-        distance: venue.distance_m,
+        distance: distanceM,
         walkTime: walkMin,
         driveTime: driveMin,
         category: venue.categories?.[0] || 'Venue',
-        description: venue.description || mockDescriptions[index % mockDescriptions.length],
-        rating: venue.rating || mockRatings[index % mockRatings.length],
+        description: mockDescriptions[index % mockDescriptions.length],
+        rating: mockRatings[index % mockRatings.length],
         priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
-        isOpen: venue.is_open !== undefined ? venue.is_open : Math.random() > 0.2, // 80% open
-        vibeMatch: Math.floor(Math.random() * 40) + 60, // TODO: Real vibe matching
+        isOpen: Math.random() > 0.2, // 80% open - mock data
+        vibeMatch: venue.vibe_score ? Math.round(venue.vibe_score * 100) : Math.floor(Math.random() * 40) + 60,
         weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 50,
         overallScore: Math.floor(Math.random() * 40) + 60,
         imageUrl: venue.photo_url,
-        tags: venue.canonical_tags || venue.categories,
+        tags: venue.canonical_tags || venue.categories || [],
         friendsGoing: Math.random() > 0.7 ? [
           { name: 'Alex', avatar: undefined },
           { name: 'Sam', avatar: undefined }
         ] : undefined,
-        regularsCount: Math.floor(Math.random() * 5) + 1 // Mock regulars count
+        regularsCount: venue.live_count || Math.floor(Math.random() * 5) + 1 // Use live_count or mock
       };
     });
 
-    const floqRecs: RecommendationItem[] = myFloqs.map((floq: any) => ({
+    // Add trending venues to the mix
+    const trendingRecs: RecommendationItem[] = trendingVenues.slice(0, 5).map((venue, index: number) => {
+      const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
+      const walkMin = Math.max(1, Math.round((distanceM || 0) / 80));
+      const driveMin = Math.round(((distanceM || 0) / 1000) / 30 * 60);
+      
+      return {
+        id: venue.venue_id,
+        title: venue.name,
+        type: 'venue' as const,
+        distance: distanceM,
+        walkTime: walkMin,
+        driveTime: driveMin,
+        category: venue.categories?.[0] || 'Trending',
+        description: `Trending now with ${venue.people_now || 0} people`,
+        rating: 4.0 + Math.random() * 1, // 4.0-5.0 for trending venues
+        priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
+        isOpen: true, // Assume trending venues are open
+        vibeMatch: venue.vibe_score ? Math.round(venue.vibe_score * 100) : Math.floor(Math.random() * 20) + 80, // Higher for trending
+        weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 30) + 60,
+        overallScore: venue.trend_score ? Math.round(venue.trend_score * 100) : Math.floor(Math.random() * 20) + 80,
+        imageUrl: venue.photo_url,
+        tags: venue.canonical_tags || venue.categories || [],
+        regularsCount: venue.people_now || Math.floor(Math.random() * 10) + 5 // Use people_now for trending
+      };
+    });
+
+    const floqRecs: RecommendationItem[] = myFloqs.map((floq) => ({
       id: floq.id,
-      title: floq.title,
+      title: floq.title || floq.name || 'Unnamed Floq',
       type: 'floq' as const,
-      distance: floq.distance_meters,
+      distance: undefined, // Floqs don't have distance in this context
       category: 'Floq',
-      description: floq.description,
-      participants: floq.participant_count,
-      maxParticipants: floq.max_participants,
-      hostName: floq.host_name,
-      hostAvatar: floq.host_avatar,
+      description: `Active floq with ${floq.member_count || 0} members`,
+      participants: floq.member_count,
+      maxParticipants: 50, // Default max
+      hostName: 'Floq Host',
+      hostAvatar: undefined,
       vibeMatch: Math.floor(Math.random() * 40) + 70, // Floqs tend to match better
       overallScore: Math.floor(Math.random() * 40) + 70
     }));
 
-    return [...venueRecs, ...floqRecs];
-  }, [nearbyVenues, myFloqs]);
+    return [...venueRecs, ...trendingRecs, ...floqRecs];
+  }, [nearbyVenues, trendingVenues, myFloqs, normalizedWeather.isGoodWeather]);
 
   // Filter recommendations by search and selected filters
   const filteredRecommendations = useMemo(() => {
