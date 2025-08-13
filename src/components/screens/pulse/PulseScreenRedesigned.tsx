@@ -33,6 +33,7 @@ import { getPulseWindow } from '@/utils/timeWindow';
 import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch';
 import { estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
 import { calculateVibeMatch, getTimeOfDay } from '@/utils/vibeMatching';
+import { FilterLogicToggle, type FilterLogic } from '@/components/filters/FilterLogicToggle';
 
 export const PulseScreenRedesigned: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showAllFilters, setShowAllFilters] = useState(false);
   const [distanceMaxM, setDistanceMaxM] = useState<number>(2000); // 2km default
   const [selectedCity, setSelectedCity] = useState<CityLocation | null>(null); // For location override
+  const [filterLogic, setFilterLogic] = useState<FilterLogic>('any'); // AND/OR filter logic
 
   // Get time window for selected time filter
   const timeWindow = useMemo(() => getPulseWindow(selectedTime), [selectedTime]);
@@ -76,7 +78,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       radiusKm: distanceMaxM / 1000, // Convert to km
       limit: 25,
       pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
-      filterLogic: 'any'
+      filterLogic: filterLogic
     }
   );
   const { data: trendingVenues = [], error: trendingError, isLoading: trendingLoading } = useTrendingVenues(
@@ -86,7 +88,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       radiusM: distanceMaxM,
       limit: 10,
       pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
-      filterLogic: 'any'
+      filterLogic: filterLogic
     }
   );
 
@@ -475,8 +477,17 @@ export const PulseScreenRedesigned: React.FC = () => {
 
       {/* Dynamic Filter Pills */}
       <div className="px-6 mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm text-white/70 font-medium">Smart Filters</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/70 font-medium">Smart Filters</span>
+            {selectedFilterKeys.length > 1 && (
+              <FilterLogicToggle 
+                value={filterLogic}
+                onChange={setFilterLogic}
+                showInfo={true}
+              />
+            )}
+          </div>
           <span className="text-xs text-white/50">
             ({selectedFilterKeys.length} selected)
           </span>
