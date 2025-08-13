@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { getPulseWindow } from '@/utils/timeWindow';
 import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch';
 import { estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
+import { calculateVibeMatch, getTimeOfDay } from '@/utils/vibeMatching';
 
 export const PulseScreenRedesigned: React.FC = () => {
   const navigate = useNavigate();
@@ -57,12 +58,20 @@ export const PulseScreenRedesigned: React.FC = () => {
   // Use selected city or current city
   const activeCity = selectedCity || currentCity;
   
-  // Data hooks - pass dateTime to weather for future forecasts
-  const { data: weatherData } = useWeather(timeWindow.start.toISOString());
+  // Use selected city coordinates or current location for weather
+  const weatherLat = selectedCity?.lat || coords?.lat || 37.7749;
+  const weatherLng = selectedCity?.lng || coords?.lng || -122.4194;
+  
+  // Data hooks - pass dateTime to weather for future forecasts and use selected location
+  const { data: weatherData } = useWeather(timeWindow.start.toISOString(), weatherLat, weatherLng);
   const { data: userVibe } = useUserVibe(profile?.id || null);
+  // Use selected city coordinates or current location for venue queries
+  const venueLat = selectedCity?.lat || coords?.lat || 37.7749;
+  const venueLng = selectedCity?.lng || coords?.lng || -122.4194;
+
   const { data: nearbyVenues = [], error: nearbyError, isLoading: nearbyLoading } = useNearbyVenues(
-    coords?.lat || 37.7749, // Default to SF if no coords
-    coords?.lng || -122.4194, 
+    venueLat,
+    venueLng, 
     {
       radiusKm: distanceMaxM / 1000, // Convert to km
       limit: 25,
@@ -71,8 +80,8 @@ export const PulseScreenRedesigned: React.FC = () => {
     }
   );
   const { data: trendingVenues = [], error: trendingError, isLoading: trendingLoading } = useTrendingVenues(
-    coords?.lat || 37.7749, // Default to SF if no coords
-    coords?.lng || -122.4194,
+    venueLat,
+    venueLng,
     {
       radiusM: distanceMaxM,
       limit: 10,
@@ -251,7 +260,12 @@ export const PulseScreenRedesigned: React.FC = () => {
         rating: mockRatings[index % mockRatings.length],
         priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
         isOpen: Math.random() > 0.2, // 80% open - mock data
-        vibeMatch: venue.vibe_score ? Math.round(venue.vibe_score * 100) : Math.floor(Math.random() * 40) + 60,
+        vibeMatch: calculateVibeMatch(
+          userVibe?.vibe || 'chill',
+          venue.vibe_tag,
+          venue.vibe_score,
+          getTimeOfDay(timeWindow.start)
+        ),
         weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 50,
         overallScore: Math.floor(Math.random() * 40) + 60,
         imageUrl: venue.photo_url,
@@ -286,7 +300,12 @@ export const PulseScreenRedesigned: React.FC = () => {
           rating: 4.0 + Math.random() * 1, // 4.0-5.0 for trending venues
           priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
           isOpen: true, // Assume trending venues are open
-          vibeMatch: venue.vibe_score ? Math.round(venue.vibe_score * 100) : Math.floor(Math.random() * 20) + 80, // Higher for trending
+          vibeMatch: calculateVibeMatch(
+            userVibe?.vibe || 'chill',
+            venue.vibe_tag,
+            venue.vibe_score,
+            getTimeOfDay(timeWindow.start)
+          ),
           weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 30) + 60,
           overallScore: venue.trend_score ? Math.round(venue.trend_score * 100) : Math.floor(Math.random() * 20) + 80,
           imageUrl: venue.photo_url,
@@ -437,6 +456,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       <LocationWeatherBar
         currentLocation={getCurrentLocationDisplay()}
         onLocationChange={handleLocationChange}
+        isCustomLocation={!!selectedCity}
         weather={{
           tempF: normalizedWeather.tempF,
           condition: normalizedWeather.condition,

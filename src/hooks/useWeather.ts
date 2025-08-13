@@ -30,21 +30,24 @@ export interface Weather {
 }
 
 /**
- * Fetches weather data for the user's current position.
+ * Fetches weather data for the specified coordinates or user's current position.
  * @param dateTime - Optional ISO string for future weather forecast. If not provided, fetches current weather.
+ * @param overrideLat - Optional latitude to override current location
+ * @param overrideLng - Optional longitude to override current location
  * Returns a React-Query result object.
  */
-export const useWeather = (dateTime?: string) => {
+export const useWeather = (dateTime?: string, overrideLat?: number, overrideLng?: number) => {
   const { coords, error: geoError, status } = useGeo();
 
-  const lat = coords?.lat;
-  const lng = coords?.lng;
+  // Use override coordinates if provided, otherwise fall back to current location
+  const lat = overrideLat ?? coords?.lat;
+  const lng = overrideLng ?? coords?.lng;
 
   return useQuery<Weather>({
     queryKey: ['weather', lat, lng, dateTime],
 
-    /* Don't run until we actually have coordinates and no geolocation error */
-    enabled: lat !== undefined && lng !== undefined && !geoError,
+    /* Don't run until we actually have coordinates and no geolocation error (unless overrides provided) */
+    enabled: lat !== undefined && lng !== undefined && (overrideLat !== undefined || !geoError),
 
     /* NETWORK CALL --------------------------------------------------------- */
     queryFn: async ({ signal }) => {

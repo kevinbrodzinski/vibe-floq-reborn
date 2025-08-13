@@ -7,6 +7,7 @@ interface LocationWeatherBarProps {
   // Location props
   currentLocation?: string;
   onLocationChange?: (location: CityLocation) => void;
+  isCustomLocation?: boolean; // New prop to indicate if location is different from current
   
   // Weather props  
   weather?: {
@@ -21,6 +22,7 @@ interface LocationWeatherBarProps {
 export const LocationWeatherBar: React.FC<LocationWeatherBarProps> = ({
   currentLocation = "Current Location",
   onLocationChange,
+  isCustomLocation = false,
   weather,
   className
 }) => {
@@ -74,7 +76,11 @@ export const LocationWeatherBar: React.FC<LocationWeatherBarProps> = ({
         
         {/* Location Display & Dropdown Trigger */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-white/80 text-sm truncate">
+          <span className={cn(
+            "text-sm truncate flex items-center gap-1",
+            isCustomLocation ? "text-blue-300" : "text-white/80"
+          )}>
+            {isCustomLocation && <span className="text-blue-400 text-xs">📍</span>}
             {currentLocation}
           </span>
           {onLocationChange && (
