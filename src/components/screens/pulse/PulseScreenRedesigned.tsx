@@ -22,7 +22,7 @@ import { VenueList } from '@/components/pulse/VenueList';
 import { ViewToggle, ViewMode } from '@/components/pulse/ViewToggle';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
 import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
-import { filterGooglePlacesUrl, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
+import { filterGooglePlacesUrl, filterGooglePlacesUrlWithContext, DEFAULT_VENUE_IMAGE } from '@/lib/utils/images';
 import { applyContextualFiltering, sortByContextualRelevance, getVenueStatus, type VenueData, type ContextualFilterOptions } from '@/lib/utils/contextualFiltering';
 
 // UI Components
@@ -156,7 +156,12 @@ export const PulseScreenRedesigned: React.FC = () => {
         vibe: venue.categories?.[0] || 'venue',
         rating: venue.rating || undefined,
         priceRange: venue.price_range as any,
-        photoUrl: filterGooglePlacesUrl(venue.photo_url, DEFAULT_VENUE_IMAGE),
+        photoUrl: filterGooglePlacesUrlWithContext(venue.photo_url, {
+          id: venue.id,
+          name: venue.name,
+          categories: venue.categories,
+          canonical_tags: venue.canonical_tags
+        }),
         liveCount: venue.live_count || 0,
         vibeMatch: Math.floor(Math.random() * 40) + 60, // Mock vibe match
         weatherMatch: weatherAnalysis?.isGoodWeather ? 85 : 65, // Weather-based scoring
@@ -254,7 +259,7 @@ export const PulseScreenRedesigned: React.FC = () => {
         id: item.id,
         name: item.title,
         subtitle: item.subtitle,
-        photoUrl: item.photoUrl,
+        photoUrl: item.photoUrl, // Already processed with contextual fallbacks
         distance: item.distance,
         rating: item.rating,
         vibeMatch: item.vibeMatch,

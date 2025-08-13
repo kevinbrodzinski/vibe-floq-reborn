@@ -69,6 +69,12 @@ export const VenueList: React.FC<VenueListProps> = ({
                   alt={venue.name || 'Venue'}
                   type="venue"
                   className="w-16 h-16 rounded-xl object-cover"
+                  venue={{
+                    id: venue.id,
+                    name: venue.name,
+                    categories: venue.tags ? [venue.tags[0]] : undefined,
+                    canonical_tags: venue.tags
+                  }}
                 />
               </div>
 

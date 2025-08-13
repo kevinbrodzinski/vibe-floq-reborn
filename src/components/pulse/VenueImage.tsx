@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { MapPin, Calendar, Users } from 'lucide-react';
-import { isGooglePlacesImageUrl } from '@/lib/utils/images';
+import { isGooglePlacesImageUrl, getContextualVenueImage } from '@/lib/utils/images';
 
 interface VenueImageProps {
   src?: string;
   alt: string;
   type: 'venue' | 'event' | 'floq';
   className?: string;
+  venue?: {
+    id?: string;
+    name?: string;
+    categories?: string[];
+    canonical_tags?: string[];
+  };
 }
 
 const getTypeIcon = (type: string) => {
@@ -22,10 +28,10 @@ const getTypeIcon = (type: string) => {
   }
 };
 
-const getFallbackImage = (type: string) => {
+const getFallbackImage = (type: string, venue?: VenueImageProps['venue']) => {
   switch (type) {
     case 'venue':
-      return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop'; // Restaurant interior
+      return venue ? getContextualVenueImage(venue) : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop';
     case 'event':
       return 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=400&fit=crop'; // Event/concert
     case 'floq':
@@ -39,7 +45,8 @@ export const VenueImage: React.FC<VenueImageProps> = ({
   src,
   alt,
   type,
-  className = "w-16 h-16 rounded-xl object-cover"
+  className = "w-16 h-16 rounded-xl object-cover",
+  venue
 }) => {
   const [imageError, setImageError] = useState(false);
   const [showFallbackImage, setShowFallbackImage] = useState(false);
@@ -68,7 +75,7 @@ export const VenueImage: React.FC<VenueImageProps> = ({
   }
 
   // Show fallback image if original failed and it's not from Google
-  const imageSrc = showFallbackImage ? getFallbackImage(type) : src;
+  const imageSrc = showFallbackImage ? getFallbackImage(type, venue) : src;
 
   return (
     <img

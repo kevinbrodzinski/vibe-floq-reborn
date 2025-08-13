@@ -159,12 +159,18 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
                   >
                     {/* Venue image */}
                     <div className="absolute inset-0">
-                      <VenueImage
-                        src={venue.photoUrl}
-                        alt={venue.name || 'Venue'}
-                        type="venue"
-                        className="w-full h-full object-cover"
-                      />
+                                             <VenueImage
+                         src={venue.photoUrl}
+                         alt={venue.name || 'Venue'}
+                         type="venue"
+                         className="w-full h-full object-cover"
+                         venue={{
+                           id: venue.id,
+                           name: venue.name,
+                           categories: venue.tags ? [venue.tags[0]] : undefined,
+                           canonical_tags: venue.tags
+                         }}
+                       />
                       
                       {/* Gradient overlays */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
