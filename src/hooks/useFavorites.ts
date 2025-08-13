@@ -74,15 +74,14 @@ export const useFavorites = () => {
         .single();
 
       if (error) throw error;
-      const row: any = data;
       return {
         user_id: user.id,
-        item_id: row.item_id,
-        item_type: row.item_type as 'venue' | 'plan',
-        created_at: row.created_at,
-        title: row.title,
-        description: row.description,
-        image_url: row.image_url,
+        item_id: data.item_id,
+        item_type: data.item_type as 'venue' | 'plan',
+        created_at: data.created_at,
+        title: data.title,
+        description: data.description,
+        image_url: data.image_url,
       };
     },
     onSuccess: () => {

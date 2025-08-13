@@ -1,10 +1,26 @@
 // supabase/functions/recommend/index.ts
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
 
 type UUID = string;
 
+const ALLOW = new Set([
+  "http://localhost:8081",
+  (Deno.env.get("WEB_ORIGIN") ?? "").trim(), // your prod web origin
+].filter(Boolean));
+
+const cors = (req: Request) => {
+  const origin = req.headers.get("origin") ?? "";
+  const allowOrigin = ALLOW.has(origin) ? origin : "http://localhost:8081"; // or "*"
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    // only add this if you use cookies:
+    // "Access-Control-Allow-Credentials": "true",
+  };
+};
 
 const DO_RERANK = (Deno.env.get("LLM_RERANK") || "").toLowerCase() === "true";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -12,10 +28,10 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 serve(async (req) => {
   // Preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { status: 200, headers: cors(req) });
   }
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    return new Response("Method Not Allowed", { status: 405, headers: cors(req) });
   }
 
   try {
@@ -59,12 +75,12 @@ serve(async (req) => {
     if (error) {
       return new Response(JSON.stringify({ error }), { 
         status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: { ...cors(req), "Content-Type": "application/json" }
       });
     }
 
     const recs = data ?? [];
-    if (recs.length === 0) return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (recs.length === 0) return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { ...cors(req), "Content-Type": "application/json" } });
 
     // --- Pull extra signals for explanations ---------------------------------
     const venueIds: UUID[] = recs.map((r: any) => r.venue_id);
@@ -221,12 +237,12 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ items }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors(req), "Content-Type": "application/json" },
     });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors(req), "Content-Type": "application/json" },
     });
   }
 });

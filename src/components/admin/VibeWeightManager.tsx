@@ -48,7 +48,7 @@ export function VibeWeightManager() {
         .select('*')
         .order('vibe');
       if (error) throw error;
-      return data as unknown as VibeWeights[];
+      return data as VibeWeights[];
     },
   });
 
@@ -61,7 +61,7 @@ export function VibeWeightManager() {
         .select('*')
         .order('profile_id, vibe');
       if (error) throw error;
-      return data as unknown as UserVibeWeights[];
+      return data as UserVibeWeights[];
     },
   });
 
@@ -78,8 +78,8 @@ export function VibeWeightManager() {
           w_cuisine_match: weights.w_cuisine_match,
           w_price_fit: weights.w_price_fit,
           updated_at: new Date().toISOString(),
-        } as any)
-        .eq('vibe' as any, weights.vibe as any);
+        })
+        .eq('vibe', weights.vibe);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -100,7 +100,7 @@ export function VibeWeightManager() {
           w_tag_match: 0.15,
           w_cuisine_match: 0.10,
           w_price_fit: 0.10,
-        } as any);
+        });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -115,7 +115,7 @@ export function VibeWeightManager() {
       const { error } = await supabase
         .from('rec_vibe_weights')
         .delete()
-        .eq('vibe' as any, vibe as any);
+        .eq('vibe', vibe);
       if (error) throw error;
     },
     onSuccess: () => {
