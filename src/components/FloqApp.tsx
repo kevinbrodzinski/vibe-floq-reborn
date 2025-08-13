@@ -23,7 +23,7 @@ export const FloqApp = () => {
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const { pathname } = useLocation();
-  const isFieldPage = pathname === '/field' || pathname === '/';
+  const onField = pathname.startsWith('/field');
 
   // Manage ambient background per route
   const ambient = pathname.startsWith('/afterglow') || pathname.startsWith('/ripple')
@@ -65,7 +65,12 @@ export const FloqApp = () => {
         <FloqUIProvider>
           <div className="min-h-screen flex flex-col">
             <AppHeader />
-            <div className={cn('flex-1 min-h-0', isFieldPage ? '' : 'pt-[calc(env(safe-area-inset-top)+4rem)]')}>
+            {/* On Field: no top padding so map sits under fixed header.
+                Elsewhere: add safe-area + ~64px to avoid content underlap. */}
+            <div className={cn(
+              'flex-1 min-h-0',
+              onField ? '' : 'pt-[calc(env(safe-area-inset-top)+4rem)]'
+            )}>
               <AppRoutes />
             </div>
             

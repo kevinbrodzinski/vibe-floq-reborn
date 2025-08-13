@@ -36,18 +36,15 @@ export function AppHeader() {
     <header
       className={cn(
         'fixed top-0 inset-x-0 h-16 sm:h-[68px] px-4',
-        'bg-transparent border-0',                // no background, no border
+        'bg-transparent border-0',                // no background/border
         'flex items-center justify-between',
-        'pointer-events-none'                     // let map receive drags under header
+        'pointer-events-none'                     // allow map gestures under header
       )}
-      style={{ 
-        zIndex: Z.navigation, 
-        paddingTop: 'env(safe-area-inset-top)'
-      }}
+      style={{ zIndex: Z.navigation, paddingTop: 'env(safe-area-inset-top)' }}
     >
       <button
         onClick={() => nav('/field')}
-        className="font-semibold text-lg text-white select-none pointer-events-auto"
+        className="pointer-events-auto font-semibold text-lg text-primary select-none"
         aria-label="Go to Field"
       >
         floq
@@ -57,7 +54,7 @@ export function AppHeader() {
         <span className="text-sm text-muted-foreground">{title}</span>
       </div>
 
-      <div className="flex items-center gap-3 pointer-events-auto drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)]">
+      <div className="flex items-center gap-3 pointer-events-auto">
         <AvatarDropdown onOpenNotifications={() => setNotifOpen(true)} />
       </div>
 
