@@ -61,7 +61,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {!isFull && route !== "/vibe" && (
         <motion.div
           {...zIndex("overlay")}
-          className="absolute inset-0 top-12 pointer-events-none"
+          className="absolute inset-0 top-0 pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

@@ -25,7 +25,6 @@ export function AppHeader() {
   // Exit fullscreen when navigating away from field page
   useEffect(() => {
     if (mode === 'full' && !isFieldPage) {
-      console.log('[AppHeader] Exiting fullscreen - not on field page', { pathname, isFieldPage });
       setMode('map');
     }
   }, [mode, isFieldPage, setMode]);
