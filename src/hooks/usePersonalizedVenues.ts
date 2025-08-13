@@ -366,7 +366,18 @@ export function usePersonalizedVenuesVerbose(params: {
         p_log: true,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Verbose personalized venues failed:', error);
+        
+        // Handle specific error codes gracefully
+        if (error.code === '42883' ||   // function does not exist
+            error.code === '404' ||     // function not found
+            error.code === 'PGRST116') { // out of range
+          return [] as VerbosePersonalizedVenue[];
+        }
+        
+        throw error;
+      }
       return (data || []) as VerbosePersonalizedVenue[];
     },
     enabled: !!user?.id,

@@ -83,11 +83,23 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
       }
       
       if (error) {
-        // Only return empty for out of range, otherwise surface error
-        if (error.code === 'PGRST116') {
+        console.error('Failed to load nearby venues:', error);
+        
+        // Handle specific error codes gracefully
+        if (error.code === 'PGRST116' || // out of range
+            error.code === '42883' ||   // function does not exist (PostGIS)
+            error.code === '404') {     // function not found
           return { venues: [], nextCursor: undefined, hasMore: false };
         }
-        console.error('Failed to load nearby venues:', error);
+        
+        // For network/CORS errors, return empty instead of crashing
+        if (error.message?.includes('CORS') || 
+            error.message?.includes('Failed to fetch') ||
+            error.message?.includes('NetworkError')) {
+          console.warn('Network error, returning empty venues list');
+          return { venues: [], nextCursor: undefined, hasMore: false };
+        }
+        
         throw error;
       }
       
