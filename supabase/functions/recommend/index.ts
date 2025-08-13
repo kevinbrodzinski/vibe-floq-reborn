@@ -1,26 +1,39 @@
 // supabase/functions/recommend/index.ts
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", // tighten to your domain in prod
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+const ALLOW = new Set([
+  "http://localhost:8081",
+  (Deno.env.get("WEB_ORIGIN") ?? "").trim(), // your prod web origin
+].filter(Boolean));
+
+const cors = (req: Request) => {
+  const origin = req.headers.get("origin") ?? "";
+  const allowOrigin = ALLOW.has(origin) ? origin : "http://localhost:8081"; // or "*"
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    // only add this if you use cookies:
+    // "Access-Control-Allow-Credentials": "true",
+  };
 };
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-Deno.serve(async (req: Request) => {
-  // CORS preflight
+serve(async (req) => {
+  // Preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
+    return new Response("ok", { status: 200, headers: cors(req) });
+  }
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405, headers: cors(req) });
   }
 
   try {
-    if (req.method !== "POST") {
-      return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
-    }
+    // Move env reads/client creation *after* preflight
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     const raw = await req.json();
 
@@ -39,7 +52,7 @@ Deno.serve(async (req: Request) => {
       ab: raw.ab ?? "edge",
     };
 
-    // ---- call your verbose RPC (already VOLATILE + returns badges/reason/components/weights) ----
+    // Call your verbose RPC (already VOLATILE + returns badges/reason/components/weights)
     const { data, error } = await supabaseAdmin.rpc("get_personalized_recs_verbose", {
       p_profile_id: body.profileId,
       p_lat: body.lat,
@@ -53,14 +66,24 @@ Deno.serve(async (req: Request) => {
       p_ab: body.ab,
       p_log: true,
     });
+    
     if (error) {
-      return new Response(JSON.stringify({ error }), { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error }), { 
+        status: 500, 
+        headers: { ...cors(req), "Content-Type": "application/json" }
+      });
     }
 
-    const items = (data ?? []).map((r: any) => r); // (optionally add your "explain" enrichment here)
+    const items = (data ?? []).map((r: any) => r); // optionally add your "explain" enrichment here
 
-    return new Response(JSON.stringify({ items }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ items }), {
+      status: 200,
+      headers: { ...cors(req), "Content-Type": "application/json" },
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: { ...cors(req), "Content-Type": "application/json" },
+    });
   }
 });
