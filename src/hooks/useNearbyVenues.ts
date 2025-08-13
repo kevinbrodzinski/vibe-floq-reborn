@@ -54,6 +54,9 @@ export function useNearbyVenues(
         return data || [];
       }
     },
-    staleTime: 30_000,   // 30 s
+    staleTime: 2 * 60_000,      // 2 minutes - venues don't change that often
+    cacheTime: 10 * 60_000,     // 10 minutes - keep cached for longer
+    refetchOnWindowFocus: false, // Don't refetch when user returns to tab
+    retry: 1,                    // Reduce retry attempts for faster failure
   });
 }

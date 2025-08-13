@@ -101,95 +101,108 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform data into recommendations with contextual filtering
   const recommendations: RecommendationItem[] = useMemo(() => {
-
+    // Early return if no data
+    if (!nearbyVenues?.length && !myFloqs?.length) return [];
     
     // Apply contextual filtering to venues if context is available
     let filteredVenues = nearbyVenues;
     
-    if (filterContext) {
-      // Convert to VenueData format for contextual filtering
+    if (filterContext && nearbyVenues?.length > 0) {
+      // Convert to VenueData format for contextual filtering (optimized)
       const venues: VenueData[] = nearbyVenues.map((venue: any) => ({
         id: venue.id,
         name: venue.name,
-        categories: venue.categories,
-        canonical_tags: venue.canonical_tags,
-        hours: venue.hours, // Assuming hours data is available
+        categories: venue.categories || [],
+        canonical_tags: venue.canonical_tags || [],
+        hours: venue.hours,
         price_level: venue.price_level,
         rating: venue.rating,
-        live_count: venue.live_count,
+        live_count: venue.live_count || 0,
         distance_m: venue.distance_m || venue.dist_m || 0
       }));
       
-      // Apply contextual filtering and sorting
+      // Apply contextual filtering and sorting (cached time)
+      const currentTime = new Date();
       const filterOptions: ContextualFilterOptions = {
         context: filterContext,
         selectedPillKeys: selectedFilterKeys,
-        currentTime: new Date(),
+        currentTime,
         userPreferences: {
-          minimumRating: 2.5, // Show venues with 2.5+ stars
-          maxDistance: 10000 // Max 10km distance
+          minimumRating: 2.5,
+          maxDistance: 10000
         }
       };
       
-             const contextuallyFiltered = applyContextualFiltering(venues, filterOptions);
-       const contextuallysorted = sortByContextualRelevance(contextuallyFiltered, filterOptions);
-       
-       console.log('🎯 Contextual Filtering Applied:', {
-         originalCount: venues.length,
-         filteredCount: contextuallyFiltered.length,
-         context: filterContext,
-         selectedFilters: selectedFilterKeys
-       });
+      const contextuallyFiltered = applyContextualFiltering(venues, filterOptions);
+      const contextuallySorted = sortByContextualRelevance(contextuallyFiltered, filterOptions);
       
-      // Convert back to original format
-      filteredVenues = contextuallysorted.map(venue => 
-        nearbyVenues.find((v: any) => v.id === venue.id)
-      ).filter(Boolean);
+      // Convert back to original format (optimized with Map lookup)
+      const venueMap = new Map(nearbyVenues.map((v: any) => [v.id, v]));
+      filteredVenues = contextuallySorted
+        .map(venue => venueMap.get(venue.id))
+        .filter(Boolean);
     }
 
-    const venueRecs: RecommendationItem[] = filteredVenues.map((venue: any) => {
-      const venueStatus = venue.hours ? getVenueStatus({
-        id: venue.id,
-        name: venue.name,
-        hours: venue.hours,
-        categories: venue.categories,
-        canonical_tags: venue.canonical_tags
-      }) : { isOpen: null, status: 'unknown' as const };
+    // Cache venue status calculations and use stable mock values
+    const venueRecs: RecommendationItem[] = filteredVenues.map((venue: any, index: number) => {
+      // Use index-based stable "random" values instead of Math.random()
+      const stableVibeMatch = 60 + (venue.id?.charCodeAt(0) || index) % 40;
+      const weatherMatch = weatherAnalysis?.isGoodWeather ? 85 : 65;
+      
+      // Optimize venue status check - only if hours exist
+      let statusText = '';
+      if (venue.hours) {
+        const venueStatus = getVenueStatus({
+          id: venue.id,
+          name: venue.name,
+          hours: venue.hours,
+          categories: venue.categories || [],
+          canonical_tags: venue.canonical_tags || []
+        });
+        statusText = venueStatus.isOpen === true ? ' • Open' : 
+                    venueStatus.isOpen === false ? ' • Closed' : '';
+      }
 
       return {
         id: venue.id,
-        title: venue.name,
+        title: venue.name || 'Unknown Venue',
         type: 'venue' as const,
-        subtitle: `${venue.categories?.[0] || 'Venue'}${venueStatus.isOpen === true ? ' • Open' : venueStatus.isOpen === false ? ' • Closed' : ''}`,
+        subtitle: `${venue.categories?.[0] || 'Venue'}${statusText}`,
         distance: venue.distance_m || venue.dist_m || 0,
         vibe: venue.categories?.[0] || 'venue',
-        rating: venue.rating || undefined,
-        priceRange: venue.price_range as any,
-        photoUrl: venue.photo_url, // Let VenueImage component handle all fallback logic
+        rating: venue.rating,
+        priceRange: venue.price_range,
+        photoUrl: venue.photo_url,
         liveCount: venue.live_count || 0,
-        vibeMatch: Math.floor(Math.random() * 40) + 60, // Mock vibe match
-        weatherMatch: weatherAnalysis?.isGoodWeather ? 85 : 65, // Weather-based scoring
+        vibeMatch: stableVibeMatch,
+        weatherMatch,
         tags: venue.canonical_tags || [],
-        friends: [], // TODO: Connect to friends data
+        friends: [],
       };
     });
 
-    const floqRecs: RecommendationItem[] = myFloqs.map((floq: any) => ({
-      id: floq.id,
-      title: floq.title,
-      type: 'floq' as const,
-      distance: floq.distance_meters || 0,
-      vibe: floq.primary_vibe || 'social',
-      participants: floq.participant_count,
-      maxParticipants: floq.max_participants,
-      host: {
-        name: floq.host_name || 'Host',
-        avatar: floq.host_avatar
-      },
-      vibeMatch: Math.floor(Math.random() * 30) + 70, // Higher match for user's floqs
-      weatherMatch: weatherAnalysis?.isGoodWeather ? 80 : 70,
-      friends: [], // TODO: Connect to friends data
-    }));
+    // Optimize floq recommendations with stable values
+    const floqRecs: RecommendationItem[] = (myFloqs || []).map((floq: any, index: number) => {
+      const stableVibeMatch = 70 + (floq.id?.charCodeAt(0) || index) % 30;
+      const weatherMatch = weatherAnalysis?.isGoodWeather ? 80 : 70;
+      
+      return {
+        id: floq.id,
+        title: floq.title || 'Untitled Floq',
+        type: 'floq' as const,
+        distance: floq.distance_meters || 0,
+        vibe: floq.primary_vibe || 'social',
+        participants: floq.participant_count || 0,
+        maxParticipants: floq.max_participants || 10,
+        host: {
+          name: floq.host_name || 'Host',
+          avatar: floq.host_avatar
+        },
+        vibeMatch: stableVibeMatch,
+        weatherMatch,
+        friends: [],
+      };
+    });
 
     return [...venueRecs, ...floqRecs];
   }, [nearbyVenues, myFloqs, weatherAnalysis, filterContext, selectedFilterKeys]);

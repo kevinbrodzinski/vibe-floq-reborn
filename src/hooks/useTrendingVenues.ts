@@ -64,6 +64,9 @@ export const useTrendingVenues = (
       // Default to original implementation
       return fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit);
     },
-    staleTime: 30_000 // 30s is plenty – rows update via trigger anyway
+    staleTime: 2 * 60_000,      // 2 minutes - trending venues don't change rapidly
+    cacheTime: 10 * 60_000,     // 10 minutes cache
+    refetchOnWindowFocus: false, // Don't refetch on focus
+    retry: 1,                    // Faster failure
   });
 };
