@@ -48,18 +48,18 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
 
-  // Data hooks with enhanced filtering
-  const { data: nearbyVenues = [] } = useNearbyVenues(
+    // Data hooks with enhanced filtering
+  const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
     coords?.lat ?? 0, 
     coords?.lng ?? 0, 
     2, // 2km radius
     { 
       pillKeys: selectedFilterKeys, 
-      filterLogic: 'any', 
+      filterLogic: 'any',
       limit: 50 
     }
   );
-  const { data: trendingVenues = [] } = useTrendingVenues(
+  const { data: trendingVenues = [], isLoading: trendingLoading } = useTrendingVenues(
     2000, // 2km radius
     10,   // 10 results
     { 
