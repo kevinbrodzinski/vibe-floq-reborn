@@ -103,7 +103,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     trendingError,
     nearbyLoading,
     trendingLoading,
-    distanceMaxM,
+    radiusKm,
     selectedFilterKeys
   });
   const { data: liveActivity = [] } = useLiveActivity();
