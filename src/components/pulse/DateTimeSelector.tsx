@@ -35,7 +35,8 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
     ];
 
     // Second button logic: Tonight vs Tomorrow
-    if (currentHour >= 7 && currentHour <= 26) { // 7 PM to 2 AM (26 = 2 AM next day)
+    // Show "Tomorrow" if it's between 7 PM (19:00) and 2 AM (02:00) next day
+    if (currentHour >= 19 || currentHour <= 2) {
       options.push({
         key: 'tomorrow' as const,
         label: 'Tomorrow',

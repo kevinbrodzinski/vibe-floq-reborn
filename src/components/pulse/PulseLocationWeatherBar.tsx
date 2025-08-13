@@ -14,6 +14,8 @@ interface WeatherData {
   precipitationChance?: number;
   icon?: string;
   updatedAt?: Date;
+  isForecast?: boolean;
+  forecastTime?: string;
 }
 
 interface PulseLocationWeatherBarProps {

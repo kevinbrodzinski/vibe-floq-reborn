@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useGeo } from '@/hooks/useGeo';
 import { useAuth } from '@/hooks/useAuth';
 import { useWeather } from '@/hooks/useWeather';
+import { useWeatherForecast } from '@/hooks/useWeatherForecast';
 import { useNearbyVenues } from '@/hooks/useNearbyVenues';
 import { useTrendingVenues } from '@/hooks/useTrendingVenues';
 import { useLiveActivity } from '@/hooks/useLiveActivity';
@@ -38,6 +39,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const { user } = useAuth();
   const { coords } = useGeo();
   const { data: weatherData, isLoading: weatherLoading } = useWeather();
+  const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime);
   
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,19 +82,22 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Location is now handled directly in PulseLocationWeatherBar component
 
-  // Weather analysis for CTAs
+  // Weather analysis for CTAs - uses forecast data when available
   const weatherAnalysis = useMemo(() => {
-    if (!weatherData) return null;
+    const activeWeatherData = forecastData || weatherData;
+    if (!activeWeatherData) return null;
     
-    const temp = weatherData.temperatureF;
-    const precipitation = weatherData.precipitationChance || 0;
+    const temp = activeWeatherData.temperatureF;
+    const precipitation = activeWeatherData.precipitationChance || 0;
     const isGoodWeather = temp >= GOOD_WEATHER.minTemp && precipitation <= GOOD_WEATHER.maxPrecipitation;
     
     return {
       isGoodWeather,
-      selectedCTA: isGoodWeather ? 'outdoor' : 'indoor'
+      selectedCTA: isGoodWeather ? 'outdoor' : 'indoor',
+      isForecast: !!forecastData,
+      forecastTime: forecastData?.forecastTime
     };
-  }, [weatherData]);
+  }, [weatherData, forecastData]);
 
   // Transform data into recommendations with contextual filtering
   const recommendations: RecommendationItem[] = useMemo(() => {
@@ -342,17 +347,19 @@ export const PulseScreenRedesigned: React.FC = () => {
 
       {/* Location & Weather Bar */}
       <PulseLocationWeatherBar
-        weather={weatherData ? {
-          condition: weatherData.condition,
-          temperatureF: weatherData.temperatureF,
-          feelsLikeF: weatherData.feelsLikeF,
-          humidity: weatherData.humidity,
-          windMph: weatherData.windMph,
-          precipitationChance: weatherData.precipitationChance,
-          updatedAt: new Date(weatherData.created_at)
+        weather={(forecastData || weatherData) ? {
+          condition: (forecastData || weatherData)!.condition,
+          temperatureF: (forecastData || weatherData)!.temperatureF,
+          feelsLikeF: (forecastData || weatherData)!.feelsLikeF,
+          humidity: (forecastData || weatherData)!.humidity,
+          windMph: (forecastData || weatherData)!.windMph,
+          precipitationChance: (forecastData || weatherData)!.precipitationChance || 0,
+          updatedAt: new Date((forecastData || weatherData)!.created_at),
+          isForecast: !!forecastData,
+          forecastTime: forecastData?.forecastTime
         } : undefined}
         selectedTime={selectedTime}
-        isLoading={weatherLoading}
+        isLoading={weatherLoading || forecastLoading}
       />
 
       {/* Live Activity */}
