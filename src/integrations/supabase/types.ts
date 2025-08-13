@@ -12238,13 +12238,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -12254,8 +12247,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -12268,8 +12261,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -12282,7 +12275,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12295,13 +12288,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -14700,15 +14700,22 @@ export type Database = {
         Returns: Json
       }
       get_cluster_venues: {
-        Args: {
-          min_lng: number
-          min_lat: number
-          max_lng: number
-          max_lat: number
-          cursor_popularity?: number
-          cursor_id?: string
-          limit_rows?: number
-        }
+        Args:
+          | {
+              min_lng: number
+              min_lat: number
+              max_lng: number
+              max_lat: number
+              cursor_popularity?: number
+              cursor_id?: string
+              limit_rows?: number
+            }
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_m?: number
+              p_limit?: number
+            }
         Returns: {
           id: string
           name: string
@@ -18012,39 +18019,6 @@ export type Database = {
         }
         Relationships: []
       }
-      messages_2025_08_09: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       messages_2025_08_10: {
         Row: {
           event: string | null
@@ -18211,6 +18185,39 @@ export type Database = {
         Relationships: []
       }
       messages_2025_08_15: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2025_08_16: {
         Row: {
           event: string | null
           extension: string
