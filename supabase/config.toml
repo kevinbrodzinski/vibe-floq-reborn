@@ -120,3 +120,6 @@ verify_jwt = false
 
 [functions.sync-places]
 verify_jwt = false
+
+[functions.recommend]
+verify_jwt = true
