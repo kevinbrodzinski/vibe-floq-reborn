@@ -59,9 +59,9 @@ export const PulseScreenRedesigned: React.FC = () => {
   // Data hooks - pass dateTime to weather for future forecasts
   const { data: weatherData } = useWeather(timeWindow.start.toISOString());
   const { data: userVibe } = useUserVibe(profile?.id || null);
-  const { data: nearbyVenues = [] } = useNearbyVenues(
-    coords?.lat ?? 0, 
-    coords?.lng ?? 0, 
+  const { data: nearbyVenues = [], error: nearbyError, isLoading: nearbyLoading } = useNearbyVenues(
+    coords?.lat || 37.7749, // Default to SF if no coords
+    coords?.lng || -122.4194, 
     {
       radiusKm: distanceMaxM / 1000, // Convert to km
       limit: 25,
@@ -69,9 +69,9 @@ export const PulseScreenRedesigned: React.FC = () => {
       filterLogic: 'any'
     }
   );
-  const { data: trendingVenues = [] } = useTrendingVenues(
-    coords?.lat ?? 0,
-    coords?.lng ?? 0,
+  const { data: trendingVenues = [], error: trendingError, isLoading: trendingLoading } = useTrendingVenues(
+    coords?.lat || 37.7749, // Default to SF if no coords
+    coords?.lng || -122.4194,
     {
       radiusM: distanceMaxM,
       limit: 10,
@@ -79,6 +79,19 @@ export const PulseScreenRedesigned: React.FC = () => {
       filterLogic: 'any'
     }
   );
+
+  // Debug logging
+  console.log('🔍 Debug venue data:', {
+    coords,
+    nearbyVenues: nearbyVenues?.length,
+    trendingVenues: trendingVenues?.length,
+    nearbyError,
+    trendingError,
+    nearbyLoading,
+    trendingLoading,
+    distanceMaxM,
+    selectedFilterKeys
+  });
   const { data: liveActivity = [] } = useLiveActivity();
   const { data: myFloqs = [] } = useMyActiveFloqs(timeWindow);
 
@@ -159,7 +172,56 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform data for recommendations
   const recommendations = useMemo((): RecommendationItem[] => {
-    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue, index: number) => {
+    console.log('🔄 Transforming recommendations:', {
+      nearbyVenuesCount: nearbyVenues.length,
+      trendingVenuesCount: trendingVenues.length,
+      myFloqsCount: myFloqs.length,
+      nearbyVenues: nearbyVenues.slice(0, 2), // Log first 2 for inspection
+      trendingVenues: trendingVenues.slice(0, 2)
+    });
+
+    // Temporary fallback mock data if database isn't returning results
+    const mockNearbyVenues = nearbyVenues.length === 0 ? [
+      {
+        id: 'mock-1',
+        name: 'The Local Spot',
+        distance_m: 250,
+        categories: ['Bar', 'Restaurant'],
+        photo_url: null,
+        vibe_tag: 'social',
+        vibe_score: 0.8,
+        live_count: 12,
+        canonical_tags: ['social', 'drinks']
+      },
+      {
+        id: 'mock-2', 
+        name: 'Corner Café',
+        distance_m: 180,
+        categories: ['Café', 'Coffee'],
+        photo_url: null,
+        vibe_tag: 'chill',
+        vibe_score: 0.7,
+        live_count: 8,
+        canonical_tags: ['chill', 'coffee']
+      }
+    ] : nearbyVenues;
+
+    const mockTrendingVenues = trendingVenues.length === 0 ? [
+      {
+        venue_id: 'trending-mock-1',
+        name: 'Hot Spot Downtown',
+        distance_m: 500,
+        people_now: 25,
+        trend_score: 0.9,
+        categories: ['Nightclub', 'Bar'],
+        photo_url: null,
+        vibe_tag: 'energy',
+        vibe_score: 0.9,
+        canonical_tags: ['energy', 'nightlife']
+      }
+    ] : trendingVenues;
+
+    const venueRecs: RecommendationItem[] = mockNearbyVenues.map((venue, index: number) => {
       // Enhanced mock data for better presentation
       const mockDescriptions = [
         "A cozy spot perfect for catching up with friends",
@@ -202,8 +264,8 @@ export const PulseScreenRedesigned: React.FC = () => {
     });
 
     // Add trending venues to the mix, but avoid duplicates with nearby venues
-    const nearbyVenueIds = new Set(nearbyVenues.map(v => v.id));
-    const trendingRecs: RecommendationItem[] = trendingVenues
+    const nearbyVenueIds = new Set(mockNearbyVenues.map(v => v.id));
+    const trendingRecs: RecommendationItem[] = mockTrendingVenues
       .filter(venue => !nearbyVenueIds.has(venue.venue_id)) // Filter out venues already in nearby
       .slice(0, 5)
       .map((venue, index: number) => {
@@ -247,7 +309,15 @@ export const PulseScreenRedesigned: React.FC = () => {
       overallScore: Math.floor(Math.random() * 40) + 70
     }));
 
-    return [...venueRecs, ...trendingRecs, ...floqRecs];
+    const allRecs = [...venueRecs, ...trendingRecs, ...floqRecs];
+    console.log('✅ Final recommendations:', {
+      venueRecsCount: venueRecs.length,
+      trendingRecsCount: trendingRecs.length,
+      floqRecsCount: floqRecs.length,
+      totalCount: allRecs.length,
+      sampleRecs: allRecs.slice(0, 3).map(r => ({ id: r.id, title: r.title, type: r.type }))
+    });
+    return allRecs;
   }, [nearbyVenues, trendingVenues, myFloqs, normalizedWeather.isGoodWeather]);
 
   // Filter recommendations by search and selected filters
