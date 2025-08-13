@@ -191,10 +191,10 @@ export const PersonalizedVenueSection = ({
                     vibe_tag: venue.categories?.[0] || 'venue',
                     last_seen_at: new Date().toISOString(),
                   }}
-                  onJoin={() => console.log('Join venue:', venue.name)}
-                  onShare={() => console.log('Share venue:', venue.name)}
-                  onLike={() => console.log('Like venue:', venue.name)}
-                  onChat={() => console.log('Chat venue:', venue.name)}
+                  onJoin={() => {/* TODO: Implement join venue */}}
+                  onShare={() => {/* TODO: Implement share venue */}}
+                  onLike={() => {/* TODO: Implement like venue */}}
+                  onChat={() => {/* TODO: Implement chat venue */}}
                 />
                 
                 {/* Smart badge overlay with theme-aware gradient */}

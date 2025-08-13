@@ -34,8 +34,6 @@ import { AISummaryCollapsible } from '@/components/ui/AISummaryCollapsible';
 import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
 
 export const PulseScreenRedesigned: React.FC = () => {
-  console.log('🎯 Pulse Redesign Active - Enhanced filtering & weather integration loaded');
-  
   // UI state (declared first so they can be used in hooks)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTime, setSelectedTime] = useState<TimeOption>('now');
@@ -263,10 +261,8 @@ export const PulseScreenRedesigned: React.FC = () => {
       // Only auto-suggest if no filters are selected yet
       if (weatherAnalysis.isGoodWeather) {
         // Subtle suggestion for outdoor activities in good weather
-        console.log('💡 Good weather detected - outdoor filters available');
       } else {
         // Subtle suggestion for indoor activities in bad weather  
-        console.log('🏠 Indoor weather detected - cozy indoor filters available');
       }
     }
   }, [weatherAnalysis, selectedFilterKeys.length]);
@@ -311,7 +307,6 @@ export const PulseScreenRedesigned: React.FC = () => {
       setSheetOpen(true);
     } else {
       // TODO: Handle floq clicks
-      console.log('Clicked floq:', item);
     }
   }, []);
 
@@ -345,22 +340,18 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   const handleActivityClick = useCallback((activity: any) => {
     // Handle activity item click
-    console.log('Activity clicked:', activity);
   }, []);
 
   const handleBookmark = useCallback((itemId: string) => {
     // Handle bookmark toggle
-    console.log('Bookmark:', itemId);
   }, []);
 
   const handleShare = useCallback((item: RecommendationItem) => {
     // Handle share action
-    console.log('Share:', item);
   }, []);
 
   const handleDirections = useCallback((item: RecommendationItem) => {
     // Handle directions action
-    console.log('Directions to:', item);
   }, []);
 
   return (
