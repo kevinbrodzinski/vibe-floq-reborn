@@ -40,7 +40,7 @@ export const PlansHub: React.FC = () => {
     <div className="min-h-screen bg-gray-950">
       {/* Enhanced Header with Subtle Dark Theme */}
       <motion.div 
-        className="sticky top-0 bg-gray-950/95 backdrop-blur-xl border-b border-gray-700/30" 
+        className="sticky top-0 bg-transparent" 
         {...zIndex('uiHeader')}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

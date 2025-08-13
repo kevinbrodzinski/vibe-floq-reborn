@@ -178,7 +178,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           </div>
         </div>}
       {/* Header with search and filters */}
-      <div className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3" {...zIndex('uiHeader')}>
+      <div className="sticky top-0 bg-transparent px-4 py-3" {...zIndex('uiHeader')}>
         <div className="flex items-center gap-3">
           {useAdvancedSearch ? <form onSubmit={handleSearchSubmit} className="flex-1">
               <div className="relative">

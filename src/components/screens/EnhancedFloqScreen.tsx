@@ -220,7 +220,7 @@ export const EnhancedFloqScreen: React.FC<EnhancedFloqScreenProps> = ({
   return (
     <div className="min-h-screen bg-gradient-field">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30">
+      <div className="sticky top-0 z-50 bg-transparent">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={onBack}>

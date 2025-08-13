@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
@@ -8,20 +9,27 @@ import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { AppHeader } from "@/components/layout/AppHeader";
 // import { useNotifications } from "@/hooks/useNotifications"; // Removed: handled by EventNotificationsProvider
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
-
+import { useAmbientBackground } from "@/hooks/useAmbientBackground";
+import { cn } from "@/lib/utils";
 
 import { Button } from "./ui/button";
-import { zIndex } from "@/constants/z";
 
 export const FloqApp = () => {
   // Notification system handled by EventNotificationsProvider in App.tsx
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { pathname } = useLocation();
+  const onField = pathname === '/field' || pathname === '/' || pathname === '/home' || pathname.startsWith('/field');
+
+  // Manage ambient background per route
+  const ambient = pathname.startsWith('/afterglow') || pathname.startsWith('/ripple')
+    ? 'linear-gradient(180deg, hsl(262 83% 58%) 0%, hsl(240 10% 10%) 100%)'
+    : 'hsl(var(--background))'; // default neutral
+
+  useAmbientBackground(ambient);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -54,20 +62,15 @@ export const FloqApp = () => {
     <ErrorBoundary>
       <TimeSyncProvider>
         <FloqUIProvider>
-          <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
-            {/* Header with search and notifications */}
-            <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2" {...zIndex('uiHeader')}>
-              <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold">Floq</h1>
-              </div>
-            </div>
-
-
-
-            <div className="pb-20">
-              <ErrorBoundary>
-                <AppRoutes />
-              </ErrorBoundary>
+          <div className="min-h-screen flex flex-col">
+            <AppHeader />
+            {/* On Field: no top padding so map sits under fixed header.
+                Elsewhere: add safe-area + ~64px to avoid content underlap. */}
+            <div className={cn(
+              'flex-1 min-h-0',
+              onField ? '' : 'pt-[calc(env(safe-area-inset-top)+4rem)]'
+            )}>
+              <AppRoutes />
             </div>
             
             <FloqNavigation />
@@ -78,11 +81,7 @@ export const FloqApp = () => {
               onOpenChange={setCommandPaletteOpen}
             />
             
-            {/* Notifications Sheet */}
-            <NotificationsSheet 
-              open={notificationsOpen}
-              onOpenChange={setNotificationsOpen}
-            />
+
           </div>
         </FloqUIProvider>
       </TimeSyncProvider>
