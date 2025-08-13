@@ -153,9 +153,9 @@ export function getContextualVenueImage(venue: {
   const imageIndex = Math.abs(hash) % images.length;
   const selectedImage = images[imageIndex];
   
-  // Debug logging to verify variety
-  if (import.meta.env.DEV) {
-    console.log(`🖼️ Contextual image for "${venue.name || venue.id}": ${category} (${imageIndex + 1}/${images.length}) -> ${selectedImage.substring(0, 60)}...`);
+  // Debug logging to verify variety (only when needed)
+  if (import.meta.env.DEV && venue.name?.includes('Test')) {
+    console.log(`🖼️ Contextual image for "${venue.name}": ${category} (${imageIndex + 1}/${images.length})`);
   }
   
   return selectedImage;
