@@ -84,7 +84,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
             data={data}
             onRipple={onRipple}
             isConstellationMode={isConstellationMode}
-            showDebugVisuals={isDebugVisible}
+            showDebugVisuals={data.showDebugVisuals}
           />
         </div>
       </FieldWebMap>
