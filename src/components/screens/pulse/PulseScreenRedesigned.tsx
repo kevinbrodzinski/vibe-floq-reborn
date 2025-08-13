@@ -70,14 +70,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   // Enable realtime updates
   useLiveActivityRealtime();
 
-  // Location data
-  const location = useMemo(() => {
-    // TODO: Get actual location from reverse geocoding
-    return {
-      city: 'San Francisco',
-      neighborhood: 'Mission District'
-    };
-  }, [coords]);
+  // Location is now handled directly in PulseLocationWeatherBar component
 
   // Weather analysis for CTAs
   const weatherAnalysis = useMemo(() => {
@@ -261,7 +254,6 @@ export const PulseScreenRedesigned: React.FC = () => {
 
       {/* Location & Weather Bar */}
       <PulseLocationWeatherBar
-        location={location}
         weather={weatherData ? {
           condition: weatherData.condition,
           temperatureF: weatherData.temperatureF,

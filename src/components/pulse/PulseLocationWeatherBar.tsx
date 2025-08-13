@@ -2,6 +2,8 @@ import React from 'react';
 import { MapPin, Droplets, Wind, Sun, Cloud } from 'lucide-react';
 import { TimeOption } from './DateTimeSelector';
 import { GOOD_WEATHER } from '@/hooks/usePulseFilters';
+import { useGeo } from '@/hooks/useGeo';
+import { useLocationDisplay } from '@/hooks/useLocationDisplay';
 
 interface WeatherData {
   condition: string;
@@ -15,10 +17,6 @@ interface WeatherData {
 }
 
 interface PulseLocationWeatherBarProps {
-  location?: {
-    city?: string;
-    neighborhood?: string;
-  };
   weather?: WeatherData;
   selectedTime: TimeOption;
   isLoading?: boolean;
@@ -94,17 +92,25 @@ const getTimeContextLabel = (selectedTime: TimeOption) => {
 };
 
 export const PulseLocationWeatherBar: React.FC<PulseLocationWeatherBarProps> = ({
-  location,
   weather,
   selectedTime,
   isLoading = false,
   className = ''
 }) => {
-  const locationText = location?.neighborhood 
-    ? `${location.neighborhood}, ${location.city || 'Unknown'}`
-    : location?.city || 'Current location';
+  const { coords, status, error: geoError, hasPermission } = useGeo();
+  const { displayText: locationText, isLoading: locationLoading } = useLocationDisplay(
+    coords?.lat, 
+    coords?.lng, 
+    hasPermission, 
+    geoError
+  );
 
-  if (isLoading) {
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Location status:', { coords, status, hasPermission, locationText });
+  }, [coords, status, hasPermission, locationText]);
+
+  if (isLoading && locationLoading) {
     return (
       <div className={`px-6 mb-4 ${className}`}>
         <div className="flex items-center justify-between">
@@ -126,8 +132,8 @@ export const PulseLocationWeatherBar: React.FC<PulseLocationWeatherBarProps> = (
       <div className="flex items-center justify-between">
         {/* Location (Left Side) */}
         <div className="flex items-center gap-2 text-white/90 flex-shrink min-w-0">
-          <MapPin className="w-4 h-4 text-white/70 flex-shrink-0" />
-          <span className="text-sm font-medium truncate">
+          <MapPin className={`w-4 h-4 text-white/70 flex-shrink-0 ${locationLoading ? 'animate-pulse' : ''}`} />
+          <span className={`text-sm font-medium truncate ${locationLoading ? 'animate-pulse' : ''}`}>
             {locationText}
           </span>
         </div>
