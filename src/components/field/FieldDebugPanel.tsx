@@ -59,24 +59,7 @@ export const FieldDebugPanel: React.FC<FieldDebugPanelProps> = ({
 
   const isNightTime = timeWarpValue[0] < 6 || timeWarpValue[0] > 20;
 
-  if (!isVisible) {
-    // Only show debug toggle in non-production environments
-    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_STAGE === 'prod') {
-      return null;
-    }
-    
-    return (
-      <Button
-        onClick={onToggle}
-        variant="outline"
-        size="sm"
-        className="fixed top-4 right-4 z-50 bg-background/80 backdrop-blur-sm"
-      >
-        <Zap className="w-4 h-4 mr-2" />
-        Debug
-      </Button>
-    );
-  }
+  if (!isVisible) return null; // external UI (FAB) will open the panel
 
   return (
     <Card className="fixed top-4 right-4 z-50 w-80 p-4 bg-background/95 backdrop-blur-sm border shadow-lg">

@@ -3,7 +3,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { FieldWebMap } from '@/components/maps/FieldWebMap';
 import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
-import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
+
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
 import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
 
@@ -30,7 +30,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const { people: socialPeople } = useFieldSocial();
   
   // Phase 4 state management
-  const [isDebugVisible, setIsDebugVisible] = useState(false);
   const [isConstellationMode, setIsConstellationMode] = useState(false);
   
   // Venue sync state (for loading overlay)
@@ -97,23 +96,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
       <FieldUILayer data={data} />
       
       {/* Data Flow Test Panel (dev only) */}
-      {process.env.NODE_ENV === 'development' && isDebugVisible && (
-        <div className="absolute top-4 left-4 max-w-md">
-          <FieldDataTestPanel />
-        </div>
-      )}
-
-      {/* Debug Panel with Time Warp */}
-      <FieldDebugPanel
-        isVisible={isDebugVisible}
-        onToggle={() => setIsDebugVisible(!isDebugVisible)}
-        tileData={fieldTiles}
-        presenceData={actualPeople}
-        clusterData={walkableFloqs} // Use actual floq data as clusters
-        currentTime={new Date()}
-        isConstellationMode={isConstellationMode}
-        onConstellationToggle={() => setIsConstellationMode(!isConstellationMode)}
-      />
+      {/* Debug panel now managed by FieldLayout and accessed via LayerSelectionFab */}
     </div>
   );
 };
