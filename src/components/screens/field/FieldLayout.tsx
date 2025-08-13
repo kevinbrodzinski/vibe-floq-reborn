@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useMemo } from "react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
 import { MotionPermissionBanner } from "@/components/ui/MotionPermissionBanner";
@@ -27,7 +27,6 @@ import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
-import { FieldDebugPanel } from "@/components/field/FieldDebugPanel";
 
 interface FieldLayoutProps {
 }
@@ -45,9 +44,6 @@ export const FieldLayout = () => {
   } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
   const { people } = useFieldSocial();
-  
-  // Debug panel state
-  const [isDebugVisible, setIsDebugVisible] = useState(false);
   
   // Use useGeo for location gate logic (more reliable than unified location context)
   const geo = useGeo();
@@ -225,7 +221,7 @@ export const FieldLayout = () => {
           </BottomHud>
 
           {/* Layer Selection FAB - consolidated controls - z-65 */}
-          <LayerSelectionFab onOpenDebug={() => setIsDebugVisible(true)} />
+          <LayerSelectionFab />
 
           {/* Proximity Notifications - z-50 */}
           <ProximityNotifications />
@@ -233,16 +229,7 @@ export const FieldLayout = () => {
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
 
-          {/* Debug Panel */}
-          <FieldDebugPanel
-            isVisible={isDebugVisible}
-            onToggle={() => setIsDebugVisible(false)}
-            tileData={data.fieldTiles}
-            presenceData={people}
-            clusterData={data.walkableFloqs}
-            fieldTiles={data.fieldTiles}
-            currentTime={new Date()}
-          />
+
 
           {/* Debug Layer (development only) - z-200+ */}
           {/* Debug visuals disabled for production */}
