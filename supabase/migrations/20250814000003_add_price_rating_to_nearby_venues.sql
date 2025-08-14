@@ -27,8 +27,7 @@ RETURNS TABLE(
   live_count      integer,
   canonical_tags  text[],
   rating          numeric,
-  price_level     integer,
-  price_range     text
+  price_tier      text
 )
 LANGUAGE sql
 STABLE
@@ -55,8 +54,7 @@ AS $$
     v.live_count,
     COALESCE(v.canonical_tags, public.canonicalize_venue_enum(v.provider, v.categories, v.name))::text[] AS canonical_tags,
     v.rating,
-    v.price_level,
-    v.price_range
+    v.price_tier::text
   FROM public.venues v
   CROSS JOIN origin o
   CROSS JOIN wish   w

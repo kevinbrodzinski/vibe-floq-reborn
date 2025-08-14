@@ -21,8 +21,7 @@ export type VenueLite = {
   website?: string | null;
   reservation_url?: string | null;
   rating?: number | null;
-  price_level?: number | null; // 1-4 ($ to $$$$)
-  price_range?: string | null; // Formatted price string like "$$"
+  price_tier?: string | null; // From price_enum: "$" | "$$" | "$$$" | "$$$$"
 };
 
 type Props = {
@@ -41,12 +40,7 @@ const clamp1 = (n: number) => Math.round(n * 10) / 10;
 const walkMins = (m?: number | null) => Math.max(1, Math.round((m ?? 0) / (1.4 * 60)));   // ~5km/h
 const driveMins = (m?: number | null) => Math.max(1, Math.round((m ?? 0) / (13.9 * 60))); // ~50km/h
 
-// Price level formatting
-const formatPriceLevel = (priceLevel?: number | null): string => {
-  if (!priceLevel) return '';
-  const levels = ['', '$', '$$', '$$$', '$$$$'];
-  return levels[priceLevel] || '';
-};
+// Price tier is already formatted as a string from the enum
 
 function uberDeepLink(userLat?: number | null, userLng?: number | null, v?: VenueLite | null) {
   if (!v?.lat || !v?.lng) return null;
@@ -133,10 +127,10 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
                             </span>
                           </div>
                         )}
-                        {(venue.price_range || venue.price_level) && (
+                        {venue.price_tier && (
                           <div className="flex items-center gap-1">
                             <span className="text-green-400 text-[11px] font-medium">
-                              {venue.price_range || formatPriceLevel(venue.price_level)}
+                              {venue.price_tier}
                             </span>
                           </div>
                         )}
