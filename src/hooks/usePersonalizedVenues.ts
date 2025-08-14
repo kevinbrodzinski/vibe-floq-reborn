@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { filterGooglePlacesUrl } from '@/lib/utils/images';
 
 const bucket = (n: number) => Math.round(n * 1e4) / 1e4; // ~11 m
 
@@ -161,7 +162,7 @@ export const usePersonalizedVenues = (
         categories: venue.categories,
         description: venue.description,
         address: venue.address,
-        photo_url: venue.photo_url,
+        photo_url: filterGooglePlacesUrl(venue.photo_url, ''),
         live_count: venue.live_count,
         price_tier: venue.price_tier,
         personalized_score: venue.personalized_score,

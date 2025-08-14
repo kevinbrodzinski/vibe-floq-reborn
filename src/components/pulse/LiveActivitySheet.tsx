@@ -8,8 +8,6 @@ export const LiveActivitySheet = ({
   open: boolean;
   onClose: () => void;
 }) => {
-  console.log('LiveActivitySheet render:', { open, LiveFeedFull });
-  
   // Handle escape key
   useEffect(() => {
     if (!open) return;

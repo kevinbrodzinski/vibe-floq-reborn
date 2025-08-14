@@ -7,6 +7,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -84,6 +85,9 @@ export function VoiceInputSheet({
       <SheetContent side="bottom" className="h-[400px]">
         <VisuallyHidden>
           <SheetTitle>Voice Input</SheetTitle>
+          <SheetDescription>
+            Use voice commands to search for venues, friends, or plans.
+          </SheetDescription>
         </VisuallyHidden>
         <SheetHeader className="flex flex-row items-center justify-between space-y-0">
           <h2 className="text-lg font-semibold">Voice Input</h2>

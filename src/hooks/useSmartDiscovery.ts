@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
 import { DISCOVERY_CONFIG } from '@/config/discovery';
 import { VenueSchema, FloqSchema, AiSuggestionSchema } from '@/schemas/discovery';
+import { filterGooglePlacesUrl } from '@/lib/utils/images';
 import { 
   createDiscoveryQueryKey, 
   matchesActivity, 
@@ -112,7 +113,7 @@ export const useSmartDiscovery = (
                 tags: venue.categories || [],
                 address: venue.address,
                 categories: venue.categories || [],
-                photo_url: venue.photo_url,
+                photo_url: filterGooglePlacesUrl(venue.photo_url, ''),
                 live_count: venue.live_count || 0,
                 isFavorite: false,
                 isWatching: false,
