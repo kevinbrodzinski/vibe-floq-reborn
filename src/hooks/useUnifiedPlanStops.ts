@@ -51,8 +51,8 @@ export function useUnifiedPlanStops(planId?: string) {
           p_plan_id: payload.plan_id,
           p_title: payload.title,
           p_description: payload.description || null,
-          p_start_time: null, // Temporarily disabled until DB migration is applied
-          p_end_time: null,   // Temporarily disabled until DB migration is applied
+          p_start_time: payload.start_time || null,
+          p_end_time: payload.end_time || null,
           p_duration_minutes: payload.duration_minutes || 60,
           p_venue_id: payload.venue_id || null,
           p_estimated_cost: payload.estimated_cost_per_person || null
