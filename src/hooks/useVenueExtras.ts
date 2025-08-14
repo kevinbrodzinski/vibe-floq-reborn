@@ -31,31 +31,30 @@ export function useVenueExtras(venueId: string | null) {
     (async () => {
       if (!venueId) return;
 
-      // FAVORITE (user_favorites uses item_type/item_id)
-      const { data: favRow, error: favErr } = await supabase
+      // FAVORITE (user_favorites uses item_type/item_id; no id column)
+      const uid = (await supabase.auth.getUser()).data.user?.id || '';
+      const favCheck = await supabase
         .from('user_favorites')
-        .select('id')
-        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id || '')
+        .select('item_id', { count: 'exact', head: true })
+        .eq('profile_id', uid)
         .eq('item_type', 'venue')
-        .eq('item_id', venueId)
-        .maybeSingle();
+        .eq('item_id', venueId);
 
       if (!cancelled) {
-        if (favErr && favErr.code !== 'PGRST116') console.warn('favorites check error', favErr);
-        setFavorite(!!favRow);
+        if (favCheck.error && favCheck.error.code !== 'PGRST116') console.warn('favorites check error', favCheck.error);
+        setFavorite((favCheck.count ?? 0) > 0);
       }
 
-      // WATCHLIST (ensure you added venue_id to user_watchlist; otherwise this returns false)
-      const { data: wlRow, error: wlErr } = await supabase
+      // WATCHLIST (no id column either)
+      const wlCheck = await supabase
         .from('user_watchlist')
-        .select('id')
-        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id || '')
-        .eq('venue_id', venueId)
-        .maybeSingle();
+        .select('venue_id', { count: 'exact', head: true })
+        .eq('profile_id', uid)
+        .eq('venue_id', venueId);
 
       if (!cancelled) {
-        if (wlErr && wlErr.code !== 'PGRST116') console.warn('watchlist check error', wlErr);
-        setWatch(!!wlRow);
+        if (wlCheck.error && wlCheck.error.code !== 'PGRST116') console.warn('watchlist check error', wlCheck.error);
+        setWatch((wlCheck.count ?? 0) > 0);
       }
 
       // HOURS (table/view might not exist → treat 404 as "no hours")
@@ -139,18 +138,16 @@ export function useVenueExtras(venueId: string | null) {
 
       // VISITS (boolean: has user visited recently?)
       try {
-        const userId = (await supabase.auth.getUser()).data.user?.id || '';
         const sinceIso = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
-        const { data: vs, error } = await supabase
+        const visitCheck = await supabase
           .from('venue_visits')
-          .select('id')
+          .select('id', { count: 'exact', head: true })
           .eq('venue_id', venueId)
-          .eq('profile_id', userId) // you store auth.uid() in profile_id today
-          .gte('arrived_at', sinceIso)
-          .limit(1);
+          .eq('profile_id', uid)
+          .gte('arrived_at', sinceIso);
         if (!cancelled) {
-          if (error) console.warn('venue_visits error', error);
-          setHasVisited((vs || []).length > 0);
+          if (visitCheck.error) console.warn('venue_visits error', visitCheck.error);
+          setHasVisited((visitCheck.count ?? 0) > 0);
         }
       } catch (e) {
         if (!cancelled) setHasVisited(false);
@@ -165,10 +162,10 @@ export function useVenueExtras(venueId: string | null) {
   // Toggles
   const toggleFavorite = async () => {
     if (!venueId) return;
-    const userId = (await supabase.auth.getUser()).data.user?.id || '';
+    const uid = (await supabase.auth.getUser()).data.user?.id || '';
     if (!favorite) {
       const { error } = await supabase.from('user_favorites').insert({
-        profile_id: userId,
+        profile_id: uid,
         item_type: 'venue',
         item_id: venueId,
       });
@@ -177,7 +174,7 @@ export function useVenueExtras(venueId: string | null) {
       const { error } = await supabase
         .from('user_favorites')
         .delete()
-        .eq('profile_id', userId)
+        .eq('profile_id', uid)
         .eq('item_type', 'venue')
         .eq('item_id', venueId);
       if (!error) setFavorite(false);
@@ -186,18 +183,18 @@ export function useVenueExtras(venueId: string | null) {
 
   const toggleWatch = async () => {
     if (!venueId) return;
-    const userId = (await supabase.auth.getUser()).data.user?.id || '';
+    const uid = (await supabase.auth.getUser()).data.user?.id || '';
     if (!watch) {
       const { error } = await supabase.from('user_watchlist').insert({
-        profile_id: userId,
-        venue_id: venueId, // requires the column we added earlier
+        profile_id: uid,
+        venue_id: venueId,
       });
       if (!error) setWatch(true);
     } else {
       const { error } = await supabase
         .from('user_watchlist')
         .delete()
-        .eq('profile_id', userId)
+        .eq('profile_id', uid)
         .eq('venue_id', venueId);
       if (!error) setWatch(false);
     }
