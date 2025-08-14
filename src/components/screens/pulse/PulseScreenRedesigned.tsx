@@ -56,7 +56,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const { data: weatherData, isLoading: weatherLoading } = useWeather();
   const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime);
 
-      // Data hooks with enhanced filtering
+      // Data hooks with enhanced filtering - only fetch when we have real coordinates
   const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
     coords?.lat ?? 0,
     coords?.lng ?? 0,
@@ -105,8 +105,8 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform data into recommendations with contextual filtering
   const recommendations: RecommendationItem[] = useMemo(() => {
-    // Early return if no data
-    if (!nearbyVenues?.length && !myFloqs?.length) return [];
+    // Early return if no data or still loading coordinates
+    if (!coords || (!nearbyVenues?.length && !myFloqs?.length)) return [];
     
     // Apply contextual filtering to venues if context is available
     let filteredVenues = nearbyVenues;
@@ -209,7 +209,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     });
 
     return [...venueRecs, ...floqRecs];
-  }, [nearbyVenues, myFloqs, weatherAnalysis, filterContext, selectedFilterKeys]);
+  }, [nearbyVenues, myFloqs, weatherAnalysis, filterContext, selectedFilterKeys, coords]);
 
   // Filter recommendations based on search and selected filters
   const filteredRecommendations = useMemo(() => {
@@ -272,12 +272,13 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Get venue IDs for batch open state query
   const venueIds = useMemo(() => {
+    if (!coords || filteredRecommendations.length === 0) return [];
     return filteredRecommendations
       .filter(item => item.type === 'venue')
       .map(item => item.id);
-  }, [filteredRecommendations]);
+  }, [filteredRecommendations, coords]);
 
-  // Fetch open state for all venues at once
+  // Fetch open state for all venues at once - only when we have venue IDs
   const { data: venuesOpenState = [] } = useVenuesOpenState(venueIds);
 
   // Transform recommendations for carousel/list view
@@ -394,6 +395,9 @@ export const PulseScreenRedesigned: React.FC = () => {
     // Handle directions action
   }, []);
 
+  // Show loading state while waiting for location
+  const isInitialLoading = !coords && (nearbyLoading || trendingLoading);
+
   return (
     <div className="min-h-screen gradient-field">
       {/* Header */}
@@ -403,6 +407,16 @@ export const PulseScreenRedesigned: React.FC = () => {
         onAIInsightsClick={() => setShowAIInsights(!showAIInsights)}
         showAIInsights={showAIInsights}
       />
+
+      {/* Loading State */}
+      {isInitialLoading && (
+        <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white/80">Getting your location...</p>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <SmartDiscoveryModal
@@ -430,11 +444,14 @@ export const PulseScreenRedesigned: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Search Bar */}
-      <PulseSearchBar
-        value={searchQuery}
-        onChange={setSearchQuery}
-      />
+      {/* Main Content - only show when we have coordinates */}
+      {!isInitialLoading && coords && (
+        <>
+          {/* Search Bar */}
+          <PulseSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
 
       {/* Location & Weather Bar */}
       <PulseLocationWeatherBar
@@ -630,6 +647,9 @@ export const PulseScreenRedesigned: React.FC = () => {
       </div>
 
       {/* Venue Detail Sheet */}
+        </>
+      )}
+
       <VenueDetailSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}

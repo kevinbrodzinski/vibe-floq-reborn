@@ -19,7 +19,7 @@ export function useNearbyVenues(
   
   return useQuery({
     queryKey: ["nearby-venues", lat, lng, radiusKm, pillKeys, filterLogic, limit],
-    enabled: Number.isFinite(lat) && Number.isFinite(lng),
+    enabled: Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0,
     queryFn: async () => {
       const radiusM = Math.round(radiusKm * 1000);
       const anyTags = filterLogic === 'any' && pillKeys.length ? pillKeys : null;
