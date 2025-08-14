@@ -85,14 +85,16 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
         className="h-[92vh] p-0 overflow-hidden"
         aria-describedby={contentId}
       >
-        <VisuallyHidden>
-          <SheetHeader>
+        <SheetHeader>
+          <VisuallyHidden>
             <SheetTitle id="venue-detail-title">{venue?.name ?? "Venue details"}</SheetTitle>
+          </VisuallyHidden>
+          <VisuallyHidden>
             <SheetDescription id={contentId}>
               Details, hours, deals, travel times, and actions for this venue.
             </SheetDescription>
-          </SheetHeader>
-        </VisuallyHidden>
+          </VisuallyHidden>
+        </SheetHeader>
         {venue && (
           <div className="flex flex-col h-full">
             {/* HERO */}
