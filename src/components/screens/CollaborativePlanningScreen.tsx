@@ -145,9 +145,10 @@ export const CollaborativePlanningScreen = () => {
       
       overlayTimeoutRef.current = setTimeout(() => {
         setShowExecutionOverlay(false);
+        overlayTimeoutRef.current = null;
       }, ms);
     },
-    [overlayAction]
+    []
   );
 
   // Advanced gestures
@@ -315,25 +316,6 @@ export const CollaborativePlanningScreen = () => {
   const isConnected = sync.isConnected;
   const activeParticipants = [];
   const syncedPlanMode = planMode;
-
-  // Overlay feedback helper with auto-dismiss
-  const showOverlay = useCallback(
-    (action: typeof overlayAction, feedback: string, ms = 2500) => {
-      setOverlayAction(action);
-      setOverlayFeedback(feedback);
-      setShowExecutionOverlay(true);
-      
-      if (overlayTimeoutRef.current) {
-        clearTimeout(overlayTimeoutRef.current);
-      }
-      
-      overlayTimeoutRef.current = setTimeout(() => {
-        setShowExecutionOverlay(false);
-        overlayTimeoutRef.current = null;
-      }, ms);
-    },
-    []  
-  );
 
   const handleAcceptSuggestion = async (s: any) => {
     const { v4: uuidv4 } = require('uuid')
