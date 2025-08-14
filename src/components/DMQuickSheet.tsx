@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -412,46 +412,96 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
             <SheetDescription>Conversation panel</SheetDescription>
           </VisuallyHidden>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             {friendLoading ? (
               <>
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <div className="flex flex-col gap-1 flex-1">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-16" />
+                <div className="relative">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-24" />
                 </div>
               </>
             ) : friend ? (
               <>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={friend.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {friend.display_name?.[0]?.toUpperCase() ?? '?'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="text-left text-sm font-semibold">{friend.display_name}</div>
-                  <div className="text-xs text-muted-foreground">@{friend.username}</div>
+                <div className="relative">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={friend.avatar_url || undefined} />
+                    <AvatarFallback className="text-sm font-medium">
+                      {friend.display_name?.[0]?.toUpperCase() ?? '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Online status indicator */}
+                  <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${
+                    online ? 'bg-green-500' : 'bg-gray-400'
+                  }`} />
                 </div>
-                {online
-                  ? <span className="ml-2 text-xs text-green-400">● Online</span>
-                  : lastSeenTs && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {dayjs(lastSeenTs).fromNow(true)}
-                    </span>
-                  )
-                }
+                
+                <div className="flex-1 min-w-0 space-y-1">
+                  {/* Name and username - vertically aligned */}
+                  <div className="space-y-0.5">
+                    <h3 className="text-sm font-semibold leading-tight text-foreground truncate">
+                      {friend.display_name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-tight">
+                      @{friend.username}
+                    </p>
+                  </div>
+                  
+                  {/* Status and location row */}
+                  <div className="flex items-center gap-2 text-xs">
+                    {/* Online status */}
+                    <div className="flex items-center gap-1">
+                      <div className={`h-1.5 w-1.5 rounded-full ${
+                        online ? 'bg-green-500' : 'bg-gray-400'
+                      }`} />
+                      <span className={online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
+                        {online ? 'Online' : lastSeenTs ? `Last seen ${dayjs(lastSeenTs).fromNow()}` : 'Offline'}
+                      </span>
+                    </div>
+                    
+                    {/* Location indicator - placeholder for future implementation */}
+                    {friend.current_location && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate max-w-20">
+                            {friend.current_location}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </>
             ) : (
               <>
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs">
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="text-left text-sm font-semibold">Direct Message</div>
-                  <div className="text-xs text-muted-foreground">Chat privately with your friend</div>
+                <div className="relative">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="text-sm">
+                      <User className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-gray-400" />
+                </div>
+                
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="space-y-0.5">
+                    <h3 className="text-sm font-semibold leading-tight text-foreground">
+                      Direct Message
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-tight">
+                      Chat privately with your friend
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                    <span>Offline</span>
+                  </div>
                 </div>
               </>
             )}
