@@ -5170,25 +5170,25 @@ export type Database = {
           created_at: string | null
           friend_state: Database["public"]["Enums"]["friend_state"]
           is_close: boolean
+          profile_high: string
+          profile_low: string
           responded_at: string | null
-          user_high: string
-          user_low: string
         }
         Insert: {
           created_at?: string | null
           friend_state?: Database["public"]["Enums"]["friend_state"]
           is_close?: boolean
+          profile_high: string
+          profile_low: string
           responded_at?: string | null
-          user_high: string
-          user_low: string
         }
         Update: {
           created_at?: string | null
           friend_state?: Database["public"]["Enums"]["friend_state"]
           is_close?: boolean
+          profile_high?: string
+          profile_low?: string
           responded_at?: string | null
-          user_high?: string
-          user_low?: string
         }
         Relationships: []
       }
@@ -12280,13 +12280,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -12296,8 +12289,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -12310,8 +12303,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -12324,7 +12317,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12337,13 +12330,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -13340,13 +13340,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -13356,8 +13349,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -13370,8 +13363,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -13384,7 +13377,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -13397,13 +13390,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -14213,6 +14213,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      current_profile_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       delete_floq: {
         Args: { p_floq_id: string }
         Returns: Json
@@ -14348,6 +14352,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      friend_ids_for: {
+        Args: { p_profile: string }
+        Returns: string[]
+      }
       friend_pair: {
         Args: { a: string; b: string }
         Returns: {
@@ -14364,6 +14372,18 @@ export type Database = {
           lat: number
           lng: number
           distance_m: number
+        }[]
+      }
+      friends_recent_at_venue: {
+        Args: { p_venue_id: string; p_days?: number }
+        Returns: {
+          friend_profile_id: string
+          friend_name: string
+          arrived_at: string
+          departed_at: string
+          arrived_local_wall: string
+          departed_local_wall: string
+          venue_tz: string
         }[]
       }
       gc_vibes_now: {
@@ -15186,6 +15206,7 @@ export type Database = {
           p_lat: number
           p_lng: number
           p_radius_m: number
+          p_limit?: number
           p_any_tags?: string[]
           p_all_tags?: string[]
         }
@@ -15478,6 +15499,10 @@ export type Database = {
           consistency_score: number
           top_locations: Json
         }[]
+      }
+      get_venue_timezone: {
+        Args: { p_venue_id: string }
+        Returns: string
       }
       get_venues_in_bbox: {
         Args:
