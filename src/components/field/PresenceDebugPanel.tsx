@@ -42,17 +42,7 @@ export const PresenceDebugPanel: React.FC<PresenceDebugPanelProps> = ({
   };
 
   if (!isExpanded) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsExpanded(true)}
-        className="fixed bottom-4 right-4 z-[300] bg-background/90 backdrop-blur-sm"
-      >
-        <Eye className="w-4 h-4 mr-2" />
-        Debug
-      </Button>
-    );
+    return null;
   }
 
   return (
