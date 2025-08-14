@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -90,12 +91,14 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
         className="h-[92vh] p-0 overflow-hidden"
         aria-describedby={contentId}
       >
-        <SheetHeader className="sr-only">
-          <SheetTitle id="venue-detail-title">{venue?.name ?? "Venue details"}</SheetTitle>
-          <SheetDescription id={contentId}>
-            Details, hours, deals, travel times, and actions for this venue.
-          </SheetDescription>
-        </SheetHeader>
+        <VisuallyHidden>
+          <SheetHeader>
+            <SheetTitle id="venue-detail-title">{venue?.name ?? "Venue details"}</SheetTitle>
+            <SheetDescription id={contentId}>
+              Details, hours, deals, travel times, and actions for this venue.
+            </SheetDescription>
+          </SheetHeader>
+        </VisuallyHidden>
         {venue && (
           <div className="flex flex-col h-full">
             {/* HERO */}
