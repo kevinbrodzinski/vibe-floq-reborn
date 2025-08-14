@@ -156,17 +156,16 @@ export function useVenueExtras(venueId: string | null) {
       let friends: any[] = [];
       try {
         const { data, error } = await supabase.rpc("friends_recent_at_venue", {
-          p_profile_id: profileId,
           p_venue_id: venueId,
-          p_days_back: 14,
+          p_days: 14,
         });
         if (error) throw error;
-        // Transform to expected format
+        // Transform to expected format - RPC now includes friend names
         friends = (data ?? []).map((f: any) => ({
-          id: f.friend_id,
-          display_name: null, // Would need to join with profiles
-          username: null,
-          avatar_url: null,
+          id: f.friend_profile_id,
+          display_name: f.friend_name,
+          username: f.friend_name, // fallback
+          avatar_url: null, // not included in RPC
         }));
       } catch (e: any) {
         if (is404(e) && profileId) {
