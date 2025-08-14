@@ -8,12 +8,16 @@ export function useOptimizedInvitedPlans() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      console.time('Invited Plans Query');
+      const queryId = `invited-plans-${Date.now()}`;
+      console.time(queryId);
       
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return [];
+      if (!user.user) {
+        console.timeEnd(queryId);
+        return [];
+      }
 
-      // Simplified query with only essential joins
+      // Fixed query with explicit relationship specification
       const { data, error } = await supabase
         .from('plan_participants')
         .select(`
@@ -24,7 +28,11 @@ export function useOptimizedInvitedPlans() {
             planned_at,
             status,
             creator_id,
-            floqs(title, location)
+            floq_id,
+            floqs!floq_plans_floq_id_fkey(
+              title,
+              location
+            )
           )
         `)
         .eq('profile_id', user.user.id)
@@ -33,10 +41,11 @@ export function useOptimizedInvitedPlans() {
 
       if (error) {
         console.error('Invited plans query error:', error);
+        console.timeEnd(queryId);
         throw error;
       }
       
-      console.timeEnd('Invited Plans Query');
+      console.timeEnd(queryId);
       return data?.map(item => item.floq_plans).filter(Boolean) || [];
     }
   });

@@ -37,7 +37,8 @@ export function useOptimizedUserPlans() {
     staleTime: 5 * 60 * 1000, // 5 minutes - increased from 1 minute
     gcTime: 10 * 60 * 1000, // 10 minutes - increased from 5 minutes
     queryFn: async () => {
-      console.time('User Plans Query');
+      const queryId = `user-plans-${Date.now()}`;
+      console.time(queryId);
       
       // Simplified query to fetch only essential data
       const { data, error } = await supabase
@@ -46,7 +47,7 @@ export function useOptimizedUserPlans() {
         .order('starts_at', { ascending: true })
         .throwOnError();
       
-      console.timeEnd('User Plans Query');
+      console.timeEnd(queryId);
       return data || [];
     },
   })
