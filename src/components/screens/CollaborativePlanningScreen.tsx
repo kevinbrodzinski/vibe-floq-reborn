@@ -7,7 +7,7 @@ import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
 import { PlanInviteButton } from "@/components/PlanInviteButton";
 import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
 import { TimeProgressBar } from "@/components/TimeProgressBar";
-import { useLegacyCollaborativeState } from "@/hooks/useLegacyCollaborativeState";
+import { useUnifiedPlanStops } from "@/hooks/useUnifiedPlanStops";
 import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { LiveParticipantTracker } from "@/components/LiveParticipantTracker";
@@ -37,6 +37,8 @@ import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { usePlanSummaries } from "@/hooks/usePlanSummaries";
 import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
 import { useCollaborativeState } from "@/hooks/useCollaborativeState";
+import { usePlan } from "@/hooks/usePlan";
+import { usePlanStops } from "@/hooks/usePlanStops";
 import { supabase } from "@/integrations/supabase/client";
 import { getSafeStatus } from '@/lib/planStatusConfig';
 import { SummaryModeEnum } from '@/types/enums/summaryMode';
@@ -72,26 +74,31 @@ export const CollaborativePlanningScreen = () => {
   
 
   // Get collaborative state including all functions
-  const {
-    stops,
-    isLoading,
-    removeStop,
+  // Fetch plan data
+  const { data: plan, isLoading: isPlanLoading, error: planError } = usePlan(actualPlanId);
+  
+  const { 
+    createStop, 
+    deleteStop, 
     reorderStops,
-    addStop,
-    voteOnStop
-  } = useLegacyCollaborativeState(actualPlanId);
+    isCreating,
+    isDeleting 
+  } = useUnifiedPlanStops(actualPlanId);
+  
+  // Get stops data separately  
+  const { data: stops = [], isLoading: isStopsLoading } = usePlanStops(actualPlanId);
 
-  // Mock the remaining properties that need real implementation
-  const plan = { 
-    id: actualPlanId,
-    title: 'Collaborative Plan',
-    date: new Date().toISOString().split('T')[0],
-    stops, 
-    status: 'draft' as const,
-    participants: [], // TODO: Get from usePlanRoom
-    creator_id: 'current-user'
-  };
   const activities = []; // TODO: Get from plan activities hook
+  
+  // Show loading state while plan is loading
+  if (isPlanLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading plan...</div>;
+  }
+  
+  // Show error state if plan failed to load
+  if (planError || !plan) {
+    return <div className="flex items-center justify-center h-screen">Failed to load plan</div>;
+  }
   
   const recentVotes = []; // TODO: Get from plan votes hook
 
@@ -101,20 +108,10 @@ export const CollaborativePlanningScreen = () => {
   // Get haptic feedback hook
   const { socialHaptics: hapticFeedback } = useHapticFeedback()
 
-  // Template functions
+  // Template functions - TODO: Update to use unified system
   const handleLoadTemplate = (templateStops: any[]) => {
-    // Generate new IDs using uuid and add to current plan
-    const { v4: uuidv4 } = require('uuid')
-    const newStops = templateStops.map((stop, index) => ({
-      ...stop,
-      id: uuidv4(),
-      participants: [],
-      created_by: 'current-user'
-    }))
-    
-    newStops.forEach(stop => {
-      addStop(stop)
-    })
+    console.log('Template loading temporarily disabled - needs update to unified system')
+    // TODO: Update to use createStop.mutateAsync for each stop
   }
 
 
@@ -146,8 +143,9 @@ export const CollaborativePlanningScreen = () => {
       participants: [],
       votes: []
     };
-    addStop(newStop);
-    showOverlay('stop-action', 'Stop created!');
+    // TODO: Update to use unified system
+    console.log('Legacy addStop temporarily disabled');
+    showOverlay('stop-action', 'Stop creation temporarily disabled');
   };
 
   const handleStopReorderByIndex = async (stopId: string, newIndex: number) => {
@@ -194,7 +192,8 @@ export const CollaborativePlanningScreen = () => {
     onAddStop: () => handleStopAdd("20:00"),
     onDeleteStop: () => {
       if (selectedStopIds.length > 0) {
-        selectedStopIds.forEach(stopId => removeStop(stopId));
+        // TODO: Update to use unified system
+        console.log('Legacy removeStop temporarily disabled');
         setSelectedStopIds([]);
       }
     },
@@ -292,8 +291,9 @@ export const CollaborativePlanningScreen = () => {
       votes: []
     };
 
-    await addStop(newStop);
-    showOverlay('stop-action', 'AI suggestion added!');
+    // TODO: Update to use unified system
+    console.log('Legacy AI addStop temporarily disabled');
+    showOverlay('stop-action', 'AI suggestion temporarily disabled');
   };
 
   // Enhanced RSVP handler with persistence
@@ -378,8 +378,9 @@ export const CollaborativePlanningScreen = () => {
       participants: [],
       votes: []
     };
-    addStop(newStop);
-    showOverlay('stop-action', 'Stop added!');
+    // TODO: Update to use unified system
+    console.log('Legacy venue addStop temporarily disabled');
+    showOverlay('stop-action', 'Venue stop temporarily disabled');
   };
 
 

@@ -12,7 +12,7 @@ const FloqManage = lazy(() => import('@/pages/FloqManage'));
 const PulseScreen = lazy(() => import('@/components/screens/pulse/PulseScreenRedesigned').then(m => ({ default: m.PulseScreenRedesigned })));
 const VibeScreen = lazy(() => import('@/screens/VibeScreen').then(m => ({ default: m.VibeScreen })));
 const AfterglowRoutes = lazy(() => import('@/routes/AfterglowRoutes'));
-const CollaborativePlanningScreen = lazy(() => import('@/components/screens/CollaborativePlanningScreen').then(m => ({ default: m.CollaborativePlanningScreen })));
+const CollaborativePlanningScreenWrapper = lazy(() => import('@/components/screens/CollaborativePlanningScreenWrapper').then(m => ({ default: m.CollaborativePlanningScreenWrapper })));
 const FloqPlanExecutionScreen = lazy(() => import('@/pages/FloqPlanExecutionScreen'));
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import UserProfileByUsernameWrapper from '@/components/UserProfileByUsernameWrapper';
@@ -106,7 +106,7 @@ export const AppRoutes = () => {
       <Route path="/plans" element={<PlansHub />} />
       <Route path="/plans/:planId" element={<PlanDetailsView />} />
       <Route path="/plan/new" element={<NewPlanWizard />} />
-      <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
+      <Route path="/plan/:planId" element={<CollaborativePlanningScreenWrapper />} />
       {/* Redirect old new-plan path to new path */}
       <Route path="/new-plan" element={<Navigate to="/plan/new" replace />} />
       {/* New route for shared plans using /share/:slug */}

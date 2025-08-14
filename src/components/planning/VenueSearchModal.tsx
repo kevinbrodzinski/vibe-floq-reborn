@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Search, MapPin, Star, Clock, DollarSign } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
-import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
+import { useUnifiedPlanStops } from '@/hooks/useUnifiedPlanStops'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import type { PlanStop } from '@/types/plan'
 
@@ -60,7 +60,7 @@ export function VenueSearchModal({
   const [selectedVenue, setSelectedVenue] = useState<typeof mockVenues[0] | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useLegacyCollaborativeState(planId)
+  const { createStop } = useUnifiedPlanStops(planId)
   const { data: existingStops } = usePlanStops(planId)
 
   const formatTimeSlot = (time: string) => {
@@ -85,29 +85,14 @@ export function VenueSearchModal({
 
     setIsSubmitting(true)
     try {
-      const newStop: PlanStop = {
-        id: '', // Will be set by the backend
+      await createStop.mutateAsync({
         plan_id: planId,
         title: selectedVenue.name,
         description: `${selectedVenue.category} • ${selectedVenue.estimatedTime}`,
-        startTime: timeSlot,
-        endTime: defaultEndTime,
         start_time: timeSlot,
         end_time: defaultEndTime,
-        location: selectedVenue.address,
-        venue: selectedVenue.name,
         address: selectedVenue.address,
-        vibeMatch: 0.8,
-        status: 'confirmed' as const,
-        color: '#3B82F6',
-        stop_order: (existingStops?.length || 0) + 1,
-        createdBy: '',
-        participants: [],
-        votes: [],
-        kind: 'venue' as any
-      }
-
-      await addStop(newStop)
+      })
       
       // Track successful venue addition
       trackEvent('stop_created', {
