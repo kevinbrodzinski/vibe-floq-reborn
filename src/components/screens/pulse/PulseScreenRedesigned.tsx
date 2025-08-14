@@ -312,6 +312,8 @@ export const PulseScreenRedesigned: React.FC = () => {
         categories: item.tags || [],
         canonical_tags: item.tags || [],
         distance_m: item.distance,
+        rating: item.rating,
+        price_range: item.priceRange,
         // Note: lat/lng not available from RecommendationItem
         // Would need to be fetched or stored differently
       };
@@ -339,6 +341,9 @@ export const PulseScreenRedesigned: React.FC = () => {
         lng: venue.lng,
         website: venue.website,
         reservation_url: venue.reservation_url,
+        rating: venue.rating,
+        price_level: venue.price_level,
+        price_range: venue.price_range,
       };
       setActiveVenue(venueLite);
       setSheetOpen(true);

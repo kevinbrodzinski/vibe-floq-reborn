@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Heart, Bookmark, MessageSquare, Camera, Clock, MapPin, Navigation, Car, Calendar, Users, Sparkles } from 'lucide-react';
+import { Heart, Bookmark, MessageSquare, Camera, Clock, MapPin, Navigation, Car, Calendar, Users, Sparkles, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useVenueExtras } from '@/hooks/useVenueExtras';
 
@@ -19,6 +19,9 @@ export type VenueLite = {
   lng?: number | null;
   website?: string | null;
   reservation_url?: string | null;
+  rating?: number | null;
+  price_level?: number | null; // 1-4 ($ to $$$$)
+  price_range?: string | null; // Formatted price string like "$$"
 };
 
 type Props = {
@@ -36,6 +39,13 @@ const clamp1 = (n: number) => Math.round(n * 10) / 10;
 
 const walkMins = (m?: number | null) => Math.max(1, Math.round((m ?? 0) / (1.4 * 60)));   // ~5km/h
 const driveMins = (m?: number | null) => Math.max(1, Math.round((m ?? 0) / (13.9 * 60))); // ~50km/h
+
+// Price level formatting
+const formatPriceLevel = (priceLevel?: number | null): string => {
+  if (!priceLevel) return '';
+  const levels = ['', '$', '$$', '$$$', '$$$$'];
+  return levels[priceLevel] || '';
+};
 
 function uberDeepLink(userLat?: number | null, userLng?: number | null, v?: VenueLite | null) {
   if (!v?.lat || !v?.lng) return null;
@@ -108,6 +118,25 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
                       <div className="text-white text-[17px] font-semibold truncate">{venue.name}</div>
                       <div className="text-white/80 text-[11px] truncate">
                         {(venue.categories ?? []).slice(0, 1).join(', ') || '—'}
+                      </div>
+                      
+                      {/* Rating and Price Row */}
+                      <div className="flex items-center gap-3 mt-1">
+                        {venue.rating && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-current text-amber-400" />
+                            <span className="text-white/90 text-[11px] font-medium">
+                              {venue.rating.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                        {(venue.price_range || venue.price_level) && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-green-400 text-[11px] font-medium">
+                              {venue.price_range || formatPriceLevel(venue.price_level)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
