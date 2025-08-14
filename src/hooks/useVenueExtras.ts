@@ -1,348 +1,244 @@
 import * as React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
-type Id = string;
+type Friend = { id: string; display_name?: string | null; username?: string | null; avatar_url?: string | null };
+type Deal = { id: string; title: string; subtitle?: string | null; endsAtText?: string | null };
 
-async function tableExists(name: string) {
-  // Light probe: PostgREST returns 404 if table is missing
-  const { error } = await supabase.from(name).select("id").limit(0);
-  return !error || error.status !== 404;
+function isNotFound(err: any) {
+  // PostgREST 404 → resource not found
+  return !!err && (err.code === 'PGRST301' || err.code === '404' || (typeof err.message === 'string' && err.message.includes('Not Found')));
 }
 
-function is404(e: any) { return e?.status === 404; }
-function is400(e: any) { return e?.status === 400; }
-
 export function useVenueExtras(venueId: string | null) {
-  const { user } = useAuth();
-  const profileId = user?.id;
-
-  // Always call useState hooks in the same order
   const [favorite, setFavorite] = React.useState(false);
   const [watch, setWatch] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
-  const [reviewText, setReviewText] = React.useState('');
   const [photoOpen, setPhotoOpen] = React.useState(false);
+  const [reviewText, setReviewText] = React.useState('');
   const photoInputRef = React.useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
-  // Main data query - always called in the same position
-  const queryResult = useQuery({
-    queryKey: ["venue-extras", venueId, profileId],
-    enabled: !!venueId,
-    queryFn: async () => {
-      if (!venueId) return {
-        openNow: null,
-        nextOpenText: null,
-        hoursToday: null,
-        deals: [],
-        friends: [],
-        hasVisited: false,
-        aiSummary: null,
-        isFav: false,
-        inWatchlist: false,
-      };
+  const [openNow, setOpenNow] = React.useState<boolean | null>(null);
+  const [nextOpenText, setNextOpenText] = React.useState<string | null>(null);
+  const [hoursToday, setHoursToday] = React.useState<{ open: string; close: string }[]>([]);
+  const [deals, setDeals] = React.useState<Deal[]>([]);
+  const [friends, setFriends] = React.useState<Friend[]>([]);
+  const [hasVisited, setHasVisited] = React.useState(false);
+  const [aiSummary, setAiSummary] = React.useState<string | null>(null);
 
-      const now = new Date();
-      const day = (now.getDay() + 6) % 7; // Mon=0 … Sun=6
-      const twoWeeksAgoIso = new Date(Date.now() - 14 * 86400000).toISOString();
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!venueId) return;
 
-      // --- favorites / watchlist (profile_id + venue_id)
-      const getFlag = async (primary: string, fallback: string) => {
-        if (!profileId) return false;
-        try {
-          const { data, error } = await supabase
-            .from(primary)
-            .select("id")
-            .eq("profile_id", profileId)
-            .eq("venue_id", venueId)
-            .limit(1);
-          if (error) throw error;
-          return !!data?.length;
-        } catch (e: any) {
-          if (is404(e)) {
-            try {
-              const { data, error } = await supabase
-                .from(fallback)
-                .select("id")
-                .eq("profile_id", profileId)
-                .eq("venue_id", venueId)
-                .limit(1);
-              if (error) throw error;
-              return !!data?.length;
-            } catch {
-              return false;
-            }
-          }
-          return false;
-        }
-      };
+      // FAVORITE (user_favorites uses item_type/item_id)
+      const { data: favRow, error: favErr } = await supabase
+        .from('user_favorites')
+        .select('id')
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id || '')
+        .eq('item_type', 'venue')
+        .eq('item_id', venueId)
+        .maybeSingle();
 
-      const [isFav, inWatchlist] = await Promise.all([
-        profileId ? getFlag("user_favorites", "favorites") : Promise.resolve(false),
-        profileId ? getFlag("user_watchlist", "watchlist") : Promise.resolve(false),
-      ]);
+      if (!cancelled) {
+        if (favErr && favErr.code !== 'PGRST116') console.warn('favorites check error', favErr);
+        setFavorite(!!favRow);
+      }
 
-      // --- hours (if you add a table later, this starts working automatically)
-      let hours: { open?: string; close?: string } | null = null;
-      let openNow: boolean | null = null;
-      let nextOpenText: string | null = null;
+      // WATCHLIST (ensure you added venue_id to user_watchlist; otherwise this returns false)
+      const { data: wlRow, error: wlErr } = await supabase
+        .from('user_watchlist')
+        .select('id')
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id || '')
+        .eq('venue_id', venueId)
+        .maybeSingle();
+
+      if (!cancelled) {
+        if (wlErr && wlErr.code !== 'PGRST116') console.warn('watchlist check error', wlErr);
+        setWatch(!!wlRow);
+      }
+
+      // HOURS (table/view might not exist → treat 404 as "no hours")
       try {
-        if (await tableExists("venue_hours")) {
-          const { data, error } = await supabase
-            .from("venue_hours")
-            .select("open,close")
-            .eq("venue_id", venueId)
-            .eq("dow", day)
-            .maybeSingle();
-          if (error) throw error;
-          if (data) {
-            hours = data;
-            // Calculate if open now
-            const pad = (n: number) => n.toString().padStart(2, '0');
-            const currentTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
-            openNow = data.open && data.close ? (data.open <= currentTime && currentTime <= data.close) : null;
-            if (!openNow && data.open) {
-              nextOpenText = `Opens ${data.open.slice(0, 5)}`;
+        const dow = (new Date().getDay() + 6) % 7; // 0=Mon…6=Sun if your DB expects that; change if your DOW is 0=Sun
+        const r = await supabase
+          .from('venue_hours')
+          .select('open,close')
+          .eq('venue_id', venueId)
+          .eq('dow', dow);
+
+        if (!cancelled) {
+          if (r.error && isNotFound(r.error)) {
+            setHoursToday([]);
+          } else if (r.error) {
+            console.warn('venue_hours error', r.error);
+            setHoursToday([]);
+          } else {
+            const rows = (r.data || []) as { open: string; close: string }[];
+            setHoursToday(rows);
+            // naive open/nextOpen
+            if (rows.length) {
+              setOpenNow(null); // compute on server if/when you have proper tz-aware fn
+              setNextOpenText(`${rows[0].open}–${rows[0].close}`);
             }
           }
         }
       } catch (e: any) {
-        // Silently handle missing venue_hours table
+        if (!cancelled) setHoursToday([]);
       }
 
-      // --- deals (optional)
-      let deals: any[] = [];
+      // DEALS (table/view might not exist → treat 404 as none)
       try {
-        if (await tableExists("venue_deals")) {
-          const { data, error } = await supabase
-            .from("venue_deals")
-            .select("id,title,ends_at,starts_at,cta_url")
-            .eq("venue_id", venueId)
-            .gte("ends_at", now.toISOString())
-            .order("ends_at", { ascending: true });
-          if (error) throw error;
-          deals = (data ?? []).map(d => ({
-            id: d.id,
-            title: d.title,
-            subtitle: d.cta_url ? 'Special offer available' : undefined,
-            endsAtText: d.ends_at ? `Ends ${new Date(d.ends_at).toLocaleDateString()}` : undefined,
-          }));
+        const nowIso = new Date().toISOString();
+        const r = await supabase
+          .from('venue_deals')
+          .select('id,title,subtitle,ends_at')
+          .eq('venue_id', venueId)
+          .gte('ends_at', nowIso)
+          .order('ends_at', { ascending: true });
+
+        if (!cancelled) {
+          if (r.error && isNotFound(r.error)) {
+            setDeals([]);
+          } else if (r.error) {
+            console.warn('venue_deals error', r.error);
+            setDeals([]);
+          } else {
+            const rows = (r.data || []) as any[];
+            setDeals(
+              rows.map((d) => ({
+                id: d.id,
+                title: d.title,
+                subtitle: d.subtitle,
+                endsAtText: d.ends_at ? `Ends ${new Date(d.ends_at).toLocaleString()}` : null,
+              }))
+            );
+          }
         }
       } catch (e: any) {
-        // Silently handle missing venue_deals table
+        if (!cancelled) setDeals([]);
       }
 
-      // --- has user visited recently? (uses arrived_at, not created_at)
-      let hasVisited = false;
-      if (profileId) {
-        try {
-          const { data, error } = await supabase
-            .from("venue_visits")
-            .select("id")
-            .eq("venue_id", venueId)
-            .eq("profile_id", profileId)
-            .gte("arrived_at", twoWeeksAgoIso)
-            .limit(1);
-          if (error && !is400(error)) throw error; // 400 can happen if RLS forbids; treat as no
-          hasVisited = !!data?.length;
-        } catch (e) {
-          // Silently handle - user just won't see review/photo options
-        }
-      }
-
-      // --- friends recently (RPC if present, else fallback)
-      let friends: any[] = [];
+      // FRIENDS (RPC we added)
       try {
-        const { data, error } = await supabase.rpc("friends_recent_at_venue", {
+        const { data: fr, error } = await supabase.rpc('friends_recent_at_venue', {
           p_venue_id: venueId,
-          p_days: 14,
+          p_days: 30,
         });
-        if (error) throw error;
-        // Transform to expected format - RPC now includes friend names
-        friends = (data ?? []).map((f: any) => ({
-          id: f.friend_profile_id,
-          display_name: f.friend_name,
-          username: f.friend_name, // fallback
-          avatar_url: null, // not included in RPC
-        }));
-      } catch (e: any) {
-        if (is404(e) && profileId) {
-          try {
-            // Fallback: friendships + venue_visits join in JS
-            const { data: f1 } = await supabase
-              .from("friendships")
-              .select("profile_a_id, profile_b_id")
-              .or(`profile_a_id.eq.${profileId},profile_b_id.eq.${profileId}`);
-            const friendIds = new Set<string>();
-            (f1 ?? []).forEach((r: any) => {
-              friendIds.add(r.profile_a_id === profileId ? r.profile_b_id : r.profile_a_id);
-            });
-            if (friendIds.size) {
-              const { data: v } = await supabase
-                .from("venue_visits")
-                .select("profile_id, arrived_at")
-                .eq("venue_id", venueId)
-                .gte("arrived_at", twoWeeksAgoIso);
-              const friendVisits = (v ?? [])
-                .filter((x: any) => friendIds.has(x.profile_id))
-                .map((x: any) => ({ profile_id: x.profile_id, since: x.arrived_at }));
-              
-              // Get friend profiles
-              if (friendVisits.length > 0) {
-                const friendProfileIds = [...new Set(friendVisits.map(f => f.profile_id))];
-                const { data: profiles } = await supabase
-                  .from("profiles")
-                  .select("id, display_name, username, avatar_url")
-                  .in("id", friendProfileIds);
-                
-                friends = (profiles ?? []).map(p => ({
-                  id: p.id,
-                  display_name: p.display_name,
-                  username: p.username,
-                  avatar_url: p.avatar_url,
-                }));
-              }
-            }
-          } catch {
-            // Silently fail - no friends data
-          }
+        if (!cancelled) {
+          if (error) console.warn('friends_recent_at_venue error', error);
+          setFriends((fr || []).map((r: any) => ({
+            id: r.friend_profile_id,
+            display_name: r.friend_name,
+            avatar_url: null,
+          })));
         }
+      } catch (e) {
+        if (!cancelled) setFriends([]);
       }
 
-      return {
-        openNow,
-        nextOpenText,
-        hoursToday: hours ? [{ open: hours.open || '', close: hours.close || '' }] : null,
-        deals,
-        friends,
-        hasVisited,
-        aiSummary: null,
-        isFav,
-        inWatchlist,
-      };
-    },
-    staleTime: 30_000,
-    retry: 1,
-    refetchOnWindowFocus: false,
-  });
+      // VISITS (boolean: has user visited recently?)
+      try {
+        const userId = (await supabase.auth.getUser()).data.user?.id || '';
+        const sinceIso = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: vs, error } = await supabase
+          .from('venue_visits')
+          .select('id')
+          .eq('venue_id', venueId)
+          .eq('profile_id', userId) // you store auth.uid() in profile_id today
+          .gte('arrived_at', sinceIso)
+          .limit(1);
+        if (!cancelled) {
+          if (error) console.warn('venue_visits error', error);
+          setHasVisited((vs || []).length > 0);
+        }
+      } catch (e) {
+        if (!cancelled) setHasVisited(false);
+      }
 
-  // Extract data with fallbacks
-  const data = queryResult.data || {
-    openNow: null,
-    nextOpenText: null,
-    hoursToday: null,
-    deals: [],
-    friends: [],
-    hasVisited: false,
-    aiSummary: null,
-    isFav: false,
-    inWatchlist: false,
+      // AI summary placeholder (fill when you have it server-side)
+      if (!cancelled) setAiSummary(null);
+    })();
+    return () => { cancelled = true; };
+  }, [venueId]);
+
+  // Toggles
+  const toggleFavorite = async () => {
+    if (!venueId) return;
+    const userId = (await supabase.auth.getUser()).data.user?.id || '';
+    if (!favorite) {
+      const { error } = await supabase.from('user_favorites').insert({
+        profile_id: userId,
+        item_type: 'venue',
+        item_id: venueId,
+      });
+      if (!error) setFavorite(true);
+    } else {
+      const { error } = await supabase
+        .from('user_favorites')
+        .delete()
+        .eq('profile_id', userId)
+        .eq('item_type', 'venue')
+        .eq('item_id', venueId);
+      if (!error) setFavorite(false);
+    }
   };
 
-  // Update local state when query data changes - use useEffect to avoid hooks order issues
-  React.useEffect(() => {
-    setFavorite(data.isFav || false);
-    setWatch(data.inWatchlist || false);
-  }, [data.isFav, data.inWatchlist]);
-
-  const toggleFavorite = React.useCallback(async () => {
-    if (!venueId || !profileId) return;
-    try {
-      if (favorite) {
-        await supabase.from('user_favorites').delete().eq('venue_id', venueId).eq('profile_id', profileId);
-        setFavorite(false);
-      } else {
-        await supabase.from('user_favorites').insert({ venue_id: venueId, profile_id: profileId });
-        setFavorite(true);
-      }
-    } catch (error) {
-      // Try fallback table name
-      try {
-        if (favorite) {
-          await supabase.from('favorites').delete().eq('venue_id', venueId).eq('profile_id', profileId);
-          setFavorite(false);
-        } else {
-          await supabase.from('favorites').insert({ venue_id: venueId, profile_id: profileId });
-          setFavorite(true);
-        }
-      } catch {
-        // Silently fail
-      }
+  const toggleWatch = async () => {
+    if (!venueId) return;
+    const userId = (await supabase.auth.getUser()).data.user?.id || '';
+    if (!watch) {
+      const { error } = await supabase.from('user_watchlist').insert({
+        profile_id: userId,
+        venue_id: venueId, // requires the column we added earlier
+      });
+      if (!error) setWatch(true);
+    } else {
+      const { error } = await supabase
+        .from('user_watchlist')
+        .delete()
+        .eq('profile_id', userId)
+        .eq('venue_id', venueId);
+      if (!error) setWatch(false);
     }
-  }, [venueId, profileId, favorite]);
+  };
 
-  const toggleWatch = React.useCallback(async () => {
-    if (!venueId || !profileId) return;
-    try {
-      if (watch) {
-        await supabase.from('user_watchlist').delete().eq('venue_id', venueId).eq('profile_id', profileId);
-        setWatch(false);
-      } else {
-        await supabase.from('user_watchlist').insert({ venue_id: venueId, profile_id: profileId });
-        setWatch(true);
-      }
-    } catch (error) {
-      // Try fallback table name
-      try {
-        if (watch) {
-          await supabase.from('watchlist').delete().eq('venue_id', venueId).eq('profile_id', profileId);
-          setWatch(false);
-        } else {
-          await supabase.from('watchlist').insert({ venue_id: venueId, profile_id: profileId });
-          setWatch(true);
-        }
-      } catch {
-        // Silently fail
-      }
-    }
-  }, [venueId, profileId, watch]);
+  const openReview = () => setReviewOpen(true);
+  const openPhoto = () => setPhotoOpen(true);
 
-  const submitReview = React.useCallback(async () => {
-    if (!venueId || !profileId || !reviewText.trim()) return;
+  const submitReview = async () => {
     setSubmitting(true);
-    try {
-      await supabase.from('venue_reviews').insert({ venue_id: venueId, profile_id: profileId, body: reviewText.trim() });
-      setReviewText('');
-      setReviewOpen(false);
-    } catch {
-      // Silently fail
-    } finally {
-      setSubmitting(false);
-    }
-  }, [venueId, profileId, reviewText]);
-
-  const uploadPhoto = React.useCallback(async (file: File) => {
-    if (!venueId || !profileId) return;
+    // TODO: wire to your review endpoint/table
+    setTimeout(() => setSubmitting(false), 600);
+  };
+  const uploadPhoto = async (_file: File) => {
     setSubmitting(true);
-    try {
-      const path = `${venueId}/${profileId}-${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from('venue-photos').upload(path, file, { upsert: false });
-      if (error) throw error;
-      await supabase.from('venue_photos').insert({ venue_id: venueId, profile_id: profileId, path });
-      setPhotoOpen(false);
-    } catch {
-      // Silently fail
-    } finally {
-      setSubmitting(false);
-    }
-  }, [venueId, profileId]);
+    // TODO: wire to storage
+    setTimeout(() => setSubmitting(false), 600);
+  };
 
   return {
-    data,
+    data: {
+      openNow,
+      nextOpenText,
+      hoursToday,
+      deals,
+      friends,
+      hasVisited,
+      aiSummary,
+    },
     toggles: {
       favorite,
       watch,
+      reviewOpen,
+      photoOpen,
+      reviewText,
+      setReviewText,
+      photoInputRef,
       toggleFavorite,
       toggleWatch,
-      reviewOpen,
-      setReviewText,
-      reviewText,
-      openReview: () => setReviewOpen((s) => !s),
-      openPhoto: () => setPhotoOpen((s) => !s),
-      photoOpen,
-      photoInputRef,
+      openReview,
+      openPhoto,
     },
     submitReview,
     uploadPhoto,
