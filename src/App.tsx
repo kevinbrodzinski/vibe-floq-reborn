@@ -23,7 +23,7 @@ import { EventNotificationsProvider } from "@/providers/EventNotificationsProvid
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
-import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
+
 import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
@@ -104,7 +104,6 @@ const App = () => {
                     <NetworkStatusBanner />
                     <BrowserRouter>
                       <PlanInviteProvider />
-                      {import.meta.env.DEV && <LocationSystemHealthDashboard />}
                       <Routes>
                         <Route path="/a/:slug" element={<SharedAfterglow />} />
                         <Route path="/share/:slug" element={<SharedPlan />} />
