@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { Plus, Calendar, Sparkles } from 'lucide-react';
+import { Plus, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanInviteButton } from '@/components/PlanInviteButton';
-import { usePlansData } from '@/hooks/usePlansData';
+import { useProgressivePlansData } from '@/hooks/useProgressivePlansData';
 import { PlansGrid } from './PlansGrid';
 import { PlansFilters } from './PlansFilters';
+import { PlansSkeleton } from './PlansSkeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { useNavigate } from 'react-router-dom';
 import { zIndex } from '@/constants/z';
@@ -21,8 +22,9 @@ export const PlansHub: React.FC = () => {
     searchQuery,
     setSearchQuery,
     isLoading,
+    isLoadingAdditional,
     counts
-  } = usePlansData();
+  } = useProgressivePlansData();
 
   const createNewPlan = () => {
     navigate('/plan/new');
@@ -56,8 +58,14 @@ export const PlansHub: React.FC = () => {
               <h1 className="text-2xl font-bold text-white">
                 Your Plans
               </h1>
-              <p className="text-xs text-gray-400 font-medium">
+              <p className="text-xs text-gray-400 font-medium flex items-center gap-2">
                 {counts.all} total plans • {counts.active} active
+                {isLoadingAdditional && (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Loading invited plans...</span>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -97,7 +105,15 @@ export const PlansHub: React.FC = () => {
           />
         </motion.div>
 
-        {plans.length === 0 ? (
+        {isLoading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PlansSkeleton count={3} />
+          </motion.div>
+        ) : plans.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
