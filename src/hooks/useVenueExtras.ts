@@ -193,10 +193,15 @@ export function useVenueExtras(venueId: string | null) {
     data: {
       openNow: openState?.open_now ?? null,
       nextOpenText: getNextOpenText(openState?.open_now ?? null, openState?.hours_today ?? null),
-      hoursToday: openState?.hours_today ? openState.hours_today.map(h => {
-        const [open, close] = h.split('–');
-        return { open: open || '', close: close || '' };
-      }) : [],
+      hoursToday: openState?.hours_today ? openState.hours_today
+        .filter(h => h && typeof h === 'string')
+        .map(h => {
+          const parts = h.split('–');
+          return { 
+            open: parts[0] || '', 
+            close: parts[1] || '' 
+          };
+        }) : [],
       hoursDisplay: formatVenueHours(openState?.hours_today ?? null),
       deals,
       friends,

@@ -80,12 +80,19 @@ export function formatVenueHours(hoursToday: string[] | null): string {
     return 'Hours unavailable';
   }
   
-  if (hoursToday.length === 1) {
-    return hoursToday[0];
+  // Filter out null/undefined/empty values
+  const validHours = hoursToday.filter(h => h && typeof h === 'string' && h.trim());
+  
+  if (validHours.length === 0) {
+    return 'Hours unavailable';
+  }
+  
+  if (validHours.length === 1) {
+    return validHours[0];
   }
   
   // Multiple time slots
-  return hoursToday.join(', ');
+  return validHours.join(', ');
 }
 
 /**
@@ -97,9 +104,12 @@ export function getNextOpenText(openNow: boolean | null, hoursToday: string[] | 
   
   // Extract opening time from first slot (format: "09:00–17:00")
   const firstSlot = hoursToday[0];
-  const openTime = firstSlot.split('–')[0];
+  if (!firstSlot || typeof firstSlot !== 'string') return null;
   
-  if (openTime) {
+  const parts = firstSlot.split('–');
+  const openTime = parts[0];
+  
+  if (openTime && openTime.trim()) {
     return `Opens ${openTime}`;
   }
   
