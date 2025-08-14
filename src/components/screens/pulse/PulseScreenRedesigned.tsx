@@ -273,19 +273,29 @@ export const PulseScreenRedesigned: React.FC = () => {
   const venueCarouselItems: VenueCarouselItem[] = useMemo(() => {
     return filteredRecommendations
       .filter(item => item.type === 'venue')
-      .map(item => ({
-        id: item.id,
-        name: item.title,
-        subtitle: item.subtitle,
-        photoUrl: item.photoUrl, // Already processed with contextual fallbacks
-        distance: item.distance,
-        rating: item.rating,
-        vibeMatch: item.vibeMatch,
-        weatherMatch: item.weatherMatch,
-        liveCount: item.liveCount,
-        tags: item.tags
-      }));
-  }, [filteredRecommendations]);
+      .map(item => {
+        // Find the original venue data to get coordinates
+        const originalVenue = nearbyVenues.find((v: any) => v.id === item.id) || 
+                             trendingVenues.find((v: any) => v.id === item.id);
+        
+        return {
+          id: item.id,
+          name: item.title,
+          subtitle: item.subtitle,
+          photoUrl: item.photoUrl, // Already processed with contextual fallbacks
+          distance: item.distance,
+          rating: item.rating,
+          vibeMatch: item.vibeMatch,
+          weatherMatch: item.weatherMatch,
+          liveCount: item.liveCount,
+          tags: item.tags,
+          // Add coordinates and temperature
+          lat: originalVenue?.lat || null,
+          lng: originalVenue?.lng || null,
+          temperatureF: weatherAnalysis?.temperature || null,
+        };
+      });
+  }, [filteredRecommendations, nearbyVenues, trendingVenues, weatherAnalysis]);
 
   // Get non-venue recommendations for separate display
   const otherRecommendations = useMemo(() => {
@@ -527,6 +537,8 @@ export const PulseScreenRedesigned: React.FC = () => {
                 loading={nearbyLoading || trendingLoading}
                 onOpen={handleVenueClick}
                 className="px-2"
+                userLat={coords?.lat || null}
+                userLng={coords?.lng || null}
               />
             </div>
           ) : (

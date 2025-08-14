@@ -1,7 +1,7 @@
 import * as React from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Star, Clock, Car, Thermometer } from 'lucide-react';
 import { VenueImage } from './VenueImage';
 
 export type VenueCarouselItem = {
@@ -15,6 +15,12 @@ export type VenueCarouselItem = {
   weatherMatch?: number | null;
   liveCount?: number;
   tags?: string[] | null;
+  // New fields for temperature and travel times
+  lat?: number | null;
+  lng?: number | null;
+  temperatureF?: number | null;
+  walkMinutes?: number | null;
+  driveMinutes?: number | null;
 };
 
 // Utility function to format distance
@@ -26,15 +32,27 @@ const formatDistance = (distance?: number | string | null): string | null => {
   return `${(meters / 1000).toFixed(1)}km`;
 };
 
+// Travel time calculation functions
+const walkMins = (m?: number | null) => {
+  if (!m || m <= 0) return null;
+  return Math.max(1, Math.round(m / (1.4 * 60))); // ~5km/h walking speed
+};
+
+const driveMins = (m?: number | null) => {
+  if (!m || m <= 0) return null;
+  return Math.max(1, Math.round(m / (13.9 * 60))); // ~50km/h average city speed
+};
+
 // Pill component for tags and badges
 function Pill({ children, variant = 'default' }: { 
   children: React.ReactNode; 
-  variant?: 'default' | 'accent' | 'success';
+  variant?: 'default' | 'accent' | 'success' | 'temperature';
 }) {
   const variants = {
     default: 'bg-white/15 text-white/90 border-white/20',
     accent: 'bg-amber-400/20 text-amber-300 border-amber-300/30',
-    success: 'bg-green-400/20 text-green-300 border-green-300/30'
+    success: 'bg-green-400/20 text-green-300 border-green-300/30',
+    temperature: 'bg-blue-400/20 text-blue-300 border-blue-300/30'
   };
 
   return (
@@ -50,6 +68,8 @@ interface VenueCarouselProps {
   onOpen?: (id: string) => void;
   className?: string;
   aspect?: string;
+  userLat?: number | null;
+  userLng?: number | null;
 }
 
 export const VenueCarousel: React.FC<VenueCarouselProps> = ({
@@ -57,7 +77,9 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
   loading = false,
   onOpen,
   className = '',
-  aspect = '3/4'
+  aspect = '3/4',
+  userLat,
+  userLng
 }) => {
   // Snap-to-center carousel configuration
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -95,6 +117,21 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
     transition: { type: 'spring', stiffness: 240, damping: 22 },
   });
 
+  // Enhanced items with calculated travel times
+  const enhancedItems = React.useMemo(() => {
+    return items.map(item => {
+      const distanceMeters = typeof item.distance === 'string' 
+        ? parseFloat(item.distance) 
+        : (item.distance || 0);
+      
+      return {
+        ...item,
+        walkMinutes: item.walkMinutes || walkMins(distanceMeters),
+        driveMinutes: item.driveMinutes || driveMins(distanceMeters),
+      };
+    });
+  }, [items]);
+
   // Show skeleton cards while loading
   const displayItems = loading
     ? Array.from({ length: 5 }).map((_, i) => ({ 
@@ -102,7 +139,7 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
         name: '', 
         photoUrl: null 
       }))
-    : items;
+    : enhancedItems;
 
   if (displayItems.length === 0) {
     return (
@@ -193,11 +230,27 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
                               </div>
                             )}
                             
+                            {/* Enhanced info row with travel times and temperature */}
                             <div className="flex items-center gap-2 text-white/80 text-xs sm:text-sm truncate mt-1">
                               {formatDistance(venue.distance) && (
                                 <span className="inline-flex items-center gap-1">
                                   <MapPin className="w-3.5 h-3.5 opacity-80" />
                                   {formatDistance(venue.distance)}
+                                </span>
+                              )}
+                              
+                              {/* Travel times */}
+                              {venue.walkMinutes && (
+                                <span className="inline-flex items-center gap-1 text-green-400">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  {venue.walkMinutes}m walk
+                                </span>
+                              )}
+                              
+                              {venue.driveMinutes && (
+                                <span className="inline-flex items-center gap-1 text-blue-400">
+                                  <Car className="w-3.5 h-3.5" />
+                                  {venue.driveMinutes}m drive
                                 </span>
                               )}
                               
@@ -218,8 +271,14 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
 
                           {/* Right side - badges and tags */}
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            {/* Match scores */}
+                            {/* Temperature and match scores */}
                             <div className="flex gap-1">
+                              {venue.temperatureF && (
+                                <Pill variant="temperature">
+                                  <Thermometer className="w-3 h-3 inline mr-1" />
+                                  {Math.round(venue.temperatureF)}°F
+                                </Pill>
+                              )}
                               {venue.vibeMatch && (
                                 <Pill variant="accent">
                                   ⚡ {Math.round(venue.vibeMatch)}%
