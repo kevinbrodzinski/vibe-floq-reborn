@@ -5,6 +5,7 @@ import { useGeo } from '@/hooks/useGeo';
 import { useAuth } from '@/hooks/useAuth';
 import { useWeather } from '@/hooks/useWeather';
 import { useWeatherForecast } from '@/hooks/useWeatherForecast';
+import { useVenuesOpenState } from '@/hooks/useVenueOpenState';
 import { useNearbyVenues } from '@/hooks/useNearbyVenues';
 import { useTrendingVenues } from '@/hooks/useTrendingVenues';
 import { useLiveActivity } from '@/hooks/useLiveActivity';
@@ -269,8 +270,20 @@ export const PulseScreenRedesigned: React.FC = () => {
     }
   }, [weatherAnalysis, selectedFilterKeys.length]);
 
+  // Get venue IDs for batch open state query
+  const venueIds = useMemo(() => {
+    return filteredRecommendations
+      .filter(item => item.type === 'venue')
+      .map(item => item.id);
+  }, [filteredRecommendations]);
+
+  // Fetch open state for all venues at once
+  const { data: venuesOpenState = [] } = useVenuesOpenState(venueIds);
+
   // Transform recommendations for carousel/list view
   const venueCarouselItems: VenueCarouselItem[] = useMemo(() => {
+    const openStateMap = new Map(venuesOpenState.map(state => [state.venue_id, state]));
+    
     return filteredRecommendations
       .filter(item => item.type === 'venue')
       .map(item => {
@@ -278,10 +291,21 @@ export const PulseScreenRedesigned: React.FC = () => {
         const originalVenue = nearbyVenues.find((v: any) => v.id === item.id) || 
                              trendingVenues.find((v: any) => v.id === item.id);
         
+        // Get open state for this venue
+        const openState = openStateMap.get(item.id);
+        
+        // Update subtitle to include open/closed status
+        let enhancedSubtitle = item.subtitle;
+        if (openState?.open_now === true) {
+          enhancedSubtitle = `${item.subtitle} • Open`;
+        } else if (openState?.open_now === false) {
+          enhancedSubtitle = `${item.subtitle} • Closed`;
+        }
+        
         return {
           id: item.id,
           name: item.title,
-          subtitle: item.subtitle,
+          subtitle: enhancedSubtitle,
           photoUrl: item.photoUrl, // Already processed with contextual fallbacks
           distance: item.distance,
           rating: item.rating,
@@ -295,7 +319,7 @@ export const PulseScreenRedesigned: React.FC = () => {
           temperatureF: weatherAnalysis?.temperature || null,
         };
       });
-  }, [filteredRecommendations, nearbyVenues, trendingVenues, weatherAnalysis]);
+  }, [filteredRecommendations, nearbyVenues, trendingVenues, weatherAnalysis, venuesOpenState]);
 
   // Get non-venue recommendations for separate display
   const otherRecommendations = useMemo(() => {

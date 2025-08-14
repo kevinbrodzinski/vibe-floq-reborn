@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useVenueOpenState, formatVenueHours, getNextOpenText } from '@/hooks/useVenueOpenState';
 
 type Friend = { id: string; display_name?: string | null; username?: string | null; avatar_url?: string | null };
 type Deal = { id: string; title: string; subtitle?: string | null; endsAtText?: string | null };
@@ -18,9 +19,9 @@ export function useVenueExtras(venueId: string | null) {
   const photoInputRef = React.useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
-  const [openNow, setOpenNow] = React.useState<boolean | null>(null);
-  const [nextOpenText, setNextOpenText] = React.useState<string | null>(null);
-  const [hoursToday, setHoursToday] = React.useState<{ open: string; close: string }[]>([]);
+  // Use the new venue open state hook
+  const { data: openState } = useVenueOpenState(venueId);
+
   const [deals, setDeals] = React.useState<Deal[]>([]);
   const [friends, setFriends] = React.useState<Friend[]>([]);
   const [hasVisited, setHasVisited] = React.useState(false);
@@ -57,34 +58,8 @@ export function useVenueExtras(venueId: string | null) {
         setWatch((wlCheck.count ?? 0) > 0);
       }
 
-      // HOURS (table/view might not exist → treat 404 as "no hours")
-      try {
-        const dow = (new Date().getDay() + 6) % 7; // 0=Mon…6=Sun if your DB expects that; change if your DOW is 0=Sun
-        const r = await supabase
-          .from('venue_hours')
-          .select('open,close')
-          .eq('venue_id', venueId)
-          .eq('dow', dow);
-
-        if (!cancelled) {
-          if (r.error && isNotFound(r.error)) {
-            setHoursToday([]);
-          } else if (r.error) {
-            console.warn('venue_hours error', r.error);
-            setHoursToday([]);
-          } else {
-            const rows = (r.data || []) as { open: string; close: string }[];
-            setHoursToday(rows);
-            // naive open/nextOpen
-            if (rows.length) {
-              setOpenNow(null); // compute on server if/when you have proper tz-aware fn
-              setNextOpenText(`${rows[0].open}–${rows[0].close}`);
-            }
-          }
-        }
-      } catch (e: any) {
-        if (!cancelled) setHoursToday([]);
-      }
+      // Hours and open state are now handled by the useVenueOpenState hook
+      // No manual logic needed here
 
       // DEALS (table/view might not exist → treat 404 as none)
       try {
@@ -216,9 +191,13 @@ export function useVenueExtras(venueId: string | null) {
 
   return {
     data: {
-      openNow,
-      nextOpenText,
-      hoursToday,
+      openNow: openState?.open_now ?? null,
+      nextOpenText: getNextOpenText(openState?.open_now ?? null, openState?.hours_today ?? null),
+      hoursToday: openState?.hours_today ? openState.hours_today.map(h => {
+        const [open, close] = h.split('–');
+        return { open: open || '', close: close || '' };
+      }) : [],
+      hoursDisplay: formatVenueHours(openState?.hours_today ?? null),
       deals,
       friends,
       hasVisited,

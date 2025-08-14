@@ -203,13 +203,9 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
                   <Clock className="h-4 w-4 text-white/70" />
                   Hours
                 </div>
-                {data?.hoursToday?.length ? (
-                  <div className="text-xs text-white/80 truncate">
-                    {data.hoursToday.map((h) => `${h.open}–${h.close}`).join(', ')}
-                  </div>
-                ) : (
-                  <div className="text-xs text-white/60">Hours unavailable</div>
-                )}
+                <div className="text-xs text-white/80 truncate">
+                  {data?.hoursDisplay || 'Hours unavailable'}
+                </div>
 
                 {!!deals.length && (
                   <>
