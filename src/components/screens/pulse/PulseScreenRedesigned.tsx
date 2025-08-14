@@ -1,0 +1,609 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+
+// Hooks
+import { useGeo } from '@/hooks/useGeo';
+import { useAuth } from '@/hooks/useAuth';
+import { useWeather } from '@/hooks/useWeather';
+import { useUserVibe } from '@/hooks/useUserVibe';
+import { useNearbyVenues } from '@/hooks/useNearbyVenues';
+import { useTrendingVenues } from '@/hooks/useTrendingVenues';
+import { useLiveActivity } from '@/hooks/useLiveActivity';
+import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
+
+// New Components
+import { PulseHeader } from '@/components/pulse/PulseHeader';
+import { PulseSearchBar } from '@/components/pulse/PulseSearchBar';
+import { LocationWeatherBar } from '@/components/pulse/LocationWeatherBar';
+import { DateTimeSelector, type TimeFilter } from '@/components/pulse/DateTimeSelector';
+
+import { PulseFilterPills } from '@/components/pulse/PulseFilterPills';
+import { LiveActivity } from '@/components/pulse/LiveActivity';
+import { type RecommendationItem } from '@/components/pulse/RecommendationsList';
+
+// Existing Components
+import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
+import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
+
+// Utils and Types
+import { GOOD_WEATHER, type Vibe } from '@/hooks/usePulseFilters';
+import { cn } from '@/lib/utils';
+import { getPulseWindow } from '@/utils/timeWindow';
+import { useReverseGeocode, type CityLocation } from '@/hooks/useLocationSearch';
+import { estimateWalkMinutes, estimateDriveMinutes } from '@/utils/venueMetrics';
+import { calculateVibeMatch, getTimeOfDay } from '@/utils/vibeMatching';
+import { FilterLogicToggle, type FilterLogic } from '@/components/filters/FilterLogicToggle';
+import VenueCarousel from '@/components/venue/VenueCarousel';
+import { DistanceRadiusPicker } from '@/components/filters/DistanceRadiusPicker';
+
+export const PulseScreenRedesigned: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const { coords } = useGeo();
+  
+  // State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTime, setSelectedTime] = useState<TimeFilter>('now');
+  const [selectedFilterKeys, setSelectedFilterKeys] = useState<string[]>([]);
+  const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
+  const [showLiveActivitySheet, setShowLiveActivitySheet] = useState(false);
+  const [showAllFilters, setShowAllFilters] = useState(false);
+  const [radiusKm, setRadiusKm] = useState<number>(0.5); // 500m default
+  const [selectedCity, setSelectedCity] = useState<CityLocation | null>(null); // For location override
+  const [filterLogic, setFilterLogic] = useState<FilterLogic>('any'); // AND/OR filter logic
+
+  // Get time window for selected time filter
+  const timeWindow = useMemo(() => getPulseWindow(selectedTime), [selectedTime]);
+  
+  // Reverse geocode current location to get city/state
+  const { data: currentCity } = useReverseGeocode(coords?.lat, coords?.lng);
+  
+  // Use selected city or current city
+  const activeCity = selectedCity || currentCity;
+  
+  // Use selected city coordinates or current location for weather
+  const weatherLat = selectedCity?.lat || coords?.lat || 37.7749;
+  const weatherLng = selectedCity?.lng || coords?.lng || -122.4194;
+  
+  // Data hooks - pass dateTime to weather for future forecasts and use selected location
+  const { data: weatherData } = useWeather(timeWindow.start.toISOString(), weatherLat, weatherLng);
+  const { data: userVibe } = useUserVibe(profile?.id || null);
+  // Use selected city coordinates or current location for venue queries
+  const venueLat = selectedCity?.lat || coords?.lat || 37.7749;
+  const venueLng = selectedCity?.lng || coords?.lng || -122.4194;
+
+  const { data: nearbyVenues = [], error: nearbyError, isLoading: nearbyLoading } = useNearbyVenues(
+    venueLat,
+    venueLng, 
+    {
+      radiusKm: radiusKm,
+      limit: 25,
+      pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
+      filterLogic: filterLogic
+    }
+  );
+  const { data: trendingVenues = [], error: trendingError, isLoading: trendingLoading } = useTrendingVenues(
+    venueLat,
+    venueLng,
+    {
+      radiusM: radiusKm * 1000, // Convert km to meters
+      limit: 10,
+      pillKeys: selectedFilterKeys.length > 0 ? selectedFilterKeys : [],
+      filterLogic: filterLogic
+    }
+  );
+
+  // Debug logging
+  console.log('🔍 Debug venue data:', {
+    coords,
+    nearbyVenues: nearbyVenues?.length,
+    trendingVenues: trendingVenues?.length,
+    nearbyError,
+    trendingError,
+    nearbyLoading,
+    trendingLoading,
+    radiusKm,
+    selectedFilterKeys
+  });
+  const { data: liveActivity = [] } = useLiveActivity();
+  const { data: myFloqs = [] } = useMyActiveFloqs(timeWindow);
+
+  // Weather normalization
+  const normalizedWeather = useMemo(() => {
+    if (!weatherData) {
+      return {
+        tempF: 70,
+        condition: 'sunny' as const,
+        precipChancePct: 0,
+        isGoodWeather: true,
+        fetchedAt: new Date().toISOString()
+      };
+    }
+
+    const condition = weatherData.condition === 'clear' || weatherData.condition === 'sunny' ? 'sunny' :
+                     weatherData.condition === 'clouds' || weatherData.condition === 'cloudy' ? 'cloudy' :
+                     weatherData.condition === 'rain' ? 'rain' :
+                     weatherData.condition === 'snow' ? 'snow' :
+                     weatherData.condition === 'mist' || weatherData.condition === 'fog' ? 'fog' :
+                     'mixed';
+
+    const weather = {
+      tempF: Math.round(weatherData.temperatureF || weatherData.tempF || 70),
+      condition,
+      precipChancePct: weatherData.precipChancePct || 0,
+      fetchedAt: weatherData.created_at || new Date().toISOString()
+    };
+
+    return {
+      ...weather,
+      isGoodWeather: GOOD_WEATHER(weather)
+    };
+  }, [weatherData]);
+
+  // Vibe normalization
+  const currentVibe: Vibe = useMemo(() => {
+    const vibeTag = userVibe?.vibe?.toLowerCase();
+    switch (vibeTag) {
+      case 'high_energy':
+      case 'hype':
+        return 'high_energy';
+      case 'social':
+        return 'social';
+      case 'chill':
+      case 'relaxed':
+        return 'chill';
+      case 'romantic':
+      case 'intimate':
+        return 'romantic';
+      case 'family':
+        return 'family';
+      default:
+        return 'social'; // Default fallback
+    }
+  }, [userVibe?.vibe]);
+
+  // Context for conditional filters
+  const filterContext = useMemo(() => ({
+    time: { localDate: new Date() }, // TODO: Use selectedTime to compute actual date
+    vibe: currentVibe,
+    weather: {
+      tempF: normalizedWeather.tempF,
+      condition: normalizedWeather.condition,
+      precipChancePct: normalizedWeather.precipChancePct
+    },
+    city: {
+      hasMajorConcert: false, // TODO: Connect to real city events data
+      hasMajorSports: false,
+      hasFestival: false
+    },
+    friends: {
+      recentCheckinCount: Array.isArray(liveActivity) ? liveActivity.length : 0,
+      activeFloqsCount: Array.isArray(myFloqs) ? myFloqs.length : 0,
+      trendingFloqsNearbyCount: 0 // TODO: Calculate from trending data
+    }
+  }), [normalizedWeather, currentVibe, liveActivity, myFloqs]);
+
+  // Transform data for recommendations
+  const recommendations = useMemo((): RecommendationItem[] => {
+    console.log('🔄 Transforming recommendations:', {
+      nearbyVenuesCount: nearbyVenues.length,
+      trendingVenuesCount: trendingVenues.length,
+      myFloqsCount: myFloqs.length,
+      nearbyVenues: nearbyVenues.slice(0, 2), // Log first 2 for inspection
+      trendingVenues: trendingVenues.slice(0, 2)
+    });
+
+    // Temporary fallback mock data if database isn't returning results
+    const mockNearbyVenues = nearbyVenues.length === 0 ? [
+      {
+        id: 'mock-1',
+        name: 'The Local Spot',
+        distance_m: 250,
+        categories: ['Bar', 'Restaurant'],
+        photo_url: null,
+        vibe_tag: 'social',
+        vibe_score: 0.8,
+        live_count: 12,
+        canonical_tags: ['social', 'drinks']
+      },
+      {
+        id: 'mock-2', 
+        name: 'Corner Café',
+        distance_m: 180,
+        categories: ['Café', 'Coffee'],
+        photo_url: null,
+        vibe_tag: 'chill',
+        vibe_score: 0.7,
+        live_count: 8,
+        canonical_tags: ['chill', 'coffee']
+      }
+    ] : nearbyVenues;
+
+    const mockTrendingVenues = trendingVenues.length === 0 ? [
+      {
+        venue_id: 'trending-mock-1',
+        name: 'Hot Spot Downtown',
+        distance_m: 500,
+        people_now: 25,
+        trend_score: 0.9,
+        categories: ['Nightclub', 'Bar'],
+        photo_url: null,
+        vibe_tag: 'energy',
+        vibe_score: 0.9,
+        canonical_tags: ['energy', 'nightlife']
+      }
+    ] : trendingVenues;
+
+    const venueRecs: RecommendationItem[] = mockNearbyVenues.map((venue, index: number) => {
+      // Enhanced mock data for better presentation
+      const mockDescriptions = [
+        "A cozy spot perfect for catching up with friends",
+        "Trendy atmosphere with craft cocktails and live music",
+        "Popular local hangout with great vibes",
+        "Intimate setting with excellent food and drinks",
+        "Vibrant venue known for its energetic crowd"
+      ];
+      
+      const mockRatings = [4.2, 4.5, 4.1, 4.7, 4.3, 4.6, 4.4];
+      
+      // Calculate walk and drive times using proper utilities
+      const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
+      const walkMin = estimateWalkMinutes(distanceM);
+      const driveMin = estimateDriveMinutes(distanceM);
+      
+      return {
+        id: `nearby-${venue.id}`, // Prefix to ensure uniqueness
+        title: venue.name,
+        type: 'venue' as const,
+        distance: distanceM,
+        walkTime: walkMin,
+        driveTime: driveMin,
+        category: venue.categories?.[0] || 'Venue',
+        description: mockDescriptions[index % mockDescriptions.length],
+        rating: mockRatings[index % mockRatings.length],
+        priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
+        isOpen: Math.random() > 0.2, // 80% open - mock data
+        vibeMatch: Math.round(calculateVibeMatch(
+          userVibe?.vibe || 'chill',
+          venue.vibe_tag,
+          venue.vibe_score,
+          getTimeOfDay(timeWindow.start)
+        ) * 100), // Convert 0-1 to 0-100 percentage
+        weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 50,
+        overallScore: Math.floor(Math.random() * 40) + 60,
+        imageUrl: venue.photo_url,
+        tags: venue.canonical_tags || venue.categories || [],
+        friendsGoing: Math.random() > 0.7 ? [
+          { name: 'Alex', avatar: undefined },
+          { name: 'Sam', avatar: undefined }
+        ] : undefined,
+        regularsCount: venue.live_count || Math.floor(Math.random() * 5) + 1 // Use live_count or mock
+      };
+    });
+
+    // Add trending venues to the mix, but avoid duplicates with nearby venues
+    const nearbyVenueIds = new Set(mockNearbyVenues.map(v => v.id));
+    const trendingRecs: RecommendationItem[] = mockTrendingVenues
+      .filter(venue => !nearbyVenueIds.has(venue.venue_id)) // Filter out venues already in nearby
+      .slice(0, 5)
+      .map((venue, index: number) => {
+        const distanceM = typeof venue.distance_m === 'string' ? Number(venue.distance_m) : venue.distance_m;
+        const walkMin = estimateWalkMinutes(distanceM);
+        const driveMin = estimateDriveMinutes(distanceM);
+        
+        return {
+          id: `trending-${venue.venue_id}`, // Prefix to ensure uniqueness
+          title: venue.name,
+          type: 'venue' as const,
+          distance: distanceM,
+          walkTime: walkMin,
+          driveTime: driveMin,
+          category: venue.categories?.[0] || 'Trending',
+          description: `Trending now with ${venue.people_now || 0} people`,
+          rating: 4.0 + Math.random() * 1, // 4.0-5.0 for trending venues
+          priceLevel: (['$', '$$', '$$$'] as const)[index % 3],
+          isOpen: true, // Assume trending venues are open
+          vibeMatch: Math.round(calculateVibeMatch(
+            userVibe?.vibe || 'chill',
+            venue.vibe_tag,
+            venue.vibe_score,
+            getTimeOfDay(timeWindow.start)
+          ) * 100), // Convert 0-1 to 0-100 percentage
+          weatherMatch: normalizedWeather.isGoodWeather ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 30) + 60,
+          overallScore: venue.trend_score ? Math.round(venue.trend_score * 100) : Math.floor(Math.random() * 20) + 80,
+          imageUrl: venue.photo_url,
+          tags: venue.canonical_tags || venue.categories || [],
+          regularsCount: venue.people_now || Math.floor(Math.random() * 10) + 5 // Use people_now for trending
+        };
+      });
+
+    const floqRecs: RecommendationItem[] = myFloqs.map((floq) => ({
+      id: `floq-${floq.id}`, // Prefix to ensure uniqueness
+      title: floq.title || floq.name || 'Unnamed Floq',
+      type: 'floq' as const,
+      distance: undefined, // Floqs don't have distance in this context
+      category: 'Floq',
+      description: `Active floq with ${floq.member_count || 0} members`,
+      participants: floq.member_count,
+      maxParticipants: 50, // Default max
+      hostName: 'Floq Host',
+      hostAvatar: undefined,
+      vibeMatch: Math.floor(Math.random() * 40) + 70, // Floqs tend to match better
+      overallScore: Math.floor(Math.random() * 40) + 70
+    }));
+
+    const allRecs = [...venueRecs, ...trendingRecs, ...floqRecs];
+    console.log('✅ Final recommendations:', {
+      venueRecsCount: venueRecs.length,
+      trendingRecsCount: trendingRecs.length,
+      floqRecsCount: floqRecs.length,
+      totalCount: allRecs.length,
+      sampleRecs: allRecs.slice(0, 3).map(r => ({ id: r.id, title: r.title, type: r.type }))
+    });
+    return allRecs;
+  }, [nearbyVenues, trendingVenues, myFloqs, normalizedWeather.isGoodWeather]);
+
+  // Transform venue data for carousel
+  const carouselItems = useMemo(() => {
+    // Prefer trending venues if available, otherwise use nearby
+    const sourceVenues = trendingVenues.length > 0 ? trendingVenues : nearbyVenues;
+    
+    return sourceVenues.map((venue) => ({
+      id: 'venue_id' in venue ? venue.venue_id : venue.id,
+      name: venue.name,
+      photo_url: venue.photo_url,
+      distance_m: typeof venue.distance_m === 'number' ? venue.distance_m : Number(venue.distance_m ?? 0),
+      match_score_pct: venue.vibe_score ? Math.round(venue.vibe_score * 100) : undefined,
+      rating: Math.random() > 0.5 ? 4.0 + Math.random() * 1 : undefined, // Mock ratings
+      canonical_tags: venue.canonical_tags || venue.categories || []
+    }));
+  }, [nearbyVenues, trendingVenues]);
+
+  // Filter recommendations by search and selected filters
+  const filteredRecommendations = useMemo(() => {
+    let filtered = recommendations;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(rec =>
+        rec.title.toLowerCase().includes(query) ||
+        rec.category?.toLowerCase().includes(query) ||
+        rec.description?.toLowerCase().includes(query) ||
+        rec.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    
+    // Apply selected filter keys
+    if (selectedFilterKeys.length > 0) {
+      // For now, implement basic filtering - in production this would use the venue's canonical_tags
+      filtered = filtered.filter(rec => {
+        // Mock filter matching based on venue properties and selected filters
+        const hasRelevantTags = rec.tags?.some(tag => {
+          const tagLower = tag.toLowerCase();
+          return selectedFilterKeys.some(filterKey => {
+            // Map filter keys to searchable terms
+            const filterMappings: Record<string, string[]> = {
+              'coffee_spots': ['coffee', 'cafe', 'espresso'],
+              'brunch': ['brunch', 'breakfast', 'morning'],
+              'dinner_spots': ['dinner', 'restaurant', 'dining'],
+              'bars_clubs': ['bar', 'club', 'nightlife', 'drinks'],
+              'outdoor_dining': ['outdoor', 'patio', 'terrace'],
+              'rooftop_bars': ['rooftop', 'roof', 'skybar'],
+              'cozy_lounges': ['lounge', 'cozy', 'intimate'],
+              'live_music': ['music', 'live', 'concert', 'band'],
+              'happy_hour': ['happy', 'drinks', 'bar'],
+              'karaoke': ['karaoke', 'sing', 'music']
+            };
+            
+            const searchTerms = filterMappings[filterKey] || [filterKey.replace('_', ' ')];
+            return searchTerms.some(term => tagLower.includes(term));
+          });
+        });
+        
+        // If no tags match, include venue if it's a basic filter like 'distance' or 'smart'
+        const basicFilters = ['distance', 'energy', 'venue_type', 'vibe_type', 'floqs', 'smart'];
+        const hasBasicFilter = selectedFilterKeys.some(key => basicFilters.includes(key));
+        
+        return hasRelevantTags || hasBasicFilter;
+      });
+    }
+    
+    return filtered;
+  }, [recommendations, searchQuery, selectedFilterKeys]);
+
+  // Handlers
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
+
+
+  const handleCalendarClick = () => {
+    // For now, show an alert - in production this would open a date picker modal
+    alert('Calendar functionality coming soon! This will allow you to select specific dates and times for discovery.');
+    setSelectedTime('custom');
+  };
+
+  const getCurrentLocationDisplay = () => {
+    if (selectedCity) return selectedCity.name;
+    if (currentCity) return currentCity.name;
+    if (coords) return 'Getting location...';
+    return 'Location unavailable';
+  };
+
+  const handleLocationChange = (city: CityLocation) => {
+    setSelectedCity(city);
+    // In production, you might want to update the coords to the new city's coordinates
+    // This would trigger new venue queries for the selected city
+    console.log('Location changed to:', city.name);
+  };
+
+  const handleRecommendationClick = (item: RecommendationItem) => {
+    if (item.type === 'venue') {
+      navigate(`/venues/${item.id}`);
+    } else if (item.type === 'floq') {
+      navigate(`/floqs/${item.id}`);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-field">
+      {/* Header */}
+      <PulseHeader onProfileClick={handleProfileClick} />
+
+      {/* Modals */}
+      <SmartDiscoveryModal
+        isOpen={showDiscoveryModal}
+        onClose={() => setShowDiscoveryModal(false)}
+        userLocation={coords ? { lat: coords.lat, lng: coords.lng } : undefined}
+      />
+
+      <LiveActivitySheet 
+        open={showLiveActivitySheet} 
+        onClose={() => setShowLiveActivitySheet(false)} 
+      />
+
+      {/* Search Bar */}
+      <PulseSearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search venues, vibes, or floqs..."
+      />
+
+      {/* Location & Weather Status Bar */}
+      <LocationWeatherBar
+        currentLocation={getCurrentLocationDisplay()}
+        onLocationChange={handleLocationChange}
+        isCustomLocation={!!selectedCity}
+        weather={{
+          tempF: normalizedWeather.tempF,
+          condition: normalizedWeather.condition,
+          precipChancePct: normalizedWeather.precipChancePct
+        }}
+      />
+
+      {/* Date/Time Selector */}
+      <DateTimeSelector
+        value={selectedTime}
+        onChange={setSelectedTime}
+        onCalendarClick={handleCalendarClick}
+      />
+
+
+
+      {/* Dynamic Filter Pills */}
+      <div className="px-6 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/70 font-medium">Smart Filters</span>
+            {selectedFilterKeys.length > 1 && (
+              <FilterLogicToggle 
+                value={filterLogic}
+                onChange={setFilterLogic}
+                showInfo={true}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <DistanceRadiusPicker valueKm={radiusKm} onChangeKm={setRadiusKm} />
+            <span className="text-xs text-white/50">
+              ({selectedFilterKeys.length} selected)
+            </span>
+          </div>
+        </div>
+        <PulseFilterPills
+          {...filterContext}
+          selectedKeys={selectedFilterKeys}
+          onToggle={(key, selected) => {
+            setSelectedFilterKeys(prev => 
+              selected 
+                ? [...prev, key]
+                : prev.filter(k => k !== key)
+            );
+          }}
+          maxVisible={showAllFilters ? undefined : 12}
+          onShowMore={() => setShowAllFilters(true)}
+          className="mb-2"
+        />
+      </div>
+
+      {/* Content Sections */}
+      <div className="space-y-8 pb-8">
+        {/* Live Activity */}
+        <div className="px-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-white text-lg flex items-center gap-2">
+              Live Activity
+            </h2>
+            <button
+              onClick={() => setShowLiveActivitySheet(true)}
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              View more →
+            </button>
+          </div>
+          <LiveActivity
+            maxItems={3}
+            onViewMore={() => setShowLiveActivitySheet(true)}
+          />
+        </div>
+
+        {/* Venue Carousel */}
+        <div className="px-0">
+          <div className="px-6 mb-4">
+            <h3 className="text-lg font-semibold text-white">
+              {trendingVenues.length > 0 ? 'Trending near you' : 'Nearby venues'}
+            </h3>
+          </div>
+          <VenueCarousel
+            items={carouselItems}
+            loading={nearbyLoading || trendingLoading}
+            onOpen={(id) => {
+              console.log('Opening venue:', id);
+              // TODO: Navigate to venue detail page
+            }}
+          />
+        </div>
+
+        {/* Floqs Section (if any) */}
+        {myFloqs.length > 0 && (
+          <div className="px-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Active Floqs</h3>
+            <div className="space-y-3">
+              {myFloqs.slice(0, 3).map((floq) => (
+                <div key={floq.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <h4 className="font-medium text-white">{floq.title || floq.name || 'Unnamed Floq'}</h4>
+                  <p className="text-sm text-white/70">{floq.member_count || 0} members active</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {filteredRecommendations.length === 0 && (
+          <div className="px-6 text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">🔍</span>
+            </div>
+            <h3 className="text-white font-medium mb-2">No matches found</h3>
+            <p className="text-white/70 text-sm mb-4">
+              Try adjusting your filters or search terms
+            </p>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedFilterKeys([]);
+              }}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
