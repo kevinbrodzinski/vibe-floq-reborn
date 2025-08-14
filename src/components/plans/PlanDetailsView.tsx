@@ -14,6 +14,7 @@ import { LivePlanTimeline } from '@/components/planning/LivePlanTimeline';
 import { PlanSummaryStats } from './PlanSummaryStats';
 import { PlanParticipantsList } from './PlanParticipantsList';
 import { PlanQuickActions } from './PlanQuickActions';
+import { QuickAddStopButton } from './QuickAddStopButton';
 import { useAuth } from '@/hooks/useAuth';
 import { PlanStatusTag } from '@/components/PlanStatusTag';
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation';
@@ -316,10 +317,13 @@ export const PlanDetailsView: React.FC = () => {
 
         {/* Timeline Preview */}
         <div className="space-y-2">
-          <h3 className="font-medium flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Timeline
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Timeline
+            </h3>
+            <QuickAddStopButton planId={planId!} />
+          </div>
           {plan.status === 'executing' ? (
             <LivePlanTimeline planId={planId!} className="mt-2" />
           ) : (
