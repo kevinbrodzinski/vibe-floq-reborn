@@ -73,10 +73,14 @@ export const CollaborativePlanningScreen = () => {
   const actualPlanId = planId;
   
 
-  // Get collaborative state including all functions
+  // ================================================================
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL LOGIC
+  // ================================================================
+  
   // Fetch plan data
   const { data: plan, isLoading: isPlanLoading, error: planError } = usePlan(actualPlanId);
   
+  // Get unified plan stops functionality
   const { 
     createStop, 
     deleteStop, 
@@ -88,7 +92,122 @@ export const CollaborativePlanningScreen = () => {
   // Get stops data separately  
   const { data: stops = [], isLoading: isStopsLoading } = usePlanStops(actualPlanId);
 
-  const activities = []; // TODO: Get from plan activities hook
+  // Status validation for edit guards
+  const { canEditPlan, canVoteOnStops } = usePlanStatusValidation()
+
+  // Get haptic feedback hook
+  const { socialHaptics: hapticFeedback } = useHapticFeedback()
+
+  // Plan summaries (conditionally enabled)
+  const { data: summaries } = usePlanSummaries(plan?.id || '');
+  const generateSummary = useGeneratePlanSummary();
+
+  // Real-time presence tracking (conditionally enabled)
+  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan?.id || '', { silent: true });
+  
+  // Collaborative state for save indicator (conditionally enabled)
+  const { saving } = useCollaborativeState({ planId: plan?.id || '', enabled: !!plan });
+
+  // Auto-progression for plan completion (conditionally enabled)
+  usePlanAutoProgression({
+    planId: plan?.id || '',
+    planStatus: plan?.status || 'draft',
+    stops: stops || [],
+    isCreator: plan?.creator_id === 'current-user',
+    enabled: !!plan
+  });
+
+  // Real-time sync hook for live collaboration (conditionally enabled)
+  const sync = useRealtimePlanSync({
+    plan_id: plan?.id || '',
+    enabled: !!plan,
+    onParticipantJoined: (participant) => {
+      console.log('Participant joined:', participant);
+    },
+    onParticipantLeft: (participant) => {
+      console.log('Participant left:', participant);
+    },
+    onStopUpdated: (stop) => {
+      console.log('Stop updated:', stop);
+    }
+  });
+
+  // Overlay feedback helper with auto-dismiss
+  const showOverlay = useCallback(
+    (action: typeof overlayAction, feedback: string, ms = 2500) => {
+      setOverlayAction(action);
+      setOverlayFeedback(feedback);
+      setShowExecutionOverlay(true);
+      
+      if (overlayTimeoutRef.current) {
+        clearTimeout(overlayTimeoutRef.current);
+      }
+      
+      overlayTimeoutRef.current = setTimeout(() => {
+        setShowExecutionOverlay(false);
+      }, ms);
+    },
+    [overlayAction]
+  );
+
+  // Advanced gestures
+  const { controls: { startListening } } = useAdvancedGestures({
+    onGesture: (gesture) => {
+      switch (gesture.type) {
+        case 'swipe-up':
+          setShowNovaSuggestions(true);
+          break;
+        case 'swipe-down':
+          setShowNovaSuggestions(false);
+          break;
+        case 'long-press':
+          showOverlay('vote', 'Vote mode activated');
+          break;
+        default:
+          break;
+      }
+    },
+    enabled: true
+  });
+
+  // Keyboard shortcuts
+  const { shortcuts } = useKeyboardShortcuts({
+    onAddStop: () => plan && handleStopAdd("20:00"),
+    onDeleteStop: () => {
+      if (selectedStopIds.length > 0) {
+        // TODO: Update to use unified system
+        console.log('Legacy removeStop temporarily disabled');
+        setSelectedStopIds([]);
+      }
+    },
+    onExecutePlan: () => {}, // Handled by PlanStatusActions now
+    onToggleChat: () => setShowChat(!showChat),
+    onToggleSettings: () => console.log('Settings toggled'),
+    onSavePlan: () => console.log('Plan saved'),
+    onUndoAction: () => console.log('Undo'),
+    onRedoAction: () => console.log('Redo'),
+    onSearch: () => (document.querySelector('input[placeholder*="Search"]') as HTMLInputElement)?.focus(),
+    onHelp: () => setShowKeyboardHelp(true)
+  });
+
+  // Effects
+  useEffect(() => {
+    if (startListening) {
+      startListening();
+    }
+  }, [startListening]);
+
+  useEffect(() => {
+    return () => {
+      if (overlayTimeoutRef.current) {
+        clearTimeout(overlayTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // ================================================================
+  // CONDITIONAL LOGIC (AFTER ALL HOOKS)
+  // ================================================================
   
   // Show loading state while plan is loading
   if (isPlanLoading) {
@@ -99,14 +218,13 @@ export const CollaborativePlanningScreen = () => {
   if (planError || !plan) {
     return <div className="flex items-center justify-center h-screen">Failed to load plan</div>;
   }
+
+  // ================================================================
+  // DERIVED STATE AND DATA
+  // ================================================================
   
+  const activities = []; // TODO: Get from plan activities hook
   const recentVotes = []; // TODO: Get from plan votes hook
-
-  // Status validation for edit guards
-  const { canEditPlan, canVoteOnStops } = usePlanStatusValidation()
-
-  // Get haptic feedback hook
-  const { socialHaptics: hapticFeedback } = useHapticFeedback()
 
   // Template functions - TODO: Update to use unified system
   const handleLoadTemplate = (templateStops: any[]) => {
@@ -187,65 +305,12 @@ export const CollaborativePlanningScreen = () => {
     }
   };
 
-  // Keyboard shortcuts
-  const { shortcuts } = useKeyboardShortcuts({
-    onAddStop: () => handleStopAdd("20:00"),
-    onDeleteStop: () => {
-      if (selectedStopIds.length > 0) {
-        // TODO: Update to use unified system
-        console.log('Legacy removeStop temporarily disabled');
-        setSelectedStopIds([]);
-      }
-    },
-    onExecutePlan: () => {}, // Handled by PlanStatusActions now
-    onToggleChat: () => setShowChat(!showChat),
-    onToggleSettings: () => console.log('Settings toggled'),
-    onSavePlan: () => console.log('Plan saved'),
-    onUndoAction: () => console.log('Undo'),
-    onRedoAction: () => console.log('Redo'),
-    onSearch: () => (document.querySelector('input[placeholder*="Search"]') as HTMLInputElement)?.focus(),
-    onHelp: () => setShowKeyboardHelp(true)
-  });
-
   // Mock collaboration state for now
-  const collaborationParticipants = plan.participants;
+  const collaborationParticipants = plan.participants || [];
   const connectionStatus = 'connected';
   const isOptimistic = false;
 
-  // Plan summaries
-  const { data: summaries } = usePlanSummaries(plan.id);
-  const generateSummary = useGeneratePlanSummary();
-
-  // Real-time presence tracking with silent join
-  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id, { silent: true });
-  
-  // Collaborative state for save indicator
-  const { saving } = useCollaborativeState({ planId: plan.id });
-
-  // Auto-progression for plan completion
-  usePlanAutoProgression({
-    planId: plan.id,
-    planStatus: plan.status || 'draft',
-    stops: plan.stops,
-    isCreator: plan.creator_id === 'current-user',
-    enabled: true
-  });
-
-  // Real-time sync hook for live collaboration
-  const sync = useRealtimePlanSync({
-    plan_id: plan.id,
-    onParticipantJoined: (participant) => {
-      console.log('Participant joined:', participant);
-    },
-    onVoteCast: (voteData) => {
-      console.log('Vote update:', voteData);
-      showOverlay('vote', 'Vote submitted ✓');
-    },
-    onStopUpdated: (stopData) => {
-      console.log('Stop update:', stopData);
-      showOverlay('stop-action', 'Timeline updated');
-    },
-  });
+  // Duplicate hooks removed - already declared at the top
   
   const isConnected = sync.isConnected;
   const activeParticipants = [];
@@ -313,42 +378,7 @@ export const CollaborativePlanningScreen = () => {
     }
   };
 
-  // Use the already declared hapticFeedback instead of duplicating
-
-  const { controls: { startListening } } = useAdvancedGestures({
-    onGesture: (gesture) => {
-      switch (gesture.type) {
-        case 'shake':
-          hapticFeedback.shakeActivated();
-          // Add random venue suggestion on shake
-          break;
-        case 'swipe-left':
-          if (showChat) setShowChat(false);
-          break;
-        case 'swipe-right': 
-          if (!showChat) setShowChat(true);
-          break;
-        case 'long-press':
-          hapticFeedback.longPressActivated();
-          // Show context menu for long press
-          break;
-      }
-    }
-  });
-
-  // Start gesture listening on mount
-  useEffect(() => {
-    startListening();
-  }, [startListening]);
-
-  // Cleanup overlay timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (overlayTimeoutRef.current) {
-        clearTimeout(overlayTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Duplicate hooks and effects removed - already declared at the top
 
   const handleVenueSelect = (venue: any) => {
     // Check if plan can be edited - normalize status with fallback
