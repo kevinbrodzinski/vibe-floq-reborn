@@ -7,6 +7,8 @@ interface VenueImageProps {
   alt: string;
   type: 'venue' | 'event' | 'floq';
   className?: string;
+  lazy?: boolean; // Enable lazy loading
+  priority?: boolean; // Disable lazy loading for above-the-fold images
   venue?: {
     id?: string;
     name?: string;
@@ -46,6 +48,8 @@ export const VenueImage: React.FC<VenueImageProps> = ({
   alt,
   type,
   className = "w-16 h-16 rounded-xl object-cover",
+  lazy = true,
+  priority = false,
   venue
 }) => {
   const [currentSrc, setCurrentSrc] = useState(src);
@@ -79,7 +83,9 @@ export const VenueImage: React.FC<VenueImageProps> = ({
       alt={alt}
       className={className}
       onError={handleImageError}
-      loading="lazy"
+      loading={priority ? "eager" : lazy ? "lazy" : "eager"}
+      decoding="async"
+      fetchpriority={priority ? "high" : "low"}
     />
   );
 };

@@ -37,9 +37,12 @@ export function useNearbyVenues(
       if (error) throw error;
       return (data ?? []);
     },
-    staleTime: 2 * 60_000,      // 2 minutes - venues don't change that often
-    cacheTime: 10 * 60_000,     // 10 minutes - keep cached for longer
+    staleTime: 5 * 60_000,      // 5 minutes - venues don't change often
+    gcTime: 30 * 60_000,        // 30 minutes - keep cached much longer (renamed from cacheTime)
     refetchOnWindowFocus: false, // Don't refetch when user returns to tab
+    refetchOnMount: false,       // Don't refetch on component mount if data exists
+    refetchOnReconnect: false,   // Don't refetch when network reconnects
     retry: 1,                    // Reduce retry attempts for faster failure
+    networkMode: 'offlineFirst', // Use cache first, then network
   });
 }

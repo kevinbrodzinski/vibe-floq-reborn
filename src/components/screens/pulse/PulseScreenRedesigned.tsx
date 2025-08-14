@@ -7,6 +7,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useWeatherForecast } from '@/hooks/useWeatherForecast';
 import { useVenuesOpenState } from '@/hooks/useVenueOpenState';
 import { useNearbyVenues } from '@/hooks/useNearbyVenues';
+import { usePrefetchVenues } from '@/hooks/usePrefetchVenues';
 import { useTrendingVenues } from '@/hooks/useTrendingVenues';
 import { useLiveActivity } from '@/hooks/useLiveActivity';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
@@ -280,6 +281,9 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Fetch open state for all venues at once - only when we have venue IDs
   const { data: venuesOpenState = [] } = useVenuesOpenState(venueIds);
+
+  // Background prefetching for better performance
+  usePrefetchVenues();
 
   // Transform recommendations for carousel/list view
   const venueCarouselItems: VenueCarouselItem[] = useMemo(() => {

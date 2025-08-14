@@ -1,4 +1,5 @@
 import * as React from 'react';
+const { memo } = React;
 import useEmblaCarousel from 'embla-carousel-react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MapPin, Star, Clock, Car, Thermometer } from 'lucide-react';
@@ -72,7 +73,7 @@ interface VenueCarouselProps {
   userLng?: number | null;
 }
 
-export const VenueCarousel: React.FC<VenueCarouselProps> = ({
+export const VenueCarousel: React.FC<VenueCarouselProps> = memo(({
   items,
   loading = false,
   onOpen,
@@ -196,8 +197,9 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
                   >
                     {/* Venue image */}
                     <div className="absolute inset-0">
-                                             <VenueImage
-                         src={venue.photoUrl}
+                      <VenueImage
+                        src={venue.photoUrl}
+                        priority={index < 3} // Load first 3 images with priority
                          alt={venue.name || 'Venue'}
                          type="venue"
                          className="w-full h-full object-cover"
@@ -330,4 +332,6 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
       )}
     </div>
   );
-};
+});
+
+VenueCarousel.displayName = 'VenueCarousel';

@@ -64,9 +64,12 @@ export const useTrendingVenues = (
       // Default to original implementation
       return fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit);
     },
-    staleTime: 2 * 60_000,      // 2 minutes - trending venues don't change rapidly
-    cacheTime: 10 * 60_000,     // 10 minutes cache
+    staleTime: 5 * 60_000,      // 5 minutes - trending venues don't change rapidly
+    gcTime: 30 * 60_000,        // 30 minutes cache (renamed from cacheTime)
     refetchOnWindowFocus: false, // Don't refetch on focus
+    refetchOnMount: false,       // Don't refetch on component mount if data exists
+    refetchOnReconnect: false,   // Don't refetch when network reconnects
     retry: 1,                    // Faster failure
+    networkMode: 'offlineFirst', // Use cache first, then network
   });
 };
