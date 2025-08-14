@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin } from 'lucide-react';
+import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin, Bug } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +12,12 @@ import { useFriendDrawer } from '@/contexts/FriendDrawerContext';
 import { useFullscreenMap } from '@/store/useFullscreenMap';
 import { useSafeMode } from '@/hooks/useSafeMode';
 import { NearbyVenuesSheet } from '@/components/NearbyVenuesSheet';
+import { LocationSystemHealthDashboard } from '@/components/debug/LocationSystemHealthDashboard';
 
 export const LayerSelectionFab = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
   
   // Hook into existing functionality
   const { open: timewarpOpen, toggle: toggleTimewarp } = useTimewarpDrawer();
@@ -24,8 +26,6 @@ export const LayerSelectionFab = () => {
   const { isActive: ghostEnabled, toggleSafeMode } = useSafeMode();
   
   const isFull = fullscreenMode === 'full';
-
-
 
   return (
     <>
@@ -69,9 +69,18 @@ export const LayerSelectionFab = () => {
           {isFull ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           <span>{isFull ? 'Exit Fullscreen' : 'Enter Fullscreen'}</span>
         </DropdownMenuItem>
+        {import.meta.env.DEV && (
+          <DropdownMenuItem onSelect={() => setDebugOpen(!debugOpen)} className="flex items-center gap-3 h-10">
+            <Bug className="h-4 w-4" />
+            <span>{debugOpen ? 'Hide Debug Panel' : 'Show Debug Panel'}</span>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
     <NearbyVenuesSheet isOpen={nearbyOpen} onClose={() => setNearbyOpen(false)} onVenueTap={() => {}} />
+    {import.meta.env.DEV && debugOpen && (
+      <LocationSystemHealthDashboard onClose={() => setDebugOpen(false)} />
+    )}
     </>
   );
 };

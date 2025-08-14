@@ -16,9 +16,12 @@ interface HealthMetrics {
   timestamp: number;
 }
 
-export const LocationSystemHealthDashboard: React.FC = () => {
+interface LocationSystemHealthDashboardProps {
+  onClose?: () => void;
+}
+
+export const LocationSystemHealthDashboard: React.FC<LocationSystemHealthDashboardProps> = ({ onClose }) => {
   const [metrics, setMetrics] = useState<HealthMetrics | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'gps' | 'bus' | 'circuit' | 'store'>('overview');
   
   // Zustand store data
@@ -28,8 +31,6 @@ export const LocationSystemHealthDashboard: React.FC = () => {
   const status = useLocationStatus();
 
   useEffect(() => {
-    if (!isVisible) return;
-
     const updateMetrics = () => {
       try {
         setMetrics({
@@ -50,7 +51,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
     const interval = setInterval(updateMetrics, 2000);
 
     return () => clearInterval(interval);
-  }, [isVisible]);
+  }, []);
 
   const formatTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString();
@@ -89,35 +90,29 @@ export const LocationSystemHealthDashboard: React.FC = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsVisible(!isVisible)}
-        className={`mb-2 px-3 py-2 rounded-lg text-sm font-mono transition-colors ${
-          healthScore >= 80 
-            ? 'bg-green-800 text-green-100 hover:bg-green-700' 
-            : healthScore >= 60 
-            ? 'bg-yellow-800 text-yellow-100 hover:bg-yellow-700'
-            : 'bg-red-800 text-red-100 hover:bg-red-700'
-        }`}
-      >
-        📊 Health: {healthScore}%
-      </button>
-
       {/* Dashboard Panel */}
-      {isVisible && (
-        <div className="bg-black/95 text-white p-4 rounded-lg font-mono text-xs max-w-2xl border border-gray-600 backdrop-blur max-h-96 overflow-y-auto">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-bold">Location System Health Dashboard</h3>
-            <button
-              onClick={() => setIsVisible(false)}
-              className="text-gray-400 hover:text-white"
-            >
-              ✕
-            </button>
+      <div className="bg-black/90 backdrop-blur text-white rounded-lg shadow-2xl border border-gray-700 w-96 max-h-[70vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
+              healthScore >= 80 ? 'bg-green-400' : healthScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+            }`} />
+            <h3 className="font-mono text-sm font-semibold">Location Debug ({healthScore}%)</h3>
           </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white text-lg leading-none"
+              aria-label="Close debug panel"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
-          {/* Tab Navigation */}
-          <div className="flex space-x-2 mb-4 border-b border-gray-700">
+        {/* Tab Navigation */}
+        <div className="flex space-x-2 px-4 border-b border-gray-700">
             {['overview', 'gps', 'bus', 'circuit', 'store'].map((tab) => (
               <button
                 key={tab}
@@ -131,11 +126,14 @@ export const LocationSystemHealthDashboard: React.FC = () => {
                 {tab}
               </button>
             ))}
-          </div>
+        </div>
+
+        {/* Content Area with Scrolling */}
+        <div className="overflow-y-auto max-h-[50vh]">
 
           {/* Overview Tab */}
           {selectedTab === 'overview' && (
-            <div className="space-y-4">
+            <div className="space-y-4 p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-blue-400 font-semibold mb-2">System Status</h4>
@@ -203,7 +201,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
 
           {/* GPS Manager Tab */}
           {selectedTab === 'gps' && metrics && (
-            <div>
+            <div className="p-4">
               <h4 className="text-yellow-400 font-semibold mb-2">GPS Manager (useGeo Foundation)</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
@@ -253,7 +251,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
 
           {/* Location Bus Tab */}
           {selectedTab === 'bus' && metrics && (
-            <div>
+            <div className="p-4">
               <h4 className="text-purple-400 font-semibold mb-2">Location Bus</h4>
               <div className="space-y-1 mb-3">
                 <div className="flex justify-between">
@@ -313,7 +311,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
 
           {/* Circuit Breaker Tab */}
           {selectedTab === 'circuit' && metrics && (
-            <div>
+            <div className="p-4">
               <h4 className="text-orange-400 font-semibold mb-2">Database Circuit Breaker</h4>
               <div className="space-y-1 mb-3">
                 <div className="flex justify-between">
@@ -369,7 +367,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
 
           {/* Zustand Store Tab */}
           {selectedTab === 'store' && (
-            <div>
+            <div className="p-4">
               <h4 className="text-green-400 font-semibold mb-2">Zustand Location Store</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
@@ -427,13 +425,13 @@ export const LocationSystemHealthDashboard: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Footer */}
-          <div className="mt-4 pt-2 border-t border-gray-700 text-gray-500 text-xs">
-            Last updated: {metrics ? formatTime(metrics.timestamp) : 'Never'}
-          </div>
         </div>
-      )}
+
+        {/* Footer */}
+        <div className="p-4 pt-2 border-t border-gray-700 text-gray-500 text-xs">
+          Last updated: {metrics ? formatTime(metrics.timestamp) : 'Never'}
+        </div>
+      </div>
     </div>
   );
 };
