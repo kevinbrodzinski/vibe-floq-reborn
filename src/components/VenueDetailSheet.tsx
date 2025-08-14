@@ -55,6 +55,7 @@ function reservationLink(v?: VenueLite | null) {
 }
 
 export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, onCreatePlan }: Props) {
+  const contentId = React.useId();
   const { data, toggles, submitReview, uploadPhoto, submitting } = useVenueExtras(venue?.id ?? null);
 
   const distanceText = venue
@@ -74,11 +75,15 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92vh] p-0 overflow-hidden">
+      <SheetContent 
+        side="bottom" 
+        className="h-[92vh] p-0 overflow-hidden"
+        aria-describedby={contentId}
+      >
         <SheetHeader className="sr-only">
-          <SheetTitle>{venue?.name ?? "Venue"}</SheetTitle>
-          <SheetDescription>
-            Venue details, hours, friends, quick actions, and planning for {venue?.name ?? "this venue"}.
+          <SheetTitle id="venue-detail-title">{venue?.name ?? "Venue details"}</SheetTitle>
+          <SheetDescription id={contentId}>
+            Details, hours, deals, travel times, and actions for this venue.
           </SheetDescription>
         </SheetHeader>
         {venue && (

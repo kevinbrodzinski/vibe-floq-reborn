@@ -32,6 +32,7 @@ import { applyContextualFiltering, sortByContextualRelevance, getVenueStatus, ty
 import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
 import { AISummaryCollapsible } from '@/components/ui/AISummaryCollapsible';
 import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
+import DistanceRadiusPicker from '@/components/filters/DistanceRadiusPicker';
 
 export const PulseScreenRedesigned: React.FC = () => {
   // UI state (declared first so they can be used in hooks)
@@ -46,6 +47,7 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [activeVenue, setActiveVenue] = useState<VenueLite | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [radiusKm, setRadiusKm] = useState(2); // Default 2km radius
 
   // Core state (using selectedTime from above)
   const { user } = useAuth();
@@ -53,23 +55,23 @@ export const PulseScreenRedesigned: React.FC = () => {
   const { data: weatherData, isLoading: weatherLoading } = useWeather();
   const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime);
 
-    // Data hooks with enhanced filtering
+      // Data hooks with enhanced filtering
   const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
-    coords?.lat ?? 0, 
-    coords?.lng ?? 0, 
-    2, // 2km radius
-    { 
-      pillKeys: selectedFilterKeys, 
+    coords?.lat ?? 0,
+    coords?.lng ?? 0,
+    radiusKm,
+    {
+      pillKeys: selectedFilterKeys,
       filterLogic: 'any',
-      limit: 50 
+      limit: 50
     }
   );
   const { data: trendingVenues = [], isLoading: trendingLoading } = useTrendingVenues(
-    2000, // 2km radius
+    Math.round(radiusKm * 1000), // Convert km to meters
     10,   // 10 results
-    { 
-      pillKeys: selectedFilterKeys, 
-      filterLogic: 'any' 
+    {
+      pillKeys: selectedFilterKeys,
+      filterLogic: 'any'
     }
   );
   const { data: liveActivity = [] } = useLiveActivity(20);
@@ -485,6 +487,14 @@ export const PulseScreenRedesigned: React.FC = () => {
                     />
                   </div>
                 )}
+
+                {/* Distance Radius Picker */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <DistanceRadiusPicker
+                    valueKm={radiusKm}
+                    onChange={setRadiusKm}
+                  />
+                </div>
 
                 {/* Filter Pills */}
                 <div>
