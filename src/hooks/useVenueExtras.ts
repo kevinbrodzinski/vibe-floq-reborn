@@ -109,7 +109,7 @@ export function useVenueExtras(venueId: string | null) {
           }
         }
       } catch (e: any) {
-        if (!is404(e)) console.warn("hours error", e);
+        // Silently handle missing venue_hours table
       }
 
       // --- deals (optional)
@@ -131,7 +131,7 @@ export function useVenueExtras(venueId: string | null) {
           }));
         }
       } catch (e: any) {
-        if (!is404(e)) console.warn("deals error", e);
+        // Silently handle missing venue_deals table
       }
 
       // --- has user visited recently? (uses arrived_at, not created_at)

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -79,6 +79,9 @@ export const WatchlistSheet: React.FC<WatchlistSheetProps> = ({
             <Eye className="w-5 h-5 text-blue-500" />
             My Watchlist
           </SheetTitle>
+          <SheetDescription>
+            Manage your saved plans and venues you're interested in.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
