@@ -21,6 +21,10 @@ export const PlansHub: React.FC = () => {
     setFilter,
     searchQuery,
     setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     isLoading,
     isLoadingAdditional,
     counts
@@ -101,6 +105,10 @@ export const PlansHub: React.FC = () => {
             onChange={setFilter}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
             counts={counts}
           />
         </motion.div>

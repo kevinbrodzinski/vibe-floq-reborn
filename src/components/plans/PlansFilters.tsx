@@ -7,13 +7,17 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import type { PlanFilter } from '@/hooks/usePlansData';
+import type { PlanFilter, SortBy, SortOrder } from '@/hooks/useProgressivePlansData';
 
 interface PlansFiltersProps {
   current: PlanFilter;
   onChange: (filter: PlanFilter) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  sortBy: SortBy;
+  setSortBy: (sortBy: SortBy) => void;
+  sortOrder: SortOrder;
+  setSortOrder: (sortOrder: SortOrder) => void;
   counts: {
     all: number;
     draft: number;
@@ -27,11 +31,13 @@ export const PlansFilters: React.FC<PlansFiltersProps> = ({
   current, 
   onChange, 
   searchQuery, 
-  onSearchChange, 
+  onSearchChange,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
   counts 
 }) => {
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'type' | 'distance'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const options: { label: string; value: PlanFilter; count: number; icon?: React.ReactNode }[] = [
     { label: 'All', value: 'all', count: counts.all, icon: <Sparkles className="w-4 h-4" /> },
@@ -49,6 +55,23 @@ export const PlansFilters: React.FC<PlansFiltersProps> = ({
     { value: 'type', label: 'By Type', icon: '●' },
     { value: 'distance', label: 'By Distance', icon: '📍' },
   ];
+
+  // Get current sort option for display
+  const getCurrentSortLabel = () => {
+    const option = sortOptions.find(opt => {
+      if (sortBy === 'name') {
+        return opt.value === (sortOrder === 'desc' ? 'name-desc' : 'name');
+      } else if (sortBy === 'date') {
+        return opt.value === (sortOrder === 'desc' ? 'date-desc' : 'date');
+      } else if (sortBy === 'type') {
+        return opt.value === 'type';
+      } else if (sortBy === 'distance') {
+        return opt.value === 'distance';
+      }
+      return false;
+    });
+    return option?.label || 'Sort';
+  };
 
   const handleSortChange = (value: string) => {
     if (value.includes('name')) {
@@ -95,21 +118,28 @@ export const PlansFilters: React.FC<PlansFiltersProps> = ({
                 className="px-4 py-4 bg-gray-900/50 border border-gray-700/50 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-gray-600/50 rounded-xl transition-all duration-300"
               >
                 <Filter className="w-4 h-4 mr-2" />
-                Sort
+                {getCurrentSortLabel()}
                 <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 min-w-[200px]">
-              {sortOptions.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => handleSortChange(option.value)}
-                  className="text-white hover:bg-gray-800/50 cursor-pointer"
-                >
-                  <span className="mr-2">{option.icon}</span>
-                  {option.label}
-                </DropdownMenuItem>
-              ))}
+              {sortOptions.map((option) => {
+                const isSelected = getCurrentSortLabel() === option.label;
+                return (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => handleSortChange(option.value)}
+                    className={cn(
+                      "text-white hover:bg-gray-800/50 cursor-pointer",
+                      isSelected && "bg-blue-600/20 text-blue-300"
+                    )}
+                  >
+                    <span className="mr-2">{option.icon}</span>
+                    {option.label}
+                    {isSelected && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
