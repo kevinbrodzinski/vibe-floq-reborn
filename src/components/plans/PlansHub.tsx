@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanInviteButton } from '@/components/PlanInviteButton';
@@ -8,6 +8,7 @@ import { PlansGrid } from './PlansGrid';
 import { PlansFilters } from './PlansFilters';
 import { PlansSkeleton } from './PlansSkeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { ComprehensiveStopModal } from './ComprehensiveStopModal';
 import { useNavigate } from 'react-router-dom';
 import { zIndex } from '@/constants/z';
 import { motion } from 'framer-motion';

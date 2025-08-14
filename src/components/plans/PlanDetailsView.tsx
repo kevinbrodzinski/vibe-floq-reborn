@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Calendar, Clock, Users, MapPin } from 'lucide-react';
+import { ChevronLeft, Calendar, Clock, Users, MapPin, Plus } from 'lucide-react';
 import { PlanEditModal } from './PlanEditModal';
 import { PlanTimelinePreview } from './PlanTimelinePreview';
 import { LivePlanTimeline } from '@/components/planning/LivePlanTimeline';
 import { PlanSummaryStats } from './PlanSummaryStats';
 import { PlanParticipantsList } from './PlanParticipantsList';
 import { PlanQuickActions } from './PlanQuickActions';
-import { QuickAddStopButton } from './QuickAddStopButton';
+import { ComprehensiveStopModal } from './ComprehensiveStopModal';
 import { useAuth } from '@/hooks/useAuth';
 import { PlanStatusTag } from '@/components/PlanStatusTag';
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation';
@@ -34,6 +34,7 @@ export const PlanDetailsView: React.FC = () => {
   const { session } = useAuth();
   const { toast } = useToast();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addStopModalOpen, setAddStopModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { validateTransition, getAvailableTransitions } = usePlanStatusValidation();
 
@@ -322,7 +323,14 @@ export const PlanDetailsView: React.FC = () => {
               <Clock className="w-4 h-4" />
               Timeline
             </h3>
-            <QuickAddStopButton planId={planId!} />
+            <Button
+              onClick={() => setAddStopModalOpen(true)}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Stop
+            </Button>
           </div>
           {plan.status === 'executing' ? (
             <LivePlanTimeline planId={planId!} className="mt-2" />
@@ -376,6 +384,13 @@ export const PlanDetailsView: React.FC = () => {
           }}
         />
       )}
+
+      {/* Add Stop Modal */}
+      <ComprehensiveStopModal
+        isOpen={addStopModalOpen}
+        onClose={() => setAddStopModalOpen(false)}
+        planId={planId!}
+      />
     </div>
   );
 };

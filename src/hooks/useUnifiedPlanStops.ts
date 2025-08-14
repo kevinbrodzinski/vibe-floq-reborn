@@ -47,16 +47,16 @@ export function useUnifiedPlanStops(planId?: string) {
       }
 
       // Use the database RPC function for proper ordering and validation
-      const { data, error } = await supabase.rpc('add_plan_stop_with_order', {
-        p_plan_id: payload.plan_id,
-        p_title: payload.title,
-        p_description: payload.description || null,
-        p_start_time: payload.start_time || null,
-        p_end_time: payload.end_time || null,
-        p_duration_minutes: payload.duration_minutes || 60,
-        p_venue_id: payload.venue_id || null,
-        p_estimated_cost: payload.estimated_cost_per_person || null
-      })
+              const { data, error } = await supabase.rpc('add_plan_stop_with_order', {
+          p_plan_id: payload.plan_id,
+          p_title: payload.title,
+          p_description: payload.description || null,
+          p_start_time: null, // Temporarily disabled until DB migration is applied
+          p_end_time: null,   // Temporarily disabled until DB migration is applied
+          p_duration_minutes: payload.duration_minutes || 60,
+          p_venue_id: payload.venue_id || null,
+          p_estimated_cost: payload.estimated_cost_per_person || null
+        })
 
       if (error) {
         console.error('RPC Error creating stop:', error)
