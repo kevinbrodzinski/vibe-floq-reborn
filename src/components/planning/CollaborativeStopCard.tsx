@@ -63,6 +63,8 @@ export function CollaborativeStopCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    zIndex: isDragging ? 20 : undefined,
+    boxShadow: isDragging ? '0 12px 30px rgba(0,0,0,.35)' : undefined,
   };
 
   const isCurrentlyDragging = isDragging || sortableIsDragging;

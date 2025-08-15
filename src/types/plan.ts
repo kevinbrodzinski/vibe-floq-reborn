@@ -38,7 +38,7 @@ export interface PlanStop {
   color: string
   duration_minutes?: number
   durationMinutes?: number // For backwards compatibility
-  stop_order?: number
+  stop_order: number
   created_by?: string
   createdBy: string
   start_time: string

@@ -76,12 +76,22 @@ export const PlanDetailsView: React.FC = () => {
   const { data: participants = [] } = usePlanParticipantsOptimized(planId!);
 
   const isCreator = plan?.creator_id === session?.user?.id;
-  const availableTransitions = plan ? getAvailableTransitions(plan.status as PlanStatus) : [];
+  const availableTransitions = plan ? getAvailableTransitions(plan.status as PlanStatus, {
+    hasParticipants: participants.length > 0,
+    isCreator,
+    hasStops: stops.length > 0,
+    isActive: plan.status === 'active'
+  }) : [];
 
   // Status change mutation
   const statusMutation = useMutation({
     mutationFn: async ({ status }: { status: PlanStatus }) => {
-      if (!plan || !validateTransition(plan.status as PlanStatus, status)) {
+      if (!plan || !validateTransition(plan.status as PlanStatus, status, {
+        hasParticipants: participants.length > 0,
+        isCreator,
+        hasStops: stops.length > 0,
+        isActive: plan.status === 'active'
+      }).isValid) {
         throw new Error('Invalid status transition');
       }
 

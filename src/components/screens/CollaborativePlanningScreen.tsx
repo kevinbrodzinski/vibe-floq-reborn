@@ -28,8 +28,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { 
+  DndContext, 
+  DragEndEvent, 
+  useSensor, 
+  useSensors, 
+  PointerSensor, 
+  KeyboardSensor,
+  closestCenter 
+} from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy, 
+  arrayMove 
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 
 // Hooks
 import { usePlan } from '@/hooks/usePlan';
@@ -106,45 +119,70 @@ export const CollaborativePlanningScreen = () => {
     [planId, queryClient2]
   );
 
-  // Drag and drop sensors
+  // Drag and drop sensors with keyboard support
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 6,
       },
-    })
+    }),
+    useSensor(KeyboardSensor)
   );
 
-  // Handle drag end
+  // Handle drag end with optimistic updates
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = stops.findIndex(stop => stop.id === active.id);
-      const newIndex = stops.findIndex(stop => stop.id === over.id);
+    if (!over || active.id === over.id) return;
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const reorderedStops = arrayMove(stops, oldIndex, newIndex);
-        
-        // Update stop orders
-        try {
-          await Promise.all(
-            reorderedStops.map((stop, index) => 
-              updateStop(stop.id, { stop_order: index + 1 })
-            )
-          );
-          toast({ title: "Timeline reordered successfully" });
-        } catch (error) {
-          console.error('Failed to reorder stops:', error);
-          toast({
-            title: "Failed to reorder timeline",
-            description: "Please try again",
-            variant: "destructive",
-          });
-        }
+    const oldIndex = stops.findIndex(stop => stop.id === active.id);
+    const newIndex = stops.findIndex(stop => stop.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // 1) Optimistic local reorder
+    const reorderedStops = arrayMove(stops, oldIndex, newIndex);
+    
+    // 2) Optimistic cache update
+    queryClient2.setQueryData(['plan-stops', planId], reorderedStops.map((s, i) => ({ ...s, stop_order: i })));
+
+    // 3) Prepare minimal update payload (only rows whose index changed)
+    const updates: { id: string; stop_order: number }[] = [];
+    reorderedStops.forEach((s, idx) => {
+      if (s.stop_order !== idx) {
+        updates.push({ id: s.id, stop_order: idx });
       }
+    });
+
+    if (updates.length === 0) return;
+
+    try {
+      // 4) Persist in one upsert round-trip (fast path)
+      const { error } = await supabase.from('plan_stops').upsert(updates, { onConflict: 'id' });
+      
+      if (error) {
+        console.error('[DnD persist] upsert failed, trying per-row updates', error);
+        // Fallback to individual updates
+        await Promise.all(updates.map((u) => updateStop(u.id, { stop_order: u.stop_order })));
+      }
+
+      // 5) Refresh cache to ensure consistency
+      await queryClient2.invalidateQueries({ queryKey: ['plan-stops', planId] });
+      
+      toast({ title: "Timeline reordered successfully" });
+    } catch (error) {
+      console.error('[DnD persist] all updates failed', error);
+      
+      // 6) Revert optimistic update on failure
+      await queryClient2.invalidateQueries({ queryKey: ['plan-stops', planId] });
+      
+      toast({
+        title: "Failed to reorder timeline",
+        description: "Changes have been reverted. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [stops, updateStop, toast]);
+  }, [stops, updateStop, toast, queryClient2, planId]);
 
   // Handle stop actions
   const handleEditStop = useCallback((stop: any) => {
@@ -461,6 +499,7 @@ export const CollaborativePlanningScreen = () => {
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             >
               <SortableContext 
                 items={processedStops.map(stop => stop.id)} 
