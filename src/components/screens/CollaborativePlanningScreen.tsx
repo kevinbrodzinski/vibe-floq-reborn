@@ -277,7 +277,7 @@ export const CollaborativePlanningScreen = () => {
 
     setIsDragOperationPending(true);
     try {
-      const stopIndex = plan.stops.findIndex(s => s.id === stopId);
+      const stopIndex = stops.findIndex(s => s.id === stopId);
       
       if (stopIndex !== -1) {
         await reorderStops(stopIndex, newIndex);
@@ -449,7 +449,7 @@ export const CollaborativePlanningScreen = () => {
               <span>{plan.date}</span>
               <span className="hidden sm:inline">•</span>
               <PlanPresenceIndicator
-                participants={plan.participants}
+                participants={collaborationParticipants}
                 isConnected={isConnected}
               />
               <span className="hidden sm:inline">•</span>
@@ -512,7 +512,7 @@ export const CollaborativePlanningScreen = () => {
 
         {/* Live Participant Tracker */}
         <LiveParticipantTracker 
-          updates={plan.participants.map(p => ({
+          updates={collaborationParticipants.map(p => ({
             id: p.id,
             username: p.name,
             avatar: p.avatar,
@@ -530,7 +530,7 @@ export const CollaborativePlanningScreen = () => {
           attendeeCount={3} // Mock data - would come from real RSVP data
           maybeCount={1} // Mock data - would come from real RSVP data
           onRSVPChange={handleRSVPChange}
-          hasConflict={plan.stops.some(stop => plan.stops.some(other => 
+          hasConflict={stops.some(stop => stops.some(other => 
             stop.id !== other.id && 
             stop.startTime < other.endTime && 
             other.startTime < stop.endTime
@@ -618,7 +618,7 @@ export const CollaborativePlanningScreen = () => {
               <SummaryReviewPanel
                 planTitle={plan.title}
                 planDate={plan.date}
-                stops={plan.stops.map(stop => ({
+                stops={stops.map(stop => ({
                   id: stop.id,
                   title: stop.title,
                   venue: stop.venue,
@@ -634,7 +634,7 @@ export const CollaborativePlanningScreen = () => {
                       name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
                       rsvpStatus: p.rsvp_status || 'pending' 
                     }))
-                  : plan.participants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
+                  : collaborationParticipants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
                 }
                 totalBudget={150}
                 onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
@@ -674,7 +674,7 @@ export const CollaborativePlanningScreen = () => {
                 
                 <VenueCardLibrary
                   onVenueSelect={handleVenueSelect}
-                  selectedVenues={plan.stops.map(s => s.venue)}
+                  selectedVenues={stops.map(s => s.venue)}
                   searchQuery={venueSearchQuery}
                 />
               </div>
@@ -696,7 +696,7 @@ export const CollaborativePlanningScreen = () => {
           /* Plan Execution Mode */
           <div>
             <PlanExecutionTracker
-              stops={plan.stops.map(stop => ({
+              stops={stops.map(stop => ({
                 id: stop.id,
                 title: stop.title,
                 venue: stop.venue,
