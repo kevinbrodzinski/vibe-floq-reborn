@@ -6,6 +6,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
 import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
 import { VirtualTimelineGrid } from "@/components/planning/VirtualTimelineGrid";
+import { TimelineCanvas, type TimelineStop } from "@/components/planning/TimelineCanvas";
 import { PlanInviteButton } from "@/components/PlanInviteButton";
 import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
 import { TimeProgressBar } from "@/components/TimeProgressBar";
@@ -108,8 +109,8 @@ export const CollaborativePlanningScreen = () => {
   const { data: summaries } = usePlanSummaries(plan?.id || '');
   const generateSummary = useGeneratePlanSummary();
 
-  // Real-time presence tracking (conditionally enabled)
-  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan?.id || '', { silent: true });
+  // Real-time presence tracking (new simplified version)
+  const { onlineUsers, totalOnline } = usePlanPresence(plan?.id || '');
   
   // Collaborative state for save indicator (conditionally enabled)
   const { saving } = useCollaborativeState({ planId: plan?.id || '', enabled: !!plan });
@@ -374,6 +375,74 @@ export const CollaborativePlanningScreen = () => {
     })), [stops]
   );
 
+  // Convert stops to TimelineStop format for new timeline canvas
+  const timelineStops = useMemo((): TimelineStop[] => 
+    stops.map(stop => {
+      const startTime = stop.startTime || '18:00';
+      const endTime = stop.endTime || '19:00';
+      const durationMin = calculateDurationMinutes(startTime, endTime);
+      
+      return {
+        id: stop.id,
+        title: stop.title,
+        venueName: stop.venue,
+        start: startTime,
+        end: endTime,
+        durationMin,
+        color: getStopColor(stop),
+        conflicts: detectConflicts(stop, stops),
+        travel: calculateTravelTime(stop, stops)
+      };
+    }), [stops]
+  );
+
+  // Helper functions for timeline conversion
+  const calculateDurationMinutes = (start: string, end: string): number => {
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    const startMin = startH * 60 + startM;
+    const endMin = endH * 60 + endM;
+    return Math.max(30, endMin - startMin); // Minimum 30 minutes
+  };
+
+  const getStopColor = (stop: any): string => {
+    if (stop.status === 'confirmed') return 'from-green-500 to-emerald-500';
+    if (stop.status === 'suggested') return 'from-blue-500 to-indigo-500';
+    if (stop.kind === 'restaurant') return 'from-orange-500 to-red-500';
+    if (stop.kind === 'entertainment') return 'from-purple-500 to-pink-500';
+    return 'from-indigo-500 to-violet-500';
+  };
+
+  const detectConflicts = (stop: any, allStops: any[]): string[] => {
+    const conflicts: string[] = [];
+    
+    // Check for time overlaps
+    const hasOverlap = allStops.some(other => 
+      other.id !== stop.id && 
+      stop.startTime < other.endTime && 
+      other.startTime < stop.endTime
+    );
+    
+    if (hasOverlap) conflicts.push('overlap');
+    
+    // Mock venue hours check
+    const hour = parseInt(stop.startTime?.split(':')[0] || '18');
+    if (hour < 10 || hour > 23) conflicts.push('closed');
+    
+    return conflicts;
+  };
+
+  const calculateTravelTime = (stop: any, allStops: any[]): TimelineStop['travel'] => {
+    const stopIndex = allStops.findIndex(s => s.id === stop.id);
+    if (stopIndex <= 0) return undefined;
+    
+    // Mock travel time calculation
+    return {
+      fromPrevWalkMin: Math.floor(Math.random() * 15) + 5, // 5-20 min
+      fromPrevDriveMin: Math.floor(Math.random() * 10) + 3  // 3-13 min
+    };
+  };
+
   const handleAcceptSuggestion = async (s: any) => {
     const newStop = {
       id: uuidv4(),
@@ -450,6 +519,36 @@ export const CollaborativePlanningScreen = () => {
     showOverlay('stop-action', 'Venue stop temporarily disabled');
   };
 
+  // New Timeline Canvas handlers
+  const handleTimelineReorder = useCallback((reorderedStops: TimelineStop[]) => {
+    // Convert back to original stop format and update
+    const reorderedIds = reorderedStops.map(s => s.id);
+    const newStops = reorderedIds.map(id => stops.find(s => s.id === id)).filter(Boolean);
+    
+    // Use the existing reorder mutation
+    const reorderedWithNewOrder = newStops.map((stop, index) => ({
+      ...stop,
+      stop_order: index + 1
+    }));
+    
+    // Update via unified hook
+    reorderedWithNewOrder.forEach((stop, index) => {
+      if (index !== stops.findIndex(s => s.id === stop.id)) {
+        // Only update if order actually changed
+        updateStop.mutate({
+          stopId: stop.id,
+          updates: { stop_order: index + 1 }
+        });
+      }
+    });
+    
+    showOverlay('stop-action', 'Timeline reordered');
+  }, [stops, updateStop, showOverlay]);
+
+  const handleTimelineAddAt = useCallback((hhmm: string) => {
+    // Use existing handleStopAdd with the specific time
+    handleStopAdd(hhmm);
+  }, [handleStopAdd]);
 
   const handleSendChatMessage = (content: string, type = 'message') => {
     // In a real app, this would send to Supabase
@@ -506,6 +605,8 @@ export const CollaborativePlanningScreen = () => {
               <PlanPresenceIndicator
                 participants={collaborationParticipants}
                 isConnected={isConnected}
+                onlineUsers={onlineUsers}
+                totalOnline={totalOnline}
               />
               <span className="hidden sm:inline">•</span>
               <span className="capitalize text-primary">{syncedPlanMode || planMode}</span>
@@ -674,17 +775,13 @@ export const CollaborativePlanningScreen = () => {
             {/* Mobile Progressive Disclosure */}
             <MobilePlanningTabs defaultTab="timeline">
               <Tab name="Timeline">
-                <VirtualTimelineGrid
-                  planId={plan.id}
-                  planStatus={plan.status}
-                  startTime="18:00"
-                  endTime="23:59"
-                  stops={stops}
-                  onStopReorder={handleStopReorder}
-                  onStopSelect={handleStopSelect}
-                  onAddStop={handleStopAdd}
-                  enableSwipeGestures={true}
-                  enableVirtualization={true}
+                <TimelineCanvas
+                  stops={timelineStops}
+                  onReorder={handleTimelineReorder}
+                  onAddAt={handleTimelineAddAt}
+                  startHHmm="18:00"
+                  endHHmm="23:30"
+                  className="mb-4"
                 />
               </Tab>
               <Tab name="Summary">
@@ -742,17 +839,13 @@ export const CollaborativePlanningScreen = () => {
             {/* Left Column - Timeline Editor & Summary */}
             <div className="md:col-span-1 lg:col-span-2 space-y-4 sm:space-y-6">
               
-              <VirtualTimelineGrid
-                planId={plan.id}
-                planStatus={plan.status}
-                startTime="18:00"
-                endTime="23:59"
-                stops={stops}
-                onStopReorder={handleStopReorder}
-                onStopSelect={handleStopSelect}
-                onAddStop={handleStopAdd}
-                enableSwipeGestures={false}
-                enableVirtualization={true}
+              <TimelineCanvas
+                stops={timelineStops}
+                onReorder={handleTimelineReorder}
+                onAddAt={handleTimelineAddAt}
+                startHHmm="18:00"
+                endHHmm="23:30"
+                className="mb-6"
               />
 
               {/* Plan Summary Card - Finalized Mode */}
