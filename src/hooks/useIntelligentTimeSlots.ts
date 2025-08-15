@@ -67,34 +67,48 @@ export function useIntelligentTimeSlots({
 }: UseIntelligentTimeSlotsOptions) {
   
   // Fetch venue data for intelligent recommendations
-  const { data: nearbyVenues = [] } = useQuery({
+  const { data: nearbyVenues = [], isLoading, error } = useQuery({
     queryKey: ['nearby-venues', centerLocation, preferences.vibes],
     queryFn: async () => {
       if (!centerLocation) return []
       
-      const { data, error } = await supabase.rpc('get_venues_with_intelligence', {
-        center_lat: centerLocation.lat,
-        center_lng: centerLocation.lng,
-        radius_meters: 5000, // 5km radius
-        limit_count: 100,
-        vibe_filter: preferences.vibes || null,
-        date_context: planDate,
-        time_window: { start: startTime, end: endTime }
-      })
-      
-      if (error) {
-        console.error('Failed to fetch intelligent venue data:', error)
+      try {
+        const { data, error } = await supabase.rpc('get_venues_with_intelligence', {
+          center_lat: centerLocation.lat,
+          center_lng: centerLocation.lng,
+          radius_meters: 5000, // 5km radius
+          limit_count: 100,
+          vibe_filter: preferences.vibes || null,
+          date_context: planDate,
+          time_window: { start: startTime, end: endTime }
+        })
+        
+        if (error) {
+          console.error('Failed to fetch intelligent venue data:', error)
+          throw error
+        }
+        
+        return data || []
+      } catch (error) {
+        console.error('Error in venue intelligence query:', error)
+        // Return empty array instead of throwing to prevent suspension
         return []
       }
-      
-      return data || []
     },
     enabled: !!centerLocation,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Prevent suspension during synchronous operations
+    suspense: false,
+    throwOnError: false
   })
 
   // Generate intelligent time slots
   const intelligentSlots = useMemo(() => {
+    // Return empty array if there's an error or no venues
+    if (error || isLoading) return []
+    
     const slots: TimeSlot[] = []
     const occupiedTimes = new Set<string>()
     
@@ -118,62 +132,83 @@ export function useIntelligentTimeSlots({
         // Skip if slot is occupied
         if (occupiedTimes.has(hour.toString())) continue
         
-        // Analyze this time slot for optimization opportunities
-        const slotAnalysis = analyzeTimeSlot({
-          time: timeStr,
-          date: planDate,
-          venues: nearbyVenues,
-          preferences,
-          groupSize,
-          existingStops
-        })
-        
-        // Only include slots with good confidence scores
-        if (slotAnalysis.confidence >= 60) {
-          slots.push({
-            id: slotId,
-            startTime: timeStr,
-            endTime: format(addMinutes(parseISO(`${planDate}T${timeStr}`), 90), 'HH:mm'), // Default 90min duration
-            ...slotAnalysis
+        try {
+          // Analyze this time slot for optimization opportunities
+          const slotAnalysis = analyzeTimeSlot({
+            time: timeStr,
+            date: planDate,
+            venues: nearbyVenues,
+            preferences,
+            groupSize,
+            existingStops
           })
+          
+          // Only include slots with good confidence scores
+          if (slotAnalysis.confidence >= 60) {
+            slots.push({
+              id: slotId,
+              startTime: timeStr,
+              endTime: format(addMinutes(parseISO(`${planDate}T${timeStr}`), 90), 'HH:mm'), // Default 90min duration
+              ...slotAnalysis
+            })
+          }
+        } catch (slotError) {
+          console.error(`Error analyzing time slot ${timeStr}:`, slotError)
+          // Skip this slot instead of failing entirely
+          continue
         }
       }
     }
     
     // Sort by confidence score
     return slots.sort((a, b) => b.confidence - a.confidence).slice(0, 8) // Top 8 suggestions
-  }, [planDate, startTime, endTime, existingStops, nearbyVenues, preferences, groupSize])
+  }, [planDate, startTime, endTime, existingStops, nearbyVenues, preferences, groupSize, error, isLoading])
 
   // Smart venue suggestions for a specific time slot
   const getVenuesForTimeSlot = useCallback((timeSlot: string) => {
-    return nearbyVenues
-      .filter(venue => isVenueOpenAt(venue, planDate, timeSlot))
-      .map(venue => ({
-        ...venue,
-        optimal_time_reason: getOptimalTimeReason(venue, timeSlot, preferences)
-      }))
-      .sort((a, b) => {
-        // Sort by vibe match, then popularity, then distance
-        const aScore = (a.vibe_score || 50) + (a.popularity || 0) * 0.1
-        const bScore = (b.vibe_score || 50) + (b.popularity || 0) * 0.1
-        return bScore - aScore
-      })
-      .slice(0, 5) // Top 5 venues per slot
-  }, [nearbyVenues, planDate, preferences])
+    if (error || !nearbyVenues.length) return []
+    
+    try {
+      return nearbyVenues
+        .filter(venue => isVenueOpenAt(venue, planDate, timeSlot))
+        .map(venue => ({
+          ...venue,
+          optimal_time_reason: getOptimalTimeReason(venue, timeSlot, preferences)
+        }))
+        .sort((a, b) => {
+          // Sort by vibe match, then popularity, then distance
+          const aScore = (a.vibe_score || 50) + (a.popularity || 0) * 0.1
+          const bScore = (b.vibe_score || 50) + (b.popularity || 0) * 0.1
+          return bScore - aScore
+        })
+        .slice(0, 5) // Top 5 venues per slot
+    } catch (venueError) {
+      console.error('Error getting venues for time slot:', venueError)
+      return []
+    }
+  }, [nearbyVenues, planDate, preferences, error])
 
   // Get smart suggestions for filling empty time slots
   const getSuggestionsForEmptySlots = useCallback(() => {
-    return intelligentSlots.map(slot => ({
-      ...slot,
-      suggestedVenues: getVenuesForTimeSlot(slot.startTime)
-    }))
-  }, [intelligentSlots, getVenuesForTimeSlot])
+    if (error) return []
+    
+    try {
+      return intelligentSlots.map(slot => ({
+        ...slot,
+        suggestedVenues: getVenuesForTimeSlot(slot.startTime)
+      }))
+    } catch (suggestionError) {
+      console.error('Error getting suggestions for empty slots:', suggestionError)
+      return []
+    }
+  }, [intelligentSlots, getVenuesForTimeSlot, error])
 
   return {
     intelligentSlots,
     getVenuesForTimeSlot,
     getSuggestionsForEmptySlots,
-    isLoading: !nearbyVenues.length && !!centerLocation
+    isLoading: isLoading && !!centerLocation,
+    error
   }
 }
 
@@ -196,61 +231,73 @@ function analyzeTimeSlot({
   const reasons: SlotReason[] = []
   let confidence = 50 // Base confidence
   
-  const hour = parseInt(time.split(':')[0])
-  const timeContext = getTimeContext(hour)
-  
-  // Analyze venue hours optimization
-  const openVenues = venues.filter(v => isVenueOpenAt(v, date, time))
-  if (openVenues.length > 0) {
-    const avgPopularity = openVenues.reduce((sum, v) => sum + (v.popularity || 0), 0) / openVenues.length
+  try {
+    const hour = parseInt(time.split(':')[0])
+    const timeContext = getTimeContext(hour)
     
-    reasons.push({
-      type: 'venue_hours',
-      confidence: Math.min(95, 60 + (openVenues.length * 2)),
-      description: `${openVenues.length} venues open with avg popularity ${avgPopularity.toFixed(0)}`
-    })
-    confidence += 15
-  }
-  
-  // Analyze crowd patterns
-  const crowdAnalysis = analyzeCrowdPatterns(venues, hour, preferences.crowdPreference)
-  if (crowdAnalysis.optimal) {
-    reasons.push({
-      type: 'crowd_optimal',
-      confidence: crowdAnalysis.confidence,
-      description: crowdAnalysis.description
-    })
-    confidence += crowdAnalysis.confidence * 0.3
-  }
-  
-  // Analyze price optimization (happy hours, lunch specials, etc.)
-  const priceOptimal = analyzePriceOptimization(hour, timeContext, preferences.budget)
-  if (priceOptimal.optimal) {
-    reasons.push({
-      type: 'price_optimal',
-      confidence: priceOptimal.confidence,
-      description: priceOptimal.description
-    })
-    confidence += 10
-  }
-  
-  // Analyze activity peak times
-  const activityAnalysis = analyzeActivityPeaks(hour, timeContext, preferences.activityTypes)
-  if (activityAnalysis.optimal) {
-    reasons.push({
-      type: 'activity_peak',
-      confidence: activityAnalysis.confidence,
-      description: activityAnalysis.description
-    })
-    confidence += 12
-  }
-  
-  return {
-    confidence: Math.min(100, Math.max(0, confidence)),
-    reasons,
-    crowdLevel: crowdAnalysis.level,
-    priceOptimal: priceOptimal.optimal,
-    optimalForActivity: activityAnalysis.activities
+    // Analyze venue hours optimization
+    const openVenues = venues.filter(v => isVenueOpenAt(v, date, time))
+    if (openVenues.length > 0) {
+      const avgPopularity = openVenues.reduce((sum, v) => sum + (v.popularity || 0), 0) / openVenues.length
+      
+      reasons.push({
+        type: 'venue_hours',
+        confidence: Math.min(95, 60 + (openVenues.length * 2)),
+        description: `${openVenues.length} venues open with avg popularity ${avgPopularity.toFixed(0)}`
+      })
+      confidence += 15
+    }
+    
+    // Analyze crowd patterns
+    const crowdAnalysis = analyzeCrowdPatterns(venues, hour, preferences.crowdPreference)
+    if (crowdAnalysis.optimal) {
+      reasons.push({
+        type: 'crowd_optimal',
+        confidence: crowdAnalysis.confidence,
+        description: crowdAnalysis.description
+      })
+      confidence += crowdAnalysis.confidence * 0.3
+    }
+    
+    // Analyze price optimization (happy hours, lunch specials, etc.)
+    const priceOptimal = analyzePriceOptimization(hour, timeContext, preferences.budget)
+    if (priceOptimal.optimal) {
+      reasons.push({
+        type: 'price_optimal',
+        confidence: priceOptimal.confidence,
+        description: priceOptimal.description
+      })
+      confidence += 10
+    }
+    
+    // Analyze activity peak times
+    const activityAnalysis = analyzeActivityPeaks(hour, timeContext, preferences.activityTypes)
+    if (activityAnalysis.optimal) {
+      reasons.push({
+        type: 'activity_peak',
+        confidence: activityAnalysis.confidence,
+        description: activityAnalysis.description
+      })
+      confidence += 12
+    }
+    
+    return {
+      confidence: Math.min(100, Math.max(0, confidence)),
+      reasons,
+      crowdLevel: crowdAnalysis.level,
+      priceOptimal: priceOptimal.optimal,
+      optimalForActivity: activityAnalysis.activities
+    }
+  } catch (error) {
+    console.error('Error analyzing time slot:', error)
+    // Return minimal analysis instead of throwing
+    return {
+      confidence: 30,
+      reasons: [],
+      crowdLevel: 'medium' as const,
+      priceOptimal: false,
+      optimalForActivity: []
+    }
   }
 }
 
@@ -274,6 +321,7 @@ function isVenueOpenAt(venue: any, date: string, time: string): boolean {
       return timeMinutes >= openMinutes && timeMinutes <= closeMinutes
     }) || false
   } catch (error) {
+    console.error('Error checking venue hours:', error)
     return true // Default to open if parsing fails
   }
 }

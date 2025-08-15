@@ -43,6 +43,11 @@ export function useCurrentUserProfile() {
       }
       return data as Profile
     },
+    // Prevent suspension during synchronous navigation
+    suspense: false,
+    throwOnError: false,
+    retry: 2,
+    staleTime: 30000
   })
 }
 
@@ -89,6 +94,9 @@ export const useProfile = (profileId: string | undefined) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Prevent suspension during synchronous navigation
+    suspense: false,
+    throwOnError: false
   });
 };
 
@@ -130,5 +138,8 @@ export const useProfileByUsername = (username: string | undefined) => {
     enabled: !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
+    // Prevent suspension during synchronous navigation
+    suspense: false,
+    throwOnError: false
   });
 };
