@@ -109,8 +109,8 @@ export function MobileTimelineGrid({
       <div className="p-4 border-b border-border/10">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Timeline</h2>
-          <Badge variant="outline" className="text-xs">
-            {stops.length} stops
+          <Badge variant="outline" className="text-xs px-3 py-1">
+            {stops.length} {stops.length === 1 ? 'stop' : 'stops'}
           </Badge>
         </div>
       </div>
@@ -142,8 +142,8 @@ export function MobileTimelineGrid({
                   >
                     {/* Time Label */}
                     <div className="flex items-center gap-3">
-                      <div className="w-20 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Clock className="w-4 h-4" />
+                      <div className="min-w-[80px] flex items-center gap-2 text-sm font-medium text-muted-foreground bg-card/30 rounded-lg px-2 py-1">
+                        <Clock className="w-5 h-5" />
                         {timeSlot}
                       </div>
                       

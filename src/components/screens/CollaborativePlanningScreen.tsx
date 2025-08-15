@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
 import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
+import { VirtualTimelineGrid } from "@/components/planning/VirtualTimelineGrid";
 import { PlanInviteButton } from "@/components/PlanInviteButton";
 import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
 import { TimeProgressBar } from "@/components/TimeProgressBar";
@@ -28,6 +29,8 @@ import { PlanPresenceIndicator } from "@/components/PlanPresenceIndicator";
 import { SummaryReviewPanel } from "@/components/SummaryReviewPanel";
 import { PlanChatSidebar } from "@/components/PlanChatSidebar";
 import { PlanSummaryCard } from "@/components/plan/PlanSummaryCard";
+import { MobileActionMenu } from "@/components/ui/MobileActionMenu";
+import { MobilePlanningTabs, Tab } from "@/components/ui/MobilePlanningTabs";
 import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
 import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 import { PlanStatusActions } from "@/components/plans/PlanStatusActions";
@@ -464,42 +467,72 @@ export const CollaborativePlanningScreen = () => {
           </div>
           
           <div className="flex flex-wrap items-center gap-2">
-            {/* Status transition buttons - prominent for major actions */}
-            <PlanStatusActions 
-              planId={plan.id}
-              currentStatus={getSafeStatus(plan.status)}
-              isCreator={plan.creator_id === 'current-user'} // This would come from auth
-              hasStops={stops.length > 0}
-              hasParticipants={collaborationParticipants.length > 0}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"
-            />
-            
-            <PlanInviteButton />
-            <SharePlanButton 
-              planId={plan.id}
-              planTitle={plan.title}
-              variant="ghost"
-              size="sm"
-            />
-            <button 
-              onClick={() => setShowChat(!showChat)}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                showChat ? 'bg-primary text-primary-foreground glow-primary' : 'bg-card/50 text-muted-foreground hover:bg-card/80'
-              }`}
-              title="Toggle chat"
-            >
-              <MessageCircle size={18} className="sm:w-5 sm:h-5" />
-            </button>
-            <button 
-              onClick={() => setShowKeyboardHelp(true)}
-              className="hidden sm:flex p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
-              title="Keyboard shortcuts (?)"
-            >
-              <HelpCircle size={20} className="text-muted-foreground" />
-            </button>
-            <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
-              <Settings size={18} className="sm:w-5 sm:h-5 text-muted-foreground" />
-            </button>
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-2">
+              <PlanStatusActions 
+                planId={plan.id}
+                currentStatus={getSafeStatus(plan.status)}
+                isCreator={plan.creator_id === 'current-user'} // This would come from auth
+                hasStops={stops.length > 0}
+                hasParticipants={collaborationParticipants.length > 0}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"
+              />
+              
+              <PlanInviteButton />
+              <SharePlanButton 
+                planId={plan.id}
+                planTitle={plan.title}
+                variant="ghost"
+                size="sm"
+              />
+              <button 
+                onClick={() => setShowChat(!showChat)}
+                className={`p-3 min-h-[44px] min-w-[44px] rounded-xl transition-all duration-300 ${
+                  showChat ? 'bg-primary text-primary-foreground glow-primary' : 'bg-card/50 text-muted-foreground hover:bg-card/80'
+                }`}
+                title="Toggle chat"
+              >
+                <MessageCircle size={20} />
+              </button>
+              <button 
+                onClick={() => setShowKeyboardHelp(true)}
+                className="hidden sm:flex p-3 min-h-[44px] min-w-[44px] rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
+                title="Keyboard shortcuts (?)"
+              >
+                <HelpCircle size={20} className="text-muted-foreground" />
+              </button>
+              <button className="p-3 min-h-[44px] min-w-[44px] rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
+                <Settings size={20} className="text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Mobile Action Menu */}
+            <MobileActionMenu>
+              <PlanStatusActions 
+                planId={plan.id}
+                currentStatus={getSafeStatus(plan.status)}
+                isCreator={plan.creator_id === 'current-user'}
+                hasStops={stops.length > 0}
+                hasParticipants={collaborationParticipants.length > 0}
+              />
+              <PlanInviteButton />
+              <SharePlanButton 
+                planId={plan.id}
+                planTitle={plan.title}
+                variant="ghost"
+              />
+              <button 
+                onClick={() => setShowChat(!showChat)}
+                className="flex items-center gap-2 p-3 rounded-xl bg-card/50 hover:bg-card/80 transition-all"
+              >
+                <MessageCircle size={20} />
+                Chat
+              </button>
+              <button className="flex items-center gap-2 p-3 rounded-xl bg-card/50 hover:bg-card/80 transition-all">
+                <Settings size={20} />
+                Settings
+              </button>
+            </MobileActionMenu>
           </div>
         </div>
 
@@ -591,11 +624,95 @@ export const CollaborativePlanningScreen = () => {
         )}
 
         {planMode === 'planning' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <>
+            {/* Mobile Progressive Disclosure */}
+            <MobilePlanningTabs defaultTab="timeline">
+              <Tab name="Timeline">
+                <VirtualTimelineGrid
+                  planId={plan.id}
+                  planStatus={plan.status}
+                  startTime="18:00"
+                  endTime="23:59"
+                  stops={stops}
+                  onStopReorder={handleStopReorder}
+                  onStopSelect={handleStopSelect}
+                  onAddStop={handleStopAdd}
+                  enableSwipeGestures={true}
+                  enableVirtualization={true}
+                />
+              </Tab>
+              <Tab name="Summary">
+                <div className="space-y-4">
+                  <PlanSummaryCard
+                    planId={plan.id}
+                    mode={SummaryModeEnum.enum.finalized}
+                    editable={true}
+                    title="Plan Summary"
+                  />
+                  <SummaryReviewPanel
+                    planTitle={plan.title}
+                    planDate={plan.date}
+                    stops={stops.map(stop => ({
+                      id: stop.id,
+                      title: stop.title,
+                      venue: stop.venue,
+                      startTime: stop.startTime,
+                      endTime: stop.endTime,
+                      estimatedCost: 25,
+                      votes: { positive: 8, negative: 1, total: 9 },
+                      status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
+                    }))}
+                    participants={activeParticipants.length > 0 
+                      ? activeParticipants.map(p => ({ 
+                          id: p.user_id, 
+                          name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
+                          rsvpStatus: p.rsvp_status || 'pending' 
+                        }))
+                      : collaborationParticipants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
+                    }
+                    totalBudget={150}
+                    onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
+                    onEdit={(stopId) => console.log('Edit stop:', stopId)}
+                  />
+                </div>
+              </Tab>
+              <Tab name="AI">
+                <div className="space-y-4">
+                  {showNovaSuggestions && (
+                    <NovaSuggestions
+                      planId={plan.id}
+                      existingStops={stops}
+                      timeRange={{ start: "18:00", end: "23:59" }}
+                      participants={collaborationParticipants.length}
+                      preferences={{
+                        budget: 'medium',
+                        vibes: ['energetic', 'social'],
+                        interests: ['dining', 'nightlife']
+                      }}
+                      onAcceptSuggestion={handleAcceptSuggestion}
+                      onDismiss={() => setShowNovaSuggestions(false)}
+                    />
+                  )}
+                  {showTiebreaker && (
+                    <TiebreakerSuggestions
+                      stopId="current-stop"
+                      tiedOptions={["Option A", "Option B"]}
+                      onSelectRecommendation={(rec) => {
+                        console.log('AI recommends:', rec);
+                        setShowTiebreaker(false);
+                      }}
+                    />
+                  )}
+                </div>
+              </Tab>
+            </MobilePlanningTabs>
+
+            {/* Desktop Layout */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Timeline Editor & Summary */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="md:col-span-1 lg:col-span-2 space-y-4 sm:space-y-6">
               
-              <MobileTimelineGrid
+              <VirtualTimelineGrid
                 planId={plan.id}
                 planStatus={plan.status}
                 startTime="18:00"
@@ -604,6 +721,8 @@ export const CollaborativePlanningScreen = () => {
                 onStopReorder={handleStopReorder}
                 onStopSelect={handleStopSelect}
                 onAddStop={handleStopAdd}
+                enableSwipeGestures={false}
+                enableVirtualization={true}
               />
 
               {/* Plan Summary Card - Finalized Mode */}
@@ -691,7 +810,8 @@ export const CollaborativePlanningScreen = () => {
                 <PlanningChat planId={plan.id} currentUserId="you" />
               )}
             </div>
-          </div>
+            </div>
+          </>
         ) : (
           /* Plan Execution Mode */
           <div>
