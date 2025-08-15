@@ -429,8 +429,8 @@ export const CollaborativePlanningScreen = () => {
         onClose={() => setShowKeyboardHelp(false)}
       />
 
-      {/* Social Pulse Overlay */}
-      {planMode === 'planning' && <SocialPulseOverlay />}
+      {/* Social Pulse Overlay - Temporarily disabled to prevent infinite re-renders */}
+      {/* {planMode === 'planning' && <SocialPulseOverlay />} */}
 
       {/* Header */}
       <div className="p-4 sm:p-6 pt-16">
