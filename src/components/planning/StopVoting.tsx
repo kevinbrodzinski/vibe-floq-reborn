@@ -11,7 +11,9 @@ import {
   TrendingUp,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Heart,
+  Meh
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -19,11 +21,14 @@ import { cn } from '@/lib/utils';
 
 interface StopVote {
   id: string;
+  plan_id: string;
   stop_id: string;
-  user_id: string;
-  vote_type: 'up' | 'down';
+  profile_id: string | null;
+  guest_id: string | null;
+  vote_type: 'upvote' | 'downvote' | 'maybe';
+  emoji_reaction: string | null;
   created_at: string;
-  user_profile?: {
+  profiles?: {
     display_name: string;
     avatar_url?: string;
   };
@@ -33,28 +38,49 @@ interface StopVotingProps {
   stopId: string;
   planId: string;
   className?: string;
-  onVoteChange?: (stopId: string, upVotes: number, downVotes: number) => void;
+  onVoteChange?: (stopId: string, voteType: string | null, totalVotes: number) => void;
 }
 
 export function StopVoting({ stopId, planId, className, onVoteChange }: StopVotingProps) {
   const { session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
+
+  // Get current user's profile_id
+  const { data: currentProfile } = useQuery({
+    queryKey: ['current-profile'],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
 
   // Fetch votes for this stop
   const { data: votes = [], isLoading } = useQuery({
     queryKey: ['stop-votes', stopId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('stop_votes')
+        .from('plan_stop_votes')
         .select(`
           id,
+          plan_id,
           stop_id,
-          user_id,
+          profile_id,
+          guest_id,
           vote_type,
+          emoji_reaction,
           created_at,
-          profiles:user_id (
+          profiles:profile_id (
             display_name,
             avatar_url
           )
@@ -62,226 +88,213 @@ export function StopVoting({ stopId, planId, className, onVoteChange }: StopVoti
         .eq('stop_id', stopId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      return (data || []).map(vote => ({
-        ...vote,
-        user_profile: vote.profiles
-      })) as StopVote[];
+      if (error) {
+        console.error('Error fetching stop votes:', error);
+        throw error;
+      }
+
+      return data as StopVote[];
     },
     enabled: !!stopId,
+    refetchOnWindowFocus: false,
+    staleTime: 30000
   });
 
   // Vote mutation
   const voteMutation = useMutation({
-    mutationFn: async ({ voteType }: { voteType: 'up' | 'down' }) => {
-      if (!session?.user?.id) throw new Error('Must be logged in to vote');
+    mutationFn: async ({ voteType }: { voteType: 'upvote' | 'downvote' | 'maybe' | null }) => {
+      if (!currentProfile?.id) throw new Error('Must be logged in to vote');
 
       // Check if user already voted
-      const existingVote = votes.find(v => v.user_id === session.user.id);
-      
-      if (existingVote) {
-        if (existingVote.vote_type === voteType) {
-          // Remove vote if clicking same vote type
+      const existingVote = votes.find(v => v.profile_id === currentProfile.id);
+
+      if (voteType === null) {
+        // Delete vote
+        if (existingVote) {
           const { error } = await supabase
-            .from('stop_votes')
+            .from('plan_stop_votes')
             .delete()
             .eq('id', existingVote.id);
-          if (error) throw error;
-        } else {
-          // Update vote type
-          const { error } = await supabase
-            .from('stop_votes')
-            .update({ vote_type: voteType })
-            .eq('id', existingVote.id);
+          
           if (error) throw error;
         }
+      } else if (existingVote) {
+        // Update existing vote
+        const { error } = await supabase
+          .from('plan_stop_votes')
+          .update({ 
+            vote_type: voteType,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingVote.id);
+          
+        if (error) throw error;
       } else {
         // Create new vote
         const { error } = await supabase
-          .from('stop_votes')
+          .from('plan_stop_votes')
           .insert({
+            plan_id: planId,
             stop_id: stopId,
-            user_id: session.user.id,
+            profile_id: currentProfile.id,
             vote_type: voteType
           });
+          
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stop-votes', stopId] });
+      const totalVotes = votes.length;
+      onVoteChange?.(stopId, null, totalVotes); // Will be updated after refetch
     },
     onError: (error) => {
+      console.error('Vote error:', error);
       toast({
-        title: "Vote failed",
-        description: error.message,
-        variant: "destructive",
+        title: 'Failed to vote',
+        description: 'Please try again',
+        variant: 'destructive'
       });
-    },
+    }
   });
 
-  const upVotes = votes.filter(v => v.vote_type === 'up');
-  const downVotes = votes.filter(v => v.vote_type === 'down');
-  const userVote = votes.find(v => v.user_id === session?.user?.id);
-  
-  const upCount = upVotes.length;
-  const downCount = downVotes.length;
-  const totalVotes = upCount + downCount;
-  const approval = totalVotes > 0 ? Math.round((upCount / totalVotes) * 100) : 0;
-
-  // Notify parent of vote changes
-  useEffect(() => {
-    if (onVoteChange) {
-      onVoteChange(stopId, upCount, downCount);
+  const handleVote = async (voteType: 'upvote' | 'downvote' | 'maybe') => {
+    if (isVoting) return;
+    
+    setIsVoting(true);
+    try {
+      const currentVote = votes.find(v => v.profile_id === currentProfile?.id);
+      const newVoteType = currentVote?.vote_type === voteType ? null : voteType;
+      
+      await voteMutation.mutateAsync({ voteType: newVoteType });
+    } finally {
+      setIsVoting(false);
     }
-  }, [upCount, downCount, stopId, onVoteChange]);
-
-  const handleVote = (voteType: 'up' | 'down') => {
-    voteMutation.mutate({ voteType });
   };
 
-  const getVoteStatus = () => {
-    if (approval >= 75) return { icon: CheckCircle2, color: 'text-green-500', label: 'Strong Support' };
-    if (approval >= 50) return { icon: TrendingUp, color: 'text-blue-500', label: 'Majority Support' };
-    if (approval >= 25) return { icon: Clock, color: 'text-yellow-500', label: 'Mixed Support' };
-    return { icon: XCircle, color: 'text-red-500', label: 'Needs Discussion' };
-  };
+  // Calculate vote counts
+  const upvotes = votes.filter(v => v.vote_type === 'upvote').length;
+  const downvotes = votes.filter(v => v.vote_type === 'downvote').length;
+  const maybes = votes.filter(v => v.vote_type === 'maybe').length;
+  const totalVotes = votes.length;
+  
+  // Calculate approval percentage
+  const approvalPercentage = totalVotes > 0 ? Math.round((upvotes / totalVotes) * 100) : 0;
+  
+  // Get current user's vote
+  const currentUserVote = votes.find(v => v.profile_id === currentProfile?.id);
 
-  const voteStatus = getVoteStatus();
+  // Get vote icon
+  const getVoteIcon = (type: 'upvote' | 'downvote' | 'maybe') => {
+    switch (type) {
+      case 'upvote': return ThumbsUp;
+      case 'downvote': return ThumbsDown;
+      case 'maybe': return Meh;
+      default: return ThumbsUp;
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className={cn("animate-pulse space-y-2", className)}>
-        <div className="h-8 bg-white/10 rounded"></div>
-        <div className="h-4 bg-white/10 rounded w-24"></div>
+      <div className={cn("flex items-center gap-2 text-white/60", className)}>
+        <div className="w-4 h-4 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+        <span className="text-sm">Loading votes...</span>
       </div>
     );
   }
 
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Vote Buttons & Summary */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleVote('up')}
-            disabled={voteMutation.isPending}
-            className={cn(
-              "h-8 px-2 rounded-full transition-all",
-              userVote?.vote_type === 'up'
-                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                : "text-white/60 hover:bg-white/10 hover:text-green-400"
-            )}
-          >
-            <ThumbsUp className="w-4 h-4 mr-1" />
-            {upCount}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleVote('down')}
-            disabled={voteMutation.isPending}
-            className={cn(
-              "h-8 px-2 rounded-full transition-all",
-              userVote?.vote_type === 'down'
-                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                : "text-white/60 hover:bg-white/10 hover:text-red-400"
-            )}
-          >
-            <ThumbsDown className="w-4 h-4 mr-1" />
-            {downCount}
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Badge 
-            variant="outline" 
-            className={cn("text-xs border-white/20", voteStatus.color)}
-          >
-            <voteStatus.icon className="w-3 h-3 mr-1" />
-            {approval}% approval
-          </Badge>
-          
-          {totalVotes > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-white/60 hover:bg-white/10 h-6 px-2 text-xs"
-            >
-              <Users className="w-3 h-3 mr-1" />
-              {totalVotes}
-            </Button>
+      {/* Vote Buttons */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleVote('upvote')}
+          disabled={isVoting || !currentProfile}
+          className={cn(
+            "h-8 px-2 text-white/60 hover:text-green-400 hover:bg-green-500/20",
+            currentUserVote?.vote_type === 'upvote' && "text-green-400 bg-green-500/20"
           )}
-        </div>
+        >
+          <ThumbsUp className="w-4 h-4 mr-1" />
+          {upvotes}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleVote('maybe')}
+          disabled={isVoting || !currentProfile}
+          className={cn(
+            "h-8 px-2 text-white/60 hover:text-yellow-400 hover:bg-yellow-500/20",
+            currentUserVote?.vote_type === 'maybe' && "text-yellow-400 bg-yellow-500/20"
+          )}
+        >
+          <Meh className="w-4 h-4 mr-1" />
+          {maybes}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleVote('downvote')}
+          disabled={isVoting || !currentProfile}
+          className={cn(
+            "h-8 px-2 text-white/60 hover:text-red-400 hover:bg-red-500/20",
+            currentUserVote?.vote_type === 'downvote' && "text-red-400 bg-red-500/20"
+          )}
+        >
+          <ThumbsDown className="w-4 h-4 mr-1" />
+          {downvotes}
+        </Button>
+
+        {/* Approval percentage */}
+        {totalVotes > 0 && (
+          <Badge 
+            variant="secondary" 
+            className={cn(
+              "ml-2 text-xs",
+              approvalPercentage >= 70 ? "bg-green-500/20 text-green-400" :
+              approvalPercentage >= 50 ? "bg-yellow-500/20 text-yellow-400" :
+              "bg-red-500/20 text-red-400"
+            )}
+          >
+            {approvalPercentage}% approval
+          </Badge>
+        )}
       </div>
 
-      {/* Vote Status */}
+      {/* Vote Summary */}
       {totalVotes > 0 && (
-        <div className="flex items-center gap-2 text-xs text-white/60">
-          <voteStatus.icon className={cn("w-3 h-3", voteStatus.color)} />
-          <span>{voteStatus.label}</span>
-          {totalVotes >= 3 && approval >= 75 && (
-            <Badge variant="default" className="text-xs ml-auto bg-green-500/20 text-green-400">
-              Ready to confirm
-            </Badge>
-          )}
+        <div className="flex items-center gap-2 text-xs text-white/50">
+          <Users className="w-3 h-3" />
+          <span>{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</span>
+          
+          {/* Recent voters */}
+          <div className="flex -space-x-1 ml-2">
+            {votes.slice(0, 3).map((vote) => (
+              <Avatar key={vote.id} className="w-5 h-5 border border-white/20">
+                <AvatarImage src={vote.profiles?.avatar_url} />
+                <AvatarFallback className="text-xs bg-white/10">
+                  {vote.profiles?.display_name?.charAt(0) || '?'}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            {votes.length > 3 && (
+              <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white/60">
+                +{votes.length - 3}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Expanded Vote Details */}
-      {isExpanded && totalVotes > 0 && (
-        <div className="space-y-2 pt-2 border-t border-white/10">
-          {upVotes.length > 0 && (
-            <div className="space-y-1">
-              <div className="text-xs text-green-400 font-medium flex items-center gap-1">
-                <ThumbsUp className="w-3 h-3" />
-                Supporting ({upVotes.length})
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {upVotes.map((vote) => (
-                  <div key={vote.id} className="flex items-center gap-1 bg-green-500/10 rounded-full px-2 py-1">
-                    <Avatar className="w-4 h-4">
-                      <AvatarImage src={vote.user_profile?.avatar_url || ''} />
-                      <AvatarFallback className="bg-green-500/20 text-green-400 text-xs">
-                        {vote.user_profile?.display_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-green-400">
-                      {vote.user_profile?.display_name || 'User'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {downVotes.length > 0 && (
-            <div className="space-y-1">
-              <div className="text-xs text-red-400 font-medium flex items-center gap-1">
-                <ThumbsDown className="w-3 h-3" />
-                Opposing ({downVotes.length})
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {downVotes.map((vote) => (
-                  <div key={vote.id} className="flex items-center gap-1 bg-red-500/10 rounded-full px-2 py-1">
-                    <Avatar className="w-4 h-4">
-                      <AvatarImage src={vote.user_profile?.avatar_url || ''} />
-                      <AvatarFallback className="bg-red-500/20 text-red-400 text-xs">
-                        {vote.user_profile?.display_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-red-400">
-                      {vote.user_profile?.display_name || 'User'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* No votes state */}
+      {totalVotes === 0 && (
+        <div className="text-xs text-white/40 flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          <span>Be the first to vote on this stop</span>
         </div>
       )}
     </div>
