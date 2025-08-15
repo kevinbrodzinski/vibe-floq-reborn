@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import * as React from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles, Calendar, DollarSign, Clock, Share2, Plus } from "lucide-react";
 import { useParams } from 'react-router-dom';
@@ -143,6 +145,36 @@ export const CollaborativePlanningScreen = () => {
       console.log('Stop updated:', stop);
     }
   });
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
+
+  /** Update a stop in DB and refresh cached list. */
+  const updateStop = React.useCallback(
+    async (id: string, patch: Partial<any>) => {
+      // normalize to your DB column names
+      const dbPatch: Record<string, any> = {};
+      if (patch.title !== undefined) dbPatch.title = patch.title;
+      if ((patch as any).description !== undefined) dbPatch.description = (patch as any).description;
+
+      const start = (patch as any).start_time ?? (patch as any).start;
+      const end   = (patch as any).end_time   ?? (patch as any).end;
+      if (start !== undefined) dbPatch.start_time = start instanceof Date ? start.toISOString() : start;
+      if (end   !== undefined) dbPatch.end_time   = end   instanceof Date ? end.toISOString()   : end;
+
+      if ((patch as any).venue_id !== undefined) dbPatch.venue_id = (patch as any).venue_id;
+      if ((patch as any).order_index !== undefined) dbPatch.order_index = (patch as any).order_index;
+      if ((patch as any).status !== undefined) dbPatch.status = (patch as any).status;
+      if ((patch as any).stop_order !== undefined) dbPatch.stop_order = (patch as any).stop_order;
+
+      const { error } = await supabase.from('plan_stops').update(dbPatch).eq('id', id);
+      if (error) throw error;
+
+      // refresh UI
+      await queryClient.invalidateQueries({ queryKey: ['plan-stops', actualPlanId] });
+    },
+    [actualPlanId, queryClient]
+  );
 
   // Overlay feedback helper with auto-dismiss
   const showOverlay = useCallback(
@@ -536,14 +568,15 @@ export const CollaborativePlanningScreen = () => {
       stop_order: index + 1
     }));
     
-    // Update via unified hook
-    reorderedWithNewOrder.forEach((stop, index) => {
+    // Update via updateStop function
+    reorderedWithNewOrder.forEach(async (stop, index) => {
       if (index !== stops.findIndex(s => s.id === stop.id)) {
         // Only update if order actually changed
-        updateStop.mutate({
-          stopId: stop.id,
-          updates: { stop_order: index + 1 }
-        });
+        try {
+          await updateStop(stop.id, { stop_order: index + 1 });
+        } catch (error) {
+          console.error('Failed to update stop order:', error);
+        }
       }
     });
     
