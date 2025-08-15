@@ -306,8 +306,8 @@ export const CollaborativePlanningScreen = () => {
     }
   };
 
-  // Mock collaboration state for now
-  const collaborationParticipants = plan.participants || [];
+  // Mock collaboration state for now - plan.participants doesn't exist in DB schema
+  const collaborationParticipants = [];
   const connectionStatus = 'connected';
   const isOptimistic = false;
 
@@ -469,8 +469,8 @@ export const CollaborativePlanningScreen = () => {
               planId={plan.id}
               currentStatus={getSafeStatus(plan.status)}
               isCreator={plan.creator_id === 'current-user'} // This would come from auth
-              hasStops={plan.stops.length > 0}
-              hasParticipants={plan.participants.length > 0}
+              hasStops={stops.length > 0}
+              hasParticipants={collaborationParticipants.length > 0}
               className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"
             />
             
@@ -564,9 +564,9 @@ export const CollaborativePlanningScreen = () => {
               {isNovaSuggestionsExpanded && (
                 <NovaSuggestions
                   planId={plan.id}
-                  existingStops={plan.stops}
+                  existingStops={stops}
                   timeRange={{ start: "18:00", end: "23:59" }}
-                  participants={plan.participants.length}
+                  participants={collaborationParticipants.length}
                   preferences={{
                     budget: 'medium',
                     vibes: ['energetic', 'social'],
@@ -583,8 +583,8 @@ export const CollaborativePlanningScreen = () => {
         {/* Voting Threshold Meter - Only show for finalized+ plans */}
         {canVoteOnStops(getSafeStatus(plan.status)) && (
           <VotingThresholdMeter
-            totalParticipants={activeParticipants.length || plan.participants.length}
-            votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
+            totalParticipants={activeParticipants.length || collaborationParticipants.length}
+            votedParticipants={Math.floor((activeParticipants.length || collaborationParticipants.length) * 0.7)} // Mock 70% participation
             threshold={60}
             className="mb-6"
           />
