@@ -141,27 +141,57 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   /* ------------------------------------------------------------------ */
   const deletePlan = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('floq_plans').delete().eq('id', plan.id as any);
-      if (error) throw error;
+      console.log('Deleting plan:', plan.id);
+      const { data, error } = await supabase
+        .from('floq_plans')
+        .delete()
+        .eq('id', plan.id)
+        .select(); // Add select to get the deleted row back
+      
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
+      
+      console.log('Delete successful, deleted rows:', data);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (deletedRows) => {
+      console.log('Plan deletion successful, invalidating queries...');
+      // Invalidate all plan-related queries
       queryClient.invalidateQueries({ queryKey: ['user-floq-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['optimized-user-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['user-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      
+      // Force refetch after a short delay to ensure cache is updated
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['optimized-user-plans'] });
+      }, 100);
+      
       toast({ title: 'Plan deleted', description: 'Your plan has been deleted.' });
     },
-    onError: (err) =>
+    onError: (err) => {
+      console.error('Plan deletion failed:', err);
       toast({
         title: 'Failed to delete plan',
         description: (err as Error).message,
         variant: 'destructive',
-      }),
+      });
+    },
   });
 
   const handleDelete = async () => {
     setDeleting(true);
-    await deletePlan.mutateAsync().finally(() => {
+    try {
+      await deletePlan.mutateAsync();
+      console.log('Plan deletion completed successfully');
+    } catch (error) {
+      console.error('Plan deletion failed in handleDelete:', error);
+    } finally {
       setDeleting(false);
       setShowDelete(false);
-    });
+    }
   };
 
   /* ------------------------------------------------------------------ */
