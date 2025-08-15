@@ -74,12 +74,22 @@ export const CollaborativePlanningScreen = () => {
 
   // Validate planId
   if (!planId) {
-    throw new Error('Plan ID is required but not provided in URL params');
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Invalid Plan</h2>
+          <p className="text-white/60 mb-4">Plan ID is required but not provided</p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   // Data hooks
-  const { data: plan, isLoading: isPlanLoading } = usePlan(planId);
-  const { data: stops = [], isLoading: isStopsLoading } = usePlanStops(planId);
+  const { data: plan, isLoading: isPlanLoading, error: planError } = usePlan(planId);
+  const { data: stops = [], isLoading: isStopsLoading, error: stopsError } = usePlanStops(planId);
   const { onlineUsers, totalOnline } = usePlanPresence(planId);
   
   // Unified stop operations
@@ -90,6 +100,50 @@ export const CollaborativePlanningScreen = () => {
     isCreating,
     isDeleting 
   } = useUnifiedPlanStops(planId);
+
+  // Show error state if plan or stops failed to load
+  if (planError || stopsError) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Failed to Load Plan</h2>
+          <p className="text-white/60 mb-4">
+            {planError?.message || stopsError?.message || 'Something went wrong'}
+          </p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while plan or stops are loading
+  if (isPlanLoading || isStopsLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60">Loading collaborative timeline...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Validate that plan exists after loading
+  if (!plan) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Plan Not Found</h2>
+          <p className="text-white/60 mb-4">The requested plan could not be found</p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Query client for cache invalidation
   const queryClient2 = useQueryClient();

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +48,7 @@ export const PlanDetailsView: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
   const { validateTransition, getAvailableTransitions } = usePlanStatusValidation();
 
@@ -141,7 +142,9 @@ export const PlanDetailsView: React.FC = () => {
   };
 
   const handleEditTimeline = () => {
-    navigate(`/plan/${planId}`);
+    startTransition(() => {
+      navigate(`/plan/${planId}`);
+    });
   };
 
   if (planLoading) {
@@ -420,7 +423,7 @@ export const PlanDetailsView: React.FC = () => {
           </Button>
           
           <Button 
-            onClick={() => navigate(`/plan/${planId}`)}
+            onClick={() => startTransition(() => navigate(`/plan/${planId}`))}
             variant="outline"
             className="h-12 border-white/20 text-white hover:bg-white/10"
           >

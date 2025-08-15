@@ -106,7 +106,11 @@ export const AppRoutes = () => {
       <Route path="/plans" element={<PlansHub />} />
       <Route path="/plans/:planId" element={<PlanDetailsView />} />
       <Route path="/plan/new" element={<NewPlanWizard />} />
-      <Route path="/plan/:planId" element={<CollaborativePlanningScreenWrapper />} />
+      <Route path="/plan/:planId" element={
+        <Suspense fallback={<FullScreenSpinner />}>
+          <CollaborativePlanningScreenWrapper />
+        </Suspense>
+      } />
       {/* Redirect old new-plan path to new path */}
       <Route path="/new-plan" element={<Navigate to="/plan/new" replace />} />
       {/* New route for shared plans using /share/:slug */}
