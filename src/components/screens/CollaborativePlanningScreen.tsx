@@ -510,14 +510,15 @@ export const CollaborativePlanningScreen = () => {
             participants={totalOnline}
             onAcceptSuggestion={async (suggestion) => {
               try {
-                await createStop({
+                await createStop.mutateAsync({
+                  plan_id: planId,
                   title: suggestion.title,
                   description: `AI suggested: ${suggestion.venue || suggestion.location}`,
                   start_time: suggestion.startTime,
                   end_time: suggestion.endTime,
                   duration_minutes: 60,
-                  venue: suggestion.venue,
-                  estimated_cost: suggestion.estimatedCost
+                  venue_id: null, // We don't have venue IDs from AI suggestions
+                  estimated_cost_per_person: suggestion.estimatedCost
                 });
                 toast({ title: "AI suggestion added to timeline!" });
               } catch (error) {

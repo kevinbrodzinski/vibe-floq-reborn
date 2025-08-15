@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -187,6 +187,9 @@ export function ComprehensiveStopModal({ isOpen, onClose, planId }: Comprehensiv
             <Plus className="w-5 h-5" />
             Add Stop to Plan
           </DialogTitle>
+          <DialogDescription>
+            Search for a venue or create a custom stop for your plan timeline.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
