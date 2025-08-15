@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, memo } from 'react';
+import React, { useRef, useEffect, memo, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -127,17 +127,17 @@ export function VirtualTimelineGrid({
   const { metrics } = useTimelinePerformance();
   const { deleteStop } = useUnifiedPlanStops(planId);
 
-  const handleEdit = React.useCallback((stopId: string) => {
+  const handleEdit = useCallback((stopId: string) => {
     console.log('Edit stop:', stopId);
     // TODO: Open edit modal
   }, []);
 
-  const handleDelete = React.useCallback((stopId: string) => {
+  const handleDelete = useCallback((stopId: string) => {
     deleteStop.mutate(stopId);
   }, [deleteStop]);
 
   // Generate time slots (every 30 minutes)
-  const timeSlots = React.useMemo(() => {
+  const timeSlots = useMemo(() => {
     const slots: string[] = [];
     const start = parseInt(startTime.split(':')[0]);
     const end = parseInt(endTime.split(':')[0]);
@@ -175,7 +175,7 @@ export function VirtualTimelineGrid({
     }
   }, [timeSlots]);
 
-  const renderContent = React.useMemo(() => {
+  const renderContent = useMemo(() => {
     if (enableVirtualization && timeSlots.length > 20) {
       // Use virtual scrolling for long timelines
       return (

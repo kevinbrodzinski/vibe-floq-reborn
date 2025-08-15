@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useParams } from 'react-router-dom';
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -75,7 +75,7 @@ export const CollaborativePlanningScreen = () => {
   }
 
   // Memoize mapped data to prevent infinite re-renders
-  const mappedStops = React.useMemo(() => 
+  const mappedStops = useMemo(() => 
     stops.map(stop => ({
       id: stop.id,
       title: stop.title,
@@ -88,7 +88,7 @@ export const CollaborativePlanningScreen = () => {
     })), [stops]
   );
 
-  const mappedParticipants = React.useMemo(() => 
+  const mappedParticipants = useMemo(() => 
     activeParticipants.length > 0 
       ? activeParticipants.map(p => ({ 
           id: p.user_id, 
@@ -98,7 +98,7 @@ export const CollaborativePlanningScreen = () => {
       : collaborationParticipants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
   , [activeParticipants, collaborationParticipants, currentUserRSVP]);
 
-  const participantUpdates = React.useMemo(() => {
+  const participantUpdates = useMemo(() => {
     const baseTimestamp = Date.now();
     return collaborationParticipants.map((p, index) => ({
       id: p.id,
@@ -109,11 +109,11 @@ export const CollaborativePlanningScreen = () => {
     }));
   }, [collaborationParticipants]);
 
-  const selectedVenues = React.useMemo(() => 
+  const selectedVenues = useMemo(() => 
     stops.map(s => s.venue), [stops]
   );
 
-  const executionStops = React.useMemo(() => 
+  const executionStops = useMemo(() => 
     stops.map(stop => ({
       id: stop.id,
       title: stop.title,

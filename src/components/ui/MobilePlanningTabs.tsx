@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, FileText, Sparkles, Users, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ export function MobilePlanningTabs({ children, defaultTab = 'timeline', classNam
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Extract tab content from children
-  const tabs: TabConfig[] = React.useMemo(() => {
+  const tabs: TabConfig[] = useMemo(() => {
     return React.Children.map(children, (child) => {
       if (React.isValidElement(child) && child.props.name) {
         const tabId = child.props.name.toLowerCase();
