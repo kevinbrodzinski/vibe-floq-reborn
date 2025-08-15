@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
 
+// Match your exact database enums
 export type RSVPStatus = 'pending' | 'accepted' | 'declined' | 'maybe'
 export type PlanRole = 'creator' | 'co_admin' | 'participant'
 export type InviteType = 'floq_member' | 'external_friend' | 'creator'
@@ -10,26 +11,26 @@ export type InviteType = 'floq_member' | 'external_friend' | 'creator'
 export interface PlanParticipant {
   id: string
   plan_id: string
-  profile_id?: string
+  profile_id?: string | null
   role: PlanRole
   rsvp_status: RSVPStatus
   invite_type: InviteType
   is_guest: boolean
-  guest_name?: string
-  guest_email?: string
-  guest_phone?: string
-  notes?: string
+  guest_name?: string | null
+  guest_email?: string | null
+  guest_phone?: string | null
+  notes?: string | null
   joined_at: string
   invited_at: string
-  responded_at?: string
-  reminded_at?: string
+  responded_at?: string | null
+  reminded_at?: string | null
   // Joined profile data
   profile?: {
     id: string
     username: string
     display_name: string
-    avatar_url?: string
-  }
+    avatar_url?: string | null
+  } | null
 }
 
 export interface InviteParticipantData {
@@ -50,7 +51,21 @@ export function usePlanParticipants(planId: string) {
       const { data, error } = await supabase
         .from('plan_participants')
         .select(`
-          *,
+          id,
+          plan_id,
+          profile_id,
+          role,
+          rsvp_status,
+          invite_type,
+          is_guest,
+          guest_name,
+          guest_email,
+          guest_phone,
+          notes,
+          joined_at,
+          invited_at,
+          responded_at,
+          reminded_at,
           profile:profiles(
             id,
             username,
@@ -59,14 +74,14 @@ export function usePlanParticipants(planId: string) {
           )
         `)
         .eq('plan_id', planId)
-        .order('joined_at', { ascending: true })
+        .order('invited_at', { ascending: true })
 
       if (error) {
         console.error('Failed to fetch plan participants:', error)
         throw error
       }
 
-      return data || []
+      return (data || []) as PlanParticipant[]
     },
     enabled: !!planId,
     staleTime: 30000, // 30 seconds
@@ -82,37 +97,76 @@ export function useInviteParticipant() {
 
   return useMutation({
     mutationFn: async (inviteData: InviteParticipantData) => {
-      // First check if participant already exists
-      const { data: existing } = await supabase
+      // Validate constraints before sending to database
+      if (inviteData.isGuest) {
+        if (!inviteData.guestName) {
+          throw new Error('Guest name is required for guest invitations')
+        }
+        if (inviteData.profileId) {
+          throw new Error('Profile ID must be null for guest invitations')
+        }
+      } else {
+        if (!inviteData.profileId) {
+          throw new Error('Profile ID is required for member invitations')
+        }
+        if (inviteData.guestName || inviteData.guestEmail || inviteData.guestPhone) {
+          throw new Error('Guest fields must be null for member invitations')
+        }
+      }
+
+      // Check if participant already exists (duplicate prevention)
+      const existingQuery = supabase
         .from('plan_participants')
         .select('id')
         .eq('plan_id', inviteData.planId)
-        .eq(inviteData.isGuest ? 'guest_email' : 'profile_id', 
-            inviteData.isGuest ? inviteData.guestEmail : inviteData.profileId)
-        .maybeSingle()
+
+      if (inviteData.isGuest && inviteData.guestEmail) {
+        existingQuery.eq('guest_email', inviteData.guestEmail)
+      } else if (!inviteData.isGuest && inviteData.profileId) {
+        existingQuery.eq('profile_id', inviteData.profileId)
+      }
+
+      const { data: existing } = await existingQuery.maybeSingle()
 
       if (existing) {
         throw new Error('This person is already invited to the plan')
       }
 
+      // Prepare participant data according to schema
       const participantData = {
         plan_id: inviteData.planId,
         profile_id: inviteData.isGuest ? null : inviteData.profileId,
         role: inviteData.role || 'participant',
         is_guest: inviteData.isGuest || false,
-        guest_name: inviteData.guestName,
-        guest_email: inviteData.guestEmail,
-        guest_phone: inviteData.guestPhone,
-        notes: inviteData.notes,
+        guest_name: inviteData.isGuest ? inviteData.guestName : null,
+        guest_email: inviteData.isGuest ? inviteData.guestEmail : null,
+        guest_phone: inviteData.isGuest ? inviteData.guestPhone : null,
+        notes: inviteData.notes || null,
         invite_type: inviteData.isGuest ? 'external_friend' : 'floq_member',
-        rsvp_status: 'pending'
+        rsvp_status: 'pending',
+        invited_at: new Date().toISOString(),
+        joined_at: new Date().toISOString()
       }
 
       const { data, error } = await supabase
         .from('plan_participants')
         .insert(participantData)
         .select(`
-          *,
+          id,
+          plan_id,
+          profile_id,
+          role,
+          rsvp_status,
+          invite_type,
+          is_guest,
+          guest_name,
+          guest_email,
+          guest_phone,
+          notes,
+          joined_at,
+          invited_at,
+          responded_at,
+          reminded_at,
           profile:profiles(
             id,
             username,
@@ -124,7 +178,7 @@ export function useInviteParticipant() {
 
       if (error) {
         console.error('Failed to invite participant:', error)
-        throw error
+        throw new Error(`Failed to invite participant: ${error.message}`)
       }
 
       // Send notification if it's a Floq member
@@ -144,7 +198,7 @@ export function useInviteParticipant() {
         }
       }
 
-      return data
+      return data as PlanParticipant
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-participants', variables.planId] })
@@ -182,16 +236,35 @@ export function useUpdateRSVP() {
       status: RSVPStatus
       notes?: string 
     }) => {
+      const updateData: any = {
+        rsvp_status: status,
+        responded_at: new Date().toISOString()
+      }
+
+      if (notes !== undefined) {
+        updateData.notes = notes
+      }
+
       const { data, error } = await supabase
         .from('plan_participants')
-        .update({
-          rsvp_status: status,
-          responded_at: new Date().toISOString(),
-          notes: notes
-        })
+        .update(updateData)
         .eq('id', participantId)
         .select(`
-          *,
+          id,
+          plan_id,
+          profile_id,
+          role,
+          rsvp_status,
+          invite_type,
+          is_guest,
+          guest_name,
+          guest_email,
+          guest_phone,
+          notes,
+          joined_at,
+          invited_at,
+          responded_at,
+          reminded_at,
           profile:profiles(
             id,
             username,
@@ -203,10 +276,10 @@ export function useUpdateRSVP() {
 
       if (error) {
         console.error('Failed to update RSVP:', error)
-        throw error
+        throw new Error(`Failed to update RSVP: ${error.message}`)
       }
 
-      return data
+      return data as PlanParticipant
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-participants', variables.planId] })
@@ -244,7 +317,7 @@ export function useRemoveParticipant() {
 
       if (error) {
         console.error('Failed to remove participant:', error)
-        throw error
+        throw new Error(`Failed to remove participant: ${error.message}`)
       }
 
       return { participantId, planId }
@@ -283,6 +356,9 @@ export function useParticipantStats(planId: string) {
     coAdmins: participants.filter(p => p.role === 'co_admin').length,
     acceptanceRate: participants.length > 0 
       ? Math.round((participants.filter(p => p.rsvp_status === 'accepted').length / participants.length) * 100)
+      : 0,
+    responseRate: participants.length > 0
+      ? Math.round((participants.filter(p => p.responded_at !== null).length / participants.length) * 100)
       : 0
   }
 }
@@ -312,6 +388,7 @@ export function useRealtimePlanParticipants(planId: string) {
             (payload) => {
               console.log('Plan participants update:', payload)
               queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] })
+              queryClient.invalidateQueries({ queryKey: ['plan-details', planId] })
             }
           )
           .subscribe()
@@ -322,4 +399,34 @@ export function useRealtimePlanParticipants(planId: string) {
       }
     }
   })
+}
+
+// Helper function to validate participant data against constraints
+export function validateParticipantData(data: Partial<InviteParticipantData>): string[] {
+  const errors: string[] = []
+
+  if (data.isGuest) {
+    // Guest constraints
+    if (!data.guestName?.trim()) {
+      errors.push('Guest name is required for guest invitations')
+    }
+    if (data.profileId) {
+      errors.push('Profile ID must not be provided for guest invitations')
+    }
+  } else {
+    // Member constraints  
+    if (!data.profileId?.trim()) {
+      errors.push('Profile ID is required for member invitations')
+    }
+    if (data.guestName || data.guestEmail || data.guestPhone) {
+      errors.push('Guest information must not be provided for member invitations')
+    }
+  }
+
+  // Role validation
+  if (data.role && !['creator', 'co_admin', 'participant'].includes(data.role)) {
+    errors.push('Invalid role specified')
+  }
+
+  return errors
 }

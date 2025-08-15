@@ -11,13 +11,14 @@ import {
   HelpCircle, 
   Crown, 
   Shield, 
-  Trash2,
   MessageSquare,
   Send,
   ChevronDown,
   Filter,
   Search,
-  UserX
+  UserX,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,7 @@ import {
   useRemoveParticipant,
   useParticipantStats,
   useRealtimePlanParticipants,
+  validateParticipantData,
   PlanParticipant,
   RSVPStatus,
   PlanRole
@@ -230,8 +232,9 @@ export function PlanParticipantsPanel({ planId, isCreator, className }: PlanPart
               </div>
             </div>
             
-            <div className="text-center text-sm text-muted-foreground">
-              {stats.acceptanceRate}% acceptance rate • {stats.guests} guests • {stats.members} members
+            <div className="text-center text-sm text-muted-foreground space-y-1">
+              <div>{stats.acceptanceRate}% acceptance rate • {stats.responseRate}% response rate</div>
+              <div>{stats.guests} guests • {stats.members} members</div>
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -366,6 +369,15 @@ function ParticipantCard({
     })
   }
 
+  // Display name logic
+  const displayName = participant.is_guest 
+    ? participant.guest_name 
+    : participant.profile?.display_name
+
+  const displayUsername = participant.is_guest 
+    ? null 
+    : participant.profile?.username
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -382,18 +394,14 @@ function ParticipantCard({
           <Avatar className="h-10 w-10">
             <AvatarImage src={participant.profile?.avatar_url || ''} />
             <AvatarFallback>
-              {participant.is_guest 
-                ? participant.guest_name?.charAt(0)?.toUpperCase() 
-                : participant.profile?.display_name?.charAt(0)?.toUpperCase()}
+              {displayName?.charAt(0)?.toUpperCase() || '?'}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="font-medium">
-                {participant.is_guest 
-                  ? participant.guest_name 
-                  : participant.profile?.display_name}
+                {displayName || 'Unknown'}
               </span>
               
               {isCurrentUser && (
@@ -403,6 +411,10 @@ function ParticipantCard({
               <div className="flex items-center gap-1">
                 <roleInfo.icon className={cn("h-3 w-3", roleInfo.color)} />
               </div>
+              
+              {participant.is_guest && (
+                <Badge variant="secondary" className="text-xs">Guest</Badge>
+              )}
             </div>
             
             <div className="text-sm text-muted-foreground">
@@ -422,7 +434,7 @@ function ParticipantCard({
                   )}
                 </div>
               ) : (
-                `@${participant.profile?.username}`
+                displayUsername && `@${displayUsername}`
               )}
             </div>
             
@@ -444,9 +456,15 @@ function ParticipantCard({
             
             <div className="text-xs text-muted-foreground">
               {participant.responded_at ? (
-                `Responded ${format(new Date(participant.responded_at), 'MMM d')}`
+                <div className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                  {format(new Date(participant.responded_at), 'MMM d')}
+                </div>
               ) : (
-                `Invited ${format(new Date(participant.invited_at), 'MMM d')}`
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-yellow-600" />
+                  {format(new Date(participant.invited_at), 'MMM d')}
+                </div>
               )}
             </div>
           </div>
@@ -489,13 +507,12 @@ function InviteParticipantDialog({ planId, onClose }: { planId: string, onClose:
     role: 'participant' as PlanRole,
     notes: ''
   })
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const inviteParticipant = useInviteParticipant()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const inviteData = {
+  const validateForm = () => {
+    const data = {
       planId,
       isGuest: inviteType === 'guest',
       role: formData.role,
@@ -504,6 +521,32 @@ function InviteParticipantDialog({ planId, onClose }: { planId: string, onClose:
         guestName: formData.guestName,
         guestEmail: formData.guestEmail,
         guestPhone: formData.guestPhone
+      } : {
+        profileId: formData.profileId
+      })
+    }
+
+    const errors = validateParticipantData(data)
+    setValidationErrors(errors)
+    return errors.length === 0
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+
+    const inviteData = {
+      planId,
+      isGuest: inviteType === 'guest',
+      role: formData.role,
+      notes: formData.notes || undefined,
+      ...(inviteType === 'guest' ? {
+        guestName: formData.guestName,
+        guestEmail: formData.guestEmail || undefined,
+        guestPhone: formData.guestPhone || undefined
       } : {
         profileId: formData.profileId
       })
@@ -520,6 +563,7 @@ function InviteParticipantDialog({ planId, onClose }: { planId: string, onClose:
           role: 'participant',
           notes: ''
         })
+        setValidationErrors([])
       }
     })
   }
@@ -534,6 +578,24 @@ function InviteParticipantDialog({ planId, onClose }: { planId: string, onClose:
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <span className="text-sm font-medium text-red-800">Please fix the following errors:</span>
+            </div>
+            <ul className="text-sm text-red-700 space-y-1">
+              {validationErrors.map((error, idx) => (
+                <li key={idx} className="flex items-center gap-1">
+                  <span>•</span>
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Invite Type Selection */}
         <div className="flex gap-2">
           <Button
@@ -560,7 +622,7 @@ function InviteParticipantDialog({ planId, onClose }: { planId: string, onClose:
         {inviteType === 'member' && (
           <div className="space-y-3">
             <div>
-              <Label htmlFor="profileId">Member Username or ID</Label>
+              <Label htmlFor="profileId">Member Username or ID *</Label>
               <Input
                 id="profileId"
                 value={formData.profileId}
