@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { v4 as uuidv4 } from 'uuid';
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useParams } from 'react-router-dom';
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -248,7 +249,6 @@ export const CollaborativePlanningScreen = () => {
     }
 
     hapticFeedback.gestureConfirm();
-    const { v4: uuidv4 } = require('uuid')
     const newStop = {
       id: uuidv4(),
       title: "New Stop",
@@ -375,7 +375,6 @@ export const CollaborativePlanningScreen = () => {
   );
 
   const handleAcceptSuggestion = async (s: any) => {
-    const { v4: uuidv4 } = require('uuid')
     const newStop = {
       id: uuidv4(),
       title: s.title,
@@ -428,7 +427,6 @@ export const CollaborativePlanningScreen = () => {
     }
 
     hapticFeedback.gestureConfirm();
-    const { v4: uuidv4 } = require('uuid')
     const newStop = {
       id: uuidv4(),
       title: `${venue.type} at ${venue.name}`,
