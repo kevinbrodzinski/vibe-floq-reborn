@@ -28,6 +28,8 @@ const TimelineItem = memo(({
   stop, 
   onAddStop, 
   onStopSelect, 
+  onEdit,
+  onDelete,
   planStatus, 
   enableSwipeGestures 
 }: {
@@ -35,21 +37,20 @@ const TimelineItem = memo(({
   stop?: PlanStop;
   onAddStop: (timeSlot: string) => void;
   onStopSelect: (stopId: string) => void;
+  onEdit: (stopId: string) => void;
+  onDelete: (stopId: string) => void;
   planStatus: string;
   enableSwipeGestures: boolean;
 }) => {
-  const { deleteStop } = useUnifiedPlanStops();
-
   const handleEdit = () => {
     if (stop) {
-      console.log('Edit stop:', stop.id);
-      // TODO: Open edit modal
+      onEdit(stop.id);
     }
   };
 
   const handleDelete = () => {
     if (stop) {
-      deleteStop.mutate(stop.id);
+      onDelete(stop.id);
     }
   };
 
@@ -123,7 +124,17 @@ export function VirtualTimelineGrid({
   enableVirtualization = true
 }: VirtualTimelineGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { metrics, measureRender } = useTimelinePerformance();
+  const { metrics } = useTimelinePerformance();
+  const { deleteStop } = useUnifiedPlanStops(planId);
+
+  const handleEdit = React.useCallback((stopId: string) => {
+    console.log('Edit stop:', stopId);
+    // TODO: Open edit modal
+  }, []);
+
+  const handleDelete = React.useCallback((stopId: string) => {
+    deleteStop.mutate(stopId);
+  }, [deleteStop]);
 
   // Generate time slots (every 30 minutes)
   const timeSlots = React.useMemo(() => {
@@ -164,7 +175,7 @@ export function VirtualTimelineGrid({
     }
   }, [timeSlots]);
 
-  const renderContent = () => {
+  const renderContent = React.useMemo(() => {
     if (enableVirtualization && timeSlots.length > 20) {
       // Use virtual scrolling for long timelines
       return (
@@ -191,6 +202,8 @@ export function VirtualTimelineGrid({
                   stop={item.stop}
                   onAddStop={onAddStop}
                   onStopSelect={onStopSelect}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
                   planStatus={planStatus}
                   enableSwipeGestures={enableSwipeGestures}
                 />
@@ -215,6 +228,8 @@ export function VirtualTimelineGrid({
                 stop={stopAtTime}
                 onAddStop={onAddStop}
                 onStopSelect={onStopSelect}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
                 planStatus={planStatus}
                 enableSwipeGestures={enableSwipeGestures}
               />
@@ -223,7 +238,7 @@ export function VirtualTimelineGrid({
         </div>
       );
     }
-  };
+  }, [enableVirtualization, timeSlots.length, containerRef, handleScroll, totalHeight, virtualItems, onAddStop, onStopSelect, handleEdit, handleDelete, planStatus, enableSwipeGestures, stops]);
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -247,7 +262,7 @@ export function VirtualTimelineGrid({
       </div>
 
       {/* Timeline Content */}
-      {measureRender(renderContent)}
+      {renderContent}
     </div>
   );
 }

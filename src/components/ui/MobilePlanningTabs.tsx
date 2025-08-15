@@ -20,26 +20,28 @@ export function MobilePlanningTabs({ children, defaultTab = 'timeline', classNam
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Extract tab content from children
-  const tabs: TabConfig[] = React.Children.map(children, (child) => {
-    if (React.isValidElement(child) && child.props.name) {
-      const tabId = child.props.name.toLowerCase();
-      const icons: Record<string, React.ReactNode> = {
-        timeline: <Clock className="w-4 h-4" />,
-        summary: <FileText className="w-4 h-4" />,
-        ai: <Sparkles className="w-4 h-4" />,
-        participants: <Users className="w-4 h-4" />,
-        venues: <MapPin className="w-4 h-4" />
-      };
+  const tabs: TabConfig[] = React.useMemo(() => {
+    return React.Children.map(children, (child) => {
+      if (React.isValidElement(child) && child.props.name) {
+        const tabId = child.props.name.toLowerCase();
+        const icons: Record<string, React.ReactNode> = {
+          timeline: <Clock className="w-4 h-4" />,
+          summary: <FileText className="w-4 h-4" />,
+          ai: <Sparkles className="w-4 h-4" />,
+          participants: <Users className="w-4 h-4" />,
+          venues: <MapPin className="w-4 h-4" />
+        };
 
-      return {
-        id: tabId,
-        label: child.props.name,
-        icon: icons[tabId] || <Clock className="w-4 h-4" />,
-        content: child.props.children
-      };
-    }
-    return null;
-  }).filter(Boolean) || [];
+        return {
+          id: tabId,
+          label: child.props.name,
+          icon: icons[tabId] || <Clock className="w-4 h-4" />,
+          content: child.props.children
+        };
+      }
+      return null;
+    }).filter(Boolean) || [];
+  }, [children]);
 
   return (
     <div className={cn("md:hidden", className)}>

@@ -97,15 +97,16 @@ export function useTimelinePerformance() {
     memoryUsage: 0
   });
 
-  const measureRender = useCallback((callback: () => void) => {
+  const measureRender = useCallback(() => {
     const start = performance.now();
-    callback();
-    const end = performance.now();
     
-    setMetrics(prev => ({
-      ...prev,
-      renderTime: end - start
-    }));
+    return () => {
+      const end = performance.now();
+      setMetrics(prev => ({
+        ...prev,
+        renderTime: end - start
+      }));
+    };
   }, []);
 
   const measureScroll = useCallback((callback: () => void) => {

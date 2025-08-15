@@ -73,6 +73,58 @@ export const CollaborativePlanningScreen = () => {
   if (!planId) {
     throw new Error('Plan ID is required but not provided in URL params');
   }
+
+  // Memoize mapped data to prevent infinite re-renders
+  const mappedStops = React.useMemo(() => 
+    stops.map(stop => ({
+      id: stop.id,
+      title: stop.title,
+      venue: stop.venue,
+      startTime: stop.startTime,
+      endTime: stop.endTime,
+      estimatedCost: 25,
+      votes: { positive: 8, negative: 1, total: 9 },
+      status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
+    })), [stops]
+  );
+
+  const mappedParticipants = React.useMemo(() => 
+    activeParticipants.length > 0 
+      ? activeParticipants.map(p => ({ 
+          id: p.user_id, 
+          name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
+          rsvpStatus: p.rsvp_status || 'pending' 
+        }))
+      : collaborationParticipants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
+  , [activeParticipants, collaborationParticipants, currentUserRSVP]);
+
+  const participantUpdates = React.useMemo(() => {
+    const baseTimestamp = Date.now();
+    return collaborationParticipants.map((p, index) => ({
+      id: p.id,
+      username: p.name,
+      avatar: p.avatar,
+      action: 'joined' as const,
+      timestamp: baseTimestamp + index, // Slight offset to avoid duplicate timestamps
+    }));
+  }, [collaborationParticipants]);
+
+  const selectedVenues = React.useMemo(() => 
+    stops.map(s => s.venue), [stops]
+  );
+
+  const executionStops = React.useMemo(() => 
+    stops.map(stop => ({
+      id: stop.id,
+      title: stop.title,
+      venue: stop.venue,
+      startTime: stop.startTime,
+      endTime: stop.endTime || stop.startTime,
+      location: stop.location || '',
+      participants: [],
+      status: 'upcoming' as const
+    })), [stops]
+  );
   const actualPlanId = planId;
   
 
@@ -545,13 +597,7 @@ export const CollaborativePlanningScreen = () => {
 
         {/* Live Participant Tracker */}
         <LiveParticipantTracker 
-          updates={collaborationParticipants.map(p => ({
-            id: p.id,
-            username: p.name,
-            avatar: p.avatar,
-            action: 'joined' as const,
-            timestamp: Date.now(),
-          }))}
+          updates={participantUpdates}
         />
 
         {/* RSVP Card */}
@@ -652,24 +698,8 @@ export const CollaborativePlanningScreen = () => {
                   <SummaryReviewPanel
                     planTitle={plan.title}
                     planDate={plan.date}
-                    stops={stops.map(stop => ({
-                      id: stop.id,
-                      title: stop.title,
-                      venue: stop.venue,
-                      startTime: stop.startTime,
-                      endTime: stop.endTime,
-                      estimatedCost: 25,
-                      votes: { positive: 8, negative: 1, total: 9 },
-                      status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
-                    }))}
-                    participants={activeParticipants.length > 0 
-                      ? activeParticipants.map(p => ({ 
-                          id: p.user_id, 
-                          name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
-                          rsvpStatus: p.rsvp_status || 'pending' 
-                        }))
-                      : collaborationParticipants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
-                    }
+                    stops={mappedStops}
+                    participants={mappedParticipants}
                     totalBudget={150}
                     onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
                     onEdit={(stopId) => console.log('Edit stop:', stopId)}
@@ -737,24 +767,8 @@ export const CollaborativePlanningScreen = () => {
               <SummaryReviewPanel
                 planTitle={plan.title}
                 planDate={plan.date}
-                stops={stops.map(stop => ({
-                  id: stop.id,
-                  title: stop.title,
-                  venue: stop.venue,
-                  startTime: stop.startTime,
-                  endTime: stop.endTime,
-                  estimatedCost: 25,
-                  votes: { positive: 8, negative: 1, total: 9 },
-                  status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
-                }))}
-                participants={activeParticipants.length > 0 
-                  ? activeParticipants.map(p => ({ 
-                      id: p.user_id, 
-                      name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
-                      rsvpStatus: p.rsvp_status || 'pending' 
-                    }))
-                  : collaborationParticipants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
-                }
+                stops={mappedStops}
+                participants={mappedParticipants}
                 totalBudget={150}
                 onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
                 onEdit={(stopId) => console.log('Edit stop:', stopId)}
@@ -793,7 +807,7 @@ export const CollaborativePlanningScreen = () => {
                 
                 <VenueCardLibrary
                   onVenueSelect={handleVenueSelect}
-                  selectedVenues={stops.map(s => s.venue)}
+                  selectedVenues={selectedVenues}
                   searchQuery={venueSearchQuery}
                 />
               </div>
@@ -816,16 +830,7 @@ export const CollaborativePlanningScreen = () => {
           /* Plan Execution Mode */
           <div>
             <PlanExecutionTracker
-              stops={stops.map(stop => ({
-                id: stop.id,
-                title: stop.title,
-                venue: stop.venue,
-                startTime: stop.startTime,
-                endTime: stop.endTime || stop.startTime,
-                location: stop.location || '',
-                participants: [],
-                status: 'upcoming' as const
-              }))}
+              stops={executionStops}
               currentTime="19:30"
               groupLocation="Arts District"
             />
