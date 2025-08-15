@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { supabase } from '@/integrations/supabase/client'
+import { useUnifiedPlanStops } from '@/hooks/useUnifiedPlanStops'
 import { useSession } from '@/hooks/useSession'
 import { PlanSuggestion } from '@/hooks/usePlanRecap'
 
@@ -14,6 +14,7 @@ interface SuggestionCardProps {
 
 export function SuggestionCard({ suggestion, planId }: SuggestionCardProps) {
   const session = useSession()
+  const { addStopFromSuggestion, isCreating } = useUnifiedPlanStops(planId)
 
   const handleAddAsStop = async () => {
     if (!session?.user) {
@@ -22,24 +23,13 @@ export function SuggestionCard({ suggestion, planId }: SuggestionCardProps) {
     }
 
     try {
-      const { error } = await supabase
-        .from('plan_stops')
-        .insert({
-          plan_id: planId,
-          title: suggestion.title,
-          description: suggestion.body,
-          created_by: session.user.id,
-          stop_order: 999 // Add at end
-        } as any)
-
-      if (error) throw error
-
-      toast.success('Added to plan!', {
-        description: `"${suggestion.title}" has been added as a new stop.`
+      await addStopFromSuggestion({
+        title: suggestion.title,
+        body: suggestion.body
       })
     } catch (error) {
+      // Error handling is done in the hook
       console.error('Failed to add suggestion as stop:', error)
-      toast.error('Failed to add stop')
     }
   }
 
@@ -55,10 +45,11 @@ export function SuggestionCard({ suggestion, planId }: SuggestionCardProps) {
               size="sm"
               variant="outline"
               onClick={handleAddAsStop}
+              disabled={isCreating}
               className="text-xs h-7"
             >
               <Plus className="w-3 h-3 mr-1" />
-              Add as Stop
+              {isCreating ? 'Adding...' : 'Add as Stop'}
             </Button>
           </div>
         </div>

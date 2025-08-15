@@ -40,7 +40,7 @@ export function usePlansData() {
           plan_id,
           floq_plans(
             *,
-            floqs(title, creator_id, location),
+            floqs!floq_plans_floq_id_fkey(title, creator_id, location),
             creator:profiles!creator_id(id, display_name, username, avatar_url)
           )
         `)

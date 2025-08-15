@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import * as chrono from 'chrono-node'
 import { supabase } from '@/integrations/supabase/client'
-import { addPlanStopRPC } from './useAddPlanStop'
+import { useUnifiedPlanStops } from './useUnifiedPlanStops'
 import { VoiceError, VoiceState, ParsedStop } from '@/types/voice'
 
 // Web Speech API types
@@ -72,6 +72,7 @@ export function useVoiceToStop(planId: string, planDate: string) {
   const [state, setState] = useState<VoiceState>('idle')
   const [transcript, setTranscript] = useState('')
   const stopFuncRef = useRef<(() => void) | undefined>()
+  const { createStop } = useUnifiedPlanStops(planId)
 
   // Start listening
   const start = useCallback(() => {
@@ -145,7 +146,7 @@ export function useVoiceToStop(planId: string, planDate: string) {
     setState('creating')
     
     try {
-      await addPlanStopRPC({
+      await createStop.mutateAsync({
         plan_id: planId,
         title: parsed.title,
         start_time: parsed.startTime,

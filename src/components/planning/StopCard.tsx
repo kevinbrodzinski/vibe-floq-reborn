@@ -1,171 +1,60 @@
-import { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, DollarSign, MoreVertical, Edit, Trash2, GripVertical } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import React from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, AlertTriangle, User, Car, Clock } from 'lucide-react';
 
-interface StopCardProps {
-  stop: {
-    id: string
-    title: string
-    description?: string
-    start_time: string
-    end_time: string
-    duration_minutes?: number
-    estimated_cost_per_person?: number
-    venue?: {
-      id: string
-      name: string
-      address?: string
-    }
-  }
-  onEdit?: (stop: StopCardProps['stop']) => void
-  onDelete?: (stopId: string) => void
-  isDragging?: boolean
-  dragHandleProps?: Record<string, unknown>
-}
+export const StopCard: React.FC<{
+  id: string;
+  title: string;
+  subtitle?: string;
+  durationMin: number;
+  color?: string;
+  conflicts?: string[];
+  travel?: { fromPrevWalkMin?: number; fromPrevDriveMin?: number };
+}> = ({ id, title, subtitle, durationMin, color = 'from-indigo-500 to-violet-500', conflicts = [], travel }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
-export function StopCard({ 
-  stop, 
-  onEdit, 
-  onDelete, 
-  isDragging = false,
-  dragHandleProps 
-}: StopCardProps) {
-  const [showFullDescription, setShowFullDescription] = useState(false)
-
-  const formatTime = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':')
-    const hour = parseInt(hours)
-    const ampm = hour >= 12 ? 'PM' : 'AM'
-    const displayHour = hour % 12 || 12
-    return `${displayHour}:${minutes} ${ampm}`
-  }
-
-  const getDurationText = (minutes?: number) => {
-    if (!minutes) return null
-    if (minutes < 60) return `${minutes}m`
-    const hours = Math.floor(minutes / 60)
-    const remainingMinutes = minutes % 60
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
-  }
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
-    <Card 
-      className={`relative transition-all duration-200 ${
-        isDragging 
-          ? 'shadow-lg scale-105 rotate-2 border-primary' 
-          : 'shadow-sm hover:shadow-md border-border'
-      }`}
-    >
-      <CardContent className="p-4">
-        {/* Header with drag handle and menu */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2 flex-1">
-            {dragHandleProps && (
-              <button 
-                {...dragHandleProps}
-                className="cursor-grab hover:text-primary touch-none"
-                aria-label="Drag to reorder"
-              >
-                <GripVertical className="h-4 w-4" />
-              </button>
-            )}
-            
-            <div className="flex-1">
-              <h3 className="font-medium text-sm leading-tight">{stop.title}</h3>
-              {stop.venue && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <MapPin className="h-3 w-3" />
-                  {stop.venue.name}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <MoreVertical className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(stop)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-              )}
-              {onDelete && (
-                <DropdownMenuItem 
-                  onClick={() => onDelete(stop.id)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+    <div ref={setNodeRef} style={style}
+      className={`rounded-xl border bg-gradient-to-br ${color} text-white/95 
+                  border-white/10 shadow-lg px-3 py-2 select-none ${isDragging ? 'opacity-80 z-50' : 'z-10'}`}>
+      <div className="flex items-center gap-2">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -m-1 rounded hover:bg-white/10 transition-colors">
+          <GripVertical className="h-4 w-4 text-white/80" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold truncate">{title}</div>
+          {!!subtitle && <div className="text-[11px] text-white/85 truncate">{subtitle}</div>}
         </div>
-
-        {/* Time and duration */}
-        <div className="flex items-center gap-2 mb-2">
-          <Badge variant="outline" className="text-xs flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {formatTime(stop.start_time)} - {formatTime(stop.end_time)}
-          </Badge>
-          
-          {stop.duration_minutes && (
-            <Badge variant="secondary" className="text-xs">
-              {getDurationText(stop.duration_minutes)}
-            </Badge>
-          )}
+        <div className="ml-auto text-[11px] flex items-center gap-1 bg-black/20 rounded-md px-2 py-0.5 flex-shrink-0">
+          <Clock className="h-3 w-3" /> {durationMin}m
         </div>
+      </div>
 
-        {/* Cost */}
-        {stop.estimated_cost_per_person && (
-          <div className="flex items-center gap-1 mb-2">
-            <DollarSign className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              ~${stop.estimated_cost_per_person}/person
+      {(travel?.fromPrevWalkMin || travel?.fromPrevDriveMin || conflicts.length > 0) && (
+        <div className="mt-2 flex items-center gap-2 text-[11px] flex-wrap">
+          {typeof travel?.fromPrevWalkMin === 'number' && (
+            <span className="bg-black/30 rounded-md px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap">
+              <User className="h-3 w-3" /> {travel.fromPrevWalkMin}m walk
             </span>
-          </div>
-        )}
-
-        {/* Description */}
-        {stop.description && (
-          <div className="text-xs text-muted-foreground">
-            {showFullDescription || stop.description.length <= 100 ? (
-              <span>{stop.description}</span>
-            ) : (
-              <>
-                <span>{stop.description.substring(0, 100)}...</span>
-                <button
-                  onClick={() => setShowFullDescription(true)}
-                  className="text-primary hover:underline ml-1"
-                >
-                  more
-                </button>
-              </>
-            )}
-            {showFullDescription && stop.description.length > 100 && (
-              <button
-                onClick={() => setShowFullDescription(false)}
-                className="text-primary hover:underline ml-1"
-              >
-                less
-              </button>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+          )}
+          {typeof travel?.fromPrevDriveMin === 'number' && (
+            <span className="bg-black/30 rounded-md px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap">
+              <Car className="h-3 w-3" /> {travel.fromPrevDriveMin}m drive
+            </span>
+          )}
+          {conflicts.map((c) => (
+            <span key={c} className="bg-amber-500/20 text-amber-200 rounded-md px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap">
+              <AlertTriangle className="h-3 w-3" /> {c.replace('_',' ')}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

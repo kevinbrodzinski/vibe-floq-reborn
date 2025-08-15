@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanInviteButton } from '@/components/PlanInviteButton';
@@ -8,6 +8,7 @@ import { PlansGrid } from './PlansGrid';
 import { PlansFilters } from './PlansFilters';
 import { PlansSkeleton } from './PlansSkeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { ComprehensiveStopModal } from './ComprehensiveStopModal';
 import { useNavigate } from 'react-router-dom';
 import { zIndex } from '@/constants/z';
 import { motion } from 'framer-motion';
@@ -21,6 +22,10 @@ export const PlansHub: React.FC = () => {
     setFilter,
     searchQuery,
     setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     isLoading,
     isLoadingAdditional,
     counts
@@ -101,6 +106,10 @@ export const PlansHub: React.FC = () => {
             onChange={setFilter}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
             counts={counts}
           />
         </motion.div>

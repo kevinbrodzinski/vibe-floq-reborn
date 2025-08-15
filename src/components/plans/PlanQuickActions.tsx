@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ export function PlanQuickActions({
 }: PlanQuickActionsProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isPending, startTransition] = useTransition();
 
   const handleShare = async () => {
     const url = `${window.location.origin}/plans/${planId}`;
@@ -90,7 +91,9 @@ export function PlanQuickActions({
   };
 
   const handleOpenChat = () => {
-    navigate(`/plan/${planId}`);
+    startTransition(() => {
+      navigate(`/plan/${planId}`);
+    });
   };
 
   return (
@@ -170,7 +173,7 @@ export function PlanQuickActions({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(`/plan/${planId}`)}
+          onClick={() => startTransition(() => navigate(`/plan/${planId}`))}
           className="justify-start"
         >
           <ExternalLink className="w-4 h-4 mr-2" />

@@ -12,11 +12,11 @@ export const VibeGlowRing = ({ className, children }: VibeGlowRingProps) => {
   const currentVibe = useCurrentVibe();
   const [animationPhase, setAnimationPhase] = useState(0);
 
-  // Create subtle pulsing animation
+  // Create subtle pulsing animation with throttling
   useEffect(() => {
     const interval = setInterval(() => {
       setAnimationPhase((prev) => (prev + 1) % 100);
-    }, 80); // 80ms for smooth but subtle animation
+    }, 150); // Increased interval to 150ms to reduce re-renders
 
     return () => clearInterval(interval);
   }, []);

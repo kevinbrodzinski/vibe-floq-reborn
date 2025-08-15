@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Sparkles, Clock, MapPin, Users, TrendingUp, X, RefreshCw } from 'lucide-react'
-import { PlanStop } from '@/types/plan'
+import type { PlanStop } from '@/types/plan'
 
 interface SuggestionReason {
   type: 'optimal_timing' | 'travel_efficiency' | 'crowd_patterns' | 'weather' | 'popularity'
@@ -32,17 +32,17 @@ interface NovaSuggestionsProps {
     vibes?: string[]
     interests?: string[]
   }
-  onAcceptSuggestion: (suggestion: TimeSlotSuggestion) => void
+  onAcceptSuggestion: (suggestion: TimeSlotSuggestion) => Promise<void> | void
   onDismiss: () => void
   className?: string
 }
 
 export function NovaSuggestions({
   planId,
-  existingStops,
-  timeRange,
-  participants,
-  preferences,
+  existingStops: _existingStops,
+  timeRange: _timeRange,
+  participants: _participants,
+  preferences: _preferences,
   onAcceptSuggestion,
   onDismiss,
   className = ""
@@ -51,7 +51,10 @@ export function NovaSuggestions({
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  
+  // Separate refs to avoid race conditions
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const fetchRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // API-ready toggle for future server integration
   const USE_MOCK = true
@@ -145,55 +148,39 @@ export function NovaSuggestions({
     }
   }, [])
 
-  // Genuine debounced refresh to prevent rapid clicks
+  // Debounced manual refresh
   const debouncedRefresh = useCallback(() => {
-    if (timeoutRef.current) return // Genuine debounce guard
-    
+    if (debounceRef.current) return
     setRefreshKey(k => k + 1)
-    timeoutRef.current = setTimeout(() => {
-      timeoutRef.current = null
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null
     }, 300)
   }, [])
 
-  // Stable callback – only recreated when planId or refreshKey changes
-  const generateSuggestions = useCallback(async () => {
+  // Generate suggestions (simulated delay)
+  const generateSuggestions = useCallback(() => {
     setIsLoading(true)
-    
-    try {
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+    if (fetchRef.current) clearTimeout(fetchRef.current)
+    fetchRef.current = setTimeout(async () => {
+      try {
+        const s = await fetchSuggestions()
+        setSuggestions(s)
+      } catch (err) {
+        console.error('Failed to fetch suggestions:', err)
+        setSuggestions([])
+      } finally {
+        setIsLoading(false)
       }
-      
-      // Simulate AI processing delay
-      timeoutRef.current = setTimeout(async () => {
-        try {
-          const suggestions = await fetchSuggestions()
-          setSuggestions(suggestions)
-        } catch (error) {
-          console.error('Failed to fetch suggestions:', error)
-          setSuggestions([])
-        } finally {
-          setIsLoading(false)
-        }
-      }, 1500)
-    } catch (error) {
-      console.error('Failed to generate suggestions:', error)
-      setSuggestions([])
-      setIsLoading(false)
-    }
-  }, [planId, refreshKey]) // Remove fetchSuggestions from deps since it's stable
+    }, 1500)
+  }, [fetchSuggestions])
 
-  // Only run on mount + manual refresh
+  // On mount + when planId/refreshKey changes
   useEffect(() => {
     generateSuggestions()
-    // Cleanup: cancel pending timeout if unmounted
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+      if (fetchRef.current) clearTimeout(fetchRef.current)
     }
-  }, [generateSuggestions])
+  }, [generateSuggestions, planId, refreshKey])
 
   const getReasonIcon = (type: SuggestionReason['type']) => {
     switch (type) {
@@ -272,14 +259,15 @@ export function NovaSuggestions({
         {suggestions.map((suggestion) => (
           <div
             key={suggestion.id}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedSuggestion(suggestion.id === selectedSuggestion ? null : suggestion.id)}
             className={`p-3 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer w-full max-w-full overflow-hidden ${
               selectedSuggestion === suggestion.id
                 ? 'border-primary bg-primary/5 shadow-sm'
                 : 'border-border/30 hover:border-border/50 hover:bg-muted/20'
             }`}
-            onClick={() => setSelectedSuggestion(
-              selectedSuggestion === suggestion.id ? null : suggestion.id
-            )}
+            onClick={() => setSelectedSuggestion(selectedSuggestion === suggestion.id ? null : suggestion.id)}
           >
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-3">
               <div className="flex-1 min-w-0">

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -28,15 +28,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader className="space-y-1.5">
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
           {description && (
-            <p 
-              id="confirm-desc"
-              className="text-sm text-muted-foreground leading-relaxed"
-              aria-describedby={description ? 'confirm-desc' : undefined}
-            >
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
               {description}
-            </p>
+            </DialogDescription>
           )}
         </DialogHeader>
 

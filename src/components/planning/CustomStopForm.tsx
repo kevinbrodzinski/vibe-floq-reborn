@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Clock, MapPin, DollarSign, Sparkles } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
-import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
+import { useUnifiedPlanStops } from '@/hooks/useUnifiedPlanStops'
 import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -38,7 +38,7 @@ export function CustomStopForm({
   const [usedNovaSuggestion, setUsedNovaSuggestion] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useLegacyCollaborativeState(planId)
+  const { createStop } = useUnifiedPlanStops(planId)
   const { data: existingStops } = usePlanStops(planId)
   const { data: userPreferences } = useUserPreferences()
   
@@ -68,29 +68,14 @@ export function CustomStopForm({
 
     setIsSubmitting(true)
     try {
-      const newStop: PlanStop = {
-        id: '', // Will be set by the backend
+      await createStop.mutateAsync({
         plan_id: planId,
         title: title.trim(),
-        description: description.trim() || '',
-        startTime: startTime,
-        endTime: endTime,
+        description: description.trim() || undefined,
         start_time: startTime,
         end_time: endTime,
-        location: '',
-        venue: '',
-        address: '',
-        vibeMatch: 0.8,
-        status: 'confirmed' as const,
-        color: '#3B82F6',
-        stop_order: (existingStops?.length || 0) + 1,
-        createdBy: '',
-        participants: [],
-        votes: [],
-        kind: 'custom' as any
-      }
-
-      await addStop(newStop)
+        estimated_cost_per_person: estimatedCost ? parseFloat(estimatedCost) : undefined,
+      })
       
       // Track successful stop creation
       trackEvent('stop_created', {

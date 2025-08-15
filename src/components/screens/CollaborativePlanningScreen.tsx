@@ -1,713 +1,609 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { useParams } from 'react-router-dom';
-import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
-import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
-import { PlanInviteButton } from "@/components/PlanInviteButton";
-import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
-import { TimeProgressBar } from "@/components/TimeProgressBar";
-import { useLegacyCollaborativeState } from "@/hooks/useLegacyCollaborativeState";
-import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
-import { useHapticFeedback } from "@/hooks/useHapticFeedback";
-import { LiveParticipantTracker } from "@/components/LiveParticipantTracker";
-import { VenueCardLibrary } from "@/components/VenueCardLibrary";
-import { TimelineGrid } from "@/components/planning/TimelineGrid";
-import { PlanningChat } from "@/components/PlanningChat";
-import { NovaSuggestions } from "@/components/planning/NovaSuggestions";
-import { TimelineOverlapValidator } from "@/components/planning/TimelineOverlapValidator";
-import { PlanTemplatesPanel } from "@/components/planning/PlanTemplatesPanel";
-import { SocialPulseOverlay } from "@/components/SocialPulseOverlay";
-import { PlanExecutionTracker } from "@/components/PlanExecutionTracker";
-import { VotingThresholdMeter } from "@/components/VotingThresholdMeter";
-import { TiebreakerSuggestions } from "@/components/TiebreakerSuggestions";
-import { RSVPCard } from "@/components/RSVPCard";
-import { SharePlanButton } from "@/components/SharePlanButton";
-import { ExecutionOverlay } from "@/components/ExecutionOverlay";
-import { PlanPresenceIndicator } from "@/components/PlanPresenceIndicator";
-import { SummaryReviewPanel } from "@/components/SummaryReviewPanel";
-import { PlanChatSidebar } from "@/components/PlanChatSidebar";
-import { PlanSummaryCard } from "@/components/plan/PlanSummaryCard";
-import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
-import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
-import { PlanStatusActions } from "@/components/plans/PlanStatusActions";
-import { usePlanStatusValidation } from "@/hooks/usePlanStatusValidation";
-import { useRealtimePlanSync } from "@/hooks/useRealtimePlanSync";
-import { usePlanPresence } from "@/hooks/usePlanPresence";
-import { usePlanSummaries } from "@/hooks/usePlanSummaries";
-import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
-import { useCollaborativeState } from "@/hooks/useCollaborativeState";
-import { supabase } from "@/integrations/supabase/client";
-import { getSafeStatus } from '@/lib/planStatusConfig';
-import { SummaryModeEnum } from '@/types/enums/summaryMode';
-import { toastError } from '@/lib/toast';
-import { usePlanAutoProgression } from '@/hooks/usePlanAutoProgression';
-import * as Collapsible from '@radix-ui/react-collapsible';
+import * as React from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  ChevronLeft, 
+  Plus, 
+  Users, 
+  MessageCircle, 
+  Settings,
+  Sparkles,
+  Clock,
+  Play,
+  Save,
+  Share2,
+  MoreHorizontal,
+  Filter,
+  SortAsc
+} from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { 
+  DndContext, 
+  DragEndEvent, 
+  useSensor, 
+  useSensors, 
+  PointerSensor, 
+  KeyboardSensor,
+  closestCenter 
+} from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy, 
+  arrayMove 
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+
+// Hooks
+import { usePlan } from '@/hooks/usePlan';
+import { usePlanStops } from '@/hooks/usePlanStops';
+import { useUnifiedPlanStops } from '@/hooks/useUnifiedPlanStops';
+import { usePlanPresence } from '@/hooks/usePlanPresence';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+
+// Components
+import { CollaborativeStopCard } from '@/components/planning/CollaborativeStopCard';
+import { ComprehensiveStopModal } from '@/components/plans/ComprehensiveStopModal';
+import { NovaSuggestions } from '@/components/planning/NovaSuggestions';
+import { supabase } from '@/integrations/supabase/client';
 
 export const CollaborativePlanningScreen = () => {
   const { planId } = useParams<{ planId: string }>();
-  
-  const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
-  const [showChat, setShowChat] = useState(false);
-  const [venueSearchQuery, setVenueSearchQuery] = useState("");
-  const [showTiebreaker, setShowTiebreaker] = useState(false);
-  const [currentUserRSVP, setCurrentUserRSVP] = useState<'attending' | 'maybe' | 'not_attending' | 'pending'>('pending');
-  const [showExecutionOverlay, setShowExecutionOverlay] = useState(false);
-  const [overlayAction, setOverlayAction] = useState<'vote' | 'rsvp' | 'check-in' | 'stop-action'>('vote');
-  const [overlayFeedback, setOverlayFeedback] = useState('');
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [showSummaryEditModal, setShowSummaryEditModal] = useState(false);
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Local state
+  const [showAddStopModal, setShowAddStopModal] = useState(false);
   const [showNovaSuggestions, setShowNovaSuggestions] = useState(true);
-  const [isNovaSuggestionsExpanded, setIsNovaSuggestionsExpanded] = useState(false);
-  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  const [isDragOperationPending, setIsDragOperationPending] = useState(false);
-  const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
-  const overlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-  // Use the actual plan ID from URL params - throw error if missing
+  const [sortBy, setSortBy] = useState<'time' | 'votes' | 'status'>('time');
+  const [filterBy, setFilterBy] = useState<'all' | 'confirmed' | 'pending' | 'needs_votes'>('all');
+  const [editingStop, setEditingStop] = useState<any>(null);
+
+  // Validate planId
   if (!planId) {
-    throw new Error('Plan ID is required but not provided in URL params');
-  }
-  const actualPlanId = planId;
-  
-
-  // Get collaborative state including all functions
-  const {
-    stops,
-    isLoading,
-    removeStop,
-    reorderStops,
-    addStop,
-    voteOnStop
-  } = useLegacyCollaborativeState(actualPlanId);
-
-  // Mock the remaining properties that need real implementation
-  const plan = { 
-    id: actualPlanId,
-    title: 'Collaborative Plan',
-    date: new Date().toISOString().split('T')[0],
-    stops, 
-    status: 'draft' as const,
-    participants: [], // TODO: Get from usePlanRoom
-    creator_id: 'current-user'
-  };
-  const activities = []; // TODO: Get from plan activities hook
-  
-  const recentVotes = []; // TODO: Get from plan votes hook
-
-  // Status validation for edit guards
-  const { canEditPlan, canVoteOnStops } = usePlanStatusValidation()
-
-  // Get haptic feedback hook
-  const { socialHaptics: hapticFeedback } = useHapticFeedback()
-
-  // Template functions
-  const handleLoadTemplate = (templateStops: any[]) => {
-    // Generate new IDs using uuid and add to current plan
-    const { v4: uuidv4 } = require('uuid')
-    const newStops = templateStops.map((stop, index) => ({
-      ...stop,
-      id: uuidv4(),
-      participants: [],
-      created_by: 'current-user'
-    }))
-    
-    newStops.forEach(stop => {
-      addStop(stop)
-    })
-  }
-
-
-  const handleStopAdd = (timeSlot: string) => {
-    // Check if plan can be edited - normalize status with fallback
-    const normalizedStatus = getSafeStatus(plan.status)
-    if (!canEditPlan(normalizedStatus)) {
-      toastError('Action blocked', 'This plan cannot be edited in its current status.');
-      return;
-    }
-
-    hapticFeedback.gestureConfirm();
-    const { v4: uuidv4 } = require('uuid')
-    const newStop = {
-      id: uuidv4(),
-      title: "New Stop",
-      venue: "TBD",
-      description: "Add details",
-      startTime: timeSlot,
-      endTime: "22:00",
-      start_time: timeSlot,
-      end_time: "22:00",
-      location: "TBD",
-      vibeMatch: 50,
-      status: 'suggested' as const,
-      color: "hsl(200 70% 60%)",
-      kind: 'restaurant' as any,
-      createdBy: 'current-user',
-      participants: [],
-      votes: []
-    };
-    addStop(newStop);
-    showOverlay('stop-action', 'Stop created!');
-  };
-
-  const handleStopReorderByIndex = async (stopId: string, newIndex: number) => {
-    // Check if plan can be edited - normalize status with fallback
-    const normalizedStatus = getSafeStatus(plan.status)
-    if (!canEditPlan(normalizedStatus)) {
-      toastError('Action blocked', 'This plan cannot be edited in its current status.');
-      return;
-    }
-
-    setIsDragOperationPending(true);
-    try {
-      const stopIndex = plan.stops.findIndex(s => s.id === stopId);
-      
-      if (stopIndex !== -1) {
-        await reorderStops(stopIndex, newIndex);
-      }
-      
-      showOverlay('stop-action', 'Timeline updated');
-    } finally {
-      setIsDragOperationPending(false);
-    }
-  };
-
-  const handleStopSelect = (stopId: string) => {
-    setSelectedStopIds(prev => 
-      prev.includes(stopId) 
-        ? prev.filter(id => id !== stopId)
-        : [...prev, stopId]
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Invalid Plan</h2>
+          <p className="text-white/60 mb-4">Plan ID is required but not provided</p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
     );
-  };
+  }
 
-  // Drag and drop handler with correct signature
-  const handleStopReorder = (activeId: string, overId: string) => {
-    const stopsArray = stops || []
-    const overIndex = stopsArray.findIndex(stop => stop.id === overId)
-    if (overIndex !== -1) {
-      handleStopReorderByIndex(activeId, overIndex)
-    }
-  };
-
-  // Keyboard shortcuts
-  const { shortcuts } = useKeyboardShortcuts({
-    onAddStop: () => handleStopAdd("20:00"),
-    onDeleteStop: () => {
-      if (selectedStopIds.length > 0) {
-        selectedStopIds.forEach(stopId => removeStop(stopId));
-        setSelectedStopIds([]);
-      }
-    },
-    onExecutePlan: () => {}, // Handled by PlanStatusActions now
-    onToggleChat: () => setShowChat(!showChat),
-    onToggleSettings: () => console.log('Settings toggled'),
-    onSavePlan: () => console.log('Plan saved'),
-    onUndoAction: () => console.log('Undo'),
-    onRedoAction: () => console.log('Redo'),
-    onSearch: () => (document.querySelector('input[placeholder*="Search"]') as HTMLInputElement)?.focus(),
-    onHelp: () => setShowKeyboardHelp(true)
-  });
-
-  // Mock collaboration state for now
-  const collaborationParticipants = plan.participants;
-  const connectionStatus = 'connected';
-  const isOptimistic = false;
-
-  // Plan summaries
-  const { data: summaries } = usePlanSummaries(plan.id);
-  const generateSummary = useGeneratePlanSummary();
-
-  // Real-time presence tracking with silent join
-  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id, { silent: true });
+  // Data hooks
+  const { data: plan, isLoading: isPlanLoading, error: planError } = usePlan(planId);
+  const { data: stops = [], isLoading: isStopsLoading, error: stopsError } = usePlanStops(planId);
+  const { onlineUsers, totalOnline } = usePlanPresence(planId);
   
-  // Collaborative state for save indicator
-  const { saving } = useCollaborativeState({ planId: plan.id });
+  // Unified stop operations
+  const { 
+    createStop, 
+    deleteStop, 
+    reorderStops,
+    isCreating,
+    isDeleting 
+  } = useUnifiedPlanStops(planId);
 
-  // Auto-progression for plan completion
-  usePlanAutoProgression({
-    planId: plan.id,
-    planStatus: plan.status || 'draft',
-    stops: plan.stops,
-    isCreator: plan.creator_id === 'current-user',
-    enabled: true
-  });
+  // Show error state if plan or stops failed to load
+  if (planError || stopsError) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Failed to Load Plan</h2>
+          <p className="text-white/60 mb-4">
+            {planError?.message || stopsError?.message || 'Something went wrong'}
+          </p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-  // Real-time sync hook for live collaboration
-  const sync = useRealtimePlanSync({
-    plan_id: plan.id,
-    onParticipantJoined: (participant) => {
-      console.log('Participant joined:', participant);
-    },
-    onVoteCast: (voteData) => {
-      console.log('Vote update:', voteData);
-      showOverlay('vote', 'Vote submitted ✓');
-    },
-    onStopUpdated: (stopData) => {
-      console.log('Stop update:', stopData);
-      showOverlay('stop-action', 'Timeline updated');
-    },
-  });
-  
-  const isConnected = sync.isConnected;
-  const activeParticipants = [];
-  const syncedPlanMode = planMode;
+  // Show loading state while plan or stops are loading
+  if (isPlanLoading || isStopsLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60">Loading collaborative timeline...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Overlay feedback helper with auto-dismiss
-  const showOverlay = useCallback(
-    (action: typeof overlayAction, feedback: string, ms = 2500) => {
-      setOverlayAction(action);
-      setOverlayFeedback(feedback);
-      setShowExecutionOverlay(true);
-      
-      if (overlayTimeoutRef.current) {
-        clearTimeout(overlayTimeoutRef.current);
-      }
-      
-      overlayTimeoutRef.current = setTimeout(() => {
-        setShowExecutionOverlay(false);
-        overlayTimeoutRef.current = null;
-      }, ms);
+  // Validate that plan exists after loading
+  if (!plan) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Plan Not Found</h2>
+          <p className="text-white/60 mb-4">The requested plan could not be found</p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Query client for cache invalidation
+  const queryClient2 = useQueryClient();
+
+  /** Update a stop in DB and refresh cached list. */
+  const updateStop = React.useCallback(
+    async (id: string, patch: Partial<any>) => {
+      const dbPatch: Record<string, any> = {};
+      if (patch.title !== undefined) dbPatch.title = patch.title;
+      if ((patch as any).description !== undefined) dbPatch.description = (patch as any).description;
+
+      const start = (patch as any).start_time ?? (patch as any).start;
+      const end   = (patch as any).end_time   ?? (patch as any).end;
+      if (start !== undefined) dbPatch.start_time = start instanceof Date ? start.toISOString() : start;
+      if (end   !== undefined) dbPatch.end_time   = end   instanceof Date ? end.toISOString()   : end;
+
+      if ((patch as any).venue_id !== undefined) dbPatch.venue_id = (patch as any).venue_id;
+      if ((patch as any).order_index !== undefined) dbPatch.order_index = (patch as any).order_index;
+      if ((patch as any).status !== undefined) dbPatch.status = (patch as any).status;
+      if ((patch as any).stop_order !== undefined) dbPatch.stop_order = (patch as any).stop_order;
+
+      const { error } = await supabase.from('plan_stops').update(dbPatch).eq('id', id);
+      if (error) throw error;
+
+      await queryClient2.invalidateQueries({ queryKey: ['plan-stops', planId] });
     },
-    []  
+    [planId, queryClient2]
   );
 
-  const handleAcceptSuggestion = async (s: any) => {
-    const { v4: uuidv4 } = require('uuid')
-    const newStop = {
-      id: uuidv4(),
-      title: s.title,
-      venue: s.venue ?? 'TBD',
-      description: `AI suggested: ${s.reasons?.[0]?.description ?? ''}`,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      start_time: s.startTime,
-      end_time: s.endTime,
-      location: s.location ?? 'TBD',
-      vibeMatch: s.vibeMatch,
-      status: 'suggested' as const,
-      color: 'hsl(280 70% 60%)',
-      kind: 'restaurant' as any,
-      createdBy: 'current-user',
-      participants: [],
-      votes: []
-    };
+  // Drag and drop sensors with keyboard support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
-    await addStop(newStop);
-    showOverlay('stop-action', 'AI suggestion added!');
-  };
+  // Handle drag end with optimistic updates
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event;
 
-  // Enhanced RSVP handler with persistence
-  const handleRSVPChange = async (status: typeof currentUserRSVP) => {
-    setCurrentUserRSVP(status);
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = stops.findIndex(stop => stop.id === active.id);
+    const newIndex = stops.findIndex(stop => stop.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // 1) Optimistic local reorder
+    const reorderedStops = arrayMove(stops, oldIndex, newIndex);
     
-    // Persist RSVP to Supabase
+    // 2) Optimistic cache update
+    queryClient2.setQueryData(['plan-stops', planId], reorderedStops.map((s, i) => ({ ...s, stop_order: i })));
+
+    // 3) Prepare minimal update payload (only rows whose index changed)
+    const updates: { id: string; stop_order: number }[] = [];
+    reorderedStops.forEach((s, idx) => {
+      if (s.stop_order !== idx) {
+        updates.push({ id: s.id, stop_order: idx });
+      }
+    });
+
+    if (updates.length === 0) return;
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Note: In production, this would update the participant's RSVP status
-        console.log('RSVP updated:', status);
-        showOverlay('rsvp', `RSVP: ${status}`);
+      // 4) Persist in one upsert round-trip (fast path)
+      const { error } = await supabase.from('plan_stops').upsert(updates, { onConflict: 'id' });
+      
+      if (error) {
+        console.error('[DnD persist] upsert failed, trying per-row updates', error);
+        // Fallback to individual updates
+        await Promise.all(updates.map((u) => updateStop(u.id, { stop_order: u.stop_order })));
       }
+
+      // 5) Refresh cache to ensure consistency
+      await queryClient2.invalidateQueries({ queryKey: ['plan-stops', planId] });
+      
+      toast({ title: "Timeline reordered successfully" });
     } catch (error) {
-      console.error('Failed to persist RSVP:', error);
+      console.error('[DnD persist] all updates failed', error);
+      
+      // 6) Revert optimistic update on failure
+      await queryClient2.invalidateQueries({ queryKey: ['plan-stops', planId] });
+      
+      toast({
+        title: "Failed to reorder timeline",
+        description: "Changes have been reverted. Please try again.",
+        variant: "destructive",
+      });
     }
-  };
+  }, [stops, updateStop, toast, queryClient2, planId]);
 
-  // Use the already declared hapticFeedback instead of duplicating
-
-  const { controls: { startListening } } = useAdvancedGestures({
-    onGesture: (gesture) => {
-      switch (gesture.type) {
-        case 'shake':
-          hapticFeedback.shakeActivated();
-          // Add random venue suggestion on shake
-          break;
-        case 'swipe-left':
-          if (showChat) setShowChat(false);
-          break;
-        case 'swipe-right': 
-          if (!showChat) setShowChat(true);
-          break;
-        case 'long-press':
-          hapticFeedback.longPressActivated();
-          // Show context menu for long press
-          break;
-      }
-    }
-  });
-
-  // Start gesture listening on mount
-  useEffect(() => {
-    startListening();
-  }, [startListening]);
-
-  // Cleanup overlay timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (overlayTimeoutRef.current) {
-        clearTimeout(overlayTimeoutRef.current);
-      }
-    };
+  // Handle stop actions
+  const handleEditStop = useCallback((stop: any) => {
+    setEditingStop(stop);
+    setShowAddStopModal(true);
   }, []);
 
-  const handleVenueSelect = (venue: any) => {
-    // Check if plan can be edited - normalize status with fallback
-    const normalizedStatus = getSafeStatus(plan.status)
-    if (!canEditPlan(normalizedStatus)) {
-      toastError('Action blocked', 'This plan cannot be edited in its current status.');
-      return;
+  const handleDeleteStop = useCallback(async (stopId: string) => {
+    if (confirm('Are you sure you want to delete this stop?')) {
+      try {
+        await deleteStop(stopId);
+        toast({ title: "Stop deleted successfully" });
+      } catch (error) {
+        toast({
+          title: "Failed to delete stop",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [deleteStop, toast]);
+
+  const handleVoteChange = useCallback((stopId: string, upVotes: number, downVotes: number) => {
+    // Optional: Update local state or trigger additional actions based on vote changes
+    console.log(`Stop ${stopId} votes: ${upVotes} up, ${downVotes} down`);
+  }, []);
+
+  // Filter and sort stops
+  const processedStops = useMemo(() => {
+    let filtered = stops;
+
+    // Apply filters
+    if (filterBy !== 'all') {
+      switch (filterBy) {
+        case 'confirmed':
+          filtered = stops.filter(stop => stop.status === 'confirmed');
+          break;
+        case 'pending':
+          filtered = stops.filter(stop => stop.status === 'pending');
+          break;
+        case 'needs_votes':
+          // This would require vote data - for now just show pending
+          filtered = stops.filter(stop => stop.status === 'pending');
+          break;
+      }
     }
 
-    hapticFeedback.gestureConfirm();
-    const { v4: uuidv4 } = require('uuid')
-    const newStop = {
-      id: uuidv4(),
-      title: `${venue.type} at ${venue.name}`,
-      venue: venue.name,
-      description: venue.description,
-      startTime: "20:00",
-      endTime: "22:00",
-      start_time: "20:00",
-      end_time: "22:00",
-      location: venue.location,
-      vibeMatch: venue.vibeMatch,
-      status: 'suggested' as const,
-      color: venue.color,
-      kind: 'restaurant' as any,
-      createdBy: 'current-user',
-      participants: [],
-      votes: []
-    };
-    addStop(newStop);
-    showOverlay('stop-action', 'Stop added!');
-  };
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'time':
+          if (!a.start_time && !b.start_time) return 0;
+          if (!a.start_time) return 1;
+          if (!b.start_time) return -1;
+          return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+        case 'status':
+          const statusOrder = { 'confirmed': 0, 'pending': 1, 'draft': 2, 'cancelled': 3 };
+          return (statusOrder[a.status as keyof typeof statusOrder] || 2) - (statusOrder[b.status as keyof typeof statusOrder] || 2);
+        case 'votes':
+          // Would need vote data - for now sort by stop_order
+          return (a.stop_order || 0) - (b.stop_order || 0);
+        default:
+          return (a.stop_order || 0) - (b.stop_order || 0);
+      }
+    });
 
+    return sorted;
+  }, [stops, sortBy, filterBy]);
 
-  const handleSendChatMessage = (content: string, type = 'message') => {
-    // In a real app, this would send to Supabase
-    const newMessage = {
-      id: Date.now().toString(),
-      profileId: 'current-user',
-      userName: 'You',
-      userAvatar: '',
-      content,
-      timestamp: new Date(),
-      type
-    };
-    setChatMessages(prev => [...prev, newMessage]);
-  };
+  const isCreator = plan?.creator_id === session?.user?.id;
+
+  if (isPlanLoading || isStopsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-field flex items-center justify-center">
+        <div className="animate-pulse space-y-4 w-full max-w-md px-4">
+          <div className="h-8 bg-white/10 rounded-lg"></div>
+          <div className="h-32 bg-white/10 rounded-xl"></div>
+          <div className="h-24 bg-white/10 rounded-xl"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!plan) {
+    return (
+      <div className="min-h-screen bg-gradient-field flex items-center justify-center">
+        <div className="text-center text-white p-8">
+          <h2 className="text-xl font-semibold mb-2">Plan not found</h2>
+          <p className="text-white/70 mb-4">This plan may have been deleted or you don't have access.</p>
+          <Button onClick={() => navigate('/plans')} variant="outline">
+            Back to Plans
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-field pb-24 sm:pb-6">
-      {/* Execution Overlay */}
-      <ExecutionOverlay
-        isVisible={showExecutionOverlay}
-        action={overlayAction}
-        feedback={overlayFeedback}
-        onComplete={() => setShowExecutionOverlay(false)}
-      />
-
-      {/* Chat will be integrated with existing PlanningChat */}
-
-      {/* Keyboard Shortcut Help */}
-      <KeyboardShortcutHelp
-        shortcuts={shortcuts}
-        isVisible={showKeyboardHelp}
-        onClose={() => setShowKeyboardHelp(false)}
-      />
-
-      {/* Social Pulse Overlay */}
-      {planMode === 'planning' && <SocialPulseOverlay />}
-
+    <div className="min-h-screen bg-gradient-field">
       {/* Header */}
-      <div className="p-4 sm:p-6 pt-16">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent truncate">
+      <div className="sticky top-0 z-50 bg-gradient-field/95 backdrop-blur-xl border-b border-white/10">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate(`/plans/${planId}`)}
+              className="text-white hover:bg-white/10"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Plan Details
+            </Button>
+            
+            <div className="hidden sm:block">
+              <h1 className="font-semibold text-white truncate max-w-[200px]">
                 {plan.title}
               </h1>
-              <PlanStatusBadge 
-                status={getSafeStatus(plan.status)} 
-                size="default"
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
-              <span>{plan.date}</span>
-              <span className="hidden sm:inline">•</span>
-              <PlanPresenceIndicator
-                participants={plan.participants}
-                isConnected={isConnected}
-              />
-              <span className="hidden sm:inline">•</span>
-              <span className="capitalize text-primary">{syncedPlanMode || planMode}</span>
-              {saving === 'done' && (
-                <div className="flex items-center gap-1 text-green-600 animate-fade">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs">Saved</span>
-                </div>
-              )}
+              <p className="text-xs text-white/60">Timeline Editor</p>
             </div>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Status transition buttons - prominent for major actions */}
-            <PlanStatusActions 
-              planId={plan.id}
-              currentStatus={getSafeStatus(plan.status)}
-              isCreator={plan.creator_id === 'current-user'} // This would come from auth
-              hasStops={plan.stops.length > 0}
-              hasParticipants={plan.participants.length > 0}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"
-            />
-            
-            <PlanInviteButton />
-            <SharePlanButton 
-              planId={plan.id}
-              planTitle={plan.title}
+
+          <div className="flex items-center gap-2">
+            {/* Online Users */}
+            {totalOnline > 0 && (
+              <div className="flex items-center gap-1 bg-white/10 rounded-full px-3 py-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-xs text-white">{totalOnline} online</span>
+                <div className="flex -space-x-1 ml-1">
+                  {onlineUsers.slice(0, 3).map((user, index) => (
+                    <Avatar key={user.userId} className="w-5 h-5 border border-white/20">
+                      <AvatarImage src={user.avatarUrl || ''} />
+                      <AvatarFallback className="bg-gradient-primary text-xs">
+                        {user.displayName?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <Button
               variant="ghost"
               size="sm"
-            />
-            <button 
-              onClick={() => setShowChat(!showChat)}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                showChat ? 'bg-primary text-primary-foreground glow-primary' : 'bg-card/50 text-muted-foreground hover:bg-card/80'
-              }`}
-              title="Toggle chat"
+              onClick={() => navigate(`/plans/${planId}`)}
+              className="text-white hover:bg-white/10"
             >
-              <MessageCircle size={18} className="sm:w-5 sm:h-5" />
-            </button>
-            <button 
-              onClick={() => setShowKeyboardHelp(true)}
-              className="hidden sm:flex p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
-              title="Keyboard shortcuts (?)"
-            >
-              <HelpCircle size={20} className="text-muted-foreground" />
-            </button>
-            <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
-              <Settings size={18} className="sm:w-5 sm:h-5 text-muted-foreground" />
-            </button>
+              <MessageCircle className="w-4 h-4" />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/10"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-black/90 border-white/20">
+                <DropdownMenuItem className="text-white hover:bg-white/10">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share Timeline
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:bg-white/10">
+                  <Save className="w-4 h-4 mr-2" />
+                  Export Timeline
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/20" />
+                <DropdownMenuItem className="text-white hover:bg-white/10">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Timeline Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
+      </div>
 
-        {/* Time Progress Bar */}
-        <TimeProgressBar
-          planStartTime={new Date(plan.date)}
-          planDuration={240} // 4 hours in minutes
-          className="mb-6"
-        />
+      <div className="p-4 pb-24 space-y-6">
+        {/* Control Bar */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 text-white">
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => setShowAddStopModal(true)}
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Stop
+                </Button>
 
-        {/* Live Participant Tracker */}
-        <LiveParticipantTracker 
-          updates={plan.participants.map(p => ({
-            id: p.id,
-            username: p.name,
-            avatar: p.avatar,
-            action: 'joined' as const,
-            timestamp: Date.now(),
-          }))}
-        />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNovaSuggestions(!showNovaSuggestions)}
+                  className={`border-white/20 text-white hover:bg-white/10 ${showNovaSuggestions ? 'bg-white/10' : ''}`}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Suggestions
+                </Button>
+              </div>
 
-        {/* RSVP Card */}
-        <RSVPCard
-          planId={plan.id}
-          planTitle={plan.title}
-          planDate={plan.date}
-          currentUserRSVP={currentUserRSVP}
-          attendeeCount={3} // Mock data - would come from real RSVP data
-          maybeCount={1} // Mock data - would come from real RSVP data
-          onRSVPChange={handleRSVPChange}
-          hasConflict={plan.stops.some(stop => plan.stops.some(other => 
-            stop.id !== other.id && 
-            stop.startTime < other.endTime && 
-            other.startTime < stop.endTime
-          ))}
-          className="mb-6"
-        />
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-white/20 text-white hover:bg-white/10"
+                    >
+                      <Filter className="w-4 h-4 mr-2" />
+                      {filterBy === 'all' ? 'All' : 
+                       filterBy === 'confirmed' ? 'Confirmed' :
+                       filterBy === 'pending' ? 'Pending' : 'Needs Votes'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-black/90 border-white/20">
+                    <DropdownMenuItem onClick={() => setFilterBy('all')} className="text-white hover:bg-white/10">
+                      All Stops
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilterBy('confirmed')} className="text-white hover:bg-white/10">
+                      Confirmed Only
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilterBy('pending')} className="text-white hover:bg-white/10">
+                      Pending Only
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilterBy('needs_votes')} className="text-white hover:bg-white/10">
+                      Needs Votes
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-        {/* Nova AI Suggestions - Moved from sidebar to main flow */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-white/20 text-white hover:bg-white/10"
+                    >
+                      <SortAsc className="w-4 h-4 mr-2" />
+                      {sortBy === 'time' ? 'Time' : 
+                       sortBy === 'votes' ? 'Votes' : 'Status'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-black/90 border-white/20">
+                    <DropdownMenuItem onClick={() => setSortBy('time')} className="text-white hover:bg-white/10">
+                      Sort by Time
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy('status')} className="text-white hover:bg-white/10">
+                      Sort by Status
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy('votes')} className="text-white hover:bg-white/10">
+                      Sort by Votes
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* AI Suggestions */}
         {showNovaSuggestions && (
-          <Collapsible.Root
-            open={isNovaSuggestionsExpanded}
-            onOpenChange={setIsNovaSuggestionsExpanded}
-            className="mb-4"
-          >
-            <Collapsible.Trigger asChild>
-              <button className="w-full flex items-center justify-between rounded-xl
-                                 bg-card/70 px-4 py-3 hover:bg-card/60 transition">
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="font-medium">Nova AI Suggestions</span>
-                </span>
-                {isNovaSuggestionsExpanded ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </button>
-            </Collapsible.Trigger>
-
-            <Collapsible.Content className="pt-3">
-              {isNovaSuggestionsExpanded && (
-                <NovaSuggestions
-                  planId={plan.id}
-                  existingStops={plan.stops}
-                  timeRange={{ start: "18:00", end: "23:59" }}
-                  participants={plan.participants.length}
-                  preferences={{
-                    budget: 'medium',
-                    vibes: ['energetic', 'social'],
-                    interests: ['dining', 'nightlife']
-                  }}
-                  onAcceptSuggestion={handleAcceptSuggestion}
-                  onDismiss={() => setShowNovaSuggestions(false)}
-                />
-              )}
-            </Collapsible.Content>
-          </Collapsible.Root>
-        )}
-
-        {/* Voting Threshold Meter - Only show for finalized+ plans */}
-        {canVoteOnStops(getSafeStatus(plan.status)) && (
-          <VotingThresholdMeter
-            totalParticipants={activeParticipants.length || plan.participants.length}
-            votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
-            threshold={60}
-            className="mb-6"
+          <NovaSuggestions
+            planId={planId}
+            existingStops={stops}
+            timeRange={{ start: "18:00", end: "23:59" }}
+            participants={totalOnline}
+            onAcceptSuggestion={async (suggestion) => {
+              try {
+                await createStop.mutateAsync({
+                  plan_id: planId,
+                  title: suggestion.title,
+                  description: `AI suggested: ${suggestion.venue || suggestion.location}`,
+                  start_time: suggestion.startTime,
+                  end_time: suggestion.endTime,
+                  duration_minutes: 60,
+                  venue_id: null, // We don't have venue IDs from AI suggestions
+                  estimated_cost_per_person: suggestion.estimatedCost
+                });
+                toast({ title: "AI suggestion added to timeline!" });
+              } catch (error) {
+                console.error('Failed to add AI suggestion:', error);
+                toast({
+                  title: "Failed to add suggestion",
+                  description: "Please try again",
+                  variant: "destructive",
+                });
+              }
+            }}
+            onDismiss={() => setShowNovaSuggestions(false)}
           />
         )}
 
-        {planMode === 'planning' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Left Column - Timeline Editor & Summary */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              
-              <MobileTimelineGrid
-                planId={plan.id}
-                planStatus={plan.status}
-                startTime="18:00"
-                endTime="23:59"
-                stops={stops}
-                onStopReorder={handleStopReorder}
-                onStopSelect={handleStopSelect}
-                onAddStop={handleStopAdd}
-              />
+        {/* Timeline */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Timeline ({processedStops.length} stops)
+            </h2>
+            
+            {processedStops.length > 0 && (
+              <Badge variant="outline" className="border-white/20 text-white">
+                {processedStops.filter(s => s.status === 'confirmed').length} confirmed
+              </Badge>
+            )}
+          </div>
 
-              {/* Plan Summary Card - Finalized Mode */}
-              <PlanSummaryCard
-                planId={plan.id}
-                mode={SummaryModeEnum.enum.finalized}
-                editable={true}
-                title="Plan Summary"
-              />
-
-              {/* Summary Review Panel */}
-              <SummaryReviewPanel
-                planTitle={plan.title}
-                planDate={plan.date}
-                stops={plan.stops.map(stop => ({
-                  id: stop.id,
-                  title: stop.title,
-                  venue: stop.venue,
-                  startTime: stop.startTime,
-                  endTime: stop.endTime,
-                  estimatedCost: 25,
-                  votes: { positive: 8, negative: 1, total: 9 },
-                  status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
-                }))}
-                participants={activeParticipants.length > 0 
-                  ? activeParticipants.map(p => ({ 
-                      id: p.user_id, 
-                      name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
-                      rsvpStatus: p.rsvp_status || 'pending' 
-                    }))
-                  : plan.participants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
-                }
-                totalBudget={150}
-                onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
-                onEdit={(stopId) => console.log('Edit stop:', stopId)}
-              />
-
-              {/* Tiebreaker Suggestions */}
-              {showTiebreaker && (
-                <TiebreakerSuggestions
-                  stopId="current-stop"
-                  tiedOptions={["Option A", "Option B"]}
-                  onSelectRecommendation={(rec) => {
-                    console.log('AI recommends:', rec);
-                    setShowTiebreaker(false);
-                    showOverlay('vote', 'Tiebreaker applied!');
-                  }}
-                  className="mb-6"
-                />
-              )}
-              
-            </div>
-
-            {/* Right Column - Mobile-optimized */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Venue Search - Hidden on mobile */}
-              <div className="hidden md:block bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30">
-                <div className="relative mb-4">
-                  <input
-                    type="text"
-                    value={venueSearchQuery}
-                    onChange={(e) => setVenueSearchQuery(e.target.value)}
-                    placeholder="Search venues..."
-                    className="w-full bg-background/50 border border-border/30 rounded-2xl py-3 px-4 pr-12 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-300"
-                  />
-                  <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          {processedStops.length > 0 ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            >
+              <SortableContext 
+                items={processedStops.map(stop => stop.id)} 
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {processedStops.map((stop, index) => (
+                    <CollaborativeStopCard
+                      key={stop.id}
+                      stop={stop}
+                      planId={planId}
+                      index={index}
+                      onEdit={handleEditStop}
+                      onDelete={handleDeleteStop}
+                      onVoteChange={handleVoteChange}
+                    />
+                  ))}
                 </div>
-                
-                <VenueCardLibrary
-                  onVenueSelect={handleVenueSelect}
-                  selectedVenues={plan.stops.map(s => s.venue)}
-                  searchQuery={venueSearchQuery}
-                />
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10 text-white">
+              <div className="p-12 text-center">
+                <Clock className="w-12 h-12 mx-auto mb-4 text-white/40" />
+                <h3 className="text-lg font-semibold mb-2">No stops planned yet</h3>
+                <p className="text-white/70 mb-4">Start building your timeline by adding your first stop</p>
+                <Button
+                  onClick={() => setShowAddStopModal(true)}
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Stop
+                </Button>
               </div>
-
-              {/* Plan Templates */}
-              <PlanTemplatesPanel
-                currentPlan={plan}
-                onLoadTemplate={handleLoadTemplate}
-                className="mb-4"
-              />
-
-              {/* Planning Chat */}
-              {showChat && (
-                <PlanningChat planId={plan.id} currentUserId="you" />
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Plan Execution Mode */
-          <div>
-            <PlanExecutionTracker
-              stops={plan.stops.map(stop => ({
-                id: stop.id,
-                title: stop.title,
-                venue: stop.venue,
-                startTime: stop.startTime,
-                endTime: stop.endTime || stop.startTime,
-                location: stop.location || '',
-                participants: [],
-                status: 'upcoming' as const
-              }))}
-              currentTime="19:30"
-              groupLocation="Arts District"
-            />
-          </div>
-        )}
+            </Card>
+          )}
+        </div>
       </div>
 
-      {/* Summary Edit Modal */}
-      {showSummaryEditModal && (
-        <PlanSummaryEditModal
-          planId={plan.id}
-          mode={SummaryModeEnum.enum.finalized}
-          onClose={() => setShowSummaryEditModal(false)}
-        />
-      )}
+      {/* Add/Edit Stop Modal */}
+      <ComprehensiveStopModal
+        isOpen={showAddStopModal}
+        onClose={() => {
+          setShowAddStopModal(false);
+          setEditingStop(null);
+        }}
+        planId={planId}
+        editingStop={editingStop}
+      />
     </div>
   );
 };

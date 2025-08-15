@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles, Clock, MapPin, DollarSign, RefreshCw } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
-import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
+import { useUnifiedPlanStops } from '@/hooks/useUnifiedPlanStops'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { NovaIndicator } from './NovaIndicator'
@@ -62,7 +62,7 @@ export function AISuggestionModal({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useLegacyCollaborativeState(planId)
+  const { createStop } = useUnifiedPlanStops(planId)
   const { data: existingStops } = usePlanStops(planId)
   const { data: userPreferences } = useUserPreferences()
 
@@ -96,29 +96,13 @@ export function AISuggestionModal({
 
     setIsSubmitting(true)
     try {
-      const newStop: PlanStop = {
-        id: '', // Will be set by the backend
+      await createStop.mutateAsync({
         plan_id: planId,
         title: selectedSuggestion.title,
         description: selectedSuggestion.description,
-        startTime: timeSlot,
-        endTime: defaultEndTime,
         start_time: timeSlot,
         end_time: defaultEndTime,
-        location: '',
-        venue: selectedSuggestion.title,
-        address: '',
-        vibeMatch: 0.8,
-        status: 'suggested' as const,
-        color: '#3B82F6',
-        stop_order: (existingStops?.length || 0) + 1,
-        createdBy: '',
-        participants: [],
-        votes: [],
-        kind: 'ai' as any
-      }
-
-      await addStop(newStop)
+      })
       
       // Track successful AI suggestion addition
       trackEvent('stop_created', {

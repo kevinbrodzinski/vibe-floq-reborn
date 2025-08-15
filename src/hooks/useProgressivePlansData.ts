@@ -6,11 +6,15 @@ import { useOptimizedUserPlans } from './useOptimizedUserPlans';
 import { useOptimizedInvitedPlans } from './useOptimizedInvitedPlans';
 
 export type PlanFilter = 'all' | 'draft' | 'active' | 'completed' | 'invited';
+export type SortBy = 'name' | 'date' | 'type' | 'distance';
+export type SortOrder = 'asc' | 'desc';
 
 // Progressive loading hook that loads user plans first, then invited plans
 export function useProgressivePlansData() {
   const [filter, setFilter] = useState<PlanFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -80,7 +84,7 @@ export function useProgressivePlansData() {
     }
   });
 
-  // Optimized filter and search
+  // Optimized filter, search, and sort
   const filteredPlans = useMemo(() => {
     let plans = [];
     
@@ -101,15 +105,48 @@ export function useProgressivePlansData() {
         plans = [...categorizedPlans.draft, ...categorizedPlans.active, ...categorizedPlans.completed, ...categorizedPlans.invited];
     }
 
-    // Optimized search with early return
-    if (!searchQuery.trim()) return plans;
-    
-    const searchLower = searchQuery.toLowerCase();
-    return plans.filter(plan => 
-      plan.title?.toLowerCase().includes(searchLower) ||
-      plan.description?.toLowerCase().includes(searchLower)
-    );
-  }, [categorizedPlans, filter, searchQuery]);
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      plans = plans.filter(plan => 
+        plan.title?.toLowerCase().includes(searchLower) ||
+        plan.description?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply sorting
+    plans.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = (a.title || '').localeCompare(b.title || '');
+          break;
+        case 'date':
+          const dateA = new Date(a.planned_at || a.starts_at || 0).getTime();
+          const dateB = new Date(b.planned_at || b.starts_at || 0).getTime();
+          comparison = dateA - dateB;
+          break;
+        case 'type':
+          const statusA = a.status || 'draft';
+          const statusB = b.status || 'draft';
+          comparison = statusA.localeCompare(statusB);
+          break;
+        case 'distance':
+          // For now, sort by location if available, otherwise by title
+          const locationA = a.location?.toString() || a.title || '';
+          const locationB = b.location?.toString() || b.title || '';
+          comparison = locationA.localeCompare(locationB);
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return plans;
+  }, [categorizedPlans, filter, searchQuery, sortBy, sortOrder]);
 
   return {
     plans: filteredPlans,
@@ -118,6 +155,10 @@ export function useProgressivePlansData() {
     setFilter,
     searchQuery,
     setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     isLoading: isInitialLoading,
     isLoadingAdditional,
     createNewPlan: () => createNewPlan.mutate(),

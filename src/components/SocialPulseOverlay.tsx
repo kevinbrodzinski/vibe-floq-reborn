@@ -46,6 +46,11 @@ export const SocialPulseOverlay: React.FC<SocialPulseOverlayProps> = ({
   const [visibleEvents, setVisibleEvents] = useState<PulseEvent[]>([]);
 
   useEffect(() => {
+    if (events.length === 0) {
+      setVisibleEvents([]);
+      return;
+    }
+
     const now = Date.now();
     const filtered = events
       .filter(event => now - event.timestamp < PULSE_DURATION)
