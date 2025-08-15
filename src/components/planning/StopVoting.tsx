@@ -166,6 +166,11 @@ export function StopVoting({ stopId, planId, className, onVoteChange }: StopVoti
       const currentVote = votes.find(v => v.profile_id === currentProfile?.id);
       const newVoteType = currentVote?.vote_type === voteType ? null : voteType;
       
+      // Add haptic feedback for better UX (if available)
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+      
       await voteMutation.mutateAsync({ voteType: newVoteType });
     } finally {
       setIsVoting(false);
@@ -196,29 +201,64 @@ export function StopVoting({ stopId, planId, className, onVoteChange }: StopVoti
 
   if (isLoading) {
     return (
-      <div className={cn("flex items-center gap-2 text-white/60", className)}>
-        <div className="w-4 h-4 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-        <span className="text-sm">Loading votes...</span>
+      <div className={cn("space-y-4", className)}>
+        {/* Vote buttons skeleton */}
+        <div className="flex items-center gap-1.5">
+          {[1, 2, 3].map((i) => (
+            <div 
+              key={i}
+              className="h-9 px-3 rounded-full bg-white/5 animate-pulse flex items-center gap-2"
+            >
+              <div className="w-4 h-4 bg-white/10 rounded" />
+              <div className="w-4 h-4 bg-white/10 rounded" />
+            </div>
+          ))}
+          <div className="ml-3 flex items-center gap-2">
+            <div className="h-2 w-16 rounded-full bg-white/5 animate-pulse" />
+            <div className="h-6 w-12 rounded-full bg-white/5 animate-pulse" />
+          </div>
+        </div>
+        
+        {/* Summary skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-4 bg-white/5 rounded animate-pulse" />
+            <div className="w-24 h-3 bg-white/5 rounded animate-pulse" />
+          </div>
+          <div className="flex -space-x-1">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="w-6 h-6 bg-white/5 rounded-full animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Vote Buttons */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => handleVote('upvote')}
           disabled={isVoting || !currentProfile}
-          className={cn(
-            "h-8 px-2 text-white/60 hover:text-green-400 hover:bg-green-500/20",
-            currentUserVote?.vote_type === 'upvote' && "text-green-400 bg-green-500/20"
-          )}
+                      className={cn(
+              "h-10 px-4 rounded-full transition-all duration-200 group touch-manipulation",
+              "text-white/50 hover:text-green-400 hover:bg-green-500/10 hover:scale-105 active:scale-95",
+              "border border-transparent hover:border-green-500/20",
+              "min-w-[60px] sm:min-w-[50px]",
+              currentUserVote?.vote_type === 'upvote' && 
+              "text-green-400 bg-green-500/15 border-green-500/30 shadow-sm shadow-green-500/20"
+            )}
         >
-          <ThumbsUp className="w-4 h-4 mr-1" />
-          {upvotes}
+          <ThumbsUp className={cn(
+            "w-4 h-4 mr-2 transition-transform duration-200",
+            "group-hover:scale-110",
+            currentUserVote?.vote_type === 'upvote' && "scale-110"
+          )} />
+          <span className="font-medium tabular-nums transition-all duration-200 group-hover:scale-110">{upvotes}</span>
         </Button>
 
         <Button
@@ -226,13 +266,21 @@ export function StopVoting({ stopId, planId, className, onVoteChange }: StopVoti
           size="sm"
           onClick={() => handleVote('maybe')}
           disabled={isVoting || !currentProfile}
-          className={cn(
-            "h-8 px-2 text-white/60 hover:text-yellow-400 hover:bg-yellow-500/20",
-            currentUserVote?.vote_type === 'maybe' && "text-yellow-400 bg-yellow-500/20"
-          )}
+                      className={cn(
+              "h-10 px-4 rounded-full transition-all duration-200 group touch-manipulation",
+              "text-white/50 hover:text-amber-400 hover:bg-amber-500/10 hover:scale-105 active:scale-95",
+              "border border-transparent hover:border-amber-500/20",
+              "min-w-[60px] sm:min-w-[50px]",
+              currentUserVote?.vote_type === 'maybe' && 
+              "text-amber-400 bg-amber-500/15 border-amber-500/30 shadow-sm shadow-amber-500/20"
+            )}
         >
-          <Meh className="w-4 h-4 mr-1" />
-          {maybes}
+          <Meh className={cn(
+            "w-4 h-4 mr-2 transition-transform duration-200",
+            "group-hover:scale-110",
+            currentUserVote?.vote_type === 'maybe' && "scale-110"
+          )} />
+          <span className="font-medium tabular-nums transition-all duration-200 group-hover:scale-110">{maybes}</span>
         </Button>
 
         <Button
@@ -240,61 +288,126 @@ export function StopVoting({ stopId, planId, className, onVoteChange }: StopVoti
           size="sm"
           onClick={() => handleVote('downvote')}
           disabled={isVoting || !currentProfile}
-          className={cn(
-            "h-8 px-2 text-white/60 hover:text-red-400 hover:bg-red-500/20",
-            currentUserVote?.vote_type === 'downvote' && "text-red-400 bg-red-500/20"
-          )}
+                      className={cn(
+              "h-10 px-4 rounded-full transition-all duration-200 group touch-manipulation",
+              "text-white/50 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 active:scale-95",
+              "border border-transparent hover:border-red-500/20",
+              "min-w-[60px] sm:min-w-[50px]",
+              currentUserVote?.vote_type === 'downvote' && 
+              "text-red-400 bg-red-500/15 border-red-500/30 shadow-sm shadow-red-500/20"
+            )}
         >
-          <ThumbsDown className="w-4 h-4 mr-1" />
-          {downvotes}
+          <ThumbsDown className={cn(
+            "w-4 h-4 mr-2 transition-transform duration-200",
+            "group-hover:scale-110",
+            currentUserVote?.vote_type === 'downvote' && "scale-110"
+          )} />
+          <span className="font-medium tabular-nums transition-all duration-200 group-hover:scale-110">{downvotes}</span>
         </Button>
 
         {/* Approval percentage */}
         {totalVotes > 0 && (
-          <Badge 
-            variant="secondary" 
-            className={cn(
-              "ml-2 text-xs",
-              approvalPercentage >= 70 ? "bg-green-500/20 text-green-400" :
-              approvalPercentage >= 50 ? "bg-yellow-500/20 text-yellow-400" :
-              "bg-red-500/20 text-red-400"
-            )}
-          >
-            {approvalPercentage}% approval
-          </Badge>
+          <div className="ml-2 sm:ml-3 flex items-center gap-2 flex-shrink-0">
+            <div className={cn(
+              "h-2 w-12 sm:w-16 rounded-full bg-white/10 overflow-hidden",
+              "relative"
+            )}>
+              <div 
+                className={cn(
+                  "h-full rounded-full transition-all duration-500 ease-out",
+                  approvalPercentage >= 70 ? "bg-green-400" :
+                  approvalPercentage >= 50 ? "bg-amber-400" :
+                  "bg-red-400"
+                )}
+                style={{ width: `${Math.max(approvalPercentage, 8)}%` }}
+              />
+            </div>
+            <Badge 
+              variant="secondary" 
+              className={cn(
+                "text-xs font-medium px-2 py-0.5 rounded-full border-0 whitespace-nowrap",
+                "transition-colors duration-200",
+                approvalPercentage >= 70 ? "bg-green-500/20 text-green-400" :
+                approvalPercentage >= 50 ? "bg-amber-500/20 text-amber-400" :
+                "bg-red-500/20 text-red-400"
+              )}
+            >
+              {approvalPercentage}%
+            </Badge>
+          </div>
         )}
       </div>
 
       {/* Vote Summary */}
       {totalVotes > 0 && (
-        <div className="flex items-center gap-2 text-xs text-white/50">
-          <Users className="w-3 h-3" />
-          <span>{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xs text-white/60">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              <span className="font-medium">
+                {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+              </span>
+            </div>
+            
+            {/* Vote breakdown */}
+            <div className="flex items-center gap-3 text-[11px]">
+              {upvotes > 0 && (
+                <span className="text-green-400/80">
+                  {upvotes} up
+                </span>
+              )}
+              {maybes > 0 && (
+                <span className="text-amber-400/80">
+                  {maybes} maybe
+                </span>
+              )}
+              {downvotes > 0 && (
+                <span className="text-red-400/80">
+                  {downvotes} down
+                </span>
+              )}
+            </div>
+          </div>
           
           {/* Recent voters */}
-          <div className="flex -space-x-1 ml-2">
-            {votes.slice(0, 3).map((vote) => (
-              <Avatar key={vote.id} className="w-5 h-5 border border-white/20">
-                <AvatarImage src={vote.profiles?.avatar_url} />
-                <AvatarFallback className="text-xs bg-white/10">
-                  {vote.profiles?.display_name?.charAt(0) || '?'}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {votes.length > 3 && (
-              <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white/60">
-                +{votes.length - 3}
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-1.5">
+              {votes.slice(0, 4).map((vote, index) => (
+                <Avatar 
+                  key={vote.id} 
+                  className={cn(
+                    "w-6 h-6 border-2 border-black/50 transition-transform duration-200",
+                    "hover:scale-110 hover:z-10 relative",
+                    index === 0 && "z-[4]",
+                    index === 1 && "z-[3]",
+                    index === 2 && "z-[2]",
+                    index === 3 && "z-[1]"
+                  )}
+                  title={vote.profiles?.display_name || 'Anonymous'}
+                >
+                  <AvatarImage src={vote.profiles?.avatar_url} />
+                  <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
+                    {vote.profiles?.display_name?.charAt(0) || '?'}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+              {votes.length > 4 && (
+                <div className="w-6 h-6 rounded-full bg-white/10 border-2 border-black/50 flex items-center justify-center text-[10px] text-white/70 font-medium z-0">
+                  +{votes.length - 4}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* No votes state */}
       {totalVotes === 0 && (
-        <div className="text-xs text-white/40 flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          <span>Be the first to vote on this stop</span>
+        <div className="text-center py-2">
+          <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/5 rounded-full px-3 py-1.5">
+            <Clock className="w-3 h-3" />
+            <span>Be the first to vote</span>
+          </div>
         </div>
       )}
     </div>

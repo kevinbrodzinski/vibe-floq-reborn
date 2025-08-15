@@ -84,37 +84,55 @@ export function CollaborativeStopCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative bg-white/5 backdrop-blur-xl border-white/10 text-white transition-all duration-200",
-        isCurrentlyDragging && "opacity-50 scale-95 shadow-2xl z-50",
-        !isCurrentlyDragging && "hover:bg-white/10 hover:border-white/20",
+        "group relative overflow-hidden transition-all duration-300 ease-out",
+        "bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-xl",
+        "border border-white/10 hover:border-white/25",
+        "hover:shadow-lg hover:shadow-black/20 hover:-translate-y-1",
+        isCurrentlyDragging && "opacity-80 scale-105 shadow-2xl shadow-black/40 z-50 border-blue-500/40 rotate-1",
+        !isCurrentlyDragging && "hover:bg-gradient-to-br hover:from-white/12 hover:to-white/6",
         className
       )}
     >
-      <div className="p-4 space-y-3">
+      {/* Subtle gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 via-transparent to-purple-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      <div className="relative p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           {/* Drag Handle */}
           <button
             {...attributes}
             {...listeners}
-            className="flex-shrink-0 p-1 hover:bg-white/10 rounded cursor-grab active:cursor-grabbing transition-colors mt-1"
+            className={cn(
+              "flex-shrink-0 p-2 rounded-lg cursor-grab active:cursor-grabbing transition-all duration-200 mt-0.5",
+              "text-white/30 hover:text-white/60 hover:bg-white/10 group-hover:text-white/50",
+              "hover:scale-110 active:scale-95"
+            )}
           >
-            <GripVertical className="w-4 h-4 text-white/40" />
+            <GripVertical className="w-4 h-4" />
           </button>
 
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Title & Status */}
-            <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-white truncate">{stop.title}</h3>
+                <h3 className="font-semibold text-lg text-white/95 truncate group-hover:text-white transition-colors duration-200">
+                  {stop.title}
+                </h3>
                 {stop.description && (
-                  <p className="text-sm text-white/70 mt-1 line-clamp-2">{stop.description}</p>
+                  <p className="text-sm text-white/60 mt-1.5 line-clamp-2 leading-relaxed group-hover:text-white/70 transition-colors duration-200">
+                    {stop.description}
+                  </p>
                 )}
               </div>
               
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge className={cn("text-xs", stopStatus.color)}>
+                <Badge className={cn(
+                  "text-xs font-medium px-2.5 py-1 rounded-full border-0 transition-all duration-200",
+                  stopStatus.color,
+                  "group-hover:scale-105"
+                )}>
                   {stopStatus.label}
                 </Badge>
                 
@@ -122,35 +140,49 @@ export function CollaborativeStopCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-white/60 hover:bg-white/10 h-6 w-6 p-0"
+                  className={cn(
+                    "text-white/40 hover:text-white/80 hover:bg-white/10 h-8 w-8 p-0 rounded-lg transition-all duration-200",
+                    "group-hover:text-white/60 hover:scale-110"
+                  )}
                 >
-                  {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  {isExpanded ? 
+                    <ChevronUp className="w-4 h-4 transition-transform duration-200" /> : 
+                    <ChevronDown className="w-4 h-4 transition-transform duration-200" />
+                  }
                 </Button>
               </div>
             </div>
 
             {/* Quick Info */}
-            <div className="flex items-center gap-4 text-sm text-white/60">
+            <div className="flex items-center gap-5 text-sm">
               {stop.start_time && (
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{format(new Date(stop.start_time), 'h:mm a')}</span>
+                <div className="flex items-center gap-2 text-white/60 group-hover:text-white/80 transition-colors duration-200">
+                  <div className="p-1 rounded bg-blue-500/20">
+                    <Clock className="w-3 h-3 text-blue-400" />
+                  </div>
+                  <span className="font-medium tabular-nums">{format(new Date(stop.start_time), 'h:mm a')}</span>
                 </div>
               )}
               
               {stop.duration_minutes && (
-                <span>{stop.duration_minutes}min</span>
+                <div className="flex items-center gap-2 text-white/60 group-hover:text-white/80 transition-colors duration-200">
+                  <span className="font-medium tabular-nums">{stop.duration_minutes}min</span>
+                </div>
               )}
 
               {stop.venue && (
-                <div className="flex items-center gap-1 truncate">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{stop.venue}</span>
+                <div className="flex items-center gap-2 text-white/60 group-hover:text-white/80 transition-colors duration-200 min-w-0">
+                  <div className="p-1 rounded bg-green-500/20 flex-shrink-0">
+                    <MapPin className="w-3 h-3 text-green-400" />
+                  </div>
+                  <span className="truncate font-medium">{stop.venue}</span>
                 </div>
               )}
 
               {stop.estimated_cost_per_person && (
-                <span>${stop.estimated_cost_per_person}/person</span>
+                <div className="flex items-center gap-2 text-white/60 group-hover:text-white/80 transition-colors duration-200">
+                  <span className="font-medium tabular-nums">${stop.estimated_cost_per_person}/person</span>
+                </div>
               )}
             </div>
           </div>
