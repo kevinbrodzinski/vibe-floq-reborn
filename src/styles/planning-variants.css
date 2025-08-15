@@ -1,0 +1,65 @@
+/* Light Glass + Neumorphism variants for planning surfaces */
+.planning-glass {
+  --card-bg: rgba(255,255,255,0.06);
+  --card-border: rgba(255,255,255,0.18);
+  --accent: #8b5cf6; /* violet-500 */
+  --text-strong: rgba(255,255,255,0.95);
+  --text-soft: rgba(255,255,255,0.75);
+  --ring: rgba(139,92,246,0.45);
+  backdrop-filter: blur(20px);
+}
+
+.planning-glass .card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.planning-glass .btn-primary {
+  background: linear-gradient(90deg, #a78bfa, #8b5cf6);
+  color: white;
+  box-shadow: 0 10px 25px rgba(139,92,246,0.35);
+}
+.planning-glass .btn-secondary {
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text-strong);
+}
+
+/* Neumorphism: soft, tactile */
+.planning-neu {
+  --neu-bg: #0f1321; /* your dark base */
+  --neu-hi: rgba(255,255,255,0.08);
+  --neu-lo: rgba(0,0,0,0.55);
+  --accent: #8b5cf6;
+  color: rgba(255,255,255,0.92);
+}
+.planning-neu .card {
+  background: var(--neu-bg);
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow:
+    10px 10px 24px var(--neu-lo),
+    -8px -8px 20px var(--neu-hi);
+}
+.planning-neu .btn-primary {
+  background: #141a2b;
+  box-shadow:
+    6px 6px 18px rgba(0,0,0,0.6),
+    -6px -6px 16px rgba(255,255,255,0.06),
+    inset 0 0 0 1px rgba(255,255,255,0.05);
+  color: white;
+}
+.planning-neu .btn-secondary {
+  background: #0f1321;
+  box-shadow:
+    inset 6px 6px 12px rgba(0,0,0,0.6),
+    inset -6px -6px 12px rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+}
+
+/* tiny niceties */
+.shadow-glass { 
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08); 
+}

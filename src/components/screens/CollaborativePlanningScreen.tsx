@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { v4 as uuidv4 } from 'uuid';
-import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles, Calendar, DollarSign, Clock, Share2, Plus } from "lucide-react";
 import { useParams } from 'react-router-dom';
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
@@ -36,6 +36,11 @@ import { MobilePlanningTabs, Tab } from "@/components/ui/MobilePlanningTabs";
 import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
 import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 import { PlanStatusActions } from "@/components/plans/PlanStatusActions";
+import { PlanHero } from "@/components/plan/PlanHero";
+import { KpiChip } from "@/components/plan/KpiChip";
+import { TimelineStop } from "@/components/plan/TimelineStop";
+import { Button } from "@/components/ui/button";
+import { mapPlanStops } from "@/components/planning/mapStop";
 import { usePlanStatusValidation } from "@/hooks/usePlanStatusValidation";
 import { useRealtimePlanSync } from "@/hooks/useRealtimePlanSync";
 import { usePlanPresence } from "@/hooks/usePlanPresence";
@@ -564,8 +569,39 @@ export const CollaborativePlanningScreen = () => {
     setChatMessages(prev => [...prev, newMessage]);
   };
 
+  // Toggle: 'glass' | 'neu' | null (keep null to stick with your current dark look)
+  const PLANNING_THEME: 'glass' | 'neu' | null = 'glass';
+
+  // Compute derived UI values with defensive guards
+  const readiness = useMemo(() => {
+    if (!stops.length) return 5;
+    const confirmedStops = stops.filter(s => s.status === 'confirmed').length;
+    return Math.min(100, Math.round((confirmedStops / stops.length) * 40 + (collaborationParticipants.length || 1) * 10));
+  }, [stops, collaborationParticipants]);
+
+  const dateLabel = useMemo(() => {
+    return plan?.date ? new Date(plan.date).toLocaleDateString(undefined, { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    }) : 'Date TBD';
+  }, [plan?.date]);
+
+  const timeLabel = `${plan?.start_time ?? '18:00'} – ${plan?.end_time ?? '00:00'}`;
+  const durationLabel = plan?.duration_hours ? `${plan.duration_hours}h` : '—';
+
+  // Prepare mapped stops for new timeline components
+  const mappedTimelineStops = useMemo(() => mapPlanStops(stops), [stops]);
+
   return (
-    <div className="min-h-screen bg-gradient-field pb-24 sm:pb-6">
+    <div 
+      className={[
+        'min-h-screen bg-gradient-field pb-24 sm:pb-6',
+        PLANNING_THEME === 'glass' ? 'planning-glass' : '',
+        PLANNING_THEME === 'neu' ? 'planning-neu' : '',
+      ].join(' ')}
+    >
       {/* Execution Overlay */}
       <ExecutionOverlay
         isVisible={showExecutionOverlay}
@@ -586,356 +622,126 @@ export const CollaborativePlanningScreen = () => {
       {/* Social Pulse Overlay - Temporarily disabled to prevent infinite re-renders */}
       {/* {planMode === 'planning' && <SocialPulseOverlay />} */}
 
-      {/* Header */}
-      <div className="p-4 sm:p-6 pt-16">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent truncate">
-                {plan.title}
-              </h1>
-              <PlanStatusBadge 
-                status={getSafeStatus(plan.status)} 
-                size="default"
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
-              <span>{plan.date}</span>
-              <span className="hidden sm:inline">•</span>
-              <PlanPresenceIndicator
-                participants={collaborationParticipants}
-                isConnected={isConnected}
-                onlineUsers={onlineUsers}
-                totalOnline={totalOnline}
-              />
-              <span className="hidden sm:inline">•</span>
-              <span className="capitalize text-primary">{syncedPlanMode || planMode}</span>
-              {saving === 'done' && (
-                <div className="flex items-center gap-1 text-green-600 animate-fade">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs">Saved</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-2">
-              <PlanStatusActions 
-                planId={plan.id}
-                currentStatus={getSafeStatus(plan.status)}
-                isCreator={plan.creator_id === 'current-user'} // This would come from auth
-                hasStops={stops.length > 0}
-                hasParticipants={collaborationParticipants.length > 0}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"
-              />
-              
-              <PlanInviteButton />
-              <SharePlanButton 
-                planId={plan.id}
-                planTitle={plan.title}
-                variant="ghost"
-                size="sm"
-              />
-              <button 
-                onClick={() => setShowChat(!showChat)}
-                className={`p-3 min-h-[44px] min-w-[44px] rounded-xl transition-all duration-300 ${
-                  showChat ? 'bg-primary text-primary-foreground glow-primary' : 'bg-card/50 text-muted-foreground hover:bg-card/80'
-                }`}
-                title="Toggle chat"
-              >
-                <MessageCircle size={20} />
-              </button>
-              <button 
-                onClick={() => setShowKeyboardHelp(true)}
-                className="hidden sm:flex p-3 min-h-[44px] min-w-[44px] rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
-                title="Keyboard shortcuts (?)"
-              >
-                <HelpCircle size={20} className="text-muted-foreground" />
-              </button>
-              <button className="p-3 min-h-[44px] min-w-[44px] rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
-                <Settings size={20} className="text-muted-foreground" />
-              </button>
-            </div>
+      {/* Hero Header */}
+      <div className="p-4 sm:p-6 pt-16 space-y-6">
+        <PlanHero
+          title={plan?.title ?? 'Untitled plan'}
+          dateLabel={dateLabel}
+          timeLabel={timeLabel}
+          durationLabel={durationLabel}
+          participants={collaborationParticipants.map(p => ({ avatar: p.avatar }))}
+          readinessPct={readiness}
+          status={getSafeStatus(plan?.status) || 'Draft'}
+          variant={PLANNING_THEME || 'darkGlass'}
+        />
 
-            {/* Mobile Action Menu */}
-            <MobileActionMenu>
-              <PlanStatusActions 
-                planId={plan.id}
-                currentStatus={getSafeStatus(plan.status)}
-                isCreator={plan.creator_id === 'current-user'}
-                hasStops={stops.length > 0}
-                hasParticipants={collaborationParticipants.length > 0}
-              />
-              <PlanInviteButton />
-              <SharePlanButton 
-                planId={plan.id}
-                planTitle={plan.title}
-                variant="ghost"
-              />
-              <button 
-                onClick={() => setShowChat(!showChat)}
-                className="flex items-center gap-2 p-3 rounded-xl bg-card/50 hover:bg-card/80 transition-all"
-              >
-                <MessageCircle size={20} />
-                Chat
-              </button>
-              <button className="flex items-center gap-2 p-3 rounded-xl bg-card/50 hover:bg-card/80 transition-all">
-                <Settings size={20} />
-                Settings
-              </button>
-            </MobileActionMenu>
-          </div>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KpiChip 
+            icon={<Clock className="h-4 w-4"/>} 
+            label="Duration" 
+            value={durationLabel}
+            variant={PLANNING_THEME || 'darkGlass'}
+          />
+          <KpiChip 
+            icon={<DollarSign className="h-4 w-4"/>} 
+            label="Per person" 
+            value={plan?.budget_per_person ? `$${plan.budget_per_person}` : '—'}
+            variant={PLANNING_THEME || 'darkGlass'}
+          />
+          <KpiChip 
+            icon={<Users className="h-4 w-4"/>} 
+            label="Going" 
+            value={(collaborationParticipants?.length ?? 0).toString()}
+            variant={PLANNING_THEME || 'darkGlass'}
+          />
+          <KpiChip 
+            icon={<Calendar className="h-4 w-4"/>} 
+            label="Stops" 
+            value={`${stops.length}`} 
+            hint={`${readiness}% ready`}
+            variant={PLANNING_THEME || 'darkGlass'}
+          />
         </div>
 
-        {/* Time Progress Bar */}
-        <TimeProgressBar
-          planStartTime={new Date(plan.date)}
-          planDuration={240} // 4 hours in minutes
-          className="mb-6"
-        />
+        {/* Quick Actions */}
+        <div className="grid sm:grid-cols-3 gap-3">
+          <Button className="h-12 rounded-2xl btn-primary">Edit Timeline</Button>
+          <Button variant="secondary" className="h-12 rounded-2xl btn-secondary">
+            <Share2 className="mr-2 h-4 w-4"/>Share Plan
+          </Button>
+          <Button variant="secondary" className="h-12 rounded-2xl btn-secondary" onClick={() => setShowChat(!showChat)}>
+            <MessageCircle className="mr-2 h-4 w-4"/>Group Chat
+          </Button>
+        </div>
 
-        {/* Live Participant Tracker */}
-        <LiveParticipantTracker 
-          updates={participantUpdates}
-        />
-
-        {/* RSVP Card */}
-        <RSVPCard
-          planId={plan.id}
-          planTitle={plan.title}
-          planDate={plan.date}
-          currentUserRSVP={currentUserRSVP}
-          attendeeCount={3} // Mock data - would come from real RSVP data
-          maybeCount={1} // Mock data - would come from real RSVP data
-          onRSVPChange={handleRSVPChange}
-          hasConflict={stops.some(stop => stops.some(other => 
-            stop.id !== other.id && 
-            stop.startTime < other.endTime && 
-            other.startTime < stop.endTime
-          ))}
-          className="mb-6"
-        />
-
-        {/* Nova AI Suggestions - Moved from sidebar to main flow */}
-        {showNovaSuggestions && (
-          <Collapsible.Root
-            open={isNovaSuggestionsExpanded}
-            onOpenChange={setIsNovaSuggestionsExpanded}
-            className="mb-4"
-          >
-            <Collapsible.Trigger asChild>
-              <button className="w-full flex items-center justify-between rounded-xl
-                                 bg-card/70 px-4 py-3 hover:bg-card/60 transition">
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="font-medium">Nova AI Suggestions</span>
-                </span>
-                {isNovaSuggestionsExpanded ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </button>
-            </Collapsible.Trigger>
-
-            <Collapsible.Content className="pt-3">
-              {isNovaSuggestionsExpanded && (
-                <NovaSuggestions
-                  planId={plan.id}
-                  existingStops={stops}
-                  timeRange={{ start: "18:00", end: "23:59" }}
-                  participants={collaborationParticipants.length}
-                  preferences={{
-                    budget: 'medium',
-                    vibes: ['energetic', 'social'],
-                    interests: ['dining', 'nightlife']
-                  }}
-                  onAcceptSuggestion={handleAcceptSuggestion}
-                  onDismiss={() => setShowNovaSuggestions(false)}
-                />
-              )}
-            </Collapsible.Content>
-          </Collapsible.Root>
-        )}
-
-        {/* Voting Threshold Meter - Only show for finalized+ plans */}
-        {canVoteOnStops(getSafeStatus(plan.status)) && (
-          <VotingThresholdMeter
-            totalParticipants={activeParticipants.length || collaborationParticipants.length}
-            votedParticipants={Math.floor((activeParticipants.length || collaborationParticipants.length) * 0.7)} // Mock 70% participation
-            threshold={60}
-            className="mb-6"
+        {/* AI Suggestions */}
+        <section className="card rounded-2xl p-3 sm:p-4">
+          <NovaSuggestions
+            planId={plan.id}
+            existingStops={stops}
+            timeRange={{ start: "18:00", end: "23:59" }}
+            participants={collaborationParticipants.length}
+            preferences={{
+              budget: 'medium',
+              vibes: ['energetic', 'social'],
+              interests: ['dining', 'nightlife']
+            }}
+            onAcceptSuggestion={handleAcceptSuggestion}
+            onDismiss={() => setShowNovaSuggestions(false)}
           />
-        )}
+        </section>
 
-        {planMode === 'planning' ? (
-          <>
-            {/* Mobile Progressive Disclosure */}
-            <MobilePlanningTabs defaultTab="timeline">
-              <Tab name="Timeline">
-                <TimelineCanvas
-                  stops={timelineStops}
-                  onReorder={handleTimelineReorder}
-                  onAddAt={handleTimelineAddAt}
-                  startHHmm="18:00"
-                  endHHmm="23:30"
-                  className="mb-4"
-                />
-              </Tab>
-              <Tab name="Summary">
-                <div className="space-y-4">
-                  <PlanSummaryCard
-                    planId={plan.id}
-                    mode={SummaryModeEnum.enum.finalized}
-                    editable={true}
-                    title="Plan Summary"
-                  />
-                  <SummaryReviewPanel
-                    planTitle={plan.title}
-                    planDate={plan.date}
-                    stops={mappedStops}
-                    participants={mappedParticipants}
-                    totalBudget={150}
-                    onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
-                    onEdit={(stopId) => console.log('Edit stop:', stopId)}
-                  />
-                </div>
-              </Tab>
-              <Tab name="AI">
-                <div className="space-y-4">
-                  {showNovaSuggestions && (
-                    <NovaSuggestions
-                      planId={plan.id}
-                      existingStops={stops}
-                      timeRange={{ start: "18:00", end: "23:59" }}
-                      participants={collaborationParticipants.length}
-                      preferences={{
-                        budget: 'medium',
-                        vibes: ['energetic', 'social'],
-                        interests: ['dining', 'nightlife']
-                      }}
-                      onAcceptSuggestion={handleAcceptSuggestion}
-                      onDismiss={() => setShowNovaSuggestions(false)}
-                    />
-                  )}
-                  {showTiebreaker && (
-                    <TiebreakerSuggestions
-                      stopId="current-stop"
-                      tiedOptions={["Option A", "Option B"]}
-                      onSelectRecommendation={(rec) => {
-                        console.log('AI recommends:', rec);
-                        setShowTiebreaker(false);
-                      }}
-                    />
-                  )}
-                </div>
-              </Tab>
-            </MobilePlanningTabs>
-
-            {/* Desktop Layout */}
-            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Left Column - Timeline Editor & Summary */}
-            <div className="md:col-span-1 lg:col-span-2 space-y-4 sm:space-y-6">
-              
-              <TimelineCanvas
-                stops={timelineStops}
-                onReorder={handleTimelineReorder}
-                onAddAt={handleTimelineAddAt}
-                startHHmm="18:00"
-                endHHmm="23:30"
-                className="mb-6"
-              />
-
-              {/* Plan Summary Card - Finalized Mode */}
-              <PlanSummaryCard
-                planId={plan.id}
-                mode={SummaryModeEnum.enum.finalized}
-                editable={true}
-                title="Plan Summary"
-              />
-
-              {/* Summary Review Panel */}
-              <SummaryReviewPanel
-                planTitle={plan.title}
-                planDate={plan.date}
-                stops={mappedStops}
-                participants={mappedParticipants}
-                totalBudget={150}
-                onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
-                onEdit={(stopId) => console.log('Edit stop:', stopId)}
-              />
-
-              {/* Tiebreaker Suggestions */}
-              {showTiebreaker && (
-                <TiebreakerSuggestions
-                  stopId="current-stop"
-                  tiedOptions={["Option A", "Option B"]}
-                  onSelectRecommendation={(rec) => {
-                    console.log('AI recommends:', rec);
-                    setShowTiebreaker(false);
-                    showOverlay('vote', 'Tiebreaker applied!');
-                  }}
-                  className="mb-6"
-                />
-              )}
-              
-            </div>
-
-            {/* Right Column - Mobile-optimized */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Venue Search - Hidden on mobile */}
-              <div className="hidden md:block bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30">
-                <div className="relative mb-4">
-                  <input
-                    type="text"
-                    value={venueSearchQuery}
-                    onChange={(e) => setVenueSearchQuery(e.target.value)}
-                    placeholder="Search venues..."
-                    className="w-full bg-background/50 border border-border/30 rounded-2xl py-3 px-4 pr-12 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-300"
-                  />
-                  <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                </div>
-                
-                <VenueCardLibrary
-                  onVenueSelect={handleVenueSelect}
-                  selectedVenues={selectedVenues}
-                  searchQuery={venueSearchQuery}
-                />
-              </div>
-
-              {/* Plan Templates */}
-              <PlanTemplatesPanel
-                currentPlan={plan}
-                onLoadTemplate={handleLoadTemplate}
-                className="mb-4"
-              />
-
-              {/* Planning Chat */}
-              {showChat && (
-                <PlanningChat planId={plan.id} currentUserId="you" />
-              )}
-            </div>
-            </div>
-          </>
-        ) : (
-          /* Plan Execution Mode */
-          <div>
-            <PlanExecutionTracker
-              stops={executionStops}
-              currentTime="19:30"
-              groupLocation="Arts District"
-            />
+        {/* Timeline */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Timeline</h2>
+            <Button className="rounded-2xl" onClick={() => handleStopAdd('20:00')}>
+              <Plus className="h-4 w-4 mr-2"/> Add Stop
+            </Button>
           </div>
-        )}
+          {stops.length === 0 ? (
+            <div className="card rounded-3xl border border-white/10 bg-white/4 backdrop-blur-xl py-12 text-center">
+              <div className="text-2xl mb-2">No stops yet</div>
+              <div className="opacity-70 mb-4 text-sm">Tap "Add Stop" or let Nova suggest a timeline.</div>
+              <Button variant="secondary" onClick={() => setShowNovaSuggestions(true)}>Get AI Suggestions</Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {stops.map((stop: any) => (
+                <TimelineStop 
+                  key={stop.id} 
+                  stop={stop} 
+                  onEdit={(s) => console.log('Edit stop:', s)}
+                  onDelete={(s) => console.log('Delete stop:', s)}
+                  variant={PLANNING_THEME || 'darkGlass'}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
-      {/* Summary Edit Modal */}
+      {/* Live tracker at bottom for Active plans */}
+      {plan?.status === 'active' && (
+        <div className="fixed bottom-0 inset-x-0">
+          <div className="bg-card/90 backdrop-blur-xl border-t border-border/30 p-4">
+            <div className="max-w-5xl mx-auto">
+              <LiveParticipantTracker updates={participantUpdates} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals and overlays */}
       {showSummaryEditModal && (
         <PlanSummaryEditModal
           planId={plan.id}
-          mode={SummaryModeEnum.enum.finalized}
+          currentSummary=""
+          onSave={(summary) => {
+            console.log('Save summary:', summary);
+            setShowSummaryEditModal(false);
+          }}
           onClose={() => setShowSummaryEditModal(false)}
         />
       )}
