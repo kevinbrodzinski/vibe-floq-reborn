@@ -24,7 +24,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { StopVoting } from './StopVoting';
 import { StopComments } from './StopComments';
 import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import type { PlanStop } from '@/types/plan';
 
 interface CollaborativeStopCardProps {
@@ -134,7 +134,7 @@ export function CollaborativeStopCard({
               {stop.start_time && (
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  <span>{format(parseISO(stop.start_time), 'h:mm a')}</span>
+                  <span>{format(new Date(stop.start_time), 'h:mm a')}</span>
                 </div>
               )}
               

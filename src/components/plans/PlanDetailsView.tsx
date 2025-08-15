@@ -32,7 +32,7 @@ import { PlanStatusTag } from '@/components/PlanStatusTag';
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation';
 import { usePlanStops } from '@/hooks/usePlanStops';
 import { usePlanParticipantsOptimized } from '@/hooks/usePlanParticipantsOptimized';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import type { PlanStatus } from '@/types/enums/planStatus';
@@ -258,10 +258,10 @@ export const PlanDetailsView: React.FC = () => {
                 <div>
                   <div className="text-sm text-white/60">Date</div>
                   <div className="font-medium">
-                    {plan.date 
-                      ? format(parseISO(plan.date), 'EEE, MMM d, yyyy')
-                      : 'Date TBD'
-                    }
+                                         {plan.date 
+                       ? format(new Date(plan.date), 'EEE, MMM d, yyyy')
+                       : 'Date TBD'
+                     }
                   </div>
                 </div>
               </div>
@@ -374,7 +374,7 @@ export const PlanDetailsView: React.FC = () => {
                       </div>
                       <div className="text-sm text-white/60 flex items-center gap-4">
                         {stop.start_time && (
-                          <span>{format(parseISO(stop.start_time), 'h:mm a')}</span>
+                          <span>{format(new Date(stop.start_time), 'h:mm a')}</span>
                         )}
                         {stop.duration_minutes && (
                           <span>{stop.duration_minutes}min</span>
