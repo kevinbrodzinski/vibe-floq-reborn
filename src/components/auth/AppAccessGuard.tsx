@@ -6,7 +6,7 @@ import { EnhancedOnboardingScreen } from '@/components/onboarding/EnhancedOnboar
 import { SplashScreen } from '@/components/visual/SplashScreen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition, Suspense } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
@@ -16,7 +16,19 @@ import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
 const ONBOARDING_KEY = 'floq_onboarding_complete';
 const SPLASH_SEEN_KEY = 'floq_splash_seen';
 
-export function AppAccessGuard({ children }: { children: React.ReactNode }) {
+// Loading component for suspense fallback
+const AppLoadingFallback = ({ message = "Loading..." }: { message?: string }) => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-3">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <p className="text-sm text-muted-foreground animate-pulse">
+        {message}
+      </p>
+    </div>
+  </div>
+);
+
+function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [showSplash, setShowSplash] = useState<boolean | null>(null);
   const { data: preferences, isLoading: loadingPrefs } = useUserPreferences();
@@ -32,20 +44,31 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   // Check if splash screen has been seen
   useEffect(() => {
     const checkSplashSeen = async () => {
-      if (isSharedPlanRoute || isDirectPlanRoute) {
-        setShowSplash(false);
-        return;
+      try {
+        if (isSharedPlanRoute || isDirectPlanRoute) {
+          startTransition(() => {
+            setShowSplash(false);
+          });
+          return;
+        }
+        
+        const splashSeen = await getItem(SPLASH_SEEN_KEY);
+        startTransition(() => {
+          setShowSplash(!splashSeen);
+        });
+      } catch (error) {
+        console.error('Error checking splash status:', error);
+        startTransition(() => {
+          setShowSplash(false);
+        });
       }
-      
-      const splashSeen = await getItem(SPLASH_SEEN_KEY);
-      setShowSplash(!splashSeen);
     };
     
     checkSplashSeen();
   }, [getItem, isSharedPlanRoute, isDirectPlanRoute]);
 
-  // Enhanced onboarding completion check with debug logging
-  const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
+  // Enhanced onboarding completion check with proper error handling
+  const { data: onboardingComplete, isLoading: onboardingLoading, error: onboardingError } = useQuery({
     queryKey: ['onboarding-complete', user?.id ?? 'anon'],
     queryFn: async () => {
       if (!user) {
@@ -107,6 +130,11 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     enabled: !!user,
     staleTime: 30000, // 30 seconds - reduced for more responsive updates
     gcTime: 60000, // 1 minute
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Prevent suspension during navigation
+    suspense: false,
+    throwOnError: false
   });
 
   // Debug logging optimized to prevent infinite loops
@@ -119,26 +147,28 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
         preferencesVersion: preferences?.onboarding_version,
         onboardingVersion: ONBOARDING_VERSION,
         onboardingComplete,
+        onboardingError,
         isSharedRoute: isSharedPlanRoute,
         isDirectRoute: isDirectPlanRoute,
         currentPath: location.pathname
       });
     }
-  }, [user?.id, preferences?.onboarding_version, onboardingComplete, isSharedPlanRoute, isDirectPlanRoute, location.pathname]);
+  }, [user?.id, preferences?.onboarding_version, onboardingComplete, onboardingError, isSharedPlanRoute, isDirectPlanRoute, location.pathname]);
 
+  // Show loading state with proper error handling
   if (loading || (user && loadingPrefs) || onboardingLoading || showSplash === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          {onboardingLoading && (
-            <p className="text-sm text-muted-foreground animate-pulse">
-              Loading your progress...
-            </p>
-          )}
-        </div>
-      </div>
-    );
+    return <AppLoadingFallback message={
+      loading ? "Authenticating..." :
+      loadingPrefs ? "Loading preferences..." :
+      onboardingLoading ? "Loading your progress..." :
+      "Initializing..."
+    } />;
+  }
+
+  // Handle onboarding query errors gracefully
+  if (onboardingError) {
+    console.error('Onboarding check error:', onboardingError);
+    // Fallback to assuming onboarding is not complete
   }
 
   // Allow access to shared routes without authentication
@@ -153,8 +183,17 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     return (
       <SplashScreen
         onComplete={async () => {
-          await setItem(SPLASH_SEEN_KEY, 'true');
-          setShowSplash(false);
+          try {
+            await setItem(SPLASH_SEEN_KEY, 'true');
+            startTransition(() => {
+              setShowSplash(false);
+            });
+          } catch (error) {
+            console.error('Error saving splash completion:', error);
+            startTransition(() => {
+              setShowSplash(false);
+            });
+          }
         }}
         autoTransition={false}
       />
@@ -167,7 +206,10 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Skip onboarding for shared plan routes or if already completed
-  if (!onboardingComplete && !isSharedPlanRoute && !isDirectPlanRoute) {
+  // Use fallback to false if there was an error checking onboarding status
+  const shouldShowOnboarding = !onboardingComplete && !onboardingError && !isSharedPlanRoute && !isDirectPlanRoute;
+  
+  if (shouldShowOnboarding) {
     console.log('📝 Showing onboarding screen');
     return (
       <EnhancedOnboardingScreen
@@ -178,9 +220,12 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
             // Clear any stale local storage
             await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
             
-            // Invalidate queries to refresh state
-            await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
-            await queryClient.invalidateQueries({ queryKey: ['onboarding-complete', user?.id] });
+            // Use startTransition for state updates
+            startTransition(() => {
+              // Invalidate queries to refresh state
+              queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+              queryClient.invalidateQueries({ queryKey: ['onboarding-complete', user?.id] });
+            });
             
             // Handle redirect
             const redirect = await getRedirectPath();
@@ -201,4 +246,14 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
 
   console.log('✅ Onboarding complete, showing main app');
   return <>{children}</>;
+}
+
+export function AppAccessGuard({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<AppLoadingFallback message="Loading application..." />}>
+      <AppAccessGuardContent>
+        {children}
+      </AppAccessGuardContent>
+    </Suspense>
+  );
 }
