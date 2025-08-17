@@ -37,7 +37,7 @@ export interface LivePresence {
   vibe: string | null;
   lat: number;
   lng: number;
-  venue_id: string | null;
+  venue_id: string | null; /* uuid */
   expires_at: string;
   isFriend?: boolean; // 6.3 - Add friend detection flag
 }

@@ -1,9 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
+import { Vibe } from '@/lib/vibes';
 
 export async function publishPresence(
   lat: number,
   lng: number,
-  vibe: 'social' | 'chill' | 'hype' | 'curious' | 'solo' | 'romantic' | 'weird' | 'down' | 'flowing' | 'open',
+  vibe: Vibe,
   visibility: 'public' | 'friends' = 'public',
 ) {
   // Check authentication
