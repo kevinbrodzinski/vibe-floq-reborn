@@ -43,38 +43,24 @@ export const SocialPulseOverlay: React.FC<SocialPulseOverlayProps> = ({
   pulseRadius = 60,
   className = ""
 }) => {
+  // Early return if no events - prevents any state updates
+  if (!events || events.length === 0) {
+    return null;
+  }
+
   const [visibleEvents, setVisibleEvents] = useState<PulseEvent[]>([]);
-  const eventsRef = useRef<PulseEvent[]>([]);
 
-  const updateVisibleEvents = useCallback(() => {
-    // Early return if no events to prevent unnecessary processing
-    if (!events || events.length === 0) {
-      setVisibleEvents(prev => prev.length > 0 ? [] : prev);
-      return;
-    }
+  // Stable reference to prevent infinite loops
+  const eventsJson = JSON.stringify(events.map(e => ({ id: e.id, timestamp: e.timestamp })));
 
-    // Only update if events actually changed
-    const eventsChanged = 
-      events.length !== eventsRef.current.length ||
-      events.some((event, index) => 
-        !eventsRef.current[index] || event.id !== eventsRef.current[index].id
-      );
-
-    if (!eventsChanged) return;
-
-    eventsRef.current = events;
-    
+  useEffect(() => {
     const now = Date.now();
     const filtered = events
       .filter(event => now - event.timestamp < PULSE_DURATION)
       .slice(-maxVisible);
     
     setVisibleEvents(filtered);
-  }, [events, maxVisible]);
-
-  useEffect(() => {
-    updateVisibleEvents();
-  }, [updateVisibleEvents]);
+  }, [eventsJson, maxVisible]);
 
   return (
     <div 
