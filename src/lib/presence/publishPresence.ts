@@ -37,7 +37,7 @@ export async function publishPresence(
 
   // Log parameters being sent
   console.log('[publishPresence] Calling upsert_presence with:', {
-    user_id: user.id,
+    profile_id: user.id,
     p_venue_id: null,
     p_lat: lat,
     p_lng: lng,

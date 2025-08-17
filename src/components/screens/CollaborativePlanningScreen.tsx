@@ -617,7 +617,7 @@ export const CollaborativePlanningScreen = () => {
                 }))}
                 participants={activeParticipants.length > 0 
                   ? activeParticipants.map(p => ({ 
-                      id: p.user_id, 
+                      id: p.profile_id || p.user_id, 
                       name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
                       rsvpStatus: p.rsvp_status || 'pending' 
                     }))

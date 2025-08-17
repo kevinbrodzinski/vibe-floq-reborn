@@ -5,7 +5,7 @@ export interface PlanStop {
   start_time?: string;
   end_time?: string;
   estimated_cost_per_person?: number;
-  venue_id?: string;
+  venue_id?: string; /* uuid */
   lat?: number;
   lng?: number;
   order_index: number;

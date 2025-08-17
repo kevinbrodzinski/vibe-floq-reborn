@@ -59,7 +59,7 @@ export interface FriendSuggestion {
 export interface CoLocationEvent {
   profile_a: string; // UUID
   profile_b: string; // UUID
-  venue_id: string;
+  venue_id: string; /* uuid */
   start_time: Date;
   end_time: Date;
   overlap_duration_minutes: number;

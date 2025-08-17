@@ -69,7 +69,7 @@ export interface CrossStat {
 }
 
 export interface CommonVenue {
-  venue_id: string;
+  venue_id: string; /* uuid */
   name: string;
   category: string;
   overlap_visits: number;

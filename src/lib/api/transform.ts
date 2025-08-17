@@ -1,7 +1,7 @@
 export const mapUserIdToProfileId = (d: any): any => {
   if (d && typeof d === 'object') {
     if ('profile_id' in d && !('profileId' in d)) {
-      d.profileId = d.user_id;
+      d.profileId = d.profile_id || d.user_id;
     }
     if (Array.isArray(d)) {
       d.forEach(mapUserIdToProfileId);
