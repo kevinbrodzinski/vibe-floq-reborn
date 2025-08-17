@@ -5,7 +5,7 @@ type FloqAction = 'boost' | 'mention'
 
 interface BoostPayload {
   floq_id: string
-  user_id: string
+  profile_id: string
   boost_type?: 'vibe' | 'activity'
 }
 

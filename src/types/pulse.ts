@@ -9,14 +9,14 @@ export interface PulseEvent {
   event_type:   PulseEventType;
   profile_id?:  string | null;
   floq_id?:     string | null;
-  venue_id?:    string | null;
+  venue_id?:    string | null; /* uuid */
   vibe_tag?:    string | null;
   people_count: number;
   meta:         Record<string, unknown>;
 }
 
 export interface TrendingVenue {
-  venue_id:     string;
+  venue_id:     string; /* uuid */
   name:         string;
   distance_m:   number;
   people_now:   number;

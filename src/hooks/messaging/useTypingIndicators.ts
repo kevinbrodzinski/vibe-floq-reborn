@@ -46,24 +46,24 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
             { event: 'typing' },
             (evt: any) => {
               const payload = (evt && (evt.payload || evt)) as any;
-              const { user_id, thread_id, is_typing, display_name, username, avatar_url } = payload || {};
+              const { profile_id, thread_id, is_typing, display_name, username, avatar_url } = payload || {};
               // Ignore our own typing events
-              if (user_id === currentUserId || thread_id !== threadId) return;
+              if (profile_id === currentUserId || thread_id !== threadId) return;
 
-              console.log('👀 Typing event:', { user_id, is_typing, display_name });
+              console.log('👀 Typing event:', { profile_id, is_typing, display_name });
 
               setTypingUsers(prev => {
                 const newMap = new Map(prev);
                 
                 if (is_typing) {
-                  newMap.set(user_id, {
-                    userId: user_id,
+                  newMap.set(profile_id, {
+                    userId: profile_id,
                     displayName: display_name,
                     username,
                     avatarUrl: avatar_url,
                   });
                 } else {
-                  newMap.delete(user_id);
+                  newMap.delete(profile_id);
                 }
                 
                 return newMap;
@@ -74,7 +74,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
                 setTimeout(() => {
                   setTypingUsers(prev => {
                     const newMap = new Map(prev);
-                    newMap.delete(user_id);
+                    newMap.delete(profile_id);
                     return newMap;
                   });
                 }, TYPING_TIMEOUT);
@@ -104,7 +104,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
           type: 'broadcast',
           event: 'typing',
           payload: {
-            user_id: currentUserId,
+            profile_id: currentUserId,
             thread_id: threadId,
             is_typing: isTypingNow,
             display_name: (profile as any)?.display_name,

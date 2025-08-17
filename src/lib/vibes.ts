@@ -13,7 +13,25 @@ export const VIBES = [
   'curious',
 ] as const;
 
-export type Vibe = (typeof VIBES)[number];
+import { Database } from '@/integrations/supabase/types';
+
+export type Vibe = Database['public']['Enums']['vibe_enum'];
+
+export const VIBE_LABEL: Record<Vibe, string> = {
+  chill: 'Chill',
+  hype: 'Hype',
+  curious: 'Curious',
+  social: 'Social',
+  solo: 'Solo',
+  romantic: 'Romantic',
+  weird: 'Weird',
+  down: 'Down',
+  flowing: 'Flowing',
+  open: 'Open',
+  energetic: 'Energetic',
+  excited: 'Excited',
+  focused: 'Focused',
+};
 
 // Validation helpers
 export const isValidVibe = (value: unknown): value is Vibe => {

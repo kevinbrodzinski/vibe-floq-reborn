@@ -63,16 +63,16 @@ export function FloqAutoMatchCard({ profileId, venueId, onCreateFloq }: FloqAuto
           <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
             {matchData.potentialMatches.slice(0, 5).map((match, index) => (
               <motion.div
-                key={match.user_id}
+                key={match.profile_id || match.user_id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className={`flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
-                  selectedMatch === match.user_id
+                  selectedMatch === (match.profile_id || match.user_id)
                     ? 'bg-primary/10 border-primary/30'
                     : 'bg-card/30 border-border/30 hover:bg-card/50'
                 }`}
-                onClick={() => setSelectedMatch(selectedMatch === match.user_id ? null : match.user_id)}
+                onClick={() => setSelectedMatch(selectedMatch === (match.profile_id || match.user_id) ? null : (match.profile_id || match.user_id))}
               >
                 <div className="flex items-center gap-3 flex-1">
                   <Avatar className="w-9 h-9">
@@ -126,7 +126,7 @@ export function FloqAutoMatchCard({ profileId, venueId, onCreateFloq }: FloqAuto
               className="overflow-hidden"
             >
               {(() => {
-                const match = matchData.potentialMatches.find(m => m.user_id === selectedMatch);
+                const match = matchData.potentialMatches.find(m => (m.profile_id || m.user_id) === selectedMatch);
                 if (!match) return null;
                 
                 return (

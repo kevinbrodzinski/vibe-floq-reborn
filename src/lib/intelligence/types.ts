@@ -15,7 +15,7 @@ export interface IntelligencePayload {
   max_tokens?: number;
   
   // Mode-specific parameters
-  user_id?: string;
+  profile_id?: string;
   plan_id?: string;
   floq_id?: string;
   date?: string;

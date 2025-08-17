@@ -57,7 +57,7 @@ export const SuggestionCard: React.FC<Props> = ({ suggestion }) => {
         <div className="flex gap-2 w-full">
           <Button 
             size="sm" 
-            onClick={() => ping(suggestion.friend_id)}
+            onClick={() => ping(suggestion.id || suggestion.friend_id)}
             className="flex-1"
           >
             <Waves className="w-4 h-4 mr-1" />
@@ -66,7 +66,7 @@ export const SuggestionCard: React.FC<Props> = ({ suggestion }) => {
           <Button 
             variant="secondary" 
             size="sm" 
-            onClick={() => window.location.hash = `#/dm/${suggestion.friend_id}`}
+            onClick={() => window.location.hash = `#/dm/${suggestion.id || suggestion.friend_id}`}
             className="flex-1"
           >
             <MessageCircle className="w-4 h-4 mr-1" />

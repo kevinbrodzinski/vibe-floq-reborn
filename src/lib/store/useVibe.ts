@@ -55,8 +55,8 @@ export const useVibe = create<VibeState>()(
               vibe: vibe
             });
             
-            // If it's the user_id error, show a helpful message
-            if (error.code === '42703' && error.message.includes('user_id')) {
+            // If it's the profile_id error, show a helpful message
+            if (error.code === '42703' && error.message.includes('profile_id')) {
               console.warn('Database function needs to be updated to use profile_id. Vibe updated in UI only.');
             }
           } else {
