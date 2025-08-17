@@ -7,739 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
-  }
-  auth: {
-    Tables: {
-      audit_log_entries: {
-        Row: {
-          created_at: string | null
-          id: string
-          instance_id: string | null
-          ip_address: string
-          payload: Json | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          instance_id?: string | null
-          ip_address?: string
-          payload?: Json | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          instance_id?: string | null
-          ip_address?: string
-          payload?: Json | null
-        }
-        Relationships: []
-      }
-      flow_state: {
-        Row: {
-          auth_code: string
-          auth_code_issued_at: string | null
-          authentication_method: string
-          code_challenge: string
-          code_challenge_method: Database["auth"]["Enums"]["code_challenge_method"]
-          created_at: string | null
-          id: string
-          provider_access_token: string | null
-          provider_refresh_token: string | null
-          provider_type: string
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          auth_code: string
-          auth_code_issued_at?: string | null
-          authentication_method: string
-          code_challenge: string
-          code_challenge_method: Database["auth"]["Enums"]["code_challenge_method"]
-          created_at?: string | null
-          id: string
-          provider_access_token?: string | null
-          provider_refresh_token?: string | null
-          provider_type: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          auth_code?: string
-          auth_code_issued_at?: string | null
-          authentication_method?: string
-          code_challenge?: string
-          code_challenge_method?: Database["auth"]["Enums"]["code_challenge_method"]
-          created_at?: string | null
-          id?: string
-          provider_access_token?: string | null
-          provider_refresh_token?: string | null
-          provider_type?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      identities: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          id: string
-          identity_data: Json
-          last_sign_in_at: string | null
-          provider: string
-          provider_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          identity_data: Json
-          last_sign_in_at?: string | null
-          provider: string
-          provider_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          identity_data?: Json
-          last_sign_in_at?: string | null
-          provider?: string
-          provider_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "identities_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      instances: {
-        Row: {
-          created_at: string | null
-          id: string
-          raw_base_config: string | null
-          updated_at: string | null
-          uuid: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          raw_base_config?: string | null
-          updated_at?: string | null
-          uuid?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          raw_base_config?: string | null
-          updated_at?: string | null
-          uuid?: string | null
-        }
-        Relationships: []
-      }
-      mfa_amr_claims: {
-        Row: {
-          authentication_method: string
-          created_at: string
-          id: string
-          session_id: string
-          updated_at: string
-        }
-        Insert: {
-          authentication_method: string
-          created_at: string
-          id: string
-          session_id: string
-          updated_at: string
-        }
-        Update: {
-          authentication_method?: string
-          created_at?: string
-          id?: string
-          session_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mfa_amr_claims_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mfa_challenges: {
-        Row: {
-          created_at: string
-          factor_id: string
-          id: string
-          ip_address: unknown
-          otp_code: string | null
-          verified_at: string | null
-          web_authn_session_data: Json | null
-        }
-        Insert: {
-          created_at: string
-          factor_id: string
-          id: string
-          ip_address: unknown
-          otp_code?: string | null
-          verified_at?: string | null
-          web_authn_session_data?: Json | null
-        }
-        Update: {
-          created_at?: string
-          factor_id?: string
-          id?: string
-          ip_address?: unknown
-          otp_code?: string | null
-          verified_at?: string | null
-          web_authn_session_data?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mfa_challenges_auth_factor_id_fkey"
-            columns: ["factor_id"]
-            isOneToOne: false
-            referencedRelation: "mfa_factors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mfa_factors: {
-        Row: {
-          created_at: string
-          factor_type: Database["auth"]["Enums"]["factor_type"]
-          friendly_name: string | null
-          id: string
-          last_challenged_at: string | null
-          phone: string | null
-          secret: string | null
-          status: Database["auth"]["Enums"]["factor_status"]
-          updated_at: string
-          user_id: string
-          web_authn_aaguid: string | null
-          web_authn_credential: Json | null
-        }
-        Insert: {
-          created_at: string
-          factor_type: Database["auth"]["Enums"]["factor_type"]
-          friendly_name?: string | null
-          id: string
-          last_challenged_at?: string | null
-          phone?: string | null
-          secret?: string | null
-          status: Database["auth"]["Enums"]["factor_status"]
-          updated_at: string
-          user_id: string
-          web_authn_aaguid?: string | null
-          web_authn_credential?: Json | null
-        }
-        Update: {
-          created_at?: string
-          factor_type?: Database["auth"]["Enums"]["factor_type"]
-          friendly_name?: string | null
-          id?: string
-          last_challenged_at?: string | null
-          phone?: string | null
-          secret?: string | null
-          status?: Database["auth"]["Enums"]["factor_status"]
-          updated_at?: string
-          user_id?: string
-          web_authn_aaguid?: string | null
-          web_authn_credential?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mfa_factors_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      one_time_tokens: {
-        Row: {
-          created_at: string
-          id: string
-          relates_to: string
-          token_hash: string
-          token_type: Database["auth"]["Enums"]["one_time_token_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id: string
-          relates_to: string
-          token_hash: string
-          token_type: Database["auth"]["Enums"]["one_time_token_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          relates_to?: string
-          token_hash?: string
-          token_type?: Database["auth"]["Enums"]["one_time_token_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "one_time_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      refresh_tokens: {
-        Row: {
-          created_at: string | null
-          id: number
-          instance_id: string | null
-          parent: string | null
-          revoked: boolean | null
-          session_id: string | null
-          token: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          instance_id?: string | null
-          parent?: string | null
-          revoked?: boolean | null
-          session_id?: string | null
-          token?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          instance_id?: string | null
-          parent?: string | null
-          revoked?: boolean | null
-          session_id?: string | null
-          token?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "refresh_tokens_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      saml_providers: {
-        Row: {
-          attribute_mapping: Json | null
-          created_at: string | null
-          entity_id: string
-          id: string
-          metadata_url: string | null
-          metadata_xml: string
-          name_id_format: string | null
-          sso_provider_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          attribute_mapping?: Json | null
-          created_at?: string | null
-          entity_id: string
-          id: string
-          metadata_url?: string | null
-          metadata_xml: string
-          name_id_format?: string | null
-          sso_provider_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          attribute_mapping?: Json | null
-          created_at?: string | null
-          entity_id?: string
-          id?: string
-          metadata_url?: string | null
-          metadata_xml?: string
-          name_id_format?: string | null
-          sso_provider_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "saml_providers_sso_provider_id_fkey"
-            columns: ["sso_provider_id"]
-            isOneToOne: false
-            referencedRelation: "sso_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      saml_relay_states: {
-        Row: {
-          created_at: string | null
-          flow_state_id: string | null
-          for_email: string | null
-          id: string
-          redirect_to: string | null
-          request_id: string
-          sso_provider_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          flow_state_id?: string | null
-          for_email?: string | null
-          id: string
-          redirect_to?: string | null
-          request_id: string
-          sso_provider_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          flow_state_id?: string | null
-          for_email?: string | null
-          id?: string
-          redirect_to?: string | null
-          request_id?: string
-          sso_provider_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "saml_relay_states_flow_state_id_fkey"
-            columns: ["flow_state_id"]
-            isOneToOne: false
-            referencedRelation: "flow_state"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "saml_relay_states_sso_provider_id_fkey"
-            columns: ["sso_provider_id"]
-            isOneToOne: false
-            referencedRelation: "sso_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      schema_migrations: {
-        Row: {
-          version: string
-        }
-        Insert: {
-          version: string
-        }
-        Update: {
-          version?: string
-        }
-        Relationships: []
-      }
-      sessions: {
-        Row: {
-          aal: Database["auth"]["Enums"]["aal_level"] | null
-          created_at: string | null
-          factor_id: string | null
-          id: string
-          ip: unknown | null
-          not_after: string | null
-          refreshed_at: string | null
-          tag: string | null
-          updated_at: string | null
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          aal?: Database["auth"]["Enums"]["aal_level"] | null
-          created_at?: string | null
-          factor_id?: string | null
-          id: string
-          ip?: unknown | null
-          not_after?: string | null
-          refreshed_at?: string | null
-          tag?: string | null
-          updated_at?: string | null
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          aal?: Database["auth"]["Enums"]["aal_level"] | null
-          created_at?: string | null
-          factor_id?: string | null
-          id?: string
-          ip?: unknown | null
-          not_after?: string | null
-          refreshed_at?: string | null
-          tag?: string | null
-          updated_at?: string | null
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sso_domains: {
-        Row: {
-          created_at: string | null
-          domain: string
-          id: string
-          sso_provider_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          domain: string
-          id: string
-          sso_provider_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          domain?: string
-          id?: string
-          sso_provider_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sso_domains_sso_provider_id_fkey"
-            columns: ["sso_provider_id"]
-            isOneToOne: false
-            referencedRelation: "sso_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sso_providers: {
-        Row: {
-          created_at: string | null
-          id: string
-          resource_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          resource_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          resource_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      users: {
-        Row: {
-          aud: string | null
-          banned_until: string | null
-          confirmation_sent_at: string | null
-          confirmation_token: string | null
-          confirmed_at: string | null
-          created_at: string | null
-          deleted_at: string | null
-          email: string | null
-          email_change: string | null
-          email_change_confirm_status: number | null
-          email_change_sent_at: string | null
-          email_change_token_current: string | null
-          email_change_token_new: string | null
-          email_confirmed_at: string | null
-          encrypted_password: string | null
-          id: string
-          instance_id: string | null
-          invited_at: string | null
-          is_anonymous: boolean
-          is_sso_user: boolean
-          is_super_admin: boolean | null
-          last_sign_in_at: string | null
-          phone: string | null
-          phone_change: string | null
-          phone_change_sent_at: string | null
-          phone_change_token: string | null
-          phone_confirmed_at: string | null
-          raw_app_meta_data: Json | null
-          raw_user_meta_data: Json | null
-          reauthentication_sent_at: string | null
-          reauthentication_token: string | null
-          recovery_sent_at: string | null
-          recovery_token: string | null
-          role: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          aud?: string | null
-          banned_until?: string | null
-          confirmation_sent_at?: string | null
-          confirmation_token?: string | null
-          confirmed_at?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          email?: string | null
-          email_change?: string | null
-          email_change_confirm_status?: number | null
-          email_change_sent_at?: string | null
-          email_change_token_current?: string | null
-          email_change_token_new?: string | null
-          email_confirmed_at?: string | null
-          encrypted_password?: string | null
-          id: string
-          instance_id?: string | null
-          invited_at?: string | null
-          is_anonymous?: boolean
-          is_sso_user?: boolean
-          is_super_admin?: boolean | null
-          last_sign_in_at?: string | null
-          phone?: string | null
-          phone_change?: string | null
-          phone_change_sent_at?: string | null
-          phone_change_token?: string | null
-          phone_confirmed_at?: string | null
-          raw_app_meta_data?: Json | null
-          raw_user_meta_data?: Json | null
-          reauthentication_sent_at?: string | null
-          reauthentication_token?: string | null
-          recovery_sent_at?: string | null
-          recovery_token?: string | null
-          role?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          aud?: string | null
-          banned_until?: string | null
-          confirmation_sent_at?: string | null
-          confirmation_token?: string | null
-          confirmed_at?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          email?: string | null
-          email_change?: string | null
-          email_change_confirm_status?: number | null
-          email_change_sent_at?: string | null
-          email_change_token_current?: string | null
-          email_change_token_new?: string | null
-          email_confirmed_at?: string | null
-          encrypted_password?: string | null
-          id?: string
-          instance_id?: string | null
-          invited_at?: string | null
-          is_anonymous?: boolean
-          is_sso_user?: boolean
-          is_super_admin?: boolean | null
-          last_sign_in_at?: string | null
-          phone?: string | null
-          phone_change?: string | null
-          phone_change_sent_at?: string | null
-          phone_change_token?: string | null
-          phone_confirmed_at?: string | null
-          raw_app_meta_data?: Json | null
-          raw_user_meta_data?: Json | null
-          reauthentication_sent_at?: string | null
-          reauthentication_token?: string | null
-          recovery_sent_at?: string | null
-          recovery_token?: string | null
-          role?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      email: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      jwt: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uid: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-    }
-    Enums: {
-      aal_level: "aal1" | "aal2" | "aal3"
-      code_challenge_method: "s256" | "plain"
-      factor_status: "unverified" | "verified"
-      factor_type: "totp" | "webauthn" | "phone"
-      one_time_token_type:
-        | "confirmation_token"
-        | "reauthentication_token"
-        | "recovery_token"
-        | "email_change_token_new"
-        | "email_change_token_current"
-        | "phone_change_token"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
   }
   public: {
     Tables: {
@@ -1549,7 +820,28 @@ export type Database = {
             foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -2906,29 +2198,41 @@ export type Database = {
         Row: {
           active_floq_ids: string[]
           avg_vibe: Json
+          centroid: unknown | null
           crowd_count: number
+          geohash6: string | null
           h3_7: string | null
+          presence_cnt: number
           profile_id: string | null
           tile_id: string
           updated_at: string
+          venue_cnt: number
         }
         Insert: {
           active_floq_ids?: string[]
           avg_vibe?: Json
+          centroid?: unknown | null
           crowd_count?: number
+          geohash6?: string | null
           h3_7?: string | null
+          presence_cnt?: number
           profile_id?: string | null
-          tile_id: string
+          tile_id?: string
           updated_at?: string
+          venue_cnt?: number
         }
         Update: {
           active_floq_ids?: string[]
           avg_vibe?: Json
+          centroid?: unknown | null
           crowd_count?: number
+          geohash6?: string | null
           h3_7?: string | null
+          presence_cnt?: number
           profile_id?: string | null
           tile_id?: string
           updated_at?: string
+          venue_cnt?: number
         }
         Relationships: [
           {
@@ -5889,7 +5193,28 @@ export type Database = {
             foreignKeyName: "place_banners_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "place_banners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "place_banners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "place_banners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -7232,7 +6557,28 @@ export type Database = {
             foreignKeyName: "plan_stops_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "plan_stops_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "plan_stops_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "plan_stops_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -7513,6 +6859,7 @@ export type Database = {
           accuracy_m: number | null
           geohash6: string | null
           h3_idx: number | null
+          id: string
           lat: number | null
           lng: number | null
           location: unknown | null
@@ -7527,6 +6874,7 @@ export type Database = {
           accuracy_m?: number | null
           geohash6?: string | null
           h3_idx?: number | null
+          id: string
           lat?: number | null
           lng?: number | null
           location?: unknown | null
@@ -7541,6 +6889,7 @@ export type Database = {
           accuracy_m?: number | null
           geohash6?: string | null
           h3_idx?: number | null
+          id?: string
           lat?: number | null
           lng?: number | null
           location?: unknown | null
@@ -7591,7 +6940,28 @@ export type Database = {
             foreignKeyName: "presence_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -8088,7 +7458,28 @@ export type Database = {
             foreignKeyName: "pulse_events_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "pulse_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "pulse_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "pulse_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -8977,6 +8368,89 @@ export type Database = {
           srtext?: string | null
         }
         Relationships: []
+      }
+      stop_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_pinned: boolean | null
+          parent_id: string | null
+          stop_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          parent_id?: string | null
+          stop_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          parent_id?: string | null
+          stop_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stop_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "stop_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stop_comments_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stop_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          stop_id: string
+          updated_at: string | null
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          stop_id: string
+          updated_at?: string | null
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          stop_id?: string
+          updated_at?: string | null
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stop_votes_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sync_log: {
         Row: {
@@ -10131,6 +9605,76 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "user_venue_interactions_fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_venue_interactions_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -10169,7 +9713,28 @@ export type Database = {
             foreignKeyName: "user_venue_interactions_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -10246,7 +9811,28 @@ export type Database = {
             foreignKeyName: "user_venue_stats_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_stats_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_stats_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "user_venue_stats_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -10418,7 +10004,28 @@ export type Database = {
             foreignKeyName: "venue_aliases_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_aliases_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_aliases_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_aliases_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -10475,6 +10082,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "venue_bumps_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "venue_bumps_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -10513,7 +10155,28 @@ export type Database = {
             foreignKeyName: "venue_bumps_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -10677,7 +10340,28 @@ export type Database = {
             foreignKeyName: "venue_discoveries_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_discoveries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_discoveries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_discoveries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -10772,6 +10456,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "venue_feed_posts_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_feed_posts_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -10780,6 +10506,77 @@ export type Database = {
           },
           {
             foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_hours: {
+        Row: {
+          close: string
+          dow: number
+          open: string
+          venue_id: string
+        }
+        Insert: {
+          close: string
+          dow: number
+          open: string
+          venue_id: string
+        }
+        Update: {
+          close?: string
+          dow?: number
+          open?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_hours_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_hours_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_hours_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_hours_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_hours_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
@@ -10879,7 +10676,28 @@ export type Database = {
             foreignKeyName: "venue_interactions_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -10959,6 +10777,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "venue_live_presence_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_live_presence_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -10967,6 +10827,80 @@ export type Database = {
           },
           {
             foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_metrics_daily: {
+        Row: {
+          avg_dwell_min: number
+          day_date: string
+          unique_visitors: number
+          venue_id: string
+          visits: number
+        }
+        Insert: {
+          avg_dwell_min?: number
+          day_date: string
+          unique_visitors?: number
+          venue_id: string
+          visits?: number
+        }
+        Update: {
+          avg_dwell_min?: number
+          day_date?: string
+          unique_visitors?: number
+          venue_id?: string
+          visits?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
@@ -10993,7 +10927,43 @@ export type Database = {
           updated_at?: string
           venue_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "venue_presence_snapshot_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_presence_snapshot_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_presence_snapshot_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_presence_snapshot_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_presence_snapshot_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venue_signatures: {
         Row: {
@@ -11093,10 +11063,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_stays_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -11119,6 +11145,7 @@ export type Database = {
           profile_id: string | null
           source: string | null
           venue_id: string
+          visit_ts: unknown | null
         }
         Insert: {
           arrived_at: string
@@ -11130,6 +11157,7 @@ export type Database = {
           profile_id?: string | null
           source?: string | null
           venue_id: string
+          visit_ts?: unknown | null
         }
         Update: {
           arrived_at?: string
@@ -11141,6 +11169,7 @@ export type Database = {
           profile_id?: string | null
           source?: string | null
           venue_id?: string
+          visit_ts?: unknown | null
         }
         Relationships: [
           {
@@ -11179,10 +11208,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -11415,7 +11500,28 @@ export type Database = {
             foreignKeyName: "venues_near_me_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venues_near_me_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venues_near_me_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venues_near_me_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -11867,7 +11973,28 @@ export type Database = {
             foreignKeyName: "vibes_now_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "vibes_now_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "vibes_now_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "vibes_now_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -12010,6 +12137,13 @@ export type Database = {
       }
     }
     Views: {
+      _va_unique_provider_id: {
+        Row: {
+          provider_id: string | null
+          venue_id: string | null
+        }
+        Relationships: []
+      }
       friendships_v: {
         Row: {
           created_at: string | null
@@ -12098,10 +12232,66 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -12369,6 +12559,19 @@ export type Database = {
           },
         ]
       }
+      v_cron_job_last_run: {
+        Row: {
+          active: boolean | null
+          jobid: number | null
+          jobname: string | null
+          last_end: string | null
+          last_start: string | null
+          return_message: string | null
+          schedule: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
       v_crossed_paths: {
         Row: {
           created_at: string | null
@@ -12406,13 +12609,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -12422,8 +12618,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -12436,8 +12632,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -12450,7 +12646,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -12463,13 +12659,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -12943,34 +13146,21 @@ export type Database = {
       }
       v_friend_sparkline: {
         Row: {
-          last_seen_at: string | null
+          current_profile_id: string | null
+          day: string | null
           other_profile_id: string | null
-          profile_id: string | null
-          recent_vibes: Database["public"]["Enums"]["vibe_enum"][] | null
+          shared_hours: number | null
         }
         Relationships: []
       }
       v_friend_visits: {
         Row: {
-          friend_pairs: Json | null
-          venue_id: string | null
+          current_profile_id: string | null
+          day: string | null
+          other_profile_id: string | null
+          shared_hours: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "venue_stays_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venue_open_state"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "venue_stays_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       v_friends_flat: {
         Row: {
@@ -13278,6 +13468,257 @@ export type Database = {
           },
         ]
       }
+      v_signal_friend_visits_30d: {
+        Row: {
+          friend_visits_30d: number | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_signal_hour_heat: {
+        Row: {
+          hour_heat: number | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_signal_vibe: {
+        Row: {
+          venue_id: string | null
+          vibe_signal: number | null
+        }
+        Insert: {
+          venue_id?: string | null
+          vibe_signal?: never
+        }
+        Update: {
+          venue_id?: string | null
+          vibe_signal?: never
+        }
+        Relationships: []
+      }
+      v_time_in_venue_daily: {
+        Row: {
+          day: string | null
+          seconds_in_venue: number | null
+          unique_visitors: number | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_today_venue_discoveries: {
         Row: {
           discovered_at: string | null
@@ -13321,10 +13762,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -13346,10 +13843,66 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -13379,10 +13932,66 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -13581,6 +14190,48 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -13591,10 +14242,83 @@ export type Database = {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_venue_popularity_7d: {
+        Row: {
+          avg_dwell_min_7d: number | null
+          popularity_score_7d: number | null
+          venue_id: string | null
+          visits_7d: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_venue_rec_scores: {
+        Row: {
+          address: string | null
+          friend_signal: number | null
+          hour_signal: number | null
+          name: string | null
+          photo_url: string | null
+          popularity_signal: number | null
+          total_score: number | null
+          venue_id: string | null
+          vibe_signal: number | null
+        }
+        Relationships: []
       }
       v_venue_visits: {
         Row: {
@@ -13639,13 +14363,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -13655,8 +14372,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -13669,8 +14386,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -13683,7 +14400,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -13697,7 +14414,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "v_discover_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -13705,13 +14422,206 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_visits_source: {
+        Row: {
+          arrived_at: string | null
+          departed_at: string | null
+          profile_id: string | null
+          venue_id: string | null
+          visited_at: string | null
+        }
+        Insert: {
+          arrived_at?: never
+          departed_at?: never
+          profile_id?: string | null
+          venue_id?: string | null
+          visited_at?: never
+        }
+        Update: {
+          arrived_at?: never
+          departed_at?: never
+          profile_id?: string | null
+          venue_id?: string | null
+          visited_at?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
           {
@@ -13744,14 +14654,49 @@ export type Database = {
         }
         Relationships: []
       }
-      venue_hours: {
+      venue_hourly_presence: {
         Row: {
-          close: string | null
-          dow: number | null
-          open: string | null
+          hour_ts: string | null
+          users: number | null
           venue_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venue_signature_performance_stats: {
         Row: {
@@ -13761,6 +14706,15 @@ export type Database = {
           unique_signal_types: number | null
           unique_venues: number | null
           updated_last_24h: number | null
+        }
+        Relationships: []
+      }
+      venue_social_metrics: {
+        Row: {
+          now_users: number | null
+          refreshed_at: string | null
+          venue_id: string | null
+          visits_7d: number | null
         }
         Relationships: []
       }
@@ -13802,10 +14756,10 @@ export type Database = {
     Functions: {
       _create_policy: {
         Args: {
+          p_cmd: string
+          p_pol_name: string
           p_schema: string
           p_table: string
-          p_pol_name: string
-          p_cmd: string
         }
         Returns: undefined
       }
@@ -13822,11 +14776,11 @@ export type Database = {
         Returns: string
       }
       _postgis_deprecate: {
-        Args: { oldname: string; newname: string; version: string }
+        Args: { newname: string; oldname: string; version: string }
         Returns: undefined
       }
       _postgis_index_extent: {
-        Args: { tbl: unknown; col: string }
+        Args: { col: string; tbl: unknown }
         Returns: unknown
       }
       _postgis_pgsql_version: {
@@ -13838,7 +14792,7 @@ export type Database = {
         Returns: string
       }
       _postgis_selectivity: {
-        Args: { tbl: unknown; att_name: string; geom: unknown; mode?: string }
+        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }
         Returns: number
       }
       _st_3dintersects: {
@@ -13924,10 +14878,10 @@ export type Database = {
       }
       _st_voronoi: {
         Args: {
-          g1: unknown
           clip?: unknown
-          tolerance?: number
+          g1: unknown
           return_polygons?: boolean
+          tolerance?: number
         }
         Returns: unknown
       }
@@ -13945,20 +14899,20 @@ export type Database = {
       }
       accept_friend_request_atomic: {
         Args:
-          | { p_requester_id: string; p_accepter_id: string }
+          | { p_accepter_id: string; p_requester_id: string }
           | { requester_id: string }
         Returns: Json
       }
       add_plan_stop_with_order: {
         Args: {
-          p_plan_id: string
-          p_title: string
           p_description?: string
-          p_start_time?: string
-          p_end_time?: string
           p_duration_minutes?: number
-          p_venue_id?: string
+          p_end_time?: string
           p_estimated_cost?: number
+          p_plan_id: string
+          p_start_time?: string
+          p_title: string
+          p_venue_id?: string
         }
         Returns: string
       }
@@ -13970,29 +14924,29 @@ export type Database = {
         Args:
           | {
               catalog_name: string
-              schema_name: string
-              table_name: string
               column_name: string
+              new_dim: number
               new_srid_in: number
               new_type: string
-              new_dim: number
-              use_typmod?: boolean
-            }
-          | {
               schema_name: string
               table_name: string
-              column_name: string
-              new_srid: number
-              new_type: string
-              new_dim: number
               use_typmod?: boolean
             }
           | {
-              table_name: string
               column_name: string
+              new_dim: number
               new_srid: number
               new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+          | {
+              column_name: string
               new_dim: number
+              new_srid: number
+              new_type: string
+              table_name: string
               use_typmod?: boolean
             }
         Returns: string
@@ -14000,77 +14954,81 @@ export type Database = {
       analyze_co_location_events: {
         Args:
           | {
-              profile_a_id: string
-              profile_b_id: string
               days_back?: number
               min_overlap_minutes?: number
+              profile_a_id: string
+              profile_b_id: string
             }
           | {
               profile_a_id: string
               profile_b_id: string
-              time_window: string
               radius_m?: number
+              time_window: string
             }
         Returns: {
-          venue_id: string
-          start_time: string
-          end_time: string
-          duration_minutes: number
           distance_m: number
+          duration_minutes: number
+          end_time: string
+          start_time: string
+          venue_id: string
         }[]
       }
       analyze_dm_performance: {
         Args: Record<PropertyKey, never>
         Returns: {
+          description: string
           metric_name: string
           metric_value: number
-          description: string
         }[]
       }
       analyze_shared_floq_participation: {
         Args:
-          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { days_back?: number; profile_a_id: string; profile_b_id: string }
           | { profile_a_id: string; profile_b_id: string; time_window: string }
         Returns: {
+          most_recent_shared: string
           shared_floqs_count: number
           total_overlap_score: number
-          most_recent_shared: string
         }[]
       }
       analyze_shared_plan_participation: {
         Args:
-          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { days_back?: number; profile_a_id: string; profile_b_id: string }
           | { profile_a_id: string; profile_b_id: string; time_window: string }
         Returns: {
-          plan_id: string
           activity_type: string
           created_at: string
-          plan_title: string
+          plan_id: string
           plan_status: string
+          plan_title: string
         }[]
       }
       analyze_time_sync_patterns: {
-        Args: { profile_a_id: string; profile_b_id: string; days_back?: number }
+        Args: { days_back?: number; profile_a_id: string; profile_b_id: string }
         Returns: {
-          sync_score: number
           peak_sync_hours: number[]
           sync_consistency: number
+          sync_score: number
         }[]
       }
       analyze_venue_overlap_patterns: {
         Args:
-          | { profile_a_id: string; profile_b_id: string; days_back?: number }
+          | { days_back?: number; profile_a_id: string; profile_b_id: string }
           | { profile_a_id: string; profile_b_id: string; time_window: string }
         Returns: {
-          venue_id: string
+          overlap_score: number
           profile_a_visits: number
           profile_b_visits: number
-          overlap_score: number
+          venue_id: string
         }[]
       }
       are_friends: {
         Args: { user_a: string; user_b: string }
         Returns: boolean
+      }
+      arr_to_tsv: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       assert_plan_is_draft: {
         Args: { _plan_id: string }
@@ -14081,15 +15039,15 @@ export type Database = {
         Returns: boolean
       }
       award_achievement_optimized: {
-        Args: { _user: string; _code: string; _increment: number }
+        Args: { _code: string; _increment: number; _user: string }
         Returns: Json
       }
       award_if_goal_met: {
-        Args: { _user: string; _code: string; _increment: number }
+        Args: { _code: string; _increment: number; _user: string }
         Returns: boolean
       }
       backfill_spatial_indexes_batch: {
-        Args: { p_table_name: string; p_batch_size?: number }
+        Args: { p_batch_size?: number; p_table_name: string }
         Returns: Json
       }
       batch_location_update_v2: {
@@ -14149,7 +15107,7 @@ export type Database = {
         Returns: Json
       }
       build_daily_recap: {
-        Args: { uid: string; d: string }
+        Args: { d: string; uid: string }
         Returns: Json
       }
       bulk_upsert_relationships: {
@@ -14157,7 +15115,7 @@ export type Database = {
         Returns: number
       }
       bump_interaction: {
-        Args: { p_profile_id: string; p_venue_id: string; p_type: string }
+        Args: { p_profile_id: string; p_type: string; p_venue_id: string }
         Returns: undefined
       }
       bytea: {
@@ -14165,20 +15123,20 @@ export type Database = {
         Returns: string
       }
       calculate_distance_meters: {
-        Args: { lat1: number; lng1: number; lat2: number; lng2: number }
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
       calculate_floq_activity_score: {
         Args: {
-          p_floq_id: string
-          p_event_type: Database["public"]["Enums"]["flock_event_type_enum"]
-          p_proximity_boost?: number
           p_decay_hours?: number
+          p_event_type: Database["public"]["Enums"]["flock_event_type_enum"]
+          p_floq_id: string
+          p_proximity_boost?: number
         }
         Returns: Json
       }
       calculate_relationship_strength: {
-        Args: { interaction_count: number; days_since_last_interaction: number }
+        Args: { days_since_last_interaction: number; interaction_count: number }
         Returns: number
       }
       call_weekly_ai_suggestion: {
@@ -14194,7 +15152,7 @@ export type Database = {
         Returns: boolean
       }
       canonicalize_venue_enum: {
-        Args: { p_provider: string; p_raw: string[]; p_name: string }
+        Args: { p_name: string; p_provider: string; p_raw: string[] }
         Returns: Database["public"]["Enums"]["canonical_tag"][]
       }
       check_floq_admin_role: {
@@ -14219,8 +15177,8 @@ export type Database = {
       }
       check_rate_limit_v2: {
         Args: {
-          p_profile_id: string
           p_action_type: string
+          p_profile_id: string
           p_target_profile_id?: string
         }
         Returns: Json
@@ -14342,50 +15300,50 @@ export type Database = {
       }
       create_floq: {
         Args: {
+          p_ends_at: string
+          p_flock_type: string
+          p_invitees: string[]
           p_lat: number
           p_lng: number
           p_starts_at: string
-          p_ends_at: string
+          p_title: string
           p_vibe: Database["public"]["Enums"]["vibe_enum"]
           p_visibility: string
-          p_title: string
-          p_invitees: string[]
-          p_flock_type: string
         }
         Returns: string
       }
       create_friend_suggestion: {
         Args:
           | {
-              p_target_profile_id: string
-              p_suggested_friend_id: string
-              p_score: number
               p_confidence_level: string
-              p_suggestion_reason: string
+              p_score: number
               p_signals_summary: Json
+              p_suggested_friend_id: string
+              p_suggestion_reason: string
+              p_target_profile_id: string
             }
           | {
-              p_target_profile_id: string
-              p_suggested_profile_id: string
-              p_score: number
               p_confidence_level: string
-              p_suggestion_reason: string
+              p_score: number
               p_signals_summary: Json
+              p_suggested_profile_id: string
+              p_suggestion_reason: string
+              p_target_profile_id: string
             }
         Returns: string
       }
       create_group_plan_with_floq: {
         Args: {
-          p_title: string
           p_description?: string
-          p_starts_at?: string
           p_ends_at?: string
-          p_floq_title?: string
           p_floq_description?: string
+          p_floq_title?: string
+          p_starts_at?: string
+          p_title: string
         }
         Returns: {
-          plan_id: string
           floq_id: string
+          plan_id: string
         }[]
       }
       create_or_get_thread: {
@@ -14393,16 +15351,16 @@ export type Database = {
         Returns: string
       }
       create_or_replace_cron_job: {
-        Args: { job_name: string; schedule: string; command: string }
+        Args: { command: string; job_name: string; schedule: string }
         Returns: undefined
       }
       create_place_banner: {
         Args: {
-          _venue_id: string
-          _headline: string
           _cta_type?: string
-          _ttl_secs?: number
+          _headline: string
           _metadata?: Json
+          _ttl_secs?: number
+          _venue_id: string
         }
         Returns: string
       }
@@ -14429,22 +15387,22 @@ export type Database = {
       drop_and_recreate_policies: {
         Args: Record<PropertyKey, never>
         Returns: {
-          table_name: string
-          policy_name: string
           action: string
+          policy_name: string
           status: string
+          table_name: string
         }[]
       }
       dropgeometrycolumn: {
         Args:
           | {
               catalog_name: string
+              column_name: string
               schema_name: string
               table_name: string
-              column_name: string
             }
-          | { schema_name: string; table_name: string; column_name: string }
-          | { table_name: string; column_name: string }
+          | { column_name: string; schema_name: string; table_name: string }
+          | { column_name: string; table_name: string }
         Returns: string
       }
       dropgeometrytable: {
@@ -14455,7 +15413,7 @@ export type Database = {
         Returns: string
       }
       emit_event_notification: {
-        Args: { p_profile_id: string; p_kind: string; p_payload: Json }
+        Args: { p_kind: string; p_payload: Json; p_profile_id: string }
         Returns: string
       }
       enablelongtransactions: {
@@ -14483,50 +15441,50 @@ export type Database = {
         Returns: {
           id: string
           name: string
-          vibe: string
           radius_m: number
+          vibe: string
         }[]
       }
       export_afterglow_data: {
         Args: {
+          p_end_date?: string
           p_profile_id?: string
           p_start_date?: string
-          p_end_date?: string
         }
         Returns: Json
       }
       fetch_floq_messages: {
-        Args: { p_floq: string; p_before?: string; p_limit?: number }
+        Args: { p_before?: string; p_floq: string; p_limit?: number }
         Returns: {
-          id: string
-          floq_id: string
-          sender_id: string
           body: string
-          emoji: string
           created_at: string
+          emoji: string
+          floq_id: string
+          id: string
+          sender_id: string
           status: string
         }[]
       }
       finalize_plan: {
-        Args: { _plan_id: string; _selections: Json; _creator: string }
+        Args: { _creator: string; _plan_id: string; _selections: Json }
         Returns: Json
       }
       find_duplicate_venue: {
         Args: {
-          p_name: string
+          p_addr_min_sim?: number
+          p_address?: string
           p_lat: number
           p_lng: number
-          p_address?: string
-          p_radius_m?: number
+          p_name: string
           p_name_min_sim?: number
-          p_addr_min_sim?: number
+          p_radius_m?: number
         }
         Returns: {
-          match_venue_id: string
+          addr_sim: number
           decision: string
           dist_m: number
+          match_venue_id: string
           name_sim: number
-          addr_sim: number
         }[]
       }
       find_or_create_dm: {
@@ -14542,7 +15500,7 @@ export type Database = {
         Returns: string
       }
       fn_emit_notification: {
-        Args: { p_profile_id: string; p_kind: string; p_payload?: Json }
+        Args: { p_kind: string; p_payload?: Json; p_profile_id: string }
         Returns: undefined
       }
       friend_count: {
@@ -14561,27 +15519,251 @@ export type Database = {
         }[]
       }
       friends_nearby: {
-        Args: { user_lat: number; user_lng: number; radius_km: number }
+        Args: { radius_km: number; user_lat: number; user_lng: number }
         Returns: {
-          profile_id: string
-          display_name: string
           avatar_url: string
+          display_name: string
+          distance_m: number
           lat: number
           lng: number
-          distance_m: number
+          profile_id: string
         }[]
       }
       friends_recent_at_venue: {
-        Args: { p_venue_id: string; p_days?: number }
+        Args: { p_days?: number; p_venue_id: string }
         Returns: {
-          friend_profile_id: string
-          friend_name: string
           arrived_at: string
-          departed_at: string
           arrived_local_wall: string
+          departed_at: string
           departed_local_wall: string
+          friend_name: string
+          friend_profile_id: string
           venue_tz: string
         }[]
+      }
+      gbt_bit_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_bool_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_bool_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_bpchar_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_bytea_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_cash_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_cash_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_date_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_date_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_enum_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_enum_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_float4_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_float4_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_float8_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_float8_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_inet_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_int2_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_int2_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_int4_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_int4_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_int8_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_int8_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_intv_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_intv_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_intv_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_macad_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_macad_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_macad8_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_macad8_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_numeric_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_oid_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_oid_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_text_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_time_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_time_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_timetz_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_ts_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_ts_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_tstz_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_uuid_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_uuid_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_var_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbt_var_fetch: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey_var_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey_var_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey16_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey16_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey2_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey2_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey32_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey32_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey4_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey4_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey8_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gbtreekey8_out: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
@@ -14600,7 +15782,7 @@ export type Database = {
         Returns: string
       }
       generate_daily_afterglow_sql: {
-        Args: { p_profile_id: string; p_date: string }
+        Args: { p_date: string; p_profile_id: string }
         Returns: Json
       }
       generate_drop_statements: {
@@ -14611,43 +15793,43 @@ export type Database = {
       }
       generate_floq_suggestions: {
         Args: {
+          p_limit?: number
           p_profile_id: string
           p_user_lat: number
           p_user_lng: number
-          p_limit?: number
         }
         Returns: {
-          floq_id: string
-          title: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          distance_meters: number
-          participant_count: number
           confidence_score: number
+          distance_meters: number
+          floq_id: string
+          participant_count: number
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           reasoning: Json
+          title: string
         }[]
       }
       generate_friend_suggestions: {
         Args: {
+          p_limit?: number
           p_profile_id: string
           p_user_lat: number
           p_user_lng: number
-          p_limit?: number
         }
         Returns: {
-          friend_id: string
-          display_name: string
-          mutual_friends: number
-          resonance_score: number
           confidence_score: number
+          display_name: string
+          friend_id: string
+          mutual_friends: number
           reasoning: Json
+          resonance_score: number
         }[]
       }
       generate_function_replacement_scripts: {
         Args: Record<PropertyKey, never>
         Returns: {
-          function_id: number
-          drop_statement: string
           create_statement: string
+          drop_statement: string
+          function_id: number
         }[]
       }
       generate_function_rewrites: {
@@ -14664,19 +15846,19 @@ export type Database = {
       generate_replacement_sql: {
         Args: Record<PropertyKey, never>
         Returns: {
-          function_number: number
-          function_name: string
-          drop_statement: string
           create_statement: string
+          drop_statement: string
+          function_name: string
+          function_number: number
         }[]
       }
       generate_replacement_sql_v2: {
         Args: Record<PropertyKey, never>
         Returns: {
-          function_number: number
-          function_fullname: string
-          drop_statement: string
           create_statement: string
+          drop_statement: string
+          function_fullname: string
+          function_number: number
         }[]
       }
       geography: {
@@ -14904,7 +16086,7 @@ export type Database = {
         Returns: unknown
       }
       get_achievement_progress: {
-        Args: { _profile_id?: string; _codes?: string[] }
+        Args: { _codes?: string[]; _profile_id?: string }
         Returns: Json
       }
       get_achievement_stats: {
@@ -14917,29 +16099,29 @@ export type Database = {
       }
       get_active_floqs_with_members: {
         Args: {
+          p_flock_type?: string
           p_limit?: number
           p_offset?: number
           p_user_lat?: number
           p_user_lng?: number
-          p_flock_type?: string
         }
         Returns: {
-          id: string
-          title: string
-          name: string
-          description: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
-          type: string
-          flock_type: string
-          starts_at: string
-          ends_at: string
-          participant_count: number
           boost_count: number
-          starts_in_min: number
-          distance_meters: number
-          members: Json
           creator_id: string
+          description: string
+          distance_meters: number
+          ends_at: string
+          flock_type: string
+          id: string
+          members: Json
+          name: string
+          participant_count: number
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          starts_at: string
+          starts_in_min: number
+          title: string
+          type: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
         }[]
       }
       get_afterglow_daily_trends: {
@@ -14947,18 +16129,18 @@ export type Database = {
         Returns: {
           day: string
           energy_score: number
-          social_intensity: number
-          total_moments: number
           rolling_energy_7d: number
           rolling_social_7d: number
+          social_intensity: number
+          total_moments: number
         }[]
       }
       get_afterglow_location_insights: {
-        Args: { p_profile_id?: string; p_days_back?: number }
+        Args: { p_days_back?: number; p_profile_id?: string }
         Returns: Json
       }
       get_afterglow_monthly_trends: {
-        Args: { p_profile_id?: string; p_months_back?: number }
+        Args: { p_months_back?: number; p_profile_id?: string }
         Returns: Json
       }
       get_afterglow_weekly_patterns: {
@@ -14968,12 +16150,12 @@ export type Database = {
       get_afterglow_weekly_trends: {
         Args: { p_profile_id?: string }
         Returns: {
-          week_start: string
           avg_energy: number
           avg_social: number
           day_count: number
           energy_trend: string
           social_trend: string
+          week_start: string
         }[]
       }
       get_afterglow_with_moments: {
@@ -14985,73 +16167,73 @@ export type Database = {
         Returns: Json
       }
       get_auto_checkin_metrics: {
-        Args: { uid: string; d: string }
+        Args: { d: string; uid: string }
         Returns: Json
       }
       get_cluster_venues: {
         Args:
           | {
-              min_lng: number
-              min_lat: number
-              max_lng: number
-              max_lat: number
-              cursor_popularity?: number
               cursor_id?: string
+              cursor_popularity?: number
               limit_rows?: number
+              max_lat: number
+              max_lng: number
+              min_lat: number
+              min_lng: number
             }
           | {
               p_lat: number
+              p_limit?: number
               p_lng: number
               p_radius_m?: number
-              p_limit?: number
             }
         Returns: {
-          id: string
-          name: string
           category: string
-          lat: number
-          lng: number
-          vibe_score: number
-          live_count: number
-          popularity: number
-          vibe: string
-          source: string
           external_id: string
+          id: string
+          lat: number
+          live_count: number
+          lng: number
+          name: string
+          popularity: number
+          source: string
+          vibe: string
+          vibe_score: number
         }[]
       }
       get_common_venues: {
         Args: { me_id: string; target_id: string }
         Returns: {
-          venue_id: string
-          name: string
           category: string
+          name: string
           overlap_visits: number
+          venue_id: string
         }[]
       }
       get_compat_clusters: {
         Args: {
+          limit_n?: number
+          radius_m?: number
           u_lat: number
           u_lng: number
           u_vibe: Database["public"]["Enums"]["vibe_enum"]
-          radius_m?: number
-          limit_n?: number
         }
         Returns: {
-          gh6: string
           centroid: unknown
-          dom_vibe: Database["public"]["Enums"]["vibe_enum"]
-          vibe_match: number
           distance_m: number
+          dom_vibe: Database["public"]["Enums"]["vibe_enum"]
+          gh6: string
           user_count: number
+          vibe_match: number
         }[]
       }
       get_crossed_paths_stats: {
         Args: { me_id: string; target_id: string }
         Returns: {
           countweek: number
-          lastvenue: string
-          lastat: string
           distance: number
+          lastat: string
+          lastvenue: string
         }[]
       }
       get_current_user_role: {
@@ -15098,21 +16280,21 @@ export type Database = {
           p_vibe_filter?: Database["public"]["Enums"]["vibe_enum"]
         }
         Returns: {
-          cluster_id: string
           center_lat: number
           center_lng: number
-          user_count: number
+          cluster_id: string
+          created_at: string
+          diversity_score: number
           dominant_vibe: Database["public"]["Enums"]["vibe_enum"]
-          vibe_distribution: Json
           intensity: number
           momentum_score: number
-          stability_index: number
-          diversity_score: number
           prediction_confidence: number
-          temporal_trend: string
           social_density: number
+          stability_index: number
+          temporal_trend: string
+          user_count: number
           vibe_coherence: number
-          created_at: string
+          vibe_distribution: Json
         }[]
       }
       get_field_state_at: {
@@ -15121,10 +16303,10 @@ export type Database = {
       }
       get_field_tiles_optimized_v2: {
         Args: {
-          p_bbox_lat_min: number
           p_bbox_lat_max: number
-          p_bbox_lng_min: number
+          p_bbox_lat_min: number
           p_bbox_lng_max: number
+          p_bbox_lng_min: number
           p_zoom_level?: number
         }
         Returns: Json
@@ -15132,24 +16314,24 @@ export type Database = {
       get_floq_full_details: {
         Args: { p_floq_id: string }
         Returns: {
-          id: string
-          title: string
-          description: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          flock_type: Database["public"]["Enums"]["flock_type_enum"]
-          starts_at: string
-          ends_at: string
-          visibility: string
-          creator_id: string
-          participant_count: number
-          boost_count: number
-          notifications_enabled: boolean
-          mention_permissions: Database["public"]["Enums"]["mention_permissions_enum"]
-          join_approval_required: boolean
           activity_visibility: Database["public"]["Enums"]["activity_visibility_enum"]
-          welcome_message: string
+          boost_count: number
+          creator_id: string
+          description: string
+          ends_at: string
+          flock_type: Database["public"]["Enums"]["flock_type_enum"]
+          id: string
+          join_approval_required: boolean
+          mention_permissions: Database["public"]["Enums"]["mention_permissions_enum"]
+          notifications_enabled: boolean
+          participant_count: number
           participants: Json
           pending_invites: Json
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          starts_at: string
+          title: string
+          visibility: string
+          welcome_message: string
         }[]
       }
       get_floq_participant_counts: {
@@ -15162,24 +16344,24 @@ export type Database = {
       get_floq_participants: {
         Args: { p_floq_id: string; p_limit?: number }
         Returns: {
-          profile_id: string
           avatar_url: string
+          profile_id: string
         }[]
       }
       get_floq_plans_enhanced: {
         Args: { p_profile_id: string }
         Returns: {
-          id: string
-          title: string
-          description: string
-          status: Database["public"]["Enums"]["plan_status_enum"]
-          starts_at: string
-          ends_at: string
           created_at: string
-          updated_at: string
           creator_id: string
+          description: string
+          ends_at: string
           floq_id: string
+          id: string
           participant_count: number
+          starts_at: string
+          status: Database["public"]["Enums"]["plan_status_enum"]
+          title: string
+          updated_at: string
           user_rsvp_status: Database["public"]["Enums"]["rsvp_status_enum"]
         }[]
       }
@@ -15188,30 +16370,30 @@ export type Database = {
         Returns: string
       }
       get_friend_feed: {
-        Args: { _since?: string; _limit?: number; _uid?: string }
+        Args: { _limit?: number; _since?: string; _uid?: string }
         Returns: {
           floq_id: string
-          joined_at: string
-          role: string
           floq_title: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          friend_avatar_url: string
+          friend_display_name: string
           friend_id: string
           friend_username: string
-          friend_display_name: string
-          friend_avatar_url: string
+          joined_at: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          role: string
         }[]
       }
       get_friend_suggestion_candidates: {
         Args:
-          | { target_profile_id: string; limit_count?: number }
           | {
-              target_profile_id: string
               limit_count?: number
               min_interactions?: number
+              target_profile_id: string
             }
+          | { limit_count?: number; target_profile_id: string }
         Returns: {
-          profile_id: string
           interaction_score: number
+          profile_id: string
         }[]
       }
       get_friend_trail: {
@@ -15221,13 +16403,13 @@ export type Database = {
           point_limit?: number
         }
         Returns: {
+          captured_at: string
           lat: number
           lng: number
-          captured_at: string
         }[]
       }
       get_friend_visit_stats: {
-        Args: { p_viewer: string; p_venue: string }
+        Args: { p_venue: string; p_viewer: string }
         Returns: {
           friend_count: number
           friend_list: Json
@@ -15236,47 +16418,47 @@ export type Database = {
       get_friends_list: {
         Args: { _uid?: string }
         Returns: {
-          friend_id: string
-          username: string
-          display_name: string
           avatar_url: string
           bio: string
+          display_name: string
+          friend_id: string
           friend_since: string
+          username: string
         }[]
       }
       get_friends_with_presence: {
         Args: Record<PropertyKey, never>
         Returns: {
-          friend_profile_id: string
-          username: string
-          display_name: string
           avatar_url: string
-          last_seen: string
-          vibe: Database["public"]["Enums"]["vibe_enum"]
-          location: unknown
+          display_name: string
+          friend_profile_id: string
           is_live: boolean
+          last_seen: string
+          location: unknown
+          username: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
         }[]
       }
       get_friends_with_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
-          friendship_id: string
-          friend_id: string
-          username: string
-          display_name: string
           avatar_url: string
           bio: string
+          display_name: string
+          friend_id: string
           friend_since: string
           friendship_created_at: string
+          friendship_id: string
+          username: string
         }[]
       }
       get_hotspot_time_series: {
         Args: { p_cluster_id: string; p_hours_back?: number }
         Returns: {
+          avg_intensity: number
+          dominant_vibe: Database["public"]["Enums"]["vibe_enum"]
           hour_bucket: string
           user_count: number
-          dominant_vibe: Database["public"]["Enums"]["vibe_enum"]
-          avg_intensity: number
         }[]
       }
       get_leaderboard_rank: {
@@ -15284,10 +16466,10 @@ export type Database = {
         Returns: Json
       }
       get_live_activity: {
-        Args: { p_radius_km: number; p_lat: number; p_lng: number }
+        Args: { p_lat: number; p_lng: number; p_radius_km: number }
         Returns: {
-          venue_id: string
           people_now: number
+          venue_id: string
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
         }[]
       }
@@ -15297,136 +16479,136 @@ export type Database = {
       }
       get_location_track: {
         Args: {
-          p_profile_id: string
-          p_start_time?: string
           p_end_time?: string
           p_limit?: number
+          p_profile_id: string
+          p_start_time?: string
         }
         Returns: {
+          accuracy: number
+          captured_at: string
           lat: number
           lng: number
-          captured_at: string
-          accuracy: number
           venue_id: string
         }[]
       }
       get_message_reactions: {
         Args: { ids: string[] }
         Returns: {
-          message_id: string
-          emoji: string
           cnt: number
+          emoji: string
+          message_id: string
         }[]
       }
       get_nearby_floqs: {
         Args: {
           p_lat: number
-          p_lng: number
-          p_radius_m?: number
-          p_primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
           p_limit?: number
+          p_lng: number
+          p_primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
+          p_radius_m?: number
         }
         Returns: {
-          id: string
-          title: string
-          distance_m: number
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          participant_count: number
-          max_participants: number
-          description: string
           address: string
-          starts_at: string
-          ends_at: string
-          creator_name: string
           creator_avatar: string
-          is_private: boolean
+          creator_name: string
+          description: string
+          distance_m: number
+          ends_at: string
+          id: string
           is_joined: boolean
+          is_private: boolean
+          max_participants: number
+          participant_count: number
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          starts_at: string
+          title: string
         }[]
       }
       get_nearby_live_positions: {
         Args: {
           p_latitude: number
+          p_limit?: number
           p_longitude: number
           p_radius_m?: number
-          p_limit?: number
         }
         Returns: {
-          profile_id: string
+          accuracy: number
+          distance_m: number
+          last_updated: string
           latitude: number
           longitude: number
-          distance_m: number
-          accuracy: number
+          profile_id: string
           vibe: string
-          last_updated: string
         }[]
       }
       get_nearby_presence: {
-        Args: { user_lat: number; user_lng: number; radius_meters?: number }
+        Args: { radius_meters?: number; user_lat: number; user_lng: number }
         Returns: {
-          profile_id: string
-          vibe: Database["public"]["Enums"]["vibe_enum"]
           distance_meters: number
+          profile_id: string
           updated_at: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
         }[]
       }
       get_nearby_users_v2: {
         Args: {
+          p_geohash6_prefix?: string
+          p_h3_ring_ids?: number[]
           p_lat: number
+          p_limit?: number
           p_lng: number
           p_radius_meters?: number
-          p_h3_ring_ids?: number[]
-          p_geohash6_prefix?: string
-          p_limit?: number
         }
         Returns: Json
       }
       get_nearby_users_with_proximity: {
         Args: {
+          radius_meters?: number
           user_lat: number
           user_lng: number
-          radius_meters?: number
           user_profile_id?: string
         }
         Returns: {
-          profile_id: string
-          display_name: string
-          username: string
           avatar_url: string
+          display_name: string
           distance_meters: number
           last_seen: string
+          profile_id: string
           proximity_score: number
           recent_proximity_events: number
+          username: string
         }[]
       }
       get_nearby_venues: {
         Args: {
+          p_all_tags?: string[]
+          p_any_tags?: string[]
           p_lat: number
+          p_limit?: number
           p_lng: number
           p_radius_m: number
-          p_limit?: number
-          p_any_tags?: string[]
-          p_all_tags?: string[]
         }
         Returns: {
-          id: string
-          name: string
-          distance_m: number
-          lat: number
-          lng: number
-          categories: string[]
-          provider: string
-          photo_url: string
-          vibe_tag: string
-          vibe_score: number
-          live_count: number
           canonical_tags: string[]
+          categories: string[]
+          distance_m: number
+          id: string
+          lat: number
+          live_count: number
+          lng: number
+          name: string
+          photo_url: string
+          provider: string
+          vibe_score: number
+          vibe_tag: string
         }[]
       }
       get_nearest_venue: {
         Args: { p_lat: number; p_lng: number; p_radius?: number }
         Returns: {
-          venue_id: string
           distance_m: number
+          venue_id: string
         }[]
       }
       get_or_create_dm_thread: {
@@ -15436,112 +16618,112 @@ export type Database = {
       get_pending_friend_requests: {
         Args: { _uid?: string }
         Returns: {
+          avatar_url: string
+          display_name: string
+          requested_at: string
           requester_id: string
           username: string
-          display_name: string
-          avatar_url: string
-          requested_at: string
         }[]
       }
       get_personalized_recs: {
         Args: {
-          p_profile_id: string
+          p_ab?: string
           p_lat: number
+          p_limit?: number
           p_lng: number
-          p_radius_m?: number
+          p_log?: boolean
           p_now?: string
-          p_vibe?: string
+          p_profile_id: string
+          p_radius_m?: number
           p_tags?: string[]
           p_tz?: string
-          p_limit?: number
-          p_ab?: string
-          p_log?: boolean
+          p_vibe?: string
         }
         Returns: {
-          venue_id: string
-          name: string
           dist_m: number
-          score: number
+          name: string
           reason: string
+          score: number
+          venue_id: string
         }[]
       }
       get_personalized_recs_verbose: {
         Args: {
-          p_profile_id: string
+          p_ab?: string
           p_lat: number
+          p_limit?: number
           p_lng: number
-          p_radius_m?: number
+          p_log?: boolean
           p_now?: string
-          p_vibe?: string
+          p_profile_id: string
+          p_radius_m?: number
           p_tags?: string[]
           p_tz?: string
-          p_limit?: number
-          p_ab?: string
-          p_log?: boolean
+          p_vibe?: string
         }
         Returns: {
-          venue_id: string
-          name: string
           address: string
-          lat: number
-          lng: number
-          dist_m: number
-          walk_min: number
-          price_tier: Database["public"]["Enums"]["price_enum"]
-          rating: number
-          popularity: number
-          categories: string[]
-          score: number
-          components: Json
-          weights: Json
           badges: string[]
-          reason: string
-          provider: string
-          provider_id: string
-          photo_url: string
+          categories: string[]
+          components: Json
+          dist_m: number
           external_id: string
           geohash5: string
+          lat: number
+          lng: number
+          name: string
+          photo_url: string
+          popularity: number
+          price_tier: Database["public"]["Enums"]["price_enum"]
+          provider: string
+          provider_id: string
+          rating: number
+          reason: string
+          score: number
+          venue_id: string
+          walk_min: number
+          weights: Json
         }[]
       }
       get_personalized_venue_score: {
         Args: {
+          p_base_score?: number
           p_profile_id: string
           p_venue_id: string
-          p_base_score?: number
         }
         Returns: number
       }
       get_plan_metadata: {
         Args: { p_plan_id: string }
         Returns: {
-          total_stops: number
           confirmed_stops: number
+          estimated_cost_per_person: number
           participant_count: number
           total_duration_minutes: number
-          estimated_cost_per_person: number
+          total_stops: number
         }[]
       }
       get_plan_suggestions: {
-        Args: { me_id: string; target_id: string; limit_n?: number }
+        Args: { limit_n?: number; me_id: string; target_id: string }
         Returns: {
+          estimated_duration: string
           id: string
           title: string
-          vibe: string
           venue_type: string
-          estimated_duration: string
+          vibe: string
         }[]
       }
       get_plan_summary: {
         Args: { p_plan_id: string }
         Returns: {
+          created_at: string
           plan_id: string
           summary: string
           summary_mode: string
-          created_at: string
         }[]
       }
       get_profile_stats: {
-        Args: { target_profile_id: string; metres?: number; seconds?: number }
+        Args: { metres?: number; seconds?: number; target_profile_id: string }
         Returns: Json
       }
       get_proj4_from_srid: {
@@ -15550,128 +16732,128 @@ export type Database = {
       }
       get_social_suggestions: {
         Args: {
-          p_lat: number
-          p_lng: number
-          p_radius_km?: number
-          p_limit?: number
-          p_vibe?: string
           p_activity?: string
           p_group_size?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
           p_profile_id?: string
+          p_radius_km?: number
+          p_vibe?: string
         }
         Returns: Json
       }
       get_social_suggestions_by_loc: {
         Args: {
-          p_lat: number
-          p_lng: number
-          p_radius_km?: number
-          p_limit?: number
-          p_vibe?: string
           p_activity?: string
           p_group_size?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
           p_profile_id?: string
+          p_radius_km?: number
+          p_vibe?: string
         }
         Returns: Json
       }
       get_social_suggestions_by_profile: {
         Args: {
-          p_profile_id?: string
-          p_lat?: number
-          p_lng?: number
-          p_radius_km?: number
-          p_limit?: number
-          p_vibe?: string
           p_activity?: string
           p_group_size?: number
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_profile_id?: string
+          p_radius_km?: number
+          p_vibe?: string
         }
         Returns: Json
       }
       get_trending_venues: {
         Args: {
           p_lat: number
+          p_limit: number
           p_lng: number
           p_radius_m: number
-          p_limit: number
         }
         Returns: {
-          venue_id: string
-          name: string
           distance_m: number
-          vibe_tag: string
-          trend_score: number
+          name: string
           people_now: number
+          trend_score: number
+          venue_id: string
+          vibe_tag: string
         }[]
       }
       get_trending_venues_enriched: {
         Args: {
+          p_all_tags?: string[]
+          p_any_tags?: string[]
           p_lat: number
+          p_limit?: number
           p_lng: number
           p_radius_m: number
-          p_limit?: number
-          p_any_tags?: string[]
-          p_all_tags?: string[]
         }
         Returns: {
-          venue_id: string
-          name: string
-          distance_m: number
-          people_now: number
-          visits_15m: number
-          trend_score: number
-          last_seen_at: string
-          provider: string
-          categories: string[]
-          vibe_tag: string
-          vibe_score: number
-          live_count: number
-          photo_url: string
           canonical_tags: string[]
+          categories: string[]
+          distance_m: number
+          last_seen_at: string
+          live_count: number
+          name: string
+          people_now: number
+          photo_url: string
+          provider: string
+          trend_score: number
+          venue_id: string
+          vibe_score: number
+          vibe_tag: string
+          visits_15m: number
         }[]
       }
       get_unread_counts: {
         Args: { p_profile: string }
         Returns: {
-          kind: string
           cnt: number
+          kind: string
         }[]
       }
       get_user_accessible_plans: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          title: string
-          planned_at: string
-          status: Database["public"]["Enums"]["plan_status_enum"]
-          vibe_tag: string
           archived_at: string
           current_stop_id: string
           execution_started_at: string
+          id: string
           participant_count: number
+          planned_at: string
+          status: Database["public"]["Enums"]["plan_status_enum"]
           stops_count: number
+          title: string
+          vibe_tag: string
         }[]
       }
       get_user_by_username: {
         Args: { lookup_username: string }
         Returns: {
-          id: string
-          username: string
-          display_name: string
           avatar_url: string
           bio: string
+          display_name: string
+          id: string
+          username: string
         }[]
       }
       get_user_geofences: {
         Args: { user_profile_id: string }
         Returns: {
-          id: string
-          name: string
-          type: string
-          privacy_level: string
           center_lat: number
           center_lng: number
-          radius_meters: number
+          id: string
+          name: string
           polygon_coordinates: Json
+          privacy_level: string
+          radius_meters: number
+          type: string
         }[]
       }
       get_user_location: {
@@ -15681,20 +16863,20 @@ export type Database = {
       get_user_plans_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
-          status_name: string
           plan_count: number
+          status_name: string
         }[]
       }
       get_user_vibe_insights: {
-        Args: { p_profile_id?: string; p_days_back?: number }
+        Args: { p_days_back?: number; p_profile_id?: string }
         Returns: {
-          total_corrections: number
           accuracy_trend: number
+          consistency_score: number
+          learning_velocity: number
           most_corrected_from: Database["public"]["Enums"]["vibe_enum"]
           most_corrected_to: Database["public"]["Enums"]["vibe_enum"]
-          learning_velocity: number
-          consistency_score: number
           top_locations: Json
+          total_corrections: number
         }[]
       }
       get_venue_timezone: {
@@ -15703,114 +16885,114 @@ export type Database = {
       }
       get_venues_in_bbox: {
         Args:
-          | { west: number; south: number; east: number; north: number }
-          | { west: number; south: number; east: number; north: number }
+          | { east: number; north: number; south: number; west: number }
+          | { east: number; north: number; south: number; west: number }
         Returns: {
-          id: string
-          name: string
-          lat: number
-          lng: number
-          vibe: string
-          source: string
-          external_id: string
-          categories: string[]
-          rating: number
-          photo_url: string
           address: string
-          live_count: number
-          popularity: number
-          vibe_score: number
+          categories: string[]
           created_at: string
+          external_id: string
+          id: string
+          lat: number
+          live_count: number
+          lng: number
+          name: string
+          photo_url: string
+          popularity: number
+          rating: number
+          source: string
           updated_at: string
+          vibe: string
+          vibe_score: number
         }[]
       }
       get_venues_open_status: {
         Args: { p_venue_ids: string[] }
         Returns: {
-          venue_id: string
+          next_close_ts: string
+          next_open_ts: string
           open_now: boolean
           status_text: string
-          next_open_ts: string
-          next_close_ts: string
           tzid: string
+          venue_id: string
         }[]
       }
       get_vibe_breakdown: {
         Args: { me_id: string; target_id: string }
         Returns: {
           overall: number
-          venuedna: number
-          timerhythm: number
           socialpattern: number
+          timerhythm: number
+          venuedna: number
         }[]
       }
       get_vibe_clusters: {
         Args: {
-          min_lng: number
-          min_lat: number
-          max_lng: number
           max_lat: number
+          max_lng: number
+          min_lat: number
+          min_lng: number
           p_precision?: number
         }
         Returns: {
-          gh6: string
           centroid: unknown
+          gh6: string
+          member_count: number
           total: number
           vibe_counts: Json
           vibe_mode: string
-          member_count: number
         }[]
       }
       get_visible_floqs_with_members: {
         Args: {
           p_lat: number
-          p_lng: number
           p_limit?: number
+          p_lng: number
           p_offset?: number
           p_radius_km?: number
         }
         Returns: {
-          id: string
-          title: string
-          description: string
-          primary_vibe: string
-          vibe_tag: string
-          flock_type: string
-          starts_at: string
-          ends_at: string
-          starts_in_min: number
-          distance_m: number
-          participant_count: number
           boost_count: number
-          members: Json
           creator_id: string
+          description: string
+          distance_m: number
+          ends_at: string
+          flock_type: string
+          id: string
+          members: Json
+          participant_count: number
+          primary_vibe: string
+          starts_at: string
+          starts_in_min: number
+          title: string
+          vibe_tag: string
         }[]
       }
       get_visible_friend_presence: {
         Args: { p_viewer: string }
         Returns: {
-          profile_id: string
           lat: number
           lng: number
-          vibe: string
+          profile_id: string
           updated_at: string
+          vibe: string
         }[]
       }
       get_walkable_floqs: {
         Args: { lat: number; lng: number; metres?: number }
         Returns: {
-          floq_id: string
-          title: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           distance_m: number
+          floq_id: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          title: string
         }[]
       }
       get_yearly_stats: {
         Args: { uid: string; yyyy: number }
         Returns: {
-          year: number
-          total_venues: number
           total_minutes: number
+          total_venues: number
+          year: number
         }[]
       }
       gettransactionid: {
@@ -15880,30 +17062,30 @@ export type Database = {
       identify_problematic_policies: {
         Args: Record<PropertyKey, never>
         Returns: {
+          check_clause: string
+          command: string
+          issue_description: string
+          policy_name: string
           schema_name: string
           table_name: string
-          policy_name: string
-          command: string
           using_clause: string
-          check_clause: string
-          issue_description: string
         }[]
       }
       import_venues: {
         Args: {
-          p_lat: number
-          p_lng: number
-          p_source: string
-          p_radius_m?: number
           p_categories?: string[]
+          p_lat: number
           p_limit?: number
+          p_lng: number
+          p_radius_m?: number
+          p_source: string
         }
         Returns: number
       }
       increment_rate_limit_v2: {
         Args: {
-          p_profile_id: string
           p_action_type: string
+          p_profile_id: string
           p_target_profile_id?: string
         }
         Returns: boolean
@@ -15924,12 +17106,16 @@ export type Database = {
         Args: { p_floq_id: string }
         Returns: boolean
       }
+      is_friend: {
+        Args: { p_other: string; p_viewer: string }
+        Returns: boolean
+      }
       is_live_now: {
         Args: { uid: string }
         Returns: boolean
       }
       is_open_at: {
-        Args: { hours: Json; tz: string; ts: string }
+        Args: { hours: Json; ts: string; tz: string }
         Returns: boolean
       }
       is_point_in_geofence: {
@@ -15957,7 +17143,7 @@ export type Database = {
         Returns: Json
       }
       join_or_leave_plan: {
-        Args: { p_plan_id: string; p_join: boolean }
+        Args: { p_join: boolean; p_plan_id: string }
         Returns: Json
       }
       json: {
@@ -15982,38 +17168,38 @@ export type Database = {
       }
       log_dedupe_candidates: {
         Args: {
-          p_run_id: string
+          p_addr_min_sim?: number
+          p_address?: string
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_name: string
+          p_name_min_sim?: number
           p_provider: string
           p_provider_id: string
-          p_name: string
-          p_lat: number
-          p_lng: number
-          p_address?: string
           p_radius_m?: number
-          p_limit?: number
-          p_name_min_sim?: number
-          p_addr_min_sim?: number
+          p_run_id: string
         }
         Returns: number
       }
       log_invite_decline: {
-        Args: { p_profile_id: string; p_plan_id: string }
+        Args: { p_plan_id: string; p_profile_id: string }
         Returns: undefined
       }
       log_pulse_event: {
         Args: {
           p_event_type: Database["public"]["Enums"]["pulse_event_type"]
-          p_profile_id?: string
           p_floq_id?: string
+          p_meta?: Json
+          p_people_count?: number
+          p_profile_id?: string
           p_venue_id?: string
           p_vibe_tag?: Database["public"]["Enums"]["vibe_tag"]
-          p_people_count?: number
-          p_meta?: Json
         }
         Returns: undefined
       }
       log_security_event: {
-        Args: { event_type: string; details?: Json; severity?: string }
+        Args: { details?: Json; event_type: string; severity?: string }
         Returns: undefined
       }
       longtransactionsenabled: {
@@ -16029,7 +17215,7 @@ export type Database = {
         Returns: undefined
       }
       mark_notifications_read: {
-        Args: { notification_ids?: string[]; mark_all_for_user?: boolean }
+        Args: { mark_all_for_user?: boolean; notification_ids?: string[] }
         Returns: number
       }
       mark_read: {
@@ -16041,11 +17227,11 @@ export type Database = {
         Returns: undefined
       }
       mark_thread_read: {
-        Args: { p_surface: string; p_thread_id: string; p_profile_id: string }
+        Args: { p_profile_id: string; p_surface: string; p_thread_id: string }
         Returns: undefined
       }
       mark_thread_read_enhanced: {
-        Args: { p_thread_id: string; p_profile_id: string }
+        Args: { p_profile_id: string; p_thread_id: string }
         Returns: undefined
       }
       match_locations_batch: {
@@ -16068,16 +17254,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           policy_name: string
-          table_name: string
           status: string
+          table_name: string
         }[]
       }
       norm_pair: {
         Args: { a: string; b: string }
         Returns: {
-          low: string
           high: string
+          low: string
         }[]
+      }
+      normalise_place_feed: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       path: {
         Args: { "": unknown }
@@ -16086,13 +17276,13 @@ export type Database = {
       people_crossed_paths_today: {
         Args: { in_me?: string; proximity_meters?: number }
         Returns: {
+          avatar_url: string
+          display_name: string
+          distance_meters: number
+          last_seen_at: string
+          overlap_duration_minutes: number
           profile_id: string
           username: string
-          display_name: string
-          avatar_url: string
-          last_seen_at: string
-          distance_meters: number
-          overlap_duration_minutes: number
         }[]
       }
       pg_get_tabledef: {
@@ -16155,6 +17345,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      populate_field_tiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       populate_geometry_columns: {
         Args:
           | { tbl_oid: unknown; use_typmod?: boolean }
@@ -16166,15 +17360,15 @@ export type Database = {
         Returns: unknown
       }
       postgis_constraint_dims: {
-        Args: { geomschema: string; geomtable: string; geomcolumn: string }
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
         Returns: number
       }
       postgis_constraint_srid: {
-        Args: { geomschema: string; geomtable: string; geomcolumn: string }
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
         Returns: number
       }
       postgis_constraint_type: {
-        Args: { geomschema: string; geomtable: string; geomcolumn: string }
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
         Returns: string
       }
       postgis_dropbbox: {
@@ -16263,8 +17457,8 @@ export type Database = {
       }
       postgis_type_name: {
         Args: {
-          geomname: string
           coord_dimension: number
+          geomname: string
           use_new_name?: boolean
         }
         Returns: string
@@ -16291,19 +17485,19 @@ export type Database = {
       }
       presence_nearby: {
         Args: {
+          include_self?: boolean
           lat: number
           lng: number
           radius_m: number
-          include_self?: boolean
         }
         Returns: {
-          profile_id: string
-          display_name: string
           avatar_url: string
+          display_name: string
           lat: number
           lng: number
-          vibe: Database["public"]["Enums"]["vibe_enum"]
+          profile_id: string
           updated_at: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
         }[]
       }
       print_pk_profile_statements: {
@@ -16322,21 +17516,33 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      publish_hotspots_json: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       publish_presence_counts: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      purge_stale_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      push_sender_ping: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       rank_nearby_people: {
-        Args: { p_lat: number; p_lng: number; p_limit?: number }
+        Args: { p_lat: number; p_limit?: number; p_lng: number }
         Returns: {
-          profile_id: string
-          vibe: string
           meters: number
+          profile_id: string
           synthetic_id: string
+          vibe: string
         }[]
       }
       react_to_message: {
-        Args: { p_message_id: string; p_user_id: string; p_emoji: string }
+        Args: { p_emoji: string; p_message_id: string; p_user_id: string }
         Returns: Json
       }
       refresh_field_tiles: {
@@ -16345,24 +17551,32 @@ export type Database = {
       }
       refresh_field_tiles_smart_v2: {
         Args: {
-          p_bbox_lat_min?: number
           p_bbox_lat_max?: number
-          p_bbox_lng_min?: number
+          p_bbox_lat_min?: number
           p_bbox_lng_max?: number
+          p_bbox_lng_min?: number
         }
         Returns: Json
       }
       refresh_field_tiles_v2: {
         Args: {
-          p_hex_size_meters?: number
-          p_bbox_lat_min?: number
           p_bbox_lat_max?: number
-          p_bbox_lng_min?: number
+          p_bbox_lat_min?: number
           p_bbox_lng_max?: number
+          p_bbox_lng_min?: number
+          p_hex_size_meters?: number
         }
         Returns: Json
       }
       refresh_friend_last_points: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_friend_last_seen: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_friend_sparkline: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -16378,8 +17592,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      refresh_time_in_venue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_v_friend_visits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_venue_hourly_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       refresh_venue_metrics: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_venue_metrics_daily: {
+        Args: { p_end?: string; p_start?: string }
         Returns: undefined
       }
       refresh_venue_social_metrics: {
@@ -16407,147 +17637,147 @@ export type Database = {
         Returns: undefined
       }
       rewrite_profile_id_to_profile_id: {
-        Args: { target_schema?: string; dry_run?: boolean }
+        Args: { dry_run?: boolean; target_schema?: string }
         Returns: {
-          schema_name: string
           function_name: string
+          schema_name: string
           status: string
         }[]
       }
       search_afterglows: {
         Args: {
+          p_dominant_vibe?: string
+          p_end_date?: string
+          p_is_pinned?: boolean
+          p_limit?: number
+          p_max_energy?: number
+          p_min_energy?: number
+          p_offset?: number
           p_profile_id?: string
           p_search_query?: string
           p_start_date?: string
-          p_end_date?: string
-          p_min_energy?: number
-          p_max_energy?: number
-          p_dominant_vibe?: string
           p_tags?: string[]
-          p_is_pinned?: boolean
-          p_limit?: number
-          p_offset?: number
         }
         Returns: {
-          id: string
-          date: string
-          energy_score: number
-          social_intensity: number
-          dominant_vibe: string
-          summary_text: string
-          total_venues: number
-          total_floqs: number
+          created_at: string
           crossed_paths_count: number
-          vibe_path: string[]
+          date: string
+          dominant_vibe: string
+          energy_score: number
+          id: string
           is_pinned: boolean
           moments_count: number
-          created_at: string
           search_rank: number
+          social_intensity: number
+          summary_text: string
+          total_floqs: number
+          total_venues: number
+          vibe_path: string[]
         }[]
       }
       search_direct_threads: {
-        Args: { p_uid: string; p_query: string }
+        Args: { p_query: string; p_uid: string }
         Returns: {
-          thread_id: string
-          friend_profile_id: string
-          friend_display_name: string
-          friend_username: string
           friend_avatar_url: string
+          friend_display_name: string
+          friend_profile_id: string
+          friend_username: string
           last_message_at: string
-          my_unread_count: number
           last_message_content: string
-          match_type: string
           match_score: number
+          match_type: string
+          my_unread_count: number
+          thread_id: string
         }[]
       }
       search_direct_threads_enhanced: {
-        Args: { p_profile_id: string; p_query?: string; p_limit?: number }
+        Args: { p_limit?: number; p_profile_id: string; p_query?: string }
         Returns: {
-          thread_id: string
-          other_profile_id: string
-          other_display_name: string
-          other_username: string
-          other_avatar_url: string
-          last_message_content: string
-          last_message_at: string
-          unread_count: number
           is_online: boolean
+          last_message_at: string
+          last_message_content: string
+          other_avatar_url: string
+          other_display_name: string
+          other_profile_id: string
+          other_username: string
+          thread_id: string
+          unread_count: number
         }[]
       }
       search_everything: {
-        Args: { query: string; limit_count?: number }
+        Args: { limit_count?: number; query: string }
         Returns: {
-          kind: string
-          id: string
-          label: string
-          sublabel: string
-          similarity: number
           distance_m: number
+          id: string
+          kind: string
+          label: string
+          similarity: number
           starts_at: string
+          sublabel: string
         }[]
       }
       search_floqs: {
         Args: {
-          p_query?: string
+          _viewer_id?: string
           p_lat?: number
+          p_limit?: number
           p_lng?: number
+          p_offset?: number
+          p_query?: string
           p_radius_km?: number
           p_time_from?: string
           p_time_to?: string
-          p_visibilities?: string[]
           p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
-          p_limit?: number
-          p_offset?: number
-          _viewer_id?: string
+          p_visibilities?: string[]
         }
         Returns: {
+          distance_m: number
+          ends_at: string
           id: string
-          title: string
+          participant_count: number
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           starts_at: string
-          ends_at: string
-          distance_m: number
-          participant_count: number
+          title: string
           user_joined_floq_id: string
         }[]
       }
       search_profiles: {
-        Args: { p_query: string; p_limit?: number }
+        Args: { p_limit?: number; p_query: string }
         Returns: {
+          avatar_url: string
+          display_name: string
           id: string
           username: string
-          display_name: string
-          avatar_url: string
         }[]
       }
       search_profiles_with_status: {
-        Args: { p_query: string; p_limit?: number; p_viewer_id?: string }
+        Args: { p_limit?: number; p_query: string; p_viewer_id?: string }
         Returns: {
-          id: string
-          display_name: string
-          username: string
           avatar_url: string
           created_at: string
+          display_name: string
+          id: string
           req_status: Database["public"]["Enums"]["friend_req_status"]
+          username: string
         }[]
       }
       search_users: {
         Args: { search_query: string }
         Returns: {
-          id: string
-          display_name: string
           avatar_url: string
           created_at: string
+          display_name: string
+          id: string
           username: string
         }[]
       }
       send_dm_message: {
         Args: {
-          p_thread_id: string
-          p_sender_id: string
           p_body?: string
-          p_reply_to?: string
           p_media?: Json
+          p_reply_to?: string
+          p_sender_id: string
+          p_thread_id: string
           p_type?: Database["public"]["Enums"]["dm_msg_type"]
         }
         Returns: {
@@ -16565,11 +17795,11 @@ export type Database = {
       }
       send_dm_message_uuid: {
         Args: {
-          p_thread_id: string
-          p_sender_id: string
           p_body: string
-          p_reply_to?: string
           p_media?: Json
+          p_reply_to?: string
+          p_sender_id: string
+          p_thread_id: string
           p_type?: Database["public"]["Enums"]["dm_msg_type"]
         }
         Returns: {
@@ -16597,12 +17827,12 @@ export type Database = {
       }
       send_message: {
         Args: {
+          p_body?: string
+          p_media_meta?: Json
+          p_reply_to_id?: string
+          p_sender_id: string
           p_surface: Database["public"]["Enums"]["chat_surface_enum"]
           p_thread_id: string
-          p_sender_id: string
-          p_body?: string
-          p_reply_to_id?: string
-          p_media_meta?: Json
         }
         Returns: {
           body: string | null
@@ -16634,24 +17864,24 @@ export type Database = {
       }
       set_live_share_bulk: {
         Args: {
+          _auto_when?: Database["public"]["Enums"]["auto_when_enum"][]
           _friend_ids: string[]
           _on: boolean
-          _auto_when?: Database["public"]["Enums"]["auto_when_enum"][]
         }
         Returns: undefined
       }
       set_participant_role: {
-        Args: { p_floq_id: string; p_profile_id: string; p_new_role: string }
+        Args: { p_floq_id: string; p_new_role: string; p_profile_id: string }
         Returns: undefined
       }
       set_user_vibe: {
         Args:
           | {
-              new_vibe: Database["public"]["Enums"]["vibe_enum"]
               lat?: number
               lng?: number
+              new_vibe: Database["public"]["Enums"]["vibe_enum"]
             }
-          | { new_vibe: string; lat?: number; lng?: number }
+          | { lat?: number; lng?: number; new_vibe: string }
         Returns: {
           active: boolean | null
           gh5: string | null
@@ -16666,11 +17896,11 @@ export type Database = {
         }
       }
       set_venue_embedding: {
-        Args: { p_venue_id: string; p: string }
+        Args: { p: string; p_venue_id: string }
         Returns: undefined
       }
       should_log_presence: {
-        Args: { p_user: string; p_loc: unknown; p_now?: string }
+        Args: { p_loc: unknown; p_now?: string; p_user: string }
         Returns: boolean
       }
       show_limit: {
@@ -16682,7 +17912,7 @@ export type Database = {
         Returns: string[]
       }
       slug_to_id: {
-        Args: { tag: string; t: Database["public"]["Enums"]["mention_target"] }
+        Args: { t: Database["public"]["Enums"]["mention_target"]; tag: string }
         Returns: string
       }
       sparsevec_out: {
@@ -16784,10 +18014,10 @@ export type Database = {
           | { geog: unknown; maxdecimaldigits?: number; options?: number }
           | { geom: unknown; maxdecimaldigits?: number; options?: number }
           | {
-              r: Record<string, unknown>
               geom_column?: string
               maxdecimaldigits?: number
               pretty_bool?: boolean
+              r: Record<string, unknown>
             }
         Returns: string
       }
@@ -16796,28 +18026,28 @@ export type Database = {
           | { "": string }
           | {
               geog: unknown
-              maxdecimaldigits?: number
-              options?: number
-              nprefix?: string
               id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+            }
+          | {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+          | {
+              geom: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
             }
           | { geom: unknown; maxdecimaldigits?: number; options?: number }
-          | {
-              version: number
-              geog: unknown
-              maxdecimaldigits?: number
-              options?: number
-              nprefix?: string
-              id?: string
-            }
-          | {
-              version: number
-              geom: unknown
-              maxdecimaldigits?: number
-              options?: number
-              nprefix?: string
-              id?: string
-            }
         Returns: string
       }
       st_ashexewkb: {
@@ -16836,24 +18066,24 @@ export type Database = {
         Returns: string
       }
       st_asmarc21: {
-        Args: { geom: unknown; format?: string }
+        Args: { format?: string; geom: unknown }
         Returns: string
       }
       st_asmvtgeom: {
         Args: {
-          geom: unknown
           bounds: unknown
-          extent?: number
           buffer?: number
           clip_geom?: boolean
+          extent?: number
+          geom: unknown
         }
         Returns: unknown
       }
       st_assvg: {
         Args:
           | { "": string }
-          | { geog: unknown; rel?: number; maxdecimaldigits?: number }
-          | { geom: unknown; rel?: number; maxdecimaldigits?: number }
+          | { geog: unknown; maxdecimaldigits?: number; rel?: number }
+          | { geom: unknown; maxdecimaldigits?: number; rel?: number }
         Returns: string
       }
       st_astext: {
@@ -16866,18 +18096,18 @@ export type Database = {
               geom: unknown[]
               ids: number[]
               prec?: number
-              prec_z?: number
               prec_m?: number
-              with_sizes?: boolean
+              prec_z?: number
               with_boxes?: boolean
+              with_sizes?: boolean
             }
           | {
               geom: unknown
               prec?: number
-              prec_z?: number
               prec_m?: number
-              with_sizes?: boolean
+              prec_z?: number
               with_boxes?: boolean
+              with_sizes?: boolean
             }
         Returns: string
       }
@@ -16896,13 +18126,13 @@ export type Database = {
         Returns: unknown
       }
       st_boundingdiagonal: {
-        Args: { geom: unknown; fits?: boolean }
+        Args: { fits?: boolean; geom: unknown }
         Returns: unknown
       }
       st_buffer: {
         Args:
-          | { geom: unknown; radius: number; options?: string }
-          | { geom: unknown; radius: number; quadsegs: number }
+          | { geom: unknown; options?: string; radius: number }
+          | { geom: unknown; quadsegs: number; radius: number }
         Returns: unknown
       }
       st_buildarea: {
@@ -16918,7 +18148,7 @@ export type Database = {
         Returns: unknown
       }
       st_clipbybox2d: {
-        Args: { geom: unknown; box: unknown }
+        Args: { box: unknown; geom: unknown }
         Returns: unknown
       }
       st_closestpoint: {
@@ -16947,9 +18177,9 @@ export type Database = {
       }
       st_concavehull: {
         Args: {
+          param_allow_holes?: boolean
           param_geom: unknown
           param_pctconvex: number
-          param_allow_holes?: boolean
         }
         Returns: unknown
       }
@@ -16986,11 +18216,11 @@ export type Database = {
         Returns: boolean
       }
       st_curvetoline: {
-        Args: { geom: unknown; tol?: number; toltype?: number; flags?: number }
+        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }
         Returns: unknown
       }
       st_delaunaytriangles: {
-        Args: { g1: unknown; tolerance?: number; flags?: number }
+        Args: { flags?: number; g1: unknown; tolerance?: number }
         Returns: unknown
       }
       st_difference: {
@@ -17062,7 +18292,7 @@ export type Database = {
         Args:
           | { box: unknown; dx: number; dy: number }
           | { box: unknown; dx: number; dy: number; dz?: number }
-          | { geom: unknown; dx: number; dy: number; dz?: number; dm?: number }
+          | { dm?: number; dx: number; dy: number; dz?: number; geom: unknown }
         Returns: unknown
       }
       st_exteriorring: {
@@ -17090,7 +18320,7 @@ export type Database = {
         Returns: unknown
       }
       st_force4d: {
-        Args: { geom: unknown; zvalue?: number; mvalue?: number }
+        Args: { geom: unknown; mvalue?: number; zvalue?: number }
         Returns: unknown
       }
       st_forcecollection: {
@@ -17151,10 +18381,10 @@ export type Database = {
       }
       st_geometricmedian: {
         Args: {
-          g: unknown
-          tolerance?: number
-          max_iter?: number
           fail_if_not_converged?: boolean
+          g: unknown
+          max_iter?: number
+          tolerance?: number
         }
         Returns: unknown
       }
@@ -17216,12 +18446,12 @@ export type Database = {
       }
       st_hexagon: {
         Args:
+          | { cell_i: number; cell_j: number; origin?: unknown; size: number }
           | { center: unknown; size: number }
-          | { size: number; cell_i: number; cell_j: number; origin?: unknown }
         Returns: unknown
       }
       st_hexagongrid: {
-        Args: { size: number; bounds: unknown }
+        Args: { bounds: unknown; size: number }
         Returns: Record<string, unknown>[]
       }
       st_interpolatepoint: {
@@ -17271,7 +18501,7 @@ export type Database = {
         Returns: boolean
       }
       st_isvaliddetail: {
-        Args: { geom: unknown; flags?: number }
+        Args: { flags?: number; geom: unknown }
         Returns: Database["public"]["CompositeTypes"]["valid_detail"]
       }
       st_isvalidreason: {
@@ -17294,7 +18524,7 @@ export type Database = {
         Returns: number
       }
       st_letters: {
-        Args: { letters: string; font?: Json }
+        Args: { font?: Json; letters: string }
         Returns: unknown
       }
       st_linecrossingdirection: {
@@ -17302,7 +18532,7 @@ export type Database = {
         Returns: number
       }
       st_linefromencodedpolyline: {
-        Args: { txtin: string; nprecision?: number }
+        Args: { nprecision?: number; txtin: string }
         Returns: unknown
       }
       st_linefrommultipoint: {
@@ -17334,20 +18564,20 @@ export type Database = {
         Returns: unknown
       }
       st_locatealong: {
-        Args: { geometry: unknown; measure: number; leftrightoffset?: number }
+        Args: { geometry: unknown; leftrightoffset?: number; measure: number }
         Returns: unknown
       }
       st_locatebetween: {
         Args: {
-          geometry: unknown
           frommeasure: number
-          tomeasure: number
+          geometry: unknown
           leftrightoffset?: number
+          tomeasure: number
         }
         Returns: unknown
       }
       st_locatebetweenelevations: {
-        Args: { geometry: unknown; fromelevation: number; toelevation: number }
+        Args: { fromelevation: number; geometry: unknown; toelevation: number }
         Returns: unknown
       }
       st_longestline: {
@@ -17495,7 +18725,7 @@ export type Database = {
         Returns: number
       }
       st_offsetcurve: {
-        Args: { line: unknown; distance: number; params?: string }
+        Args: { distance: number; line: unknown; params?: string }
         Returns: unknown
       }
       st_orderingequals: {
@@ -17528,10 +18758,10 @@ export type Database = {
       }
       st_pointm: {
         Args: {
-          xcoordinate: number
-          ycoordinate: number
           mcoordinate: number
           srid?: number
+          xcoordinate: number
+          ycoordinate: number
         }
         Returns: unknown
       }
@@ -17545,20 +18775,20 @@ export type Database = {
       }
       st_pointz: {
         Args: {
+          srid?: number
           xcoordinate: number
           ycoordinate: number
           zcoordinate: number
-          srid?: number
         }
         Returns: unknown
       }
       st_pointzm: {
         Args: {
+          mcoordinate: number
+          srid?: number
           xcoordinate: number
           ycoordinate: number
           zcoordinate: number
-          mcoordinate: number
-          srid?: number
         }
         Returns: unknown
       }
@@ -17583,16 +18813,16 @@ export type Database = {
         Returns: unknown
       }
       st_project: {
-        Args: { geog: unknown; distance: number; azimuth: number }
+        Args: { azimuth: number; distance: number; geog: unknown }
         Returns: unknown
       }
       st_quantizecoordinates: {
         Args: {
           g: unknown
+          prec_m?: number
           prec_x: number
           prec_y?: number
           prec_z?: number
-          prec_m?: number
         }
         Returns: unknown
       }
@@ -17633,7 +18863,7 @@ export type Database = {
         Returns: unknown
       }
       st_simplifypolygonhull: {
-        Args: { geom: unknown; vertex_fraction: number; is_outer?: boolean }
+        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }
         Returns: unknown
       }
       st_split: {
@@ -17641,11 +18871,11 @@ export type Database = {
         Returns: unknown
       }
       st_square: {
-        Args: { size: number; cell_i: number; cell_j: number; origin?: unknown }
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
         Returns: unknown
       }
       st_squaregrid: {
-        Args: { size: number; bounds: unknown }
+        Args: { bounds: unknown; size: number }
         Returns: Record<string, unknown>[]
       }
       st_srid: {
@@ -17657,7 +18887,7 @@ export type Database = {
         Returns: unknown
       }
       st_subdivide: {
-        Args: { geom: unknown; maxvertices?: number; gridsize?: number }
+        Args: { geom: unknown; gridsize?: number; maxvertices?: number }
         Returns: unknown[]
       }
       st_summary: {
@@ -17678,11 +18908,11 @@ export type Database = {
       }
       st_tileenvelope: {
         Args: {
-          zoom: number
-          x: number
-          y: number
           bounds?: unknown
           margin?: number
+          x: number
+          y: number
+          zoom: number
         }
         Returns: unknown
       }
@@ -17692,8 +18922,8 @@ export type Database = {
       }
       st_transform: {
         Args:
-          | { geom: unknown; from_proj: string; to_proj: string }
-          | { geom: unknown; from_proj: string; to_srid: number }
+          | { from_proj: string; geom: unknown; to_proj: string }
+          | { from_proj: string; geom: unknown; to_srid: number }
           | { geom: unknown; to_proj: string }
         Returns: unknown
       }
@@ -17709,11 +18939,11 @@ export type Database = {
         Returns: unknown
       }
       st_voronoilines: {
-        Args: { g1: unknown; tolerance?: number; extend_to?: unknown }
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
         Returns: unknown
       }
       st_voronoipolygons: {
-        Args: { g1: unknown; tolerance?: number; extend_to?: unknown }
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
         Returns: unknown
       }
       st_within: {
@@ -17729,7 +18959,7 @@ export type Database = {
         Returns: unknown
       }
       st_wrapx: {
-        Args: { geom: unknown; wrap: number; move: number }
+        Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
       st_x: {
@@ -17773,17 +19003,17 @@ export type Database = {
         Returns: number
       }
       store_push_token: {
-        Args: { p_device_id: string; p_token: string; p_platform: string }
+        Args: { p_device_id: string; p_platform: string; p_token: string }
         Returns: undefined
       }
       suggest_friends: {
-        Args: { p_profile_id: string; p_limit?: number }
+        Args: { p_limit?: number; p_profile_id: string }
         Returns: {
-          id: string
-          username: string
-          display_name: string
           avatar_url: string
+          display_name: string
+          id: string
           shared_tags: number
+          username: string
         }[]
       }
       text: {
@@ -17791,11 +19021,11 @@ export type Database = {
         Returns: string
       }
       toggle_close_friend: {
-        Args: { _other_user: string; _flag: boolean }
+        Args: { _flag: boolean; _other_user: string }
         Returns: undefined
       }
       toggle_dm_reaction: {
-        Args: { p_message_id: string; p_profile_id: string; p_emoji: string }
+        Args: { p_emoji: string; p_message_id: string; p_profile_id: string }
         Returns: Json
       }
       toggle_venue_bump: {
@@ -17804,11 +19034,11 @@ export type Database = {
       }
       track_interaction: {
         Args: {
-          p_profile_id: string
-          p_venue_id: string
-          p_type: string
-          p_weight?: number
           p_context?: Json
+          p_profile_id: string
+          p_type: string
+          p_venue_id: string
+          p_weight?: number
         }
         Returns: undefined
       }
@@ -17830,10 +19060,10 @@ export type Database = {
       }
       update_circuit_breaker_state: {
         Args: {
-          p_state: string
           p_failure_count?: number
-          p_success_count?: number
           p_metadata?: Json
+          p_state: string
+          p_success_count?: number
         }
         Returns: undefined
       }
@@ -17847,20 +19077,20 @@ export type Database = {
       }
       update_proximity_stats: {
         Args: {
-          p_profile_id_a: string
-          p_profile_id_b: string
+          p_confidence?: number
           p_distance_meters: number
           p_duration_minutes?: number
-          p_confidence?: number
+          p_profile_id_a: string
+          p_profile_id_b: string
         }
         Returns: undefined
       }
       update_suggestion_metrics: {
         Args: {
-          p_profile_id: string
-          p_suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
           p_action: string
+          p_profile_id: string
           p_suggestion_id?: string
+          p_suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
         }
         Returns: Json
       }
@@ -17869,7 +19099,7 @@ export type Database = {
         Returns: undefined
       }
       update_user_preferences_from_feedback: {
-        Args: { p_profile_id: string; p_vibe: string; p_moment: string }
+        Args: { p_moment: string; p_profile_id: string; p_vibe: string }
         Returns: undefined
       }
       update_username: {
@@ -17891,47 +19121,47 @@ export type Database = {
       updategeometrysrid: {
         Args: {
           catalogn_name: string
-          schema_name: string
-          table_name: string
           column_name: string
           new_srid_in: number
+          schema_name: string
+          table_name: string
         }
         Returns: string
       }
       upsert_friendship: {
         Args: {
-          _other_user: string
-          _new_state: Database["public"]["Enums"]["friend_state"]
           _is_close?: boolean
+          _new_state: Database["public"]["Enums"]["friend_state"]
+          _other_user: string
         }
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_friendship_analysis: {
         Args:
           | {
+              p_confidence_level: string
+              p_overall_score: number
               p_profile_a: string
               p_profile_b: string
-              p_overall_score: number
-              p_confidence_level: string
-              p_signals_data: Json
               p_relationship_type: string
+              p_signals_data: Json
             }
           | {
+              p_confidence_level: string
+              p_overall_score: number
               p_profile_a: string
               p_profile_b: string
-              p_overall_score: number
-              p_confidence_level: string
-              p_signals_data: Json
               p_relationship_type: string
+              p_signals_data: Json
             }
         Returns: string
       }
       upsert_live_position: {
         Args: {
-          p_profile_id: string
+          p_accuracy?: number
           p_latitude: number
           p_longitude: number
-          p_accuracy?: number
+          p_profile_id: string
           p_vibe?: string
           p_visibility?: string
         }
@@ -17942,18 +19172,18 @@ export type Database = {
           | { p: Json }
           | {
               p: Json
-              p_run_id?: string
-              p_radius_m?: number
-              p_name_min_sim?: number
               p_addr_min_sim?: number
+              p_name_min_sim?: number
+              p_radius_m?: number
+              p_run_id?: string
             }
         Returns: {
-          venue_id: string
           action: string
-          matched_venue_id: string
-          dist_m: number
-          name_sim: number
           addr_sim: number
+          dist_m: number
+          matched_venue_id: string
+          name_sim: number
+          venue_id: string
         }[]
       }
       upsert_online_status: {
@@ -17973,51 +19203,51 @@ export type Database = {
         Args: {
           p_lat: number
           p_lng: number
+          p_venue_id?: string
           p_vibe?: Database["public"]["Enums"]["vibe_enum"]
           p_visibility?: string
-          p_venue_id?: string
         }
         Returns: undefined
       }
       upsert_presence_realtime_v2: {
         Args: {
+          p_accuracy?: number
+          p_h3_idx?: number
           p_lat: number
           p_lng: number
           p_vibe?: string
-          p_accuracy?: number
-          p_h3_idx?: number
         }
         Returns: Json
       }
       upsert_presence_realtime_v2_text: {
         Args: {
+          p_accuracy?: number
+          p_h3_idx_text?: string
           p_lat: number
           p_lng: number
           p_vibe?: string
-          p_accuracy?: number
-          p_h3_idx_text?: string
         }
         Returns: Json
       }
       upsert_user_tastes: {
-        Args: { p_profile_id: string; p_json: Json }
+        Args: { p_json: Json; p_profile_id: string }
         Returns: undefined
       }
       upsert_venue_presence_smart: {
         Args: {
-          _venue_id: string
-          _profile_id: string
-          _vibe: Database["public"]["Enums"]["vibe_enum"]
           _heartbeat_ts?: string
+          _profile_id: string
+          _venue_id: string
+          _vibe: Database["public"]["Enums"]["vibe_enum"]
         }
         Returns: boolean
       }
       upsert_vibes_now_smart: {
         Args: {
-          _profile_id: string
-          _vibe: Database["public"]["Enums"]["vibe_enum"]
           _location: unknown
+          _profile_id: string
           _venue_id?: string
+          _vibe: Database["public"]["Enums"]["vibe_enum"]
           _visibility?: string
         }
         Returns: boolean
@@ -18101,63 +19331,63 @@ export type Database = {
       venue_details: {
         Args: { p_venue_id: string }
         Returns: {
-          id: string
-          name: string
-          vibe: string
           description: string
-          live_count: number
-          vibe_score: number
-          popularity: number
-          lat: number
-          lng: number
           geom: unknown
+          id: string
+          lat: number
+          live_count: number
+          lng: number
+          name: string
+          popularity: number
+          vibe: string
+          vibe_score: number
         }[]
       }
       venues_near_me: {
-        Args: { user_lat: number; user_lng: number; radius_km?: number }
+        Args: { radius_km?: number; user_lat: number; user_lng: number }
         Returns: {
-          id: string
-          name: string
-          lat: number
-          lng: number
-          vibe: string
-          source: string
           distance_m: number
+          id: string
+          lat: number
           live_count: number
+          lng: number
+          name: string
+          source: string
+          vibe: string
         }[]
       }
       venues_within_radius: {
         Args: {
-          p_lat: number
-          p_lng: number
-          p_radius_m?: number
-          p_limit?: number
-          p_profile_id?: string
           p_categories?: string[]
+          p_lat: number
+          p_limit?: number
+          p_lng: number
           p_price_tier_max?: Database["public"]["Enums"]["price_enum"]
+          p_profile_id?: string
+          p_radius_m?: number
           p_vibe?: string
         }
         Returns: {
-          venue_id: string
-          name: string
-          distance_m: number
-          rating: number
+          address: string
           categories: string[]
           description: string
-          address: string
-          photo_url: string
+          distance_m: number
           live_count: number
-          price_tier: Database["public"]["Enums"]["price_enum"]
+          name: string
           personalized_score: number
+          photo_url: string
+          price_tier: Database["public"]["Enums"]["price_enum"]
+          rating: number
+          venue_id: string
         }[]
       }
       verify_profile_id_rewrite: {
         Args: { target_schema?: string }
         Returns: {
-          schema_name: string
           function_name: string
-          kind: string
           issue: string
+          kind: string
+          schema_name: string
         }[]
       }
       vibe_similarity: {
@@ -18170,12 +19400,12 @@ export type Database = {
       walkable_floqs: {
         Args: { p_lat: number; p_lng: number; p_metres?: number }
         Returns: {
-          id: string
-          title: string
-          starts_at: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           distance_meters: number
+          id: string
           participant_count: number
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          starts_at: string
+          title: string
         }[]
       }
     }
@@ -18360,419 +19590,6 @@ export type Database = {
         valid: boolean | null
         reason: string | null
         location: unknown | null
-      }
-    }
-  }
-  realtime: {
-    Tables: {
-      messages: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_10: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_11: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_12: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_13: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_14: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_15: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2025_08_16: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      schema_migrations: {
-        Row: {
-          inserted_at: string | null
-          version: number
-        }
-        Insert: {
-          inserted_at?: string | null
-          version: number
-        }
-        Update: {
-          inserted_at?: string | null
-          version?: number
-        }
-        Relationships: []
-      }
-      subscription: {
-        Row: {
-          claims: Json
-          claims_role: unknown
-          created_at: string
-          entity: unknown
-          filters: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
-          id: number
-          subscription_id: string
-        }
-        Insert: {
-          claims: Json
-          claims_role?: unknown
-          created_at?: string
-          entity: unknown
-          filters?: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
-          id?: never
-          subscription_id: string
-        }
-        Update: {
-          claims?: Json
-          claims_role?: unknown
-          created_at?: string
-          entity?: unknown
-          filters?: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
-          id?: never
-          subscription_id?: string
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      apply_rls: {
-        Args: { wal: Json; max_record_bytes?: number }
-        Returns: Database["realtime"]["CompositeTypes"]["wal_rls"][]
-      }
-      broadcast_changes: {
-        Args: {
-          topic_name: string
-          event_name: string
-          operation: string
-          table_name: string
-          table_schema: string
-          new: Record<string, unknown>
-          old: Record<string, unknown>
-          level?: string
-        }
-        Returns: undefined
-      }
-      build_prepared_statement_sql: {
-        Args: {
-          prepared_statement_name: string
-          entity: unknown
-          columns: Database["realtime"]["CompositeTypes"]["wal_column"][]
-        }
-        Returns: string
-      }
-      cast: {
-        Args: { val: string; type_: unknown }
-        Returns: Json
-      }
-      check_equality_op: {
-        Args: {
-          op: Database["realtime"]["Enums"]["equality_op"]
-          type_: unknown
-          val_1: string
-          val_2: string
-        }
-        Returns: boolean
-      }
-      is_visible_through_filters: {
-        Args: {
-          columns: Database["realtime"]["CompositeTypes"]["wal_column"][]
-          filters: Database["realtime"]["CompositeTypes"]["user_defined_filter"][]
-        }
-        Returns: boolean
-      }
-      list_changes: {
-        Args: {
-          publication: unknown
-          slot_name: unknown
-          max_changes: number
-          max_record_bytes: number
-        }
-        Returns: Database["realtime"]["CompositeTypes"]["wal_rls"][]
-      }
-      quote_wal2json: {
-        Args: { entity: unknown }
-        Returns: string
-      }
-      send: {
-        Args: { payload: Json; event: string; topic: string; private?: boolean }
-        Returns: undefined
-      }
-      to_regrole: {
-        Args: { role_name: string }
-        Returns: unknown
-      }
-      topic: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-    }
-    Enums: {
-      action: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE" | "ERROR"
-      equality_op: "eq" | "neq" | "lt" | "lte" | "gt" | "gte" | "in"
-    }
-    CompositeTypes: {
-      user_defined_filter: {
-        column_name: string | null
-        op: Database["realtime"]["Enums"]["equality_op"] | null
-        value: string | null
-      }
-      wal_column: {
-        name: string | null
-        type_name: string | null
-        type_oid: unknown | null
-        value: Json | null
-        is_pkey: boolean | null
-        is_selectable: boolean | null
-      }
-      wal_rls: {
-        wal: Json | null
-        is_rls_enabled: boolean | null
-        subscription_ids: string[] | null
-        errors: string[] | null
       }
     }
   }
@@ -18995,7 +19812,7 @@ export type Database = {
     }
     Functions: {
       can_insert_object: {
-        Args: { bucketid: string; name: string; owner: string; metadata: Json }
+        Args: { bucketid: string; metadata: Json; name: string; owner: string }
         Returns: undefined
       }
       extension: {
@@ -19013,38 +19830,38 @@ export type Database = {
       get_size_by_bucket: {
         Args: Record<PropertyKey, never>
         Returns: {
-          size: number
           bucket_id: string
+          size: number
         }[]
       }
       list_multipart_uploads_with_delimiter: {
         Args: {
           bucket_id: string
-          prefix_param: string
           delimiter_param: string
           max_keys?: number
           next_key_token?: string
           next_upload_token?: string
+          prefix_param: string
         }
         Returns: {
-          key: string
-          id: string
           created_at: string
+          id: string
+          key: string
         }[]
       }
       list_objects_with_delimiter: {
         Args: {
           bucket_id: string
-          prefix_param: string
           delimiter_param: string
           max_keys?: number
-          start_after?: string
           next_token?: string
+          prefix_param: string
+          start_after?: string
         }
         Returns: {
-          name: string
           id: string
           metadata: Json
+          name: string
           updated_at: string
         }[]
       }
@@ -19054,22 +19871,22 @@ export type Database = {
       }
       search: {
         Args: {
-          prefix: string
           bucketname: string
-          limits?: number
           levels?: number
+          limits?: number
           offsets?: number
+          prefix: string
           search?: string
           sortcolumn?: string
           sortorder?: string
         }
         Returns: {
-          name: string
-          id: string
-          updated_at: string
           created_at: string
+          id: string
           last_accessed_at: string
           metadata: Json
+          name: string
+          updated_at: string
         }[]
       }
     }
@@ -19200,25 +20017,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  auth: {
-    Enums: {
-      aal_level: ["aal1", "aal2", "aal3"],
-      code_challenge_method: ["s256", "plain"],
-      factor_status: ["unverified", "verified"],
-      factor_type: ["totp", "webauthn", "phone"],
-      one_time_token_type: [
-        "confirmation_token",
-        "reauthentication_token",
-        "recovery_token",
-        "email_change_token_new",
-        "email_change_token_current",
-        "phone_change_token",
-      ],
-    },
-  },
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       acc_enum: ["exact", "street", "area"],
@@ -19403,12 +20201,6 @@ export const Constants = {
         "creative-collab",
         "support-group",
       ],
-    },
-  },
-  realtime: {
-    Enums: {
-      action: ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "ERROR"],
-      equality_op: ["eq", "neq", "lt", "lte", "gt", "gte", "in"],
     },
   },
   storage: {
