@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 import { useParams } from 'react-router-dom';
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
@@ -104,7 +105,6 @@ export const CollaborativePlanningScreen = () => {
   // Template functions
   const handleLoadTemplate = (templateStops: any[]) => {
     // Generate new IDs using uuid and add to current plan
-    const { v4: uuidv4 } = require('uuid')
     const newStops = templateStops.map((stop, index) => ({
       ...stop,
       id: uuidv4(),
@@ -127,7 +127,6 @@ export const CollaborativePlanningScreen = () => {
     }
 
     hapticFeedback.gestureConfirm();
-    const { v4: uuidv4 } = require('uuid')
     const newStop = {
       id: uuidv4(),
       title: "New Stop",
@@ -272,7 +271,6 @@ export const CollaborativePlanningScreen = () => {
   );
 
   const handleAcceptSuggestion = async (s: any) => {
-    const { v4: uuidv4 } = require('uuid')
     const newStop = {
       id: uuidv4(),
       title: s.title,
@@ -359,7 +357,6 @@ export const CollaborativePlanningScreen = () => {
     }
 
     hapticFeedback.gestureConfirm();
-    const { v4: uuidv4 } = require('uuid')
     const newStop = {
       id: uuidv4(),
       title: `${venue.type} at ${venue.name}`,
