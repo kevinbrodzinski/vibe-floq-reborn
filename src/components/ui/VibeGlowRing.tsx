@@ -19,9 +19,9 @@ export const VibeGlowRing = ({ className, children }: VibeGlowRingProps) => {
     }, 80); // 80ms for smooth but subtle animation
 
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Empty dependency array - this should only run once
 
-  // Memoize color calculations for performance
+  // Memoize color calculations for performance - throttle updates
   const colors = useMemo(() => {
     const vibeRgb = VIBE_RGB[currentVibe as Vibe] || VIBE_RGB.chill;
     const [r, g, b] = vibeRgb;
@@ -36,7 +36,7 @@ export const VibeGlowRing = ({ className, children }: VibeGlowRingProps) => {
       secondary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.5})`,
       tertiary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.1})`,
     };
-  }, [currentVibe, animationPhase]);
+  }, [currentVibe, Math.floor(animationPhase / 5)]); // Throttle animation updates
 
   return (
     <div className={cn("relative", className)}>

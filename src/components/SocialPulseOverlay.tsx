@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Users, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -44,8 +44,26 @@ export const SocialPulseOverlay: React.FC<SocialPulseOverlayProps> = ({
   className = ""
 }) => {
   const [visibleEvents, setVisibleEvents] = useState<PulseEvent[]>([]);
+  const eventsRef = useRef<PulseEvent[]>([]);
 
-  useEffect(() => {
+  const updateVisibleEvents = useCallback(() => {
+    // Early return if no events to prevent unnecessary processing
+    if (!events || events.length === 0) {
+      setVisibleEvents(prev => prev.length > 0 ? [] : prev);
+      return;
+    }
+
+    // Only update if events actually changed
+    const eventsChanged = 
+      events.length !== eventsRef.current.length ||
+      events.some((event, index) => 
+        !eventsRef.current[index] || event.id !== eventsRef.current[index].id
+      );
+
+    if (!eventsChanged) return;
+
+    eventsRef.current = events;
+    
     const now = Date.now();
     const filtered = events
       .filter(event => now - event.timestamp < PULSE_DURATION)
@@ -53,6 +71,10 @@ export const SocialPulseOverlay: React.FC<SocialPulseOverlayProps> = ({
     
     setVisibleEvents(filtered);
   }, [events, maxVisible]);
+
+  useEffect(() => {
+    updateVisibleEvents();
+  }, [updateVisibleEvents]);
 
   return (
     <div 
