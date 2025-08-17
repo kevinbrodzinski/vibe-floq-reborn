@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useCurrentVibe } from '@/lib/store/useVibe';
 import { VIBE_RGB, type Vibe } from '@/lib/vibes';
 import { cn } from '@/lib/utils';
