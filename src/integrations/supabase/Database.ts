@@ -2391,6 +2391,13 @@ export type Database = {
             foreignKeyName: "flock_auto_suggestions_target_floq_id_fkey"
             columns: ["target_floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flock_auto_suggestions_target_floq_id_fkey"
+            columns: ["target_floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -2468,6 +2475,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flock_history_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2699,6 +2713,13 @@ export type Database = {
             foreignKeyName: "floq_activity_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_activity_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -2810,6 +2831,13 @@ export type Database = {
             foreignKeyName: "fk_floq_afterglow_floq"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_floq_afterglow_floq"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -2883,6 +2911,13 @@ export type Database = {
           profile_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_floq_boosts_floq"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_floq_boosts_floq"
             columns: ["floq_id"]
@@ -2990,6 +3025,13 @@ export type Database = {
             foreignKeyName: "floq_ignored_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_ignored_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -3067,6 +3109,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_invitations_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -3454,6 +3503,13 @@ export type Database = {
             foreignKeyName: "floq_messages_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_messages_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -3573,6 +3629,13 @@ export type Database = {
           role?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "floq_participants_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "floq_participants_floq_id_fkey"
             columns: ["floq_id"]
@@ -3800,11 +3863,114 @@ export type Database = {
             foreignKeyName: "floq_plans_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_plans_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_plans_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floq_session_feed: {
+        Row: {
+          author_profile_id: string
+          created_at: string
+          duration_sec: number | null
+          expires_at: string | null
+          floq_id: string
+          id: string
+          kind: Database["public"]["Enums"]["floq_feed_kind"]
+          saved_to_ripple: boolean
+          storage_key: string | null
+          text_content: string | null
+        }
+        Insert: {
+          author_profile_id: string
+          created_at?: string
+          duration_sec?: number | null
+          expires_at?: string | null
+          floq_id: string
+          id?: string
+          kind: Database["public"]["Enums"]["floq_feed_kind"]
+          saved_to_ripple?: boolean
+          storage_key?: string | null
+          text_content?: string | null
+        }
+        Update: {
+          author_profile_id?: string
+          created_at?: string
+          duration_sec?: number | null
+          expires_at?: string | null
+          floq_id?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["floq_feed_kind"]
+          saved_to_ripple?: boolean
+          storage_key?: string | null
+          text_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_session_feed_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_session_feed_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "v_public_floqs"
@@ -3877,6 +4043,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_settings_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: true
+            referencedRelation: "floq_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -4067,6 +4240,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floqs_parent_flock_id_fkey"
+            columns: ["parent_flock_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -5913,6 +6093,13 @@ export type Database = {
             foreignKeyName: "plan_floqs_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_floqs_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -6973,6 +7160,113 @@ export type Database = {
           },
         ]
       }
+      presence_events: {
+        Row: {
+          accuracy_m: number | null
+          created_at: string
+          id: string
+          location: unknown
+          prev_state_duration_ms: number | null
+          profile_id: string
+          source: string
+          status: Database["public"]["Enums"]["checkin_status"]
+          venue_id: string | null
+        }
+        Insert: {
+          accuracy_m?: number | null
+          created_at?: string
+          id?: string
+          location: unknown
+          prev_state_duration_ms?: number | null
+          profile_id: string
+          source?: string
+          status: Database["public"]["Enums"]["checkin_status"]
+          venue_id?: string | null
+        }
+        Update: {
+          accuracy_m?: number | null
+          created_at?: string
+          id?: string
+          location?: unknown
+          prev_state_duration_ms?: number | null
+          profile_id?: string
+          source?: string
+          status?: Database["public"]["Enums"]["checkin_status"]
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presence_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "presence_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "presence_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presence_log: {
         Row: {
           location: unknown
@@ -7405,6 +7699,13 @@ export type Database = {
           vibe_tag?: Database["public"]["Enums"]["vibe_tag"] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pulse_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pulse_events_floq_id_fkey"
             columns: ["floq_id"]
@@ -8157,6 +8458,142 @@ export type Database = {
           },
         ]
       }
+      ripple_signals: {
+        Row: {
+          centroid: unknown
+          created_at: string
+          expires_at: string
+          id: string
+          p1: string
+          p2: string
+          venue_id: string | null
+        }
+        Insert: {
+          centroid: unknown
+          created_at?: string
+          expires_at?: string
+          id?: string
+          p1: string
+          p2: string
+          venue_id?: string | null
+        }
+        Update: {
+          centroid?: unknown
+          created_at?: string
+          expires_at?: string
+          id?: string
+          p1?: string
+          p2?: string
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_audit_log: {
         Row: {
           created_at: string
@@ -8341,6 +8778,78 @@ export type Database = {
             columns: ["stop_id"]
             isOneToOne: false
             referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_clusters: {
+        Row: {
+          centroid: unknown
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          member_hash: string
+          member_ids: string[]
+          size: number
+          state: Database["public"]["Enums"]["cluster_state"]
+          venue_id: string | null
+        }
+        Insert: {
+          centroid: unknown
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          member_hash: string
+          member_ids: string[]
+          size: number
+          state?: Database["public"]["Enums"]["cluster_state"]
+          venue_id?: string | null
+        }
+        Update: {
+          centroid?: unknown
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          member_hash?: string
+          member_ids?: string[]
+          size?: number
+          state?: Database["public"]["Enums"]["cluster_state"]
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
@@ -8977,6 +9486,13 @@ export type Database = {
             foreignKeyName: "fk_tracking_floq"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tracking_floq"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -9095,6 +9611,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -12144,6 +12667,84 @@ export type Database = {
         }
         Relationships: []
       }
+      floq_sessions: {
+        Row: {
+          centroid: unknown | null
+          created_at: string | null
+          created_by: string | null
+          ends_at: string | null
+          id: string | null
+          live_radius_m: number | null
+          name: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["floq_session_status"] | null
+          updated_at: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          centroid?: unknown | null
+          created_at?: string | null
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string | null
+          live_radius_m?: number | null
+          name?: never
+          started_at?: string | null
+          status?: never
+          updated_at?: string | null
+          venue_id?: never
+        }
+        Update: {
+          centroid?: unknown | null
+          created_at?: string | null
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string | null
+          live_radius_m?: number | null
+          name?: never
+          started_at?: string | null
+          status?: never
+          updated_at?: string | null
+          venue_id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floqs_creator_id_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floqs_creator_id_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floqs_creator_id_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floqs_creator_id_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floqs_creator_id_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships_v: {
         Row: {
           created_at: string | null
@@ -12222,6 +12823,126 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_ripples_recent: {
+        Row: {
+          centroid: unknown | null
+          created_at: string | null
+          expires_at: string | null
+          id: string | null
+          lat: number | null
+          lng: number | null
+          p1: string | null
+          p2: string | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p1_fkey"
+            columns: ["p1"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_p2_fkey"
+            columns: ["p2"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mv_trending_venues: {
         Row: {
           last_seen_at: string | null
@@ -12296,6 +13017,55 @@ export type Database = {
           },
           {
             foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mv_waves_recent: {
+        Row: {
+          centroid: unknown | null
+          id: string | null
+          last_seen_at: string | null
+          lat: number | null
+          lng: number | null
+          member_ids: string[] | null
+          size: number | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
@@ -12384,6 +13154,13 @@ export type Database = {
           unread: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "floq_messages_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "floq_messages_floq_id_fkey"
             columns: ["floq_id"]
@@ -12508,6 +13285,13 @@ export type Database = {
           status: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "floq_messages_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "floq_messages_floq_id_fkey"
             columns: ["floq_id"]
@@ -12940,6 +13724,13 @@ export type Database = {
             foreignKeyName: "floq_participants_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_participants_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
@@ -12952,13 +13743,6 @@ export type Database = {
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -12968,8 +13752,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -12982,8 +13766,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -12996,7 +13780,7 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -13009,13 +13793,20 @@ export type Database = {
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_participants_profile_id_fkey"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -13450,6 +14241,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floqs_parent_flock_id_fkey"
+            columns: ["parent_flock_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -14103,13 +14901,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -14119,8 +14910,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -14133,8 +14924,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -14147,7 +14938,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -14160,13 +14951,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: true
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -14363,13 +15161,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -14379,8 +15170,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -14393,8 +15184,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -14407,7 +15198,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -14420,13 +15211,20 @@ export type Database = {
           {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -15502,6 +16300,24 @@ export type Database = {
       fn_emit_notification: {
         Args: { p_kind: string; p_payload?: Json; p_profile_id: string }
         Returns: undefined
+      }
+      fn_floq_participant_count: {
+        Args: { f_id: string }
+        Returns: number
+      }
+      fn_friend_ids: {
+        Args: { only_close?: boolean; viewer: string }
+        Returns: {
+          friend_id: string
+        }[]
+      }
+      fn_is_host_floq: {
+        Args: { f_id: string; who: string }
+        Returns: boolean
+      }
+      fn_is_participant_floq: {
+        Args: { f_id: string; who: string }
+        Returns: boolean
       }
       friend_count: {
         Args: Record<PropertyKey, never>
@@ -17644,6 +18460,155 @@ export type Database = {
           status: string
         }[]
       }
+      rpc_floq_session_create: {
+        Args: {
+          in_invite_profiles?: string[]
+          in_lat?: number
+          in_lng?: number
+          in_primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          in_radius_m?: number
+          in_title?: string
+          in_visibility?: string
+        }
+        Returns: string
+      }
+      rpc_live_floqs_near: {
+        Args: {
+          center_lat: number
+          center_lng: number
+          radius_m?: number
+          vis_filters?: string[]
+        }
+        Returns: {
+          distance_m: number
+          ends_at: string
+          id: string
+          name: string
+          participants: number
+          status: Database["public"]["Enums"]["floq_session_status"]
+        }[]
+      }
+      rpc_my_live_floqs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ends_at: string
+          id: string
+          is_creator: boolean
+          name: string
+          participants: number
+          status: Database["public"]["Enums"]["floq_session_status"]
+        }[]
+      }
+      rpc_presence_otw: {
+        Args: {
+          in_accuracy_m?: number
+          in_lat: number
+          in_lng: number
+          in_venue_id?: string
+        }
+        Returns: string
+      }
+      rpc_ripples_near: {
+        Args: {
+          center_lat: number
+          center_lng: number
+          friends_only?: boolean
+          only_close_friends?: boolean
+          radius_m?: number
+          recent_minutes?: number
+        }
+        Returns: {
+          both_friends: boolean
+          centroid_lat: number
+          centroid_lng: number
+          distance_m: number
+          expires_at: string
+          includes_friend: boolean
+          ripple_id: string
+          venue_id: string
+        }[]
+      }
+      rpc_session_checkin: {
+        Args: {
+          in_checkin: Database["public"]["Enums"]["checkin_status"]
+          in_floq_id: string
+        }
+        Returns: undefined
+      }
+      rpc_session_end: {
+        Args: { in_floq_id: string }
+        Returns: undefined
+      }
+      rpc_session_extend: {
+        Args: { add_minutes?: number; in_floq_id: string }
+        Returns: string
+      }
+      rpc_session_feed_list: {
+        Args: { in_before?: string; in_floq_id: string; in_limit?: number }
+        Returns: {
+          author_profile_id: string
+          created_at: string
+          duration_sec: number
+          id: string
+          kind: Database["public"]["Enums"]["floq_feed_kind"]
+          storage_key: string
+          text_content: string
+        }[]
+      }
+      rpc_session_join: {
+        Args: {
+          in_checkin?: Database["public"]["Enums"]["checkin_status"]
+          in_floq_id: string
+        }
+        Returns: undefined
+      }
+      rpc_session_post: {
+        Args: {
+          in_duration_sec?: number
+          in_floq_id: string
+          in_kind: Database["public"]["Enums"]["floq_feed_kind"]
+          in_storage_key?: string
+          in_text?: string
+        }
+        Returns: string
+      }
+      rpc_wave_ripple_overview: {
+        Args: {
+          center_lat: number
+          center_lng: number
+          only_close_friends?: boolean
+          radius_m?: number
+          recent_ripple_minutes?: number
+          recent_wave_minutes?: number
+        }
+        Returns: {
+          ripples_total: number
+          ripples_with_friends: number
+          waves_total: number
+          waves_with_friends: number
+        }[]
+      }
+      rpc_waves_near: {
+        Args: {
+          center_lat: number
+          center_lng: number
+          friends_only?: boolean
+          min_size?: number
+          only_close_friends?: boolean
+          radius_m?: number
+          recent_minutes?: number
+        }
+        Returns: {
+          centroid_lat: number
+          centroid_lng: number
+          cluster_id: string
+          distance_m: number
+          friends_in_cluster: number
+          last_seen_at: string
+          size: number
+          venue_id: string
+        }[]
+      }
       search_afterglows: {
         Args: {
           p_dominant_vibe?: string
@@ -19397,6 +20362,36 @@ export type Database = {
         }
         Returns: number
       }
+      view_active_ripples_stub: {
+        Args: {
+          center_lat: number
+          center_lng: number
+          radius_m?: number
+          viewer_profile_id: string
+        }
+        Returns: {
+          centroid_lat: number
+          centroid_lng: number
+          created_at: string
+          expires_at: string
+          venue_id: string
+        }[]
+      }
+      view_nearby_waves_stub: {
+        Args: {
+          center_lat: number
+          center_lng: number
+          radius_m?: number
+          viewer_profile_id: string
+        }
+        Returns: {
+          centroid_lat: number
+          centroid_lng: number
+          last_seen_at: string
+          size: number
+          venue_id: string
+        }[]
+      }
       walkable_floqs: {
         Args: { p_lat: number; p_lng: number; p_metres?: number }
         Returns: {
@@ -19467,6 +20462,8 @@ export type Database = {
         | "date_spot"
         | "open_air_event"
       chat_surface_enum: "dm" | "floq" | "plan"
+      checkin_status: "idle" | "otw" | "here"
+      cluster_state: "forming" | "stable" | "cooldown"
       cluster_type_enum:
         | "nightlife"
         | "cafe"
@@ -19491,7 +20488,9 @@ export type Database = {
         | "plan_created"
         | "invited"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
+      floq_feed_kind: "photo" | "audio" | "text" | "vibe"
       floq_participant_role_enum: "creator" | "admin" | "member"
+      floq_session_status: "live" | "ending" | "ended" | "cancelled"
       friend_req_status:
         | "none"
         | "pending_out"
@@ -20079,6 +21078,8 @@ export const Constants = {
         "open_air_event",
       ],
       chat_surface_enum: ["dm", "floq", "plan"],
+      checkin_status: ["idle", "otw", "here"],
+      cluster_state: ["forming", "stable", "cooldown"],
       cluster_type_enum: [
         "nightlife",
         "cafe",
@@ -20105,7 +21106,9 @@ export const Constants = {
         "invited",
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
+      floq_feed_kind: ["photo", "audio", "text", "vibe"],
       floq_participant_role_enum: ["creator", "admin", "member"],
+      floq_session_status: ["live", "ending", "ended", "cancelled"],
       friend_req_status: [
         "none",
         "pending_out",
