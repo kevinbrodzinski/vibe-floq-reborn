@@ -9,6 +9,7 @@ import { ParticipantsAvatars } from '@/components/momentary/ParticipantsAvatars'
 import { postMomentFeed } from '@/hooks/useMomentFeed';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentPosition } from '@/lib/deviceLocation';
+import { notifyFriendJoinedFloq } from '@/lib/momentaryFloqNotifications';
 
 export type MomentaryFloqDetailProps = {
   floqId: string;
@@ -19,8 +20,36 @@ export type MomentaryFloqDetailProps = {
 
 export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 'gaining' }: MomentaryFloqDetailProps) {
   const onJoin = React.useCallback(async () => {
-    await supabase.rpc('rpc_session_join', { in_floq_id: floqId, in_status: 'here' });
-  }, [floqId]);
+    try {
+      // Join the floq
+      await supabase.rpc('rpc_session_join', { in_floq_id: floqId, in_status: 'here' });
+
+      // Get user info and floq creator for notifications
+      const { data: user } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, username')
+        .eq('id', user.user?.id)
+        .single();
+
+      const { data: floqDetails } = await supabase.rpc('get_floq_full_details', {
+        p_floq_id: floqId
+      });
+
+      if (profile && floqDetails?.[0] && user.user?.id !== floqDetails[0].creator_id) {
+        // Notify the creator that someone joined
+        await notifyFriendJoinedFloq({
+          joinerId: user.user?.id || '',
+          joinerName: profile.display_name || profile.username || 'Someone',
+          floqId,
+          floqTitle: title,
+          creatorId: floqDetails[0].creator_id
+        });
+      }
+    } catch (error) {
+      console.error('Error joining floq:', error);
+    }
+  }, [floqId, title]);
 
   const onSaveRipple = React.useCallback(async () => {
     await postMomentFeed(floqId, { kind: 'vibe', text: 'Saved as Ripple' });

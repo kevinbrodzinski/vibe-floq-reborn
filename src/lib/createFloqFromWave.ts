@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { notifyFriendStartedFloq } from './momentaryFloqNotifications';
 
 export async function createMomentaryFromWave(args: { 
   title: string; 
@@ -40,6 +41,36 @@ export async function createMomentaryFromWave(args: {
     
     if (joinError) {
       console.warn('Created floq but failed to auto-join:', joinError);
+    }
+
+    // Get creator info and friends for notifications
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, username')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      const { data: friends } = await supabase.rpc('fn_friend_ids', {
+        viewer: (await supabase.auth.getUser()).data.user?.id,
+        only_close: false
+      });
+
+      if (profile && friends) {
+        // Notify friends about the new momentary floq
+        await notifyFriendStartedFloq({
+          creatorId: (await supabase.auth.getUser()).data.user?.id || '',
+          creatorName: profile.display_name || profile.username || 'Someone',
+          floqId,
+          floqTitle: title,
+          lat,
+          lng,
+          friendIds: friends || []
+        });
+      }
+    } catch (notificationError) {
+      console.warn('Failed to send notifications:', notificationError);
+      // Don't fail the floq creation if notifications fail
     }
     
     return { floqId } as const;
