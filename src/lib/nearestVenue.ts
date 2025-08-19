@@ -8,20 +8,24 @@ export type NearestVenue = {
   lng: number;
 };
 
-export async function fetchNearestVenue(opts: { 
-  lat: number; 
-  lng: number; 
-  maxDistanceM?: number 
-}): Promise<NearestVenue | null> {
-  const { lat, lng, maxDistanceM = 200 } = opts;
-  
+export async function fetchNearestVenue(lat: number, lng: number, maxM = 150): Promise<NearestVenue | null> {
   const { data, error } = await supabase.rpc('rpc_nearest_venue', {
     in_lat: lat,
     in_lng: lng,
-    in_max_distance_m: maxDistanceM,
+    in_max_distance_m: maxM,
   });
-
-  if (error) throw error;
-  const row = (data as any[] | null)?.[0];
-  return row ? (row as NearestVenue) : null;
+  
+  if (error) return null;
+  
+  // rpc can return a single row or array depending on implementation; normalize
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  
+  return {
+    venue_id: row.venue_id,
+    name: row.name,
+    distance_m: row.distance_m,
+    lat: row.lat ?? null,
+    lng: row.lng ?? row.lon ?? null,
+  };
 }

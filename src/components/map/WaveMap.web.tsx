@@ -3,13 +3,14 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { getMapboxToken } from '@/lib/geo/getMapboxToken';
 
-export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number };
+export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number; venueName?: string };
 
 export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
   lat: number; lng: number; markers: WaveMarker[]; onSelect?: (m: WaveMarker) => void;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
   const [tokenReady, setTokenReady] = useState(false);
 
   // Initialize Mapbox token using existing system
@@ -33,6 +34,7 @@ export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
       zoom: 12.5,
     });
     mapRef.current.addControl(new mapboxgl.NavigationControl({ showCompass: false }));
+    popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
   }, [lat, lng, tokenReady]);
 
   // update data layer
@@ -47,7 +49,14 @@ export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
       type: 'FeatureCollection',
       features: markers.map((m) => ({
         type: 'Feature',
-        properties: { id: m.id, size: m.size, friends: m.friends, lat: m.lat, lng: m.lng },
+        properties: { 
+          id: m.id, 
+          size: m.size, 
+          friends: m.friends, 
+          lat: m.lat, 
+          lng: m.lng,
+          venue: m.venueName ?? null
+        },
         geometry: { type: 'Point', coordinates: [m.lng, m.lat] },
       })),
     };
@@ -74,9 +83,23 @@ export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
         },
       });
 
-      // cursor + selection
-      map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
+      // hover tooltips + selection
+      map.on('mouseenter', layerId, (e) => {
+        map.getCanvas().style.cursor = 'pointer';
+        const f = e.features?.[0];
+        const p: any = f?.properties ?? {};
+        const content = p.venue ? `Near ${p.venue}` : `Wave (size ${p.size})`;
+        popupRef.current!
+          .setLngLat([Number(p.lng), Number(p.lat)])
+          .setHTML(`<div style="padding:4px 6px; font-size:12px; background: rgba(0,0,0,0.8); color: white; border-radius: 4px;">${content}</div>`)
+          .addTo(map);
+      });
+      
+      map.on('mouseleave', layerId, () => {
+        map.getCanvas().style.cursor = '';
+        popupRef.current?.remove();
+      });
+      
       map.on('click', layerId, (e) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -86,7 +109,8 @@ export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
           size: Number(p.size), 
           friends: Number(p.friends), 
           lat: Number(p.lat), 
-          lng: Number(p.lng) 
+          lng: Number(p.lng),
+          venueName: p.venue ?? undefined
         };
         onSelect?.(marker);
       });

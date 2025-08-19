@@ -10,6 +10,7 @@ export type WaveRow = {
   distance_m: number;
   centroid_lat: number;
   centroid_lng: number;
+  venue_name?: string | null;
 };
 
 export default function WaveListItem({ wave, onPress }: { wave: WaveRow; onPress?: () => void }) {
@@ -20,7 +21,9 @@ export default function WaveListItem({ wave, onPress }: { wave: WaveRow; onPress
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              <span className="font-semibold">Wave size {wave.size}</span>
+              <span className="font-semibold">
+                {wave.venue_name ? `Near ${wave.venue_name}` : `Wave size ${wave.size}`}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-3 h-3" />
