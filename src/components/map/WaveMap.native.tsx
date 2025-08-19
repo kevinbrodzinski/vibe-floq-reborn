@@ -1,53 +1,30 @@
 import React from 'react';
 
-// Use dynamic imports to avoid bundling issues on web
-let MapView: any = null;
-let Marker: any = null;
-let View: any = null;
-
-// Only import React Native components if we're actually in a React Native environment
-if (typeof window !== 'undefined' && (window as any).Expo) {
-  try {
-    const RNMaps = require('react-native-maps');
-    const RN = require('react-native');
-    MapView = RNMaps.MapView || RNMaps.default;
-    Marker = RNMaps.Marker;
-    View = RN.View;
-  } catch (e) {
-    console.warn('React Native Maps not available:', e);
-  }
-}
-
 export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number; venueName?: string };
 
 export default function WaveMapNative({ lat, lng, markers, onSelect }: {
   lat: number; lng: number; markers: WaveMarker[]; onSelect?: (m: WaveMarker) => void;
 }) {
-  // Fallback for web builds - return a placeholder
-  if (!MapView || !Marker || !View) {
-    return (
-      <div className="w-full h-full bg-muted rounded-xl flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Native map (React Native only)</p>
-      </div>
-    );
-  }
-
+  // For web builds, show a placeholder that explains this is for native
   return (
-    <View style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }}>
-      <MapView
-        style={{ width: '100%', height: '100%' }}
-        initialRegion={{ latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }}
-      >
-        {markers.map((m) => (
-          <Marker
-            key={m.id}
-            coordinate={{ latitude: m.lat, longitude: m.lng }}
-            title={m.venueName ? `Near ${m.venueName}` : `Wave size ${m.size}`}
-            description={`${m.friends} friends`}
-            onPress={() => onSelect?.(m)}
-          />
+    <div className="w-full h-full bg-muted rounded-xl flex flex-col items-center justify-center p-4">
+      <p className="text-sm text-muted-foreground text-center mb-2">
+        Native Map Component
+      </p>
+      <p className="text-xs text-muted-foreground text-center">
+        This will show React Native Maps when running on mobile
+      </p>
+      <div className="mt-4 space-y-1">
+        {markers.slice(0, 3).map((m) => (
+          <div 
+            key={m.id} 
+            className="text-xs text-muted-foreground cursor-pointer hover:text-foreground"
+            onClick={() => onSelect?.(m)}
+          >
+            • {m.venueName ? `Near ${m.venueName}` : `Wave size ${m.size}`} ({m.friends} friends)
+          </div>
         ))}
-      </MapView>
-    </View>
+      </div>
+    </div>
   );
 }
