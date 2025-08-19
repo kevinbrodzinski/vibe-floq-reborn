@@ -40,7 +40,7 @@ export const FriendSuggestionCarousel: React.FC = () => {
           <div className="flex gap-4 pb-4">
             {suggestions.map(suggestion => (
               <SuggestionCard 
-                key={suggestion.friend_id} 
+                key={suggestion.id || suggestion.friend_id} 
                 suggestion={suggestion} 
               />
             ))}

@@ -66,12 +66,28 @@ export function useGeneratePlanSummary() {
 
   return useMutation({
     mutationFn: async ({ planId, mode }: { planId: string; mode: SummaryMode }) => {
-      const { data, error } = await supabase.functions.invoke('generate-intelligence', {
-        body: { mode: 'plan', plan_id: planId, summary_mode: mode },
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-intelligence', {
+          body: { mode: 'plan', plan_id: planId, summary_mode: mode },
+        });
 
-      if (error) throw error;
-      return data;
+        if (error) {
+          // Handle 404 gracefully - function might not be deployed
+          if (error.message?.includes('404') || error.message?.includes('Not Found')) {
+            console.warn('generate-intelligence function not deployed, using fallback');
+            return { summary: 'AI summary temporarily unavailable', status: 'fallback' };
+          }
+          throw error;
+        }
+        return data;
+      } catch (err: any) {
+        // Graceful fallback for network issues
+        if (err.message?.includes('404') || err.message?.includes('Not Found')) {
+          console.warn('generate-intelligence function not available, using fallback');
+          return { summary: 'AI summary temporarily unavailable', status: 'fallback' };
+        }
+        throw err;
+      }
     },
     onSuccess: (_, { planId, mode }) => {
       // Optimistic update to show immediate feedback

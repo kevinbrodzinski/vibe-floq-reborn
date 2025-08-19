@@ -142,6 +142,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.2.0",
+    "react-error-boundary": "^6.0.0",
     "react-fast-compare": "^3.2.2",
     "react-hook-form": "^7.53.0",
     "react-hotkeys-hook": "^5.1.0",

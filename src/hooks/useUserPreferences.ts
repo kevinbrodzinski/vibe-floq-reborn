@@ -36,6 +36,10 @@ export function useUserPreferences(profileId?: string) {
       return data as UserPreferences | null;
     },
     staleTime: 300000, // 5 minutes
+    // Prevent suspension during synchronous navigation
+    suspense: false,
+    throwOnError: false,
+    retry: 2
   });
 }
 

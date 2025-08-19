@@ -171,7 +171,7 @@ export function Phase4FeaturesDemo() {
                         <div className="space-y-1">
                           {peopleData.encountered_users.map((user, userIndex) => (
                             <div key={userIndex} className="flex items-center justify-between text-xs bg-muted/50 p-2 rounded">
-                              <span>User {user.user_id.slice(-3)}</span>
+                              <span>User {user.id.slice(-3)}</span>
                               <div className="flex items-center gap-2">
                                 <Badge variant="secondary" className="text-xs">
                                   {user.interaction_type}

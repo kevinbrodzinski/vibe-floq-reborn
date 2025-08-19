@@ -1,8 +1,40 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, startTransition } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner';
+import { ErrorBoundary } from 'react-error-boundary';
+
+// Error fallback component for route-level errors
+const RouteErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-center space-y-4 max-w-md mx-auto p-6">
+      <h2 className="text-xl font-semibold text-destructive">Something went wrong</h2>
+      <p className="text-muted-foreground text-sm">
+        {error.message || 'An unexpected error occurred while loading this page.'}
+      </p>
+      <button
+        onClick={() => {
+          startTransition(() => {
+            resetErrorBoundary();
+          });
+        }}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+      >
+        Try again
+      </button>
+    </div>
+  </div>
+);
+
+// Enhanced Suspense wrapper with error boundary
+const RouteSuspense = ({ children, fallback = <FullScreenSpinner /> }: { children: React.ReactNode; fallback?: React.ReactNode }) => (
+  <ErrorBoundary FallbackComponent={RouteErrorFallback} onReset={() => window.location.reload()}>
+    <Suspense fallback={fallback}>
+      {children}
+    </Suspense>
+  </ErrorBoundary>
+);
 
 // Lazy load large components to reduce initial bundle size
 const FieldScreen = lazy(() => import('@/components/screens/FieldScreen').then(m => ({ default: m.FieldScreen })));
@@ -47,66 +79,70 @@ export const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<DailyRecapGate />} />
       <Route path="/home" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <FieldScreen />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/recap-actions" element={<RecapActionSheet />} />
       <Route path="/field" element={<LegacyRedirect />} />
       <Route path="/floqs" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <FlocksHome />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/floqs/:floqId" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <FloqDetail />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/floqs/:floqId/manage" element={
         <RoleGuard roles={['creator', 'co-admin']}>
-          <Suspense fallback={<FullScreenSpinner />}>
+          <RouteSuspense>
             <FloqManage />
-          </Suspense>
+          </RouteSuspense>
         </RoleGuard>
       } />
       <Route path="/floqs/:floqId/plans/new" element={<NewPlan />} />
       <Route path="/floqs/:floqId/plan" element={<FloqPlan />} />
       <Route path="/floqs/:floqId/plans/:planId/execute" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <FloqPlanExecutionScreen />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/pulse" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <PulseScreen />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/vibe" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <VibeScreen />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/recommendations-demo" element={<RecommendationsDemo />} />
       {exploreBeta && (
         <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
       )}
       <Route path="/afterglow" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <AfterglowRoutes />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/afterglow/:afterglowId/insights" element={<AfterglowInsightsPage />} />
       <Route path="/phase34-demo" element={
-        <Suspense fallback={<FullScreenSpinner />}>
+        <RouteSuspense>
           <Phase34DemoRoutes />
-        </Suspense>
+        </RouteSuspense>
       } />
       <Route path="/archive" element={<Archive />} />
       <Route path="/plans" element={<PlansHub />} />
       <Route path="/plans/:planId" element={<PlanDetailsView />} />
       <Route path="/plan/new" element={<NewPlanWizard />} />
-      <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
+      <Route path="/plan/:planId" element={
+        <RouteSuspense>
+          <CollaborativePlanningScreen />
+        </RouteSuspense>
+      } />
       {/* Redirect old new-plan path to new path */}
       <Route path="/new-plan" element={<Navigate to="/plan/new" replace />} />
       {/* New route for shared plans using /share/:slug */}

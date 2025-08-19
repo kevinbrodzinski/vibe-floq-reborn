@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Users, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,15 @@ export const SocialPulseOverlay: React.FC<SocialPulseOverlayProps> = ({
   pulseRadius = 60,
   className = ""
 }) => {
+  // Early return if no events - prevents any state updates
+  if (!events || events.length === 0) {
+    return null;
+  }
+
   const [visibleEvents, setVisibleEvents] = useState<PulseEvent[]>([]);
+
+  // Stable reference to prevent infinite loops
+  const eventsJson = JSON.stringify(events.map(e => ({ id: e.id, timestamp: e.timestamp })));
 
   useEffect(() => {
     const now = Date.now();
@@ -52,7 +60,7 @@ export const SocialPulseOverlay: React.FC<SocialPulseOverlayProps> = ({
       .slice(-maxVisible);
     
     setVisibleEvents(filtered);
-  }, [events, maxVisible]);
+  }, [eventsJson, maxVisible]);
 
   return (
     <div 

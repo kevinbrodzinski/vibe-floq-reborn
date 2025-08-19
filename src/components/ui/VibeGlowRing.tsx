@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useCurrentVibe } from '@/lib/store/useVibe';
 import { VIBE_RGB, type Vibe } from '@/lib/vibes';
 import { cn } from '@/lib/utils';
@@ -11,17 +11,25 @@ interface VibeGlowRingProps {
 export const VibeGlowRing = ({ className, children }: VibeGlowRingProps) => {
   const currentVibe = useCurrentVibe();
   const [animationPhase, setAnimationPhase] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Create subtle pulsing animation
+  // Create subtle pulsing animation - only start once
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (intervalRef.current) return; // Prevent multiple intervals
+    
+    intervalRef.current = setInterval(() => {
       setAnimationPhase((prev) => (prev + 1) % 100);
-    }, 80); // 80ms for smooth but subtle animation
+    }, 120); // Slower animation to reduce renders
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []); // Empty dependency array - this should only run once
 
-  // Memoize color calculations for performance
+  // Memoize color calculations for performance - throttle updates more aggressively
   const colors = useMemo(() => {
     const vibeRgb = VIBE_RGB[currentVibe as Vibe] || VIBE_RGB.chill;
     const [r, g, b] = vibeRgb;
@@ -29,14 +37,15 @@ export const VibeGlowRing = ({ className, children }: VibeGlowRingProps) => {
     // Calculate opacity based on animation phase (stronger glow)
     const baseOpacity = 0.4; // Much stronger base opacity
     const pulseIntensity = 0.2; // More pronounced pulse variation
-    const waveOpacity = baseOpacity + (Math.sin(animationPhase * 0.1) * pulseIntensity);
+    const throttledPhase = Math.floor(animationPhase / 10) * 10; // Much more aggressive throttling
+    const waveOpacity = baseOpacity + (Math.sin(throttledPhase * 0.1) * pulseIntensity);
 
     return {
       primary: `rgba(${r}, ${g}, ${b}, ${waveOpacity})`,
       secondary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.5})`,
       tertiary: `rgba(${r}, ${g}, ${b}, ${waveOpacity * 0.1})`,
     };
-  }, [currentVibe, animationPhase]);
+  }, [currentVibe, Math.floor(animationPhase / 10)]); // Much more aggressive throttling
 
   return (
     <div className={cn("relative", className)}>

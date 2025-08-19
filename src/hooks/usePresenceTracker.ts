@@ -12,9 +12,22 @@ export function usePresenceTracker(heartbeatMs = 30_000) {
 
     const upsert = async (online: boolean) => {
       try {
-        await supabase.rpc('upsert_online_status', { p_is_online: online });
-      } catch (error) {
-        console.warn('Failed to update online status:', error);
+        const { error } = await supabase.rpc('upsert_online_status', { p_is_online: online });
+        if (error) {
+          // Handle function not found gracefully
+          if (error.message?.includes('function') || error.code === '42883') {
+            console.warn('upsert_online_status function not deployed, skipping online status updates');
+            return;
+          }
+          throw error;
+        }
+      } catch (error: any) {
+        // Graceful degradation for online status
+        if (error.message?.includes('function') || error.code === '42883') {
+          console.warn('Online status tracking disabled - function not available');
+        } else {
+          console.warn('Failed to update online status:', error);
+        }
       }
     };
 

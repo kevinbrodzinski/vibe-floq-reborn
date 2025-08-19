@@ -84,7 +84,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
       const rows = (data as any[]) ?? []
       return (
         rows.map((r: any) => ({
-          id          : r.friend_id,
+          id          : r.friend_profile_id,
           username    : r.username ?? '',
           display_name: r.display_name ?? '',
           avatar_url  : r.avatar_url ?? undefined,

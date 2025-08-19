@@ -6,14 +6,14 @@
 import { supabase } from '@/integrations/supabase/client';
 // Types moved inline since tables now exist in main schema
 interface TimeInVenueDaily {
-  user_id: string;
+  profile_id: string;
   day: string;
   minutes_spent: number;
   venue_id?: string;
 }
 
 interface VenueVisit {
-  user_id: string;
+  profile_id: string;
   venue_id: string;
   created_at: string;
 }
@@ -23,7 +23,7 @@ interface VenueVisit {
 /* ------------------------------------------------------------------ */
 
 type PopularVenue = { id: string; name: string; latitude?: number; longitude?: number; popularity?: number };
-type VenueStay = { user_id: string; venue_id: string; minutes_spent: number; day: string };
+type VenueStay = { profile_id: string; venue_id: string; minutes_spent: number; day: string };
 
 /**
  * Fetch time-in-venue data for insights and streaks

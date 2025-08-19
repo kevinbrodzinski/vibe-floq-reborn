@@ -13,12 +13,12 @@ const supabase = createClient(
 
 type ToggleReactionPayload = {
   message_id: string;
-  user_id: string;
+  profile_id: string;
   emoji: string;
 };
 
 async function toggleDMReaction(payload: ToggleReactionPayload) {
-  console.log(`[toggle-dm-reaction] Processing reaction: message_id=${payload.message_id}, user_id=${payload.user_id}, emoji=${payload.emoji}`);
+  console.log(`[toggle-dm-reaction] Processing reaction: message_id=${payload.message_id}, profile_id=${payload.profile_id}, emoji=${payload.emoji}`);
   
   try {
     // 1. Verify the message exists and user has access to it
@@ -39,7 +39,7 @@ async function toggleDMReaction(payload: ToggleReactionPayload) {
 
     // Check if user is a member of the thread
     const thread = (message as any).direct_threads;
-    const isMember = thread.member_a === payload.user_id || thread.member_b === payload.user_id;
+    const isMember = thread.member_a === payload.profile_id || thread.member_b === payload.profile_id;
     
     if (!isMember) {
       throw new Error("User is not a member of this thread");
@@ -50,7 +50,7 @@ async function toggleDMReaction(payload: ToggleReactionPayload) {
       .from("dm_message_reactions")
       .select("*")
       .eq("message_id", payload.message_id)
-      .eq("profile_id", payload.user_id)
+      .eq("profile_id", payload.profile_id)
       .eq("emoji", payload.emoji)
       .maybeSingle();
 
@@ -67,7 +67,7 @@ async function toggleDMReaction(payload: ToggleReactionPayload) {
         .from("dm_message_reactions")
         .delete()
         .eq("message_id", payload.message_id)
-        .eq("profile_id", payload.user_id)
+        .eq("profile_id", payload.profile_id)
         .eq("emoji", payload.emoji);
 
       if (deleteError) {
@@ -84,7 +84,7 @@ async function toggleDMReaction(payload: ToggleReactionPayload) {
         .from("dm_message_reactions")
         .insert({
           message_id: payload.message_id,
-          profile_id: payload.user_id,
+          profile_id: payload.profile_id,
           emoji: payload.emoji,
         });
 
@@ -118,13 +118,13 @@ serve(async (req) => {
     // Support both RPC-style parameters and direct parameters
     const payload: ToggleReactionPayload = {
       message_id: input.p_message_id || input.message_id,
-      user_id: input.p_user_id || input.user_id,
+      profile_id: input.p_user_id || input.p_profile_id || input.user_id || input.profile_id,
       emoji: input.p_emoji || input.emoji,
     };
 
     // Validate required parameters
-    if (!payload.message_id || !payload.user_id || !payload.emoji) {
-      throw new Error("Missing required parameters: message_id, user_id, emoji");
+    if (!payload.message_id || !payload.profile_id || !payload.emoji) {
+      throw new Error("Missing required parameters: message_id, profile_id, emoji");
     }
 
     const result = await toggleDMReaction(payload);
