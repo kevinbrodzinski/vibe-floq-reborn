@@ -27,6 +27,7 @@ import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
+// import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
 }
@@ -225,6 +226,9 @@ export const FieldLayout = () => {
 
           {/* Proximity Notifications - z-50 */}
           <ProximityNotifications />
+
+          {/* Auto-Discovery Manager - disabled for now to prevent errors */}
+          {/* <AutoDiscoveryManager /> */}
 
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />

@@ -39,6 +39,12 @@ const SUB_KINDS = [
   'plan_checkin',
   'floq_reaction',
   'floq_reply',
+  // Momentary Floq notifications
+  'momentary_floq_created',
+  'momentary_floq_friend_joined',
+  'momentary_floq_nearby',
+  'wave_activity_friend',
+  'friend_started_floq_nearby',
 ] as const;
 
 export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
