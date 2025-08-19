@@ -5,23 +5,28 @@ export type WaveMarker = { id: string; lat: number; lng: number; size: number; f
 export default function WaveMapNative({ lat, lng, markers, onSelect }: {
   lat: number; lng: number; markers: WaveMarker[]; onSelect?: (m: WaveMarker) => void;
 }) {
-  // For web builds, show a placeholder that explains this is for native
+  // Placeholder for native - use web map for now since this is a web build
   return (
     <div className="w-full h-full bg-muted rounded-xl flex flex-col items-center justify-center p-4">
       <p className="text-sm text-muted-foreground text-center mb-2">
-        Native Map Component
+        Native Map Placeholder
       </p>
-      <p className="text-xs text-muted-foreground text-center">
-        This will show React Native Maps when running on mobile
+      <p className="text-xs text-muted-foreground text-center mb-4">
+        Map @ {lat.toFixed(4)}, {lng.toFixed(4)}
       </p>
-      <div className="mt-4 space-y-1">
-        {markers.slice(0, 3).map((m) => (
+      <div className="space-y-1 w-full">
+        {markers.slice(0, 5).map((m) => (
           <div 
             key={m.id} 
-            className="text-xs text-muted-foreground cursor-pointer hover:text-foreground"
+            className="text-xs p-2 bg-background rounded cursor-pointer hover:bg-accent transition-colors"
             onClick={() => onSelect?.(m)}
           >
-            • {m.venueName ? `Near ${m.venueName}` : `Wave size ${m.size}`} ({m.friends} friends)
+            <div className="font-medium">
+              {m.venueName ? `Near ${m.venueName}` : `Wave size ${m.size}`}
+            </div>
+            <div className="text-muted-foreground">
+              {m.friends} friends • {Math.round(Math.sqrt((m.lat - lat) ** 2 + (m.lng - lng) ** 2) * 111000)}m
+            </div>
           </div>
         ))}
       </div>
