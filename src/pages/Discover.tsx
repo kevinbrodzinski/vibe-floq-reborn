@@ -62,16 +62,14 @@ export default function Discover() {
     setSheetOpen(true);
   }, []);
 
-  const onLetsFloq = useCallback(async () => {
-    if (!selectedWave) return;
-    
+  const onLetsFloq = useCallback(async (payload: { venueId?: string; name?: string; lat: number; lng: number }) => {
     setIsCreating(true);
     try {
       const res = await createMomentaryFromWave({
-        title: 'Wave Floq',
+        title: payload.name ? `Floq at ${payload.name}` : 'Wave Floq',
         vibe: 'hype',
-        lat: selectedWave.lat,
-        lng: selectedWave.lng,
+        lat: payload.lat,
+        lng: payload.lng,
         radiusM: 300,
       });
       
@@ -87,7 +85,7 @@ export default function Discover() {
       setIsCreating(false);
       setSheetOpen(false);
     }
-  }, [selectedWave]);
+  }, []);
 
   // Handle wave press from list items
   async function onWavePress(clusterId: string) {
