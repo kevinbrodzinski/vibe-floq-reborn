@@ -1,8 +1,7 @@
-// src/hooks/useMyLiveFloqs.ts
 import { useEffect, useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-type MyFloq = {
+export type MyLiveFloq = {
   id: string;
   name: string | null;
   status: 'live' | 'ending' | 'ended' | 'cancelled';
@@ -11,21 +10,21 @@ type MyFloq = {
   participants: number;
 };
 
-export function useMyLiveFloqs(client: SupabaseClient) {
-  const [data, setData] = useState<MyFloq[] | null>(null);
+export function useMyLiveFloqs() {
+  const [data, setData] = useState<MyLiveFloq[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setErr] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function fetchOnce() {
     setLoading(true);
-    setErr(null);
-    const { data, error } = await client.rpc('rpc_my_live_floqs');
-    if (error) setErr(new Error(error.message));
-    setData((data ?? null) as MyFloq[] | null);
+    setError(null);
+    const { data, error } = await supabase.rpc('rpc_my_live_floqs');
+    if (error) setError(error.message);
+    setData((data ?? null) as MyLiveFloq[] | null);
     setLoading(false);
   }
 
-  useEffect(() => { fetchOnce(); }, [client]);
+  useEffect(() => { fetchOnce(); }, []);
 
   return { data, loading, error, refetch: fetchOnce };
 }
