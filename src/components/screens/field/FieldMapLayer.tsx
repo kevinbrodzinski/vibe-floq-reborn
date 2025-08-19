@@ -6,7 +6,7 @@ import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
 import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
-import { WaveMapOverlay } from '@/components/field/WaveMapOverlay';
+// import { WaveMapOverlay } from '@/components/field/WaveMapOverlay'; // Removed - using dedicated /discover page instead
 
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
@@ -93,18 +93,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         </div>
       </FieldWebMap>
 
-      {/* Wave Map Overlay - adds wave clusters to the map */}
-      {isLocationReady && location?.coords && (
-        <WaveMapOverlay
-          lat={location.coords.lat}
-          lng={location.coords.lng}
-          isVisible={true}
-          onWaveClick={(waveId, lat, lng) => {
-            console.log('Wave clicked on map:', waveId, lat, lng);
-            // This will be handled by the popup button for now
-          }}
-        />
-      )}
+      {/* Wave Map Overlay - removed, using dedicated /discover page instead */}
       
       {/* Venue Loading Overlay */}
       <VenueLoadingOverlay show={isVenueSyncing} />
