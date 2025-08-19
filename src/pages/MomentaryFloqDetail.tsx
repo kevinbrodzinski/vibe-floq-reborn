@@ -8,6 +8,7 @@ import { ActionBar } from '@/components/momentary/ActionBar';
 import { ParticipantsAvatars } from '@/components/momentary/ParticipantsAvatars';
 import { postMomentFeed } from '@/hooks/useMomentFeed';
 import { supabase } from '@/integrations/supabase/client';
+import { getCurrentPosition } from '@/lib/deviceLocation';
 
 export type MomentaryFloqDetailProps = {
   floqId: string;
@@ -27,11 +28,18 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
 
   const onShareLocation = React.useCallback(async () => {
     try {
+      // Get current device location
+      const location = await getCurrentPosition();
+      if (!location) {
+        console.warn('Could not get device location');
+        return;
+      }
+
       // Use existing presence system to share location
       const { error } = await supabase.rpc('upsert_presence', {
-        p_lat: 34.0522, // TODO: Get actual device location
-        p_lng: -118.2437, // TODO: Get actual device location  
-        p_vibe: 'hype', // TODO: Get user's current vibe
+        p_lat: location.lat,
+        p_lng: location.lng,
+        p_vibe: 'hype', // TODO: Get user's current vibe from state
         p_visibility: 'public'
       });
 
@@ -39,7 +47,7 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
         console.error('Error sharing location:', error);
       } else {
         console.log('✅ Location shared successfully');
-        // Optionally post a feed item to show location was shared
+        // Post a feed item to show location was shared
         await postMomentFeed(floqId, { kind: 'vibe', text: 'Shared location' });
       }
     } catch (error) {
