@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useNotificationActions } from '@/hooks/useNotificationActions';
 import { MomentaryFloqNotificationItem } from './MomentaryFloqNotificationItem';
+import { MomentaryFloqNotificationModal } from './MomentaryFloqNotificationModal';
 
 const getNotificationIcon = (kind: string) => {
   switch (kind) {
