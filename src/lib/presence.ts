@@ -1,4 +1,4 @@
-import { createClient } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 export async function upsertPresence({
@@ -12,7 +12,6 @@ export async function upsertPresence({
   vibe?: Database['public']['Enums']['vibe_enum'] | null;
   point?: { lat: number, lng: number } | null;
 }) {
-  const supabase = createClient();
   const location = point
     ? `SRID=4326;POINT(${point.lng} ${point.lat})`
     : null;
