@@ -1,6 +1,5 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { XStack, Button, Separator, YStack } from 'tamagui';
 
 export type ActionBarProps = {
   onJoin?: () => void;
@@ -11,14 +10,14 @@ export type ActionBarProps = {
 
 export default function ActionBar({ onJoin, onShareLocation, onInvite, onSaveRipple }: ActionBarProps) {
   return (
-    <div className="p-3 space-y-2 border-t">
-      <div className="flex gap-2 flex-wrap">
-        <Button onClick={onJoin}>Join Now</Button>
-        <Button onClick={onShareLocation} variant="outline">Share Location</Button>
-        <Button onClick={onInvite} variant="secondary">Invite Friend</Button>
-        <Button onClick={onSaveRipple} variant="default">Save as Ripple</Button>
-      </div>
+    <YStack padding="$3" gap="$2" borderTopWidth={1} borderColor="$color2">
+      <XStack gap="$2" fw="wrap">
+        <Button onPress={onJoin}>Join Now</Button>
+        <Button onPress={onShareLocation} theme="alt1">Share Location</Button>
+        <Button onPress={onInvite} theme="alt2">Invite Friend</Button>
+        <Button onPress={onSaveRipple} theme="active">Save as Ripple</Button>
+      </XStack>
       <Separator />
-    </div>
+    </YStack>
   );
 }

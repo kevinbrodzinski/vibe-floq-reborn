@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { XStack, YStack, Text, Button, Separator } from 'tamagui';
 
 export type MomentHeaderProps = {
   title: string;
@@ -32,19 +31,19 @@ export default function MomentHeader({ title, endsAt, onBack, onMore }: MomentHe
   const dissolved = remaining <= 0;
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack} aria-label="Back">
+    <YStack padding="$3" gap="$2">
+      <XStack ai="center" jc="space-between">
+        <Button size="$3" onPress={onBack} accessibilityLabel="Back">
           ←
         </Button>
-        <h1 className="text-xl font-bold">{title}</h1>
-        <Button variant="ghost" size="sm" onClick={onMore} aria-label="More options">•••</Button>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-lg font-semibold">{dissolved ? 'Ended' : formatRemaining(remaining)}</span>
-        <span className="text-sm text-muted-foreground">Floq dissolves when timer ends</span>
-      </div>
+        <Text fontWeight="700" fontSize="$7">{title}</Text>
+        <Button size="$3" onPress={onMore} accessibilityLabel="More options">•••</Button>
+      </XStack>
+      <XStack ai="center" gap="$2">
+        <Text fontSize="$6">{dissolved ? 'Ended' : formatRemaining(remaining)}</Text>
+        <Text opacity={0.7}>Floq dissolves when timer ends</Text>
+      </XStack>
       <Separator />
-    </div>
+    </YStack>
   );
 }

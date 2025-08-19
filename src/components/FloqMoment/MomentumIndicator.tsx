@@ -1,14 +1,15 @@
 import React from 'react';
+import { XStack, Text, YStack } from 'tamagui';
 
 export type MomentumState = 'gaining' | 'steady' | 'winding';
 
 export default function MomentumIndicator({ state }: { state: MomentumState }) {
   const label = state === 'gaining' ? 'Floq is gaining steam' : state === 'winding' ? 'Floq is winding down' : 'Floq is steady';
   return (
-    <div className="flex items-center gap-2 p-3">
+    <XStack ai="center" gap="$2" padding="$3">
       {/* TODO: replace with animated orbit/glow (Reanimated) */}
-      <div className="w-4 h-4 rounded-full bg-accent opacity-70" />
-      <span className="text-base">{label}</span>
-    </div>
+      <YStack width={16} height={16} br="$12" backgroundColor="$accentColor" opacity={0.7} />
+      <Text fontSize="$5">{label}</Text>
+    </XStack>
   );
 }

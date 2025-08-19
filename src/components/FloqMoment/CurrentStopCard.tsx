@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardFooter, CardBackground, YStack, XStack, Text, Button, Image, Progress } from 'tamagui';
 
 export type CurrentStopCardProps = {
   venueName: string;
@@ -15,35 +14,31 @@ export type CurrentStopCardProps = {
 export default function CurrentStopCard(props: CurrentStopCardProps) {
   const { venueName, photoUrl, vibePulse0to1 = 0.5, friendsHere = 0, onOnMyWay, onHere, onSkip } = props;
   return (
-    <Card className="overflow-hidden">
+    <Card elevation="$2" overflow="hidden">
+      <CardBackground />
       {photoUrl ? (
-        <img src={photoUrl} alt={venueName} className="w-full h-45 object-cover" />
+        <Image source={{ uri: photoUrl }} alt={venueName} width="100%" height={180} />
       ) : (
-        <div className="h-45 flex items-center justify-center bg-muted">
-          <span className="text-muted-foreground">Venue photo</span>
-        </div>
+        <YStack height={180} ai="center" jc="center">
+          <Text opacity={0.6}>Venue photo</Text>
+        </YStack>
       )}
       <CardHeader>
-        <h3 className="text-xl font-bold">{venueName}</h3>
-        <div className="flex items-center gap-3">
-          <span>Friends here: {friendsHere}</span>
-        </div>
+        <Text fontSize="$7" fontWeight="700">{venueName}</Text>
+        <XStack ai="center" gap="$3">
+          <Text>Friends here: {friendsHere}</Text>
+        </XStack>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <span className="text-sm text-muted-foreground">Live vibe</span>
-        <div className="w-full bg-muted rounded-full h-2">
-          <div 
-            className="bg-primary h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${Math.round(vibePulse0to1 * 100)}%` }}
-          />
-        </div>
-      </CardContent>
+      <YStack paddingHorizontal="$4" paddingBottom="$3" gap="$2">
+        <Text opacity={0.7}>Live vibe</Text>
+        <Progress value={Math.round(vibePulse0to1 * 100)} max={100} />
+      </YStack>
       <CardFooter>
-        <div className="flex gap-2">
-          <Button onClick={onOnMyWay} variant="outline">On my way</Button>
-          <Button onClick={onHere}>I'm here</Button>
-          <Button onClick={onSkip} variant="secondary">Skip</Button>
-        </div>
+        <XStack gap="$2">
+          <Button onPress={onOnMyWay}>On my way</Button>
+          <Button onPress={onHere} theme="active">I'm here</Button>
+          <Button onPress={onSkip} theme="alt1">Skip</Button>
+        </XStack>
       </CardFooter>
     </Card>
   );
