@@ -5,6 +5,7 @@ import { CurrentStopCard } from '@/components/momentary/CurrentStopCard';
 import { UpcomingStopsCarousel } from '@/components/momentary/UpcomingStopsCarousel';
 import { EphemeralFeed } from '@/components/momentary/EphemeralFeed';
 import { ActionBar } from '@/components/momentary/ActionBar';
+import { ParticipantsAvatars } from '@/components/momentary/ParticipantsAvatars';
 import { postMomentFeed } from '@/hooks/useMomentFeed';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,11 +30,12 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
       <MomentHeader title={title} endsAt={endsAt} />
       <div className="space-y-4 p-3">
         <MomentumIndicator state={momentum} />
+        <ParticipantsAvatars floqId={floqId} className="px-3" />
         <CurrentStopCard venueName="Current Venue" friendsHere={9} vibePulse0to1={0.7} />
         <UpcomingStopsCarousel stops={[{ id: '1', name: 'Next Bar', eta: '10m' }, { id: '2', name: 'Late Night Taco' }]} />
         <EphemeralFeed floqId={floqId} />
       </div>
-      <ActionBar onJoin={onJoin} onSaveRipple={onSaveRipple} />
+      <ActionBar floqId={floqId} onJoin={onJoin} onSaveRipple={onSaveRipple} />
     </div>
   );
 }
