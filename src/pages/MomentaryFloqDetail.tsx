@@ -25,6 +25,11 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
     await postMomentFeed(floqId, { kind: 'vibe', text: 'Saved as Ripple' });
   }, [floqId]);
 
+  const onShareLocation = React.useCallback(async () => {
+    // TODO: Wire to existing presence system or implement presence beacon
+    console.log('Share Location clicked - TODO: implement presence update');
+  }, []);
+
   return (
     <div className="flex flex-col min-h-dvh">
       <MomentHeader title={title} endsAt={endsAt} />
@@ -35,7 +40,7 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
         <UpcomingStopsCarousel stops={[{ id: '1', name: 'Next Bar', eta: '10m' }, { id: '2', name: 'Late Night Taco' }]} />
         <EphemeralFeed floqId={floqId} />
       </div>
-      <ActionBar floqId={floqId} onJoin={onJoin} onSaveRipple={onSaveRipple} />
+      <ActionBar floqId={floqId} onJoin={onJoin} onShareLocation={onShareLocation} onSaveRipple={onSaveRipple} />
     </div>
   );
 }
