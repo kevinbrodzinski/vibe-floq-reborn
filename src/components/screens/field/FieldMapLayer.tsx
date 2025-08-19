@@ -6,8 +6,10 @@ import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
 import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
+import { WaveMapOverlay } from '@/components/field/WaveMapOverlay';
 
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
+import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useVenueSync } from '@/hooks/useVenueSync';
 import type { FieldData } from '../field/FieldDataProvider';
 
@@ -28,6 +30,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
 }) => {
   const { walkableFloqs, fieldTiles, realtime } = data;
   const { people: socialPeople } = useFieldSocial();
+  const { location, isLocationReady } = useFieldLocation();
   
   // Phase 4 state management
   const [isDebugVisible, setIsDebugVisible] = useState(false);
@@ -89,6 +92,19 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
           />
         </div>
       </FieldWebMap>
+
+      {/* Wave Map Overlay - adds wave clusters to the map */}
+      {isLocationReady && location?.coords && (
+        <WaveMapOverlay
+          lat={location.coords.lat}
+          lng={location.coords.lng}
+          isVisible={true}
+          onWaveClick={(waveId, lat, lng) => {
+            console.log('Wave clicked on map:', waveId, lat, lng);
+            // This will be handled by the popup button for now
+          }}
+        />
+      )}
       
       {/* Venue Loading Overlay */}
       <VenueLoadingOverlay show={isVenueSyncing} />
