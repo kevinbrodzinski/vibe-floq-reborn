@@ -7,7 +7,7 @@ export async function createTestMomentaryFloq() {
   try {
     console.log('Creating test momentary floq...');
     
-    // Create a momentary floq using the RPC
+    // Create a momentary floq using the RPC (4 hour duration makes it momentary)
     const { data: floqId, error } = await supabase.rpc('rpc_floq_session_create', {
       p_vibe: 'hype',
       p_title: 'Test Momentary Floq',

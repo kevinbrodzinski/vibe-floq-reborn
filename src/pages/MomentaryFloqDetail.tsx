@@ -26,9 +26,26 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
   }, [floqId]);
 
   const onShareLocation = React.useCallback(async () => {
-    // TODO: Wire to existing presence system or implement presence beacon
-    console.log('Share Location clicked - TODO: implement presence update');
-  }, []);
+    try {
+      // Use existing presence system to share location
+      const { error } = await supabase.rpc('upsert_presence', {
+        p_lat: 34.0522, // TODO: Get actual device location
+        p_lng: -118.2437, // TODO: Get actual device location  
+        p_vibe: 'hype', // TODO: Get user's current vibe
+        p_visibility: 'public'
+      });
+
+      if (error) {
+        console.error('Error sharing location:', error);
+      } else {
+        console.log('✅ Location shared successfully');
+        // Optionally post a feed item to show location was shared
+        await postMomentFeed(floqId, { kind: 'vibe', text: 'Shared location' });
+      }
+    } catch (error) {
+      console.error('Failed to share location:', error);
+    }
+  }, [floqId]);
 
   return (
     <div className="flex flex-col min-h-dvh">
