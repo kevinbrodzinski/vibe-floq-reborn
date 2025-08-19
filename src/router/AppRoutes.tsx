@@ -41,6 +41,7 @@ const FieldScreen = lazy(() => import('@/components/screens/FieldScreen').then(m
 const FlocksHome = lazy(() => import('@/components/FlocksHome').then(m => ({ default: m.FlocksHome })));
 const FloqRoute = lazy(() => import('@/pages/FloqRoute'));
 const FloqManage = lazy(() => import('@/pages/FloqManage'));
+const Discover = lazy(() => import('@/pages/Discover'));
 const PulseScreen = lazy(() => import('@/components/screens/pulse/PulseScreenRedesigned').then(m => ({ default: m.PulseScreenRedesigned })));
 const VibeScreen = lazy(() => import('@/screens/VibeScreen').then(m => ({ default: m.VibeScreen })));
 const AfterglowRoutes = lazy(() => import('@/routes/AfterglowRoutes'));
@@ -88,6 +89,11 @@ export const AppRoutes = () => {
       <Route path="/floqs" element={
         <RouteSuspense>
           <FlocksHome />
+        </RouteSuspense>
+      } />
+      <Route path="/discover" element={
+        <RouteSuspense>
+          <Discover />
         </RouteSuspense>
       } />
       <Route path="/floqs/:floqId" element={

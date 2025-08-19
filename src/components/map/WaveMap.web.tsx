@@ -1,18 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { getMapboxToken } from '@/lib/geo/getMapboxToken';
 
 export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number };
-
-mapboxgl.accessToken = (import.meta as any).env.VITE_MAPBOX_TOKEN as string;
 
 export default function WaveMapWeb({ lat, lng, markers }: { lat: number; lng: number; markers: WaveMarker[] }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const [tokenReady, setTokenReady] = useState(false);
 
-  // init once
+  // Initialize Mapbox token using existing system
   useEffect(() => {
-    if (!ref.current || mapRef.current) return;
+    getMapboxToken().then(({ token }) => {
+      mapboxgl.accessToken = token;
+      setTokenReady(true);
+    }).catch(err => {
+      console.error('Failed to get Mapbox token:', err);
+    });
+  }, []);
+
+  // init map once token is ready
+  useEffect(() => {
+    if (!ref.current || mapRef.current || !tokenReady) return;
+    
     mapRef.current = new mapboxgl.Map({
       container: ref.current,
       style: 'mapbox://styles/mapbox/dark-v11',
@@ -20,7 +31,7 @@ export default function WaveMapWeb({ lat, lng, markers }: { lat: number; lng: nu
       zoom: 12.5,
     });
     mapRef.current.addControl(new mapboxgl.NavigationControl({ showCompass: false }));
-  }, [lat, lng]);
+  }, [lat, lng, tokenReady]);
 
   // update data layer
   useEffect(() => {
@@ -77,5 +88,13 @@ export default function WaveMapWeb({ lat, lng, markers }: { lat: number; lng: nu
     }
   }, [markers]);
 
-  return <div ref={ref} style={{ width: '100%', height: 300, borderRadius: 12, overflow: 'hidden' }} />;
+  if (!tokenReady) {
+    return (
+      <div className="w-full h-full bg-muted rounded-xl flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading map...</p>
+      </div>
+    );
+  }
+
+  return <div ref={ref} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />;
 }

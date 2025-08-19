@@ -6,7 +6,7 @@ export type WaveMarker = { id: string; lat: number; lng: number; size: number; f
 
 export default function WaveMapNative({ lat, lng, markers }: { lat: number; lng: number; markers: WaveMarker[] }) {
   return (
-    <View style={{ width: '100%', height: 300, borderRadius: 12, overflow: 'hidden' }}>
+    <View style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }}>
       <MapView
         style={{ width: '100%', height: '100%' }}
         initialRegion={{ latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }}
