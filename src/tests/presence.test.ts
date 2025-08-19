@@ -1,20 +1,21 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { upsertPresence } from '@/lib/presence';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock Supabase client
-const mockSupabase = {
-  from: vi.fn(() => ({
-    upsert: vi.fn(() => ({
-      select: vi.fn(() => ({
-        single: vi.fn(() => ({ data: { id: 'test-id' }, error: null }))
+// Hoist-safe module mock: define everything inside the factory
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      upsert: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn(() => ({ data: { id: 'test-id' }, error: null }))
+        }))
       }))
     }))
-  }))
-};
-
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: mockSupabase
+  }
 }));
+
+// Import AFTER the mock above
+import { upsertPresence } from '@/lib/presence';
+import { supabase } from '@/integrations/supabase/client';
 
 describe('Presence System', () => {
   beforeEach(() => {
@@ -29,7 +30,7 @@ describe('Presence System', () => {
       point: { lat: 40.7128, lng: -74.0060 }
     });
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('presence');
+    expect(supabase.from).toHaveBeenCalledWith('presence');
     expect(result).toEqual({ id: 'test-id' });
   });
 
@@ -43,7 +44,7 @@ describe('Presence System', () => {
       point: { lat: 40.7128, lng: -74.0060 }
     });
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('presence');
+    expect(supabase.from).toHaveBeenCalledWith('presence');
     expect(result).toEqual({ id: 'test-id' });
   });
 
@@ -54,7 +55,7 @@ describe('Presence System', () => {
       }))
     }));
 
-    mockSupabase.from.mockReturnValue({
+    vi.mocked(supabase.from).mockReturnValue({
       upsert: upsertMock
     });
 
@@ -83,7 +84,7 @@ describe('Presence System', () => {
       }))
     }));
 
-    mockSupabase.from.mockReturnValue({
+    vi.mocked(supabase.from).mockReturnValue({
       upsert: upsertMock
     });
 
@@ -96,7 +97,7 @@ describe('Presence System', () => {
 
     expect(upsertMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        location: 'SRID=4326;POINT(-74.0060 40.7128)'
+        location: 'SRID=4326;POINT(-74.006 40.7128)'
       }),
       { onConflict: 'profile_id,venue_id' }
     );
