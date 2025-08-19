@@ -5,7 +5,9 @@ import { getMapboxToken } from '@/lib/geo/getMapboxToken';
 
 export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number };
 
-export default function WaveMapWeb({ lat, lng, markers }: { lat: number; lng: number; markers: WaveMarker[] }) {
+export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
+  lat: number; lng: number; markers: WaveMarker[]; onSelect?: (m: WaveMarker) => void;
+}) {
   const ref = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [tokenReady, setTokenReady] = useState(false);
@@ -45,7 +47,7 @@ export default function WaveMapWeb({ lat, lng, markers }: { lat: number; lng: nu
       type: 'FeatureCollection',
       features: markers.map((m) => ({
         type: 'Feature',
-        properties: { id: m.id, size: m.size, friends: m.friends },
+        properties: { id: m.id, size: m.size, friends: m.friends, lat: m.lat, lng: m.lng },
         geometry: { type: 'Point', coordinates: [m.lng, m.lat] },
       })),
     };
@@ -72,21 +74,24 @@ export default function WaveMapWeb({ lat, lng, markers }: { lat: number; lng: nu
         },
       });
 
-      // simple cursor + popup
+      // cursor + selection
       map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
       map.on('click', layerId, (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        const { size, friends } = f.properties as any;
-        const [x, y] = e.lngLat.toArray();
-        new mapboxgl.Popup({ closeButton: true })
-          .setLngLat([x, y])
-          .setHTML(`<div style="font: 12px system-ui;">Wave size <b>${size}</b><br/>Friends here <b>${friends}</b></div>`)
-          .addTo(map);
+        const p = f.properties as any;
+        const marker: WaveMarker = { 
+          id: String(p.id), 
+          size: Number(p.size), 
+          friends: Number(p.friends), 
+          lat: Number(p.lat), 
+          lng: Number(p.lng) 
+        };
+        onSelect?.(marker);
       });
     }
-  }, [markers]);
+  }, [markers, onSelect]);
 
   if (!tokenReady) {
     return (

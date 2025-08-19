@@ -4,7 +4,9 @@ import { View } from 'react-native';
 
 export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number };
 
-export default function WaveMapNative({ lat, lng, markers }: { lat: number; lng: number; markers: WaveMarker[] }) {
+export default function WaveMapNative({ lat, lng, markers, onSelect }: {
+  lat: number; lng: number; markers: WaveMarker[]; onSelect?: (m: WaveMarker) => void;
+}) {
   return (
     <View style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }}>
       <MapView
@@ -17,6 +19,7 @@ export default function WaveMapNative({ lat, lng, markers }: { lat: number; lng:
             coordinate={{ latitude: m.lat, longitude: m.lng }}
             title={`Wave size ${m.size}`}
             description={`${m.friends} friends`}
+            onPress={() => onSelect?.(m)}
           />
         ))}
       </MapView>
