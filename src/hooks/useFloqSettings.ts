@@ -19,17 +19,18 @@ export function useFloqSettings(floqId: string) {
     queryFn: async (): Promise<FloqSettings> => {
       const { data, error } = await supabase
         .rpc('get_floq_full_details', { p_floq_id: floqId })
+        .returns<any>()
         .single();
 
       if (error) throw error;
 
       return {
-        notifications_enabled: data.notifications_enabled ?? true,
-        mention_permissions: data.mention_permissions ?? 'all',
-        join_approval_required: data.join_approval_required ?? false,
-        activity_visibility: data.activity_visibility ?? 'public',
-        welcome_message: data.welcome_message ?? '',
-        pinned_note: (data as any).pinned_note ?? null,
+        notifications_enabled: (data as any)?.notifications_enabled ?? true,
+        mention_permissions: (data as any)?.mention_permissions ?? 'all',
+        join_approval_required: (data as any)?.join_approval_required ?? false,
+        activity_visibility: (data as any)?.activity_visibility ?? 'public',
+        welcome_message: (data as any)?.welcome_message ?? '',
+        pinned_note: (data as any)?.pinned_note ?? null,
       };
     },
     enabled: !!floqId,

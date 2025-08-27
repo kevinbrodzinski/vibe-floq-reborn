@@ -114,8 +114,8 @@ export function useFloqRealtime(floqId: string) {
         .from('floq_messages')
         .insert({
           floq_id: floqId,
-          sender_id: message.sender_id,
-          content: message.content,
+          sender_profile_id: message.sender_id,
+          body: message.content,
           reply_to_id: message.reply_to_id
         });
       

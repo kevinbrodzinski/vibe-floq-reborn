@@ -36,14 +36,14 @@ export function useFloqSuggestions({
         p_user_lat: geo.lat,
         p_user_lng: geo.lng,
         p_limit: limit,
-      } as any);
+      } as any).returns<FloqSuggestion[]>();
 
       if (error) {
         console.error("Floq suggestions error:", error);
         throw error;
       }
 
-      return (data || []) satisfies FloqSuggestion[];
+      return (data || []) as FloqSuggestion[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
