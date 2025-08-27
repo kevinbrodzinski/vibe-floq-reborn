@@ -39,9 +39,10 @@ export function usePendingInvitations() {
             avatar_url
           )
         `)
-        .eq('invitee_profile_id', user.id)
-        .eq('status', 'pending')
-        .order('invited_at', { ascending: false });
+        .eq('invitee_profile_id', user.id as any)
+        .eq('status', 'pending' as any)
+        .order('invited_at', { ascending: false })
+        .returns<Array<any>>();
 
       if (error) throw error;
 

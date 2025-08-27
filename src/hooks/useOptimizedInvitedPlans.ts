@@ -27,9 +27,10 @@ export function useOptimizedInvitedPlans() {
             floqs(title, location)
           )
         `)
-        .eq('profile_id', user.user.id)
-        .neq('floq_plans.creator_id', user.user.id)
-        .limit(20); // Limit to prevent large queries
+        .eq('profile_id', user.user.id as any)
+        .neq('floq_plans.creator_id', user.user.id as any)
+        .limit(20) // Limit to prevent large queries
+        .returns<Array<{ plan_id: string; floq_plans: any[] }>>();
 
       if (error) {
         console.error('Invited plans query error:', error);
@@ -37,7 +38,7 @@ export function useOptimizedInvitedPlans() {
       }
       
       console.timeEnd('Invited Plans Query');
-      return data?.map(item => item.floq_plans).filter(Boolean) || [];
+      return data?.map(item => (item as any).floq_plans).filter(Boolean) || [];
     }
   });
 }

@@ -59,13 +59,14 @@ export function usePendingInvites(): UsePendingInvitesReturn {
             username
           )
         `)
-        .eq('invitee_id', user.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .eq('invitee_id', user.id as any)
+        .eq('status', 'pending' as any)
+        .order('created_at', { ascending: false })
+        .returns<Array<any>>();
 
       if (error) throw error;
 
-      return data?.map(invite => ({
+      return data?.map((invite: any) => ({
         id: invite.id,
         floq_id: invite.floq_id,
         inviter_id: invite.inviter_id,

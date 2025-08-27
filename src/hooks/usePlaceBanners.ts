@@ -44,7 +44,7 @@ export function usePlaceBanners(lat?: number, lng?: number) {
         return [];
       }
       
-      return (data || []) as PlaceBanner[];
+      return ((data || []) as any[]) as PlaceBanner[];
     },
     enabled: !!geohash4,
     staleTime: 90_000, // 90 seconds cache

@@ -38,7 +38,7 @@ export function useAddStop() {
           start_time: timeSlot ? `${timeSlot}:00` : undefined,
           created_by: (await supabase.auth.getUser()).data.user?.id,
           stop_order: 1 // Will be updated by the legacy wrapper
-        })
+        } as any)
         .select()
         .single()
 
@@ -73,8 +73,8 @@ export function useRemoveStop() {
       const { error } = await supabase
         .from('plan_stops')
         .delete()
-        .eq('id', stopId)
-        .eq('plan_id', planId)
+        .eq('id', stopId as any)
+        .eq('plan_id', planId as any)
 
       if (error) throw error
     },
@@ -111,7 +111,7 @@ export function useVoteOnStop() {
           vote_type: voteType,
           emoji_reaction: emojiReaction,
           profile_id: (await supabase.auth.getUser()).data.user?.id
-        })
+        } as any)
         .select()
         .single()
 

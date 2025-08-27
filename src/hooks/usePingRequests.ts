@@ -15,12 +15,12 @@ const fetchPingRequests = async (): Promise<PingRequest[]> => {
   const { data, error } = await supabase
     .from('ping_requests')
     .select('*')
-    .eq('target_id', (await supabase.auth.getUser()).data.user?.id)
-    .eq('status', 'pending')
+    .eq('target_id', (await supabase.auth.getUser()).data.user?.id as any)
+    .eq('status', 'pending' as any)
     .order('requested_at', { ascending: false })
   
   if (error) throw error
-  return data as PingRequest[]
+  return (data as any) || []
 }
 
 export const usePingRequests = () => {

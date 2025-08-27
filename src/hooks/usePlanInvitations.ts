@@ -25,11 +25,11 @@ export function usePlanInvitations(planId: string) {
       const { data, error } = await supabase
         .from('plan_invitations')
         .select('*')
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data || []);
+      setInvitations((data || []) as any);
     } catch (error) {
       console.error('Error fetching invitations:', error);
     }
@@ -53,7 +53,7 @@ export function usePlanInvitations(planId: string) {
 
       const { error } = await supabase
         .from('plan_invitations')
-        .insert(inviteData);
+        .insert(inviteData as any);
 
       if (error) throw error;
 
@@ -82,8 +82,8 @@ export function usePlanInvitations(planId: string) {
         .update({
           status: accept ? 'accepted' : 'declined',
           responded_at: new Date().toISOString()
-        })
-        .eq('id', invitationId);
+        } as any)
+        .eq('id', invitationId as any);
 
       if (error) throw error;
 
@@ -97,7 +97,7 @@ export function usePlanInvitations(planId: string) {
               plan_id: planId,
               profile_id: user.id,
               invite_type: 'invitation'
-            });
+            } as any);
         }
       }
 

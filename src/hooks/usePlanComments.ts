@@ -70,7 +70,7 @@ export function usePlanComments(planId?: string) {
       const { data, error } = await supabase
         .from('plan_comments' as any)
         .select('*, profiles(username, avatar_url)')
-        .eq('plan_id', planId!)
+        .eq('plan_id', planId! as any)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -89,7 +89,7 @@ export async function sendPlanComment(
     plan_id: planId,
     content,
     reply_to_id: replyToId ?? null,
-  });
+  } as any);
   
   if (error) throw error;
 }

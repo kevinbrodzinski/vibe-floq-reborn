@@ -154,7 +154,7 @@ export const usePersonalizedVenues = (
       });
       if (error) throw new Error(error.message ?? 'venues_within_radius failed');
 
-      return (data || []).map((venue: any) => ({
+      return ((data || []) as any[]).map((venue: any) => ({
         venue_id: venue.venue_id,
         name: venue.name,
         distance_m: venue.distance_m,

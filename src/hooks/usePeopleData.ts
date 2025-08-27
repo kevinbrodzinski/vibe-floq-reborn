@@ -67,7 +67,7 @@ export function usePeopleData() {
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .in('id', userIds)
+        .in('id', userIds as any)
 
       if (fetchError) throw fetchError
       return data || []

@@ -25,7 +25,7 @@ export function usePlanFeedback(planId: string) {
       const { data, error } = await supabase
         .from('plan_feedback')
         .select('*')
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -42,8 +42,8 @@ export function useMyPlanFeedback(planId: string) {
       const { data, error } = await supabase
         .from('plan_feedback')
         .select('*')
-        .eq('plan_id', planId)
-        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('plan_id', planId as any)
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id as any)
         .maybeSingle();
 
       if (error) throw error;
@@ -73,7 +73,7 @@ export function useSubmitPlanFeedback() {
           plan_id: planId,
           profile_id: user.id,
           ...feedback,
-        });
+        } as any);
 
       if (error) throw error;
       return data;

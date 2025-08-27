@@ -11,7 +11,7 @@ export function useParticipants(floqId: string) {
     const { data: parts } = await supabase
       .from('floq_participants')
       .select('profile_id, role, joined_at')
-      .eq('floq_id', floqId)
+      .eq('floq_id', floqId as any)
       .order('joined_at', { ascending: false });
     const p = (parts ?? []) as Participant[];
 
@@ -21,7 +21,7 @@ export function useParticipants(floqId: string) {
     const { data: profs } = await supabase
       .from('profiles')
       .select('id, display_name, avatar_url')
-      .in('id', ids);
+      .in('id', ids as any);
 
     const byId = new Map((profs ?? []).map((r: any) => [r.id, r]));
     const merged: ParticipantInfo[] = p.map((r) => ({

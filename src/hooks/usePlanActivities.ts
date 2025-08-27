@@ -11,7 +11,7 @@ export function usePlanActivities(plan_id: string) {
           *,
           user:profiles(display_name, username, avatar_url)
         `)
-        .eq('plan_id', plan_id)
+        .eq('plan_id', plan_id as any)
         .order('created_at', { ascending: false })
         .limit(50)
       

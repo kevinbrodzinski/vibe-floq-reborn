@@ -28,8 +28,8 @@ export async function checkIntoStop(
   const { data: existingParticipant } = await supabase
     .from('plan_participants')
     .select('id')
-    .eq('plan_id', planId)
-    .eq('profile_id', user.id)
+    .eq('plan_id', planId as any)
+    .eq('profile_id', user.id as any)
     .single();
 
   if (!existingParticipant) {
@@ -39,7 +39,7 @@ export async function checkIntoStop(
         plan_id: planId,
         profile_id: user.id,
         joined_at: new Date().toISOString(),
-      });
+      } as any);
   }
 
   // Then record the check-in
@@ -49,7 +49,7 @@ export async function checkIntoStop(
     participant_id: user.id,
     location: lat && lng ? `SRID=4326;POINT(${lng} ${lat})` : null,
     device_id: deviceId,
-  });
+  } as any);
   
   if (error) throw error;
 }
@@ -59,8 +59,8 @@ export async function checkOutOfStop(
 ) {
   const { error } = await supabase
     .from('plan_check_ins' as any)
-    .update({ checked_out_at: new Date().toISOString() })
-    .eq('id', checkInId);
+    .update({ checked_out_at: new Date().toISOString() } as any)
+    .eq('id', checkInId as any);
     
   if (error) throw error;
 }
@@ -69,8 +69,8 @@ export async function getCurrentCheckIns(planId: string, profileId: string): Pro
   const { data, error } = await supabase
     .from('plan_check_ins' as any)
     .select('*')
-    .eq('plan_id', planId)
-    .eq('participant_id', profileId)
+    .eq('plan_id', planId as any)
+    .eq('participant_id', profileId as any)
     .is('checked_out_at', null);
     
   if (error) throw error;

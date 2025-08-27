@@ -16,8 +16,8 @@ export const useTogglePinned = () => {
     mutationFn: async ({ id, pinned }: { id: string; pinned: boolean }) => {
       const { error } = await supabase
         .from('daily_afterglow')
-        .update({ is_pinned: pinned })
-        .eq('id', id)
+        .update({ is_pinned: pinned } as any)
+        .eq('id', id as any)
       
       if (error) throw error
       return pinned
@@ -100,8 +100,8 @@ export const useToggleFavorite = () => {
         const { error } = await supabase
           .from('afterglow_favorites')
           .delete()
-          .eq('daily_afterglow_id', afterglowId)
-          .eq('profile_id', profileId)
+          .eq('daily_afterglow_id', afterglowId as any)
+          .eq('profile_id', profileId as any)
         
         if (error) throw error
         return false
@@ -112,7 +112,7 @@ export const useToggleFavorite = () => {
           .insert({
             daily_afterglow_id: afterglowId,
             profile_id: profileId
-          })
+          } as any)
         
         if (error) throw error
         return true

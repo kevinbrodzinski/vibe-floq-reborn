@@ -51,7 +51,7 @@ export function useOnboardingStatus(): OnboardingStatus {
   // User needs onboarding if:
   // 1. No completed onboarding progress record, AND
   // 2. No preferences record with current version
-  const progressCompletedAt = progressData?.completed_at ?? null;
+  const progressCompletedAt = progressData ? (progressData as any).completed_at ?? null : null;
   const needsOnboarding = !progressCompletedAt && 
     (!preferences?.onboarding_version || preferences.onboarding_version !== CURRENT_ONBOARDING_VERSION);
 

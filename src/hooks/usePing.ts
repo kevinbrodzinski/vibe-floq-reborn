@@ -14,7 +14,7 @@ export const usePing = () => {
           target_id: targetId,
           requester_id: user.user.id,
           status: 'pending'
-        })
+        } as any)
 
       if (error) throw error
       
