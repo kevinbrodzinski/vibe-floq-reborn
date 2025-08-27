@@ -31,7 +31,7 @@ const AppLoadingFallback = ({ message = "Loading..." }: { message?: string }) =>
 function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [showSplash, setShowSplash] = useState<boolean | null>(null);
-  const { data: preferences, isLoading: loadingPrefs } = useUserPreferences();
+  const { data: preferences, isLoading: loadingPrefs } = useUserPreferences(user?.id);
   const queryClient = useQueryClient();
   const { getRedirectPath, clearRedirectPath } = useDeepLinkRedirect();
   const { getItem, setItem } = useSafeStorage();
@@ -101,9 +101,7 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
         }
 
         // Fallback to preferences table check
-        console.log('🔄 Checking user preferences...', preferences);
         const hasCompletedPreferences = preferences?.onboarding_version === ONBOARDING_VERSION;
-        
         if (hasCompletedPreferences) {
           console.log('✅ Onboarding completed in preferences table');
           await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
@@ -133,7 +131,7 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     // Prevent suspension during navigation
-    suspense: false,
+    
     throwOnError: false
   });
 

@@ -85,7 +85,7 @@ export const VenueImage: React.FC<VenueImageProps> = ({
       onError={handleImageError}
       loading={priority ? "eager" : lazy ? "lazy" : "eager"}
       decoding="async"
-      fetchpriority={priority ? "high" : "low"}
+      fetchPriority={priority ? "high" : "low"}
     />
   );
 };

@@ -100,7 +100,7 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = memo(({
     onSelect();
     emblaApi.on('select', onSelect);
     setCount(emblaApi.scrollSnapList().length);
-    return () => emblaApi.off('select', onSelect);
+    return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi]);
 
   const scrollPrev = React.useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
@@ -115,7 +115,6 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = memo(({
     boxShadow: isActive
       ? '0 16px 40px rgba(0,0,0,0.38)'
       : '0 10px 24px rgba(0,0,0,0.28)',
-    transition: { type: 'spring', stiffness: 240, damping: 22 },
   });
 
   // Enhanced items with calculated travel times

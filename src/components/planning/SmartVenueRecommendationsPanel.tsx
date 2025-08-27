@@ -135,7 +135,7 @@ export function SmartVenueRecommendationsPanel({
       format(addMinutes(parseISO(`${planDate}T${startTime}`), 90), 'HH:mm')
 
     createPlanStop.mutate({
-      planId,
+      plan_id: planId,
       venueId: venue.id,
       startTime,
       endTime,
