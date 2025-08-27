@@ -38,7 +38,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         const { count: friendsCount } = await supabase
           .from('friendships')
           .select('*', { count: 'exact', head: true })
-          .or(`user_low.eq.${profileId},user_high.eq.${profileId}`)
+          .or(`profile_low.eq.${profileId},profile_high.eq.${profileId}`)
           .eq('friend_state', 'accepted');
         
         friendCount = friendsCount || 0;
@@ -48,26 +48,26 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           // Get current user's friends
           const { data: myFriends } = await supabase
             .from('friendships')
-            .select('user_low, user_high')
-            .or(`user_low.eq.${currentUserId},user_high.eq.${currentUserId}`)
+            .select('profile_low, profile_high')
+            .or(`profile_low.eq.${currentUserId},profile_high.eq.${currentUserId}`)
             .eq('friend_state', 'accepted');
 
           // Get target user's friends
           const { data: theirFriends } = await supabase
             .from('friendships')
-            .select('user_low, user_high')
-            .or(`user_low.eq.${profileId},user_high.eq.${profileId}`)
+            .select('profile_low, profile_high')
+            .or(`profile_low.eq.${profileId},profile_high.eq.${profileId}`)
             .eq('friend_state', 'accepted');
 
           if (myFriends && theirFriends) {
             // Extract friend IDs for current user
             const myFriendIds = new Set(myFriends.map(f => 
-              f.user_low === currentUserId ? f.user_high : f.user_low
+              f.profile_low === currentUserId ? f.profile_high : f.profile_low
             ));
 
             // Extract friend IDs for target user
             const theirFriendIds = new Set(theirFriends.map(f => 
-              f.user_low === profileId ? f.user_high : f.user_low
+              f.profile_low === profileId ? f.profile_high : f.profile_low
             ));
 
             // Count mutual friends
@@ -156,8 +156,8 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           const { data: friendship } = await supabase
             .from('friendships')
             .select('*')
-            .eq('user_low', userLow)
-            .eq('user_high', userHigh)
+            .eq('profile_low', userLow)
+            .eq('profile_high', userHigh)
             .eq('friend_state', 'accepted')
             .maybeSingle();
 

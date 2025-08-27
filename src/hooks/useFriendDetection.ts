@@ -178,8 +178,8 @@ export function useFriendSuggestions(profileId: string, options?: { limit?: numb
           const { error: friendshipError } = await supabase
             .from('friendships')
             .insert({
-              user_low: userLow,
-              user_high: userHigh,
+              profile_low: userLow,
+              profile_high: userHigh,
               friend_state: 'accepted',
               responded_at: new Date().toISOString()
             });
@@ -256,15 +256,15 @@ export function useFriendshipAnalysis(profileA: string, profileB: string) {
       const { data: existingAnalysis } = await supabase
         .from('friendship_analysis')
         .select('*')
-        .eq('user_low', userLow)
-        .eq('user_high', userHigh)
+        .eq('profile_low', userLow)
+        .eq('profile_high', userHigh)
         .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Within 24 hours
         .single();
 
       if (existingAnalysis) {
         setAnalysis({
-          user_low: existingAnalysis.user_low,
-          user_high: existingAnalysis.user_high,
+          user_low: existingAnalysis.profile_low,
+          user_high: existingAnalysis.profile_high,
           overall_score: existingAnalysis.overall_score,
           confidence_level: existingAnalysis.confidence_level as 'low' | 'medium' | 'high',
           relationship_type: existingAnalysis.relationship_type as 'friend' | 'acquaintance' | 'close_friend' | 'best_friend',
