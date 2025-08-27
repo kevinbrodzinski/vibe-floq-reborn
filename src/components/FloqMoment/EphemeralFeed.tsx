@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { useMomentFeed } from '../../hooks/useMomentFeed';
 
 export default function EphemeralFeed({ client, floqId }: { client: SupabaseClient; floqId: string }) {
-  const { items, loading, error, hasMore, loadMore } = useMomentFeed(client, floqId, { pageSize: 30 });
+  const { items, loading, error, hasMore, loadMore } = useMomentFeed(client, floqId);
 
   useEffect(() => {
     // TODO: subscribe to realtime on feed table filtered by floq_id and call loadMore/refetch as needed
@@ -26,7 +26,7 @@ export default function EphemeralFeed({ client, floqId }: { client: SupabaseClie
       </div>
       
       {error && (
-        <div className="text-red-500 text-sm">{error.message}</div>
+        <div className="text-red-500 text-sm">{String(error)}</div>
       )}
       
       <div className="space-y-2">

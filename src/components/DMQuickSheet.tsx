@@ -408,7 +408,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       >
         <SheetHeader className="pb-4 border-b border-border/50">
           <VisuallyHidden asChild>
-            <SheetTitle>Direct message with {typedFriend?.display_name ?? 'user'}</SheetTitle>
+            <SheetTitle>Direct message with {(typedFriend as any)?.display_name ?? 'user'}</SheetTitle>
           </VisuallyHidden>
           
           <VisuallyHidden asChild>
@@ -427,14 +427,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
             ) : typedFriend ? (
               <>
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={typedFriend.avatar_url || undefined} />
+                  <AvatarImage src={(typedFriend as any).avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
-                    {typedFriend.display_name?.[0]?.toUpperCase() ?? '?'}
+                    {(typedFriend as any).display_name?.[0]?.toUpperCase() ?? '?'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="text-left text-sm font-semibold">{typedFriend.display_name}</div>
-                  <div className="text-xs text-muted-foreground">@{typedFriend.username}</div>
+                  <div className="text-left text-sm font-semibold">{(typedFriend as any).display_name}</div>
+                  <div className="text-xs text-muted-foreground">@{(typedFriend as any).username}</div>
                 </div>
                 {online
                   ? <span className="ml-2 text-xs text-green-400">● Online</span>

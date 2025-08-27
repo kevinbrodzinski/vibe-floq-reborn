@@ -30,7 +30,7 @@ const UserProfileByUsernameWrapper = () => {
   }
 
   // Redirect to the new unified profile system using the profileId
-  return <UserProfile profileId={typedProfile.id} />;
+  return <UserProfile profileId={(typedProfile as any).id} />;
 };
 
 export default UserProfileByUsernameWrapper;

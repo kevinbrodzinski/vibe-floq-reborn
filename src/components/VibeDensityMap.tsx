@@ -117,7 +117,9 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
     const locLayer = myLocationLayer(
       userLocation ? [userLocation.lng, userLocation.lat] : null,
     );
-    if (locLayer) layers.push(locLayer);
+    if (locLayer) {
+      layers.push(locLayer);
+    }
 
     return layers;
   }, [userLocation ? `${userLocation.lat},${userLocation.lng}` : null]);

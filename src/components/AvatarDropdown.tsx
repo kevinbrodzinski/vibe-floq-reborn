@@ -72,8 +72,8 @@ export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => 
           <div className="relative">
             <VibeGlowRing>
               <AvatarWithFallback
-                src={typedProfile?.avatar_url ? getAvatarUrl(typedProfile.avatar_url, 64) : null}
-                fallbackText={typedProfile?.display_name || 'U'}
+                src={(typedProfile as any)?.avatar_url ? getAvatarUrl((typedProfile as any).avatar_url, 64) : null}
+                fallbackText={(typedProfile as any)?.display_name || 'U'}
                 className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
               />
             </VibeGlowRing>
@@ -224,8 +224,8 @@ export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => 
           <div className="max-w-sm mx-auto">
             <h3 className="text-lg font-semibold text-center mb-4">Change Avatar</h3>
             <AvatarUpload
-              currentAvatarUrl={typedProfile?.avatar_url}
-              displayName={typedProfile?.display_name}
+              currentAvatarUrl={(typedProfile as any)?.avatar_url}
+              displayName={(typedProfile as any)?.display_name}
               onAvatarChange={async (newAvatarUrl) => {
                 // Update the database with new avatar URL
                 const { error } = await supabase

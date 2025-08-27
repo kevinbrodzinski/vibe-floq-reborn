@@ -83,8 +83,8 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   });
 
   const handleClick = () => {
-    if (typedP?.username) {
-      navigate(`/u/${typedP.username}`);
+    if ((typedP as any)?.username) {
+      navigate(`/u/${(typedP as any).username}`);
     }
   };
 
@@ -116,10 +116,10 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
       >
         <div className="relative">
           <AvatarWithLoading
-            avatarPath={typedP?.avatar_url}
-            displayName={typedP?.display_name}
-            username={typedP?.username}
-            profileId={typedP?.id}
+            avatarPath={(typedP as any)?.avatar_url}
+            displayName={(typedP as any)?.display_name}
+            username={(typedP as any)?.username}
+            profileId={(typedP as any)?.id}
             size={32}
             className="h-8 w-8"
           />
@@ -134,13 +134,13 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
-          {sparklineData?.length ? <MiniPath pts={sparklineData} /> : null}
+          {(sparklineData as any)?.length ? <MiniPath pts={sparklineData as any} /> : null}
         </div>
 
         {/* Main Content Section */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <UserTag profile={typedP as Profile} className="truncate font-medium" />
+            <UserTag profile={(typedP as any) || {}} className="truncate font-medium" />
             {online
               ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
               : lastSeen && <PresenceBadge kind="lastSeen" ts={lastSeen} />}

@@ -49,7 +49,7 @@ export function VibeWeightManager() {
         .order('vibe')
         .returns<VibeWeights[]>()
       if (error) throw error;
-      return data ?? [];
+      return (data as any) || [];
     },
   });
 

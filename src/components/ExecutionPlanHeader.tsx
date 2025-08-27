@@ -15,7 +15,7 @@ export function ExecutionPlanHeader({ planId, currentStopIndex, progress }: Exec
   const typedParticipants = participants as any[]
   
   const currentStop = stops[currentStopIndex]
-  const totalStops = stops.length
+  const totalStops = (stops as any)?.length || 0
 
   return (
     <div className="space-y-4">
