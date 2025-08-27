@@ -1,9 +1,9 @@
-
 import { useUserPreferences, useUpdateUserPreferences } from './useUserPreferences';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants/onboarding';
+import { castSupabaseFilter, castString } from '@/lib/typeAssertions';
 
 export interface OnboardingStatus {
   needsOnboarding: boolean;
@@ -31,8 +31,9 @@ export function useOnboardingStatus(): OnboardingStatus {
       const { data, error } = await supabase
         .from('user_onboarding_progress')
         .select('completed_at, onboarding_version')
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', CURRENT_ONBOARDING_VERSION)
+        .eq('profile_id', castSupabaseFilter(user.id))
+        .eq('onboarding_version', castString(CURRENT_ONBOARDING_VERSION))
+        .returns<{ completed_at: string | null; onboarding_version: string }>()
         .maybeSingle();
       
       if (error) {
@@ -50,7 +51,8 @@ export function useOnboardingStatus(): OnboardingStatus {
   // User needs onboarding if:
   // 1. No completed onboarding progress record, AND
   // 2. No preferences record with current version
-  const needsOnboarding = !progressData?.completed_at && 
+  const progressCompletedAt = progressData?.completed_at ?? null;
+  const needsOnboarding = !progressCompletedAt && 
     (!preferences?.onboarding_version || preferences.onboarding_version !== CURRENT_ONBOARDING_VERSION);
 
   const markCompleted = async () => {
@@ -71,7 +73,7 @@ export function useOnboardingStatus(): OnboardingStatus {
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
-        }, {
+        } as any, {
           onConflict: ONBOARDING_CONFLICT_COLUMNS
         }),
         

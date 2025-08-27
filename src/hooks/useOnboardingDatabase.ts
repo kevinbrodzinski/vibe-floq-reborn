@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type Vibe } from '@/lib/vibes';
 import type { Database } from '@/integrations/supabase/types';
+import { castSupabaseFilter, castString } from '@/lib/typeAssertions';
 export const ONBOARDING_VERSION = 'v2' as const;
 export const FINAL_STEP = 6 as const;
 
@@ -26,6 +27,9 @@ type OnboardingRow = {
   completed_at?: string | null
   created_at: string
 }
+
+type UOPInsert = Database['public']['Tables']['user_onboarding_progress']['Insert'];
+ type UOPUpdate = Database['public']['Tables']['user_onboarding_progress']['Update'];
 
 interface OnboardingState {
   currentStep: number;
@@ -56,21 +60,22 @@ export function useOnboardingDatabase() {
       const { data, error: fetchError } = await supabase
         .from('user_onboarding_progress')
         .select('*')
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2')
+        .eq('profile_id', castSupabaseFilter(user.id))
+        .eq('onboarding_version', castString(ONBOARDING_VERSION))
         .maybeSingle();
       
       if (fetchError) throw fetchError;
       
-      if (!data) return null;
+      const row = data as unknown as OnboardingRow | null;
+      if (!row) return null;
       
       return {
-        currentStep: data.current_step,
-        completedSteps: Array.isArray(data.completed_steps) ? data.completed_steps : [],
-        selectedVibe: data.selected_vibe as Vibe,
-        profileData: data.profile_data as ProfileData,
-        avatarUrl: data.avatar_url,
-        startedAt: Date.parse(data.started_at ?? data.created_at) || Date.now()
+        currentStep: row.current_step,
+        completedSteps: Array.isArray(row.completed_steps) ? row.completed_steps : [],
+        selectedVibe: row.selected_vibe as Vibe,
+        profileData: row.profile_data as ProfileData,
+        avatarUrl: row.avatar_url,
+        startedAt: Date.parse(row.started_at ?? row.created_at) || Date.now()
       };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load progress');
@@ -87,19 +92,19 @@ export function useOnboardingDatabase() {
     setError(null);
     
     try {
-      const progressData = {
-        profile_id: user.id,
-        onboarding_version: 'v2' as const,
+      const progressData: UOPInsert = {
+        profile_id: user.id as any,
+        onboarding_version: ONBOARDING_VERSION as any,
         current_step: Math.min(state.currentStep, 10),
-        completed_steps: state.completedSteps,
-        selected_vibe: state.selectedVibe,
-        profile_data: state.profileData as ProfileData,
-        avatar_url: state.avatarUrl,
+        completed_steps: state.completedSteps as any,
+        selected_vibe: state.selectedVibe as any,
+        profile_data: state.profileData as any,
+        avatar_url: state.avatarUrl ?? null,
       };
 
       const { error: upsertError } = await supabase
         .from('user_onboarding_progress')
-        .upsert(progressData, {
+        .upsert(progressData as any, {
           onConflict: 'profile_id,onboarding_version'
         });
       
@@ -126,9 +131,9 @@ export function useOnboardingDatabase() {
         .update({ 
           completed_at: new Date().toISOString(),
           current_step: FINAL_STEP
-        })
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2');
+        } as any)
+        .eq('profile_id', castSupabaseFilter(user.id))
+        .eq('onboarding_version', castString(ONBOARDING_VERSION));
       
       if (updateError) throw updateError;
       
@@ -151,8 +156,8 @@ export function useOnboardingDatabase() {
       const { error: deleteError } = await supabase
         .from('user_onboarding_progress')
         .delete()
-        .eq('profile_id', user.id)
-        .eq('onboarding_version', 'v2');
+        .eq('profile_id', castSupabaseFilter(user.id))
+        .eq('onboarding_version', castString(ONBOARDING_VERSION));
       
       if (deleteError) throw deleteError;
       
