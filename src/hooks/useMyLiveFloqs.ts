@@ -6,7 +6,7 @@ import type { Database } from '@/integrations/supabase/types'
 
 type RpcReturn = Database['public']['Functions']['rpc_my_live_floqs']['Returns']
 
-// Public type (keep the branch’s name)
+// Public type (keep the branch's name)
 export type MyLiveFloq = RpcReturn extends Array<infer E> ? E : RpcReturn
 
 type Result = {
@@ -31,9 +31,7 @@ export function useMyLiveFloqs(a?: SupabaseClient): Result {
     setLoading(true)
     setErr(null)
     try {
-      const { data, error } = await client
-        .rpc('rpc_my_live_floqs' as any)
-        .returns<RpcReturn>()
+      const { data, error } = await client.rpc('rpc_my_live_floqs' as any)
       if (error) throw new Error(error.message)
 
       // Normalize: some RPCs return an array; others may return a single row

@@ -20,7 +20,7 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
         setLoading(true)
         
         // Use the database RPC function instead of edge function
-        const { data, error } = await supabase.rpc('rank_nearby_people', {
+        const { data, error } = await supabase.rpc('rank_nearby_people' as any, {
           p_lat: lat,
           p_lng: lng,
           p_limit: limit
@@ -28,9 +28,10 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
         
         if (error) throw error
         
-        // Transform the data to match expected interface
+        // Ensure data is array and transform the data to match expected interface
+        const people = Array.isArray(data) ? data : (data ? [data] : [])
         setPeople(
-          (data || [])
+          people
             .filter(r => Number.isFinite(r.meters))
             .map(r => ({
               profile_id: r.profile_id,

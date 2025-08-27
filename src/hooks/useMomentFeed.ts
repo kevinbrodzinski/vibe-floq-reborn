@@ -44,16 +44,15 @@ export function useMomentFeed(
     setLoading(true)
     setErr(null)
     try {
-      const { data, error } = await client
-        .rpc('rpc_session_feed_list' as any, {
-          in_floq_id: floqId,
-          in_limit: pageSize,
-          in_before: cursor,
-        } as any)
-        .returns<FeedReturn>()
+      const { data, error } = await client.rpc('rpc_session_feed_list' as any, {
+        in_floq_id: floqId,
+        in_limit: pageSize,
+        in_before: cursor,
+      } as any)
+
       if (error) throw new Error(error.message)
 
-      const rows = (data ?? []) as MomentFeedRow[]
+      const rows = Array.isArray(data) ? data : (data ? [data] : [])
       setItems(prev => [...prev, ...rows])
       setCursor(rows.length > 0 ? rows[rows.length - 1].created_at : cursor)
       setHasMore(rows.length === pageSize)

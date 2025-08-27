@@ -33,7 +33,7 @@ export function useNearbyVenues(
       const allTags = filterLogic === 'all' && pillKeys.length ? pillKeys : null;
 
       // Calls 6-arg RPC: (p_lat, p_lng, p_radius_m, p_limit, p_any_tags, p_all_tags)
-      const { data, error } = await supabase.rpc('get_nearby_venues', {
+      const { data, error } = await supabase.rpc('get_nearby_venues' as any, {
         p_lat: lat,
         p_lng: lng,
         p_radius_m: radiusM,
@@ -42,7 +42,10 @@ export function useNearbyVenues(
         p_all_tags: allTags
       });
       if (error) throw error;
-      return (data ?? []);
+      
+      // Ensure we always return array
+      const venues = Array.isArray(data) ? data : (data ? [data] : [])
+      return venues as Venue[];
     },
     staleTime: 5 * 60_000,      // 5 minutes - venues don't change often
     gcTime: 30 * 60_000,        // 30 minutes - keep cached much longer (renamed from cacheTime)

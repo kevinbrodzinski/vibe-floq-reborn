@@ -6,6 +6,9 @@ import type { FloqFilters } from '@/contexts/FloqUIContext';
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { VibeEnum } from '@/types/enums/vibes';
+import type { Database } from '@/integrations/supabase/types';
+
+type FPRow = Database['public']['Tables']['floq_participants']['Row'];
 
 export interface NearbyFloq {
   id: string;
@@ -84,13 +87,13 @@ export function useNearbyFlocks({
     };
   }, [queryClient]);
 
-  return useQuery({
+  return useQuery<NearbyFloq[]>({
     queryKey: ['nearby-flocks', user?.id, geo?.lat, geo?.lng, filters, limit],
     enabled: enabled && !!geo && typeof geo.lat === 'number' && typeof geo.lng === 'number',
     queryFn: async (): Promise<NearbyFloq[]> => {
       if (!geo) return [];
 
-      const { data, error } = await supabase.rpc('search_floqs', {
+      const { data, error } = await supabase.rpc('search_floqs' as any, {
         p_lat: geo.lat,
         p_lng: geo.lng,
         p_radius_km: 25,
@@ -119,9 +122,10 @@ export function useNearbyFlocks({
         const { data: joinedData } = await supabase
           .from('floq_participants')
           .select('floq_id')
-          .eq('profile_id', user.id);
+          .eq('profile_id', user.id as FPRow['profile_id'])
+          .returns<Array<{floq_id: string}>>()
 
-        joinedFloqIds = joinedData?.map(item => item.floq_id) || [];
+        joinedFloqIds = (joinedData ?? []).map(item => item.floq_id)
       }
 
       let filteredData = parsed.data.map(floq => {
