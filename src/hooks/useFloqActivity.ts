@@ -48,7 +48,7 @@ export function useFloqActivity(floqId: string) {
         supabase
           .from('floq_activity')
           .select('*')
-          .eq('floq_id', floqId)
+          .eq('floq_id', floqId as any)
           .order('created_at', { ascending: false }),
         supabase
           .from('flock_history')
@@ -60,7 +60,7 @@ export function useFloqActivity(floqId: string) {
             metadata,
             profiles:profile_id(display_name, username, avatar_url)
           `)
-          .eq('floq_id', floqId)
+          .eq('floq_id', floqId as any)
           .order('created_at', { ascending: false })
       ]);
 
@@ -68,12 +68,12 @@ export function useFloqActivity(floqId: string) {
       if (historyResult.error) throw historyResult.error;
 
       // Combine and sort all events by timestamp (optimized)
-      const planEvents: MergedActivity[] = (activityResult.data || []).map(event => ({
+      const planEvents: MergedActivity[] = (activityResult.data || []).map((event: any) => ({
         ...event,
         source: 'plan_activity' as const
       } as MergedActivity));
 
-      const historyEvents: MergedActivity[] = (historyResult.data || []).map(event => {
+      const historyEvents: MergedActivity[] = (historyResult.data || []).map((event: any) => {
         const profile = event.profiles as { display_name?: string; username?: string; avatar_url?: string } | null;
         return {
           ...event,
