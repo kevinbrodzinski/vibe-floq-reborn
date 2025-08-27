@@ -17,16 +17,17 @@ export function useSyncedVibeDetection() {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('vibe_detection_enabled')
-        .eq('profile_id', profileId)
+        .eq('profile_id', profileId as any)
         .maybeSingle()
+        .returns<any>()
 
       if (error) {
         console.warn('Failed to load vibe_detection_enabled:', error)
         return
       }
 
-      if (typeof data?.vibe_detection_enabled === 'boolean') {
-        setAutoMode(data.vibe_detection_enabled)
+      if (typeof (data as any)?.vibe_detection_enabled === 'boolean') {
+        setAutoMode((data as any).vibe_detection_enabled)
       }
     }
 

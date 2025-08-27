@@ -155,12 +155,12 @@ export function useSmartVenueRecommendations({
           throw error
         }
 
-        if (!venues || venues.length === 0) {
+        if (!venues || (venues as any)?.length === 0) {
           return []
         }
 
         // Process venues into smart recommendations
-        const processedRecommendations = venues.map(venue => 
+        const processedRecommendations = (venues as any)?.map((venue: any) => 
           processVenueRecommendation(venue, {
             participantInsights,
             timeWindow,
@@ -182,43 +182,42 @@ export function useSmartVenueRecommendations({
     },
     enabled: !!centerLocation && !!planId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    suspense: false,
     throwOnError: false,
     retry: 2
   })
 
   // Get recommendations by category
   const getRecommendationsByCategory = useCallback((category: string) => {
-    return recommendations.filter(rec => 
-      rec.categories.some(cat => 
+    return (recommendations as any)?.filter((rec: any) => 
+      rec.categories.some((cat: any) => 
         cat.toLowerCase().includes(category.toLowerCase())
       )
-    )
+    ) || []
   }, [recommendations])
 
   // Get recommendations by vibe
   const getRecommendationsByVibe = useCallback((vibe: string) => {
-    return recommendations.filter(rec => 
+    return (recommendations as any)?.filter((rec: any) => 
       rec.vibe.toLowerCase() === vibe.toLowerCase()
-    )
+    ) || []
   }, [recommendations])
 
   // Get recommendations for specific time slot
   const getRecommendationsForTimeSlot = useCallback((timeSlot: string) => {
-    return recommendations.filter(rec =>
-      rec.optimal_time_slots.some(slot => {
+    return (recommendations as any)?.filter((rec: any) =>
+      rec.optimal_time_slots.some((slot: any) => {
         const slotStart = parseISO(`${planDate}T${slot.start_time}`)
         const slotEnd = parseISO(`${planDate}T${slot.end_time}`)
         const targetTime = parseISO(`${planDate}T${timeSlot}`)
         
         return targetTime >= slotStart && targetTime <= slotEnd
       })
-    )
+    ) || []
   }, [recommendations, planDate])
 
   // Get top recommendations by criteria
   const getTopRecommendations = useCallback((criteria: 'match_score' | 'popularity' | 'rating' | 'distance', limit = 5) => {
-    const sorted = [...recommendations].sort((a, b) => {
+    const sorted = [...(recommendations as any || [])].sort((a: any, b: any) => {
       switch (criteria) {
         case 'match_score':
           return b.match_score - a.match_score

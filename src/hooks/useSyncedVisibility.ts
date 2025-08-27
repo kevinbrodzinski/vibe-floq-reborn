@@ -14,10 +14,11 @@ export function useSyncedVisibility() {
     supabase
       .from('vibes_now')
       .select('visibility')
-      .eq('profile_id', user.id)
+      .eq('profile_id', user.id as any)
       .maybeSingle()
+      .returns<any>()
       .then(({ data }) => {
-        if (data?.visibility) setVisibility(data.visibility as any);
+        if ((data as any)?.visibility) setVisibility((data as any).visibility as any);
       });
   }, [user?.id, setVisibility]);
 

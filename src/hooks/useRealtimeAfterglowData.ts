@@ -65,9 +65,10 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
       const { data, error } = await supabase
         .from('daily_afterglow')
         .select('*')
-        .eq('date', dateISO)
-        .eq('profile_id', (await supabase.auth.getUser()).data.user!.id)
-        .maybeSingle<DailyAfterglow>();
+        .eq('date', dateISO as any)
+        .eq('profile_id', (await supabase.auth.getUser()).data.user!.id as any)
+        .maybeSingle<DailyAfterglow>()
+        .returns<any>();
 
       if (error) throw error;
       return data ?? null;

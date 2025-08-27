@@ -53,7 +53,7 @@ export function useRipplesNear(a: SupabaseClient | Params, b?: Params): Result {
     try {
       setLoading(true)
       setErr(null)
-      const { data, error } = await client
+      const { data, error } = await (client as any)
         .rpc('rpc_ripples_near', {
           center_lat: lat,
           center_lng: lng,
@@ -62,7 +62,6 @@ export function useRipplesNear(a: SupabaseClient | Params, b?: Params): Result {
           recent_minutes: recentMinutes,
           only_close_friends: onlyCloseFriends,
         })
-        .returns<RipplesNearReturn>()
       if (error) throw new Error(error.message)
       setData((data ?? null) as RipplesNearRow[] | null)
     } catch (e: any) {

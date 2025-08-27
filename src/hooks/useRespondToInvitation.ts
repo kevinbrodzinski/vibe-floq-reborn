@@ -24,9 +24,10 @@ export function useRespondToInvitation() {
         .update({
           status,
           responded_at: new Date().toISOString(),
-        })
-        .eq('id', invitationId)
-        .eq('invitee_profile_id', user.id);
+        } as any)
+        .eq('id', invitationId as any)
+        .eq('invitee_profile_id', user.id as any)
+        .returns<any>();
 
       if (inviteError) throw inviteError;
 
@@ -36,8 +37,9 @@ export function useRespondToInvitation() {
         const { data: invitation, error: fetchError } = await supabase
           .from('plan_invitations')
           .select('plan_id')
-          .eq('id', invitationId)
-          .single();
+          .eq('id', invitationId as any)
+          .single()
+          .returns<any>();
 
         if (fetchError) throw fetchError;
 
@@ -45,10 +47,11 @@ export function useRespondToInvitation() {
         const { error: participantError } = await supabase
           .from('plan_participants')
           .insert({
-            plan_id: invitation.plan_id,
+            plan_id: (invitation as any).plan_id,
             profile_id: user.id,
             joined_at: new Date().toISOString(),
-          });
+          } as any)
+          .returns<any>();
 
         if (participantError && !participantError.message.includes('duplicate')) {
           throw participantError;

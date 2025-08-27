@@ -21,17 +21,18 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
       const { data, error: fetchError } = await supabase
         .from('daily_afterglow')
         .select('*')
-        .eq('profile_id', user.id)
+        .eq('profile_id', user.id as any)
         .order('date', { ascending: false })
         .limit(limit)
+        .returns<any>()
 
       if (fetchError) {
         throw fetchError
       }
 
-      setHistory((data || []).map(item => ({
+      setHistory(((data as any) || []).map((item: any) => ({
         ...item,
-        updated_at: (item as any).updated_at || item.created_at,
+        updated_at: item.updated_at || item.created_at,
         emotion_journey: Array.isArray(item.emotion_journey) ? item.emotion_journey.map(String) : [],
         moments: Array.isArray(item.moments) ? item.moments.map(String) : [], // Convert moments to string array too
         vibe_path: Array.isArray(item.vibe_path) ? item.vibe_path.map(String) : []

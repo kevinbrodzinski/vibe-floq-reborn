@@ -21,8 +21,9 @@ export function useRecentAfterglows() {
       const { data: afterglowData, error: afterglowError } = await supabase
         .from('daily_afterglow')
         .select('date, energy_score, total_venues, total_floqs, crossed_paths_count')
-        .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
-        .order('date', { ascending: false });
+        .gte('date', thirtyDaysAgo.toISOString().split('T')[0] as any)
+        .order('date', { ascending: false })
+        .returns<any>();
       
       if (afterglowError) throw afterglowError;
       
@@ -35,15 +36,15 @@ export function useRecentAfterglows() {
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
         
-        const afterglow = afterglowData?.find(d => d.date === dateStr);
+        const afterglow = (afterglowData as any)?.find((d: any) => d.date === dateStr);
         
         recentDates.push({
           date: dateStr,
-          energy: afterglow?.energy_score || null,
+          energy: (afterglow as any)?.energy_score || null,
           has_data: !!afterglow,
-          total_venues: afterglow?.total_venues || 0,
-          total_floqs: afterglow?.total_floqs || 0,
-          crossed_paths_count: afterglow?.crossed_paths_count || 0,
+          total_venues: (afterglow as any)?.total_venues || 0,
+          total_floqs: (afterglow as any)?.total_floqs || 0,
+          crossed_paths_count: (afterglow as any)?.crossed_paths_count || 0,
         });
       }
       

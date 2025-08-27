@@ -140,8 +140,8 @@ export const usePulseFilters = () => {
     else dayType = 'weekend';
 
     // Weather assessment
-    const temp = weatherData?.temperatureF || 70;
-    const precipitation = weatherData?.precipitationChance || 0;
+    const temp = (weatherData as any)?.temperatureF || 70;
+    const precipitation = (weatherData as any)?.precipitationChance || 0;
     let weather: PulseFilterContext['weather'];
     if (temp >= GOOD_WEATHER.minTemp && precipitation <= GOOD_WEATHER.maxPrecipitation) {
       weather = 'good';

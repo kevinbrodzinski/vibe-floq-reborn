@@ -20,15 +20,16 @@ export function useStopComments({ planId, stopId }: UseStopCommentsParams) {
       const { data, error } = await supabase
         .from('plan_stop_comments')
         .select('*')
-        .eq('plan_id', planId)
-        .eq('stop_id', stopId)
+        .eq('plan_id', planId as any)
+        .eq('stop_id', stopId as any)
         .order('created_at', { ascending: true })
+        .returns<any>()
 
       if (error) throw error
-      return data.map(comment => ({
+      return (data as any)?.map((comment: any) => ({
         ...comment,
-        guest_name: comment.guest_id ? guestName : null
-      }))
+        guest_name: (comment as any)?.guest_id ? guestName : null
+      })) || []
     },
     enabled: !!planId && !!stopId,
   })
@@ -43,7 +44,8 @@ export function useStopComments({ planId, stopId }: UseStopCommentsParams) {
           profile_id: session?.user?.id || null,
           guest_id: guestId || null,
           text,
-        })
+        } as any)
+        .returns<any>()
 
       if (error) throw error
     },

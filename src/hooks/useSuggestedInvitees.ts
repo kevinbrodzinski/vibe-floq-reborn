@@ -32,9 +32,10 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
       const { data } = await supabase
         .from('floq_participants')
         .select('profile_id')
-        .eq('floq_id', options.floqId);
+        .eq('floq_id', options.floqId as any)
+        .returns<any>();
       
-      return data?.map(p => p.profile_id) || [];
+      return (data as any)?.map((p: any) => p.profile_id) || [];
     },
     enabled: !!options.floqId,
   });
@@ -48,9 +49,10 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
       const { data } = await supabase
         .from('plan_participants')
         .select('profile_id')
-        .eq('plan_id', options.planId);
+        .eq('plan_id', options.planId as any)
+        .returns<any>();
       
-      return data?.map(p => p.profile_id) || [];
+      return (data as any)?.map((p: any) => p.profile_id) || [];
     },
     enabled: !!options.planId,
   });

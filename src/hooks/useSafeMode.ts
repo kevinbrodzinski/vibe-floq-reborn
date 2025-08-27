@@ -26,8 +26,9 @@ export const useSafeMode = () => {
         .from('profiles')
         .update({ 
           custom_status: active ? 'Safe Mode Active' : null
-        })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        } as any)
+        .eq('id', (await supabase.auth.getUser()).data.user?.id as any)
+        .returns<any>()
 
       if (error) {
         console.error('Failed to update safe mode status:', error)

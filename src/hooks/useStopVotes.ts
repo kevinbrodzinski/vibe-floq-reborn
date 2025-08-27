@@ -19,8 +19,9 @@ export function useStopVotes({ planId, stopId }: UseStopVotesParams) {
       const { data, error } = await supabase
         .from('plan_stop_votes')
         .select('*')
-        .eq('plan_id', planId)
-        .eq('stop_id', stopId)
+        .eq('plan_id', planId as any)
+        .eq('stop_id', stopId as any)
+        .returns<any>()
 
       if (error) throw error
       return data || []
@@ -41,7 +42,8 @@ export function useStopVotes({ planId, stopId }: UseStopVotesParams) {
           guest_id: guestId || null,
           vote_type: voteType,
           emoji_reaction: emoji || null,
-        })
+        } as any)
+        .returns<any>()
 
       if (error) throw error
     },
@@ -51,13 +53,13 @@ export function useStopVotes({ planId, stopId }: UseStopVotesParams) {
   })
 
   // Calculate vote counts and user's current vote
-  const voteCounts = votes.reduce((acc, vote) => {
+  const voteCounts = (votes as any)?.reduce((acc: any, vote: any) => {
     acc[vote.vote_type] = (acc[vote.vote_type] || 0) + 1
     return acc
-  }, {} as Record<string, number>)
+  }, {} as Record<string, number>) || {}
 
-  const userVote = votes.find(vote => 
-    session?.user?.id ? vote.profile_id === session.user.id : vote.guest_id === guestId
+  const userVote = (votes as any)?.find((vote: any) => 
+    session?.user?.id ? (vote as any).profile_id === session.user.id : (vote as any).guest_id === guestId
   )
 
   return {

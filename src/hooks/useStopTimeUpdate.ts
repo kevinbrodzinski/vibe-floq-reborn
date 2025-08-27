@@ -27,8 +27,9 @@ export function useStopTimeUpdate() {
       const { data: currentStop, error: fetchError } = await supabase
         .from('plan_stops')
         .select('start_time, end_time, duration_minutes, title')
-        .eq('id', stopId)
+        .eq('id', stopId as any)
         .single()
+        .returns<any>()
 
       if (fetchError) {
         throw new Error(`Failed to fetch stop data: ${fetchError.message}`)
@@ -36,15 +37,15 @@ export function useStopTimeUpdate() {
 
       let newEndTime = newStartTime
       
-      if (maintainDuration && currentStop.duration_minutes) {
+      if (maintainDuration && (currentStop as any)?.duration_minutes) {
         // Calculate new end time based on duration
         const startDateTime = parseISO(`${planDate || new Date().toISOString().split('T')[0]}T${newStartTime}`)
-        const endDateTime = addMinutes(startDateTime, currentStop.duration_minutes)
+        const endDateTime = addMinutes(startDateTime, (currentStop as any).duration_minutes)
         newEndTime = format(endDateTime, 'HH:mm')
-      } else if (currentStop.start_time && currentStop.end_time) {
+      } else if ((currentStop as any)?.start_time && (currentStop as any)?.end_time) {
         // Calculate duration from current times and apply to new start time
-        const oldStart = parseISO(`2000-01-01T${currentStop.start_time}`)
-        const oldEnd = parseISO(`2000-01-01T${currentStop.end_time}`)
+        const oldStart = parseISO(`2000-01-01T${(currentStop as any).start_time}`)
+        const oldEnd = parseISO(`2000-01-01T${(currentStop as any).end_time}`)
         const duration = (oldEnd.getTime() - oldStart.getTime()) / (1000 * 60) // minutes
         
         const startDateTime = parseISO(`${planDate || new Date().toISOString().split('T')[0]}T${newStartTime}`)
@@ -59,10 +60,11 @@ export function useStopTimeUpdate() {
           start_time: newStartTime,
           end_time: newEndTime,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', stopId)
+        } as any)
+        .eq('id', stopId as any)
         .select()
         .single()
+        .returns<any>()
 
       if (error) {
         throw new Error(`Failed to update stop time: ${error.message}`)
@@ -75,13 +77,14 @@ export function useStopTimeUpdate() {
           activity_type: 'stop_time_updated',
           activity_data: {
             stop_id: stopId,
-            old_start_time: currentStop.start_time,
+            old_start_time: (currentStop as any)?.start_time,
             new_start_time: newStartTime,
-            old_end_time: currentStop.end_time,
+            old_end_time: (currentStop as any)?.end_time,
             new_end_time: newEndTime,
-            stop_title: currentStop.title
+            stop_title: (currentStop as any)?.title
           }
-        })
+        } as any)
+        .returns<any>()
       } catch (activityError) {
         console.warn('Failed to log activity:', activityError)
         // Don't fail the main operation if activity logging fails
@@ -125,10 +128,11 @@ export function useBatchStopTimeUpdate() {
           .update({
             start_time: update.newStartTime,
             updated_at: new Date().toISOString()
-          })
-          .eq('id', update.stopId)
+          } as any)
+          .eq('id', update.stopId as any)
           .select()
           .single()
+          .returns<any>()
 
         if (error) {
           throw new Error(`Failed to update stop ${update.stopId}: ${error.message}`)
@@ -177,8 +181,9 @@ export function useSmartTimeSlotSuggestion(planId: string) {
       const { data: existingStops, error } = await supabase
         .from('plan_stops')
         .select('id, start_time, end_time, duration_minutes, title')
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
         .order('start_time')
+        .returns<any>()
 
       if (error) {
         throw new Error(`Failed to fetch existing stops: ${error.message}`)
@@ -189,7 +194,7 @@ export function useSmartTimeSlotSuggestion(planId: string) {
       const requestedEnd = addMinutes(requestedStart, stopDuration)
 
       // Check for conflicts
-      const hasConflict = existingStops?.some(stop => {
+      const hasConflict = (existingStops as any)?.some((stop: any) => {
         if (!stop.start_time || !stop.end_time) return false
         
         const stopStart = parseISO(`${planDate || new Date().toISOString().split('T')[0]}T${stop.start_time}`)

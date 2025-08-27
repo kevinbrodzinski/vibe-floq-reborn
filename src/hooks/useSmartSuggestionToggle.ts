@@ -10,14 +10,15 @@ export function useSmartSuggestionToggle(profileId: string) {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('prefer_smart_suggestions')
-        .eq('profile_id', profileId)
+        .eq('profile_id', profileId as any)
         .maybeSingle()
+        .returns<any>()
       
       if (error && error.code !== 'PGRST116') {
         throw error
       }
       
-      return data?.prefer_smart_suggestions ?? true
+      return (data as any)?.prefer_smart_suggestions ?? true
     },
     enabled: !!profileId
   })
@@ -27,9 +28,10 @@ export function useSmartSuggestionToggle(profileId: string) {
       const { error } = await supabase
         .from('user_preferences')
         .upsert(
-          { profile_id: profileId, prefer_smart_suggestions: newValue },
+          { profile_id: profileId, prefer_smart_suggestions: newValue } as any,
           { onConflict: 'profile_id' }
         )
+        .returns<any>()
       
       if (error) throw error
       return newValue

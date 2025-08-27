@@ -37,9 +37,9 @@ export function useStopInteractions({ planId, stopId, requireAuth = false }: Use
   }
 
   // Type-safe user vote with proper union type
-  const userVote = rawUserVote ? {
-    ...rawUserVote,
-    vote_type: rawUserVote.vote_type as 'upvote' | 'downvote' | 'maybe'
+  const userVote = (rawUserVote as any) ? {
+    ...(rawUserVote as any),
+    vote_type: (rawUserVote as any).vote_type as 'upvote' | 'downvote' | 'maybe'
   } : null
 
   const {
