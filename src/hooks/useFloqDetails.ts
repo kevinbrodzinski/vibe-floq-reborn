@@ -44,6 +44,7 @@ export interface FloqDetails {
   activity_score?: number;
   radius_m?: number;
   pinned_note?: string | null;
+  flock_type?: "momentary" | "persistent" | "recurring" | "template" | null;
   location: {
     lat: number;
     lng: number;
@@ -140,6 +141,7 @@ export function useFloqDetails(
         created_at: floqData.starts_at,
         visibility: floqData.visibility,
         pinned_note: typeof (floqData as any).pinned_note === 'string' ? (floqData as any).pinned_note : null,
+        flock_type: (floqData as any).flock_type || null,
         location: { lat: 0, lng: 0 },
         participants,
         pending_invites: pendingInvites,

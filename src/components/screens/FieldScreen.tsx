@@ -7,6 +7,8 @@ import { FieldLocationProvider } from "@/components/field/contexts/FieldLocation
 import { FieldSocialProvider } from "@/components/field/contexts/FieldSocialContext";
 import { useSyncedVisibility } from "@/hooks/useSyncedVisibility";
 import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
+import { useAutoDiscoveryNotifications } from "@/hooks/useAutoDiscoveryNotifications";
+import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 
 export const FieldScreen = () => {
   useSyncedVisibility(); // Sync visibility across app and devices
