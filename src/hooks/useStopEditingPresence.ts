@@ -45,17 +45,17 @@ export function useStopEditingPresence({ planId, enabled = true }: UseStopEditin
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
         newPresences.forEach((presence: any) => {
-          if (presence.userId !== user.id && presence.stopId) {
-            setEditingPresences(prev => new Map(prev.set(`${presence.userId}_${presence.stopId}`, presence as StopEditingPresence)))
+          if (presence.profileId !== user.id && presence.stopId) {
+            setEditingPresences(prev => new Map(prev.set(`${presence.profileId}_${presence.stopId}`, presence as StopEditingPresence)))
           }
         })
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
         leftPresences.forEach((presence: any) => {
-          if (presence.userId && presence.stopId) {
+          if (presence.profileId && presence.stopId) {
             setEditingPresences(prev => {
               const next = new Map(prev)
-              next.delete(`${presence.userId}_${presence.stopId}`)
+              next.delete(`${presence.profileId}_${presence.stopId}`)
               return next
             })
           }

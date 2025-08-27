@@ -6,14 +6,14 @@ import { realtimeManager } from '@/lib/realtime/manager';
 import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 
 interface TypingState {
-  userId: string;
+  profileId: string;
   threadId: string;
   isTyping: boolean;
   lastTyped: Date;
 }
 
 interface TypingUser {
-  userId: string;
+  profileId: string;
   displayName?: string;
   username?: string;
   avatarUrl?: string;
@@ -23,7 +23,7 @@ const TYPING_TIMEOUT = 3000; // 3 seconds
 const TYPING_DEBOUNCE = 1000; // 1 second debounce for sending typing events
 
 export function useTypingIndicators(threadId: string | undefined, surface: 'dm' | 'floq' | 'plan' = 'dm') {
-  const currentUserId = useCurrentUserId();
+  const currentProfileId = useCurrentUserId();
   const queryClient = useQueryClient();
   const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
   const [isTyping, setIsTyping] = useState(false);
@@ -34,7 +34,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
 
   // Real-time subscription for typing events
   useEffect(() => {
-    if (!threadId || !currentUserId) return;
+    if (!threadId || !currentProfileId) return;
 
     const cleanup = realtimeManager.subscribe(
       `typing:${threadId}`,
@@ -48,7 +48,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
               const payload = (evt && (evt.payload || evt)) as any;
               const { profile_id, thread_id, is_typing, display_name, username, avatar_url } = payload || {};
               // Ignore our own typing events
-              if (profile_id === currentUserId || thread_id !== threadId) return;
+              if (profile_id === currentProfileId || thread_id !== threadId) return;
 
               console.log('👀 Typing event:', { profile_id, is_typing, display_name });
 
@@ -57,7 +57,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
                 
                 if (is_typing) {
                   newMap.set(profile_id, {
-                    userId: profile_id,
+                    profileId: profile_id,
                     displayName: display_name,
                     username,
                     avatarUrl: avatar_url,
@@ -85,18 +85,18 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
     );
 
     return cleanup;
-  }, [threadId, currentUserId, surface]);
+  }, [threadId, currentProfileId, surface]);
 
   // Send typing event to other users
   const sendTypingEvent = useCallback(async (isTypingNow: boolean) => {
-    if (!threadId || !currentUserId) return;
+    if (!threadId || !currentProfileId) return;
 
     try {
       // Get current user profile for the typing event
       const { data: profile } = await supabase
         .from('profiles')
         .select('display_name, username, avatar_url')
-        .eq('id', currentUserId as any)
+        .eq('id', currentProfileId as any)
         .single();
 
       await supabase.channel(`typing_${surface}_${threadId}`)
@@ -104,7 +104,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
           type: 'broadcast',
           event: 'typing',
           payload: {
-            profile_id: currentUserId,
+            profile_id: currentProfileId,
             thread_id: threadId,
             is_typing: isTypingNow,
             display_name: (profile as any)?.display_name,
@@ -115,7 +115,7 @@ export function useTypingIndicators(threadId: string | undefined, surface: 'dm' 
     } catch (error) {
       console.error('Failed to send typing event:', error);
     }
-  }, [threadId, currentUserId, surface]);
+  }, [threadId, currentProfileId, surface]);
 
   // Start typing - called when user starts typing
   const startTyping = useCallback(() => {
