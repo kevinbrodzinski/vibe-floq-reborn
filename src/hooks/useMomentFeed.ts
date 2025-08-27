@@ -45,11 +45,11 @@ export function useMomentFeed(
     setErr(null)
     try {
       const { data, error } = await client
-        .rpc('rpc_session_feed_list', {
+        .rpc('rpc_session_feed_list' as any, {
           in_floq_id: floqId,
           in_limit: pageSize,
           in_before: cursor,
-        })
+        } as any)
         .returns<FeedReturn>()
       if (error) throw new Error(error.message)
 
@@ -124,48 +124,48 @@ export async function postMomentFeed(
   const payload = (typeof a === 'string' ? (b as PostPayload) : c!) as PostPayload
 
   if (payload.kind === 'text') {
-    const { error } = await client.rpc('rpc_session_post', {
+    const { error } = await client.rpc('rpc_session_post' as any, {
       in_floq_id: floqId,
       in_kind: 'text',
       in_storage_key: null,
       in_text: payload.text,
       in_duration_sec: null,
-    })
+    } as any)
     if (error) throw new Error(error.message)
     return
   }
 
   if (payload.kind === 'audio') {
-    const { error } = await client.rpc('rpc_session_post', {
+    const { error } = await client.rpc('rpc_session_post' as any, {
       in_floq_id: floqId,
       in_kind: 'audio',
       in_storage_key: payload.storageKey,
       in_text: null,
       in_duration_sec: payload.durationSec,
-    })
+    } as any)
     if (error) throw new Error(error.message)
     return
   }
 
   if (payload.kind === 'photo') {
-    const { error } = await client.rpc('rpc_session_post', {
+    const { error } = await client.rpc('rpc_session_post' as any, {
       in_floq_id: floqId,
       in_kind: 'photo',
       in_storage_key: payload.storageKey,
       in_text: null,
       in_duration_sec: null,
-    })
+    } as any)
     if (error) throw new Error(error.message)
     return
   }
 
   // vibe
-  const { error } = await client.rpc('rpc_session_post', {
+  const { error } = await client.rpc('rpc_session_post' as any, {
     in_floq_id: floqId,
     in_kind: 'vibe',
     in_storage_key: null,
     in_text: payload.text ?? null,
     in_duration_sec: null,
-  })
+  } as any)
   if (error) throw new Error(error.message)
 }

@@ -11,9 +11,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMentionNotifications } from '@/hooks/useMentionNotifications';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
 
 export const MentionNotificationBell: React.FC = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useMentionNotifications();
+  const { user } = useAuth();
+  const query = useMentionNotifications(user?.id ?? '');
+  
+  const notifications = query.data ?? [];
+  const unreadCount = notifications.length;
+  const markAsRead = (id: string) => query.refetch();
+  const markAllAsRead = () => query.refetch();
 
   if (unreadCount === 0) {
     return (
@@ -63,13 +70,13 @@ export const MentionNotificationBell: React.FC = () => {
             <div className="divide-y">
               {notifications.map((notification) => (
                 <div
-                  key={notification.id}
+                  key={notification.message_id}
                   className={cn(
                     'p-4 hover:bg-muted/50 cursor-pointer transition-colors',
                     'border-l-2 border-l-primary/20'
                   )}
                   onClick={() => {
-                    markAsRead(notification.id);
+                    markAsRead(notification.message_id);
                     window.location.href = `/floq/${notification.floq_id}`;
                   }}
                 >
@@ -77,13 +84,11 @@ export const MentionNotificationBell: React.FC = () => {
                     <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm">
-                        <span className="font-medium">
-                          {notification.sender_username}
-                        </span>
+                        <span className="font-medium">Someone</span>
                         {' mentioned you'}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
-                        In {notification.floq_title || 'a floq'}
+                        {notification.body}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(notification.created_at), { 

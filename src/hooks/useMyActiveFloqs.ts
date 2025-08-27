@@ -25,7 +25,7 @@ export function useMyActiveFloqs() {
       const { data: ids, error: idErr } = await supabase
         .from('floq_participants')
         .select('floq_id')
-        .eq('profile_id', session.user.id);
+        .eq('profile_id', session.user.id as any);
 
       if (idErr) throw idErr;
       if (!ids?.length) return [];
@@ -40,7 +40,7 @@ export function useMyActiveFloqs() {
           primary_vibe,
           floq_participants(count)
         `)
-        .in('id', ids.map(r => r.floq_id))
+        .in('id', ids.map(r => r.floq_id) as any)
         .is('deleted_at', null)
         .is('archived_at', null)                // new guard for archived floqs
         // ends_at is either NULL **or** in the future (floqs use ends_at, not disband_at)

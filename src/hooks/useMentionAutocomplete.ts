@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import type { Database } from '@/integrations/supabase/types'
 
 export interface MentionCandidate {
   id: string
@@ -22,12 +24,11 @@ interface Params {
  *  – exposing UI state
  */
 export const useMentionAutocomplete = ({ onInsert }: Params) => {
-  const [open, setOpen]           = useState(false)
-  const [query, setQuery]         = useState('')          // raw text after @
-  const [index, setIndex]         = useState(0)           // keyboard highlight
-  const [items, setItems]         = useState<MentionCandidate[]>([])
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [index, setIndex] = useState(0)
+  const [items, setItems] = useState<MentionCandidate[]>([])
 
-  /* ------------------------------------------------ search (300 ms debounce) */
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -41,39 +42,39 @@ export const useMentionAutocomplete = ({ onInsert }: Params) => {
     timer.current = setTimeout(async () => {
       const q = query.toLowerCase()
 
-      /* ---- users --------------------------------------------------------- */
       const { data: users } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .ilike('username', `${q}%`)
         .limit(5)
+        .returns<Array<{id: string; username: string; display_name: string; avatar_url: string}>>()
 
-      /* ---- venues -------------------------------------------------------- */
       const { data: venues } = await supabase
         .from('venues')
         .select('id, name')
         .ilike('name', `${q}%`)
         .limit(5)
+        .returns<Array<{id: string; name: string}>>()
 
-      /* ---- plans (id match starts-with) ---------------------------------- */
       const { data: plans } = await supabase
         .from('floq_plans')
         .select('id, title')
-        .filter('id', 'like', `${q}%`)  // Use filter instead of ilike for UUID
+        .filter('id', 'like', `${q}%`)
         .limit(5)
+        .returns<Array<{id: string; title: string}>>()
 
       const candidates: MentionCandidate[] = [
         ...(users ?? []).map(u => ({
           id: u.id,
-          tag: u.username,
+          tag: u.username || '',
           label: `${u.display_name || u.username} – @${u.username}`,
           avatar_url: u.avatar_url,
           type: 'user' as const,
         })),
         ...(venues ?? []).map(v => ({
           id: v.id,
-          tag: v.name.toLowerCase().replace(/\s+/g, '-'),
-          label: `${v.name} – @${v.name.toLowerCase().replace(/\s+/g, '-')}`,
+          tag: v.name?.toLowerCase().replace(/\s+/g, '-') || '',
+          label: `${v.name} – @${v.name?.toLowerCase().replace(/\s+/g, '-')}`,
           avatar_url: null,
           type: 'venue' as const,
         })),
@@ -94,7 +95,6 @@ export const useMentionAutocomplete = ({ onInsert }: Params) => {
     return () => timer.current && clearTimeout(timer.current)
   }, [query])
 
-  /* ------------------------------------------------ keyboard navigation */
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       if (!open) return
@@ -119,13 +119,10 @@ export const useMentionAutocomplete = ({ onInsert }: Params) => {
   )
 
   return {
-    /* wiring for the input field */
     open,
     query,
     setQuery,
     onKeyDown,
-
-    /* menu UI state */
     items,
     index,
     close: () => setOpen(false),

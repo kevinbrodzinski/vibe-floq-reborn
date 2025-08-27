@@ -44,8 +44,8 @@ const fetchMyFloqs = async (profileId: string): Promise<MyFloq[]> => {
         deleted_at
       )
     `)
-    .eq('profile_id', profileId)
-    .neq('role', 'creator');
+    .eq('profile_id', profileId as any)
+    .neq('role', 'creator' as any);
 
   // Query for floqs I created
   const createdQuery = supabase
@@ -63,7 +63,7 @@ const fetchMyFloqs = async (profileId: string): Promise<MyFloq[]> => {
       created_at,
       deleted_at
     `)
-    .eq('creator_id', profileId);
+    .eq('creator_id', profileId as any);
 
   const [participatedResult, createdResult] = await Promise.all([
     participatedQuery,
