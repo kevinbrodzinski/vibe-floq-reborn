@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { trackError } from '@/lib/trackError';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { evaluatePolicyLadder } from '@/lib/policy/ladder';
 
 type Vibe = 'social' | 'chill' | 'focused' | 'energetic' | 'open' | 'curious';
 
@@ -32,6 +33,36 @@ export function usePresencePublisher(
       setIsPublishing(true);
       setError(null);
 
+      // Apply policy ladder before publishing presence
+      const policyDecision = evaluatePolicyLadder({
+        claim: {
+          kind: 'raw',
+          value: vibe,
+          confidence: 0.8, // High confidence for user-initiated vibe
+        },
+        theta: 0.7, // Confidence threshold
+        omega: 0.3, // Uncertainty threshold
+        class: 'presence',
+        lastChangeAt: lastUpdate || undefined,
+        venueSafety: 'safe', // TODO: detect from venue context
+        userId: user.id,
+      });
+
+      if (!policyDecision.allowed) {
+        console.log('[PresencePublisher] Policy ladder blocked publication:', policyDecision.reason);
+        
+        // Show user-friendly message for cooldown
+        if (policyDecision.observability.min_interval_enforced) {
+          setError('Presence update rate limited - please wait before updating again');
+        } else if (policyDecision.observability.hysteresis_applied) {
+          setError('Presence change too frequent - waiting for stability');
+        } else {
+          setError(policyDecision.reason || 'Presence update blocked by policy');
+        }
+        
+        return;
+      }
+
       const { error: presenceError } = await supabase.rpc('upsert_presence', {
         p_lat: lat,
         p_lng: lng,
@@ -53,7 +84,7 @@ export function usePresencePublisher(
     } finally {
       setIsPublishing(false);
     }
-  }, [user, isActive, vibe]);
+  }, [user, isActive, vibe, lastUpdate]);
 
   useEffect(() => {
     if (!user || !isActive) {
