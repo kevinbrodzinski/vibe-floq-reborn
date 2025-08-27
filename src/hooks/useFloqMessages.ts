@@ -8,6 +8,13 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { extractMentions } from '@/utils/mentionParser'
+import type { Database } from '@/integrations/supabase/types'
+
+type MsgRow = Database['public']['Tables']['floq_messages']['Row'];
+type MsgInsert = Database['public']['Tables']['floq_messages']['Insert'];
+type FloqId = Database['public']['Tables']['floq_messages']['Row']['floq_id'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type ProfileId = Profile['id'];
 
 export interface FloqMessage {
   id: string
@@ -62,7 +69,7 @@ export function useFloqMessages(floqId: string) {
             )
           `
         )
-        .eq('floq_id', floqId)
+        .eq('floq_id', floqId as any)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -117,11 +124,14 @@ export function useSendFloqMessage() {
       if (!user.user) throw new Error('Not authenticated')
       
       // Get current user profile for optimistic update
-      const { data: userProfile } = await supabase
+      const { data: userProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('id', user.user.id)
-        .single()
+        .eq('id', user.user.id as any)
+        .maybeSingle()
+        .returns<Pick<Profile,'id'|'username'|'display_name'|'avatar_url'>>()
+      
+      if (profileError) throw profileError;
 
       // Create optimistic message
       const optimisticMessage: FloqMessage = {
@@ -146,15 +156,17 @@ export function useSendFloqMessage() {
         }
       )
       
-      // 1️⃣ Insert to database
+      // 1️⃣ Insert to database  
+      const row: MsgInsert = {
+        floq_id: p.floqId as string,
+        body: p.body,
+        sender_id: user.user.id as string,
+        reply_to_id: (p.replyTo ?? null) as string | null,
+      };
+      
       const { data, error } = await supabase
         .from('floq_messages')
-        .insert({
-          floq_id: p.floqId,
-           body: p.body,
-           sender_id: user.user.id,
-          reply_to_id: p.replyTo ?? null,
-        })
+        .insert([row] as any)
         .select('id, body, created_at, sender_id, reply_to_id')
         .single()
 

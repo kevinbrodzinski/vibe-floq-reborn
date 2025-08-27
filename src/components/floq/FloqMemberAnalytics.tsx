@@ -105,8 +105,8 @@ export function FloqMemberAnalytics({ floqId }: { floqId: string }) {
 
       return {
         memberId: member.profile_id,
-        name: member.profile.display_name || member.profile.username,
-        avatar: member.profile.avatar_url,
+        name: member.profiles?.display_name || member.profiles?.username,
+        avatar: member.profiles?.avatar_url,
         engagementScore: Math.floor(Math.random() * 100),
         activityHeatmap,
         weeklyActivity,
