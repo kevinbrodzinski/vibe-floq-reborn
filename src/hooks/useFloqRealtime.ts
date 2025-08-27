@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { castSupabaseInsert } from '@/lib/typeAssertions';
 
 export interface RealtimeEvent {
   type: 'message' | 'presence' | 'activity' | 'location' | 'vibe' | 'typing' | 'reaction' | 'join' | 'leave';
@@ -112,12 +113,12 @@ export function useFloqRealtime(floqId: string) {
     try {
       await supabase
         .from('floq_messages')
-        .insert({
-          floq_id: floqId as any,
-          sender_profile_id: message.sender_id as any,
+        .insert(castSupabaseInsert({
+          floq_id: floqId,
+          sender_profile_id: message.sender_id,
           body: message.content,
-          reply_to_id: message.reply_to_id as any
-        });
+          reply_to_id: message.reply_to_id
+        }));
       
       // Remove from queue and optimistic messages
       setMessageQueue(prev => prev.slice(1));

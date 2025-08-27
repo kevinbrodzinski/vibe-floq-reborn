@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
+import { castSupabaseInsert } from '@/lib/typeAssertions';
 
 interface AutoDiscoveryOptions {
   enabled?: boolean;
@@ -64,8 +65,8 @@ export function useAutoDiscoveryNotifications(
           id, title, name, creator_id, created_at, ends_at, flock_type,
           creator:profiles!creator_id(display_name, username)
         `)
-        .eq('flock_type', 'momentary')
-        .in('creator_id', friendIds)
+        .eq('flock_type', 'momentary' as any)
+        .in('creator_id', friendIds as any)
         .gte('created_at', new Date(Date.now() - checkIntervalMs * 2).toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
@@ -73,8 +74,8 @@ export function useAutoDiscoveryNotifications(
       const newDiscoveries: DiscoveryEvent[] = [];
 
       // Process wave activity
-      if (waves && waves.length > 0) {
-        waves.forEach(wave => {
+      if (waves && Array.isArray(waves) && waves.length > 0) {
+        waves.forEach((wave: any) => {
           if (wave.friends_in_cluster > 0) {
             newDiscoveries.push({
               type: 'wave_activity_friend',
@@ -130,7 +131,7 @@ export function useAutoDiscoveryNotifications(
       // Insert into event_notifications table
       await supabase
         .from('event_notifications')
-        .insert({
+        .insert(castSupabaseInsert({
           profile_id: user?.id,
           kind: discovery.type,
           payload: {
@@ -144,7 +145,7 @@ export function useAutoDiscoveryNotifications(
             lng: discovery.lng,
             distance_m: discovery.distance,
           }
-        });
+        }));
     } catch (error) {
       console.error('Failed to send auto-discovery notification:', error);
     }

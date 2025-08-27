@@ -139,23 +139,23 @@ export const useFrequencyData = (profileId: string | undefined) => {
       const { data: afterglowVenues } = await supabase
         .from('afterglow_venues')
         .select('name, lat, lng, created_at')
-        .eq('profile_id', profileId)
+        .eq('profile_id', profileId as any)
         .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false });
 
       const locationFrequency = new Map<string, { count: number; lastVisit: string; lat?: number; lng?: number }>();
-      afterglowVenues?.forEach(venue => {
-        const current = locationFrequency.get(venue.name) || { 
+      afterglowVenues?.forEach((venue: any) => {
+        const current = locationFrequency.get(venue.name as string) || { 
           count: 0, 
-          lastVisit: venue.created_at,
-          lat: venue.lat,
-          lng: venue.lng
+          lastVisit: venue.created_at as string,
+          lat: venue.lat as number,
+          lng: venue.lng as number
         };
-        locationFrequency.set(venue.name, {
+        locationFrequency.set(venue.name as string, {
           count: current.count + 1,
-          lastVisit: venue.created_at > current.lastVisit ? venue.created_at : current.lastVisit,
-          lat: current.lat || venue.lat,
-          lng: current.lng || venue.lng
+          lastVisit: (venue.created_at as string) > current.lastVisit ? (venue.created_at as string) : current.lastVisit,
+          lat: current.lat || (venue.lat as number),
+          lng: current.lng || (venue.lng as number)
         });
       });
 

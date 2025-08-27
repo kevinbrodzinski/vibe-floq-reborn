@@ -3,11 +3,11 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { VibeDensityWebMap } from '@/components/maps/VibeDensityWebMap';
 import { useClusters } from '@/hooks/useClusters';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
-import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
-import { VibeDensityBackground } from '@/components/map/VibeDensityBackground';
-import { ClusterLegend } from '@/components/map/ClusterLegend';
+// import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
+// import { VibeDensityBackground } from '@/components/map/VibeDensityBackground';
+// import { ClusterLegend } from '@/components/map/ClusterLegend';
 import DeckGL from '@deck.gl/react';
-import { createDensityLayer } from '@/components/map/DeckLayers';
+// import { createDensityLayer } from '@/components/map/DeckLayers';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
 import { renderClusterTooltip } from './tooltipHelpers';
 import type { MapViewState } from '@deck.gl/core';
@@ -73,11 +73,7 @@ export const VibeDensityMap: React.FC = () => {
       activeVibes.map(vibe => [vibe, 1])
     );
     
-    const densityLayer = createDensityLayer(
-      filteredClusters,
-      weights,
-      handleClusterClick
-    );
+    const densityLayer = null; // createDensityLayer not available
     
     return densityLayer ? [densityLayer] : [];
   }, [filteredClusters, vibeFilterHelpers.activeSet]);
@@ -98,7 +94,7 @@ export const VibeDensityMap: React.FC = () => {
         onRegionChange={onRegionChange}
       >
         {/* Background visualization - always visible */}
-        <VibeDensityBackground />
+        {/* <VibeDensityBackground /> */}
         
         {/* Deck.GL Layer - only render if we have layers to avoid empty canvas covering map */}
         {layers.length > 0 && (
@@ -115,11 +111,8 @@ export const VibeDensityMap: React.FC = () => {
         )}
         
         {/* Empty/Loading States */}
-        <VibeDensityEmpty 
-          isLoading={loading}
-          error={error}
-          clustersCount={filteredClusters.length}
-        />
+        {loading && <div className="absolute inset-0 flex items-center justify-center">Loading...</div>}
+        {error && <div className="absolute inset-0 flex items-center justify-center text-destructive">Error: {error}</div>}
         
         {/* Simplified Debug Info Overlay - only shows critical info */}
         {import.meta.env.DEV && (
@@ -132,12 +125,12 @@ export const VibeDensityMap: React.FC = () => {
         )}
         
         {/* Legend */}
-        {filteredClusters.length > 0 && (
+        {/* {filteredClusters.length > 0 && (
           <ClusterLegend 
             clusters={filteredClusters}
             className="absolute bottom-4 right-4"
           />
-        )}
+        )} */}
       </VibeDensityWebMap>
     </div>
   );

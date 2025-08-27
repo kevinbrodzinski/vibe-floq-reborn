@@ -13,7 +13,7 @@ export function EphemeralFeed({ floqId }: { floqId: string }) {
         <div className="text-lg font-semibold">Live feed</div>
         <Button size="sm" variant="secondary" onClick={loadMore} disabled={!hasMore || loading}>Load more</Button>
       </div>
-      {error && <div className="px-3 text-sm text-destructive">{error}</div>}
+      {error && <div className="px-3 text-sm text-destructive">{String(error)}</div>}
       <Separator />
       {items.map((it) => (
         <Card key={it.id}>

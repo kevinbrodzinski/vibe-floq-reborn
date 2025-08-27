@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FriendShareToggle } from '@/components/friends/FriendShareToggle';
-import { LiveMap } from '@/components/map/LiveMap';
+// import { LiveMap } from '@/components/map/LiveMap';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -66,7 +66,9 @@ export function LiveLocationDemo() {
           )}
 
           {/* Live map */}
-          <LiveMap friendIds={mockFriendIds} className="min-h-[300px]" />
+          <div className="min-h-[300px] bg-muted rounded-lg flex items-center justify-center">
+            Live Map (Component not available)
+          </div>
         </CardContent>
       </Card>
     </div>

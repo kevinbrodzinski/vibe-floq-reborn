@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { FriendConstellation } from "@/components/FriendConstellation";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { FloqOrb } from "@/components/FloqOrb";
-import { ClusterPin } from "@/components/map/ClusterPin";
-import { VenuePin } from "@/components/map/VenuePin";
+// import { ClusterPin } from "@/components/map/ClusterPin";
+// import { VenuePin } from "@/components/map/VenuePin";
 import { Z } from "@/constants/z";
-import { ViewportControls } from "@/components/map/ViewportControls";
+// import { ViewportControls } from "@/components/map/ViewportControls";
 
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
 import { DMQuickSheet } from "@/components/DMQuickSheet";
@@ -509,16 +509,11 @@ export const FieldVisualization = ({
                 onClick={() => handleVenueClick(venue)}
               >
                 {isCluster ? (
-                  <ClusterPin 
-                    count={venue.pointCount} 
-                    onClick={() => handleVenueClick(venue)}
-                  />
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs font-bold">
+                    {venue.pointCount}
+                  </div>
                 ) : (
-                  <VenuePin 
-                    vibe={venue.vibe}
-                    name={venue.name}
-                    onClick={() => handleVenueClick(venue)}
-                  />
+                  <div className="w-6 h-6 bg-accent rounded-full" title={venue.name}></div>
                 )}
               </div>
             );
@@ -535,7 +530,7 @@ export const FieldVisualization = ({
       )}
 
       {/* Viewport Controls */}
-      {!mini && <ViewportControls controls={viewportControls} />}
+      {/* {!mini && <ViewportControls controls={viewportControls} />} */}
 
       {!mini && (
         <>
