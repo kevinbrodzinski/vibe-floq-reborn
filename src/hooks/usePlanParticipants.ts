@@ -45,7 +45,7 @@ export interface InviteParticipantData {
 }
 
 export function usePlanParticipants(planId: string) {
-  return useQuery({
+  return useQuery<PlanParticipant[]>({
     queryKey: ['plan-participants', planId],
     queryFn: async (): Promise<PlanParticipant[]> => {
       const { data, error } = await supabase

@@ -9,6 +9,8 @@ export type PlanParticipantWithProfile = {
   joined_at: string
   is_guest: boolean
   guest_name: string | null
+  rsvp_status?: 'yes' | 'no' | 'maybe' | 'pending' | null
+  display_name?: string
   profiles?: {
     id: string
     username: string | null

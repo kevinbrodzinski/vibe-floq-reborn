@@ -12,7 +12,7 @@ export function useCurrentUserProfile() {
   return useQuery<Profile>({
     enabled: !!session?.user,
     queryKey: ['profile:v2', session?.user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
@@ -20,7 +20,6 @@ export function useCurrentUserProfile() {
         .maybeSingle()
       if (error) throw error
       if (!data) {
-        // one retry
         await new Promise(r => setTimeout(r, 1500))
         const retry = await queryClient.fetchQuery({
           queryKey: ['profile:v2', session!.user.id],
@@ -33,7 +32,7 @@ export function useCurrentUserProfile() {
             if (error) throw error
             if (!data) throw new Error('Profile not found after retry')
             return data as Profile
-          }
+          },
         })
         return retry
       }
@@ -45,20 +44,15 @@ export function useCurrentUserProfile() {
     throwOnError: false,
     ...(OFFLINE_MODE && {
       initialData: session?.user
-        ? {
-            id: session.user.id,
-            username: 'mock_user',
-            display_name: 'Mock User',
-            avatar_url: null,
-          }
+        ? { id: session.user.id, username: 'mock_user', display_name: 'Mock User', avatar_url: null }
         : undefined,
     }),
   })
 }
 
 // Keep the original useProfile signature for backward compatibility
-export const useProfile = (profileId: string | undefined) => {
-  return useQuery<Profile>({
+export const useProfile = (profileId: string | undefined) =>
+  useQuery<Profile>({
     queryKey: ['profile:v2', profileId],
     enabled: !!profileId,
     queryFn: async (): Promise<Profile> => {
@@ -75,21 +69,10 @@ export const useProfile = (profileId: string | undefined) => {
     retry: 2,
     suspense: false,
     throwOnError: false,
-    ...(OFFLINE_MODE && {
-      initialData: profileId
-        ? {
-            id: profileId,
-            username: 'mock_user',
-            display_name: 'Mock User',
-            avatar_url: null,
-          }
-        : undefined,
-    }),
-  })
-};
+  });
 
-export const useProfileByUsername = (username: string | undefined) => {
-  return useQuery<Profile>({
+export const useProfileByUsername = (username: string | undefined) =>
+  useQuery<Profile>({
     queryKey: ['profile-by-username', username],
     enabled: !!username,
     queryFn: async (): Promise<Profile> => {
@@ -106,15 +89,4 @@ export const useProfileByUsername = (username: string | undefined) => {
     retry: 2,
     suspense: false,
     throwOnError: false,
-    ...(OFFLINE_MODE && {
-      initialData: username
-        ? {
-            id: 'mock-id-' + username,
-            username,
-            display_name: username,
-            avatar_url: null,
-          }
-        : undefined,
-    }),
-  })
-};
+  });

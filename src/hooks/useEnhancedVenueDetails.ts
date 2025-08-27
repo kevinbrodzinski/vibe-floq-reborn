@@ -56,48 +56,22 @@ export interface EnhancedVenueDetails {
   timestamp: string;
 }
 
-export const useEnhancedVenueDetails = (venueId: string | null) => {
-  return useQuery({
-    queryKey: ["enhanced-venue-details", venueId],
-    queryFn: async (): Promise<EnhancedVenueDetails> => {
-      if (!venueId) {
-        throw new Error("Venue ID is required");
-      }
-
-      console.log('useEnhancedVenueDetails calling edge function for:', venueId);
-
-      const { data, error } = await supabase.functions.invoke(
-        "get-venue-intelligence",
-        {
-          body: { venue_id: venueId, mode: "energy" }
-        }
-      );
-
-      if (error) {
-        console.error('useEnhancedVenueDetails error:', error);
-        throw error;
-      }
-
-      if (!data) {
-        console.error('useEnhancedVenueDetails: no data returned');
-        throw new Error("No venue data found");
-      }
-
-      console.log('useEnhancedVenueDetails success:', data.name, data.people_count, 'people');
-      return data;
-    },
+export const useEnhancedVenueDetails = (venueId: string | null) =>
+  useQuery<EnhancedVenueDetails>({
+    queryKey: ['enhanced-venue-details', venueId],
     enabled: !!venueId,
-    staleTime: 15000, // 15 seconds
-    refetchInterval: 30000, // Refetch every 30 seconds for live data
-    retry: (failureCount, error) => {
-      console.log('useEnhancedVenueDetails retry attempt:', failureCount, error?.message);
-      // Don't retry on 404s
-      if (error?.message?.includes('not found')) return false;
-      return failureCount < 2;
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    retry: (n, e: any) => (e?.message?.includes('not found') ? false : n < 2),
+    queryFn: async (): Promise<EnhancedVenueDetails> => {
+      const { data, error } = await supabase.functions.invoke('get-venue-intelligence', {
+        body: { venue_id: venueId, mode: 'energy' },
+      })
+      if (error) throw error
+      if (!data) throw new Error('No venue data found')
+      return data as EnhancedVenueDetails
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
-};
 
 export interface FloqAutoMatch {
   userVibe: string;
@@ -133,32 +107,21 @@ export interface FloqAutoMatch {
   timestamp: string;
 }
 
-export const useFloqAutoMatch = (profileId: string | null, venueId: string | null) => {
-  return useQuery<FloqAutoMatch>({
+export const useFloqAutoMatch = (profileId: string | null, venueId: string | null) =>
+  useQuery<FloqAutoMatch>({
     queryKey: ['floq-auto-match', profileId, venueId],
     enabled: !!profileId && !!venueId,
-    staleTime: 30000,
-    refetchInterval: 60000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
     queryFn: async (): Promise<FloqAutoMatch> => {
       const { data, error } = await supabase.functions.invoke('generate-floq-auto-match', {
         body: { profileId, venueId },
       })
       if (error) throw error
-
-      // Map user_id -> profile_id for components that expect it
+      // map user_id → profile_id for UI that expects profile_id
       return {
         ...data,
-        potentialMatches: (data?.potentialMatches ?? []).map((m: any) => ({
-          ...m,
-          profile_id: m.user_id,
-        })),
-        floqSuggestions: (data?.floqSuggestions ?? []).map((s: any) => ({
-          ...s,
-          primaryVibe: s.primaryVibe || 'social',
-          confidence: s.confidence || 0.8,
-          suggestedMembers: s.suggestedMembers || [],
-        })),
+        potentialMatches: (data?.potentialMatches ?? []).map((m: any) => ({ ...m, profile_id: m.user_id })),
       } as FloqAutoMatch
     },
   })
-}

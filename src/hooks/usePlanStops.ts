@@ -13,11 +13,11 @@ export function usePlanStops(plan_id: string) {
     enabled: !!plan_id,
     staleTime: 15000,
     refetchOnWindowFocus: false,
-    queryFn: async () => {
+    queryFn: async (): Promise<any[]> => {
       const { data, error } = await supabase
         .from('plan_stops')
         .select(`
-          id, plan_id, title, description, start_time, end_time, location, color, status, vibe_match,
+          *,
           venue:venues(*)
         `)
         .eq('plan_id', plan_id)

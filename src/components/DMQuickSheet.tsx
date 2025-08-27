@@ -33,6 +33,7 @@ import dayjs from '@/lib/dayjs';
 import { MessageList } from '@/components/chat/MessageList';
 import { getMediaURL } from '@/utils/mediaHelpers';
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Profile } from '@/types/profile';
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -141,7 +142,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
   });
 
   // Get friend profile and presence
+  // Cast friend data properly
   const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
+  const typedFriend = friend as Profile | undefined;
   const presence = useFriendsPresence()[friendId || ''];
   const online = presence?.status === 'online' && presence?.visible;
   const lastSeenTs = useLastSeen(friendId || '');
@@ -405,7 +408,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
       >
         <SheetHeader className="pb-4 border-b border-border/50">
           <VisuallyHidden asChild>
-            <SheetTitle>Direct message with {friend?.display_name ?? 'user'}</SheetTitle>
+            <SheetTitle>Direct message with {typedFriend?.display_name ?? 'user'}</SheetTitle>
           </VisuallyHidden>
           
           <VisuallyHidden asChild>
@@ -421,17 +424,17 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
                   <Skeleton className="h-3 w-16" />
                 </div>
               </>
-            ) : friend ? (
+            ) : typedFriend ? (
               <>
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={friend.avatar_url || undefined} />
+                  <AvatarImage src={typedFriend.avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
-                    {friend.display_name?.[0]?.toUpperCase() ?? '?'}
+                    {typedFriend.display_name?.[0]?.toUpperCase() ?? '?'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="text-left text-sm font-semibold">{friend.display_name}</div>
-                  <div className="text-xs text-muted-foreground">@{friend.username}</div>
+                  <div className="text-left text-sm font-semibold">{typedFriend.display_name}</div>
+                  <div className="text-xs text-muted-foreground">@{typedFriend.username}</div>
                 </div>
                 {online
                   ? <span className="ml-2 text-xs text-green-400">● Online</span>
@@ -480,7 +483,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId, threadId: thre
                   <>
                     <br />
                     <br />
-                    Send <strong>{friend.display_name}</strong> a friend request to start chatting!
+                    Send <strong>{typedFriend.display_name}</strong> a friend request to start chatting!
                   </>
                 )}
               </p>
