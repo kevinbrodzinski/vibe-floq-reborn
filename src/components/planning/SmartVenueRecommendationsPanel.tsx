@@ -136,10 +136,11 @@ export function SmartVenueRecommendationsPanel({
 
     createPlanStop.mutate({
       plan_id: planId,
-      venueId: venue.id,
-      startTime,
-      endTime,
-      notes: `Added via smart recommendations - ${venue.match_score}% match`
+      venue_id: venue.id,
+      start_time: startTime,
+      end_time: endTime,
+      title: venue.name || 'Stop',
+      description: `Added via smart recommendations - ${venue.match_score}% match`
     }, {
       onSuccess: () => {
         onVenueSelect?.(venue, timeSlot)

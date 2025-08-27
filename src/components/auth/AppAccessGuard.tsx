@@ -68,7 +68,7 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
   }, [getItem, isSharedPlanRoute, isDirectPlanRoute]);
 
   // Enhanced onboarding completion check with proper error handling
-  const { data: onboardingComplete, isLoading: onboardingLoading, error: onboardingError } = useQuery({
+  const { data: onboardingComplete, isLoading: onboardingLoading, error: onboardingError } = useQuery<boolean>({
     queryKey: ['onboarding-complete', user?.id ?? 'anon'],
     queryFn: async () => {
       if (!user) {
@@ -130,8 +130,6 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
     gcTime: 60000, // 1 minute
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    // Prevent suspension during navigation
-    
     throwOnError: false
   });
 

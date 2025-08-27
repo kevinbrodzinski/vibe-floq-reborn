@@ -15,7 +15,7 @@ export function useCurrentUserProfile() {
     queryFn: async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, bio, interests, custom_status')
         .eq('id', session!.user.id)
         .maybeSingle()
       if (error) throw error
@@ -26,7 +26,7 @@ export function useCurrentUserProfile() {
           queryFn: async (): Promise<Profile> => {
             const { data, error } = await supabase
               .from('profiles')
-              .select('id, username, display_name, avatar_url')
+              .select('id, username, display_name, avatar_url, bio, interests, custom_status')
               .eq('id', session!.user.id)
               .maybeSingle()
             if (error) throw error
@@ -40,7 +40,6 @@ export function useCurrentUserProfile() {
     },
     staleTime: 5 * 60 * 1000,
     retry: 2,
-    suspense: false,
     throwOnError: false,
     ...(OFFLINE_MODE && {
       initialData: session?.user
@@ -58,7 +57,7 @@ export const useProfile = (profileId: string | undefined) =>
     queryFn: async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, bio, interests, custom_status')
         .eq('id', profileId!)
         .maybeSingle()
       if (error) throw error
@@ -67,7 +66,6 @@ export const useProfile = (profileId: string | undefined) =>
     },
     staleTime: 5 * 60 * 1000,
     retry: 2,
-    suspense: false,
     throwOnError: false,
   });
 
@@ -78,7 +76,7 @@ export const useProfileByUsername = (username: string | undefined) =>
     queryFn: async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, bio, interests, custom_status')
         .eq('username', username!)
         .maybeSingle()
       if (error) throw error
@@ -87,6 +85,5 @@ export const useProfileByUsername = (username: string | undefined) =>
     },
     staleTime: 5 * 60 * 1000,
     retry: 2,
-    suspense: false,
     throwOnError: false,
   });
