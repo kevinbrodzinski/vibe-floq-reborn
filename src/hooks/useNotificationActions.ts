@@ -37,8 +37,24 @@ export const useNotificationActions = () => {
       case 'floq_reply':
         // Navigate to floq
         if (notification.payload?.floq_id) {
-          navigate(`/floq/${notification.payload.floq_id}`);
+          navigate(`/floqs/${notification.payload.floq_id}`);
         }
+        break;
+
+      // Momentary Floq notifications
+      case 'momentary_floq_created':
+      case 'friend_started_floq_nearby':
+      case 'momentary_floq_friend_joined':
+      case 'momentary_floq_nearby':
+        // Navigate to momentary floq
+        if (notification.payload?.floq_id) {
+          navigate(`/floqs/${notification.payload.floq_id}`);
+        }
+        break;
+
+      case 'wave_activity_friend':
+        // Navigate to discover page to see wave activity
+        navigate('/discover');
         break;
       
       default:
