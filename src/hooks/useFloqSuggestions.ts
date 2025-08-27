@@ -1,9 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from '@/integrations/supabase/types';
-
-type FloqSuggestionsReturn = Database['public']['Functions']['generate_floq_suggestions']['Returns'];
 
 export interface FloqSuggestion {
   floq_id: string;
@@ -28,26 +25,25 @@ export function useFloqSuggestions({
 }: UseFloqSuggestionsOptions = {}) {
   const { user } = useAuth();
 
-  return useQuery<FloqSuggestion[]>({
+  return useQuery({
     queryKey: ["floq-suggestions", user?.id, geo?.lat, geo?.lng, limit],
     enabled: enabled && !!user && !!geo,
-    queryFn: async (): Promise<FloqSuggestion[]> => {
+    queryFn: async () => {
       if (!user || !geo) return [];
       
       const { data, error } = await supabase.rpc("generate_floq_suggestions", {
-        p_profile_id: user.id as any,
+        p_profile_id: user.id,
         p_user_lat: geo.lat,
         p_user_lng: geo.lng,
         p_limit: limit,
-      }).returns<FloqSuggestionsReturn>();
+      } as any);
 
       if (error) {
         console.error("Floq suggestions error:", error);
         throw error;
       }
 
-      const results = Array.isArray(data) ? data : [];
-      return results as FloqSuggestion[];
+      return (data || []) satisfies FloqSuggestion[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes

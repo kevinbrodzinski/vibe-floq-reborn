@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, MessageCircle, UserPlus, UserCheck, UserX, Calendar, MapPin, Heart, Reply, Waves, Users, Zap } from 'lucide-react';
+import { Bell, MessageCircle, UserPlus, UserCheck, UserX, Calendar, MapPin, Heart, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,8 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useNotificationActions } from '@/hooks/useNotificationActions';
-import { MomentaryFloqNotificationItem } from './MomentaryFloqNotificationItem';
-import { MomentaryFloqNotificationModal } from './MomentaryFloqNotificationModal';
 
 const getNotificationIcon = (kind: string) => {
   switch (kind) {
@@ -33,15 +31,6 @@ const getNotificationIcon = (kind: string) => {
       return <Heart className="w-4 h-4" />;
     case 'floq_reply':
       return <Reply className="w-4 h-4" />;
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return <Waves className="w-4 h-4" />;
-    case 'momentary_floq_friend_joined':
-      return <Users className="w-4 h-4" />;
-    case 'momentary_floq_nearby':
-    case 'wave_activity_friend':
-      return <Zap className="w-4 h-4" />;
     default:
       return <Bell className="w-4 h-4" />;
   }
@@ -69,15 +58,6 @@ const getNotificationColor = (kind: string) => {
       return 'text-pink-500 bg-pink-50 dark:bg-pink-950/20';
     case 'floq_reply':
       return 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/20';
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return 'text-purple-500 bg-purple-50 dark:bg-purple-950/20';
-    case 'momentary_floq_friend_joined':
-      return 'text-green-500 bg-green-50 dark:bg-green-950/20';
-    case 'momentary_floq_nearby':
-    case 'wave_activity_friend':
-      return 'text-yellow-500 bg-yellow-50 dark:bg-yellow-950/20';
     default:
       return 'text-gray-500 bg-gray-50 dark:bg-gray-950/20';
   }
@@ -105,16 +85,6 @@ const getNotificationTitle = (notification: any) => {
       return 'Floq Invitation Accepted';
     case 'floq_invite_declined':
       return 'Floq Invitation Declined';
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return 'Momentary Floq Started';
-    case 'momentary_floq_friend_joined':
-      return 'Friend Joined Floq';
-    case 'momentary_floq_nearby':
-      return 'Floq Nearby';
-    case 'wave_activity_friend':
-      return 'Friend Activity';
     case 'plan_comment_new':
       return 'New Plan Comment';
     case 'plan_checkin':
@@ -150,16 +120,6 @@ const getNotificationSubtitle = (notification: any) => {
       return 'Your floq invitation was accepted';
     case 'floq_invite_declined':
       return 'Your floq invitation was declined';
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return 'A friend started a momentary floq nearby';
-    case 'momentary_floq_friend_joined':
-      return 'A friend joined your momentary floq';
-    case 'momentary_floq_nearby':
-      return 'There\'s a momentary floq happening near you';
-    case 'wave_activity_friend':
-      return 'Friends are gathering in a wave nearby';
     case 'plan_comment_new':
       return 'Someone commented on a plan';
     case 'plan_checkin':
@@ -228,73 +188,50 @@ export const NotificationsList = () => {
 
       <ScrollArea className="max-h-96">
         <div className="space-y-2 px-4">
-          {notifications.map((notification) => {
-            // Use enhanced component for momentary floq notifications
-            const isMomentaryFloqNotification = [
-              'momentary_floq_created',
-              'momentary_floq_friend_joined', 
-              'momentary_floq_nearby',
-              'wave_activity_friend',
-              'friend_started_floq_nearby'
-            ].includes(notification.kind);
-
-            if (isMomentaryFloqNotification) {
-              return (
-                <MomentaryFloqNotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onTap={() => handleNotificationClick(notification)}
-                  onMarkSeen={() => markAsSeen([notification.id])}
-                />
-              );
-            }
-
-            // Default notification rendering for other types
-            return (
-              <div
-                key={notification.id}
-                className={cn(
-                  "max-w-full p-3 rounded-lg border transition-colors cursor-pointer",
-                  notification.seen_at 
-                    ? 'bg-muted/20 border-border/50' 
-                    : 'bg-card border-border hover:bg-muted/30'
-                )}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={cn("flex-shrink-0 p-2 rounded-full", getNotificationColor(notification.kind))}>
-                    {getNotificationIcon(notification.kind)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className={cn("text-sm font-medium", 
-                          notification.seen_at ? 'text-muted-foreground' : 'text-foreground'
-                        )}>
-                          {getNotificationTitle(notification)}
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={cn(
+                "max-w-full p-3 rounded-lg border transition-colors cursor-pointer",
+                notification.seen_at 
+                  ? 'bg-muted/20 border-border/50' 
+                  : 'bg-card border-border hover:bg-muted/30'
+              )}
+              onClick={() => handleNotificationClick(notification)}
+            >
+              <div className="flex items-start gap-3">
+                <div className={cn("flex-shrink-0 p-2 rounded-full", getNotificationColor(notification.kind))}>
+                  {getNotificationIcon(notification.kind)}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <p className={cn("text-sm font-medium", 
+                        notification.seen_at ? 'text-muted-foreground' : 'text-foreground'
+                      )}>
+                        {getNotificationTitle(notification)}
+                      </p>
+                      {getNotificationSubtitle(notification) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {getNotificationSubtitle(notification)}
                         </p>
-                        {getNotificationSubtitle(notification) && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {getNotificationSubtitle(notification)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                        </span>
-                        {!notification.seen_at && (
-                          <div className="w-2 h-2 bg-primary rounded-full" />
-                        )}
-                      </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </span>
+                      {!notification.seen_at && (
+                        <div className="w-2 h-2 bg-primary rounded-full" />
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </ScrollArea>
     </div>

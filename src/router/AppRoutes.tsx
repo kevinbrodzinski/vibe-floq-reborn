@@ -39,9 +39,8 @@ const RouteSuspense = ({ children, fallback = <FullScreenSpinner /> }: { childre
 // Lazy load large components to reduce initial bundle size
 const FieldScreen = lazy(() => import('@/components/screens/FieldScreen').then(m => ({ default: m.FieldScreen })));
 const FlocksHome = lazy(() => import('@/components/FlocksHome').then(m => ({ default: m.FlocksHome })));
-const FloqRoute = lazy(() => import('@/pages/FloqRoute'));
+const FloqDetail = lazy(() => import('@/pages/FloqDetail'));
 const FloqManage = lazy(() => import('@/pages/FloqManage'));
-const Discover = lazy(() => import('@/pages/Discover'));
 const PulseScreen = lazy(() => import('@/components/screens/pulse/PulseScreenRedesigned').then(m => ({ default: m.PulseScreenRedesigned })));
 const VibeScreen = lazy(() => import('@/screens/VibeScreen').then(m => ({ default: m.VibeScreen })));
 const AfterglowRoutes = lazy(() => import('@/routes/AfterglowRoutes'));
@@ -91,14 +90,9 @@ export const AppRoutes = () => {
           <FlocksHome />
         </RouteSuspense>
       } />
-      <Route path="/discover" element={
-        <RouteSuspense>
-          <Discover />
-        </RouteSuspense>
-      } />
       <Route path="/floqs/:floqId" element={
         <RouteSuspense>
-          <FloqRoute />
+          <FloqDetail />
         </RouteSuspense>
       } />
       <Route path="/floqs/:floqId/manage" element={

@@ -1,12 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
-
-type VenueStayRow = Database['public']['Tables']['venue_stays']['Row'];
-type VenueRow = Database['public']['Tables']['venues']['Row'];
-type FloqParticipantRow = Database['public']['Tables']['floq_participants']['Row'];
-type AfterglowVenueRow = Database['public']['Tables']['afterglow_venues']['Row'];
-type ProfileId = Database['public']['Tables']['profiles']['Row']['id'];
 
 export interface FrequentVenue {
   venue_id: string;
@@ -45,28 +38,23 @@ export const useFrequencyData = (profileId: string | undefined) => {
       if (!profileId) return { venues: [], activities: [], locations: [] };
 
       // Get most frequent venues from venue_stays
-      const { data: venueStays, error: venueStaysError } = await supabase
+      const { data: venueStays } = await supabase
         .from('venue_stays')
         .select(`
           venue_id,
           arrived_at
         `)
-        .eq('profile_id', profileId as ProfileId)
+        .eq('profile_id', profileId)
         .gte('arrived_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // Last 90 days
-        .order('arrived_at', { ascending: false })
-        .returns<Array<Pick<VenueStayRow, 'venue_id' | 'arrived_at'>>>();
-      
-      if (venueStaysError) throw venueStaysError;
+        .order('arrived_at', { ascending: false });
 
       // Group venue visits and get venue details
       const venueFrequency = new Map<string, { count: number; lastVisit: string }>();
-      (venueStays ?? []).forEach(stay => {
-        const venueId = String(stay.venue_id);
-        const arrivedAt = String(stay.arrived_at);
-        const current = venueFrequency.get(venueId) || { count: 0, lastVisit: arrivedAt };
-        venueFrequency.set(venueId, {
+      venueStays?.forEach(stay => {
+        const current = venueFrequency.get(stay.venue_id) || { count: 0, lastVisit: stay.arrived_at };
+        venueFrequency.set(stay.venue_id, {
           count: current.count + 1,
-          lastVisit: arrivedAt > current.lastVisit ? arrivedAt : current.lastVisit
+          lastVisit: stay.arrived_at > current.lastVisit ? stay.arrived_at : current.lastVisit
         });
       });
 
@@ -75,50 +63,43 @@ export const useFrequencyData = (profileId: string | undefined) => {
         .slice(0, 5)
         .map(([venueId]) => venueId);
 
-      const { data: venues, error: venuesError } = await supabase
+      const { data: venues } = await supabase
         .from('venues')
         .select('id, name, categories')
-        .in('id', topVenueIds as ReadonlyArray<VenueRow['id']>)
-        .returns<Array<Pick<VenueRow, 'id' | 'name' | 'categories'>>>();
+        .in('id', topVenueIds);
 
-      if (venuesError) throw venuesError;
-
-      const frequentVenues: FrequentVenue[] = (venues ?? []).map(venue => ({
-        venue_id: String(venue.id),
-        name: String(venue.name),
-        visit_count: venueFrequency.get(String(venue.id))?.count || 0,
-        last_visit: venueFrequency.get(String(venue.id))?.lastVisit || '',
-        venue_type: (venue.categories as string[])?.[0] || 'venue'
-      })).sort((a, b) => b.visit_count - a.visit_count);
+      const frequentVenues: FrequentVenue[] = venues?.map(venue => ({
+        venue_id: venue.id,
+        name: venue.name,
+        visit_count: venueFrequency.get(venue.id)?.count || 0,
+        last_visit: venueFrequency.get(venue.id)?.lastVisit || '',
+        venue_type: venue.categories?.[0] || 'venue'
+      })).sort((a, b) => b.visit_count - a.visit_count) || [];
 
       // Get most frequent floq activities
-      const { data: floqParticipation, error: floqError } = await supabase
+      const { data: floqParticipation } = await supabase
         .from('floq_participants')
         .select(`
           floq_id,
           joined_at,
           floqs!inner(title, primary_vibe, ends_at)
         `)
-        .eq('profile_id', profileId as ProfileId)
+        .eq('profile_id', profileId)
         .gte('joined_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
         .order('joined_at', { ascending: false });
 
-      if (floqError) throw floqError;
-
       const floqFrequency = new Map<string, { count: number; lastJoined: string; title: string; vibe?: string }>();
-      (floqParticipation ?? []).forEach(participation => {
-        const floq = (participation as any).floqs;
-        const floqId = String(participation.floq_id);
-        const joinedAt = String(participation.joined_at);
-        const current = floqFrequency.get(floqId) || { 
+      floqParticipation?.forEach(participation => {
+        const floq = participation.floqs as any;
+        const current = floqFrequency.get(participation.floq_id) || { 
           count: 0, 
-          lastJoined: joinedAt,
-          title: String(floq?.title || 'Unknown'),
-          vibe: String(floq?.primary_vibe || '')
+          lastJoined: participation.joined_at,
+          title: floq.title,
+          vibe: floq.primary_vibe
         };
-        floqFrequency.set(floqId, {
+        floqFrequency.set(participation.floq_id, {
           count: current.count + 1,
-          lastJoined: joinedAt > current.lastJoined ? joinedAt : current.lastJoined,
+          lastJoined: participation.joined_at > current.lastJoined ? participation.joined_at : current.lastJoined,
           title: current.title,
           vibe: current.vibe
         });

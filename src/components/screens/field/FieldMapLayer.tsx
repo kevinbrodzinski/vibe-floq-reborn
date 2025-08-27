@@ -6,10 +6,8 @@ import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
 import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
-// import { WaveMapOverlay } from '@/components/field/WaveMapOverlay'; // Removed - using dedicated /discover page instead
 
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
-import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useVenueSync } from '@/hooks/useVenueSync';
 import type { FieldData } from '../field/FieldDataProvider';
 
@@ -30,7 +28,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
 }) => {
   const { walkableFloqs, fieldTiles, realtime } = data;
   const { people: socialPeople } = useFieldSocial();
-  const { location, isLocationReady } = useFieldLocation();
   
   // Phase 4 state management
   const [isDebugVisible, setIsDebugVisible] = useState(false);
@@ -92,8 +89,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
           />
         </div>
       </FieldWebMap>
-
-      {/* Wave Map Overlay - removed, using dedicated /discover page instead */}
       
       {/* Venue Loading Overlay */}
       <VenueLoadingOverlay show={isVenueSyncing} />

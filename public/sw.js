@@ -1,157 +1,131 @@
-// service-worker.js (safe dev-friendly version)
-
 const CACHE_NAME = 'floq-venues-v1';
 const VENUE_IMAGE_CACHE = 'floq-venue-images-v1';
 const API_CACHE = 'floq-api-v1';
 
-// Only cache GET requests. Never cache RPC POSTs.
-const API_GET_ALLOWLIST = [
-  // e.g. your GET endpoints; do NOT include /rpc/
-  '/rest/v1/get_nearby_venues',
-  '/rest/v1/get_trending_venues_enriched',
-  '/rest/v1/get_venues_open_status',
-];
-
+// URLs to cache on install
 const STATIC_CACHE_URLS = [
-  // Make these optional to avoid install failures in dev
-  // '/placeholder/venue.jpg',
-  // '/placeholder/avatar.png',
+  '/placeholder/venue.jpg',
+  '/placeholder/avatar.png',
 ];
 
+// Install event - cache static resources
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(
-        STATIC_CACHE_URLS.map((u) =>
-          cache.add(u).catch(() => null) // don't fail install if missing
-        )
-      )
-    )
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_CACHE_URLS);
+    })
   );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys.map((k) => {
-          if (![CACHE_NAME, VENUE_IMAGE_CACHE, API_CACHE].includes(k)) {
-            return caches.delete(k);
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME && cacheName !== VENUE_IMAGE_CACHE && cacheName !== API_CACHE) {
+            return caches.delete(cacheName);
           }
         })
       );
-      await self.clients.claim();
-    })()
+    })
   );
 });
 
+// Fetch event - handle caching strategy
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
+  const { request } = event;
+  const url = new URL(request.url);
 
-  // Always pass through non-GET (POST/PUT/etc.) to avoid body stream issues
-  if (req.method !== 'GET') {
-    event.respondWith(fetch(req));
-    return;
-  }
-
-  // Don't touch dev/HMR or navigations
-  const isViteAsset = url.pathname.startsWith('/@vite') || url.pathname.includes('__vite') || url.pathname.startsWith('/vite');
-  if (req.mode === 'navigate' || isViteAsset) {
-    event.respondWith(fetch(req));
-    return;
-  }
-
-  // IMAGE CACHING (same-origin + known origins)
-  if (
-    req.destination === 'image' &&
-    (
-      url.origin === self.location.origin ||
-      url.hostname.includes('unsplash.com') ||
-      url.hostname.includes('googleusercontent.com') ||
-      url.pathname.includes('/venue-photos/')
-    )
-  ) {
+  // Cache venue images (Unsplash, Google Places, etc.)
+  if (request.destination === 'image' && 
+      (url.hostname.includes('unsplash.com') || 
+       url.hostname.includes('googleusercontent.com') ||
+       url.pathname.includes('/venue-photos/'))) {
     event.respondWith(
-      caches.open(VENUE_IMAGE_CACHE).then(async (cache) => {
-        const hit = await cache.match(req);
-        if (hit) return hit;
-        try {
-          const net = await fetch(req);
-          if (net.ok) cache.put(req, net.clone());
-          return net;
-        } catch {
-          // Soft fallback if you really have a placeholder; otherwise return a generic Response
-          const fallback = await caches.match('/placeholder/venue.jpg');
-          return fallback || Response.error();
-        }
+      caches.open(VENUE_IMAGE_CACHE).then((cache) => {
+        return cache.match(request).then((response) => {
+          if (response) {
+            return response;
+          }
+          
+          return fetch(request).then((fetchResponse) => {
+            // Only cache successful image responses
+            if (fetchResponse.status === 200) {
+              cache.put(request, fetchResponse.clone());
+            }
+            return fetchResponse;
+          }).catch(() => {
+            // Return a fallback image if network fails
+            return caches.match('/placeholder/venue.jpg');
+          });
+        });
       })
     );
-    return;
   }
-
-  // API GET CACHING (never /rpc/, only GET allowlist)
-  const isApiGet =
-    url.origin === self.location.origin &&
-    req.method === 'GET' &&
-    API_GET_ALLOWLIST.some((p) => url.pathname.startsWith(p));
-
-  if (isApiGet) {
+  
+  // Cache API responses for venues
+  else if (url.pathname.includes('/rest/v1/rpc/get_nearby_venues') ||
+           url.pathname.includes('/rest/v1/rpc/get_trending_venues_enriched') ||
+           url.pathname.includes('/rest/v1/rpc/get_venues_open_status')) {
     event.respondWith(
-      caches.open(API_CACHE).then(async (cache) => {
-        const hit = await cache.match(req);
-        if (hit) {
-          const ts = hit.headers.get('sw-cached-time');
-          if (ts && Date.now() - Number(ts) < 5 * 60 * 1000) {
-            return hit;
+      caches.open(API_CACHE).then((cache) => {
+        return cache.match(request).then((response) => {
+          // Return cached response if available and less than 5 minutes old
+          if (response) {
+            const cachedTime = response.headers.get('sw-cached-time');
+            if (cachedTime && (Date.now() - parseInt(cachedTime)) < 5 * 60 * 1000) {
+              return response;
+            }
           }
-        }
-        try {
-          const net = await fetch(req);
-          if (net.ok) {
-            // add timestamp header for staleness check
-            const headers = new Headers(net.headers);
-            headers.set('sw-cached-time', String(Date.now()));
-            const cached = new Response(net.clone().body, {
-              status: net.status,
-              statusText: net.statusText,
-              headers,
-            });
-            // Note: cache.put returns a promise; we intentionally don't await it
-            cache.put(req, cached).catch(() => {});
-          }
-          return net;
-        } catch {
-          // If network fails, return cache hit if present; else a proper error Response (never undefined)
-          return hit || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-        }
+          
+          return fetch(request).then((fetchResponse) => {
+            if (fetchResponse.status === 200) {
+              // Clone and add timestamp header
+              const responseToCache = fetchResponse.clone();
+              const headers = new Headers(responseToCache.headers);
+              headers.set('sw-cached-time', Date.now().toString());
+              
+              const cachedResponse = new Response(responseToCache.body, {
+                status: responseToCache.status,
+                statusText: responseToCache.statusText,
+                headers: headers
+              });
+              
+              cache.put(request, cachedResponse);
+            }
+            return fetchResponse;
+          }).catch(() => {
+            // Return cached response even if stale when network fails
+            return response;
+          });
+        });
       })
     );
-    return;
   }
-
-  // Default: network-first
-  event.respondWith(fetch(req));
+  
+  // Default: network first for other requests
+  else {
+    event.respondWith(fetch(request));
+  }
 });
 
-// Background prefetch (use GET endpoint; do NOT prefetch /rpc/)
+// Background sync for prefetching
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'PREFETCH_VENUES') {
-    const { lat, lng, radius } = event.data.payload || {};
-    const prefetchUrl = `/rest/v1/get_nearby_venues?p_lat=${lat}&p_lng=${lng}&p_radius_m=${radius}&p_limit=50`;
-    fetch(prefetchUrl)
-      .then((res) => {
-        if (res.ok) {
-          caches.open(API_CACHE).then((cache) => {
-            const headers = new Headers(res.headers);
-            headers.set('sw-cached-time', String(Date.now()));
-            const cached = new Response(res.clone().body, { status: res.status, statusText: res.statusText, headers });
-            cache.put(prefetchUrl, cached).catch(() => {});
-          });
-        }
-      })
-      .catch(() => {});
+  if (event.data && event.data.type === 'PREFETCH_VENUES') {
+    const { lat, lng, radius } = event.data.payload;
+    
+    // Prefetch venue data in the background
+    const prefetchUrl = `/rest/v1/rpc/get_nearby_venues?p_lat=${lat}&p_lng=${lng}&p_radius_m=${radius}&p_limit=50`;
+    
+    fetch(prefetchUrl).then((response) => {
+      if (response.ok) {
+        caches.open(API_CACHE).then((cache) => {
+          cache.put(prefetchUrl, response.clone());
+        });
+      }
+    }).catch(() => {
+      // Silently fail prefetch attempts
+    });
   }
 });

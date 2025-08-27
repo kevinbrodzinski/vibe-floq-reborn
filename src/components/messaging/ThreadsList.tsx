@@ -4,12 +4,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useThreads } from '@/hooks/messaging/useThreads';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { formatDistanceToNow } from 'date-fns';
-import { Search, MessageCircle, User, Hash, Plus, X } from 'lucide-react';
+import { Search, MessageCircle, User, Hash, Plus } from 'lucide-react';
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CreateMessageDialog } from './CreateMessageDialog';
@@ -172,69 +171,34 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b space-y-3">
-        {/* Header with title and create button */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Messages</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => setCreateDialogOpen(true)}
-                  className="flex items-center gap-2 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200"
-                  variant="default"
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="inline">New Message</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Start a new conversation</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Search and Create Message Row */}
+        <div className="flex items-center gap-2">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search conversations..."
+              className="pl-10 bg-background/60"
+            />
+          </div>
+          
+          {/* Create New Message Button */}
+          <Button
+            onClick={() => setCreateDialogOpen(true)}
+            className="flex items-center gap-2 shrink-0"
+            variant="default"
+            size="default"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">New</span>
+          </Button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search conversations..."
-            className="pl-10 pr-8 bg-background/60"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-              onClick={() => setSearchQuery('')}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          )}
-        </div>
-
-        {/* Search Results Info */}
-        {debouncedSearch && (
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              {threadsToShow.length > 0 
-                ? `Found ${threadsToShow.length} result${threadsToShow.length !== 1 ? 's' : ''}`
-                : 'No matches found'
-              }
-            </span>
-            {threadsToShow.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchQuery('')}
-                className="h-auto p-1 text-xs"
-              >
-                Clear search
-              </Button>
-            )}
+        {debouncedSearch && threadsToShow.length > 0 && (
+          <div className="text-xs text-muted-foreground">
+            Found {threadsToShow.length} result{threadsToShow.length !== 1 ? 's' : ''}
           </div>
         )}
       </div>
@@ -249,28 +213,8 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
         )}
 
         {threadsToShow.length === 0 && !searchLoading && !isLoading && !isFetching && !error && (
-          <div className="p-8 text-center">
-            {debouncedSearch ? (
-              <div className="text-sm text-muted-foreground">No matches found</div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex flex-col items-center space-y-2">
-                  <MessageCircle className="w-12 h-12 text-muted-foreground/50" />
-                  <h3 className="text-lg font-medium">No conversations yet</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    Start your first conversation by tapping the "New Message" button above
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setCreateDialogOpen(true)}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Start a conversation
-                </Button>
-              </div>
-            )}
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            {debouncedSearch ? 'No matches found' : 'No conversations yet'}
           </div>
         )}
 

@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
-// import { WaveDiscoveryOverlay } from "@/components/field/WaveDiscoveryOverlay"; // Removed - using dedicated /discover page
 
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
@@ -98,8 +97,6 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {!isFull && (
         <div className="absolute inset-0 pointer-events-none" {...zIndex("uiInteractive")}>
           <SocialGestureManager onSocialAction={handleSocialAction} />
-
-          {/* Wave Discovery moved to dedicated /discover page */}
 
           {/* Friend suggestions */}
           <div className="absolute inset-x-0 bottom-20 px-4 pointer-events-auto">

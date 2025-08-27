@@ -113,10 +113,10 @@ export function useFloqRealtime(floqId: string) {
       await supabase
         .from('floq_messages')
         .insert({
-          floq_id: floqId as any,
-          sender_profile_id: message.sender_id as any,
-          body: message.content,
-          reply_to_id: message.reply_to_id as any
+          floq_id: floqId,
+          sender_id: message.sender_id,
+          content: message.content,
+          reply_to_id: message.reply_to_id
         });
       
       // Remove from queue and optimistic messages

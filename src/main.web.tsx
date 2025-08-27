@@ -78,8 +78,8 @@ if (import.meta.env.DEV) {
     initPerformanceMonitoring();
   });
 
-  // Register service worker for venue caching (disabled in development)
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  // Register service worker for venue caching
+  if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {

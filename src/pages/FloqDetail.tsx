@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { PublicFloqPreview } from '@/components/floq/PublicFloqPreview';
 import { JoinedFloqView } from '@/components/floq/JoinedFloqView';
-import MomentaryFloqDetail from '@/pages/MomentaryFloqDetail';
 import { useFloqDetails } from '@/hooks/useFloqDetails';
 import { useLiveFloqScore } from '@/hooks/useLiveFloqScore';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
@@ -129,18 +128,6 @@ const FloqDetail = () => {
 
   // Don't early-return until we know definitively whether we're in or out
   const renderFloqView = () => {
-    // Check if this is a momentary floq and user is a member/host
-    if (floqDetails.flock_type === 'momentary' && (isHost || isMember)) {
-      return (
-        <MomentaryFloqDetail
-          floqId={floqDetails.id}
-          title={floqDetails.title || floqDetails.name || 'Untitled Floq'}
-          endsAt={floqDetails.ends_at || new Date(Date.now() + 4 * 3600_000).toISOString()}
-        />
-      );
-    }
-
-    // Default floq UI for non-momentary or non-members
     return (isHost || isMember) ? (
       <JoinedFloqView
         floqDetails={floqDetails}
