@@ -52,26 +52,24 @@ export const PulseScreenRedesigned: React.FC = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [radiusKm, setRadiusKm] = useState(2); // Default 2km radius
 
-  // Core state (using selectedTime from above)
+  // Core state with corrected variable names
   const { user } = useAuth();
   const { coords } = useGeo();
-  const { data: weatherData, isLoading: weatherLoading } = usePulseWeatherNow();
-  const { data: forecastData, isLoading: forecastLoading } = usePulseWeatherForecast(selectedTime);
+  const { data: weatherNow, isLoading: weatherLoading } = usePulseWeatherNow();
+  const { data: weatherForecast = [], isLoading: forecastLoading } = usePulseWeatherForecast();
 
-  // Data hooks with enhanced filtering - only fetch when we have real coordinates
+  // Data hooks with corrected parameter names
   const { data: nearbyVenues = [], isLoading: nearbyLoading } = usePulseNearbyVenues({
     lat: coords?.lat ?? 0,
     lng: coords?.lng ?? 0,
-    radiusKm,
-    limit: 50,
-    pillKeys: selectedFilterKeys
+    radiusKm: radiusKm,
+    limit: 50
   });
   const { data: trendingVenues = [], isLoading: trendingLoading } = usePulseTrendingVenues({
     lat: coords?.lat ?? 0,
     lng: coords?.lng ?? 0,
     radiusM: Math.round(radiusKm * 1000),
-    limit: 10,
-    pillKeys: selectedFilterKeys
+    limit: 10
   });
   const { data: liveActivity = [] } = useLiveActivity(20);
   const { data: myFloqs = [] } = useMyActiveFloqs();
@@ -84,93 +82,37 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Location is now handled directly in PulseLocationWeatherBar component
 
-  // Weather analysis for CTAs - uses forecast data when available
+  // Weather analysis using typed data
   const weatherAnalysis = useMemo(() => {
-    const activeWeatherData = weatherData; // Always use current weather for temperature checks
-    if (!activeWeatherData) return null;
+    if (!weatherNow) return null;
     
-    const temp = activeWeatherData.temperatureF;
-    const precipitation = activeWeatherData.precipitationChance || 0;
+    const temp = weatherNow.temperatureF;
+    const precipitation = weatherNow.precipitationChance || 0;
     const isGoodWeather = temp >= GOOD_WEATHER.minTemp && precipitation <= GOOD_WEATHER.maxPrecipitation;
     
     return {
       isGoodWeather,
       selectedCTA: isGoodWeather ? 'outdoor' : 'indoor',
-      isForecast: !!forecastData?.length,
-      forecastTime: forecastData?.[0]?.forecastTime || null,
+      isForecast: weatherForecast.length > 0,
+      forecastTime: weatherForecast[0]?.forecastTime || '',
       temperature: temp
     };
-  }, [weatherData, forecastData]);
+  }, [weatherNow, weatherForecast]);
 
-  // Transform data into recommendations with contextual filtering
+  // Typed iteration over venue arrays
   const recommendations: RecommendationItem[] = useMemo(() => {
-    // Early return if no data or still loading coordinates
     if (!coords || (!nearbyVenues.length && !myFloqs.length)) return [];
     
-    // Apply contextual filtering to venues if context is available
-    let filteredVenues = nearbyVenues;
-    
-    if (filterContext && nearbyVenues.length > 0) {
-      // Convert to VenueData format for contextual filtering (optimized)
-      const venues: VenueData[] = nearbyVenues.map((venue: any) => ({
-        id: venue.id,
-        name: venue.name,
-        categories: venue.categories || [],
-        canonical_tags: venue.canonical_tags || [],
-        hours: venue.hours,
-        price_level: venue.price_level,
-        rating: venue.rating,
-        live_count: venue.live_count || 0,
-        distance_m: venue.distance_m || venue.dist_m || 0
-      }));
-      
-      // Apply contextual filtering and sorting (cached time)
-      const currentTime = new Date();
-      const filterOptions: ContextualFilterOptions = {
-        context: filterContext,
-        selectedPillKeys: selectedFilterKeys,
-        currentTime,
-        userPreferences: {
-          minimumRating: 2.5,
-          maxDistance: 10000
-        }
-      };
-      
-      const contextuallyFiltered = applyContextualFiltering(venues, filterOptions);
-      const contextuallySorted = sortByContextualRelevance(contextuallyFiltered, filterOptions);
-      
-      // Convert back to original format (optimized with Map lookup)
-      const venueMap = new Map(nearbyVenues.map((v: any) => [v.id, v]));
-      filteredVenues = contextuallySorted
-        .map(venue => venueMap.get(venue.id))
-        .filter(Boolean);
-    }
-
-    // Cache venue status calculations and use stable mock values
-    const venueRecs: RecommendationItem[] = filteredVenues.map((venue: any, index: number) => {
-      // Use index-based stable "random" values instead of Math.random()
+    // Process nearby venues
+    const venueRecs: RecommendationItem[] = nearbyVenues.map((venue: any, index: number) => {
       const stableVibeMatch = 60 + (venue.id?.charCodeAt(0) || index) % 40;
       const weatherMatch = weatherAnalysis?.isGoodWeather ? 85 : 65;
       
-      // Optimize venue status check - only if hours exist
-      let statusText = '';
-      if (venue.hours) {
-        const venueStatus = getVenueStatus({
-          id: venue.id,
-          name: venue.name,
-          hours: venue.hours,
-          categories: venue.categories || [],
-          canonical_tags: venue.canonical_tags || []
-        });
-        statusText = venueStatus.isOpen === true ? ' • Open' : 
-                    venueStatus.isOpen === false ? ' • Closed' : '';
-      }
-
       return {
         id: venue.id,
         title: venue.name || 'Unknown Venue',
         type: 'venue' as const,
-        subtitle: `${venue.categories?.[0] || 'Venue'}${statusText}`,
+        subtitle: `${venue.categories?.[0] || 'Venue'}`,
         distance: venue.distance_m || venue.dist_m || 0,
         vibe: venue.categories?.[0] || 'venue',
         rating: venue.rating,
@@ -181,34 +123,36 @@ export const PulseScreenRedesigned: React.FC = () => {
         weatherMatch,
         tags: venue.canonical_tags || [],
         friends: [],
+        open_now: venue.open_now
       };
     });
 
-    // Optimize floq recommendations with stable values
-    const floqRecs: RecommendationItem[] = (myFloqs || []).map((floq: any, index: number) => {
-      const stableVibeMatch = 70 + (floq.id?.charCodeAt(0) || index) % 30;
+    // Process trending venues
+    const trendingRecs: RecommendationItem[] = trendingVenues.map((venue: any, index: number) => {
+      const stableVibeMatch = 65 + (venue.id?.charCodeAt(0) || index) % 35;
       const weatherMatch = weatherAnalysis?.isGoodWeather ? 80 : 70;
       
       return {
-        id: floq.id,
-        title: floq.title || 'Untitled Floq',
-        type: 'floq' as const,
-        distance: floq.distance_meters || 0,
-        vibe: floq.primary_vibe || 'social',
-        participants: floq.participant_count || 0,
-        maxParticipants: floq.max_participants || 10,
-        host: {
-          name: floq.host_name || 'Host',
-          avatar: floq.host_avatar
-        },
+        id: venue.id,
+        title: venue.name || 'Unknown Venue',
+        type: 'venue' as const,
+        subtitle: `${venue.categories?.[0] || 'Trending'}`,
+        distance: venue.distance_m || venue.dist_m || 0,
+        vibe: venue.categories?.[0] || 'venue',
+        rating: venue.rating,
+        priceRange: venue.price_tier,
+        photoUrl: venue.photo_url,
+        liveCount: venue.live_count || 0,
         vibeMatch: stableVibeMatch,
         weatherMatch,
+        tags: venue.canonical_tags || [],
         friends: [],
+        open_now: venue.open_now
       };
     });
 
-    return [...venueRecs, ...floqRecs];
-  }, [nearbyVenues, myFloqs, weatherAnalysis, filterContext, selectedFilterKeys, coords]);
+    return [...venueRecs, ...trendingRecs];
+  }, [nearbyVenues, trendingVenues, myFloqs, weatherAnalysis, coords]);
 
   // Filter recommendations based on search and selected filters
   const filteredRecommendations = useMemo(() => {
@@ -402,7 +346,7 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   return (
     <div className="min-h-screen gradient-field">
-      {/* Header */}
+      {/* Header with proper location typing */}
       <PulseHeader
         location={{ city: 'Current Location' } as LocationDisplay}
         onLocationClick={() => setShowDiscoveryModal(true)}
@@ -456,16 +400,16 @@ export const PulseScreenRedesigned: React.FC = () => {
           />
 
       <PulseLocationWeatherBar
-        weather={weatherData ? {
-          condition: weatherData.condition,
-          temperatureF: weatherData.temperatureF,
-          feelsLikeF: weatherData.feelsLikeF,
-          humidity: weatherData.humidity,
-          windMph: weatherData.windMph,
-          precipitationChance: weatherData.precipitationChance || 0,
-          updatedAt: new Date(weatherData.created_at),
+        weather={weatherNow ? {
+          condition: weatherNow.condition,
+          temperatureF: weatherNow.temperatureF,
+          feelsLikeF: weatherNow.feelsLikeF,
+          humidity: weatherNow.humidity,
+          windMph: weatherNow.windMph,
+          precipitationChance: weatherNow.precipitationChance || 0,
+          updatedAt: new Date(weatherNow.created_at),
           isForecast: false,
-          forecastTime: forecastData?.[0]?.forecastTime
+          forecastTime: weatherForecast?.[0]?.forecastTime
         } : undefined}
         selectedTime={selectedTime}
         isLoading={weatherLoading || forecastLoading}

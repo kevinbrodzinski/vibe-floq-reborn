@@ -65,13 +65,14 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
             username
           )
         `)
-        .eq('floq_id', floqId)
+        .eq('floq_id', floqId as any)
         .order('created_at', { ascending: true })
         .range(pageParam * 20, (pageParam + 1) * 20 - 1);
 
       if (error) throw error;
+      if (!data) throw new Error('No data returned');
 
-      const messages = data?.map(msg => ({
+      const messages = data.map((msg: any) => ({
         id: msg.id,
         floq_id: msg.floq_id,
         sender_id: msg.sender_id,
@@ -79,11 +80,11 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
         emoji: msg.emoji || undefined,
         created_at: msg.created_at,
         sender: {
-          display_name: msg.profiles.display_name,
-          avatar_url: msg.profiles.avatar_url || undefined,
-          username: msg.profiles.username || undefined,
+          display_name: msg.profiles?.display_name || 'Unknown',
+          avatar_url: msg.profiles?.avatar_url || undefined,
+          username: msg.profiles?.username || undefined,
         },
-      })) || [];
+      }));
 
       // Track message IDs for deduplication
       messages.forEach(msg => messageIdsRef.current.add(msg.id));
@@ -215,17 +216,18 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
 
           if (error || !fullMessage) return;
 
+          const msgData = fullMessage as any;
           const formattedMessage: FloqMessage = {
-            id: fullMessage.id,
-            floq_id: fullMessage.floq_id,
-            sender_id: fullMessage.sender_id,
-            body: fullMessage.body || undefined,
-            emoji: fullMessage.emoji || undefined,
-            created_at: fullMessage.created_at,
+            id: msgData.id,
+            floq_id: msgData.floq_id,
+            sender_id: msgData.sender_id,
+            body: msgData.body || undefined,
+            emoji: msgData.emoji || undefined,
+            created_at: msgData.created_at,
             sender: {
-              display_name: fullMessage.profiles.display_name,
-              avatar_url: fullMessage.profiles.avatar_url || undefined,
-              username: fullMessage.profiles.username || undefined,
+              display_name: msgData.profiles?.display_name || 'Unknown',
+              avatar_url: msgData.profiles?.avatar_url || undefined,
+              username: msgData.profiles?.username || undefined,
             },
           };
 

@@ -3,6 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { addMinutes, format, parseISO } from 'date-fns'
+import type { Database } from '@/integrations/supabase/types'
+import { useAuth } from '@/hooks/useAuth'
+
+type PlanStopRow = Database['public']['Tables']['plan_stops']['Row']
+type PlanStopInsert = Database['public']['Tables']['plan_stops']['Insert']
+type PlanActivityInsert = Database['public']['Tables']['plan_activities']['Insert']
 
 interface BatchOperation {
   type: 'move' | 'delete' | 'duplicate' | 'update_time' | 'update_venue'
@@ -17,6 +23,7 @@ interface BatchTimeUpdate {
 }
 
 export function useBatchStopOperations(planId: string) {
+  const { user } = useAuth();
   const [selectedStopIds, setSelectedStopIds] = useState<Set<string>>(new Set())
   const [batchMode, setBatchMode] = useState(false)
   const queryClient = useQueryClient()
@@ -58,7 +65,7 @@ export function useBatchStopOperations(planId: string) {
       const { error } = await supabase
         .from('plan_stops')
         .delete()
-        .in('id', stopIds as any)
+        .in('id', stopIds as any[])
 
       if (error) {
         throw new Error(`Failed to delete stops: ${error.message}`)
@@ -66,13 +73,13 @@ export function useBatchStopOperations(planId: string) {
 
       // Log activities
       try {
-        const activities = stopIds.map(stopId => ({
+        const activities: PlanActivityInsert[] = stopIds.map(stopId => ({
           plan_id: planId,
           activity_type: 'stop_deleted',
           activity_data: {
             stop_id: stopId,
             source: 'batch_operation'
-          }
+          } as any
         }))
         
         await supabase.from('plan_activities').insert(activities as any[])
@@ -108,7 +115,7 @@ export function useBatchStopOperations(planId: string) {
       const { data: stopsToClone, error: fetchError } = await supabase
         .from('plan_stops')
         .select('*')
-        .in('id', stopIds as any)
+        .in('id', stopIds as any[])
 
       if (fetchError || !stopsToClone) {
         throw new Error(`Failed to fetch stops: ${fetchError?.message}`)
@@ -127,6 +134,8 @@ export function useBatchStopOperations(planId: string) {
 
         return {
           plan_id: planId,
+          created_by: user?.id || 'system',
+          stop_order: index + 1,
           title: `${stop.title} (Copy)`,
           description: stop.description,
           start_time: newStartTime,
@@ -135,7 +144,7 @@ export function useBatchStopOperations(planId: string) {
           estimated_cost_per_person: stop.estimated_cost_per_person,
           venue_id: stop.venue_id,
           venue_data: stop.venue_data
-        }
+        } as any as PlanStopInsert
       })
 
       const { data: newStops, error } = await supabase
