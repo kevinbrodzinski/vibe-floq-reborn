@@ -46,7 +46,7 @@ export const useTimewarp = (options: TimewarpHookOptions = {}) => {
       });
       
       if (error) throw error;
-      return data || [];
+      return (data as any) || [];
     },
     enabled: !!currentUserId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -69,16 +69,13 @@ export const useTimewarp = (options: TimewarpHookOptions = {}) => {
     const frameInterval = 1000 / (fps * timewarpState.speed);
     
     if (timestamp - lastFrameTimeRef.current >= frameInterval) {
-      setTimewarpState(prev => {
-        const nextIndex = prev.currentIndex + 1;
-        
-        // Stop at end of track
-        if (nextIndex >= prev.totalFrames) {
-          return { ...prev, isPlaying: false, currentIndex: prev.totalFrames - 1 };
-        }
-        
-        return { ...prev, currentIndex: nextIndex };
-      });
+      const nextIndex = timewarpState.currentIndex + 1;
+      
+      if (nextIndex >= timewarpState.totalFrames) {
+        setTimewarpState({ isPlaying: false, currentIndex: timewarpState.totalFrames - 1 });
+      } else {
+        setTimewarpState({ currentIndex: nextIndex });
+      }
       
       lastFrameTimeRef.current = timestamp;
     }

@@ -58,7 +58,7 @@ const sendFriendRequest = async (targetUserId: string) => {
       profile_id: (await supabase.auth.getUser()).data.user?.id,
       other_profile_id: targetUserId,
       status: 'pending'
-    });
+    } as any);
   
   if (error) throw error;
 };
@@ -71,10 +71,10 @@ const acceptFriendRequest = async (fromUserId: string) => {
   // Update the friend request to accepted
   const { error: updateError } = await supabase
     .from('friend_requests')
-    .update({ status: 'accepted', responded_at: new Date().toISOString() })
-    .eq('profile_id', fromUserId)
-    .eq('other_profile_id', user.id)
-    .eq('status', 'pending');
+    .update({ status: 'accepted', responded_at: new Date().toISOString() } as any)
+    .eq('profile_id', fromUserId as any)
+    .eq('other_profile_id', user.id as any)
+    .eq('status', 'pending' as any);
 
   if (updateError) throw updateError;
 

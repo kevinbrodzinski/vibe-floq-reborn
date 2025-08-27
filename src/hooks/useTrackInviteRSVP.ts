@@ -24,8 +24,8 @@ export function useTrackInviteRSVP() {
         .update({
           status: accept ? 'accepted' : 'declined',
           responded_at: new Date().toISOString(),
-        })
-        .eq('id', invitationId)
+        } as any)
+        .eq('id', invitationId as any)
 
       if (inviteUpdateError) throw inviteUpdateError
 
@@ -37,7 +37,7 @@ export function useTrackInviteRSVP() {
             plan_id: planId,
             profile_id: user.id,
             invite_type: 'invitation',
-          })
+          } as any)
 
         // Handle duplicate participant gracefully
         if (participantInsertError && !participantInsertError.message?.includes('duplicate')) {

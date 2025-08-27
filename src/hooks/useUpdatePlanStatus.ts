@@ -74,7 +74,7 @@ export function useUpdatePlanStatus() {
       const { error } = await supabase
         .from('floq_plans')
         .update(updateData)
-        .eq('id', planId)
+        .eq('id', planId as any)
 
       if (error) {
         console.error('Plan status update error:', error)

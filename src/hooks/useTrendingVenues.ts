@@ -31,7 +31,7 @@ export const useTrendingVenues = (
   return useQuery<VenueSnapshot[]>({
     enabled: !!coords,
     queryKey: ['trending', coords?.lat, coords?.lng, radiusM, limit, pillKeys, filterLogic],
-    queryFn: async () => {
+    queryFn: async (): Promise<VenueSnapshot[]> => {
       if (!coords) throw new Error('No coordinates available');
       
       // Auto-sync venues in the background if enabled
@@ -58,20 +58,20 @@ export const useTrendingVenues = (
           if (error) {
             // If enhanced RPC doesn't exist, fall back to original method
             if (error.message.includes('function') || error.message.includes('does not exist')) {
-              return fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit);
+              return (fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit) as unknown) as VenueSnapshot[];
             }
             throw error;
           }
           
-          return data || [];
+          return (data as any) || [];
         } catch (err) {
           console.warn('Enhanced trending venues failed, falling back:', err);
-          return fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit);
+          return (fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit) as unknown) as VenueSnapshot[];
         }
       }
       
       // Default to original implementation
-      return fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit);
+      return (fetchTrendingVenues(coords.lat, coords.lng, radiusM, limit) as unknown) as VenueSnapshot[];
     },
     staleTime: 5 * 60_000,      // 5 minutes - trending venues don't change rapidly
     gcTime: 30 * 60_000,        // 30 minutes cache (renamed from cacheTime)

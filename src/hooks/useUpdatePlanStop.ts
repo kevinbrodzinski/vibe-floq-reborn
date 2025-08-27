@@ -21,10 +21,11 @@ export function useUpdatePlanStop() {
     mutationFn: async ({ id, plan_id, ...updates }: UpdatePlanStopData) => {
       const { data, error } = await supabase
         .from('plan_stops')
-        .update(updates)
-        .eq('id', id)
+        .update(updates as any)
+        .eq('id', id as any)
         .select()
         .single()
+        .returns<any>();
 
       if (error) throw error
       return data

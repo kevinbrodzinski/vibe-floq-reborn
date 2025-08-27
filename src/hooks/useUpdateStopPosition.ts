@@ -37,8 +37,8 @@ export function useUpdateStopPosition() {
       const { data, error } = await supabase
         .from('plan_stops')
         .update(updateData)
-        .eq('id', stopId)
-        .eq('plan_id', planId)
+        .eq('id', stopId as any)
+        .eq('plan_id', planId as any)
         .select()
 
       if (error) {

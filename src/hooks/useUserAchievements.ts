@@ -10,11 +10,12 @@ export const useUserAchievements = (profileId: string | undefined) => {
       const { data: achievements } = await supabase
         .from('achievements')
         .select('*')
-        .eq('profile_id', profileId)
+        .eq('profile_id', profileId as any)
         .order('earned_at', { ascending: false })
-        .limit(10);
+        .limit(10)
+        .returns<any>();
 
-      return achievements?.map(achievement => ({
+      return (achievements as any)?.map((achievement: any) => ({
         id: achievement.id,
         name: achievement.achievement_type || 'Unknown',
         description: 'Achievement earned',

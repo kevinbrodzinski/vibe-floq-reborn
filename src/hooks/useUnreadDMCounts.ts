@@ -23,11 +23,11 @@ export const useUnreadDMCounts = (selfId: string | null) => {
       if (error) throw error;
       
       return (data || [])
-        .map(t => ({
+        .map((t: any) => ({
           thread_id: t.id,
           cnt: t.member_a_profile_id === selfId ? t.unread_a : t.unread_b
         }))
-        .filter(r => r.cnt > 0);
+        .filter((r: any) => r.cnt > 0);
     },
     staleTime: 30_000, // 30 seconds
   });

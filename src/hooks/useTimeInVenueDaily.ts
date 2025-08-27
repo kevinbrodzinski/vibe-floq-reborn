@@ -12,10 +12,10 @@ export function useTimeInVenueDaily(venue_id?: string, day?: string) {
       let query = supabase
         .from('v_time_in_venue_daily')
         .select('*')
-        .eq('venue_id', venue_id);
+        .eq('venue_id', venue_id as any);
       
       if (day) {
-        query = query.eq('day', day);
+        query = query.eq('day', day as any);
       }
       
       const { data, error } = await query.order('day', { ascending: false });
@@ -30,10 +30,10 @@ export async function getTimeInVenueDaily(venue_id: string, day?: string) {
   let query = supabase
     .from('v_time_in_venue_daily')
     .select('*')
-    .eq('venue_id', venue_id);
+    .eq('venue_id', venue_id as any);
   
   if (day) {
-    query = query.eq('day', day);
+    query = query.eq('day', day as any);
   }
   
   const { data, error } = await query.order('day', { ascending: false });

@@ -20,9 +20,10 @@ export const useUnreadCounts = (floqId: string) => {
       const { data, error } = await supabase
         .from('user_floq_unread_counts')
         .select('*')
-        .eq('profile_id', session.user.id)
-        .eq('floq_id', floqId)
-        .maybeSingle();
+        .eq('profile_id', session.user.id as any)
+        .eq('floq_id', floqId as any)
+        .maybeSingle()
+        .returns<any>();
 
       if (error) {
         console.error('Error fetching unread counts:', error);
@@ -31,9 +32,9 @@ export const useUnreadCounts = (floqId: string) => {
 
       // Return with total
       return data ? {
-        profile_id: data.profile_id || session.user.id,
-        floq_id: data.floq_id || floqId,
-        unread_total: data.unread || 0
+        profile_id: (data as any).profile_id || session.user.id,
+        floq_id: (data as any).floq_id || floqId,
+        unread_total: (data as any).unread || 0
       } : {
         profile_id: session.user.id,
         floq_id: floqId,
@@ -59,7 +60,8 @@ export const useMyFloqsUnreadCounts = () => {
       const { data, error } = await supabase
         .from('user_floq_unread_counts')
         .select('*')
-        .eq('profile_id', session.user.id);
+        .eq('profile_id', session.user.id as any)
+        .returns<any>();
 
       if (error) {
         console.error('Error fetching my floqs unread counts:', error);
@@ -67,7 +69,7 @@ export const useMyFloqsUnreadCounts = () => {
       }
 
       // Return with totals mapped
-      return data?.map(item => ({
+      return (data as any)?.map((item: any) => ({
         profile_id: item.profile_id,
         floq_id: item.floq_id,
         unread_total: item.unread || 0
@@ -124,9 +126,9 @@ export const useNotificationCounts = (profileId?: string) => {
       const { count, error } = await supabase
         .from('event_notifications')
         .select('id', { count: 'exact', head: true })
-        .eq('profile_id', profileId)
+        .eq('profile_id', profileId as any)
         .is('seen_at', null)
-        .in('kind', ['friend_request', 'floq_invite', 'plan_invite', 'dm', 'floq_reaction', 'floq_reply', 'plan_comment_new', 'plan_checkin']);
+        .in('kind', ['friend_request', 'floq_invite', 'plan_invite', 'dm', 'floq_reaction', 'floq_reply', 'plan_comment_new', 'plan_checkin'] as any);
 
       if (error) {
         console.error('Error fetching notification counts:', error);

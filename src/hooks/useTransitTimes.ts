@@ -59,7 +59,7 @@ export function useTransitTime(
             distance_meters: data.distance_meters,
             from_geom: `SRID=4326;POINT(${from.lng} ${from.lat})`,
             to_geom: `SRID=4326;POINT(${to.lng} ${to.lat})`,
-          });
+          } as any);
         } catch { /* ignore RLS errors */ }
         
         return data as TransitResult;

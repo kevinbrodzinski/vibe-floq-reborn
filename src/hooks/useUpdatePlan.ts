@@ -20,17 +20,18 @@ export function useUpdatePlan() {
     mutationFn: async ({ id, ...updates }: UpdatePlanData) => {
       const { data, error } = await supabase
         .from('floq_plans')
-        .update(updates)
-        .eq('id', id)
+        .update(updates as any)
+        .eq('id', id as any)
         .select()
         .single()
+        .returns<any>();
 
       if (error) throw error
       return data
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['plan', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['plan-stops', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['plan', (data as any).id] })
+      queryClient.invalidateQueries({ queryKey: ['plan-stops', (data as any).id] })
       toast({
         title: 'Plan updated',
         description: 'Your plan has been updated successfully.',
