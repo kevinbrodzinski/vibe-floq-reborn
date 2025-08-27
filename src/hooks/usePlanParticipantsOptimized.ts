@@ -20,7 +20,7 @@ export type PlanParticipantWithProfile = {
 export function usePlanParticipantsOptimized(planId: string) {
   const queryClient = useQueryClient()
   
-  const query = useQuery({
+  const query = useQuery<PlanParticipantWithProfile[]>({
     queryKey: ['plan-participants', planId],
     queryFn: async () => {
       // Try the optimized join first

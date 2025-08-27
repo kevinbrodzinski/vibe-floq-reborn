@@ -9,26 +9,22 @@ export function useCurrentUserProfile() {
   const session = useSession()
   const queryClient = useQueryClient()
 
-  return useQuery({
+  return useQuery<Profile>({
     enabled: !!session?.user,
-    queryKey : ['profile:v2', session?.user.id],
-    queryFn  : async () => {
+    queryKey: ['profile:v2', session?.user?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .eq('id', session!.user.id)
         .maybeSingle()
-
-      if (error) {
-        throw error;
-      }
-      
-      if (!data) {        // "No rows"
-        // attempt one retry: maybe trigger hasn't fired yet (cold edge function)
+      if (error) throw error
+      if (!data) {
+        // one retry
         await new Promise(r => setTimeout(r, 1500))
-        const result = await queryClient.fetchQuery({
+        const retry = await queryClient.fetchQuery({
           queryKey: ['profile:v2', session!.user.id],
-          queryFn: async () => {
+          queryFn: async (): Promise<Profile> => {
             const { data, error } = await supabase
               .from('profiles')
               .select('id, username, display_name, avatar_url')
@@ -39,107 +35,86 @@ export function useCurrentUserProfile() {
             return data as Profile
           }
         })
-        return result
+        return retry
       }
       return data as Profile
     },
-    // Prevent suspension during synchronous navigation
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
     suspense: false,
     throwOnError: false,
-    retry: 2,
-    staleTime: 30000
+    ...(OFFLINE_MODE && {
+      initialData: session?.user
+        ? {
+            id: session.user.id,
+            username: 'mock_user',
+            display_name: 'Mock User',
+            avatar_url: null,
+          }
+        : undefined,
+    }),
   })
 }
 
 // Keep the original useProfile signature for backward compatibility
 export const useProfile = (profileId: string | undefined) => {
-  
-  if (OFFLINE_MODE) {
-    const mockProfile: Profile = {
-      id: profileId || 'mock-id',
-      username: 'mock_user',
-      display_name: 'Mock User',
-      avatar_url: null,
-    };
-
-    return {
-      data: profileId ? mockProfile : undefined,
-      isLoading: false,
-      error: null,
-      isError: false,
-      isSuccess: !!profileId,
-    };
-  }
-
-  return useQuery({
+  return useQuery<Profile>({
     queryKey: ['profile:v2', profileId],
+    enabled: !!profileId,
     queryFn: async (): Promise<Profile> => {
-      if (!profileId) throw new Error('User ID is required');
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('id', profileId)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) {
-        console.warn(`Profile not found for user ${profileId}`);
-        throw new Error('Profile not found');
-      }
-      
-      return data as Profile;
+        .eq('id', profileId!)
+        .maybeSingle()
+      if (error) throw error
+      if (!data) throw new Error('Profile not found')
+      return data as Profile
     },
-    enabled: !!profileId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    // Prevent suspension during synchronous navigation
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
     suspense: false,
-    throwOnError: false
-  });
+    throwOnError: false,
+    ...(OFFLINE_MODE && {
+      initialData: profileId
+        ? {
+            id: profileId,
+            username: 'mock_user',
+            display_name: 'Mock User',
+            avatar_url: null,
+          }
+        : undefined,
+    }),
+  })
 };
 
 export const useProfileByUsername = (username: string | undefined) => {
-  
-  if (OFFLINE_MODE) {
-    const mockProfile: Profile = {
-      id: 'mock-id-' + username,
-      username: username || 'mock_user',
-      display_name: username || 'Mock User',
-      avatar_url: null,
-    };
-
-    return {
-      data: username ? mockProfile : undefined,
-      isLoading: false,
-      error: null,
-      isError: false,
-      isSuccess: !!username,
-    };
-  }
-
-  return useQuery({
+  return useQuery<Profile>({
     queryKey: ['profile-by-username', username],
+    enabled: !!username,
     queryFn: async (): Promise<Profile> => {
-      if (!username) throw new Error('Username is required');
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('username', username)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) throw new Error('Profile not found');
-      
-      return data as Profile;
+        .eq('username', username!)
+        .maybeSingle()
+      if (error) throw error
+      if (!data) throw new Error('Profile not found')
+      return data as Profile
     },
-    enabled: !!username,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 2,
-    // Prevent suspension during synchronous navigation
     suspense: false,
-    throwOnError: false
-  });
+    throwOnError: false,
+    ...(OFFLINE_MODE && {
+      initialData: username
+        ? {
+            id: 'mock-id-' + username,
+            username,
+            display_name: username,
+            avatar_url: null,
+          }
+        : undefined,
+    }),
+  })
 };

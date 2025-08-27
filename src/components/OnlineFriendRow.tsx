@@ -28,6 +28,7 @@ import { UserTag } from '@/components/ui/user-tag';
 import { PresenceBadge } from '@/components/ui/PresenceBadge';
 import { FriendShareToggle } from '@/components/friends/FriendShareToggle';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { Profile } from '@/types/profile';
 
 interface OnlineFriendRowProps {
   profileId: string;
@@ -38,6 +39,7 @@ interface OnlineFriendRowProps {
 export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFriendRowProps) => {
   const navigate = useNavigate();
   const { data: p, isLoading, isError } = useProfile(profileId);
+  const typedP = p as Profile | undefined;
   const statusMap = useFriendsPresence();
   const { data: sparklineData = [] } = useFriendSparkline(profileId);
   const status = statusMap[profileId];
@@ -81,8 +83,8 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   });
 
   const handleClick = () => {
-    if (p?.username) {
-      navigate(`/u/${p.username}`);
+    if (typedP?.username) {
+      navigate(`/u/${typedP.username}`);
     }
   };
 
@@ -114,10 +116,10 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
       >
         <div className="relative">
           <AvatarWithLoading
-            avatarPath={p.avatar_url}
-            displayName={p.display_name}
-            username={p.username}
-            profileId={p.id}
+            avatarPath={typedP?.avatar_url}
+            displayName={typedP?.display_name}
+            username={typedP?.username}
+            profileId={typedP?.id}
             size={32}
             className="h-8 w-8"
           />
@@ -138,7 +140,7 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
         {/* Main Content Section */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <UserTag profile={p} className="truncate font-medium" />
+            <UserTag profile={typedP as Profile} className="truncate font-medium" />
             {online
               ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
               : lastSeen && <PresenceBadge kind="lastSeen" ts={lastSeen} />}

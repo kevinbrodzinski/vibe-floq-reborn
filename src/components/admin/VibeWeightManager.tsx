@@ -40,28 +40,30 @@ export function VibeWeightManager() {
   const [selectedUserProfile, setSelectedUserProfile] = useState('');
 
   // Fetch global vibe weights
-  const { data: globalWeights, isLoading: globalLoading } = useQuery({
+  const { data: globalWeights, isLoading: globalLoading } = useQuery<VibeWeights[]>({
     queryKey: ['globalVibeWeights'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rec_vibe_weights')
         .select('*')
-        .order('vibe');
+        .order('vibe')
+        .returns<VibeWeights[]>()
       if (error) throw error;
-      return data as VibeWeights[];
+      return data ?? [];
     },
   });
 
   // Fetch user vibe weights
-  const { data: userWeights, isLoading: userLoading } = useQuery({
+  const { data: userWeights, isLoading: userLoading } = useQuery<UserVibeWeights[]>({
     queryKey: ['userVibeWeights'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rec_user_vibe_weights')
         .select('*')
-        .order('profile_id, vibe');
+        .order('profile_id, vibe')
+        .returns<UserVibeWeights[]>()
       if (error) throw error;
-      return data as UserVibeWeights[];
+      return data ?? [];
     },
   });
 

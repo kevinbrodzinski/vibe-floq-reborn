@@ -8,29 +8,25 @@ type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
 };
 
 export function usePlanStops(plan_id: string) {
-  return useQuery({
+  return useQuery<any[]>({
     queryKey: ['plan-stops', plan_id],
+    enabled: !!plan_id,
+    staleTime: 15000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('plan_stops')
         .select(`
-          *,
+          id, plan_id, title, description, start_time, end_time, location, color, status, vibe_match,
           venue:venues(*)
         `)
         .eq('plan_id', plan_id)
         .order('stop_order', { ascending: true, nullsFirst: false })
         .order('start_time', { ascending: true })
         .returns<PlanStopRow[]>()
-      
-      if (error) {
-        console.error('Plan stops fetch error:', error)
-        throw error
-      }
-      
-      return (data || []).map(mapPlanStopFromDb)
+
+      if (error) throw error
+      return (data ?? []).map(mapPlanStopFromDb)
     },
-    enabled: !!plan_id,
-    staleTime: 15000, // 15 seconds
-    refetchOnWindowFocus: false,
   })
 }

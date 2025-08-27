@@ -103,6 +103,7 @@ export interface FloqAutoMatch {
   userVibe: string;
   potentialMatches: Array<{
     user_id: string;
+    profile_id?: string; // <- add this for UI convenience
     vibe: string;
     checked_in_at: string;
     session_duration: string;
@@ -117,44 +118,47 @@ export interface FloqAutoMatch {
     matchReasons: string[];
   }>;
   floqSuggestions: Array<{
-    type: string;
     title: string;
     description: string;
+    reason: string;
+    primaryVibe: string;
+    confidence: number;
     suggestedMembers: Array<{
       profileId: string;
       username: string;
       avatar: string;
     }>;
-    primaryVibe: string;
-    confidence: number;
   }>;
   matchCount: number;
   timestamp: string;
 }
 
 export const useFloqAutoMatch = (profileId: string | null, venueId: string | null) => {
-  return useQuery({
-    queryKey: ["floq-auto-match", profileId, venueId],
-    queryFn: async (): Promise<FloqAutoMatch> => {
-      if (!profileId || !venueId) {
-        throw new Error("User ID and Venue ID are required");
-      }
-
-      const { data, error } = await supabase.functions.invoke(
-        "generate-floq-auto-match",
-        {
-          body: { profileId, venueId }
-        }
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
+  return useQuery<FloqAutoMatch>({
+    queryKey: ['floq-auto-match', profileId, venueId],
     enabled: !!profileId && !!venueId,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
-  });
-};
+    staleTime: 30000,
+    refetchInterval: 60000,
+    queryFn: async (): Promise<FloqAutoMatch> => {
+      const { data, error } = await supabase.functions.invoke('generate-floq-auto-match', {
+        body: { profileId, venueId },
+      })
+      if (error) throw error
+
+      // Map user_id -> profile_id for components that expect it
+      return {
+        ...data,
+        potentialMatches: (data?.potentialMatches ?? []).map((m: any) => ({
+          ...m,
+          profile_id: m.user_id,
+        })),
+        floqSuggestions: (data?.floqSuggestions ?? []).map((s: any) => ({
+          ...s,
+          primaryVibe: s.primaryVibe || 'social',
+          confidence: s.confidence || 0.8,
+          suggestedMembers: s.suggestedMembers || [],
+        })),
+      } as FloqAutoMatch
+    },
+  })
+}
