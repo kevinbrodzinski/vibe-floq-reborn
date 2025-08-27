@@ -15,9 +15,9 @@ export const usePlanParticipationRecorder = () => {
       const { data: existing } = await supabase
         .from('plan_participants')
         .select('id')
-        .eq('plan_id', planId)
-        .eq('profile_id', user.id)
-        .single();
+        .eq('plan_id', planId as any)
+        .eq('profile_id', user.id as any)
+        .maybeSingle();
 
       if (!existing) {
         // Record initial plan participation for afterglow
@@ -27,7 +27,7 @@ export const usePlanParticipationRecorder = () => {
             plan_id: planId,
             profile_id: user.id,
             joined_at: new Date().toISOString(),
-          });
+          } as any);
 
         if (participationError) {
           console.error('Failed to record plan participation:', participationError);
@@ -46,7 +46,7 @@ export const usePlanParticipationRecorder = () => {
             stop_id: stopId,
             participant_id: user.id,
             checked_in_at: new Date().toISOString(),
-          }, {
+          } as any, {
             onConflict: 'plan_id,stop_id,participant_id'
           });
 

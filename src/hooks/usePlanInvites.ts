@@ -23,7 +23,7 @@ export function usePlanInvites() {
           is_guest: false,
           role: 'participant',
           rsvp_status: 'pending'
-        })
+        } as any)
         .select()
         .single()
 
@@ -76,7 +76,7 @@ export function usePlanInvites() {
           role: 'participant',
           rsvp_status: 'pending',
           invited_at: null, // Will be set when actually sent
-        })
+        } as any)
         .select()
         .single()
 
@@ -105,8 +105,8 @@ export function usePlanInvites() {
       const { error } = await supabase
         .from('plan_participants')
         .delete()
-        .eq('id', participantId)
-        .eq('is_guest', true)
+        .eq('id', participantId as any)
+        .eq('is_guest', true as any)
 
       if (error) throw error
     },
@@ -133,8 +133,8 @@ export function usePlanInvites() {
       const { data: guests, error: fetchError } = await supabase
         .from('plan_participants')
         .select('id, guest_name, guest_email, guest_phone')
-        .eq('plan_id', planId)
-        .eq('is_guest', true)
+        .eq('plan_id', planId as any)
+        .eq('is_guest', true as any)
         .is('invited_at', null)
 
       if (fetchError) throw fetchError
@@ -151,18 +151,18 @@ export function usePlanInvites() {
         .from('floq_participants')
         .upsert(guests.map(g => ({
           floq_id: targetFloqId,
-          profile_id: g.id,
+          profile_id: (g as any).id,
           role: 'member' as const
-        })))
+        })) as any)
 
       if (error) throw error
 
       // Update the database to mark guests as invited
       const { error: updateError } = await supabase
         .from('plan_participants')
-        .update({ invited_at: new Date().toISOString() })
-        .eq('plan_id', planId)
-        .eq('is_guest', true)
+        .update({ invited_at: new Date().toISOString() } as any)
+        .eq('plan_id', planId as any)
+        .eq('is_guest', true as any)
         .is('invited_at', null)
 
       if (updateError) throw updateError

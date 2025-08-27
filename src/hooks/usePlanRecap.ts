@@ -67,16 +67,16 @@ export function usePlanRecap(planId: string) {
       const { data, error } = await supabase
         .from('plan_ai_summaries')
         .select('*')
-        .eq('plan_id', planId)
-        .single()
+        .eq('plan_id', planId as any)
+        .returns<any>()
       
       if (error && error.code !== 'PGRST116') {
         throw error
       }
       
       return data ? {
-        ...data,
-        suggestions: Array.isArray(data.suggestions) ? data.suggestions as unknown as PlanSuggestion[] : []
+        ...(data as any),
+        suggestions: Array.isArray((data as any).suggestions) ? (data as any).suggestions as unknown as PlanSuggestion[] : []
       } as PlanRecapData : null
     },
     refetchInterval: 3000,

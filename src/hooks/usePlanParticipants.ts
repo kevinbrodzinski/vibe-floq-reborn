@@ -87,7 +87,6 @@ export function usePlanParticipants(planId: string) {
     },
     enabled: !!planId,
     staleTime: 30000, // 30 seconds
-    suspense: false,
     throwOnError: false
   })
 }
@@ -201,13 +200,13 @@ export function useInviteParticipant() {
         }
       }
 
-      return data as PlanParticipant
+       return data && data.id ? data as PlanParticipant : null
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-participants', variables.planId] })
       queryClient.invalidateQueries({ queryKey: ['plan-details', variables.planId] })
       
-      const participantName = data.is_guest ? data.guest_name : data.profile?.display_name
+      const participantName = data?.is_guest ? data?.guest_name : data?.profile?.display_name
       toast({
         title: 'Participant Invited',
         description: `${participantName} has been invited to the plan`,
@@ -375,7 +374,6 @@ export function useRealtimePlanParticipants(planId: string) {
     queryKey: ['realtime-plan-participants', planId],
     queryFn: () => null, // This is just for the subscription
     enabled: false, // We don't actually fetch, just subscribe
-    suspense: false,
     throwOnError: false,
     meta: {
       subscription: () => {

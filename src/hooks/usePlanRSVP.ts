@@ -26,8 +26,8 @@ export function usePlanRSVP() {
         const { error } = await supabase
           .from('plan_participants')
           .delete()
-          .eq('plan_id', planId)
-          .eq('profile_id', user.id)
+          .eq('plan_id', planId as any)
+          .eq('profile_id', user.id as any)
 
         if (error) throw error
         return { action: 'removed' }
@@ -44,7 +44,7 @@ export function usePlanRSVP() {
               rsvp_status: status,
               notes: notes || null,
               responded_at: new Date().toISOString(),
-            },
+            } as any,
             { 
               onConflict: 'plan_id,profile_id',
               ignoreDuplicates: false 

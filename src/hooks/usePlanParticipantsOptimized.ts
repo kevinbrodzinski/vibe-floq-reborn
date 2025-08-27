@@ -42,7 +42,8 @@ export function usePlanParticipantsOptimized(planId: string) {
             avatar_url
           )
         `)
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
+        .returns<any>()
       
       if (error) {
         console.warn('[PlanParticipants] Join fallback due to:', error.message)
@@ -51,36 +52,38 @@ export function usePlanParticipantsOptimized(planId: string) {
         const { data: participants, error: participantsError } = await supabase
           .from('plan_participants')
           .select('*')
-          .eq('plan_id', planId)
+          .eq('plan_id', planId as any)
+          .returns<any>()
         
         if (participantsError) throw participantsError
         
         // Get unique profile IDs (excluding guests)
-        const profileIds = participants
-          ?.filter(p => !p.is_guest && p.profile_id)
-          .map(p => p.profile_id)
+        const profileIds = (participants as any[])
+          ?.filter((p: any) => !p.is_guest && p.profile_id)
+          .map((p: any) => p.profile_id)
           .filter(Boolean) || []
         
         if (profileIds.length === 0) {
-          return participants?.map(p => ({ ...p, profiles: null })) || []
+          return (participants as any[])?.map((p: any) => ({ ...p, profiles: null })) || []
         }
         
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
-          .in('id', profileIds)
+          .in('id', profileIds as any)
+          .returns<any>()
         
         if (profilesError) {
           console.warn('[PlanParticipants] Profiles fetch failed:', profilesError)
-          return participants?.map(p => ({ ...p, profiles: null })) || []
+          return (participants as any[])?.map((p: any) => ({ ...p, profiles: null })) || []
         }
         
         // Manually join the data
-        return participants?.map(participant => ({
+        return (participants as any[])?.map((participant: any) => ({
           ...participant,
           profiles: participant.is_guest 
             ? null 
-            : profiles?.find(profile => profile.id === participant.profile_id) || null
+            : (profiles as any[])?.find((profile: any) => (profile as any).id === (participant as any).profile_id) || null
         })) || []
       }
       

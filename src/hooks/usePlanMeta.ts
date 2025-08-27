@@ -20,11 +20,11 @@ export function usePlanMeta(planId: string, enabled = true) {
         .single();
       if (error) throw error;
       return {
-        total_stops: Number(data.total_stops),
-        confirmed_stops: Number(data.confirmed_stops),
-        participant_count: Number(data.participant_count),
-        total_duration_minutes: Number(data.total_duration_minutes),
-        estimated_cost_per_person: Number(data.estimated_cost_per_person),
+        total_stops: Number((data as any).total_stops),
+        confirmed_stops: Number((data as any).confirmed_stops),
+        participant_count: Number((data as any).participant_count),
+        total_duration_minutes: Number((data as any).total_duration_minutes),
+        estimated_cost_per_person: Number((data as any).estimated_cost_per_person),
       } as PlanMeta;
     },
   });

@@ -67,7 +67,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
             avatar_url
           )
         `)
-        .eq('plan_id', planId);
+        .eq('plan_id', planId as any);
 
       if (error) throw error;
 
