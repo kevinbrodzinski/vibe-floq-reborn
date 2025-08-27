@@ -189,7 +189,7 @@ export const CreateMessageDialog: React.FC<CreateMessageDialogProps> = ({
             </Button>
           </DialogTitle>
           <DialogDescription>
-            Search for someone to start a conversation with
+            Type names or usernames to find people you want to message
           </DialogDescription>
         </DialogHeader>
 
@@ -203,6 +203,11 @@ export const CreateMessageDialog: React.FC<CreateMessageDialogProps> = ({
               placeholder="Search friends or enter username..."
               className="pl-10 pr-8"
               autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchUsers.length === 1) {
+                  handleUserSelect(searchUsers[0]);
+                }
+              }}
             />
             {searchQuery && (
               <Button

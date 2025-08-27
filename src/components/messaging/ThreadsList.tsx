@@ -180,12 +180,12 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
               <TooltipTrigger asChild>
                 <Button
                   onClick={() => setCreateDialogOpen(true)}
-                  className="flex items-center gap-2 shrink-0"
+                  className="flex items-center gap-2 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200"
                   variant="default"
                   size="sm"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">New Message</span>
+                  <span className="inline">New Message</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -249,8 +249,28 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({
         )}
 
         {threadsToShow.length === 0 && !searchLoading && !isLoading && !isFetching && !error && (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            {debouncedSearch ? 'No matches found' : 'No conversations yet'}
+          <div className="p-8 text-center">
+            {debouncedSearch ? (
+              <div className="text-sm text-muted-foreground">No matches found</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <MessageCircle className="w-12 h-12 text-muted-foreground/50" />
+                  <h3 className="text-lg font-medium">No conversations yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    Start your first conversation by tapping the "New Message" button above
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setCreateDialogOpen(true)}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Start a conversation
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
