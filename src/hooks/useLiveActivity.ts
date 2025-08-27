@@ -31,14 +31,15 @@ export const useLiveActivity = (limit = 40) => {
       if (!data) return [];
       
       // Transform to PulseEvent format with actor info in meta
-      return data.map(event => {
+      return (data as any[]).map((event: any) => {
         const existingMeta = (event.meta as Record<string, unknown>) || {};
+        const profiles = event.profiles || {};
         return {
           ...event,
           meta: {
             ...existingMeta,
-            actor_name: event.profiles?.display_name || event.profiles?.username,
-            actor_avatar: event.profiles?.avatar_url
+            actor_name: profiles.display_name || profiles.username,
+            actor_avatar: profiles.avatar_url
           }
         } as PulseEvent;
       });

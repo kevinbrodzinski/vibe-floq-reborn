@@ -39,7 +39,7 @@ export interface FrequencyData {
 }
 
 export const useFrequencyData = (profileId: string | undefined) => {
-  return useQuery({
+  return useQuery<FrequencyData>({
     queryKey: ['frequency-data', profileId],
     queryFn: async (): Promise<FrequencyData> => {
       if (!profileId) return { venues: [], activities: [], locations: [] };
@@ -51,7 +51,7 @@ export const useFrequencyData = (profileId: string | undefined) => {
           venue_id,
           arrived_at
         `)
-        .eq('profile_id', profileId as ProfileId)
+        .eq('profile_id', profileId as any)
         .gte('arrived_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // Last 90 days
         .order('arrived_at', { ascending: false })
         .returns<Array<Pick<VenueStayRow, 'venue_id' | 'arrived_at'>>>();
@@ -78,7 +78,7 @@ export const useFrequencyData = (profileId: string | undefined) => {
       const { data: venues, error: venuesError } = await supabase
         .from('venues')
         .select('id, name, categories')
-        .in('id', topVenueIds as ReadonlyArray<VenueRow['id']>)
+        .in('id', topVenueIds as any)
         .returns<Array<Pick<VenueRow, 'id' | 'name' | 'categories'>>>();
 
       if (venuesError) throw venuesError;
@@ -99,7 +99,7 @@ export const useFrequencyData = (profileId: string | undefined) => {
           joined_at,
           floqs!inner(title, primary_vibe, ends_at)
         `)
-        .eq('profile_id', profileId as ProfileId)
+        .eq('profile_id', profileId as any)
         .gte('joined_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
         .order('joined_at', { ascending: false });
 
@@ -108,8 +108,9 @@ export const useFrequencyData = (profileId: string | undefined) => {
       const floqFrequency = new Map<string, { count: number; lastJoined: string; title: string; vibe?: string }>();
       (floqParticipation ?? []).forEach(participation => {
         const floq = (participation as any).floqs;
-        const floqId = String(participation.floq_id);
-        const joinedAt = String(participation.joined_at);
+        if (!participation || typeof participation !== 'object') return;
+        const floqId = String((participation as any).floq_id || '');
+        const joinedAt = String((participation as any).joined_at || '');
         const current = floqFrequency.get(floqId) || { 
           count: 0, 
           lastJoined: joinedAt,

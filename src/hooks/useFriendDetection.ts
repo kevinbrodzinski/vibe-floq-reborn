@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { FriendDetectionEngine } from '@/lib/friendDetection/FriendDetectionEngine';
 import type {
   FriendDetectionConfig,
@@ -131,8 +132,8 @@ export function useFriendSuggestions(profileId: string, options?: { limit?: numb
             avatar_url
           )
         `)
-        .eq('target_profile_id', profileId)
-        .eq('status', 'pending')
+        .eq('target_profile_id', profileId as any)
+        .eq('status', 'pending' as any)
         .gt('expires_at', new Date().toISOString())
         .order('score', { ascending: false })
         .limit(options?.limit || 10);
@@ -162,8 +163,8 @@ export function useFriendSuggestions(profileId: string, options?: { limit?: numb
         .update({
           status: response,
           responded_at: new Date().toISOString()
-        })
-        .eq('id', suggestionId);
+        } as any)
+        .eq('id', suggestionId as any);
 
       if (updateError) throw updateError;
 
@@ -179,10 +180,10 @@ export function useFriendSuggestions(profileId: string, options?: { limit?: numb
             .from('friendships')
             .insert({
               profile_low: userLow,
-              profile_high: userHigh,
+              profile_high: userHigh, 
               friend_state: 'accepted',
               responded_at: new Date().toISOString()
-            });
+            } as any);
 
           if (friendshipError) throw friendshipError;
         }
@@ -256,21 +257,22 @@ export function useFriendshipAnalysis(profileA: string, profileB: string) {
       const { data: existingAnalysis } = await supabase
         .from('friendship_analysis')
         .select('*')
-        .eq('profile_low', userLow)
-        .eq('profile_high', userHigh)
+        .eq('profile_low', userLow as any)
+        .eq('profile_high', userHigh as any)
         .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Within 24 hours
-        .single();
+        .maybeSingle();
 
       if (existingAnalysis) {
+        const analysis = existingAnalysis as any;
         setAnalysis({
-          user_low: existingAnalysis.profile_low,
-          user_high: existingAnalysis.profile_high,
-          overall_score: existingAnalysis.overall_score,
-          confidence_level: existingAnalysis.confidence_level as 'low' | 'medium' | 'high',
-          relationship_type: existingAnalysis.relationship_type as 'friend' | 'acquaintance' | 'close_friend' | 'best_friend',
-          signals_data: existingAnalysis.signals_data as Record<string, any>,
-          created_at: new Date(existingAnalysis.created_at),
-          updated_at: new Date(existingAnalysis.updated_at)
+          user_low: analysis.profile_low,
+          user_high: analysis.profile_high,
+          overall_score: analysis.overall_score,
+          confidence_level: analysis.confidence_level as 'low' | 'medium' | 'high',
+          relationship_type: analysis.relationship_type as 'friend' | 'acquaintance' | 'close_friend' | 'best_friend',
+          signals_data: analysis.signals_data as Record<string, any>,
+          created_at: new Date(analysis.created_at),
+          updated_at: new Date(analysis.updated_at)
         });
         return;
       }

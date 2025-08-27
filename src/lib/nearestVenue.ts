@@ -8,11 +8,20 @@ export type NearestVenue = {
   lng: number;
 };
 
-export async function fetchNearestVenue(lat: number, lng: number, maxM = 150): Promise<NearestVenue | null> {
+// Overload for object parameter
+export async function fetchNearestVenue(params: { lat: number; lng: number; maxDistanceM?: number }): Promise<NearestVenue | null>;
+// Overload for individual parameters  
+export async function fetchNearestVenue(lat: number, lng: number, maxM?: number): Promise<NearestVenue | null>;
+// Implementation
+export async function fetchNearestVenue(latOrParams: number | { lat: number; lng: number; maxDistanceM?: number }, lng?: number, maxM = 150): Promise<NearestVenue | null> {
+  // Handle both call signatures
+  const lat = typeof latOrParams === 'number' ? latOrParams : latOrParams.lat;
+  const lngValue = typeof latOrParams === 'number' ? lng! : latOrParams.lng;
+  const maxDistance = typeof latOrParams === 'number' ? maxM : (latOrParams.maxDistanceM ?? 150);
   const { data, error } = await supabase.rpc('rpc_nearest_venue', {
     in_lat: lat,
-    in_lng: lng,
-    in_max_distance_m: maxM,
+    in_lng: lngValue,
+    in_max_distance_m: maxDistance,
   });
   
   if (error) return null;

@@ -8,7 +8,7 @@ export function useIncognito(uid: string) {
       const { data, error } = await supabase
         .from('friend_share_pref')
         .select('is_live, ends_at')
-        .eq('profile_id', uid).maybeSingle();
+        .eq('profile_id', uid as any).maybeSingle();
       if (error) throw error;
       if (!data) return { is_live: true };
       return data;

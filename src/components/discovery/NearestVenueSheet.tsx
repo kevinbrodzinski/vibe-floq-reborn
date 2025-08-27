@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin, Waves } from 'lucide-react';
-import { fetchNearestVenue } from '@/lib/nearestVenue';
+import { fetchNearestVenue, type NearestVenue } from '@/lib/nearestVenue';
 
 export type NearestVenueSheetProps = {
   open: boolean;
@@ -31,7 +31,7 @@ export function NearestVenueSheet({
 }: NearestVenueSheetProps) {
   const enabled = open && !!coords;
   
-  const { data: venue, isLoading, isFetching, error } = useQuery({
+  const { data: venue, isLoading, isFetching, error } = useQuery<NearestVenue | null>({
     queryKey: ['nearestVenue', coords?.lat, coords?.lng, maxDistanceM],
     queryFn: async () => {
       if (!coords) return null;

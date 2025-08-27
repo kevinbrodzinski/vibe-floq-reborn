@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 
 export interface FriendshipInfo {
@@ -27,8 +28,8 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       const { data: friends } = await supabase
         .from('friendships')
         .select('*')
-        .eq('profile_low', profileLow)
-        .eq('profile_high', profileHigh)
+        .eq('profile_low', profileLow as any)
+        .eq('profile_high', profileHigh as any)
         .maybeSingle();
 
       if (!friends) {
@@ -42,22 +43,22 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       const { data: relationship } = await supabase
         .from('flock_relationships')
         .select('last_interaction_at')
-        .eq('user_a_id', userA)
-        .eq('user_b_id', userB)
+        .eq('user_a_id', userA as any)
+        .eq('user_b_id', userB as any)
         .maybeSingle();
 
       // Calculate days since last interaction
       let daysSinceLastHang = null;
-      if (relationship?.last_interaction_at) {
-        const lastInteraction = new Date(relationship.last_interaction_at);
+      if (relationship && (relationship as any).last_interaction_at) {
+        const lastInteraction = new Date((relationship as any).last_interaction_at);
         const now = new Date();
         const diffTime = Math.abs(now.getTime() - lastInteraction.getTime());
         daysSinceLastHang = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
 
       return {
-        friendsSince: friends.created_at,
-        lastInteraction: relationship?.last_interaction_at || null,
+        friendsSince: (friends as any).created_at,
+        lastInteraction: relationship ? (relationship as any).last_interaction_at || null : null,
         daysSinceLastHang,
         isFriend: true
       };

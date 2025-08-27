@@ -67,7 +67,7 @@ export function useIntelligentTimeSlots({
 }: UseIntelligentTimeSlotsOptions) {
   
   // Fetch venue data for intelligent recommendations
-  const { data: nearbyVenues = [], isLoading, error } = useQuery({
+  const { data: nearbyVenues = [], isLoading, error } = useQuery<any[]>({
     queryKey: ['nearby-venues', centerLocation, preferences.vibes],
     queryFn: async () => {
       if (!centerLocation) return []
@@ -88,20 +88,17 @@ export function useIntelligentTimeSlots({
           throw error
         }
         
-        return data || []
+        return (data as any[]) || []
       } catch (error) {
         console.error('Error in venue intelligence query:', error)
         // Return empty array instead of throwing to prevent suspension
-        return []
+        return [] as any[]
       }
     },
     enabled: !!centerLocation,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    // Prevent suspension during synchronous operations
-    suspense: false,
-    throwOnError: false
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   })
 
   // Generate intelligent time slots
@@ -137,7 +134,7 @@ export function useIntelligentTimeSlots({
           const slotAnalysis = analyzeTimeSlot({
             time: timeStr,
             date: planDate,
-            venues: nearbyVenues,
+            venues: nearbyVenues as any[],
             preferences,
             groupSize,
             existingStops
@@ -166,10 +163,10 @@ export function useIntelligentTimeSlots({
 
   // Smart venue suggestions for a specific time slot
   const getVenuesForTimeSlot = useCallback((timeSlot: string) => {
-    if (error || !nearbyVenues.length) return []
+    if (error || !(nearbyVenues as any[]).length) return []
     
     try {
-      return nearbyVenues
+      return (nearbyVenues as any[])
         .filter(venue => isVenueOpenAt(venue, planDate, timeSlot))
         .map(venue => ({
           ...venue,

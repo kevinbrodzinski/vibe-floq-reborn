@@ -26,8 +26,7 @@ export function useFriendSuggestions(limit = 10, geo?: { lat: number; lng: numbe
         } as any)
 
       if (error) throw error
-      // Map the response to match our expected interface
-      return (data || []).map((item: any) => ({
+      return (data as any || []).map((item: any) => ({
         id: item.profile_id || item.user_id,
         username: item.username,
         display_name: item.display_name,

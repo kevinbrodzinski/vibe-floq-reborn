@@ -13,12 +13,12 @@ export function useLastSeen(profileId: string) {
       const { data, error } = await supabase
         .from('v_friend_last_seen')
         .select('last_seen_at')
-        .eq('current_profile_id', user.id)
-        .eq('other_profile_id', profileId)
+        .eq('current_profile_id', user.id as any)
+        .eq('other_profile_id', profileId as any)
         .maybeSingle();
       
       if (error) throw error;
-      return data?.last_seen_at || null; // Always return string | null, never undefined
+      return (data as any)?.last_seen_at || null; // Always return string | null, never undefined
     },
     refetchInterval: 30_000,
     staleTime: 10_000 // Prevent excessive refetching

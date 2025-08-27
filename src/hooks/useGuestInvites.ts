@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import type { Database } from '@/integrations/supabase/types'
 import { useToast } from '@/hooks/use-toast'
 
 export interface GuestData {
@@ -48,7 +49,7 @@ export function useGuestInvites() {
           role: 'participant',
           rsvp_status: 'pending',
           invited_at: null, // Will be set when actually sent
-        })
+        } as any)
         .select()
         .single()
 
@@ -77,8 +78,8 @@ export function useGuestInvites() {
       const { error } = await supabase
         .from('plan_participants')
         .delete()
-        .eq('id', participantId)
-        .eq('is_guest', true)
+        .eq('id', participantId as any)
+        .eq('is_guest', true as any)
 
       if (error) throw error
     },
@@ -105,8 +106,8 @@ export function useGuestInvites() {
       const { data: guests, error: fetchError } = await supabase
         .from('plan_participants')
         .select('id, guest_name, guest_email, guest_phone')
-        .eq('plan_id', planId)
-        .eq('is_guest', true)
+        .eq('plan_id', planId as any)
+        .eq('is_guest', true as any)
         .is('invited_at', null)
 
       if (fetchError) throw fetchError
@@ -119,7 +120,7 @@ export function useGuestInvites() {
       const { data, error } = await supabase.functions.invoke('send-guest-invites', {
         body: {
           planId,
-          guests: guests.map(g => ({
+          guests: (guests as any[]).map((g: any) => ({
             id: g.id,
             name: g.guest_name,
             email: g.guest_email,
@@ -134,9 +135,9 @@ export function useGuestInvites() {
       // Update the database to mark guests as invited
       const { error: updateError } = await supabase
         .from('plan_participants')
-        .update({ invited_at: new Date().toISOString() })
-        .eq('plan_id', planId)
-        .eq('is_guest', true)
+        .update({ invited_at: new Date().toISOString() } as any)
+        .eq('plan_id', planId as any)
+        .eq('is_guest', true as any)
         .is('invited_at', null)
 
       if (updateError) throw updateError

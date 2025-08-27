@@ -18,7 +18,7 @@ export function useJoinPlan(planId?: string) {
         .insert({
           plan_id: planId,
           profile_id: user.id,
-        })
+        } as any)
 
       if (error) throw error
     },
