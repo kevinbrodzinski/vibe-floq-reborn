@@ -2,8 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from '@/integrations/supabase/types';
 
 import type { Vibe } from "@/types";
+
+type FloqDetailsReturn = Database['public']['Functions']['get_floq_full_details']['Returns']
+type FloqDetailsData = FloqDetailsReturn extends any[] ? FloqDetailsReturn[number] : FloqDetailsReturn
 
 export interface FloqParticipant {
   profile_id: string;
@@ -66,25 +70,27 @@ export function useFloqDetails(
   const { session } = useAuth();
   const user = session?.user;
 
-  const query = useQuery({
+  const query = useQuery<FloqDetails | null>({
     queryKey: ["floq-details", floqId, profileId || user?.id],
     enabled: enabled && !!floqId && !!(profileId || user?.id), // Wait for session to load
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
 
       // Use the database function for complete details
-      const { data: fullDetails, error } = await supabase.rpc('get_floq_full_details', {
-        p_floq_id: floqId
-      });
+      const { data: fullDetails, error } = await supabase
+        .rpc('get_floq_full_details', { p_floq_id: floqId })
+        .returns<FloqDetailsReturn>();
 
       if (error) {
         console.error('[useFloqDetails] Floq details error:', error);
         throw error;
       }
 
-      if (!fullDetails || fullDetails.length === 0) return null;
+      // Normalize: function may return an object or an array with one row
+      const row = Array.isArray(fullDetails) ? (fullDetails[0] ?? null) : (fullDetails ?? null);
+      if (!row) return null;
 
-      const floqData = fullDetails[0];
+      const floqData = row as any;
       const currentUserId = profileId || user?.id;
 
       // Safely parse participants array

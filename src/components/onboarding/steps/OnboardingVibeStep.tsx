@@ -18,7 +18,7 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
       toast({ title: 'Pick a vibe first', variant: 'destructive' });
       return;
     }
-    if (!VIBES.includes(selectedVibe as Vibe)) {
+    if (!vibeOptions.some(v => v.vibe === selectedVibe)) {
       toast({
         title: 'Invalid vibe selected',
         description: 'Please pick one of the listed vibe options.',

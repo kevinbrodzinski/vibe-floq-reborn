@@ -230,20 +230,21 @@ export const PulseScreen: React.FC = () => {
 
   /* 4-A · Apply filters to trending venues */
   const visibleTrending = useMemo(() => {
-    return trendingVenues.filter(v => {
+    const tv = Array.isArray(trendingVenues) ? (trendingVenues as any[]) : []
+    return tv.filter(v => {
       if (filters.has('walking') &&
-          v.distance_m != null &&
-          v.distance_m > WALKING_THRESHOLD_M) return false;
+          (v as any).distance_m != null &&
+          (v as any).distance_m > WALKING_THRESHOLD_M) return false;
 
       if (filters.has('highEnergy') &&
-          v.vibe_tag !== 'hype' &&
-          v.trend_score <= HIGH_ENERGY_SCORE) return false;
+          (v as any).vibe_tag !== 'hype' &&
+          (v as any).trend_score <= HIGH_ENERGY_SCORE) return false;
 
       if (filters.has('socialVibes') &&
-          v.vibe_tag !== 'social') return false;
+          (v as any).vibe_tag !== 'social') return false;
 
       if (filters.has('myFloqs') &&
-          !myFloqIds.has(v.venue_id)) return false;
+          !myFloqIds.has((v as any).venue_id)) return false;
 
       return true;
     });

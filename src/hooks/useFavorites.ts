@@ -74,14 +74,17 @@ export const useFavorites = () => {
         .single();
 
       if (error) throw error;
+      if (!data) throw new Error('No data returned');
+      const item = data as any;
+      
       return {
         user_id: user.id,
-        item_id: data.item_id,
-        item_type: data.item_type as 'venue' | 'plan',
-        created_at: data.created_at,
-        title: data.title,
-        description: data.description,
-        image_url: data.image_url,
+        item_id: item.item_id,
+        item_type: item.item_type as 'venue' | 'plan',
+        created_at: item.created_at,
+        title: item.title,
+        description: item.description,
+        image_url: item.image_url,
       };
     },
     onSuccess: () => {

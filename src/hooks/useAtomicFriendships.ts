@@ -19,10 +19,9 @@ export function useAtomicFriendships() {
       if (!targetUserId) throw new Error('Target user ID is required');
       if (currentUserId === targetUserId) throw new Error('Cannot send request to yourself');
 
-      // Use the enhanced rate-limited function
-      const { data, error } = await (supabase.rpc('send_friend_request_with_rate_limit', {
-        p_from_profile: currentUserId,
-        p_to_profile: targetUserId,
+      // Use the corrected send_friend_request function
+      const { data, error } = await (supabase.rpc('send_friend_request', {
+        _target: targetUserId
       }) as any);
 
       if (error) {
@@ -98,10 +97,9 @@ export function useAtomicFriendships() {
       if (!currentUserId) throw new Error('User not authenticated');
       if (!fromUserId) throw new Error('Requester user ID is required');
 
-      // Use enhanced atomic accept function to prevent race conditions
-      const { data, error } = await (supabase.rpc('accept_friend_request_atomic', {
-        p_requester_id: fromUserId,
-        p_accepter_id: currentUserId,
+      // Use the corrected accept_friend_request function
+      const { data, error } = await (supabase.rpc('accept_friend_request', {
+        _friend: fromUserId
       }) as any);
 
       if (error) {
@@ -239,8 +237,8 @@ export function useAtomicFriendships() {
       if (!currentUserId) throw new Error('User not authenticated');
 
       const { error } = await supabase.rpc('upsert_friendship', {
-        _other_user: targetUserId,
-        _new_state: 'blocked',
+        _other: targetUserId,
+        _action: 'blocked',
       });
 
       if (error) throw error;
@@ -306,14 +304,14 @@ export function useAtomicFriendships() {
       if (!currentUserId) throw new Error('User not authenticated');
 
       // Remove the blocked relationship entirely
-      const userLow = currentUserId < targetUserId ? currentUserId : targetUserId;
-      const userHigh = currentUserId < targetUserId ? targetUserId : currentUserId;
+      const profileLow = currentUserId < targetUserId ? currentUserId : targetUserId;
+      const profileHigh = currentUserId < targetUserId ? targetUserId : currentUserId;
 
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .eq('user_low', userLow as any)
-        .eq('user_high', userHigh as any)
+        .eq('profile_low', profileLow as any)
+        .eq('profile_high', profileHigh as any)
         .eq('friend_state', 'blocked' as any)
 
       if (error) throw error;
@@ -360,14 +358,14 @@ export function useAtomicFriendships() {
       if (!currentUserId) throw new Error('User not authenticated');
 
       // Remove the friendship entirely
-      const userLow = currentUserId < friendUserId ? currentUserId : friendUserId;
-      const userHigh = currentUserId < friendUserId ? friendUserId : currentUserId;
+      const profileLow = currentUserId < friendUserId ? currentUserId : friendUserId;
+      const profileHigh = currentUserId < friendUserId ? friendUserId : currentUserId;
 
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .eq('user_low', userLow as any)
-        .eq('user_high', userHigh as any)
+        .eq('profile_low', profileLow as any)
+        .eq('profile_high', profileHigh as any)
         .eq('friend_state', 'accepted' as any)
 
       if (error) throw error;

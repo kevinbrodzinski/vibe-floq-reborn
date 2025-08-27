@@ -108,16 +108,16 @@ export function FloqMemberList({ floqId }: { floqId: string }) {
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.profile?.avatar_url} />
+                      <AvatarImage src={member.profiles?.avatar_url} />
                       <AvatarFallback>
-                        {member.profile?.display_name?.charAt(0) || 'U'}
+                        {member.profiles?.display_name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
                         <span className="font-medium truncate">
-                          {member.profile?.display_name || member.profile?.username || 'Unknown'}
+                          {member.profiles?.display_name || member.profiles?.username || 'Unknown'}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {memberStatus.status === 'online' ? '🟢 Online' : 

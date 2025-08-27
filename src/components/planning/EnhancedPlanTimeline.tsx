@@ -102,7 +102,7 @@ export function EnhancedPlanTimeline({
     const totalStops = stops.length
     const hasConflicts = conflictCount > 0
     const hasLocation = !!planData.location
-    const activeParticipants = participants.filter(p => p.rsvp_status === 'attending').length
+    const activeParticipants = participants.filter(p => p.rsvp_status === 'yes').length
     
     return {
       totalStops,
@@ -358,7 +358,7 @@ export function EnhancedPlanTimeline({
               <CardContent>
                 <div className="flex items-center gap-3">
                   {participants
-                    .filter(p => p.rsvp_status === 'attending')
+                    .filter(p => p.rsvp_status === 'yes')
                     .slice(0, 6)
                     .map((participant) => (
                       <div key={participant.id} className="flex items-center gap-2">
@@ -371,9 +371,9 @@ export function EnhancedPlanTimeline({
                       </div>
                     ))}
                   
-                  {participants.filter(p => p.rsvp_status === 'attending').length > 6 && (
+                  {participants.filter(p => p.rsvp_status === 'yes').length > 6 && (
                     <Badge variant="secondary" className="text-xs">
-                      +{participants.filter(p => p.rsvp_status === 'attending').length - 6} more
+                      +{participants.filter(p => p.rsvp_status === 'yes').length - 6} more
                     </Badge>
                   )}
                 </div>

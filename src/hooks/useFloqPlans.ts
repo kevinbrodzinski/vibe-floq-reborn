@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanStatus } from '@/types/enums/planStatus';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface FloqPlan {
   id: string;
@@ -16,8 +17,11 @@ export interface FloqPlan {
   max_participants?: number;
 }
 
+type PlanRow = Database['public']['Tables']['floq_plans']['Row'];
+type FloqId = PlanRow['floq_id'];
+
 export function useFloqPlans(floqId: string) {
-  return useQuery({
+  return useQuery<FloqPlan[]>({
     queryKey: ['floq-plans', floqId],
     queryFn: async (): Promise<FloqPlan[]> => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -26,11 +30,13 @@ export function useFloqPlans(floqId: string) {
       const { data, error } = await supabase
         .from('floq_plans')
         .select('*')
-        .eq('floq_id', floqId)
-        .order('planned_at', { ascending: true });
+        .eq('floq_id', floqId as any)
+        .order('planned_at', { ascending: true })
+        .returns<PlanRow[]>();
 
       if (error) throw error;
-      return data || [];
+      // Map DB → domain type if your FloqPlan differs; otherwise cast
+      return (data || []) as unknown as FloqPlan[];
     },
     enabled: !!floqId,
     staleTime: 2 * 60 * 1000, // 2 minutes

@@ -9,29 +9,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, RotateCcw, Plus, Trash2 } from 'lucide-react';
 
-interface VibeWeights {
-  vibe: string;
-  w_distance: number;
-  w_rating: number;
-  w_popularity: number;
-  w_tag_match: number;
-  w_cuisine_match: number;
-  w_price_fit: number;
+interface VibeWeights { 
+  vibe: string; 
+  w_distance: number; 
+  w_rating: number; 
+  w_popularity: number; 
+  w_tag_match: number; 
+  w_cuisine_match: number; 
+  w_price_fit: number; 
   updated_at: string;
 }
 
-interface UserVibeWeights {
-  profile_id: string;
-  vibe: string;
-  weights: {
-    w_distance?: number;
-    w_rating?: number;
-    w_popularity?: number;
-    w_tag_match?: number;
-    w_cuisine_match?: number;
-    w_price_fit?: number;
-  };
-  updated_at: string;
+interface UserVibeWeights { 
+  profile_id: string; 
+  vibe: string; 
+  weights: { 
+    w_distance?: number; 
+    w_rating?: number; 
+    w_popularity?: number; 
+    w_tag_match?: number; 
+    w_cuisine_match?: number; 
+    w_price_fit?: number; 
+  }; 
+  updated_at: string; 
 }
 
 export function VibeWeightManager() {
@@ -40,28 +40,30 @@ export function VibeWeightManager() {
   const [selectedUserProfile, setSelectedUserProfile] = useState('');
 
   // Fetch global vibe weights
-  const { data: globalWeights, isLoading: globalLoading } = useQuery({
+  const { data: globalWeights, isLoading: globalLoading } = useQuery<VibeWeights[]>({
     queryKey: ['globalVibeWeights'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rec_vibe_weights')
         .select('*')
-        .order('vibe');
+        .order('vibe')
+        .returns<VibeWeights[]>()
       if (error) throw error;
-      return data as VibeWeights[];
+      return data ?? [];
     },
   });
 
   // Fetch user vibe weights
-  const { data: userWeights, isLoading: userLoading } = useQuery({
+  const { data: userWeights, isLoading: userLoading } = useQuery<UserVibeWeights[]>({
     queryKey: ['userVibeWeights'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rec_user_vibe_weights')
         .select('*')
-        .order('profile_id, vibe');
+        .order('profile_id, vibe')
+        .returns<UserVibeWeights[]>()
       if (error) throw error;
-      return data as UserVibeWeights[];
+      return data ?? [];
     },
   });
 
@@ -78,8 +80,8 @@ export function VibeWeightManager() {
           w_cuisine_match: weights.w_cuisine_match,
           w_price_fit: weights.w_price_fit,
           updated_at: new Date().toISOString(),
-        })
-        .eq('vibe', weights.vibe);
+        } as any)
+        .eq('vibe', weights.vibe as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -100,7 +102,7 @@ export function VibeWeightManager() {
           w_tag_match: 0.15,
           w_cuisine_match: 0.10,
           w_price_fit: 0.10,
-        });
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -115,7 +117,7 @@ export function VibeWeightManager() {
       const { error } = await supabase
         .from('rec_vibe_weights')
         .delete()
-        .eq('vibe', vibe);
+        .eq('vibe', vibe as any);
       if (error) throw error;
     },
     onSuccess: () => {

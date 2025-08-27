@@ -9,6 +9,8 @@ export type PlanParticipantWithProfile = {
   joined_at: string
   is_guest: boolean
   guest_name: string | null
+  rsvp_status?: 'yes' | 'no' | 'maybe' | 'pending' | null
+  display_name?: string
   profiles?: {
     id: string
     username: string | null
@@ -20,7 +22,7 @@ export type PlanParticipantWithProfile = {
 export function usePlanParticipantsOptimized(planId: string) {
   const queryClient = useQueryClient()
   
-  const query = useQuery({
+  const query = useQuery<PlanParticipantWithProfile[]>({
     queryKey: ['plan-participants', planId],
     queryFn: async () => {
       // Try the optimized join first

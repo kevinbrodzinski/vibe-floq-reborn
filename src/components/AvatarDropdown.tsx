@@ -31,6 +31,7 @@ import { WatchlistSheet } from './ui/WatchlistSheet';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { DiscoverSheet } from './friends/DiscoverSheet';
+import { Profile } from '@/types/profile';
 
 // Type for tracking which sheet is currently open
 type ActiveSheet = 'friends' | 'discover' | 'messages' | 'favorites' | 'watchlist' | null
@@ -54,6 +55,7 @@ export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => 
   const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + uc.cnt, 0);
   const totalNotifications = pendingIn.length + totalUnreadMessages;
   const { data: profile } = useProfile(user?.id);
+  const typedProfile = profile as Profile | undefined;
 
   // Get favorites and watchlist counts
   const { favorites } = useFavorites();
@@ -70,8 +72,8 @@ export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => 
           <div className="relative">
             <VibeGlowRing>
               <AvatarWithFallback
-                src={profile?.avatar_url ? getAvatarUrl(profile.avatar_url, 64) : null}
-                fallbackText={profile?.display_name || 'U'}
+                src={typedProfile?.avatar_url ? getAvatarUrl(typedProfile.avatar_url, 64) : null}
+                fallbackText={typedProfile?.display_name || 'U'}
                 className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
               />
             </VibeGlowRing>
@@ -222,8 +224,8 @@ export const AvatarDropdown = ({ onOpenNotifications }: AvatarDropdownProps) => 
           <div className="max-w-sm mx-auto">
             <h3 className="text-lg font-semibold text-center mb-4">Change Avatar</h3>
             <AvatarUpload
-              currentAvatarUrl={profile?.avatar_url}
-              displayName={profile?.display_name}
+              currentAvatarUrl={typedProfile?.avatar_url}
+              displayName={typedProfile?.display_name}
               onAvatarChange={async (newAvatarUrl) => {
                 // Update the database with new avatar URL
                 const { error } = await supabase

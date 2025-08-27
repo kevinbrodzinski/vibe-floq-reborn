@@ -11,4 +11,7 @@ export const VIBE_DESCRIPTIONS: Record<Vibe, string> = {
   open: "Curious and receptive to new experiences",
   curious: "Exploring with an open, inquisitive mindset",
   down: "Feeling low, needing comfort and understanding",
+  energetic: "Full of energy and vitality",
+  excited: "Thrilled and enthusiastic about what's ahead",
+  focused: "Concentrated and mentally sharp",
 };

@@ -49,11 +49,11 @@ export function RecentActivity() {
       const { data: recentFriends } = await supabase
         .from('friendships')
         .select(`
-          user_low,
-          user_high,
+          profile_low,
+          profile_high,
           created_at
         `)
-        .or(`user_low.eq.${user.id},user_high.eq.${user.id}`)
+        .or(`profile_low.eq.${user.id},profile_high.eq.${user.id}`)
         .eq('friend_state', 'accepted' as any)
         .gte('created_at', yesterday.toISOString())
         .order('created_at', { ascending: false })
@@ -73,7 +73,7 @@ export function RecentActivity() {
       const recentFriendsArr = Array.isArray(recentFriends) ? (recentFriends as any[]) : [];
       recentFriendsArr.forEach((friendship: any) => {
         // Get the other user's ID
-        const friendId = friendship.user_low === user.id ? friendship.user_high : friendship.user_low;
+        const friendId = friendship.profile_low === user.id ? friendship.profile_high : friendship.profile_low;
         activities.push({
           id: `friend-${friendship.created_at}`,
           type: 'friend_added',

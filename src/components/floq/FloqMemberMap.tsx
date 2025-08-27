@@ -89,8 +89,8 @@ export function FloqMemberMap({ floqId }: { floqId: string }) {
       
       return {
         id: member.profile_id,
-        name: member.profile.display_name || member.profile.username,
-        avatar: member.profile.avatar_url,
+        name: member.profiles?.display_name || member.profiles?.username,
+        avatar: member.profiles?.avatar_url,
         status: ['online', 'away', 'busy', 'offline'][Math.floor(Math.random() * 4)] as any,
         location,
         distance: Math.floor(Math.random() * 5000),

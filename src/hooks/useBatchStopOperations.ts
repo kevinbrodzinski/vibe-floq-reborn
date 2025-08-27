@@ -3,6 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { addMinutes, format, parseISO } from 'date-fns'
+import type { Database } from '@/integrations/supabase/types'
+import { useAuth } from '@/hooks/useAuth'
+
+type PlanStopRow = Database['public']['Tables']['plan_stops']['Row']
+type PlanStopInsert = Database['public']['Tables']['plan_stops']['Insert']
+type PlanActivityInsert = Database['public']['Tables']['plan_activities']['Insert']
 
 interface BatchOperation {
   type: 'move' | 'delete' | 'duplicate' | 'update_time' | 'update_venue'
@@ -17,6 +23,7 @@ interface BatchTimeUpdate {
 }
 
 export function useBatchStopOperations(planId: string) {
+  const { user } = useAuth();
   const [selectedStopIds, setSelectedStopIds] = useState<Set<string>>(new Set())
   const [batchMode, setBatchMode] = useState(false)
   const queryClient = useQueryClient()
@@ -58,7 +65,7 @@ export function useBatchStopOperations(planId: string) {
       const { error } = await supabase
         .from('plan_stops')
         .delete()
-        .in('id', stopIds)
+        .in('id', stopIds as any[])
 
       if (error) {
         throw new Error(`Failed to delete stops: ${error.message}`)
@@ -66,16 +73,16 @@ export function useBatchStopOperations(planId: string) {
 
       // Log activities
       try {
-        const activities = stopIds.map(stopId => ({
+        const activities: PlanActivityInsert[] = stopIds.map(stopId => ({
           plan_id: planId,
           activity_type: 'stop_deleted',
           activity_data: {
             stop_id: stopId,
             source: 'batch_operation'
-          }
+          } as any
         }))
         
-        await supabase.from('plan_activities').insert(activities)
+        await supabase.from('plan_activities').insert(activities as any[])
       } catch (activityError) {
         console.warn('Failed to log batch delete activities:', activityError)
       }
@@ -108,14 +115,14 @@ export function useBatchStopOperations(planId: string) {
       const { data: stopsToClone, error: fetchError } = await supabase
         .from('plan_stops')
         .select('*')
-        .in('id', stopIds)
+        .in('id', stopIds as any[])
 
       if (fetchError || !stopsToClone) {
         throw new Error(`Failed to fetch stops: ${fetchError?.message}`)
       }
 
       // Create duplicates with adjusted times
-      const duplicates = stopsToClone.map((stop, index) => {
+      const duplicates = stopsToClone.map((stop: any, index) => {
         // Add 30 minutes to start time for each duplicate
         const originalStart = parseISO(`2000-01-01T${stop.start_time}`)
         const newStart = addMinutes(originalStart, 30 * (index + 1))
@@ -127,6 +134,8 @@ export function useBatchStopOperations(planId: string) {
 
         return {
           plan_id: planId,
+          created_by: user?.id || 'system',
+          stop_order: index + 1,
           title: `${stop.title} (Copy)`,
           description: stop.description,
           start_time: newStartTime,
@@ -135,12 +144,12 @@ export function useBatchStopOperations(planId: string) {
           estimated_cost_per_person: stop.estimated_cost_per_person,
           venue_id: stop.venue_id,
           venue_data: stop.venue_data
-        }
+        } as any as PlanStopInsert
       })
 
       const { data: newStops, error } = await supabase
         .from('plan_stops')
-        .insert(duplicates)
+        .insert(duplicates as any[])
         .select()
 
       if (error) {
@@ -156,7 +165,7 @@ export function useBatchStopOperations(planId: string) {
       
       toast({
         title: 'Stops Duplicated',
-        description: `${newStops.length} stops duplicated with adjusted times`,
+        description: `${newStops?.length || 0} stops duplicated with adjusted times`,
       })
     },
     onError: (error: Error) => {
@@ -180,18 +189,18 @@ export function useBatchStopOperations(planId: string) {
         const { data: currentStop, error: fetchError } = await supabase
           .from('plan_stops')
           .select('start_time, end_time, duration_minutes')
-          .eq('id', stopId)
+          .eq('id', stopId as any)
           .single()
 
-        if (fetchError) {
-          throw new Error(`Failed to fetch stop ${stopId}: ${fetchError.message}`)
+        if (fetchError || !currentStop) {
+          throw new Error(`Failed to fetch stop ${stopId}: ${fetchError?.message}`)
         }
 
         // Calculate new end time
         let newEndTime = newStartTime
-        if (currentStop.duration_minutes) {
+        if ((currentStop as any).duration_minutes) {
           const startDateTime = parseISO(`2000-01-01T${newStartTime}`)
-          const endDateTime = addMinutes(startDateTime, currentStop.duration_minutes)
+          const endDateTime = addMinutes(startDateTime, (currentStop as any).duration_minutes)
           newEndTime = format(endDateTime, 'HH:mm')
         }
 
@@ -201,8 +210,8 @@ export function useBatchStopOperations(planId: string) {
             start_time: newStartTime,
             end_time: newEndTime,
             updated_at: new Date().toISOString()
-          })
-          .eq('id', stopId)
+          } as any)
+          .eq('id', stopId as any)
           .select()
           .single()
 
@@ -249,7 +258,7 @@ export function useBatchStopOperations(planId: string) {
       const { data: stops, error: fetchError } = await supabase
         .from('plan_stops')
         .select('id, start_time, end_time, duration_minutes')
-        .in('id', stopIds)
+        .in('id', stopIds as any)
         .order('start_time')
 
       if (fetchError || !stops) {
@@ -261,7 +270,7 @@ export function useBatchStopOperations(planId: string) {
       let currentTime = newStartTime
 
       for (let i = 0; i < stops.length; i++) {
-        const stop = stops[i]
+        const stop = stops[i] as any
         updates.push({
           stopId: stop.id,
           newStartTime: currentTime
@@ -270,7 +279,7 @@ export function useBatchStopOperations(planId: string) {
         if (maintainSpacing && i < stops.length - 1) {
           // Calculate gap to next stop
           const currentStart = parseISO(`2000-01-01T${stop.start_time}`)
-          const nextStart = parseISO(`2000-01-01T${stops[i + 1].start_time}`)
+          const nextStart = parseISO(`2000-01-01T${(stops[i + 1] as any).start_time}`)
           const gapMinutes = (nextStart.getTime() - currentStart.getTime()) / (1000 * 60)
           
           // Add stop duration plus gap for next start time

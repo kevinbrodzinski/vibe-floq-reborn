@@ -20,15 +20,15 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       }
 
       // Check friendship using the friendships table 
-      // Use canonical ordering: user_low is always the smaller UUID
-      const userLow = currentUserId < profileId ? currentUserId : profileId;
-      const userHigh = currentUserId < profileId ? profileId : currentUserId;
+      // Use canonical ordering: profile_low is always the smaller UUID
+      const profileLow = currentUserId < profileId ? currentUserId : profileId;
+      const profileHigh = currentUserId < profileId ? profileId : currentUserId;
       
       const { data: friends } = await supabase
         .from('friendships')
         .select('*')
-        .eq('user_low', userLow)
-        .eq('user_high', userHigh)
+        .eq('profile_low', profileLow)
+        .eq('profile_high', profileHigh)
         .maybeSingle();
 
       if (!friends) {

@@ -135,11 +135,12 @@ export function SmartVenueRecommendationsPanel({
       format(addMinutes(parseISO(`${planDate}T${startTime}`), 90), 'HH:mm')
 
     createPlanStop.mutate({
-      planId,
-      venueId: venue.id,
-      startTime,
-      endTime,
-      notes: `Added via smart recommendations - ${venue.match_score}% match`
+      plan_id: planId,
+      venue_id: venue.id,
+      start_time: startTime,
+      end_time: endTime,
+      title: venue.name || 'Stop',
+      description: `Added via smart recommendations - ${venue.match_score}% match`
     }, {
       onSuccess: () => {
         onVenueSelect?.(venue, timeSlot)

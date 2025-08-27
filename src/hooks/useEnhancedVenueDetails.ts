@@ -56,53 +56,28 @@ export interface EnhancedVenueDetails {
   timestamp: string;
 }
 
-export const useEnhancedVenueDetails = (venueId: string | null) => {
-  return useQuery({
-    queryKey: ["enhanced-venue-details", venueId],
-    queryFn: async (): Promise<EnhancedVenueDetails> => {
-      if (!venueId) {
-        throw new Error("Venue ID is required");
-      }
-
-      console.log('useEnhancedVenueDetails calling edge function for:', venueId);
-
-      const { data, error } = await supabase.functions.invoke(
-        "get-venue-intelligence",
-        {
-          body: { venue_id: venueId, mode: "energy" }
-        }
-      );
-
-      if (error) {
-        console.error('useEnhancedVenueDetails error:', error);
-        throw error;
-      }
-
-      if (!data) {
-        console.error('useEnhancedVenueDetails: no data returned');
-        throw new Error("No venue data found");
-      }
-
-      console.log('useEnhancedVenueDetails success:', data.name, data.people_count, 'people');
-      return data;
-    },
+export const useEnhancedVenueDetails = (venueId: string | null) =>
+  useQuery<EnhancedVenueDetails>({
+    queryKey: ['enhanced-venue-details', venueId],
     enabled: !!venueId,
-    staleTime: 15000, // 15 seconds
-    refetchInterval: 30000, // Refetch every 30 seconds for live data
-    retry: (failureCount, error) => {
-      console.log('useEnhancedVenueDetails retry attempt:', failureCount, error?.message);
-      // Don't retry on 404s
-      if (error?.message?.includes('not found')) return false;
-      return failureCount < 2;
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    retry: (n, e: any) => (e?.message?.includes('not found') ? false : n < 2),
+    queryFn: async (): Promise<EnhancedVenueDetails> => {
+      const { data, error } = await supabase.functions.invoke('get-venue-intelligence', {
+        body: { venue_id: venueId, mode: 'energy' },
+      })
+      if (error) throw error
+      if (!data) throw new Error('No venue data found')
+      return data as EnhancedVenueDetails
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
-};
 
 export interface FloqAutoMatch {
   userVibe: string;
   potentialMatches: Array<{
     user_id: string;
+    profile_id?: string; // <- add this for UI convenience
     vibe: string;
     checked_in_at: string;
     session_duration: string;
@@ -117,44 +92,36 @@ export interface FloqAutoMatch {
     matchReasons: string[];
   }>;
   floqSuggestions: Array<{
-    type: string;
     title: string;
     description: string;
+    reason: string;
+    primaryVibe: string;
+    confidence: number;
     suggestedMembers: Array<{
       profileId: string;
       username: string;
       avatar: string;
     }>;
-    primaryVibe: string;
-    confidence: number;
   }>;
   matchCount: number;
   timestamp: string;
 }
 
-export const useFloqAutoMatch = (profileId: string | null, venueId: string | null) => {
-  return useQuery({
-    queryKey: ["floq-auto-match", profileId, venueId],
-    queryFn: async (): Promise<FloqAutoMatch> => {
-      if (!profileId || !venueId) {
-        throw new Error("User ID and Venue ID are required");
-      }
-
-      const { data, error } = await supabase.functions.invoke(
-        "generate-floq-auto-match",
-        {
-          body: { profileId, venueId }
-        }
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
+export const useFloqAutoMatch = (profileId: string | null, venueId: string | null) =>
+  useQuery<FloqAutoMatch>({
+    queryKey: ['floq-auto-match', profileId, venueId],
     enabled: !!profileId && !!venueId,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
-  });
-};
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    queryFn: async (): Promise<FloqAutoMatch> => {
+      const { data, error } = await supabase.functions.invoke('generate-floq-auto-match', {
+        body: { profileId, venueId },
+      })
+      if (error) throw error
+      // map user_id → profile_id for UI that expects profile_id
+      return {
+        ...data,
+        potentialMatches: (data?.potentialMatches ?? []).map((m: any) => ({ ...m, profile_id: m.user_id })),
+      } as FloqAutoMatch
+    },
+  })

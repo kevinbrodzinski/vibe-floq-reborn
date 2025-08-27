@@ -80,8 +80,8 @@ const acceptFriendRequest = async (fromUserId: string) => {
 
   // Create the bidirectional friendship
   const { error: friendshipError } = await supabase.rpc('upsert_friendship', {
-    _other_user: fromUserId,
-    _new_state: 'accepted'
+    _other: fromUserId,
+    _action: 'accepted'
   });
 
   if (friendshipError) throw friendshipError;
@@ -89,8 +89,8 @@ const acceptFriendRequest = async (fromUserId: string) => {
 
 const blockUser = async (targetUserId: string) => {
   const { error } = await supabase.rpc('upsert_friendship', {
-    _other_user: targetUserId,
-    _new_state: 'blocked'
+    _other: targetUserId,
+    _action: 'blocked'
   });
   
   if (error) throw error;
@@ -146,7 +146,7 @@ export function useUnifiedFriends() {
       .on(
         'postgres_changes',
         { event:'*', schema:'public', table:'friendships',
-          filter:`user_low=eq.${uid},user_high=eq.${uid}` },
+          filter:`profile_low=eq.${uid},profile_high=eq.${uid}` },
         invalidate
       )
       .on(

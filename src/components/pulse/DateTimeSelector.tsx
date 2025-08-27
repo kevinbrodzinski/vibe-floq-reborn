@@ -26,9 +26,9 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
     const now = new Date();
     const currentHour = now.getHours();
     
-    const options = [
+    const options: { key: TimeOption; label: string; description: string }[] = [
       {
-        key: 'now' as const,
+        key: 'now',
         label: 'Now',
         description: 'Within the next 2 hours'
       }

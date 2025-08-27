@@ -125,6 +125,7 @@ export function SmartConflictResolver({
       for (const change of suggestion.changes) {
         await updateStop({
           id: change.stopId,
+          plan_id: planId,
           [change.field]: change.suggestedValue
         })
       }

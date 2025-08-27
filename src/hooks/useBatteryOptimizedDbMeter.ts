@@ -106,9 +106,11 @@ export const useBatteryOptimizedDbMeter = (pulseInterval: number = 30000) => {
   // Take a single dB reading
   const takeReading = useCallback(() => {
     if (!analyserRef.current || !dataArrayRef.current) return;
-
-    analyserRef.current.getByteFrequencyData(dataArrayRef.current!);
-    const dbLevel = calculateDbLevel(dataArrayRef.current!);
+    
+    // Create a proper Uint8Array to avoid buffer type conflicts
+    const dataArray = new Uint8Array(dataArrayRef.current.length);
+    analyserRef.current.getByteFrequencyData(dataArray);
+    const dbLevel = calculateDbLevel(dataArray);
     
     const reading: DbReading = {
       level: dbLevel,

@@ -12,6 +12,7 @@ interface ExecutionPlanHeaderProps {
 export function ExecutionPlanHeader({ planId, currentStopIndex, progress }: ExecutionPlanHeaderProps) {
   const { data: stops = [] } = usePlanStops(planId)
   const { data: participants = [] } = usePlanParticipants(planId)
+  const typedParticipants = participants as any[]
   
   const currentStop = stops[currentStopIndex]
   const totalStops = stops.length
@@ -54,7 +55,7 @@ export function ExecutionPlanHeader({ planId, currentStopIndex, progress }: Exec
           
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            <span>{participants.length} participants</span>
+            <span>{typedParticipants.length} participants</span>
           </div>
           
           {currentStop.address && (

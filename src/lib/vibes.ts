@@ -11,6 +11,9 @@ export const VIBES = [
   'open',
   'down',
   'curious',
+  'energetic',
+  'excited',
+  'focused',
 ] as const;
 
 import { Database } from '@/integrations/supabase/types';
@@ -57,6 +60,9 @@ export const VIBE_RGB: Record<Vibe, [number, number, number]> = {
   open:    [175,  82, 222],
   down:    [ 88,  86, 214],
   curious: [255, 193,   7], // Yellow-orange for curiosity
+  energetic:[255, 165,   0], // Orange for energy
+  excited: [255,  20, 147], // Deep pink for excitement
+  focused: [ 50, 205,  50], // Lime green for focus
 };
 
 // RGB colors converted to CSS rgb() format for consistency
@@ -71,4 +77,7 @@ export const VIBE_COLORS: Record<Vibe, string> = {
   open:     `rgb(${VIBE_RGB.open.join(', ')})`,
   down:     `rgb(${VIBE_RGB.down.join(', ')})`,
   curious:  `rgb(${VIBE_RGB.curious.join(', ')})`,
+  energetic:`rgb(${VIBE_RGB.energetic.join(', ')})`,
+  excited:  `rgb(${VIBE_RGB.excited.join(', ')})`,
+  focused:  `rgb(${VIBE_RGB.focused.join(', ')})`,
 };

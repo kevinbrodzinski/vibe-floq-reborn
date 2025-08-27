@@ -11,7 +11,7 @@ export function useFloqBoost() {
         floq_id: floqId,
         boost_type: 'vibe',
         profile_id: user.user.id
-      })
+      } as any)
       if (error) throw error
     }
   })

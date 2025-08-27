@@ -1,30 +1,52 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+// src/hooks/useMyLiveFloqs.ts
+import { useEffect, useState } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { supabase as defaultClient } from '@/integrations/supabase/client'
+import type { Database } from '@/integrations/supabase/types'
 
-export type MyLiveFloq = {
-  id: string;
-  name: string | null;
-  status: 'live' | 'ending' | 'ended' | 'cancelled';
-  ends_at: string | null;
-  is_creator: boolean;
-  participants: number;
-};
+type RpcReturn = Database['public']['Functions']['rpc_my_live_floqs']['Returns']
 
-export function useMyLiveFloqs() {
-  const [data, setData] = useState<MyLiveFloq[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Public type (keep the branch’s name)
+export type MyLiveFloq = RpcReturn extends Array<infer E> ? E : RpcReturn
 
-  async function fetchOnce() {
-    setLoading(true);
-    setError(null);
-    const { data, error } = await supabase.rpc('rpc_my_live_floqs');
-    if (error) setError(error.message);
-    setData((data ?? null) as MyLiveFloq[] | null);
-    setLoading(false);
+type Result = {
+  data: MyLiveFloq[] | null
+  loading: boolean
+  error: Error | null
+  refetch: () => Promise<void>
+}
+
+// Overloads: DI-first (preferred), singleton fallback supported
+export function useMyLiveFloqs(client: SupabaseClient): Result
+export function useMyLiveFloqs(): Result
+
+export function useMyLiveFloqs(a?: SupabaseClient): Result {
+  const client = a ?? defaultClient
+
+  const [data, setData] = useState<MyLiveFloq[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setErr] = useState<Error | null>(null)
+
+  const fetchOnce = async () => {
+    setLoading(true)
+    setErr(null)
+    try {
+      const { data, error } = await client
+        .rpc('rpc_my_live_floqs')
+        .returns<RpcReturn>()
+      if (error) throw new Error(error.message)
+
+      // Normalize: some RPCs return an array; others may return a single row
+      const rows = Array.isArray(data) ? data : (data ? [data] : [])
+      setData((rows ?? null) as MyLiveFloq[] | null)
+    } catch (e: any) {
+      setErr(e instanceof Error ? e : new Error(String(e)))
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => { fetchOnce(); }, []);
+  useEffect(() => { fetchOnce() }, [client])
 
-  return { data, loading, error, refetch: fetchOnce };
+  return { data, loading, error: setErr ? error : null, refetch: fetchOnce }
 }

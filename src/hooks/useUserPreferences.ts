@@ -22,25 +22,24 @@ export interface UserPreferences {
  * Hook to fetch user preferences
  */
 export function useUserPreferences(profileId?: string) {
-  return useQuery({
+  return useQuery<UserPreferences | null>({
     queryKey: ['user-preferences', profileId],
     enabled: !!profileId,
-    queryFn: async () => {
+    queryFn: async (): Promise<UserPreferences | null> => {
+      if (!profileId) return null
       const { data, error } = await supabase
         .from('user_preferences')
-        .select('checkin_streak')
-        .eq('profile_id', profileId!)
-        .maybeSingle();
+        .select('checkin_streak, prefer_smart_suggestions, preferred_vibe, onboarding_version')
+        .eq('profile_id', profileId as any)
+        .maybeSingle()
 
-      if (error) throw error;
-      return data as UserPreferences | null;
+      if (error) throw error
+      return (data as UserPreferences) ?? null
     },
     staleTime: 300000, // 5 minutes
-    // Prevent suspension during synchronous navigation
-    suspense: false,
     throwOnError: false,
     retry: 2
-  });
+  })
 }
 
 /**

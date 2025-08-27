@@ -1,7 +1,7 @@
 export interface FriendRow {
   id: string;
-  user_low: string;
-  user_high: string;
+  profile_low: string;
+  profile_high: string;
   created_at: string;
 }
 

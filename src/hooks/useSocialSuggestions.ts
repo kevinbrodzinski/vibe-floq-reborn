@@ -4,6 +4,7 @@ import { useNearbyPeople } from './useNearbyPeople'
 import { useMemo } from 'react'
 
 export interface SocialSuggestion {
+  id: string           // Mapped from friend_id
   friend_id: string
   display_name: string
   avatar_url: string | null
@@ -33,6 +34,7 @@ export const useSocialSuggestions = (lat?: number, lng?: number) => {
       if ((p.profile_id || p.synthetic_id) && Number.isFinite(p.meters)) {  // only add valid entries
         const uniqueId = p.profile_id || p.synthetic_id!
         map.set(uniqueId, {
+          id: uniqueId,            // Map to id field for compatibility
           friend_id: p.profile_id || p.synthetic_id!,
           display_name: p.profile_id ? `User ${p.profile_id.slice(-4)}` : 'Nearby user',
           avatar_url: null,
@@ -44,7 +46,11 @@ export const useSocialSuggestions = (lat?: number, lng?: number) => {
         })
       }
     })
-    friends.forEach((f: SocialSuggestion) => map.set(f.friend_id, f)) // overrides duplicates
+    friends.forEach((f: SocialSuggestion) => {
+      // Ensure friends also have id field
+      const friendWithId = { ...f, id: f.friend_id || f.id }
+      map.set(friendWithId.friend_id, friendWithId)
+    }) // overrides duplicates
     return [...map.values()].sort((a, b) => a.distance_m - b.distance_m)
   }, [people, friends])
 

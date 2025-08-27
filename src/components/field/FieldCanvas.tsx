@@ -730,7 +730,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         // 1️⃣ empty the pool first (all Graphics still have a context)
         try {
-          graphicsPoolRef.current?.releaseAll();
+          if (graphicsPoolRef.current && typeof graphicsPoolRef.current.releaseAll === "function") {
+            graphicsPoolRef.current.releaseAll();
+          }
         } catch (e) {
           console.warn('[CLEANUP] Error releasing graphics pool:', e);
         }
@@ -739,7 +741,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         try {
           heatContainerRef.current?.removeChildren();
           peopleContainerRef.current?.removeChildren();
-          tilePoolRef.current?.clearAll();
+          if (tilePoolRef.current && typeof tilePoolRef.current.clearAll === "function") {
+            tilePoolRef.current.clearAll();
+          }
         } catch (e) {
           console.warn('[CLEANUP] Error clearing containers:', e);
         }

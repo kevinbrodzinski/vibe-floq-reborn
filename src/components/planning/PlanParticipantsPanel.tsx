@@ -129,11 +129,11 @@ export function PlanParticipantsPanel({ planId, isCreator, className }: PlanPart
   useRealtimePlanParticipants(planId)
 
   // Current user's participant record
-  const currentUserParticipant = participants.find(p => p.profile_id === user?.id)
+  const currentUserParticipant = (participants as any[]).find(p => p.profile_id === user?.id)
 
   // Filtered participants
   const filteredParticipants = useMemo(() => {
-    return participants.filter(participant => {
+    return (participants as any[]).filter(participant => {
       const matchesSearch = searchQuery === '' || 
         (participant.profile?.display_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (participant.profile?.username?.toLowerCase().includes(searchQuery.toLowerCase())) ||

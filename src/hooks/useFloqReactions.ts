@@ -20,14 +20,14 @@ export async function toggleReaction(
   if (isAdding) {
     await supabase
       .from('floq_message_reactions')
-      .insert({ message_id: messageId, emoji, profile_id: user.id });
+      .insert({ message_id: messageId, emoji, profile_id: user.id } as any);
   } else {
     await supabase
       .from('floq_message_reactions')
       .delete()
-      .eq('message_id', messageId)
-      .eq('profile_id', user.id)
-      .eq('emoji', emoji);
+      .eq('message_id', messageId as any)
+      .eq('profile_id', user.id as any)
+      .eq('emoji', emoji as any);
   }
 }
 
@@ -41,7 +41,7 @@ export function useReactions(floqId: string) {
       const { data: messages, error: messagesError } = await supabase
         .from('floq_messages')
         .select('id')
-        .eq('floq_id', floqId);
+        .eq('floq_id', floqId as any);
 
       if (messagesError) throw messagesError;
 
@@ -49,7 +49,7 @@ export function useReactions(floqId: string) {
         return {};
       }
 
-      const messageIds = messages.map((m: { id: string }) => m.id);
+      const messageIds = messages.map((m: any) => m.id);
 
       // Use server-side aggregation RPC
       const { data, error } = await supabase.rpc('get_message_reactions', { ids: messageIds });
@@ -60,12 +60,12 @@ export function useReactions(floqId: string) {
         const { data: reactionData, error: reactionError } = await supabase
           .from('floq_message_reactions')
           .select('message_id, emoji, profile_id')
-          .in('message_id', messageIds);
+          .in('message_id', messageIds as any);
 
         if (reactionError) throw reactionError;
 
         const result: Record<string, Record<string, number>> = {};
-        (reactionData || []).forEach((reaction: { message_id: string; emoji: string; profile_id: string }) => {
+        (reactionData || []).forEach((reaction: any) => {
           if (!result[reaction.message_id]) {
             result[reaction.message_id] = {};
           }
@@ -79,7 +79,7 @@ export function useReactions(floqId: string) {
 
       // Shape to { [messageId]: { '❤️':2,'👍':1 } }
       const result: Record<string, Record<string, number>> = {};
-      (data || []).forEach((reaction: { message_id: string; emoji: string; cnt: number }) => {
+      (Array.isArray(data) ? data : []).forEach((reaction: any) => {
         if (!result[reaction.message_id]) {
           result[reaction.message_id] = {};
         }
@@ -106,5 +106,5 @@ export async function sendFloqMessage(
     body: text,
     reply_to_id: replyTo ?? null,
     sender_id: user.id,
-  });
+  } as any);
 }

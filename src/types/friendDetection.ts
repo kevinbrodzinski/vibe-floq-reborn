@@ -15,8 +15,8 @@ export interface FriendshipSignal {
 }
 
 export interface FriendshipScore {
-  user_low: string; // UUID - matches friendships table structure (auth.users.id)
-  user_high: string; // UUID - matches friendships table structure (auth.users.id)
+  user_low: string; // UUID - matches friendships table structure (profile_id)
+  user_high: string; // UUID - matches friendships table structure (profile_id)
   overall_score: number; // 0-1
   confidence_level: 'low' | 'medium' | 'high';
   signals: FriendshipSignal[];
