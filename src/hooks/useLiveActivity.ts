@@ -6,7 +6,7 @@ import type { PulseEvent } from '@/types/pulse';
 export const useLiveActivity = (limit = 40) => {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<PulseEvent[]>({
     queryKey: ['live_activity', user?.id, limit],
     enabled: !!user?.id,
     queryFn: async () => {

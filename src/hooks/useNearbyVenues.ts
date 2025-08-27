@@ -1,5 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase }  from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface Venue {
+  id: string;
+  name: string;
+  distance_m?: number;
+  [key: string]: any;
+}
 
 export type FilterLogic = 'any' | 'all';
 
@@ -17,7 +24,7 @@ export function useNearbyVenues(
 ) {
   const { pillKeys = [], filterLogic = 'any', limit = 50 } = options;
   
-  return useQuery({
+  return useQuery<Venue[]>({
     queryKey: ["nearby-venues", lat, lng, radiusKm, pillKeys, filterLogic, limit],
     enabled: Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0,
     queryFn: async () => {

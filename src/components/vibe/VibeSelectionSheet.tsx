@@ -28,6 +28,9 @@ const vibeDescriptions: Record<Vibe, string> = {
   open: "Open to new experiences",
   down: "Feeling low, need support",
   curious: "Eager to explore and learn",
+  energetic: "Full of energy and vitality",
+  excited: "Thrilled and enthusiastic",
+  focused: "Concentrated and determined",
 };
 
 export const VibeSelectionSheet = ({

@@ -8,7 +8,7 @@ import { useWeatherForecast } from '@/hooks/useWeatherForecast';
 import { useVenuesOpenState } from '@/hooks/useVenueOpenState';
 import { useNearbyVenues } from '@/hooks/useNearbyVenues';
 import { usePrefetchVenues } from '@/hooks/usePrefetchVenues';
-import { useTrendingVenues } from '@/hooks/useTrendingVenues';
+import { useTrendingVenues, type VenueSnapshot } from '@/hooks/useTrendingVenues';
 import { useLiveActivity } from '@/hooks/useLiveActivity';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { usePulseFilters, GOOD_WEATHER } from '@/hooks/usePulseFilters';
@@ -54,8 +54,14 @@ export const PulseScreenRedesigned: React.FC = () => {
   // Core state (using selectedTime from above)
   const { user } = useAuth();
   const { coords } = useGeo();
-  const { data: weatherData, isLoading: weatherLoading } = useWeather();
-  const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime);
+  const { data: weatherData, isLoading: weatherLoading } = useWeather() as { 
+    data: import('@/hooks/useWeather').Weather | undefined, 
+    isLoading: boolean 
+  };
+  const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime) as { 
+    data: import('@/hooks/useWeatherForecast').WeatherForecast | undefined, 
+    isLoading: boolean 
+  };
 
       // Data hooks with enhanced filtering - only fetch when we have real coordinates
   const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
@@ -67,7 +73,7 @@ export const PulseScreenRedesigned: React.FC = () => {
       filterLogic: 'any',
       limit: 50
     }
-  );
+  ) as { data: import('@/hooks/useNearbyVenues').Venue[], isLoading: boolean };
   const { data: trendingVenues = [], isLoading: trendingLoading } = useTrendingVenues(
     Math.round(radiusKm * 1000), // Convert km to meters
     10,   // 10 results

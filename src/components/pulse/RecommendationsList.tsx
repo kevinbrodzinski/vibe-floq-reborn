@@ -20,6 +20,7 @@ import { VenueImage } from './VenueImage';
 export interface RecommendationItem {
   id: string;
   title: string;
+  subtitle?: string;  // Added for subtitle property
   type: 'venue' | 'event' | 'floq';
   distance?: number; // in meters
   vibe?: string;

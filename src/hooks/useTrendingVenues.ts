@@ -4,6 +4,15 @@ import { useGeo } from '@/hooks/useGeo';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface VenueSnapshot {
+  id: string;
+  name: string;
+  distance_m?: number;
+  popularity?: number;
+  match_score?: number;
+  [key: string]: any;
+}
+
 interface TrendingVenuesOptions {
   autoSync?: boolean;
   pillKeys?: string[];
@@ -19,7 +28,7 @@ export const useTrendingVenues = (
   const { user } = useAuth();
   const { autoSync = true, pillKeys = [], filterLogic = 'any' } = options;
 
-  return useQuery({
+  return useQuery<VenueSnapshot[]>({
     enabled: !!coords,
     queryKey: ['trending', coords?.lat, coords?.lng, radiusM, limit, pillKeys, filterLogic],
     queryFn: async () => {

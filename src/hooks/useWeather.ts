@@ -25,6 +25,8 @@ export interface Weather {
   windMph: number;         // mph
   icon: string;            // OpenWeather icon code, etc.
   created_at: string;      // ISO timestamp
+  precipitationChance?: number; // %
+  forecastTime?: string;   // For forecast data
 }
 
 /**
