@@ -3,12 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useGeo } from '@/hooks/useGeo';
 import { useAuth } from '@/hooks/useAuth';
-import { useWeather } from '@/hooks/useWeather';
-import { useWeatherForecast } from '@/hooks/useWeatherForecast';
+import { usePulseWeatherNow, usePulseWeatherForecast } from '@/hooks/pulse/usePulseWeather';
+import { usePulseNearbyVenues, usePulseTrendingVenues } from '@/hooks/pulse/usePulseVenues';
 import { useVenuesOpenState } from '@/hooks/useVenueOpenState';
-import { useNearbyVenues } from '@/hooks/useNearbyVenues';
 import { usePrefetchVenues } from '@/hooks/usePrefetchVenues';
-import { useTrendingVenues, type VenueSnapshot } from '@/hooks/useTrendingVenues';
+import type { VenueSnapshot } from '@/hooks/useTrendingVenues';
 import { useLiveActivity } from '@/hooks/useLiveActivity';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { usePulseFilters, GOOD_WEATHER } from '@/hooks/usePulseFilters';
@@ -25,7 +24,9 @@ import { VenueCarousel, VenueCarouselItem } from '@/components/pulse/VenueCarous
 import { VenueList } from '@/components/pulse/VenueList';
 import { ViewToggle, ViewMode } from '@/components/pulse/ViewToggle';
 import { LiveActivity } from '@/components/pulse/LiveActivity';
-import { RecommendationsList, RecommendationItem } from '@/components/pulse/RecommendationsList';
+import { RecommendationsList } from '@/components/pulse/RecommendationsList';
+import type { LocationDisplay, LiveActivityItem, PulseEvent } from '@/types/pulse';
+import type { RecommendationItem } from '@/types/pulse';
 import { VenueDetailSheet, type VenueLite } from '@/components/VenueDetailSheet';
 // Image utilities no longer needed - VenueImage component handles all fallback logic
 import { applyContextualFiltering, sortByContextualRelevance, getVenueStatus, type VenueData, type ContextualFilterOptions } from '@/lib/utils/contextualFiltering';
@@ -54,34 +55,24 @@ export const PulseScreenRedesigned: React.FC = () => {
   // Core state (using selectedTime from above)
   const { user } = useAuth();
   const { coords } = useGeo();
-  const { data: weatherData, isLoading: weatherLoading } = useWeather() as { 
-    data: import('@/hooks/useWeather').Weather | undefined, 
-    isLoading: boolean 
-  };
-  const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast(selectedTime) as { 
-    data: import('@/hooks/useWeatherForecast').WeatherForecast | undefined, 
-    isLoading: boolean 
-  };
+  const { data: weatherData, isLoading: weatherLoading } = usePulseWeatherNow();
+  const { data: forecastData, isLoading: forecastLoading } = usePulseWeatherForecast(selectedTime);
 
-      // Data hooks with enhanced filtering - only fetch when we have real coordinates
-  const { data: nearbyVenues = [], isLoading: nearbyLoading } = useNearbyVenues(
-    coords?.lat ?? 0,
-    coords?.lng ?? 0,
+  // Data hooks with enhanced filtering - only fetch when we have real coordinates
+  const { data: nearbyVenues = [], isLoading: nearbyLoading } = usePulseNearbyVenues({
+    lat: coords?.lat ?? 0,
+    lng: coords?.lng ?? 0,
     radiusKm,
-    {
-      pillKeys: selectedFilterKeys,
-      filterLogic: 'any',
-      limit: 50
-    }
-  ) as { data: import('@/hooks/useNearbyVenues').Venue[], isLoading: boolean };
-  const { data: trendingVenues = [], isLoading: trendingLoading } = useTrendingVenues(
-    Math.round(radiusKm * 1000), // Convert km to meters
-    10,   // 10 results
-    {
-      pillKeys: selectedFilterKeys,
-      filterLogic: 'any'
-    }
-  );
+    limit: 50,
+    pillKeys: selectedFilterKeys
+  });
+  const { data: trendingVenues = [], isLoading: trendingLoading } = usePulseTrendingVenues({
+    lat: coords?.lat ?? 0,
+    lng: coords?.lng ?? 0,
+    radiusM: Math.round(radiusKm * 1000),
+    limit: 10,
+    pillKeys: selectedFilterKeys
+  });
   const { data: liveActivity = [] } = useLiveActivity(20);
   const { data: myFloqs = [] } = useMyActiveFloqs();
   
@@ -95,7 +86,7 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Weather analysis for CTAs - uses forecast data when available
   const weatherAnalysis = useMemo(() => {
-    const activeWeatherData = forecastData || weatherData;
+    const activeWeatherData = weatherData; // Always use current weather for temperature checks
     if (!activeWeatherData) return null;
     
     const temp = activeWeatherData.temperatureF;
@@ -105,20 +96,21 @@ export const PulseScreenRedesigned: React.FC = () => {
     return {
       isGoodWeather,
       selectedCTA: isGoodWeather ? 'outdoor' : 'indoor',
-      isForecast: !!forecastData,
-      forecastTime: forecastData?.forecastTime
+      isForecast: !!forecastData?.length,
+      forecastTime: forecastData?.[0]?.forecastTime || null,
+      temperature: temp
     };
   }, [weatherData, forecastData]);
 
   // Transform data into recommendations with contextual filtering
   const recommendations: RecommendationItem[] = useMemo(() => {
     // Early return if no data or still loading coordinates
-    if (!coords || (!nearbyVenues?.length && !myFloqs?.length)) return [];
+    if (!coords || (!nearbyVenues.length && !myFloqs.length)) return [];
     
     // Apply contextual filtering to venues if context is available
     let filteredVenues = nearbyVenues;
     
-    if (filterContext && nearbyVenues?.length > 0) {
+    if (filterContext && nearbyVenues.length > 0) {
       // Convert to VenueData format for contextual filtering (optimized)
       const venues: VenueData[] = nearbyVenues.map((venue: any) => ({
         id: venue.id,
@@ -293,24 +285,24 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   // Transform recommendations for carousel/list view
   const venueCarouselItems: VenueCarouselItem[] = useMemo(() => {
-    const openStateMap = new Map(venuesOpenState.map(state => [state.venue_id, state]));
+    const openStateMap = new Map((venuesOpenState as any[]).map((state: any) => [state.venue_id, state]));
     
     return filteredRecommendations
       .filter(item => item.type === 'venue')
       .map(item => {
         // Find the original venue data to get coordinates
         const originalVenue = nearbyVenues.find((v: any) => v.id === item.id) || 
-                             trendingVenues.find((v: any) => v.id === item.id);
+                              trendingVenues.find((v: any) => v.venue_id === item.id);
         
         // Get open state for this venue
-        const openState = openStateMap.get(item.id);
+        const openState = openStateMap.get(item.id) as any;
         
         // Update subtitle to include open/closed status
-        let enhancedSubtitle = item.subtitle;
+        let enhancedSubtitle = item.subtitle || '';
         if (openState?.open_now === true) {
-          enhancedSubtitle = `${item.subtitle} • Open`;
+          enhancedSubtitle = `${item.subtitle || ''} • Open`;
         } else if (openState?.open_now === false) {
-          enhancedSubtitle = `${item.subtitle} • Closed`;
+          enhancedSubtitle = `${item.subtitle || ''} • Closed`;
         }
         
         return {
@@ -324,9 +316,9 @@ export const PulseScreenRedesigned: React.FC = () => {
           weatherMatch: item.weatherMatch,
           liveCount: item.liveCount,
           tags: item.tags,
-          // Add coordinates and temperature
-          lat: originalVenue?.lat || null,
-          lng: originalVenue?.lng || null,
+          // Add coordinates and temperature with proper type handling
+          lat: (originalVenue as any)?.lat || null,
+          lng: (originalVenue as any)?.lng || null,
           temperatureF: weatherAnalysis?.temperature || null,
         };
       });
@@ -361,23 +353,23 @@ export const PulseScreenRedesigned: React.FC = () => {
 
   const handleVenueClick = useCallback((venueId: string) => {
     // Find venue in our data and open sheet
-    const venue = [...(nearbyVenues || []), ...(trendingVenues || [])]
-      .find((v: any) => v.id === venueId);
+    const venue = [...nearbyVenues, ...trendingVenues]
+      .find((v: any) => v.id === venueId || v.venue_id === venueId);
     
     if (venue) {
       const venueLite: VenueLite = {
-        id: venue.id,
+        id: (venue as any).id || (venue as any).venue_id,
         name: venue.name || 'Unknown Venue',
         photo_url: venue.photo_url,
         categories: venue.categories || [],
         canonical_tags: venue.canonical_tags || [],
-        distance_m: venue.distance_m || venue.dist_m,
-        lat: venue.lat,
-        lng: venue.lng,
-        website: venue.website,
-        reservation_url: venue.reservation_url,
-        rating: venue.rating,
-        price_tier: venue.price_tier,
+        distance_m: venue.distance_m,
+        lat: (venue as any).lat,
+        lng: (venue as any).lng,
+        website: (venue as any).website,
+        reservation_url: (venue as any).reservation_url,
+        rating: (venue as any).rating,
+        price_tier: (venue as any).price_tier,
       };
       setActiveVenue(venueLite);
       setSheetOpen(true);
@@ -412,7 +404,7 @@ export const PulseScreenRedesigned: React.FC = () => {
     <div className="min-h-screen gradient-field">
       {/* Header */}
       <PulseHeader
-        location={location}
+        location={{ city: 'Current Location' } as LocationDisplay}
         onLocationClick={() => setShowDiscoveryModal(true)}
         onAIInsightsClick={() => setShowAIInsights(!showAIInsights)}
         showAIInsights={showAIInsights}
@@ -463,18 +455,17 @@ export const PulseScreenRedesigned: React.FC = () => {
             onChange={setSearchQuery}
           />
 
-      {/* Location & Weather Bar */}
       <PulseLocationWeatherBar
-        weather={(forecastData || weatherData) ? {
-          condition: (forecastData || weatherData)!.condition,
-          temperatureF: (forecastData || weatherData)!.temperatureF,
-          feelsLikeF: (forecastData || weatherData)!.feelsLikeF,
-          humidity: (forecastData || weatherData)!.humidity,
-          windMph: (forecastData || weatherData)!.windMph,
-          precipitationChance: (forecastData || weatherData)!.precipitationChance || 0,
-          updatedAt: new Date((forecastData || weatherData)!.created_at),
-          isForecast: !!forecastData,
-          forecastTime: forecastData?.forecastTime
+        weather={weatherData ? {
+          condition: weatherData.condition,
+          temperatureF: weatherData.temperatureF,
+          feelsLikeF: weatherData.feelsLikeF,
+          humidity: weatherData.humidity,
+          windMph: weatherData.windMph,
+          precipitationChance: weatherData.precipitationChance || 0,
+          updatedAt: new Date(weatherData.created_at),
+          isForecast: false,
+          forecastTime: forecastData?.[0]?.forecastTime
         } : undefined}
         selectedTime={selectedTime}
         isLoading={weatherLoading || forecastLoading}
@@ -483,7 +474,11 @@ export const PulseScreenRedesigned: React.FC = () => {
       {/* Live Activity */}
       <div className="px-6 mb-6">
         <LiveActivity
-          activities={liveActivity}
+          activities={liveActivity.map((event: PulseEvent): any => ({
+            ...event,
+            id: String(event.id),
+            event_type: event.event_type as any // Type cast for compatibility
+          }))}
           maxVisible={3}
           onViewMore={() => setActivitySheetOpen(true)}
           onActivityClick={handleActivityClick}
@@ -608,12 +603,12 @@ export const PulseScreenRedesigned: React.FC = () => {
           {otherRecommendations.length > 0 && (
             <div className="mt-8">
               <RecommendationsList
-                recommendations={otherRecommendations}
+                recommendations={otherRecommendations as any[]} // Type cast for compatibility
                 title="Events & Floqs"
-                onItemClick={handleRecommendationClick}
+                onItemClick={handleRecommendationClick as any}
                 onBookmark={handleBookmark}
-                onShare={handleShare}
-                onDirections={handleDirections}
+                onShare={handleShare as any}
+                onDirections={handleDirections as any}
                 maxVisible={6}
               />
             </div>
