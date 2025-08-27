@@ -44,7 +44,7 @@ export function useMomentFeed(
     setLoading(true)
     setErr(null)
     try {
-      const { data, error } = await client.rpc('rpc_session_feed_list' as any, {
+      const { data, error } = await (client as any).rpc('rpc_session_feed_list', {
         in_floq_id: floqId,
         in_limit: pageSize,
         in_before: cursor,
@@ -123,7 +123,7 @@ export async function postMomentFeed(
   const payload = (typeof a === 'string' ? (b as PostPayload) : c!) as PostPayload
 
   if (payload.kind === 'text') {
-    const { error } = await client.rpc('rpc_session_post' as any, {
+    const { error } = await (client as any).rpc('rpc_session_post', {
       in_floq_id: floqId,
       in_kind: 'text',
       in_storage_key: null,
@@ -135,7 +135,7 @@ export async function postMomentFeed(
   }
 
   if (payload.kind === 'audio') {
-    const { error } = await client.rpc('rpc_session_post' as any, {
+    const { error } = await (client as any).rpc('rpc_session_post', {
       in_floq_id: floqId,
       in_kind: 'audio',
       in_storage_key: payload.storageKey,
@@ -147,7 +147,7 @@ export async function postMomentFeed(
   }
 
   if (payload.kind === 'photo') {
-    const { error } = await client.rpc('rpc_session_post' as any, {
+    const { error } = await (client as any).rpc('rpc_session_post', {
       in_floq_id: floqId,
       in_kind: 'photo',
       in_storage_key: payload.storageKey,
@@ -159,7 +159,7 @@ export async function postMomentFeed(
   }
 
   // vibe
-  const { error } = await client.rpc('rpc_session_post' as any, {
+  const { error } = await (client as any).rpc('rpc_session_post', {
     in_floq_id: floqId,
     in_kind: 'vibe',
     in_storage_key: null,

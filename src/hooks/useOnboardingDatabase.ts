@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type Vibe } from '@/lib/vibes';
-
+import type { Database } from '@/integrations/supabase/types';
 export const ONBOARDING_VERSION = 'v2' as const;
 export const FINAL_STEP = 6 as const;
 
@@ -13,24 +13,18 @@ export type ProfileData = {
   interests?: string[];
 };
 
-interface OnboardingProgressData {
-  id: string;
-  user_id: string;
-  onboarding_version: 'v1' | 'v2';
-  current_step: number;
-  completed_steps: number[];
-  selected_vibe?: string;
-  profile_data?: {
-    username: string;
-    display_name: string;
-    bio?: string;
-    interests?: string[];
-  };
-  avatar_url?: string;
-  started_at: string;
-  updated_at: string;
-  completed_at?: string;
-  created_at: string;
+type OnboardingRow = {
+  profile_id: string
+  onboarding_version: string
+  current_step: number
+  completed_steps: number[]
+  selected_vibe?: string | null
+  profile_data?: ProfileData | null
+  avatar_url?: string | null
+  started_at?: string | null
+  updated_at?: string | null
+  completed_at?: string | null
+  created_at: string
 }
 
 interface OnboardingState {

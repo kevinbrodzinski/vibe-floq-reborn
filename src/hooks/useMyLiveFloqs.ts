@@ -31,7 +31,7 @@ export function useMyLiveFloqs(a?: SupabaseClient): Result {
     setLoading(true)
     setErr(null)
     try {
-      const { data, error } = await client.rpc('rpc_my_live_floqs' as any)
+      const { data, error } = await (client as any).rpc('rpc_my_live_floqs')
       if (error) throw new Error(error.message)
 
       // Normalize: some RPCs return an array; others may return a single row
