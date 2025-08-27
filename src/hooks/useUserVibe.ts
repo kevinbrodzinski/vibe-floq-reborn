@@ -20,20 +20,21 @@ export function useUserVibe(profileId: string | null) {
         const { data, error } = await supabase
           .from('user_vibe_states')
           .select('vibe_tag, started_at, location')
-          .eq('profile_id', profileId)
-          .eq('active', true)
-          .maybeSingle();
+          .eq('profile_id', profileId as any)
+          .eq('active', true as any)
+          .maybeSingle()
+          .returns<any>();
 
         if (error) throw error;
         if (!data) return null;
         
-        if (data.location) {
+        if ((data as any).location) {
           // Extract lat/lng from PostGIS geometry
-          const coords = data.location as any;
+          const coords = (data as any).location as any;
           if (coords?.coordinates) {
             return {
-              vibe: data.vibe_tag,
-              started_at: data.started_at,
+              vibe: (data as any).vibe_tag,
+              started_at: (data as any).started_at,
               location: {
                 lng: coords.coordinates[0],
                 lat: coords.coordinates[1]
@@ -43,8 +44,8 @@ export function useUserVibe(profileId: string | null) {
         }
         
         return {
-          vibe: data.vibe_tag,
-          started_at: data.started_at
+          vibe: (data as any).vibe_tag,
+          started_at: (data as any).started_at
         };
       } catch (error) {
         console.error('Error fetching user vibe:', error);

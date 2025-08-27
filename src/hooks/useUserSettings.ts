@@ -78,8 +78,9 @@ export const useUserSettings = () => {
       const { data, error } = await supabase
         .from('user_settings')
         .select('*')
-        .eq('profile_id', user.id)
-        .maybeSingle();
+        .eq('profile_id', user.id as any)
+        .maybeSingle()
+        .returns<any>();
 
       if (error) {
         console.error('User settings error:', error);
@@ -89,18 +90,18 @@ export const useUserSettings = () => {
       // Return merged settings with defaults
       if (data) {
         // Safely parse and validate JSON data with fallbacks
-        const notificationPrefs = (typeof data.notification_preferences === 'object' && data.notification_preferences !== null) 
-          ? data.notification_preferences as Record<string, any>
+        const notificationPrefs = (typeof (data as any).notification_preferences === 'object' && (data as any).notification_preferences !== null) 
+          ? (data as any).notification_preferences as Record<string, any>
           : {};
-        const privacySettings = (typeof data.privacy_settings === 'object' && data.privacy_settings !== null)
-          ? data.privacy_settings as Record<string, any>
+        const privacySettings = (typeof (data as any).privacy_settings === 'object' && (data as any).privacy_settings !== null)
+          ? (data as any).privacy_settings as Record<string, any>
           : {};
-        const themePrefs = (typeof data.theme_preferences === 'object' && data.theme_preferences !== null)
-          ? data.theme_preferences as Record<string, any>
+        const themePrefs = (typeof (data as any).theme_preferences === 'object' && (data as any).theme_preferences !== null)
+          ? (data as any).theme_preferences as Record<string, any>
           : {};
         
         return {
-          ...data,
+          ...(data as any),
           notification_preferences: { 
             ...DEFAULT_NOTIFICATION_PREFERENCES, 
             ...notificationPrefs
@@ -113,7 +114,7 @@ export const useUserSettings = () => {
             ...DEFAULT_THEME_PREFERENCES, 
             ...themePrefs
           },
-          field_enabled: data.field_enabled ?? false,
+          field_enabled: (data as any).field_enabled ?? false,
         } as UserSettings;
       }
       return {
@@ -138,7 +139,7 @@ export const useUserSettings = () => {
           profile_id: user.id,
           ...updates,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .select()
         .single();
 
@@ -229,8 +230,8 @@ export const useUserSettings = () => {
       // Update current presence with new broadcast radius
       const { error } = await supabase
         .from('vibes_now')
-        .update({ broadcast_radius: radius })
-        .eq('profile_id', user.id);
+        .update({ broadcast_radius: radius } as any)
+        .eq('profile_id', user.id as any);
 
       if (error) throw error;
       

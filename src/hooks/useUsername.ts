@@ -22,8 +22,9 @@ export function useUsername() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('id', user.id)
-        .single();
+        .eq('id', user.id as any)
+        .single()
+        .returns<any>();
 
       return profile;
     },
@@ -52,7 +53,7 @@ export function useUsername() {
         return false;
       }
 
-      setIsAvailable(data);
+      setIsAvailable(data as any);
       return data;
     } catch (error) {
       console.error('Availability check error:', error);

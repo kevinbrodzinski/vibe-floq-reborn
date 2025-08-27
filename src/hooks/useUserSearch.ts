@@ -29,7 +29,7 @@ export function useUserSearch(query: string, enabled: boolean = true) {
       })
 
       if (error) throw error
-      return data || []
+      return (data || []) as any
     },
     staleTime: 60_000,
   })

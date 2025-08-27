@@ -67,13 +67,13 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
             )
           )
         `)
-        .eq('invitee_profile_id', user.id)
-        .eq('status', 'pending')
-        .eq('archived', false)
+        .eq('invitee_profile_id', user.id as any)
+        .eq('status', 'pending' as any)
+        .eq('archived', false as any)
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data || []);
+      setInvitations((data || []) as any);
     } catch (error) {
       console.error('Error fetching invitations:', error);
     }
@@ -107,8 +107,8 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
           status: accept ? 'accepted' : 'declined',
           responded_at: new Date().toISOString(),
           archived: true,
-        })
-        .eq('id', inviteId);
+        } as any)
+        .eq('id', inviteId as any);
 
       if (inviteError) throw inviteError;
 
@@ -120,7 +120,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
             plan_id: planId,
             profile_id: user.id,
             invite_type: 'invitation',
-          })
+          } as any)
           .select()
           .single();
 

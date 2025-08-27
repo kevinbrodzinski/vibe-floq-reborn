@@ -24,8 +24,9 @@ export function useUserOnlineStatus(profileId?: string): OnlineStatus | null {
         const { data } = await supabase
           .from('user_online_status')
           .select('is_online,last_seen')
-          .eq('profile_id', profileId)
-          .maybeSingle();
+          .eq('profile_id', profileId as any)
+          .maybeSingle()
+          .returns<any>();
         
         setStatus(
           data

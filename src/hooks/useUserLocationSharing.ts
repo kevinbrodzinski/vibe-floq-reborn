@@ -33,8 +33,9 @@ export function useUserLocationSharing(profileId: string | undefined) {
         const { data: sharePrefs, error: shareError } = await supabase
           .from('friend_share_pref')
           .select('is_live, ends_at')
-          .eq('profile_id', profileId)
-          .maybeSingle();
+          .eq('profile_id', profileId as any)
+          .maybeSingle()
+          .returns<any>();
 
         if (shareError) {
           console.log('[DEBUG] Error fetching share prefs:', shareError);
@@ -45,7 +46,7 @@ export function useUserLocationSharing(profileId: string | undefined) {
           };
         }
 
-        if (!sharePrefs?.is_live) {
+        if (!(sharePrefs as any)?.is_live) {
           return {
             isSharing: false,
             accuracyLevel: 'exact',
@@ -54,7 +55,7 @@ export function useUserLocationSharing(profileId: string | undefined) {
         }
 
         const now = new Date();
-        const endsAt = sharePrefs.ends_at ? new Date(sharePrefs.ends_at) : null;
+        const endsAt = (sharePrefs as any)?.ends_at ? new Date((sharePrefs as any).ends_at) : null;
         
         if (endsAt && now > endsAt) {
           return {
@@ -67,20 +68,21 @@ export function useUserLocationSharing(profileId: string | undefined) {
         const { data: presence, error: presenceError } = await supabase
           .from('vibes_now')
           .select('updated_at')
-          .eq('profile_id', profileId)
-          .maybeSingle();
+          .eq('profile_id', profileId as any)
+          .maybeSingle()
+          .returns<any>();
 
         if (presenceError) {
           console.log('[DEBUG] Error fetching presence:', presenceError);
         }
 
-        const isRecentlyActive = presence?.updated_at && 
-          (now.getTime() - new Date(presence.updated_at).getTime()) < 5 * 60 * 1000;
+        const isRecentlyActive = (presence as any)?.updated_at && 
+          (now.getTime() - new Date((presence as any).updated_at).getTime()) < 5 * 60 * 1000;
 
         return {
           isSharing: isRecentlyActive || false,
           accuracyLevel: 'exact',
-          sharedSince: presence?.updated_at ? new Date(presence.updated_at) : null,
+          sharedSince: (presence as any)?.updated_at ? new Date((presence as any).updated_at) : null,
         };
       } catch (error) {
         console.log('[DEBUG] Unexpected error in location sharing check:', error);
