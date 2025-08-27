@@ -12,7 +12,7 @@ export function useVenueHourlyPresence(venue_id?: string, hours?: number) {
       let query = supabase
         .from('venue_hourly_presence')
         .select('*')
-        .eq('venue_id', venue_id);
+        .eq('venue_id', venue_id as any);
       
       if (hours) {
         // Get last N hours
@@ -33,7 +33,7 @@ export async function getVenueHourlyPresence(venue_id: string, hours?: number) {
   let query = supabase
     .from('venue_hourly_presence')
     .select('*')
-    .eq('venue_id', venue_id);
+    .eq('venue_id', venue_id as any);
   
   if (hours) {
     const cutoff = new Date();

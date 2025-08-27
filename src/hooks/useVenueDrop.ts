@@ -110,7 +110,7 @@ export function useVenueDrop() {
             lng: venue.lng,
             match_score: venue.match_score
           }
-        })
+        } as any)
         .select()
         .single()
 
@@ -124,13 +124,13 @@ export function useVenueDrop() {
           plan_id: planId,
           activity_type: 'venue_added',
           activity_data: {
-            stop_id: stop.id,
+            stop_id: (stop as any).id,
             venue_id: venue.id,
             venue_name: venue.name,
             time_slot: timeSlot,
             source: 'drag_drop'
           }
-        })
+        } as any)
       } catch (activityError) {
         console.warn('Failed to log activity:', activityError)
       }
@@ -199,7 +199,7 @@ export function useBatchVenueDrop() {
               lng: venue.lng,
               match_score: venue.match_score
             }
-          })
+          } as any)
           .select()
           .single()
 
@@ -252,10 +252,10 @@ export function useSmartVenueSuggestions(planId: string) {
       const { data: plan, error: planError } = await supabase
         .from('floq_plans')
         .select('lat, lng, preferences, participant_count')
-        .eq('id', planId)
+        .eq('id', planId as any)
         .single()
 
-      if (planError || !plan.lat || !plan.lng) {
+      if (planError || !(plan as any)?.lat || !(plan as any)?.lng) {
         throw new Error('Failed to get plan location')
       }
 
@@ -263,14 +263,14 @@ export function useSmartVenueSuggestions(planId: string) {
       const { data: existingStops } = await supabase
         .from('plan_stops')
         .select('venue_id, venue_data')
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
 
-      const existingVenueIds = existingStops?.map(s => s.venue_id).filter(Boolean) || []
+      const existingVenueIds = existingStops?.map(s => (s as any).venue_id).filter(Boolean) || []
 
       // Call the intelligent venue function
       const { data: venues, error } = await supabase.rpc('get_venues_with_intelligence', {
-        center_lat: plan.lat,
-        center_lng: plan.lng,
+        center_lat: (plan as any).lat,
+        center_lng: (plan as any).lng,
         radius_meters: radius,
         limit_count: limit,
         date_context: planDate || new Date().toISOString().split('T')[0],
@@ -278,7 +278,7 @@ export function useSmartVenueSuggestions(planId: string) {
           start_time: timeSlot,
           duration_minutes: 90
         }
-      })
+      }).returns<any>()
 
       if (error) {
         throw new Error(`Failed to get venue suggestions: ${error.message}`)
@@ -289,7 +289,7 @@ export function useSmartVenueSuggestions(planId: string) {
         ?.filter(venue => !existingVenueIds.includes(venue.id))
         .map(venue => ({
           ...venue,
-          match_score: calculateMatchScore(venue, timeSlot, plan.preferences)
+          match_score: calculateMatchScore(venue, timeSlot, (plan as any).preferences)
         }))
         .sort((a, b) => (b.match_score || 0) - (a.match_score || 0))
 

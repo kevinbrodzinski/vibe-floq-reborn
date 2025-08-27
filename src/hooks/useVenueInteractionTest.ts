@@ -23,8 +23,8 @@ export const useVenueInteractionTest = (venueId: string | null) => {
       const { data: interactions, error: interactionsError } = await supabase
         .from('user_venue_interactions')
         .select('*')
-        .eq('venue_id', venueId)
-        .eq('profile_id', user.id);
+        .eq('venue_id', venueId as any)
+        .eq('profile_id', user.id as any);
 
       if (interactionsError) {
         devError('❌ Failed to fetch venue interactions:', interactionsError);
@@ -35,8 +35,8 @@ export const useVenueInteractionTest = (venueId: string | null) => {
       const { data: presence, error: presenceError } = await supabase
         .from('venue_live_presence')
         .select('*')
-        .eq('venue_id', venueId)
-        .eq('profile_id', user.id)
+        .eq('venue_id', venueId as any)
+        .eq('profile_id', user.id as any)
         .maybeSingle();
 
       if (presenceError) {
@@ -50,11 +50,11 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         interactions: interactions || [],
         presence: presence || null,
         hasInteractions: (interactions?.length || 0) > 0,
-        isCurrentlyPresent: presence && new Date(presence.expires_at) > new Date(),
-        favoriteCount: interactions?.find(i => i.interaction_type === 'favorite')?.interaction_count || 0,
-        checkInCount: interactions?.find(i => i.interaction_type === 'check_in')?.interaction_count || 0,
-        viewCount: interactions?.find(i => i.interaction_type === 'view')?.interaction_count || 0,
-        shareCount: interactions?.find(i => i.interaction_type === 'share')?.interaction_count || 0
+        isCurrentlyPresent: presence && new Date((presence as any).expires_at) > new Date(),
+        favoriteCount: interactions?.find(i => (i as any).interaction_type === 'favorite')?.(i as any).interaction_count || 0,
+        checkInCount: interactions?.find(i => (i as any).interaction_type === 'check_in')?.(i as any).interaction_count || 0,
+        viewCount: interactions?.find(i => (i as any).interaction_type === 'view')?.(i as any).interaction_count || 0,
+        shareCount: interactions?.find(i => (i as any).interaction_type === 'share')?.(i as any).interaction_count || 0
       };
 
       devLog('✅ Venue interaction test results:', testResult);

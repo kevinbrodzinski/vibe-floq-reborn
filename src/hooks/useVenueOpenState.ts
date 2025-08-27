@@ -15,20 +15,20 @@ export function useVenueOpenState(venueId: string | null) {
   return useQuery<VenueOpenState | null>({
     queryKey: ['venue-open-state', venueId],
     enabled: !!venueId,
-    queryFn: async () => {
+    queryFn: async (): Promise<VenueOpenState | null> => {
       if (!venueId) return null;
       
       const { data, error } = await supabase
         .from('v_venue_open_state')
         .select('venue_id, tzid, hours_today, open_now')
-        .eq('venue_id', venueId)
+        .eq('venue_id', venueId as any)
         .maybeSingle();
       
       if (error) throw error;
-      return data;
+      return data as any;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - venue status changes relatively slowly
-    cacheTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true, // Refetch when user returns to tab
     retry: 2,
   });
@@ -42,14 +42,14 @@ export function useVenuesOpenState(venueIds: string[]) {
   return useQuery<VenueOpenState[]>({
     queryKey: ['venues-open-state', venueIds.sort().join(',')],
     enabled: venueIds.length > 0,
-    queryFn: async () => {
+    queryFn: async (): Promise<VenueOpenState[]> => {
       if (venueIds.length === 0) return [];
       
       // Use the helper function for batch fetching
       const { data, error } = await supabase
         .rpc('get_venues_open_status', {
           p_venue_ids: venueIds
-        });
+        }).returns<any>();
       
       if (error) {
         // Fallback to direct view query if RPC fails
@@ -57,13 +57,13 @@ export function useVenuesOpenState(venueIds: string[]) {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('v_venue_open_state')
           .select('venue_id, tzid, hours_today, open_now')
-          .in('venue_id', venueIds);
+          .in('venue_id', venueIds as any);
         
         if (fallbackError) throw fallbackError;
-        return fallbackData || [];
+        return (fallbackData as any) || [];
       }
       
-      return data || [];
+      return (data as any) || [];
     },
     staleTime: 3 * 60 * 1000, // 3 minutes - open status changes less frequently
     gcTime: 15 * 60 * 1000,   // 15 minutes cache (renamed from cacheTime)

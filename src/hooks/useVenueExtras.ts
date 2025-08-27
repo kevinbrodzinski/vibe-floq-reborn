@@ -37,9 +37,9 @@ export function useVenueExtras(venueId: string | null) {
       const favCheck = await supabase
         .from('user_favorites')
         .select('item_id', { count: 'exact', head: true })
-        .eq('profile_id', uid)
-        .eq('item_type', 'venue')
-        .eq('item_id', venueId);
+        .eq('profile_id', uid as any)
+        .eq('item_type', 'venue' as any)
+        .eq('item_id', venueId as any);
 
       if (!cancelled) {
         if (favCheck.error && favCheck.error.code !== 'PGRST116') console.warn('favorites check error', favCheck.error);
@@ -50,8 +50,8 @@ export function useVenueExtras(venueId: string | null) {
       const wlCheck = await supabase
         .from('user_watchlist')
         .select('venue_id', { count: 'exact', head: true })
-        .eq('profile_id', uid)
-        .eq('venue_id', venueId);
+        .eq('profile_id', uid as any)
+        .eq('venue_id', venueId as any);
 
       if (!cancelled) {
         if (wlCheck.error && wlCheck.error.code !== 'PGRST116') console.warn('watchlist check error', wlCheck.error);
@@ -67,7 +67,7 @@ export function useVenueExtras(venueId: string | null) {
         const r = await supabase
           .from('venue_deals')
           .select('id,title,subtitle,ends_at')
-          .eq('venue_id', venueId)
+          .eq('venue_id', venueId as any)
           .gte('ends_at', nowIso)
           .order('ends_at', { ascending: true });
 
@@ -98,10 +98,10 @@ export function useVenueExtras(venueId: string | null) {
         const { data: fr, error } = await supabase.rpc('friends_recent_at_venue', {
           p_venue_id: venueId,
           p_days: 30,
-        });
+        }).returns<any>();
         if (!cancelled) {
           if (error) console.warn('friends_recent_at_venue error', error);
-          setFriends((fr || []).map((r: any) => ({
+          setFriends(((fr as any) || []).map((r: any) => ({
             id: r.friend_profile_id,
             display_name: r.friend_name,
             avatar_url: null,
@@ -117,8 +117,8 @@ export function useVenueExtras(venueId: string | null) {
         const visitCheck = await supabase
           .from('venue_visits')
           .select('id', { count: 'exact', head: true })
-          .eq('venue_id', venueId)
-          .eq('profile_id', uid)
+          .eq('venue_id', venueId as any)
+          .eq('profile_id', uid as any)
           .gte('arrived_at', sinceIso);
         if (!cancelled) {
           if (visitCheck.error) console.warn('venue_visits error', visitCheck.error);
@@ -143,15 +143,15 @@ export function useVenueExtras(venueId: string | null) {
         profile_id: uid,
         item_type: 'venue',
         item_id: venueId,
-      });
+      } as any);
       if (!error) setFavorite(true);
     } else {
       const { error } = await supabase
         .from('user_favorites')
         .delete()
-        .eq('profile_id', uid)
-        .eq('item_type', 'venue')
-        .eq('item_id', venueId);
+        .eq('profile_id', uid as any)
+        .eq('item_type', 'venue' as any)
+        .eq('item_id', venueId as any);
       if (!error) setFavorite(false);
     }
   };
@@ -163,14 +163,14 @@ export function useVenueExtras(venueId: string | null) {
       const { error } = await supabase.from('user_watchlist').insert({
         profile_id: uid,
         venue_id: venueId,
-      });
+      } as any);
       if (!error) setWatch(true);
     } else {
       const { error } = await supabase
         .from('user_watchlist')
         .delete()
-        .eq('profile_id', uid)
-        .eq('venue_id', venueId);
+        .eq('profile_id', uid as any)
+        .eq('venue_id', venueId as any);
       if (!error) setWatch(false);
     }
   };
@@ -191,18 +191,18 @@ export function useVenueExtras(venueId: string | null) {
 
   return {
     data: {
-      openNow: openState?.open_now ?? null,
-      nextOpenText: getNextOpenText(openState?.open_now ?? null, openState?.hours_today ?? null),
-      hoursToday: openState?.hours_today ? openState.hours_today
-        .filter(h => h && typeof h === 'string')
-        .map(h => {
+      openNow: (openState as any)?.open_now ?? null,
+      nextOpenText: getNextOpenText((openState as any)?.open_now ?? null, (openState as any)?.hours_today ?? null),
+      hoursToday: (openState as any)?.hours_today ? (openState as any).hours_today
+        .filter((h: any) => h && typeof h === 'string')
+        .map((h: any) => {
           const parts = h.split('–');
           return { 
             open: parts[0] || '', 
             close: parts[1] || '' 
           };
         }) : [],
-      hoursDisplay: formatVenueHours(openState?.hours_today ?? null),
+      hoursDisplay: formatVenueHours((openState as any)?.hours_today ?? null),
       deals,
       friends,
       hasVisited,

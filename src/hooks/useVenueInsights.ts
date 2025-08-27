@@ -50,8 +50,8 @@ export const useVenueInsights = () => {
           .limit(10)
         
         popularVenues = fallbackVenues?.map(v => ({ 
-          id: v.id,
-          name: v.name,
+          id: (v as any).id,
+          name: (v as any).name,
           popularity: 0 
         })) || []
       }
@@ -61,7 +61,7 @@ export const useVenueInsights = () => {
       const { data: visits, error: visitsError } = await supabase
         .from('venue_visits')
         .select('arrived_at')
-        .eq('profile_id', user.id)
+        .eq('profile_id', user.id as any)
         .gte('arrived_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
         .order('arrived_at', { ascending: true })
 
@@ -72,7 +72,7 @@ export const useVenueInsights = () => {
 
       // Group by day and estimate time (simplified version)
       const timeData: TimeData[] = visits?.reduce((acc: TimeData[], visit) => {
-        const day = new Date(visit.arrived_at).toISOString().split('T')[0]
+        const day = new Date((visit as any).arrived_at).toISOString().split('T')[0]
         const existing = acc.find(item => item.day === day)
         if (existing) {
           existing.minutes_spent += 30 // Estimate 30 min per visit

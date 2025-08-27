@@ -26,6 +26,7 @@ export const useVenueDetails = (venueId: string | null) => {
 
       const { data, error } = await supabase
         .rpc("venue_details", { p_venue_id: venueId })
+        .returns<any>()
         .maybeSingle();
 
       if (error) {
@@ -42,15 +43,15 @@ export const useVenueDetails = (venueId: string | null) => {
 
       // Transform and validate the data
       const venueDetails: VenueDetails = {
-        id: data.id,
-        name: data.name || 'Unknown Venue',
-        vibe: data.vibe || undefined,
-        description: data.description || undefined,
-        live_count: Number(data.live_count) || 0,
-        vibe_score: Number(data.vibe_score) || 50,
-        popularity: Number(data.popularity) || 0,
-        lat: data.lat ?? null,
-        lng: data.lng ?? null
+        id: (data as any).id,
+        name: (data as any).name || 'Unknown Venue',
+        vibe: (data as any).vibe || undefined,
+        description: (data as any).description || undefined,
+        live_count: Number((data as any).live_count) || 0,
+        vibe_score: Number((data as any).vibe_score) || 50,
+        popularity: Number((data as any).popularity) || 0,
+        lat: (data as any).lat ?? null,
+        lng: (data as any).lng ?? null
       };
 
       return venueDetails;
