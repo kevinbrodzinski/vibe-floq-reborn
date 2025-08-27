@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { Database } from '@/integrations/supabase/types';
+
+type FloqDetailsReturn = Database['public']['Functions']['get_floq_full_details']['Returns'];
 
 export interface FloqSettings {
   notifications_enabled: boolean;
@@ -14,23 +17,27 @@ export interface FloqSettings {
 export function useFloqSettings(floqId: string) {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<FloqSettings>({
     queryKey: ["floq-settings", floqId],
     queryFn: async (): Promise<FloqSettings> => {
       const { data, error } = await supabase
-        .rpc('get_floq_full_details', { p_floq_id: floqId })
-        .returns<any>()
+        .rpc('get_floq_full_details', { p_floq_id: floqId as any })
+        .returns<FloqDetailsReturn>()
         .single();
 
       if (error) throw error;
+      
+      // Normalize data - could be array or object
+      const details = Array.isArray(data) ? data[0] : data;
+      if (!details) throw new Error('No floq details found');
 
       return {
-        notifications_enabled: (data as any)?.notifications_enabled ?? true,
-        mention_permissions: (data as any)?.mention_permissions ?? 'all',
-        join_approval_required: (data as any)?.join_approval_required ?? false,
-        activity_visibility: (data as any)?.activity_visibility ?? 'public',
-        welcome_message: (data as any)?.welcome_message ?? '',
-        pinned_note: (data as any)?.pinned_note ?? null,
+        notifications_enabled: (details as any).notifications_enabled ?? true,
+        mention_permissions: (details as any).mention_permissions ?? 'all',
+        join_approval_required: (details as any).join_approval_required ?? false,
+        activity_visibility: (details as any).activity_visibility ?? 'public',
+        welcome_message: (details as any).welcome_message ?? '',
+        pinned_note: (details as any).pinned_note ?? null,
       };
     },
     enabled: !!floqId,
