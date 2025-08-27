@@ -309,14 +309,14 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
                      if (enableProximityTracking && services.proximityScorer) {
              try {
               const currentUser = {
-                userId: user.id, // Keep userId for proximity system as it uses auth.uid()
+                profileId: user.id, // Use profileId to match ProximityUser interface
                 location: pos,
                 accuracy: pos.accuracy,
                 timestamp: now
               };
 
               const friendUser = {
-                userId: friend.profileId, // Use profileId as userId for consistency
+                profileId: friend.profileId, // Use profileId to match ProximityUser interface
                 location: friend.location,
                 accuracy: friend.accuracy,
                 timestamp: friend.timestamp

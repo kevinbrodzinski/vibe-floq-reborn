@@ -9,7 +9,7 @@ export function applyPrivacyFilter(
   const privacyLevel = settings.live_accuracy || 'exact';
   
   // Apply coordinate snapping based on privacy level
-  const filtered = snapToGrid(lat, lng, privacyLevel as 'exact' | 'street' | 'area');
+  const filtered = snapToGrid(lat, lng, privacyLevel as 'exact' | 'street' | 'area', accuracy);
   
   // Ensure accuracy reflects the privacy level
   const finalAccuracy = Math.max(accuracy, filtered.accuracy);
@@ -26,12 +26,13 @@ export function applyPrivacyFilter(
 export function snapToGrid(
   lat: number, 
   lng: number, 
-  privacyLevel: 'exact' | 'street' | 'area'
+  privacyLevel: 'exact' | 'street' | 'area',
+  originalAccuracy?: number
 ): { lat: number; lng: number; accuracy: number } {
   switch (privacyLevel) {
     case 'exact':
-      // No filtering, return original coordinates with minimal accuracy buffer
-      return { lat, lng, accuracy: 10 };
+      // No filtering, return original coordinates with preserved accuracy
+      return { lat, lng, accuracy: originalAccuracy ?? 10 };
       
     case 'street':
       // Snap to ~50m grid (good for street-level privacy)

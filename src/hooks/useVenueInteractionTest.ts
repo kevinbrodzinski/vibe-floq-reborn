@@ -46,7 +46,7 @@ export const useVenueInteractionTest = (venueId: string | null) => {
 
       const testResult = {
         venueId,
-        userId: user.id,
+        profileId: user.id,
         interactions: interactions || [],
         presence: presence || null,
         hasInteractions: (interactions?.length || 0) > 0,

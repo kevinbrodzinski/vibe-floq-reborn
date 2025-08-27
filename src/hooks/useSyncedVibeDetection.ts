@@ -6,18 +6,18 @@ import { updateVibeDetectionPreference } from '@/lib/sync/updateVibeDetectionPre
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 export function useSyncedVibeDetection() {
-  const userId = useCurrentUserId()             // ✅ get current user ID directly
+  const profileId = useCurrentUserId()             // ✅ get current user ID directly
   const { autoMode, setAutoMode } = useVibeDetection()
 
   // Pull preference from Supabase on mount
   useEffect(() => {
-    if (!userId) return        // user is not authenticated
+    if (!profileId) return        // user is not authenticated
 
     const fetchPreference = async () => {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('vibe_detection_enabled')
-        .eq('profile_id', userId)
+        .eq('profile_id', profileId)
         .maybeSingle()
 
       if (error) {
@@ -31,13 +31,13 @@ export function useSyncedVibeDetection() {
     }
 
     fetchPreference()
-  }, [userId, setAutoMode])
+  }, [profileId, setAutoMode])
 
   // 🕓 Debounce Supabase writes
   const debouncedAutoMode = useDebouncedValue(autoMode, 1000)
 
   useEffect(() => {
-    if (!userId) return
-    updateVibeDetectionPreference(userId, debouncedAutoMode)
-  }, [debouncedAutoMode, userId])
+    if (!profileId) return
+    updateVibeDetectionPreference(profileId, debouncedAutoMode)
+  }, [debouncedAutoMode, profileId])
 }

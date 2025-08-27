@@ -53,9 +53,9 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
         newPresences.forEach((presence: any) => {
-          if (presence.userId !== user.id) {
-            setCursors(prev => new Map(prev.set(presence.userId, {
-              profileId: presence.userId,
+          if (presence.profileId !== user.id) {
+            setCursors(prev => new Map(prev.set(presence.profileId, {
+              profileId: presence.profileId,
               username: presence.username || 'Anonymous',
               x: presence.x || 0,
               y: presence.y || 0,
@@ -68,7 +68,7 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
         leftPresences.forEach((presence: any) => {
           setCursors(prev => {
             const next = new Map(prev)
-            next.delete(presence.userId)
+            next.delete(presence.profileId)
             return next
           })
         })
