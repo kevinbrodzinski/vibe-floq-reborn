@@ -21344,11 +21344,16 @@ export type Database = {
         Returns: string
       }
       upsert_friendship: {
-        Args: {
-          _is_close?: boolean
-          _new_state: Database["public"]["Enums"]["friend_state"]
-          _other_user: string
-        }
+        Args:
+          | {
+              _action?: Database["public"]["Enums"]["friend_state"]
+              _other: string
+            }
+          | {
+              _is_close?: boolean
+              _new_state: Database["public"]["Enums"]["friend_state"]
+              _other_user: string
+            }
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_friendship_analysis: {
