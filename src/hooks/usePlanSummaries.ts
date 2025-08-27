@@ -31,8 +31,9 @@ export function usePlanSummaries(planId: string) {
       const { data, error } = await supabase
         .from('plan_summaries')
         .select('*')
-        .eq('plan_id', planId)
-        .order('created_at', { ascending: false });
+        .eq('plan_id', planId as any)
+        .order('created_at', { ascending: false })
+        .returns<any>();
 
       if (error) throw error;
       // Validate data shape before return
@@ -49,9 +50,10 @@ export function usePlanSummary(planId: string, mode: SummaryMode) {
       const { data, error } = await supabase
         .from('plan_summaries')
         .select('*')
-        .eq('plan_id', planId)
-        .eq('mode', mode)
-        .maybeSingle();
+        .eq('plan_id', planId as any)
+        .eq('mode', mode as any)
+        .maybeSingle()
+        .returns<any>();
 
       if (error) throw error;
       // Validate data shape if it exists
@@ -132,7 +134,8 @@ export function useUpdatePlanSummary() {
           mode,
           summary,
           generated_at: new Date().toISOString(),
-        });
+        } as any)
+        .returns<any>();
 
       if (error) throw error;
       return data;

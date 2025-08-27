@@ -40,12 +40,13 @@ export function usePlanVote(planId?: string) {
             vote_type: params.vote_type,
             comment: params.comment || null,
             emoji_reaction: params.emoji_reaction || null,
-          },
+          } as any,
           {
             onConflict: 'plan_id,stop_id,profile_id',
           }
         )
         .select()
+        .returns<any>()
 
       if (error) {
         console.error('Vote submission error:', error)
@@ -101,7 +102,7 @@ export function useStopVotes(stopId: string) {
           *,
           user:profiles(display_name, username, avatar_url)
         `)
-        .eq('stop_id', stopId)
+        .eq('stop_id', stopId as any)
         .order('created_at', { ascending: false })
 
       if (error) {

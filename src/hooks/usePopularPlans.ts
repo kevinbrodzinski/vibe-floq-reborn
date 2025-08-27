@@ -32,7 +32,7 @@ export function usePopularPlans(limit = 10) {
         `)
         .order('participant_count', { ascending: false })
         .limit(limit)
-        .eq('status', 'finalized')
+        .eq('status', 'finalized' as any)
 
       if (error) throw error
       const parsed = z.array(PopularPlanSchema).safeParse(data)

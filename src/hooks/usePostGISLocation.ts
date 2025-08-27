@@ -86,7 +86,7 @@ export function usePostGISLocation() {
       // Update state only for the hook's internal positions, return data directly
       setState(prev => ({
         ...prev,
-        positions: data || [],
+        positions: (data as any) || [],
         isLoading: false,
         error: null
       }));

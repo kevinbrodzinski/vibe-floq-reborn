@@ -17,11 +17,12 @@ export function usePlanUserSearch(planId: string, query: string) {
       const { data: participants, error: participantsError } = await supabase
         .from('plan_participants')
         .select('profile_id')
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
+        .returns<any>()
 
       if (participantsError) throw participantsError
 
-      const existingUserIds = participants?.map(p => p.profile_id).filter(Boolean) || []
+      const existingUserIds = (participants as any)?.map((p: any) => p.profile_id).filter(Boolean) || []
 
       // Search users excluding existing participants
       let searchQuery = supabase
@@ -35,10 +36,10 @@ export function usePlanUserSearch(planId: string, query: string) {
         searchQuery = searchQuery.not('id', 'in', `(${existingUserIds.map(id => `'${id}'`).join(',')})`)
       }
 
-      const { data, error } = await searchQuery
+      const { data, error } = await searchQuery.returns<any>()
 
       if (error) throw error
-      return data || []
+      return (data as any) || []
     },
     staleTime: 60_000,
   })

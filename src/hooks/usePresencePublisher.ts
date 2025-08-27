@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { trackError } from '@/lib/trackError';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAuth } from '@/hooks/useAuth';
 import { evaluatePolicyLadder } from '@/lib/policy/ladder';
 
 type Vibe = 'social' | 'chill' | 'focused' | 'energetic' | 'open' | 'curious';
@@ -24,7 +24,7 @@ export function usePresencePublisher(
   const [error, setError] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  const { data: user } = useCurrentUser();
+  const { user } = useAuth();
 
   const updatePosition = useCallback(async (lat: number, lng: number) => {
     if (!user || !isActive) return;
@@ -35,18 +35,16 @@ export function usePresencePublisher(
 
       // Apply policy ladder before publishing presence
       const policyDecision = evaluatePolicyLadder({
-        claim: {
-          kind: 'raw',
-          value: vibe,
-          confidence: 0.8, // High confidence for user-initiated vibe
-        },
+        kind: 'raw',
+        value: vibe,
+        confidence: 0.8, // High confidence for user-initiated vibe
         theta: 0.7, // Confidence threshold
         omega: 0.3, // Uncertainty threshold
         class: 'presence',
         lastChangeAt: lastUpdate || undefined,
         venueSafety: 'safe', // TODO: detect from venue context
         userId: user.id,
-      });
+      } as any);
 
       if (!policyDecision.allowed) {
         console.log('[PresencePublisher] Policy ladder blocked publication:', policyDecision.reason);

@@ -39,7 +39,7 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           .from('friendships')
           .select('*', { count: 'exact', head: true })
           .or(`profile_low.eq.${profileId},profile_high.eq.${profileId}`)
-          .eq('friend_state', 'accepted');
+          .eq('friend_state', 'accepted' as any);
         
         friendCount = friendsCount || 0;
 
@@ -50,23 +50,23 @@ export const useRealProfileStats = (profileId: string | undefined) => {
             .from('friendships')
             .select('profile_low, profile_high')
             .or(`profile_low.eq.${currentUserId},profile_high.eq.${currentUserId}`)
-            .eq('friend_state', 'accepted');
+            .eq('friend_state', 'accepted' as any);
 
           // Get target user's friends
           const { data: theirFriends } = await supabase
             .from('friendships')
             .select('profile_low, profile_high')
             .or(`profile_low.eq.${profileId},profile_high.eq.${profileId}`)
-            .eq('friend_state', 'accepted');
+            .eq('friend_state', 'accepted' as any);
 
           if (myFriends && theirFriends) {
             // Extract friend IDs for current user
-            const myFriendIds = new Set(myFriends.map(f => 
+            const myFriendIds = new Set((myFriends as any).map((f: any) => 
               f.profile_low === currentUserId ? f.profile_high : f.profile_low
             ));
 
             // Extract friend IDs for target user
-            const theirFriendIds = new Set(theirFriends.map(f => 
+            const theirFriendIds = new Set((theirFriends as any).map((f: any) => 
               f.profile_low === profileId ? f.profile_high : f.profile_low
             ));
 
@@ -79,7 +79,8 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         const { data: floqParticipation } = await supabase
           .from('floq_participants')
           .select('floq_id, role')
-          .eq('profile_id', profileId);
+          .eq('profile_id', profileId as any)
+          .returns<any>();
 
         totalFloqs = floqParticipation?.length || 0;
 
@@ -88,11 +89,12 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           const { data: myFloqs } = await supabase
             .from('floq_participants')
             .select('floq_id')
-            .eq('profile_id', currentUserId);
+            .eq('profile_id', currentUserId as any)
+            .returns<any>();
 
           if (myFloqs) {
-            const myFlockIds = new Set(myFloqs.map((f) => f.floq_id));
-            sharedFloqs = floqParticipation.filter((f) => myFlockIds.has(f.floq_id)).length;
+            const myFlockIds = new Set((myFloqs as any).map((f: any) => f.floq_id));
+            sharedFloqs = (floqParticipation as any).filter((f: any) => myFlockIds.has(f.floq_id)).length;
           }
         }
 
@@ -100,15 +102,16 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         const { data: planParticipation } = await supabase
           .from('plan_participants')
           .select('plan_id')
-          .eq('profile_id', profileId);
+          .eq('profile_id', profileId as any)
+          .returns<any>();
 
-        totalPlans = planParticipation?.length || 0;
+        totalPlans = (planParticipation as any)?.length || 0;
 
         // 5. Get achievement count
         const { count: achievementsCount } = await supabase
           .from('achievements')
           .select('*', { count: 'exact', head: true })
-          .eq('profile_id', profileId);
+          .eq('profile_id', profileId as any);
 
         achievementCount = achievementsCount || 0;
 
@@ -116,23 +119,25 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         const { data: venueVisits } = await supabase
           .from('venue_live_presence')
           .select('venue_id')
-          .eq('profile_id', profileId);
+          .eq('profile_id', profileId as any)
+          .returns<any>();
 
         if (venueVisits) {
-          venuesVisited = new Set(venueVisits.map(v => v.venue_id)).size;
+          venuesVisited = new Set((venueVisits as any).map((v: any) => v.venue_id)).size;
         }
 
         // 7. Calculate average vibe score from recent presence
         const { data: recentVibes } = await supabase
           .from('vibes_now')
           .select('vibe')
-          .eq('profile_id', profileId)
+          .eq('profile_id', profileId as any)
           .order('updated_at', { ascending: false })
-          .limit(10);
+          .limit(10)
+          .returns<any>();
 
         if (recentVibes && recentVibes.length > 0) {
           // Basic vibe score mapping since vibe_score field doesn't exist
-          const vibeScores = recentVibes.map((v) => {
+          const vibeScores = (recentVibes as any).map((v: any) => {
             switch (v.vibe) {
               case 'hype': case 'energetic': case 'excited': return 80;
               case 'social': case 'open': return 70;
@@ -156,9 +161,9 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           const { data: friendship } = await supabase
             .from('friendships')
             .select('*')
-            .eq('profile_low', userLow)
-            .eq('profile_high', userHigh)
-            .eq('friend_state', 'accepted')
+            .eq('profile_low', userLow as any)
+            .eq('profile_high', userHigh as any)
+            .eq('friend_state', 'accepted' as any)
             .maybeSingle();
 
           if (friendship) {
@@ -176,12 +181,13 @@ export const useRealProfileStats = (profileId: string | undefined) => {
           const { data: recentInteractions } = await supabase
             .from('flock_relationships')
             .select('last_interaction_at, interaction_count')
-            .eq('user_a_id', userA)
-            .eq('user_b_id', userB)
-            .maybeSingle();
+            .eq('user_a_id', userA as any)
+            .eq('user_b_id', userB as any)
+            .maybeSingle()
+            .returns<any>();
 
-          if (recentInteractions?.last_interaction_at) {
-            const daysSinceInteraction = (Date.now() - new Date(recentInteractions.last_interaction_at).getTime()) / (1000 * 60 * 60 * 24);
+          if ((recentInteractions as any)?.last_interaction_at) {
+            const daysSinceInteraction = (Date.now() - new Date((recentInteractions as any).last_interaction_at).getTime()) / (1000 * 60 * 60 * 24);
             if (daysSinceInteraction < 7) {
               resonanceScore += Math.max(0, 10 - daysSinceInteraction); // Recent interaction bonus
             }

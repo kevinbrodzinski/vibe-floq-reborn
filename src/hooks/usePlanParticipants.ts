@@ -191,7 +191,7 @@ export function useInviteParticipant() {
               planId: inviteData.planId,
               invitedProfileId: inviteData.profileId,
               inviterProfileId: user?.id,
-              participantId: data.id
+              participantId: (data as any)?.id
             }
           })
         } catch (notificationError) {
@@ -200,7 +200,7 @@ export function useInviteParticipant() {
         }
       }
 
-       return data && data.id ? data as PlanParticipant : null
+       return (data as any) || null
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-participants', variables.planId] })

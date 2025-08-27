@@ -13,19 +13,20 @@ async function callCreatePlanShareLink(planId: string): Promise<PlanShareLinkRes
   const { data: existing, error: queryError } = await supabase
     .from('plan_share_links')
     .select('slug')
-    .eq('plan_id', planId)
-    .maybeSingle();
+    .eq('plan_id', planId as any)
+    .maybeSingle()
+    .returns<any>();
   
   if (queryError) {
     console.error('Error querying existing share link:', queryError);
     throw queryError;
   }
   
-  if (existing?.slug) {
-    console.log('Found existing share link:', existing.slug);
+  if ((existing as any)?.slug) {
+    console.log('Found existing share link:', (existing as any).slug);
     return {
-      slug: existing.slug,
-      url: `${window.location.origin}/plan/${existing.slug}`
+      slug: (existing as any).slug,
+      url: `${window.location.origin}/plan/${(existing as any).slug}`
     };
   }
   

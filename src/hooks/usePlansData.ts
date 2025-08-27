@@ -44,11 +44,12 @@ export function usePlansData() {
             creator:profiles!creator_id(id, display_name, username, avatar_url)
           )
         `)
-        .eq('profile_id', user.user.id)
-        .neq('floq_plans.creator_id', user.user.id);
+        .eq('profile_id', user.user.id as any)
+        .neq('floq_plans.creator_id', user.user.id as any)
+        .returns<any>();
 
       if (error) throw error;
-      return data?.map(item => item.floq_plans).filter(Boolean) || [];
+      return (data as any)?.map((item: any) => item.floq_plans).filter(Boolean) || [];
     }
   });
 
@@ -79,9 +80,10 @@ export function usePlansData() {
           creator_id: user.user.id,
           status: 'draft',
           planned_at: new Date().toISOString()
-        })
+        } as any)
         .select()
-        .single();
+        .single()
+        .returns<any>();
 
       if (error) throw error;
       return data;

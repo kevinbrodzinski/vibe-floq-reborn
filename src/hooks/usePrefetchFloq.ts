@@ -21,7 +21,7 @@ export const usePrefetchFloq = () => {
             profiles!floqs_creator_id_fkey(display_name, avatar_url),
             floq_participants(user_id)
           `)
-          .eq('id', floqId)
+          .eq('id', floqId as any)
           .single();
         
         if (error) throw error;

@@ -16,7 +16,7 @@ export function useCurrentUserProfile() {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url, bio, interests, custom_status')
-        .eq('id', session!.user.id)
+        .eq('id', session!.user.id as any)
         .maybeSingle()
       if (error) throw error
       if (!data) {
@@ -27,7 +27,7 @@ export function useCurrentUserProfile() {
             const { data, error } = await supabase
               .from('profiles')
               .select('id, username, display_name, avatar_url, bio, interests, custom_status')
-              .eq('id', session!.user.id)
+              .eq('id', session!.user.id as any)
               .maybeSingle()
             if (error) throw error
             if (!data) throw new Error('Profile not found after retry')
@@ -58,7 +58,7 @@ export const useProfile = (profileId: string | undefined) =>
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url, bio, interests, custom_status')
-        .eq('id', profileId!)
+        .eq('id', profileId! as any)
         .maybeSingle()
       if (error) throw error
       if (!data) throw new Error('Profile not found')
@@ -77,7 +77,7 @@ export const useProfileByUsername = (username: string | undefined) =>
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url, bio, interests, custom_status')
-        .eq('username', username!)
+        .eq('username', username! as any)
         .maybeSingle()
       if (error) throw error
       if (!data) throw new Error('Profile not found')

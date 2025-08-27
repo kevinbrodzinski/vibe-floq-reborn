@@ -56,7 +56,7 @@ export function useProgressivePlansData() {
           creator_id: user.user.id,
           status: 'draft',
           planned_at: new Date().toISOString()
-        })
+        } as any)
         .select('id')
         .single();
 

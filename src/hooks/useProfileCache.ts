@@ -60,7 +60,7 @@ export function useProfile(profileId: string) {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('id', profileId)
+        .eq('id', profileId as any)
         .maybeSingle();
 
       if (error) {
@@ -78,7 +78,7 @@ export function useProfile(profileId: string) {
       }
       
       if (import.meta.env.DEV) {
-        console.log(`✅ [PROFILE] Successfully fetched profile for ${profileId}:`, data.username);
+        console.log(`✅ [PROFILE] Successfully fetched profile for ${profileId}:`, (data as any).username);
       }
       return data as Profile;
     },

@@ -31,7 +31,7 @@ export function usePlanVotes(plan_id: string) {
           stop:plan_stops!inner(title),
           user:profiles!profile_id(display_name, username, avatar_url)
         `)
-        .eq('plan_id', plan_id)
+        .eq('plan_id', plan_id as any)
         .order('created_at', { ascending: false })
       
       if (error) {

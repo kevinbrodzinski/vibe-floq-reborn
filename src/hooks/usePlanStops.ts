@@ -20,7 +20,7 @@ export function usePlanStops(plan_id: string) {
           *,
           venue:venues(*)
         `)
-        .eq('plan_id', plan_id)
+        .eq('plan_id', plan_id as any)
         .order('stop_order', { ascending: true, nullsFirst: false })
         .order('start_time', { ascending: true })
         .returns<PlanStopRow[]>()
