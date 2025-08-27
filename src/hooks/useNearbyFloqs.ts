@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { WalkableFloqSchema, type WalkableFloq } from '@/types/schemas/WalkableFloqSchema';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface NearbyFloqsReturn {
   nearby: WalkableFloq[];
@@ -35,7 +36,7 @@ export function useNearbyFloqs(
     console.warn('useNearbyFloqs called with invalid coordinates:', { lat, lng });
   }
 
-  const { data: floqs = [], isLoading: loading, error } = useQuery({
+  const { data: floqs = [], isLoading: loading, error } = useQuery<WalkableFloq[]>({
     queryKey: ['walkable', lastLatRef.current, lastLngRef.current, lastKmRef.current],
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async () => {
@@ -44,7 +45,7 @@ export function useNearbyFloqs(
         p_lat: lat!,
         p_lng: lng!,
         p_metres: km * 1000,
-      });
+      } as any).returns<WalkableFloq[]>();
       
       // Add observability tracking
       const duration = performance.now() - startTime;

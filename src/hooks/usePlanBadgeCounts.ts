@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface PlanBadgeCount {
   plan_id: string;
@@ -10,7 +11,7 @@ export interface PlanBadgeCount {
 export function usePlanBadgeCounts() {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<PlanBadgeCount[]>({
     queryKey: ['plan-badges', user?.id],
     enabled: !!user?.id,
     queryFn: async (): Promise<PlanBadgeCount[]> => {
@@ -18,7 +19,7 @@ export function usePlanBadgeCounts() {
 
       const { data, error } = await supabase.rpc('count_unseen_plan_events' as any, { 
         uid: user.id 
-      });
+      } as any).returns<PlanBadgeCount[]>();
 
       if (error) {
         console.warn('Plan badge RPC not available, falling back to client calculation');

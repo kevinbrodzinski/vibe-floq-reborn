@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client'
+import type { Database } from '@/integrations/supabase/types'
 
 interface LogSnapSuggestionParams {
   planId: string
@@ -39,7 +40,7 @@ export function useLogSnapSuggestion() {
           confidence,
           reason,
           source: 'nova'
-        })
+        } as any)
 
       if (error) throw error
     } catch (err) {

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LiveSettings } from '@/types/liveSettings';
+import type { Database } from '@/integrations/supabase/types';
 
 const key = ['live-settings'];
 
@@ -15,7 +16,7 @@ const DEFAULTS: LiveSettings = {
 export const useLiveSettings = () => {
     const qc = useQueryClient();
 
-    const query = useQuery({
+    const query = useQuery<LiveSettings>({
         queryKey: key,
         queryFn: async (): Promise<LiveSettings> => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -30,7 +31,8 @@ export const useLiveSettings = () => {
                     live_muted_until,
                     live_smart_flags
                 `)
-                .eq('id', user.id)   // ← correct PK
+                .eq('id', user.id as any)   // ← correct PK
+                .returns<LiveSettings>()
                 .maybeSingle();         // ← null instead of crash
 
             if (error) {
@@ -51,8 +53,8 @@ export const useLiveSettings = () => {
 
             const { error } = await supabase
                 .from('profiles')
-                .update(patch)
-                .eq('id', user.id);  // ← not profile_id 
+                .update(patch as any)
+                .eq('id', user.id as any);  // ← not profile_id 
 
             if (error) {
                 console.error('Failed to update live settings:', error);

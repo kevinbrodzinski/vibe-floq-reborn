@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { usePostGISLocation } from './usePostGISLocation';
 import { useLocationMetrics } from './useLocationMetrics';
 import { useGeo } from './useGeo';
+import type { Database } from '@/integrations/supabase/types';
 
 /**
  * Migration hook that provides a unified interface between old and new location systems
@@ -77,7 +78,7 @@ export function useLocationMigration() {
       await recordMetric('performance', Date.now() - startTime, {
         operation: 'get_nearby_positions',
         radius_m: radiusMeters,
-        results_count: result.length
+        results_count: Array.isArray(result) ? result.length : 0
       });
 
       return result;

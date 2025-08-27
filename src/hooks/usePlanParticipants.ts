@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
+import type { Database } from '@/integrations/supabase/types'
 
 // Match your exact database enums
 export type RSVPStatus = 'pending' | 'accepted' | 'declined' | 'maybe'
@@ -73,8 +74,9 @@ export function usePlanParticipants(planId: string) {
             avatar_url
           )
         `)
-        .eq('plan_id', planId)
+        .eq('plan_id', planId as any)
         .order('invited_at', { ascending: true })
+        .returns<PlanParticipant[]>()
 
       if (error) {
         console.error('Failed to fetch plan participants:', error)
@@ -118,12 +120,12 @@ export function useInviteParticipant() {
       const existingQuery = supabase
         .from('plan_participants')
         .select('id')
-        .eq('plan_id', inviteData.planId)
+        .eq('plan_id', inviteData.planId as any)
 
       if (inviteData.isGuest && inviteData.guestEmail) {
-        existingQuery.eq('guest_email', inviteData.guestEmail)
+        existingQuery.eq('guest_email', inviteData.guestEmail as any)
       } else if (!inviteData.isGuest && inviteData.profileId) {
-        existingQuery.eq('profile_id', inviteData.profileId)
+        existingQuery.eq('profile_id', inviteData.profileId as any)
       }
 
       const { data: existing } = await existingQuery.maybeSingle()
@@ -150,7 +152,7 @@ export function useInviteParticipant() {
 
       const { data, error } = await supabase
         .from('plan_participants')
-        .insert(participantData)
+        .insert(participantData as any)
         .select(`
           id,
           plan_id,
@@ -174,6 +176,7 @@ export function useInviteParticipant() {
             avatar_url
           )
         `)
+        .returns<PlanParticipant>()
         .single()
 
       if (error) {
@@ -248,7 +251,7 @@ export function useUpdateRSVP() {
       const { data, error } = await supabase
         .from('plan_participants')
         .update(updateData)
-        .eq('id', participantId)
+        .eq('id', participantId as any)
         .select(`
           id,
           plan_id,
@@ -272,6 +275,7 @@ export function useUpdateRSVP() {
             avatar_url
           )
         `)
+        .returns<PlanParticipant>()
         .single()
 
       if (error) {
@@ -313,7 +317,7 @@ export function useRemoveParticipant() {
       const { error } = await supabase
         .from('plan_participants')
         .delete()
-        .eq('id', participantId)
+        .eq('id', participantId as any)
 
       if (error) {
         console.error('Failed to remove participant:', error)
@@ -367,7 +371,7 @@ export function useParticipantStats(planId: string) {
 export function useRealtimePlanParticipants(planId: string) {
   const queryClient = useQueryClient()
 
-  return useQuery({
+  return useQuery<null>({
     queryKey: ['realtime-plan-participants', planId],
     queryFn: () => null, // This is just for the subscription
     enabled: false, // We don't actually fetch, just subscribe

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import type { Json } from '@/integrations/supabase/types';
+import type { Json, Database } from '@/integrations/supabase/types';
 
 interface LocationMetric {
   id: string;
@@ -44,7 +44,7 @@ export function useLocationMetrics() {
           metric_name: metricName,
           metric_value: value,
           metadata
-        });
+        } as any);
 
       if (error) {
         throw error;
@@ -76,15 +76,15 @@ export function useLocationMetrics() {
       let query = supabase
         .from('location_metrics')
         .select('*')
-        .eq('profile_id', user.id)
+        .eq('profile_id', user.id as any)
         .order('recorded_at', { ascending: false })
         .limit(limit);
 
       if (metricName) {
-        query = query.eq('metric_name', metricName);
+        query = query.eq('metric_name', metricName as any);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.returns<LocationMetric[]>();
 
       if (error) {
         throw error;

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface MyFloq {
   id: string;
@@ -35,10 +36,11 @@ export function useMyFloqs() {
           creator_id,
           floq_participants!inner(profile_id)
         `)
-        .eq('floq_participants.profile_id', user.id)
-        .eq('visibility', 'public')
+        .eq('floq_participants.profile_id', user.id as any)
+        .eq('visibility', 'public' as any)
         .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<(MyFloq & { floq_participants: any[] })[]>();
 
       if (error) throw error;
 

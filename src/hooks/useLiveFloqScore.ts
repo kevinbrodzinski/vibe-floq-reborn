@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import type { Database } from '@/integrations/supabase/types';
 
 interface FloqActivityData {
   id: string;
@@ -10,7 +11,7 @@ interface FloqActivityData {
 }
 
 export function useLiveFloqScore(floqId: string | undefined) {
-  const query = useQuery({
+  const query = useQuery<FloqActivityData | null>({
     queryKey: ["floq-activity", floqId],
     enabled: !!floqId,
     queryFn: async () => {
@@ -24,7 +25,7 @@ export function useLiveFloqScore(floqId: string | undefined) {
           last_activity_at,
           floq_participants!inner(count)
         `)
-        .eq("id", floqId)
+        .eq("id", floqId as any)
         .single();
 
       if (error) {
@@ -32,11 +33,15 @@ export function useLiveFloqScore(floqId: string | undefined) {
         throw error;
       }
 
+      if (!data) {
+        throw new Error("No floq data found");
+      }
+
       return {
-        id: data.id,
-        activity_score: data.activity_score || 0,
-        participant_count: data.floq_participants?.length || 0,
-        last_activity_at: data.last_activity_at
+        id: (data as any).id,
+        activity_score: (data as any).activity_score || 0,
+        participant_count: (data as any).floq_participants?.length || 0,
+        last_activity_at: (data as any).last_activity_at || ''
       } satisfies FloqActivityData;
     },
     staleTime: 1000 * 30, // 30 seconds

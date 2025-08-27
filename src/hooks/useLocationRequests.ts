@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
 
 interface LocationRequest {
   id: string;
@@ -51,8 +52,8 @@ export const useLocationRequests = () => {
           status,
           requester:profiles!requester_id(display_name)
         `)
-        .eq('target_id', user.id)
-        .eq('status', 'pending')
+        .eq('target_id', user.id as any)
+        .eq('status', 'pending' as any)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
@@ -92,7 +93,7 @@ export const useLocationRequests = () => {
           status,
           target:profiles!target_id(display_name)
         `)
-        .eq('requester_id', user.id)
+        .eq('requester_id', user.id as any)
         .order('created_at', { ascending: false })
         .limit(10);
 
