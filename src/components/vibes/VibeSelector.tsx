@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
+import type { Insert } from '@/types/util';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,15 +48,24 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({
   // Set user vibe state
   const setVibeMutation = useMutation({
     mutationFn: async (vibeState: Omit<VibeState, 'id'>) => {
-      // Placeholder - use direct table insert for now
+      type UvsInsert = Insert<'user_vibe_states'>;
+      
+      const row: UvsInsert = {
+        profile_id: currentUserId as UvsInsert['profile_id'],
+        active: true,
+        started_at: new Date().toISOString() as UvsInsert['started_at'],
+        vibe_tag: vibeState.vibe,
+        gh5: null,
+        location: null,
+        visible_to: vibeState.visibility as UvsInsert['visible_to'],
+        vibe_h: null,
+        vibe_s: null,
+        vibe_l: null,
+      };
+
       const { error } = await supabase
         .from('user_vibe_states')
-        .upsert({
-          profile_id: currentUserId,
-          vibe: vibeState.vibe,
-          visibility: vibeState.visibility,
-          is_broadcasting: vibeState.is_broadcasting
-        });
+        .upsert([row] as UvsInsert[]);
 
       if (error) throw error;
     },
