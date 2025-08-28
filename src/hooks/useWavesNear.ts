@@ -66,7 +66,7 @@ export function useWavesNear(a: SupabaseClient | Params, b?: Params): Result {
           min_size: minSize,
           recent_minutes: recentMinutes,
           only_close_friends: onlyCloseFriends,
-        })
+        } as any)
         .returns<WavesReturn>()
       if (error) throw new Error(error.message)
       setData((data ?? null) as WavesNearRow[] | null)

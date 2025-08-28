@@ -10,7 +10,7 @@ export const createPing = async (targetId: string) => {
       target_id: targetId,
       requester_id: user.data.user.id,
       status: 'pending'
-    })
+    } as any)
   
   if (error) throw error
 }
@@ -23,9 +23,9 @@ export const acceptPing = async (pingId: string, shareGeom?: { lat: number; lng:
   
   const { error } = await supabase
     .from('ping_requests')
-    .update(updates)
-    .eq('id', pingId)
-    .eq('target_id', (await supabase.auth.getUser()).data.user?.id)
+    .update(updates as any)
+    .eq('id', pingId as any)
+    .eq('target_id', (await supabase.auth.getUser()).data.user?.id as any)
     
   if (error) throw error
   

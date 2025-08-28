@@ -24,10 +24,6 @@ const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
   },
   db: {
     schema: 'public',
-    fetchOptions: { 
-      // ✅ Skip HEAD requests to prevent 400 errors from PostgREST
-      noHead: true 
-    } as any,
   },
 });
 

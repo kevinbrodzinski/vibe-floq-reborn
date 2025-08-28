@@ -66,7 +66,7 @@ export function useWaveRippleOverview(a: SupabaseClient | Params, b?: Params): R
           recent_wave_minutes: recentWaveMinutes,
           recent_ripple_minutes: recentRippleMinutes,
           only_close_friends: onlyCloseFriends,
-        })
+        } as any)
         .returns<OverviewReturn>()
       if (error) throw new Error(error.message)
 

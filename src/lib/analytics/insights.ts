@@ -32,7 +32,7 @@ export async function fetchTimeSeries(uid: string, fromDate?: string, toDate?: s
   let query = supabase
     .from('v_time_in_venue_daily' as any)
     .select('*')
-    .eq('profile_id', uid);
+    .eq('profile_id', uid as any);
 
   if (fromDate) query = query.gte('day', fromDate);
   if (toDate) query = query.lte('day', toDate);
@@ -67,9 +67,10 @@ export async function getVenueVisitPatterns(uid: string, days = 30) {
   const { data, error } = await supabase
     .from('venue_visits' as any)
     .select('venue_id, created_at')
-    .eq('profile_id', uid)
+    .eq('profile_id', uid as any)
     .gte('created_at', fromDate.toISOString())
-    .order('created_at');
+    .order('created_at')
+    .returns<Array<{ venue_id: string; created_at: string }>>();
 
   if (error) throw error;
   return data ?? [];

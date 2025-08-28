@@ -44,17 +44,18 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         // Don't throw, this is optional
       }
 
+      const interactionsList = interactions || [];
       const testResult = {
         venueId,
         profileId: user.id,
-        interactions: interactions || [],
+        interactions: interactionsList,
         presence: presence || null,
-        hasInteractions: (interactions?.length || 0) > 0,
+        hasInteractions: interactionsList.length > 0,
         isCurrentlyPresent: presence && new Date((presence as any).expires_at) > new Date(),
-        favoriteCount: interactions?.find(i => (i as any).interaction_type === 'favorite')?.(i as any).interaction_count || 0,
-        checkInCount: interactions?.find(i => (i as any).interaction_type === 'check_in')?.(i as any).interaction_count || 0,
-        viewCount: interactions?.find(i => (i as any).interaction_type === 'view')?.(i as any).interaction_count || 0,
-        shareCount: interactions?.find(i => (i as any).interaction_type === 'share')?.(i as any).interaction_count || 0
+        favoriteCount: interactionsList.find(i => (i as any).interaction_type === 'favorite')?.(i as any).interaction_count || 0,
+        checkInCount: interactionsList.find(i => (i as any).interaction_type === 'check_in')?.(i as any).interaction_count || 0,
+        viewCount: interactionsList.find(i => (i as any).interaction_type === 'view')?.(i as any).interaction_count || 0,
+        shareCount: interactionsList.find(i => (i as any).interaction_type === 'share')?.(i as any).interaction_count || 0
       };
 
       devLog('✅ Venue interaction test results:', testResult);

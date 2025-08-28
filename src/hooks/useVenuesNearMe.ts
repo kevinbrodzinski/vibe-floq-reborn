@@ -108,9 +108,9 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
           name: venue.name,
           lat: +venue.lat,
           lng: +venue.lng,
-          vibe: venue.categories?.[0] || 'mixed', // use first category as vibe
+          vibe: venue.category || 'mixed', // use category as vibe
           source: 'database',
-          distance_m: venue.dist_m, // use calculated distance from RPC
+          distance_m: 0, // distance calculation placeholder
           live_count: 0, // not available in this RPC
           vibe_score: 50, // default
           popularity: venue.popularity || 0

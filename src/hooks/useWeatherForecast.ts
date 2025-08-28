@@ -83,7 +83,6 @@ export const useWeatherForecast = (timeOption: TimeOption = 'now') => {
           'get_weather',
           {
             body: { lat, lng },
-            signal,
           },
         );
         
@@ -109,7 +108,6 @@ export const useWeatherForecast = (timeOption: TimeOption = 'now') => {
               targetTime: targetDateTime.toISOString(),
               timeOption 
             },
-            signal,
           },
         );
         
@@ -129,7 +127,6 @@ export const useWeatherForecast = (timeOption: TimeOption = 'now') => {
           'get_weather',
           {
             body: { lat, lng },
-            signal,
           },
         );
         
@@ -147,7 +144,7 @@ export const useWeatherForecast = (timeOption: TimeOption = 'now') => {
     },
     
     staleTime: isCurrentWeather ? 10 * 60_000 : 30 * 60_000, // Current: 10min, Forecast: 30min
-    cacheTime: isCurrentWeather ? 30 * 60_000 : 60 * 60_000, // Current: 30min, Forecast: 1hr
+    gcTime: isCurrentWeather ? 30 * 60_000 : 60 * 60_000, // Current: 30min, Forecast: 1hr
     refetchOnWindowFocus: false,
     retry: 2,
     
