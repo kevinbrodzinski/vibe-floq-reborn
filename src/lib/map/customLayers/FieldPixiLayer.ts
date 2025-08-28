@@ -235,14 +235,8 @@ export function createFieldPixiLayer(
         const animatedAlpha = baseRingAlpha + Math.sin(animationTime * pulseSpeed) * pulseIntensity * baseRingAlpha;
         const animatedRadius = ringRadius + Math.sin(animationTime * pulseSpeed * 1.2) * 2;
         
-        g.lineStyle({
-          width: Math.max(1.5, baseRadius * 0.25),
-          color: (typeof pt.haloColor === 'number' ? pt.haloColor : drawColor),
-          alpha: clamp(animatedAlpha, 0.1, 1),
-          alignment: 0.5,
-        });
+        g.stroke({ width: Math.max(1.5, baseRadius * 0.25), color: (typeof pt.haloColor === 'number' ? pt.haloColor : drawColor), alpha: clamp(animatedAlpha, 0.1, 1), alignment: 0.5 });
         g.drawCircle(x, y, animatedRadius);
-        g.lineStyle(0, 0, 0);
       }
 
       // Core dot
@@ -294,13 +288,8 @@ export function createFieldPixiLayer(
     
     // Cluster border with animation
     const borderPulse = 1 + Math.sin(animationTime * 0.003) * 0.1;
-    g.lineStyle({
-      width: 2 * borderPulse,
-      color: 0xffffff,
-      alpha: alpha * 0.8,
-    });
+    g.stroke({ width: 2 * borderPulse, color: 0xffffff, alpha: alpha * 0.8 });
     g.drawCircle(x, y, radius);
-    g.lineStyle(0, 0, 0);
 
     // Count text (simplified - in real app you'd use PIXI.Text)
     g.beginFill(0xffffff, alpha + 0.2);
@@ -324,9 +313,11 @@ export function createFieldPixiLayer(
     // Check if viewport changed significantly for clustering
     const currentBounds = map?.getBounds();
     const currentZoom = map?.getZoom() || 15;
+    const boundsEq = (a: mapboxgl.LngLatBounds, b: mapboxgl.LngLatBounds) =>
+      JSON.stringify(a.toArray()) === JSON.stringify(b.toArray())
     const viewportChanged = !lastViewport.bounds || 
       Math.abs(currentZoom - lastViewport.zoom) > 0.5 ||
-      !currentBounds?.equals?.(lastViewport.bounds);
+      !currentBounds || !boundsEq(currentBounds, lastViewport.bounds);
     
     if (viewportChanged) {
       buildClusters();
@@ -386,7 +377,7 @@ export function createFieldPixiLayer(
           clearBeforeRender: false,
           powerPreference: 'high-performance',
           backgroundAlpha: 0,
-        }) as PIXI.Renderer;
+        }) as unknown as PIXI.Renderer;
       }
 
       // Some builds expose renderer.view – make it non-interactive just in case

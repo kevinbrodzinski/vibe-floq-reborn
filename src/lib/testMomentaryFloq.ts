@@ -8,14 +8,13 @@ export async function createTestMomentaryFloq() {
     console.log('Creating test momentary floq...');
     
     // Create a momentary floq using the RPC (4 hour duration makes it momentary)
-    const { data: floqId, error } = await supabase.rpc('rpc_floq_session_create', {
-      p_vibe: 'hype',
-      p_title: 'Test Momentary Floq',
-      p_lat: 34.0522,
-      p_lng: -118.2437,
-      p_radius_m: 500,
-      p_visibility: 'public',
-      p_invite_profiles: []
+    const { data: floqId, error } = await supabase.rpc('create_momentary_floq', {
+      in_primary_vibe: 'hype',
+      in_title: 'Test Momentary Floq',
+      in_lat: 34.0522,
+      in_lng: -118.2437,
+      in_radius_m: 500,
+      in_visibility: 'public',
     });
 
     if (error) {
@@ -36,9 +35,9 @@ export async function createTestMomentaryFloq() {
 export async function testSessionJoin(floqId: string) {
   try {
     console.log('Joining session...');
-    const { error } = await supabase.rpc('rpc_session_join', {
+    const { error } = await supabase.rpc('update_floq_checkin', {
       in_floq_id: floqId,
-      in_status: 'here'
+      in_checkin: 'here'
     });
 
     if (error) {

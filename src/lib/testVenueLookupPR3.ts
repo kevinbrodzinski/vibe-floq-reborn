@@ -2,31 +2,34 @@
 // Test nearest venue RPC and venue-aware floq creation
 
 import { supabase } from '@/integrations/supabase/client';
+import { getVenuesWithIntelligence } from '@/lib/venues/getVenuesWithIntelligence';
 
 export async function testNearestVenueRPC(lat: number = 34.0522, lng: number = -118.2437) {
   console.log('🏢 Testing nearest venue RPC at:', lat, lng);
   
   try {
-    const { data, error } = await supabase.rpc('rpc_nearest_venue', {
-      in_lat: lat,
-      in_lng: lng,
-      in_max_distance_m: 200
+    const venues = await getVenuesWithIntelligence({
+      lat: lat,
+      lng: lng,
+      radius_m: 200,
+      limit: 1,
     });
+    const data = venues[0] || null;
+    const error = null;
 
     if (error) {
       console.error('❌ Nearest venue RPC failed:', error);
       return false;
     }
 
-    const venue = data?.[0];
-    if (venue) {
+    if (data) {
       console.log('✅ Found nearest venue:', {
-        id: venue.venue_id,
-        name: venue.name,
-        distance: `${venue.distance_m}m`,
-        location: `${venue.lat}, ${venue.lng}`
+        id: data.id,
+        name: data.name,
+        distance: `${data.distance_m}m`,
+        location: `${data.lat}, ${data.lng}`
       });
-      return venue;
+      return data;
     } else {
       console.log('ℹ️ No venue found within 200m - this is normal for non-urban areas');
       return null;
@@ -45,7 +48,7 @@ export async function testVenueAwareFloqCreation() {
   
   const testCoords = { lat: 34.0522, lng: -118.2437 };
   const payload = venue ? {
-    venueId: venue.venue_id,
+    venueId: venue.id,
     name: venue.name,
     lat: venue.lat,
     lng: venue.lng
