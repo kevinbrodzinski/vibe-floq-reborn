@@ -1,64 +1,115 @@
-import { useMemo, useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { Z } from '@/constants/z';
-import { useFullscreenMap } from '@/store/useFullscreenMap';
-import { AvatarDropdown } from '@/components/AvatarDropdown';
-import { NotificationsSheet } from '@/components/notifications/NotificationsSheet';
+import React, { useState } from 'react';
+import { Bell, Search, User, Settings, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/useAuth';
+import { useCurrentUserProfile } from '@/hooks/useProfile';
+import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export function AppHeader() {
-  const nav = useNavigate();
-  const { pathname } = useLocation();
-  const { mode, setMode } = useFullscreenMap();
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { user } = useAuth();
+  const { data: profile } = useCurrentUserProfile();
+  const { unseen } = useEventNotifications();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const title = useMemo(() => {
-    if (pathname.startsWith('/pulse')) return 'pulse';
-    if (pathname.startsWith('/vibe')) return 'vibe';
-    if (pathname.startsWith('/afterglow')) return 'ripple';
-    if (pathname.startsWith('/floqs')) return 'floqs';
-    return 'floq';
-  }, [pathname]);
+  const unreadCount = unseen.length;
 
-  const isFieldPage = pathname === '/field' || pathname === '/' || pathname === '/home' || pathname.startsWith('/field');
-
-  // Exit fullscreen when navigating away from field page
-  useEffect(() => {
-    if (mode === 'full' && !isFieldPage) {
-      setMode('map');
-    }
-  }, [mode, isFieldPage, setMode]);
-
-  // Only hide header when in fullscreen mode AND on field page
-  if (mode === 'full' && isFieldPage) return null;
+  // Don't show header on field page for full map experience
+  if (location.pathname === '/field' || location.pathname === '/' || location.pathname === '/home') {
+    return null;
+  }
 
   return (
-    <header
-      className={cn(
-        'fixed top-0 inset-x-0 h-16 sm:h-[68px] px-4',
-        'bg-transparent border-0',                // no background/border
-        'flex items-center justify-between',
-        'pointer-events-none'                     // allow map gestures under header
-      )}
-      style={{ zIndex: Z.navigation, paddingTop: 'env(safe-area-inset-top)' }}
-    >
-      <button
-        onClick={() => nav('/field')}
-        className="pointer-events-auto font-semibold text-lg text-primary select-none"
-        aria-label="Go to Field"
-      >
-        floq
-      </button>
+    <>
+      <header className="fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          {/* Left side - Logo/Brand */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/home')}
+            >
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                floq
+              </h1>
+            </Button>
+          </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-        <span className="text-sm text-muted-foreground">{title}</span>
-      </div>
+          {/* Center - Search (on larger screens) */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8">
+            <Button
+              variant="outline"
+              className="w-full justify-start text-muted-foreground"
+              onClick={() => {
+                // TODO: Open command palette or search modal
+              }}
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Search places, friends...
+            </Button>
+          </div>
 
-      <div className="flex items-center gap-3 pointer-events-auto">
-        <AvatarDropdown onOpenNotifications={() => setNotifOpen(true)} />
-      </div>
+          {/* Right side - Actions */}
+          <div className="flex items-center gap-2">
+            {/* Search button for mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
 
-      <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
-    </header>
+            {/* Notifications */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNotifications(true)}
+              className="relative"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Profile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/settings/profile')}
+              className="flex items-center gap-2"
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={profile?.avatar_url || ''} />
+                <AvatarFallback>
+                  {profile?.display_name?.[0] || profile?.username?.[0] || user?.email?.[0] || '?'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline-block text-sm font-medium">
+                {profile?.display_name || profile?.username || 'Profile'}
+              </span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Notification Center */}
+      <NotificationCenter
+        open={showNotifications}
+        onOpenChange={setShowNotifications}
+      />
+    </>
   );
 }
