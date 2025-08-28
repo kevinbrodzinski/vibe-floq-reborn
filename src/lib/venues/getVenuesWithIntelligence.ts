@@ -11,64 +11,57 @@ export type VenueIntel = {
   lng: number | null
   distance_m?: number | null
   trend_score?: number | null
-  popularity?: number | null
-  category?: string | null
 }
 
-export async function getVenuesWithIntelligence(args: { 
-  lat: number; 
-  lng: number; 
-  radius_m?: number; 
-  city?: string; 
-  limit?: number; 
-}) {
+export async function getVenuesWithIntelligence(args: {
+  lat: number
+  lng: number
+  radius_m?: number
+  city?: string | null
+  limit?: number
+}): Promise<VenueIntel[]> {
   const [{ data: near }, { data: trend }] = await Promise.all([
-    supabase.rpc('get_nearby_venues', {
-      p_lat: args.lat, 
-      p_lng: args.lng, 
-      p_radius_m: args.radius_m ?? 1200, 
-      p_limit: args.limit ?? 40
-    }).returns<Database['public']['Functions']['get_nearby_venues']['Returns']>(),
+    supabase
+      .rpc('get_nearby_venues', {
+        lat: args.lat,
+        lng: args.lng,
+        radius_meters: args.radius_m ?? 1200,
+        limit_count: args.limit ?? 40,
+      })
+      .returns<Database['public']['Functions']['get_nearby_venues']['Returns']>(),
     args.city
-      ? supabase.rpc('get_trending_venues_enriched', { 
-          p_lat: args.lat,
-          p_lng: args.lng,
-          p_radius_m: args.radius_m ?? 1200,
-          p_limit: args.limit ?? 40 
-        }).returns<Database['public']['Functions']['get_trending_venues_enriched']['Returns']>()
-      : Promise.resolve({ data: [] as TrendingRet[] })
+      ? supabase
+          .rpc('get_trending_venues_enriched', {
+            city: args.city,
+            limit_count: args.limit ?? 40,
+          })
+          .returns<Database['public']['Functions']['get_trending_venues_enriched']['Returns']>()
+      : Promise.resolve({ data: [] as TrendingRet[] }),
   ])
 
   const byId = new Map<string, VenueIntel>()
-  
-  // Process nearby venues
-  ;(near ?? []).forEach(n => {
-    const venue = n as any;
-    byId.set(venue.id, { 
-      id: venue.id, 
-      name: venue.name ?? null, 
-      lat: venue.lat ?? null, 
-      lng: venue.lng ?? null, 
-      distance_m: venue.distance_m ?? null,
-      popularity: venue.popularity ?? null,
-      category: venue.category ?? null
+
+  ;(near ?? []).forEach((n) => {
+    byId.set(n.id, {
+      id: n.id,
+      name: (n as any).name ?? null,
+      lat: (n as any).lat ?? null,
+      lng: (n as any).lng ?? null,
+      distance_m: (n as any).distance_m ?? null,
     })
   })
-  
-  // Merge trending data
-  ;(trend ?? []).forEach(t => {
-    const venue = t as any;
-    const existing = byId.get(venue.id)
-    byId.set(venue.id, { 
-      ...(existing ?? { 
-        id: venue.id, 
-        name: venue.name ?? null, 
-        lat: venue.lat ?? null, 
-        lng: venue.lng ?? null 
-      }), 
-      trend_score: venue.trend_score ?? null 
+  ;(trend ?? []).forEach((t) => {
+    const existing = byId.get(t.id)
+    byId.set(t.id, {
+      ...(existing ?? {
+        id: t.id,
+        name: (t as any).name ?? null,
+        lat: (t as any).lat ?? null,
+        lng: (t as any).lng ?? null,
+      }),
+      trend_score: (t as any).trend_score ?? null,
     })
   })
-  
+
   return Array.from(byId.values())
 }
