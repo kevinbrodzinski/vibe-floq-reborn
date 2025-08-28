@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeo } from '@/hooks/useGeo';
 import type { IntelligentFriendSuggestion } from '@/types/recommendations';
+import type { AiFriendsResponse } from '@/types/intelligence';
 
 const enhanceRpcSuggestions = (data: any[]): IntelligentFriendSuggestion[] => {
   return data.map((item, index) => ({
@@ -100,8 +101,9 @@ export const useIntelligentFriendSuggestions = (
           }
         });
 
-        if (!error && data?.suggestions) {
-          return data.suggestions as IntelligentFriendSuggestion[];
+        if (!error && (data as AiFriendsResponse)?.suggestions) {
+          console.info('[reco_shown]', { type: 'friend', count: (data as AiFriendsResponse).suggestions.length, ts: Date.now() });
+          return (data as AiFriendsResponse).suggestions;
         }
 
         // Fallback: Basic friend suggestions with enhanced processing

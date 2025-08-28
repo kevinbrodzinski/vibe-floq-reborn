@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { PersonalInsights, ProfileStats, TimeRange, PersonalInsightRecommendation, PersonalInsightAchievement } from '@/types/insights';
+import type { AiInsightsResponse } from '@/types/intelligence';
 
 const generateFallbackInsights = (stats: ProfileStats | null, timeRange: TimeRange): PersonalInsights => {
   const friendCount = stats?.friend_count || 0;
@@ -95,8 +96,9 @@ export const usePersonalInsights = (timeRange: TimeRange = '30d') => {
           }
         });
         
-        if (!error && data) {
-          return data as PersonalInsights;
+        if (!error && (data as AiInsightsResponse)) {
+          console.info('[reco_shown]', { type: 'insights', mode: 'personal-insights', ts: Date.now() });
+          return data as AiInsightsResponse;
         }
         
         // Fallback to generating mock insights based on actual profile data
@@ -109,6 +111,7 @@ export const usePersonalInsights = (timeRange: TimeRange = '30d') => {
             metres: 100,
             seconds: 3600
           })
+          .returns<ProfileStats>()
         
         return generateFallbackInsights(stats as ProfileStats | null, timeRange);
         

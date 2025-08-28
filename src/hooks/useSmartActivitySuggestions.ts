@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { SmartActivitySuggestion, ContextType, TimeCtx } from '@/types/recommendations';
+import type { AiActivityResponse } from '@/types/intelligence';
 
 const generateFallbackSuggestions = (params: {
   lat: number;
@@ -193,8 +194,9 @@ export const useSmartActivitySuggestions = (
           }
         });
 
-        if (!error && data?.suggestions) {
-          return data.suggestions as SmartActivitySuggestion[];
+        if (!error && (data as AiActivityResponse)?.suggestions) {
+          console.info('[reco_shown]', { type: 'activity', count: (data as AiActivityResponse).suggestions.length, context, ts: Date.now() });
+          return (data as AiActivityResponse).suggestions;
         }
 
         // Fallback: generate contextual suggestions
