@@ -23,13 +23,13 @@ export function useCreateMomentaryFromWave() {
       
       // Create momentary floq at the wave location
       const { data: floqId, error } = await supabase.rpc('rpc_floq_session_create', {
-        p_vibe: (params.vibe as any) || 'hype',
-        p_title: params.title || 'Spontaneous Floq',
-        p_lat: params.lat,
-        p_lng: params.lng,
-        p_radius_m: 300, // Smaller radius for momentary floqs
-        p_visibility: 'public',
-        p_invite_profiles: [] // No specific invites, let people discover
+        in_primary_vibe: (params.vibe as any) || 'hype',
+        in_title: params.title || 'Spontaneous Floq',
+        in_lat: params.lat,
+        in_lng: params.lng,
+        in_radius_m: 300, // Smaller radius for momentary floqs
+        in_visibility: 'public',
+        in_invite_profiles: [] // No specific invites, let people discover
       });
 
       if (error) {
@@ -45,7 +45,7 @@ export function useCreateMomentaryFromWave() {
       // Auto-join the creator
       const { error: joinError } = await supabase.rpc('rpc_session_join', {
         in_floq_id: floqId,
-        in_status: 'here'
+        in_checkin: 'here'
       });
 
       if (joinError) {

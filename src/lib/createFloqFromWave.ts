@@ -13,13 +13,13 @@ export async function createMomentaryFromWave(args: {
   
   try {
     const { data, error } = await supabase.rpc('rpc_floq_session_create', {
-      p_vibe: vibe,
-      p_title: title,
-      p_lat: lat,
-      p_lng: lng,
-      p_radius_m: radiusM ?? 300,
-      p_visibility: visibility ?? 'public',
-      p_invite_profiles: [],
+      in_primary_vibe: vibe,
+      in_title: title,
+      in_lat: lat,
+      in_lng: lng,
+      in_radius_m: radiusM ?? 300,
+      in_visibility: visibility ?? 'public',
+      in_invite_profiles: [],
     });
     
     if (error) {
@@ -36,7 +36,7 @@ export async function createMomentaryFromWave(args: {
     // Auto-join the creator
     const { error: joinError } = await supabase.rpc('rpc_session_join', {
       in_floq_id: floqId,
-      in_status: 'here'
+      in_checkin: 'here'
     });
     
     if (joinError) {
@@ -65,7 +65,7 @@ export async function createMomentaryFromWave(args: {
           floqTitle: title,
           lat,
           lng,
-          friendIds: friends || []
+          friendIds: (friends || []).map(f => f.friend_id || f)
         });
       }
     } catch (notificationError) {

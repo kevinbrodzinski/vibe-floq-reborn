@@ -100,10 +100,10 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
         try {
           const { data, error } = await supabase.rpc('send_dm_message', {
             p_thread_id: threadId,
-            p_profile_id: user.id,
-            p_content: content,
+            p_sender_id: user.id,
+            p_body: content,
             p_reply_to: replyTo ?? null,
-            p_client_id: client_id,
+            p_type: 'text'
           });
           
           if (error) throw error;

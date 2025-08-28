@@ -253,7 +253,8 @@ export function useTrackInteraction() {
         const { data, error } = await supabase.rpc('track_interaction', {
           p_profile_id: user.id,
           p_venue_id: venue_id,
-          p_interaction_type: interaction_type,
+          p_type: interaction_type,
+          p_weight: 1.0,
           p_context: context || {}
         });
 
@@ -289,14 +290,16 @@ export function useUpdateUserTastes() {
 
       const { data, error } = await supabase.rpc('upsert_user_tastes', {
         p_profile_id: user.id,
-        p_preferred_cuisines: tastes.preferred_cuisines ?? null,
-        p_disliked_cuisines: tastes.disliked_cuisines ?? null,
-        p_preferred_tags: tastes.preferred_tags ?? null,
-        p_disliked_tags: tastes.disliked_tags ?? null,
-        p_price_min: tastes.price_min ?? null,
-        p_price_max: tastes.price_max ?? null,
-        p_max_distance_km: tastes.max_distance_km ?? null,
-        p_open_now_only: tastes.open_now_only ?? null,
+        p_json: {
+          preferred_cuisines: tastes.preferred_cuisines ?? null,
+          disliked_cuisines: tastes.disliked_cuisines ?? null,
+          preferred_tags: tastes.preferred_tags ?? null,
+          disliked_tags: tastes.disliked_tags ?? null,
+          price_min: tastes.price_min ?? null,
+          price_max: tastes.price_max ?? null,
+          max_distance_km: tastes.max_distance_km ?? null,
+          open_now_only: tastes.open_now_only ?? null,
+        }
       });
 
       if (error) throw error;
