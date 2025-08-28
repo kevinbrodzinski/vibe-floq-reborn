@@ -1,3 +1,4 @@
+// src/types/util.ts
 import type { Database } from '@/integrations/supabase/types'
 
 export type Simplify<T> = { [K in keyof T]: T[K] } & {}
