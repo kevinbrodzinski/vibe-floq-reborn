@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
+import { getVenuesWithIntelligence, type VenueIntel } from '@/lib/venues/getVenuesWithIntelligence'
 import { usePlanParticipants } from '@/hooks/usePlanParticipants'
 import { addMinutes, parseISO, format } from 'date-fns'
 
@@ -140,20 +140,12 @@ export function useSmartVenueRecommendations({
     ],
     queryFn: async (): Promise<SmartVenueRecommendation[]> => {
       try {
-        const { data: venues, error } = await supabase.rpc('get_venues_with_intelligence', {
-          center_lat: centerLocation.lat,
-          center_lng: centerLocation.lng,
-          radius_meters: maxDistance,
-          limit_count: limitResults * 2, // Get more to allow for filtering
-          vibe_filter: preferences.vibes,
-          date_context: planDate,
-          time_window: timeWindow
+        const venues = await getVenuesWithIntelligence({
+          lat: centerLocation.lat,
+          lng: centerLocation.lng,
+          radius_m: maxDistance,
+          limit: limitResults * 2, // Get more to allow for filtering
         })
-
-        if (error) {
-          console.error('Failed to fetch venue intelligence:', error)
-          throw error
-        }
 
         if (!venues || (venues as any)?.length === 0) {
           return []

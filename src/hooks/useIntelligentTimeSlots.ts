@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
+import { getVenuesWithIntelligence, type VenueIntel } from '@/lib/venues/getVenuesWithIntelligence'
 import { addMinutes, format, parseISO, isWithinInterval } from 'date-fns'
 
 interface TimeSlot {
@@ -73,22 +73,14 @@ export function useIntelligentTimeSlots({
       if (!centerLocation) return []
       
       try {
-        const { data, error } = await supabase.rpc('get_venues_with_intelligence', {
-          center_lat: centerLocation.lat,
-          center_lng: centerLocation.lng,
-          radius_meters: 5000, // 5km radius
-          limit_count: 100,
-          vibe_filter: preferences.vibes || null,
-          date_context: planDate,
-          time_window: { start: startTime, end: endTime }
+        const data = await getVenuesWithIntelligence({
+          lat: centerLocation.lat,
+          lng: centerLocation.lng,
+          radius_m: 5000, // 5km radius
+          limit: 100
         })
         
-        if (error) {
-          console.error('Failed to fetch intelligent venue data:', error)
-          throw error
-        }
-        
-        return (data as any[]) || []
+        return data || []
       } catch (error) {
         console.error('Error in venue intelligence query:', error)
         // Return empty array instead of throwing to prevent suspension

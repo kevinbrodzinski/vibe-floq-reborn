@@ -47,19 +47,23 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   const [dmOpen, setDmOpen] = useState(false);
   const lastSeen = useLastSeen(profileId);
 
-  // pull the initial preference once; you probably already fetch profile extras here
-  const { data: pref, error: prefError } = useQuery({
+  // Simplified share preference query to avoid type loops
+  type SharePref = { is_live: boolean }
+  const { data: pref, error: prefError } = useQuery<boolean>({
     queryKey: ['share-pref', profileId],
+    gcTime: 5 * 60_000,
+    staleTime: 60_000,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('friend_share_pref')
         .select('is_live')
-        .eq('other_profile_id' as any, profileId as any)
-        .maybeSingle();
-      const row = data as any;
-      return row?.is_live ?? false;
+        .eq('other_profile_id', profileId)
+        .maybeSingle()
+        .returns<SharePref | null>();
+      if (error) throw error;
+      return data?.is_live ?? false;
     },
-    retry: false, // Don't retry if QueryClient isn't ready
+    retry: false,
   });
 
   // Get current user ID for unread counts

@@ -74,14 +74,14 @@ export const MomentaryFloqNotificationModal: React.FC<MomentaryFloqNotificationM
       const floq = data[0];
       return {
         id: floq.id,
-        title: floq.title || floq.name || 'Untitled Floq',
+        title: floq.title || 'Untitled Floq',
         creator_name: notification.payload.friend_name || 'Someone',
         creator_avatar: null, // TODO: Get from payload if available
         venue_name: notification.payload.venue_name,
         participant_count: floq.participant_count || 0,
         ends_at: floq.ends_at,
         distance_m: notification.payload.distance_m,
-        created_at: floq.created_at
+        created_at: new Date().toISOString()
       };
     },
     enabled: open && !!notification?.payload?.floq_id,
@@ -128,7 +128,7 @@ export const MomentaryFloqNotificationModal: React.FC<MomentaryFloqNotificationM
       // Join the floq
       const { error } = await supabase.rpc('rpc_session_join', {
         in_floq_id: floqPreview.id,
-        in_status: 'here'
+        in_checkin: 'here'
       });
 
       if (error) {

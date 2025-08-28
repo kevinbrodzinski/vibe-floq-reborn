@@ -160,17 +160,17 @@ export function useVenueExtras(venueId: string | null) {
     if (!venueId) return;
     const uid = (await supabase.auth.getUser()).data.user?.id || '';
     if (!watch) {
-      const { error } = await supabase.from('user_watchlist').insert({
+      const { error } = await supabase.from('venue_favorites').insert({
         profile_id: uid,
         venue_id: venueId,
       } as any);
       if (!error) setWatch(true);
     } else {
       const { error } = await supabase
-        .from('user_watchlist')
+        .from('venue_favorites')
         .delete()
-        .eq('profile_id', uid as any)
-        .eq('venue_id', venueId as any);
+        .eq('profile_id', uid)
+        .eq('venue_id', venueId);
       if (!error) setWatch(false);
     }
   };

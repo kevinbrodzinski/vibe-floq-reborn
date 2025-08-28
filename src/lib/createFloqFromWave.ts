@@ -11,9 +11,13 @@ export async function createMomentaryFromWave(args: {
 }) {
   const { title, vibe, lat, lng, radiusM, visibility } = args;
   
+  // Ensure vibe is a valid type
+  const validVibes = ['social', 'chill', 'hype', 'curious', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open', 'energetic', 'excited', 'focused'] as const;
+  const safeVibe = validVibes.includes(vibe as any) ? vibe as typeof validVibes[number] : 'social';
+  
   try {
     const { data, error } = await supabase.rpc('rpc_floq_session_create', {
-      in_primary_vibe: vibe,
+      in_primary_vibe: safeVibe,
       in_title: title,
       in_lat: lat,
       in_lng: lng,
@@ -27,7 +31,7 @@ export async function createMomentaryFromWave(args: {
       return { error } as const;
     }
     
-    const floqId: string = typeof data === 'string' ? data : data?.id ?? data;
+    const floqId: string = typeof data === 'string' ? data : (data as any)?.id ?? data;
     
     if (!floqId) {
       return { error: 'No floq ID returned' } as const;
@@ -65,7 +69,7 @@ export async function createMomentaryFromWave(args: {
           floqTitle: title,
           lat,
           lng,
-          friendIds: (friends || []).map(f => f.friend_id || f)
+          friendIds: (friends || []).map(f => typeof f === 'string' ? f : f.friend_id).filter(Boolean)
         });
       }
     } catch (notificationError) {

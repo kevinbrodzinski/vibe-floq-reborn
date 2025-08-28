@@ -254,16 +254,30 @@ export function useFriendshipAnalysis(profileA: string, profileB: string) {
       const userLow = profileA < profileB ? profileA : profileB;
       const userHigh = profileA < profileB ? profileB : profileA;
 
-      const { data: existingAnalysis } = await supabase
+      // Simplified friendship analysis query
+      type AnalysisRow = {
+        profile_low: string
+        profile_high: string
+        overall_score: number
+        confidence_level: string
+        signals_data: Record<string, any>
+        relationship_type: string
+        updated_at: string
+      }
+      
+      const { data: existingAnalysis, error: analysisError } = await supabase
         .from('friendship_analysis')
-        .select('*')
-        .eq('profile_low', userLow as any)
-        .eq('profile_high', userHigh as any)
-        .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Within 24 hours
-        .maybeSingle();
+        .select('profile_low, profile_high, overall_score, confidence_level, signals_data, relationship_type, updated_at')
+        .eq('profile_low', userLow)
+        .eq('profile_high', userHigh)
+        .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .maybeSingle()
+        .returns<AnalysisRow | null>();
+
+      if (analysisError) throw analysisError;
 
       if (existingAnalysis) {
-        const analysis = existingAnalysis as any;
+        const analysis = existingAnalysis;
         setAnalysis({
           user_low: analysis.profile_low,
           user_high: analysis.profile_high,

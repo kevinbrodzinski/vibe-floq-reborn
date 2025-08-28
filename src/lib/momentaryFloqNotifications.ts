@@ -10,6 +10,7 @@ export interface NotificationPayload {
   lat?: number;
   lng?: number;
   distance_m?: number;
+  [key: string]: any; // Index signature for Json compatibility
 }
 
 export async function notifyFriendStartedFloq(params: {
@@ -44,7 +45,7 @@ export async function notifyFriendStartedFloq(params: {
 
     const { error } = await supabase
       .from('event_notifications')
-      .insert(notifications);
+      .insert(notifications as any[]);
 
     if (error) {
       console.error('Failed to send friend started floq notifications:', error);
@@ -76,7 +77,7 @@ export async function notifyFriendJoinedFloq(params: {
           friend_name: joinerName,
           floq_id: floqId,
           floq_title: floqTitle,
-        } as NotificationPayload
+        } as any
       });
 
     if (error) {
@@ -116,7 +117,7 @@ export async function notifyWaveActivityToFriends(params: {
 
     const { error } = await supabase
       .from('event_notifications')
-      .insert(notifications);
+      .insert(notifications as any[]);
 
     if (error) {
       console.error('Failed to send wave activity notifications:', error);
@@ -154,7 +155,7 @@ export async function notifyNearbyMomentaryFloq(params: {
           lat,
           lng,
           distance_m: distance,
-        } as NotificationPayload
+        } as any
       });
 
     if (error) {

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { getVenuesWithIntelligence, type VenueIntel } from '@/lib/venues/getVenuesWithIntelligence'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { addMinutes, format, parseISO } from 'date-fns'
@@ -268,21 +269,12 @@ export function useSmartVenueSuggestions(planId: string) {
       const existingVenueIds = existingStops?.map(s => (s as any).venue_id).filter(Boolean) || []
 
       // Call the intelligent venue function
-      const { data: venues, error } = await supabase.rpc('get_venues_with_intelligence', {
-        center_lat: (plan as any).lat,
-        center_lng: (plan as any).lng,
-        radius_meters: radius,
-        limit_count: limit,
-        date_context: planDate || new Date().toISOString().split('T')[0],
-        time_window: {
-          start_time: timeSlot,
-          duration_minutes: 90
-        }
-      }).returns<any>()
-
-      if (error) {
-        throw new Error(`Failed to get venue suggestions: ${error.message}`)
-      }
+      const venues = await getVenuesWithIntelligence({
+        lat: (plan as any).lat,
+        lng: (plan as any).lng,
+        radius_m: radius,
+        limit: limit,
+      });
 
       // Filter out already added venues and add match scores
       const filteredVenues = venues
