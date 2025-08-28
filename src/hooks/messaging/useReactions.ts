@@ -1,6 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useCurrentUserId } from '@/hooks/useCurrentUser'
+import type { Row, Insert } from '@/types/util'
+
+type ReactionRow = Row<'dm_message_reactions'>
+type ReactionInsert = Insert<'dm_message_reactions'>
 
 type ReactionSelect = {
   id: string
@@ -17,9 +21,9 @@ export function useReactions(threadId?: string) {
       const { data: existing, error: selErr } = await supabase
         .from('dm_message_reactions')
         .select('id')
-        .eq('message_id', messageId)
-        .eq('profile_id', me)
-        .eq('emoji', emoji)
+        .eq('message_id', messageId as ReactionRow['message_id'])
+        .eq('profile_id', me as ReactionRow['profile_id'])
+        .eq('emoji', emoji as ReactionRow['emoji'])
         .maybeSingle()
         .returns<ReactionSelect | null>()
       if (selErr) throw selErr
@@ -29,11 +33,12 @@ export function useReactions(threadId?: string) {
         if (error) throw error
         return { action: 'removed' as const }
       } else {
-        const { error } = await supabase.from('dm_message_reactions').insert({
-          message_id: messageId,
-          profile_id: me,
-          emoji,
-        })
+        const payload: ReactionInsert = {
+          message_id: messageId as ReactionInsert['message_id'],
+          profile_id: me as ReactionInsert['profile_id'],
+          emoji: emoji as ReactionInsert['emoji'],
+        }
+        const { error } = await supabase.from('dm_message_reactions').insert([payload] as ReactionInsert[])
         if (error) throw error
         return { action: 'added' as const }
       }

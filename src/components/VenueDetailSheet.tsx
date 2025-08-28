@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Heart, Bookmark, MessageSquare, Camera, Clock, MapPin, Navigation, Car, Calendar, Users, Sparkles, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useVenueExtras } from '@/hooks/useVenueExtras';
+import { useVenueExtrasCompat } from '@/hooks/useVenueExtrasCompat';
 
 export type VenueLite = {
   id: string;
@@ -61,7 +61,7 @@ function reservationLink(v?: VenueLite | null) {
 
 export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, onCreatePlan }: Props) {
   const contentId = React.useId();
-  const { data, toggles, submitReview, uploadPhoto, submitting } = useVenueExtras(venue?.id ?? null);
+  const { data, toggles, submitReview, uploadPhoto, submitting } = useVenueExtrasCompat(venue?.id ?? null);
 
   const distanceText = venue
     ? `${clamp1(km(venue.distance_m))} km • ${walkMins(venue.distance_m)}m walk • ${driveMins(venue.distance_m)}m drive`

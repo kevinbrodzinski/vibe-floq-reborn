@@ -49,12 +49,13 @@ export function useVenueExtras(venueId?: string): VenueExtrasState & {
           setFavorite(!!favData)
         }
 
-        // Check watchlist
+        // Check watchlist using user_venue_interactions
         const { data: watchData, error: watchError } = await supabase
-          .from('user_watchlist')
-          .select('venue_id')
+          .from('user_venue_interactions')
+          .select('id')
           .eq('profile_id', currentUserId)
           .eq('venue_id', venueId)
+          .eq('interaction_type', 'watch')
           .maybeSingle()
 
         if (!cancelled) {
@@ -102,17 +103,20 @@ export function useVenueExtras(venueId?: string): VenueExtrasState & {
     if (!venueId || !currentUserId) return
 
     if (!watch) {
-      const { error } = await supabase.from('user_watchlist').insert({
+      const { error } = await supabase.from('user_venue_interactions').insert({
         profile_id: currentUserId,
         venue_id: venueId,
+        interaction_type: 'watch',
+        interaction_count: 1,
       })
       if (!error) setWatch(true)
     } else {
       const { error } = await supabase
-        .from('user_watchlist')
+        .from('user_venue_interactions')
         .delete()
         .eq('profile_id', currentUserId)
         .eq('venue_id', venueId)
+        .eq('interaction_type', 'watch')
       if (!error) setWatch(false)
     }
   }

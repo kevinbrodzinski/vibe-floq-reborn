@@ -23,17 +23,17 @@ export async function getVenuesWithIntelligence(args: {
   const [{ data: near }, { data: trend }] = await Promise.all([
     supabase
       .rpc('get_nearby_venues', {
-        lat: args.lat,
-        lng: args.lng,
-        radius_meters: args.radius_m ?? 1200,
-        limit_count: args.limit ?? 40,
+        p_lat: args.lat,
+        p_lng: args.lng,
+        p_radius_m: args.radius_m ?? 1200,
+        p_limit: args.limit ?? 40,
       })
       .returns<Database['public']['Functions']['get_nearby_venues']['Returns']>(),
     args.city
       ? supabase
           .rpc('get_trending_venues_enriched', {
-            city: args.city,
-            limit_count: args.limit ?? 40,
+            p_city: args.city,
+            p_limit: args.limit ?? 40,
           })
           .returns<Database['public']['Functions']['get_trending_venues_enriched']['Returns']>()
       : Promise.resolve({ data: [] as TrendingRet[] }),
@@ -51,10 +51,10 @@ export async function getVenuesWithIntelligence(args: {
     })
   })
   ;(trend ?? []).forEach((t) => {
-    const existing = byId.get(t.id)
-    byId.set(t.id, {
+    const existing = byId.get(t.venue_id)
+    byId.set(t.venue_id, {
       ...(existing ?? {
-        id: t.id,
+        id: t.venue_id,
         name: (t as any).name ?? null,
         lat: (t as any).lat ?? null,
         lng: (t as any).lng ?? null,

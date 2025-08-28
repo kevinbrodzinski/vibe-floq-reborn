@@ -20,7 +20,13 @@ export async function upsertPresence({
   const { data, error } = await supabase
     .from('presence')
     .upsert(
-      { profile_id, venue_id: venue_id || null, vibe: vibe || null, location },
+      { 
+        id: crypto.randomUUID(),
+        profile_id, 
+        venue_id: venue_id || null, 
+        vibe: vibe || null, 
+        location 
+      },
       { onConflict: 'profile_id,venue_id' }
     )
     .select()

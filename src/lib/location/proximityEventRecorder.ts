@@ -34,7 +34,7 @@ export interface ProximityEventRecorderOptions {
  */
 export class ProximityEventRecorder {
   private eventQueue: ProximityEventRecord[] = [];
-  private flushTimer: number | null = null;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private options: Required<ProximityEventRecorderOptions>;
 
   constructor(options: ProximityEventRecorderOptions = {}) {

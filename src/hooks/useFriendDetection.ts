@@ -57,7 +57,7 @@ export function useFriendDetection(lat?: number, lng?: number, radiusM = 500) {
         .eq('profile_high', userHigh)
         .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .maybeSingle()
-        .returns<AnalysisRow | null>()
+        .returns<Pick<AnalysisRow, 'profile_low' | 'profile_high' | 'overall_score' | 'confidence_level' | 'signals_data' | 'relationship_type' | 'updated_at'> | null>()
 
       if (analysisError) throw analysisError
 
@@ -74,3 +74,6 @@ export function useFriendDetection(lat?: number, lng?: number, radiusM = 500) {
     gcTime: 300000,
   })
 }
+
+// Export alias for compatibility
+export const useFriendSuggestions = useFriendDetection

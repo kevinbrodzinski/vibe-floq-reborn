@@ -43,7 +43,7 @@ export interface BackgroundProcessorOptions {
  */
 export class BackgroundLocationProcessor {
   private processingQueue: LocationUpdate[] = [];
-  private processingTimer: number | null = null;
+  private processingTimer: ReturnType<typeof setInterval> | null = null;
   private nearbyUsers: Map<string, ProximityUser> = new Map();
   private lastProcessedLocation: GPSCoords | null = null;
   private options: Required<BackgroundProcessorOptions>;
