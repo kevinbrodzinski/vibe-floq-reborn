@@ -1,186 +1,229 @@
-import { supabase } from '@/integrations/supabase/client';
-import { supaFn } from '@/lib/supaFn';
+// src/lib/chat/api.ts
+import { supabase } from '@/integrations/supabase/client'
+import { supaFn } from '@/lib/supaFn'
+import type { Database } from '@/integrations/supabase/types'
+import type { Json, Row, Insert, Update } from '@/types/util'
 
+/** Public message DTO used by UI */
 export interface ChatMessage {
-  id: string;
-  thread_id: string;
-  sender_id: string;
-  content: string | null;
-  metadata: any | null;
-  reply_to_id: string | null;
-  message_type?: 'text' | 'image' | 'voice' | 'file';
-  status?: string;
-  created_at: string;
-  reactions?: Record<string, string[]>;
+  id: string
+  thread_id: string
+  sender_id: string
+  content: string | null
+  metadata: Json | null
+  reply_to_id: string | null
+  message_type?: 'text' | 'image' | 'voice' | 'file'
+  status?: string
+  created_at: string
+  reactions?: Record<string, string[]>
 }
 
-export type Surface = 'dm' | 'floq' | 'plan';
-export const PAGE_SIZE = 40;
+export type Surface = 'dm' | 'floq' | 'plan'
+export const PAGE_SIZE = 40
 
-export const rpc_sendMessage = (payload: {
-  p_surface: 'dm' | 'floq' | 'plan';
-  p_thread_id: string;
-  p_sender_id: string;
-  p_body?: string | null;
-  p_reply_to_id?: string | null;
-  p_media_meta?: any;
-}) => supabase.rpc('send_message', payload);
+/** ==== RPC Types (from generated Database types) ==== */
 
-export const rpc_reactToMsg = (payload: {
-  p_message_id: string;
-  p_user_id: string;
-  p_emoji: string;
-}) => supabase.rpc('react_to_message', payload);
+type SendMessageArgs =
+  Database['public']['Functions']['send_message']['Args']
+type SendMessageRet =
+  Database['public']['Functions']['send_message']['Returns']
+
+type ReactArgs =
+  Database['public']['Functions']['react_to_message']['Args']
+type ReactRet =
+  Database['public']['Functions']['react_to_message']['Returns']
+
+type CreateOrGetThreadArgs =
+  Database['public']['Functions']['create_or_get_thread']['Args']
+type CreateOrGetThreadRet =
+  Database['public']['Functions']['create_or_get_thread']['Returns']
+
+type MarkThreadReadArgs =
+  Database['public']['Functions']['mark_thread_read_enhanced']['Args']
+type MarkThreadReadRet =
+  Database['public']['Functions']['mark_thread_read_enhanced']['Returns']
+
+/** ==== Tables Types ==== */
+type ThreadRow = Row<'direct_threads'>
+type ThreadInsert = Insert<'direct_threads'>
+type ThreadUpdate = Update<'direct_threads'>
+
+/** ==== RPC wrappers (typed) ==== */
+
+export const rpc_sendMessage = (payload: SendMessageArgs) =>
+  supabase.rpc('send_message', payload).returns<SendMessageRet>()
+
+export const rpc_reactToMsg = (payload: ReactArgs) =>
+  supabase.rpc('react_to_message', payload).returns<ReactRet>()
 
 /**
- * Enhanced thread creation that handles both old and new schema
+ * Get or create a 1:1 thread for (profileIdA, profileIdB).
+ * Tries typed RPC first, then manual lookup, finally manual insert.
  */
-export async function getOrCreateThread(profileIdA: string, profileIdB: string): Promise<string> {
+export async function getOrCreateThread(
+  profileIdA: string,
+  profileIdB: string
+): Promise<string> {
+  // normalize pair ordering (A < B)
+  const [low, high] = profileIdA < profileIdB
+    ? [profileIdA, profileIdB]
+    : [profileIdB, profileIdA]
+
+  // 1) Preferred: typed RPC
   try {
-    // First try the new enhanced function
-    const { data: threadId, error: newError } = await supabase
+    const { data: threadId, error } = await supabase
       .rpc('create_or_get_thread', {
-        p_user_a: profileIdA,
-        p_user_b: profileIdB
-      });
+        p_user_a: low,
+        p_user_b: high,
+      } satisfies CreateOrGetThreadArgs)
+      .returns<CreateOrGetThreadRet>()
 
-    if (!newError && threadId) {
-      return threadId;
+    if (!error && threadId) {
+      // Many setups return a UUID string; if your RPC returns an object, adjust here.
+      return String(threadId)
     }
-
-    console.warn('[getOrCreateThread] New function failed, trying fallback:', newError);
-
-    // Fallback: Try to find existing thread manually
-    const { data: existingThread, error: findError } = await supabase
-      .from('direct_threads')
-      .select('id')
-      .or(`member_a_profile_id.eq.${profileIdA},member_b_profile_id.eq.${profileIdA}`)
-      .or(`member_a_profile_id.eq.${profileIdB},member_b_profile_id.eq.${profileIdB}`)
-      .limit(1)
-      .single();
-
-    if (!findError && existingThread) {
-      return existingThread.id;
+    if (error) {
+      // fall through to manual path
+      // console.warn('[getOrCreateThread] RPC failed:', error)
     }
-
-    // Last resort: Create thread manually (if we have the right permissions)
-    const { data: newThread, error: createError } = await supabase
-      .from('direct_threads')
-      .insert({
-        member_a: profileIdA < profileIdB ? profileIdA : profileIdB,
-        member_b: profileIdA < profileIdB ? profileIdB : profileIdA,
-        member_a_profile_id: profileIdA < profileIdB ? profileIdA : profileIdB,
-        member_b_profile_id: profileIdA < profileIdB ? profileIdB : profileIdA,
-        created_at: new Date().toISOString(),
-        last_message_at: new Date().toISOString(),
-        unread_a: 0,
-        unread_b: 0
-      })
-      .select('id')
-      .single();
-
-    if (createError) {
-      throw new Error(`Failed to create thread: ${createError.message}`);
-    }
-
-    return newThread.id;
-
-  } catch (error) {
-    console.error('[getOrCreateThread] All methods failed:', error);
-    throw error;
+  } catch {
+    // ignore, continue to fallback
   }
+
+  // 2) Manual: search for a thread with the same pair
+  // Build an OR with both orderings (member_a=a, member_b=b) OR (a=b, b=a)
+  const pairFilter = [
+    `and(member_a_profile_id.eq.${low},member_b_profile_id.eq.${high})`,
+    `and(member_a_profile_id.eq.${high},member_b_profile_id.eq.${low})`,
+  ].join(',')
+
+  const { data: existingThread } = await supabase
+    .from('direct_threads')
+    .select('id')
+    .or(pairFilter)
+    .limit(1)
+    .single()
+    .returns<Pick<ThreadRow, 'id'>>()
+
+  if (existingThread?.id) return existingThread.id
+
+  // 3) Manual insert (requires RLS policy to allow)
+  const nowIso = new Date().toISOString()
+  const insert: ThreadInsert = {
+    // Prefer setting only known/allowed keys
+    member_a_profile_id: low as ThreadInsert['member_a_profile_id'],
+    member_b_profile_id: high as ThreadInsert['member_b_profile_id'],
+    created_at: nowIso as ThreadInsert['created_at'],
+    last_message_at: nowIso as ThreadInsert['last_message_at'],
+    unread_a: 0 as ThreadInsert['unread_a'],
+    unread_b: 0 as ThreadInsert['unread_b'],
+    // if your schema has additional required fields, include them here
+  }
+
+  const { data: newThread, error: createError } = await supabase
+    .from('direct_threads')
+    .insert([insert] as ThreadInsert[])
+    .select('id')
+    .single()
+    .returns<Pick<ThreadRow, 'id'>>()
+
+  if (createError) {
+    throw new Error(`Failed to create thread: ${createError.message}`)
+  }
+  return newThread.id
 }
 
 /**
- * Enhanced thread read marking that handles both old and new schema
+ * Mark a thread as read for the current user.
+ * Tries typed RPC -> edge function -> manual direct_threads update.
  */
-export async function rpc_markThreadRead(threadId: string, surface: Surface = 'dm') {
+export async function rpc_markThreadRead(
+  threadId: string,
+  surface: Surface = 'dm'
+) {
+  // current user
+  const { data: auth } = await supabase.auth.getUser()
+  const userId = auth.user?.id
+  if (!userId) throw new Error('User not authenticated')
+
+  // 1) Preferred: typed RPC
+  const { error: rpcError } = await supabase
+    .rpc('mark_thread_read_enhanced', {
+      p_thread_id: threadId,
+      p_profile_id: userId,
+    } satisfies MarkThreadReadArgs)
+    .returns<MarkThreadReadRet>()
+  if (!rpcError) return
+
+  // 2) Edge function fallback
   try {
-    // Get current user profile ID
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // First try the enhanced RPC function
-    const { error: rpcError } = await supabase
-      .rpc('mark_thread_read_enhanced', {
-        p_thread_id: threadId,
-        p_profile_id: user.id
-      });
-
-    if (!rpcError) {
-      console.log('[rpc_markThreadRead] Successfully marked thread as read with enhanced RPC');
-      return;
-    }
-
-    console.warn('[rpc_markThreadRead] Enhanced RPC failed, trying edge function:', rpcError);
-
-    // Fallback: Try the edge function
-    const { data, error: edgeError } = await supaFn('mark-thread-read', {
+    const { data, error: edgeError } = await supaFn<{ ok: boolean }>('mark-thread-read', {
       surface,
       thread_id: threadId,
-      profile_id: user.id
-    });
-
-    if (!edgeError) {
-      console.log('[rpc_markThreadRead] Successfully marked thread as read with edge function');
-      return;
-    }
-
-    console.warn('[rpc_markThreadRead] Edge function failed, trying manual update:', edgeError);
-
-    // Last resort: Manual update (requires knowing the thread structure)
-    const { data: thread, error: fetchError } = await supabase
-      .from('direct_threads')
-      .select('member_a_profile_id, member_b_profile_id')
-      .eq('id', threadId)
-      .single();
-
-    if (fetchError) {
-      throw new Error(`Failed to fetch thread: ${fetchError.message}`);
-    }
-
-    const isMemberA = thread.member_a_profile_id === user.id;
-    const updateData = isMemberA 
-      ? { last_read_at_a: new Date().toISOString(), unread_a: 0 }
-      : { last_read_at_b: new Date().toISOString(), unread_b: 0 };
-
-    const { error: updateError } = await supabase
-      .from('direct_threads')
-      .update(updateData)
-      .eq('id', threadId);
-
-    if (updateError) {
-      throw new Error(`Failed to update thread: ${updateError.message}`);
-    }
-
-    console.log('[rpc_markThreadRead] Successfully marked thread as read with manual update');
-
-  } catch (error) {
-    console.error('[rpc_markThreadRead] All methods failed:', error);
-    throw error;
+      profile_id: userId,
+    })
+    if (!edgeError) return
+    // console.warn('[rpc_markThreadRead] Edge function failed:', edgeError)
+  } catch {
+    // swallow and try manual
   }
+
+  // 3) Manual update (RLS must allow)
+  const { data: thread, error: fetchError } = await supabase
+    .from('direct_threads')
+    .select('member_a_profile_id, member_b_profile_id')
+    .eq('id', threadId)
+    .single()
+    .returns<Pick<ThreadRow, 'member_a_profile_id' | 'member_b_profile_id'>>()
+
+  if (fetchError) throw new Error(`Failed to fetch thread: ${fetchError.message}`)
+
+  const isMemberA = thread.member_a_profile_id === userId
+
+  const patch: Partial<ThreadUpdate> = isMemberA
+    ? {
+        last_read_at_a: new Date().toISOString() as ThreadUpdate['last_read_at_a'],
+        unread_a: 0 as ThreadUpdate['unread_a'],
+      }
+    : {
+        last_read_at_b: new Date().toISOString() as ThreadUpdate['last_read_at_b'],
+        unread_b: 0 as ThreadUpdate['unread_b'],
+      }
+
+  const { error: updateError } = await supabase
+    .from('direct_threads')
+    .update(patch as ThreadUpdate)
+    .eq('id', threadId)
+
+  if (updateError) throw new Error(`Failed to update thread: ${updateError.message}`)
 }
 
-export const fn_uploadChatMedia = async (body: Record<string, unknown>) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("No auth session");
-  
-  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-chat-media`, {
+/**
+ * Upload chat media via Supabase Edge Function.
+ * Returns typed JSON { data, error } – error is always null when resolved, throws otherwise.
+ */
+export const fn_uploadChatMedia = async <T = unknown>(
+  body: Record<string, unknown>
+): Promise<{ data: T; error: null }> => {
+  const { data: sess } = await supabase.auth.getSession()
+  const token = sess.session?.access_token
+  if (!token) throw new Error('No auth session')
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-chat-media`
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to upload media: ${response.status} ${errorText}`);
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text()
+    throw new Error(`Failed to upload media: ${res.status} ${errorText}`)
   }
-  
-  const data = await response.json();
-  return { data, error: null };
-};
+
+  const data = (await res.json()) as T
+  return { data, error: null }
+}

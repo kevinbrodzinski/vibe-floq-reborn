@@ -1,8 +1,9 @@
+// src/lib/venues/getVenuesWithIntelligence.ts
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
 
-type NearbyRet = Database['public']['Functions']['get_nearby_venues']['Returns'][number]
-type TrendingRet = Database['public']['Functions']['get_trending_venues_enriched']['Returns'][number]
+type Nearby = Database['public']['Functions']['get_nearby_venues']['Returns']
+type Trending = Database['public']['Functions']['get_trending_venues_enriched']['Returns']
 
 export type VenueIntel = {
   id: string
@@ -23,43 +24,45 @@ export async function getVenuesWithIntelligence(args: {
   const [{ data: near }, { data: trend }] = await Promise.all([
     supabase
       .rpc('get_nearby_venues', {
-        p_lat: args.lat,
-        p_lng: args.lng,
-        p_radius_m: args.radius_m ?? 1200,
-        p_limit: args.limit ?? 40,
+        lat: args.lat,
+        lng: args.lng,
+        radius_meters: args.radius_m ?? 1200,
+        limit_count: args.limit ?? 40,
       })
-      .returns<Database['public']['Functions']['get_nearby_venues']['Returns']>(),
+      .returns<Nearby>(),
     args.city
       ? supabase
           .rpc('get_trending_venues_enriched', {
-            p_city: args.city,
-            p_limit: args.limit ?? 40,
+            city: args.city,
+            limit_count: args.limit ?? 40,
           })
-          .returns<Database['public']['Functions']['get_trending_venues_enriched']['Returns']>()
-      : Promise.resolve({ data: [] as TrendingRet[] }),
+          .returns<Trending>()
+      : Promise.resolve({ data: [] as Trending }),
   ])
 
   const byId = new Map<string, VenueIntel>()
 
-  ;(near ?? []).forEach((n) => {
+  ;(near ?? []).forEach((n: any) => {
     byId.set(n.id, {
       id: n.id,
-      name: (n as any).name ?? null,
-      lat: (n as any).lat ?? null,
-      lng: (n as any).lng ?? null,
-      distance_m: (n as any).distance_m ?? null,
+      name: n.name ?? null,
+      lat: n.lat ?? null,
+      lng: n.lng ?? null,
+      distance_m: n.distance_m ?? null,
     })
   })
-  ;(trend ?? []).forEach((t) => {
-    const existing = byId.get(t.venue_id)
-    byId.set(t.venue_id, {
+
+  ;(trend ?? []).forEach((t: any) => {
+    const id = t.id ?? t.venue_id // support either shape
+    const existing = byId.get(id)
+    byId.set(id, {
       ...(existing ?? {
-        id: t.venue_id,
-        name: (t as any).name ?? null,
-        lat: (t as any).lat ?? null,
-        lng: (t as any).lng ?? null,
+        id,
+        name: t.name ?? null,
+        lat: t.lat ?? null,
+        lng: t.lng ?? null,
       }),
-      trend_score: (t as any).trend_score ?? null,
+      trend_score: t.trend_score ?? null,
     })
   })
 
