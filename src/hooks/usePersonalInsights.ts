@@ -1,109 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import type { PersonalInsights, ProfileStats, TimeRange, PersonalInsightRecommendation, PersonalInsightAchievement } from '@/types/insights';
 
-export interface PersonalInsightRecommendation {
-  title: string;
-  description: string;
-  confidence: number;
-  category: 'social' | 'venue' | 'timing' | 'activity';
-}
-
-export interface PersonalInsightAchievement {
-  title: string;
-  description: string;
-  icon: string;
-  earnedAt: string;
-  category: string;
-}
-
-export interface PersonalInsights {
-  // Core metrics
-  socialScore: number;
-  explorationLevel: number;
-  streakTrend: 'up' | 'down' | 'stable';
-  streakChange: string;
-  newConnections: number;
-  
-  // Patterns
-  peakEnergyTime: string;
-  peakEnergyWindow: string;
-  mostSocialDay: string;
-  favoriteVenueType: string;
-  avgVenueDistance: string;
-  explorationRate: number;
-  
-  // Optimal timing
-  optimalSocialTime: string;
-  optimalExploreTime: string;
-  
-  // AI insights
-  energyInsight?: string;
-  locationInsight?: string;
-  socialInsight?: string;
-  
-  // Recommendations
-  recommendations: PersonalInsightRecommendation[];
-  achievements: PersonalInsightAchievement[];
-  
-  // Metadata
-  lastUpdated: string;
-  dataQuality: 'high' | 'medium' | 'low';
-}
-
-export const usePersonalInsights = (timeRange: '7d' | '30d' | '90d' = '30d') => {
-  const { user } = useAuth();
-  
-  return useQuery<PersonalInsights>({
-    queryKey: ['personal-insights', user?.id, timeRange],
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
-      
-      try {
-        // Try to get insights from AI intelligence function
-        const { data, error } = await supabase.functions.invoke('generate-intelligence', {
-          body: {
-            mode: 'personal-insights',
-            profile_id: user.id,
-            time_range: timeRange,
-            temperature: 0.3,
-            max_tokens: 800
-          }
-        });
-        
-        if (!error && data) {
-          return data as PersonalInsights;
-        }
-        
-        // Fallback to generating mock insights based on actual profile data
-        console.warn('AI insights failed, generating fallback insights:', error);
-        
-        // Get basic profile stats for fallback
-        const { data: stats } = await supabase.rpc('get_profile_stats', {
-          target_profile_id: user.id,
-          metres: 100,
-          seconds: 3600
-        });
-        
-        const daysAgo = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-        const fromDate = new Date();
-        fromDate.setDate(fromDate.getDate() - daysAgo);
-        
-        // Generate intelligent fallback insights
-        return generateFallbackInsights(stats, timeRange);
-        
-      } catch (error) {
-        console.error('Failed to fetch personal insights:', error);
-        // Return minimal fallback insights
-        return generateMinimalInsights(timeRange);
-      }
-    }
-  });
-};
-
-function generateFallbackInsights(stats: any, timeRange: string): PersonalInsights {
+const generateFallbackInsights = (stats: ProfileStats | null, timeRange: TimeRange): PersonalInsights => {
   const friendCount = stats?.friend_count || 0;
   const crossings = stats?.crossings_7d || 0;
   const daysActive = stats?.days_active_this_month || 0;
@@ -141,9 +41,9 @@ function generateFallbackInsights(stats: any, timeRange: string): PersonalInsigh
     lastUpdated: new Date().toISOString(),
     dataQuality: stats ? 'medium' : 'low'
   };
-}
+};
 
-function generateMinimalInsights(timeRange: string): PersonalInsights {
+const generateMinimalInsights = (timeRange: TimeRange): PersonalInsights => {
   return {
     socialScore: 70,
     explorationLevel: 60,
@@ -170,7 +70,56 @@ function generateMinimalInsights(timeRange: string): PersonalInsights {
     lastUpdated: new Date().toISOString(),
     dataQuality: 'low'
   };
-}
+};
+
+export const usePersonalInsights = (timeRange: TimeRange = '30d') => {
+  const { user } = useAuth();
+  
+  return useQuery<PersonalInsights>({
+    queryKey: ['personal-insights', user?.id, timeRange],
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    queryFn: async (): Promise<PersonalInsights> => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      try {
+        // Try to get insights from AI intelligence function
+        const { data, error } = await supabase.functions.invoke('generate-intelligence', {
+          body: {
+            mode: 'personal-insights',
+            profile_id: user.id,
+            time_range: timeRange,
+            temperature: 0.3,
+            max_tokens: 800
+          }
+        });
+        
+        if (!error && data) {
+          return data as PersonalInsights;
+        }
+        
+        // Fallback to generating mock insights based on actual profile data
+        console.warn('AI insights failed, generating fallback insights:', error);
+        
+        // Get basic profile stats for fallback
+        const { data: stats } = await supabase
+          .rpc('get_profile_stats', {
+            target_profile_id: user.id,
+            metres: 100,
+            seconds: 3600
+          })
+        
+        return generateFallbackInsights(stats as ProfileStats | null, timeRange);
+        
+      } catch (error) {
+        console.error('Failed to fetch personal insights:', error);
+        // Return minimal fallback insights
+        return generateMinimalInsights(timeRange);
+      }
+    }
+  });
+};
 
 function generateEnergyInsight(daysActive: number, crossings: number): string {
   if (daysActive > 20) {
@@ -202,7 +151,7 @@ function generateSocialInsight(friendCount: number, crossings: number): string {
   }
 }
 
-function generateRecommendations(stats: any): PersonalInsightRecommendation[] {
+function generateRecommendations(stats: ProfileStats | null): PersonalInsightRecommendation[] {
   const recommendations: PersonalInsightRecommendation[] = [];
   
   const friendCount = stats?.friend_count || 0;
@@ -236,7 +185,7 @@ function generateRecommendations(stats: any): PersonalInsightRecommendation[] {
   return recommendations;
 }
 
-function generateAchievements(stats: any): PersonalInsightAchievement[] {
+function generateAchievements(stats: ProfileStats | null): PersonalInsightAchievement[] {
   const achievements: PersonalInsightAchievement[] = [];
   
   const friendCount = stats?.friend_count || 0;

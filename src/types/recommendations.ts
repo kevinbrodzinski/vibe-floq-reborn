@@ -1,7 +1,7 @@
 // Phase 3: Recommendations & Suggestions Types
 
-export type ContextType = 'solo' | 'group'
-export type TimeCtx = 'now' | 'morning' | 'afternoon' | 'evening' | 'late'
+export type ContextType = 'solo' | 'group' | 'date' | 'friends'
+export type TimeCtx = 'now' | 'morning' | 'afternoon' | 'evening' | 'late' | 'weekend'
 
 export type SmartActivitySuggestion = {
   id: string

@@ -183,7 +183,7 @@ export const PersonalAnalyticsDashboard: React.FC = () => {
                 {insights?.energyInsight && (
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground italic">
-                      "{insights.energyInsight}"
+                      {insights.energyInsight}
                     </p>
                   </div>
                 )}
@@ -219,7 +219,7 @@ export const PersonalAnalyticsDashboard: React.FC = () => {
                 {insights?.locationInsight && (
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground italic">
-                      "{insights.locationInsight}"
+                      {insights.locationInsight}
                     </p>
                   </div>
                 )}
