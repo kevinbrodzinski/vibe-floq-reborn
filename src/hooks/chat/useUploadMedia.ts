@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { fn_uploadChatMedia } from '@/lib/chat/api';
 
+type UploadInitResponse = {
+  upload_url: string
+  object_key: string
+  bucket: string
+}
+
 export const useUploadMedia = (
   threadId: string,
   sendMessage: (p: { text: null; metadata: any }) => Promise<unknown>
@@ -19,15 +25,14 @@ export const useUploadMedia = (
       setAbortController(controller);
 
       try {
-        const { data, error } = await fn_uploadChatMedia({
+        const { data } = await fn_uploadChatMedia<UploadInitResponse>({
           thread_id: threadId,
           filename: file.name,
           content_type: file.type,
           size: file.size,
         });
-        if (error) throw error;
 
-        const { upload_url, object_key, bucket } = data!;
+        const { upload_url, object_key, bucket } = data;
 
         const putRes = await fetch(upload_url, {
           method: 'PUT',

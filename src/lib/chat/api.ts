@@ -110,14 +110,14 @@ export async function getOrCreateThread(
   // 3) Manual insert (requires RLS policy to allow)
   const nowIso = new Date().toISOString()
   const insert: ThreadInsert = {
-    // Prefer setting only known/allowed keys
+    member_a: low as ThreadInsert['member_a'],
+    member_b: high as ThreadInsert['member_b'],
     member_a_profile_id: low as ThreadInsert['member_a_profile_id'],
     member_b_profile_id: high as ThreadInsert['member_b_profile_id'],
     created_at: nowIso as ThreadInsert['created_at'],
     last_message_at: nowIso as ThreadInsert['last_message_at'],
     unread_a: 0 as ThreadInsert['unread_a'],
     unread_b: 0 as ThreadInsert['unread_b'],
-    // if your schema has additional required fields, include them here
   }
 
   const { data: newThread, error: createError } = await supabase
@@ -157,13 +157,16 @@ export async function rpc_markThreadRead(
 
   // 2) Edge function fallback
   try {
-    const { data, error: edgeError } = await supaFn<{ ok: boolean }>('mark-thread-read', {
-      surface,
-      thread_id: threadId,
-      profile_id: userId,
-    })
-    if (!edgeError) return
-    // console.warn('[rpc_markThreadRead] Edge function failed:', edgeError)
+    const { data: sess } = await supabase.auth.getSession()
+    const token = sess.session?.access_token
+    if (token) {
+      const result = await supaFn('mark-thread-read', token, {
+        surface,
+        thread_id: threadId,
+        profile_id: userId,
+      })
+      if (result.ok) return
+    }
   } catch {
     // swallow and try manual
   }

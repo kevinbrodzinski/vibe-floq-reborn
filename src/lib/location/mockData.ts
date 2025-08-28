@@ -40,7 +40,7 @@ export const DEMO_USERS = [
  */
 export class MockLocationGenerator {
   private currentLocation: GPS;
-  private intervalId: number | null = null;
+  private intervalId: ReturnType<typeof setTimeout> | null = null;
   private callbacks: Array<(coords: GPS) => void> = [];
 
   constructor(private options: MockLocationOptions) {

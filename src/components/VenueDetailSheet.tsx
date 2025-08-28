@@ -284,7 +284,7 @@ export function VenueDetailSheet({ open, onOpenChange, venue, userLat, userLng, 
                       ref={toggles.photoInputRef}
                       onChange={(e) => {
                         const f = e.target.files?.[0];
-                        if (f) uploadPhoto(f);
+                        if (f) uploadPhoto();
                       }}
                     />
                     <Button size="sm" variant="secondary" onClick={() => toggles.photoInputRef.current?.click()} disabled={submitting}>

@@ -8,8 +8,8 @@ import type { Row } from '@/types/util'
 type AnalysisRow = Row<'friendship_analysis'>
 type AnalysisPick = Pick<
   AnalysisRow,
-  | 'profile_low'
-  | 'profile_high'
+  | 'user_low'
+  | 'user_high'
   | 'overall_score'
   | 'confidence_level'
   | 'signals_data'
@@ -37,60 +37,43 @@ export type FriendDetectionResult = {
 }
 
 export function useFriendDetection(lat?: number, lng?: number, radiusM = 500) {
-  const currentUserId = useCurrentUserId()
+  const me = useCurrentUserId()
 
   return useQuery<FriendDetectionResult>({
-    queryKey: ['friend-detection', lat, lng, radiusM, currentUserId],
-    enabled: !!lat && !!lng && !!currentUserId,
+    queryKey: ['friend-detection', lat, lng, radiusM, me],
+    enabled: !!lat && !!lng && !!me,
     staleTime: 60_000,
     gcTime: 300_000,
     queryFn: async (): Promise<FriendDetectionResult> => {
-      if (!lat || !lng || !currentUserId) {
-        return { nearbyFriends: [], score: 0, confidence: 0 }
-      }
+      if (!lat || !lng || !me) return { nearbyFriends: [], score: 0, confidence: 0 }
 
-      const result: FriendDetectionResult = {
-        nearbyFriends: [],
-        score: 0,
-        confidence: 0,
-      }
+      const sinceIso = new Date(Date.now() - 86_400_000).toISOString()
 
-      // If your schema stores a "canonical ordering" for pairs, apply it here.
-      // For now we just use the same id on both sides.
-      const userLow: AnalysisRow['profile_low'] = currentUserId as AnalysisRow['profile_low']
-      const userHigh: AnalysisRow['profile_high'] = currentUserId as AnalysisRow['profile_high']
-
-      // Pull the most recent analysis within the last 24h
-      const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-
-      const { data: existingAnalysis, error: analysisError } = await supabase
+      const { data: analysis, error } = await supabase
         .from('friendship_analysis')
-        .select(
-          'profile_low, profile_high, overall_score, confidence_level, signals_data, relationship_type, updated_at'
-        )
-        .eq('profile_low', userLow)
-        .eq('profile_high', userHigh)
+        .select('user_low,user_high,overall_score,confidence_level,signals_data,relationship_type,updated_at')
+        .eq('user_low',  me as AnalysisRow['user_low'])
+        .eq('user_high', me as AnalysisRow['user_high'])
         .gte('updated_at', sinceIso)
         .maybeSingle()
         .returns<AnalysisPick | null>()
 
-      if (analysisError) throw analysisError
+      if (error) throw error
 
-      if (existingAnalysis) {
-        result.score = existingAnalysis.overall_score ?? 0
-        // confidence_level can be a string/decimal in some schemas
+      const res: FriendDetectionResult = { nearbyFriends: [], score: 0, confidence: 0 }
+
+      if (analysis) {
+        res.score = analysis.overall_score ?? 0
         const conf =
-          typeof existingAnalysis.confidence_level === 'number'
-            ? existingAnalysis.confidence_level
-            : parseFloat(String(existingAnalysis.confidence_level))
-        result.confidence = Number.isFinite(conf) ? (conf as number) : 0
-        result.lastAnalysis = new Date(existingAnalysis.updated_at)
+          typeof analysis.confidence_level === 'number'
+            ? analysis.confidence_level
+            : parseFloat(String(analysis.confidence_level))
+        res.confidence = Number.isFinite(conf) ? conf : 0
+        res.lastAnalysis = new Date(analysis.updated_at)
       }
 
-      // If you later add an RPC/view for nearby friend profiles, wire it here
-      // and populate result.nearbyFriends with its typed output.
-
-      return result
+      // TODO: populate nearbyFriends when RPC/view is ready.
+      return res
     },
   })
 }

@@ -22,6 +22,10 @@ export const vibeOptions: VibeMeta[] = VIBES.map((vibe) => {
     social: { emoji: '👥', label: 'Social', color: VIBE_COLORS.social, energy: 70, social: 95, timeOfDay: 'afternoon' },
     open: { emoji: '🌱', label: 'Open', color: VIBE_COLORS.open, energy: 40, social: 70, timeOfDay: 'morning' },
     down: { emoji: '😔', label: 'Down', color: VIBE_COLORS.down, energy: 10, social: 20, timeOfDay: 'any' },
+    curious: { emoji: '🤔', label: 'Curious', color: VIBE_COLORS.curious, energy: 60, social: 50, timeOfDay: 'any' },
+    energetic: { emoji: '⚡', label: 'Energetic', color: VIBE_COLORS.energetic, energy: 95, social: 80, timeOfDay: 'any' },
+    excited: { emoji: '🎉', label: 'Excited', color: VIBE_COLORS.excited, energy: 90, social: 85, timeOfDay: 'any' },
+    focused: { emoji: '🎯', label: 'Focused', color: VIBE_COLORS.focused, energy: 70, social: 30, timeOfDay: 'any' },
   };
 
   return {
