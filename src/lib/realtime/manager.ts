@@ -88,7 +88,7 @@ class RealtimeManager {
     try {
       console.log(`[RealtimeManager] Creating subscription: ${key} (attempt ${retryCount + 1})`);
       
-      const channel = supabase.channel(channelName);
+      const channel = supabase.channel(channelName, { config: {} });
       
       // Configure the channel with the provided setup function
       const configuredChannel = setup(channel);
@@ -98,7 +98,7 @@ class RealtimeManager {
       const isPresenceChannel = channelName.includes('presence') || channelName.includes('typing');
       if (isPresenceChannel) {
         configuredChannel
-          .on('presence', { event: 'sync' }, (state) => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'presence' }, (state) => {
             console.log(`[RealtimeManager] Presence sync for ${key}:`, state);
             this.updateActivity(key);
           })

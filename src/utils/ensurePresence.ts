@@ -6,7 +6,12 @@ import { supabase } from '@/integrations/supabase/client'
  */
 export async function ensurePresence(profile_id: string) {
   try {
-    await supabase.rpc('ensure_presence_row', { _profile_id: profile_id });
+    await supabase.rpc('upsert_presence', {
+      p_lat: 0,
+      p_lng: 0,
+      p_vibe: 'chill',
+      p_visibility: 'public'
+    });
   } catch (error) {
     console.warn('[ensurePresence] Failed to ensure presence row:', error);
     // Don't throw - this is a "nice to have" operation

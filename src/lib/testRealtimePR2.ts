@@ -10,7 +10,7 @@ export async function testRealtimeParticipants(floqId: string) {
   try {
     const { error } = await supabase.rpc('rpc_session_join', {
       in_floq_id: floqId,
-      in_status: 'here'
+      in_checkin: 'here'
     });
     
     if (error) {

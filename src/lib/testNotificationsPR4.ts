@@ -95,7 +95,7 @@ export async function testAutoDiscoverySystem() {
           creator:profiles!creator_id(display_name, username)
         `)
         .eq('flock_type', 'momentary')
-        .in('creator_id', friends)
+        .in('creator_id', friends.map(f => f.friend_id))
         .gte('created_at', new Date(Date.now() - 60000).toISOString()) // Last minute
         .order('created_at', { ascending: false })
         .limit(5);

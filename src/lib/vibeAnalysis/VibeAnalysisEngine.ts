@@ -311,7 +311,7 @@ export class VibeAnalysisEngine {
     
     // Weighted ensemble combination
     const ensembleScores: Record<Vibe, number> = {} as Record<Vibe, number>;
-    const vibes: Vibe[] = VIBES;
+    const vibes: Vibe[] = [...VIBES];
     
     vibes.forEach(vibe => {
       ensembleScores[vibe] = 

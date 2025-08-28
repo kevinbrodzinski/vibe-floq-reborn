@@ -22,7 +22,7 @@ export default function MomentaryFloqDetail({ floqId, title, endsAt, momentum = 
   const onJoin = React.useCallback(async () => {
     try {
       // Join the floq
-      await supabase.rpc('rpc_session_join', { in_floq_id: floqId, in_status: 'here' });
+      await supabase.rpc('rpc_session_join', { in_floq_id: floqId, in_checkin: 'here' });
 
       // Get user info and floq creator for notifications
       const { data: user } = await supabase.auth.getUser();

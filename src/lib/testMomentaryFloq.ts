@@ -7,14 +7,17 @@ export async function createTestMomentaryFloq() {
   try {
     console.log('Creating test momentary floq...');
     
-    // Create a momentary floq using the RPC (4 hour duration makes it momentary)
-    const { data: floqId, error } = await supabase.rpc('create_momentary_floq', {
-      in_primary_vibe: 'hype',
-      in_title: 'Test Momentary Floq',
-      in_lat: 34.0522,
-      in_lng: -118.2437,
-      in_radius_m: 500,
-      in_visibility: 'public',
+    // Create a momentary floq using the create_floq RPC
+    const { data: floqId, error } = await supabase.rpc('create_floq', {
+      p_lat: 34.0522,
+      p_lng: -118.2437,
+      p_starts_at: new Date().toISOString(),
+      p_ends_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+      p_vibe: 'hype',
+      p_visibility: 'public',
+      p_title: 'Test Momentary Floq',
+      p_invitees: [],
+      p_flock_type: 'momentary'
     });
 
     if (error) {
@@ -35,9 +38,11 @@ export async function createTestMomentaryFloq() {
 export async function testSessionJoin(floqId: string) {
   try {
     console.log('Joining session...');
-    const { error } = await supabase.rpc('update_floq_checkin', {
-      in_floq_id: floqId,
-      in_checkin: 'here'
+    const { error } = await supabase.rpc('upsert_presence', {
+      p_lat: 34.0522,
+      p_lng: -118.2437,
+      p_vibe: 'hype',
+      p_visibility: 'public'
     });
 
     if (error) {
@@ -87,13 +92,13 @@ export async function runMomentaryFloqTest() {
   // Wait a moment for the floq to be created
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const joined = await testSessionJoin(floqId);
+  const joined = await testSessionJoin(String(floqId));
   if (!joined) return;
 
   // Wait a moment then post a message
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  const posted = await testSessionPost(floqId);
+  const posted = await testSessionPost(String(floqId));
   if (!posted) return;
 
   console.log('🎉 All tests passed! Check the UI at:', `/floqs/${floqId}`);

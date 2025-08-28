@@ -106,7 +106,11 @@ export const LegacyVibeScreen = () => {
     open: { label: "Open", angle: 200, color: "hsl(120 70% 60%)" },
     flowing: { label: "Flowing", angle: 240, color: "hsl(30 70% 60%)" },
     down: { label: "Down", angle: 280, color: "hsl(280 70% 60%)" },
-    solo: { label: "Solo", angle: 320, color: "hsl(240 70% 60%)" }
+    solo: { label: "Solo", angle: 320, color: "hsl(240 70% 60%)" },
+    curious: { label: "Curious", angle: 90, color: "hsl(180 70% 60%)" },
+    energetic: { label: "Energetic", angle: 130, color: "hsl(40 70% 60%)" },
+    excited: { label: "Excited", angle: 170, color: "hsl(20 70% 60%)" },
+    focused: { label: "Focused", angle: 210, color: "hsl(260 70% 60%)" }
   };
 
   // Dynamic status updates based on auto-detection
@@ -179,7 +183,7 @@ export const LegacyVibeScreen = () => {
         }
 
         // Only apply if it's a valid VibeState
-        const vibeAsState = safeVibeState(vibeDetection.suggestedVibe);
+        const vibeAsState = vibeDetection.suggestedVibe as VibeState;
         if (vibes[vibeAsState]) {
           await setSelectedVibe(vibeAsState);
           // Debounce feedback banner to prevent double-shows
@@ -227,7 +231,7 @@ export const LegacyVibeScreen = () => {
     setIsLearning(true);
     try {
       await recordFeedback(false, correctedVibe);
-      await setSelectedVibe(safeVibeState(correctedVibe));
+      await setSelectedVibe(correctedVibe as VibeState);
       // Small delay to show completion before hiding with cleanup
       feedbackTimeoutRef.current = setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
@@ -346,7 +350,7 @@ export const LegacyVibeScreen = () => {
   // Remove the local visibility management - now handled by useSyncedVisibility
 
   const handleApplySuggestion = useCallback(async (suggestion: any) => {
-    await handleVibeSelect(safeVibeState(suggestion.vibe));
+    await handleVibeSelect(suggestion.vibe as VibeState);
     applyVibe(suggestion);
   }, [handleVibeSelect, applyVibe]);
 

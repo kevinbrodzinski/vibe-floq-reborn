@@ -24,7 +24,6 @@ function PlatformMap({ lat, lng, markers, onSelect }: {
   onSelect: (m: any) => void;
 }) {
   // bundlers will tree-shake the wrong one; this indirection avoids conditional imports
-  // @ts-expect-error platform resolution
   const isWeb = typeof window !== 'undefined' && !(window as any).Expo;
   return isWeb ? (
     <WaveMapWeb lat={lat} lng={lng} markers={markers} onSelect={onSelect} />

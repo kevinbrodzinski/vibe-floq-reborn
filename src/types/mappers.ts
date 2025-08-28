@@ -1,6 +1,12 @@
 
 import type { PlanStop } from '@/types/plan'
-import type { PlanStopRow, DailyAfterglowRow, JsonArray, JsonObject } from '@/integrations/supabase/types'
+import type { Json } from '@/integrations/supabase/types'
+import type { Row } from '@/types/util'
+
+type PlanStopRow = Row<'plan_stops'>
+type DailyAfterglowRow = Row<'daily_afterglow'>
+type JsonArray = Json[]
+type JsonObject = Record<string, Json>
 
 // Enhanced plan stop mapper
 export function mapPlanStopFromDb(row: PlanStopRow): PlanStop {
@@ -12,7 +18,7 @@ export function mapPlanStopFromDb(row: PlanStopRow): PlanStop {
     id: row.id,
     plan_id: row.plan_id || '',
     title: row.title || '',
-    venue: row.venue?.name || '',
+    venue: row.venue_id || '',
     description: row.description || '',
     startTime: row.start_time || '',
     endTime: row.end_time || '',

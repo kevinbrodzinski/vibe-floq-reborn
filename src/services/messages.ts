@@ -8,7 +8,7 @@ export async function sendMessageRPC(params: {
   body: string;
   replyTo?: string | null;
   media?: any | null;   // keep null for now
-  type?: 'text' | 'image' | 'video'; // maps to dm_msg_type
+  type?: 'text' | 'image' | 'voice' | 'file'; // maps to dm_msg_type
 }) {
   const { threadId, senderId, body, replyTo, media = null, type = 'text' } = params;
 

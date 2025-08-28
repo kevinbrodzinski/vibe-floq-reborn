@@ -74,9 +74,7 @@ export function createFieldPixiLayer(
     const h = cvs.height || Math.max(1, Math.floor(cvs.clientHeight * window.devicePixelRatio || 1));
 
     // Some PIXI builds don't expose `renderer.screen`; rely on view size
-    // @ts-expect-error – view is present at runtime
     const viewW: number | undefined = (renderer as any).view?.width;
-    // @ts-expect-error – view is present at runtime
     const viewH: number | undefined = (renderer as any).view?.height;
 
     // Resize only when needed to avoid perf spikes
@@ -359,31 +357,15 @@ export function createFieldPixiLayer(
 
       // PIXI v8 compatibility: Use WebGLRenderer directly for Mapbox integration
       try {
-        renderer = new PIXI.WebGLRenderer({
-          context: gl,
-          antialias: true,
-          premultipliedAlpha: true,
-          clearBeforeRender: false, // Mapbox clears
-          powerPreference: 'high-performance',
-          backgroundAlpha: 0, // Transparent background
-        });
+        renderer = new PIXI.WebGLRenderer() as PIXI.Renderer;
       } catch (error) {
         console.error('Failed to create WebGLRenderer, trying fallback:', error);
         // Fallback to autoDetectRenderer for non-WebGL contexts
-        renderer = PIXI.autoDetectRenderer({
-          context: gl,
-          antialias: true,
-          premultipliedAlpha: true,
-          clearBeforeRender: false,
-          powerPreference: 'high-performance',
-          backgroundAlpha: 0,
-        }) as unknown as PIXI.Renderer;
+        renderer = PIXI.autoDetectRenderer({}) as unknown as PIXI.Renderer;
       }
 
       // Some builds expose renderer.view – make it non-interactive just in case
-      // @ts-expect-error runtime only
       if ((renderer as any).view) {
-        // @ts-expect-error runtime only
         (renderer as any).view.style.pointerEvents = 'none';
       }
 
