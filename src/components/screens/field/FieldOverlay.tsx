@@ -6,6 +6,7 @@ import { VibeSelectionSheet } from "@/components/vibe/VibeSelectionSheet";
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
 import { zIndex } from "@/constants/z";
+import { AvatarDropdown } from '@/components/AvatarDropdown';
 
 interface FieldOverlayProps {
   isLocationReady: boolean;
@@ -57,6 +58,11 @@ export const FieldOverlay = memo(({
           updating={updating}
           error={error}
         />
+      </div>
+
+      {/* Avatar Region - Top right */}
+      <div className="absolute top-16 right-4 pointer-events-auto" {...zIndex('overlay')}>
+        <AvatarDropdown />
       </div>
 
       {/* Controls Region - Right center column */}
