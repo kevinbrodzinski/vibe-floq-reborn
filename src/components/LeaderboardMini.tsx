@@ -66,7 +66,7 @@ const LeaderboardMiniContent = () => {
 export const LeaderboardMini = () => {
   return (
     <ErrorBoundary
-      fallback={({ error, retry }) => (
+      fallback={({ error, reset }) => (
         <div className="flex flex-col items-center gap-2 text-muted-foreground" role="alert">
           <AlertTriangle className="w-6 h-6" />
           <p className="text-xs">Stats unavailable</p>

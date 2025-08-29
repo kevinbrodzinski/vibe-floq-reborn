@@ -106,10 +106,7 @@ export function AppHeader() {
       </header>
 
       {/* Notification Center */}
-      <NotificationCenter
-        open={showNotifications}
-        onOpenChange={setShowNotifications}
-      />
+      <NotificationCenter />
     </>
   );
 }

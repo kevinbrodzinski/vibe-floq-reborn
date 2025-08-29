@@ -161,10 +161,7 @@ export function NotificationsPage() {
       </Card>
 
       {/* Notification Center Modal */}
-      <NotificationCenter
-        open={showNotificationCenter}
-        onOpenChange={setShowNotificationCenter}
-      />
+      <NotificationCenter />
     </div>
   );
 }

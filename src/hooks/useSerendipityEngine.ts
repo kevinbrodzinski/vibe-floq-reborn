@@ -45,9 +45,10 @@ export function useSerendipityEngine() {
         throw new Error('User not authenticated');
       }
 
+      // Use profileId instead of userId as per project knowledge base
       const { data, error } = await supabase.functions.invoke('generate-resonance-match', {
         body: {
-          userId: user.id,
+          profileId: user.id, // Changed from userId to profileId
           limit: options?.limit || 5,
           currentLat: options?.currentLat,
           currentLng: options?.currentLng
