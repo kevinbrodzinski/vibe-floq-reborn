@@ -12,7 +12,7 @@ interface ChatMediaBubbleProps {
 }
 
 export const ChatMediaBubble: React.FC<ChatMediaBubbleProps> = ({ media, className = '' }) => {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const mediaUrl = `${supabaseUrl}/storage/v1/object/public/${media.bucket}/${media.key}`;
 
   if (media.type.startsWith('image/')) {
