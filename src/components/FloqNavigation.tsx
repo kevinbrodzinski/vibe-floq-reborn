@@ -1,6 +1,6 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutGrid, Circle, Loader, AudioWaveform, Calendar, Activity } from "lucide-react";
+import { LayoutGrid, Circle, Loader, AudioWaveform, Calendar, Activity, Sparkles } from "lucide-react";
 import { prefetchTab } from '@/utils/tabPrefetch';
 import { Z } from '@/constants/z';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -15,6 +15,7 @@ const TABS: { id: string; label: string; Icon: any }[] = [
   { id: 'vibe', label: 'Vibe', Icon: Loader },
   { id: 'afterglow', label: 'Ripple', Icon: AudioWaveform },
   { id: 'plan', label: 'Plan', Icon: Calendar },
+  { id: 'serendipity', label: 'Match', Icon: Sparkles },
 ];
 
 export const FloqNavigation = () => {

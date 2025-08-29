@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ export function SerendipityDashboard() {
   const { matches, loading, error, lastGenerated, generateMatches } = useSerendipityEngine();
   const { coords } = useLocationCore({ enableHighAccuracy: true });
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
 
   // Auto-generate matches on mount if user has location
@@ -44,12 +46,36 @@ export function SerendipityDashboard() {
   };
 
   const handleConnect = async (partnerId: string) => {
-    // TODO: Implement connection flow
-    toast({
-      title: "Connection Sent! 🚀",
-      description: "Your resonance match will be notified",
-    });
-    setSelectedMatch(partnerId);
+    try {
+      // Use existing friend request system
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('friend_requests')
+        .insert({
+          profile_id: user.id,
+          other_profile_id: partnerId,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Connection Sent! 🚀",
+        description: "Your resonance match will be notified",
+      });
+      setSelectedMatch(partnerId);
+    } catch (error) {
+      console.error('Failed to send connection:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSkip = (partnerId: string) => {
@@ -62,8 +88,7 @@ export function SerendipityDashboard() {
   };
 
   const handleViewProfile = (partnerId: string) => {
-    // TODO: Navigate to profile view
-    console.log('View profile:', partnerId);
+    navigate(`/profile/${partnerId}`);
   };
 
   return (

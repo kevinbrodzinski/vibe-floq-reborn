@@ -126,6 +126,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     setInputValue(value)
     
     // TODO: Send typing indicator when available
+    // TODO: Implement typing indicators real-time
     
     // Mention autocomplete
     const sel = e.target.selectionStart ?? 0
@@ -181,11 +182,22 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     if (!me || msgs.length === 0) return
     
     const lastMessage = msgs[0] // Messages are in reverse order
-    if (lastMessage && lastMessage.sender_id !== me) {
-      // TODO: Implement read receipts when available
-      console.log('Mark as read:', lastMessage.id)
+    if (lastMessage && lastMessage.sender_id !== me && lastMessage.status !== 'read') {
+      // Mark message as read
+      const markAsRead = async () => {
+        try {
+          await supabase
+            .from('floq_messages')
+            .update({ status: 'read' })
+            .eq('id', lastMessage.id);
+        } catch (error) {
+          console.error('Failed to mark message as read:', error);
+        }
+      };
+      
+      markAsRead();
     }
-  }, [msgs, me])
+  }, [msgs, me]);
 
   // Render reply preview
   const renderReplyPreview = () => {
