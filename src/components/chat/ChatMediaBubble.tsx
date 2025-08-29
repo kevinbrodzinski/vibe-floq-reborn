@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 interface ChatMediaBubbleProps {
   media: {
@@ -12,7 +13,7 @@ interface ChatMediaBubbleProps {
 }
 
 export const ChatMediaBubble: React.FC<ChatMediaBubbleProps> = ({ media, className = '' }) => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseUrl = SUPABASE_URL;
   const mediaUrl = `${supabaseUrl}/storage/v1/object/public/${media.bucket}/${media.key}`;
 
   if (media.type.startsWith('image/')) {

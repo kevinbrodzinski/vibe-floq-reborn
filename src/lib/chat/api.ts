@@ -1,5 +1,5 @@
 // src/lib/chat/api.ts
-import { supabase } from '@/integrations/supabase/client'
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client'
 import { supaFn } from '@/lib/supaFn'
 import type { Database } from '@/integrations/supabase/types'
 import type { Json, Row, Insert, Update } from '@/types/util'
@@ -212,7 +212,7 @@ export const fn_uploadChatMedia = async <T = unknown>(
   const token = sess.session?.access_token
   if (!token) throw new Error('No auth session')
 
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-chat-media`
+  const url = `${SUPABASE_URL}/functions/v1/upload-chat-media`
   const res = await fetch(url, {
     method: 'POST',
     headers: {
