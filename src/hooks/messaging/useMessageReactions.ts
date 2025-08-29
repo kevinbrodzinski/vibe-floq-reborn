@@ -27,7 +27,7 @@ interface ReactionsByMessage {
 }
 
 // ✅ Global toggle for reactions subscription
-const REACTIONS_SUB_ENABLED = false; // flip to true when you're ready
+const REACTIONS_SUB_ENABLED = true; // Phase 1: reactions are now enabled
 
 export function useMessageReactions(threadId: string | undefined, surface: 'dm' | 'floq' | 'plan' = 'dm') {
   const queryClient = useQueryClient();
