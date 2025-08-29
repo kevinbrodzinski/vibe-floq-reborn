@@ -5631,6 +5631,51 @@ export type Database = {
         }
         Relationships: []
       }
+      location_dwell_sessions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          detection_method: string | null
+          dwell_duration_seconds: number | null
+          end_location: unknown | null
+          ended_at: string | null
+          id: string
+          metadata: Json | null
+          profile_id: string
+          start_location: unknown
+          started_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          detection_method?: string | null
+          dwell_duration_seconds?: number | null
+          end_location?: unknown | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id: string
+          start_location: unknown
+          started_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          detection_method?: string | null
+          dwell_duration_seconds?: number | null
+          end_location?: unknown | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id?: string
+          start_location?: unknown
+          started_at?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       location_history: {
         Row: {
           accuracy: number | null
@@ -5981,6 +6026,89 @@ export type Database = {
           privacy_budget?: number
           profile_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      momentary_flock_participants: {
+        Row: {
+          created_at: string | null
+          flock_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string
+          left_at: string | null
+          location_at_join: unknown | null
+          profile_id: string
+          vibe_at_join: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flock_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          left_at?: string | null
+          location_at_join?: unknown | null
+          profile_id: string
+          vibe_at_join?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flock_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          left_at?: string | null
+          location_at_join?: unknown | null
+          profile_id?: string
+          vibe_at_join?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentary_flock_participants_flock_id_fkey"
+            columns: ["flock_id"]
+            isOneToOne: false
+            referencedRelation: "momentary_flocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentary_flocks: {
+        Row: {
+          center_point: unknown
+          created_at: string | null
+          dominant_vibe: string | null
+          ended_at: string | null
+          geofence_data: Json | null
+          id: string
+          is_active: boolean | null
+          participant_count: number | null
+          radius_meters: number
+          started_at: string
+        }
+        Insert: {
+          center_point: unknown
+          created_at?: string | null
+          dominant_vibe?: string | null
+          ended_at?: string | null
+          geofence_data?: Json | null
+          id?: string
+          is_active?: boolean | null
+          participant_count?: number | null
+          radius_meters?: number
+          started_at?: string
+        }
+        Update: {
+          center_point?: unknown
+          created_at?: string | null
+          dominant_vibe?: string | null
+          ended_at?: string | null
+          geofence_data?: Json | null
+          id?: string
+          is_active?: boolean | null
+          participant_count?: number | null
+          radius_meters?: number
+          started_at?: string
         }
         Relationships: []
       }
