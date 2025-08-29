@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,53 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // SECURITY: Authenticate user before providing admin token
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("[mapbox-token] Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }), 
+        { 
+          status: 401, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          } 
+        }
+      );
+    }
+
+    // Verify the JWT token
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.log("[mapbox-token] Invalid or expired token:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }), 
+        { 
+          status: 401, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          } 
+        }
+      );
+    }
+
+    console.log(`[mapbox-token] Authenticated user: ${user.id}`);
+
+    // Rate limiting: log access for monitoring
+    console.log(`[mapbox-token] Token requested by user ${user.id} at ${new Date().toISOString()}`);
+
+    // Get the admin Mapbox token
     console.log("[mapbox-token] Checking for ADMIN_MAP_TOKEN secret...");
     const mapboxToken = Deno.env.get('ADMIN_MAP_TOKEN');
     
