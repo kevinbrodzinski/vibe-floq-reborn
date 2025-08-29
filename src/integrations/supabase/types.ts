@@ -13973,6 +13973,30 @@ export type Database = {
         }
         Relationships: []
       }
+      friends: {
+        Row: {
+          created_at: string | null
+          friend_id: string | null
+          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          profile_id: string | null
+          responded_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          friend_id?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          profile_id?: string | null
+          responded_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          friend_id?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          profile_id?: string | null
+          responded_at?: string | null
+        }
+        Relationships: []
+      }
       friendships_v: {
         Row: {
           created_at: string | null
@@ -21651,6 +21675,10 @@ export type Database = {
       validate_stop_times: {
         Args: { p_plan_id: string }
         Returns: undefined
+      }
+      validate_uuid_param: {
+        Args: { input_text: string }
+        Returns: string
       }
       vector_avg: {
         Args: { "": number[] }

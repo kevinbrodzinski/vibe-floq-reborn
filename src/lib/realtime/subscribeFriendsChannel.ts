@@ -12,7 +12,7 @@ export function subscribeFriendsChannel(
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'friendships',
-        filter: `profile_low=eq.${uid},profile_high=eq.${uid}` },
+        filter: `or=(profile_low.eq.${uid},profile_high.eq.${uid})` },
       onInvalidate
     )
 
