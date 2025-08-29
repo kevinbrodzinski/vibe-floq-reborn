@@ -9,7 +9,14 @@ export const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey
 // import { supabase } from "@/integrations/supabase/client";
 
 // Create the main client with v2 configuration
-const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+const resolvedUrl = SUPABASE_URL || 'https://reztyrrafsmlvvlqvsqt.supabase.co';
+const resolvedKey = SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck';
+
+if (!resolvedUrl || !resolvedKey) {
+  console.error('[Supabase] Missing configuration:', { resolvedUrl, hasKey: !!resolvedKey });
+}
+
+const baseClient = createClient<Database>(resolvedUrl, resolvedKey, {
   auth: {
     storage: localStorage,
     persistSession: true,
