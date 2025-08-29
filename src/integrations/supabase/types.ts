@@ -13260,6 +13260,116 @@ export type Database = {
           },
         ]
       }
+      vibe_pairing_patterns: {
+        Row: {
+          created_at: string | null
+          day_of_week: number | null
+          frequency_score: number | null
+          id: string
+          last_interaction_at: string | null
+          partner_user_id: string | null
+          time_of_day: string
+          updated_at: string | null
+          user_id: string | null
+          vibe_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week?: number | null
+          frequency_score?: number | null
+          id?: string
+          last_interaction_at?: string | null
+          partner_user_id?: string | null
+          time_of_day: string
+          updated_at?: string | null
+          user_id?: string | null
+          vibe_type: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number | null
+          frequency_score?: number | null
+          id?: string
+          last_interaction_at?: string | null
+          partner_user_id?: string | null
+          time_of_day?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vibe_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vibe_similarity: {
         Row: {
           profile_id: string | null
@@ -17314,6 +17424,10 @@ export type Database = {
       calculate_relationship_strength: {
         Args: { days_since_last_interaction: number; interaction_count: number }
         Returns: number
+      }
+      calculate_resonance_score: {
+        Args: { p_partner_id: string; p_user_id: string }
+        Returns: Json
       }
       call_weekly_ai_suggestion: {
         Args: { p_profile_id: string }
