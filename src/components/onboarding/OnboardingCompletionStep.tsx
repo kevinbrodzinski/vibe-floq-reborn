@@ -150,40 +150,105 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         avatar_url: payload.avatar_url ? 'present' : 'missing'
       });
 
-      // Create profile using edge function
+      // Create profile using edge function with fallback
       console.log('📝 Creating user profile via edge function...');
       console.log('📋 Edge function payload:', {
         ...payload,
         avatar_url: payload.avatar_url ? 'present' : 'missing'
       });
       
-      const { data: profile, error: profileError } = await supabase.functions.invoke('create-profile', {
-        body: payload
-      });
-
-      if (profileError) {
-        console.error('❌ Error creating profile:', profileError);
-        console.error('❌ Profile error details:', {
-          message: profileError.message,
-          details: profileError.details,
-          hint: profileError.hint,
-          status: profileError.status,
-          code: profileError.code
+      let profileCreated = false;
+      
+      try {
+        const { data: profile, error: profileError } = await supabase.functions.invoke('create-profile', {
+          body: payload
         });
-        
-        // Handle specific edge function errors
-        if (profileError.message?.includes('Missing required fields')) {
-          throw new Error('Please complete all onboarding steps before continuing.');
-        } else if (profileError.message?.includes('Username already taken')) {
-          throw new Error('Username already taken. Please go back and choose another.');
-        } else if (profileError.message?.includes('Unauthenticated')) {
-          throw new Error('Authentication error. Please log in again.');
-        }
-        
-        throw new Error(profileError.message || 'Failed to create profile. Please try again.');
-      }
 
-      console.log('✅ Profile created successfully');
+        if (profileError) {
+          console.error('❌ Error creating profile via edge function:', profileError);
+          
+          // Handle specific edge function errors before fallback
+          if (profileError.message?.includes('Missing required fields')) {
+            throw new Error('Please complete all onboarding steps before continuing.');
+          } else if (profileError.message?.includes('Username already taken')) {
+            throw new Error('Username already taken. Please go back and choose another.');
+          } else if (profileError.message?.includes('Unauthenticated')) {
+            throw new Error('Authentication error. Please log in again.');
+          }
+          
+          // Check if it's a network/function error that we can work around
+          const isNetworkError = profileError.message?.includes('Load failed') || 
+                                profileError.message?.includes('FunctionsFetchError') ||
+                                profileError.message?.includes('Failed to fetch') ||
+                                !profileError.status;
+          
+          if (isNetworkError) {
+            console.log('🔄 Network error detected, attempting fallback to direct database insert...');
+            throw new Error('FALLBACK_NEEDED');
+          }
+          
+          throw new Error(profileError.message || 'Failed to create profile. Please try again.');
+        }
+
+        console.log('✅ Profile created successfully via edge function');
+        profileCreated = true;
+        
+      } catch (error: any) {
+        if (error.message === 'FALLBACK_NEEDED') {
+          console.log('🔄 Attempting fallback profile creation...');
+          
+          // Check username uniqueness before inserting
+          const { data: existingUser } = await supabase
+            .from('profiles')
+            .select('username')
+            .ilike('username', payload.username)
+            .maybeSingle();
+          
+          if (existingUser) {
+            throw new Error('Username already taken. Please go back and choose another.');
+          }
+          
+          // Fallback: Direct database insert
+          const { error: directInsertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              username: payload.username,
+              display_name: payload.display_name,
+              bio: payload.bio,
+              avatar_url: payload.avatar_url,
+              vibe_preference: payload.vibe_preference,
+              interests: payload.interests,
+              email: payload.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (directInsertError) {
+            console.error('❌ Fallback profile creation failed:', directInsertError);
+            
+            // Handle specific database errors
+            if (directInsertError.code === '23505') {
+              throw new Error('Username already taken. Please go back and choose another.');
+            }
+            
+            throw new Error(`Failed to create profile: ${directInsertError.message}`);
+          }
+          
+          console.log('✅ Profile created successfully via fallback method');
+          console.log('ℹ️ Profile setup completed with direct database insert');
+          profileCreated = true;
+          
+          // Show informational toast about fallback
+          const toastId = toast({
+            title: 'Profile Created',
+            description: 'Your profile was set up successfully.',
+          });
+          if (toastId) toastIdsRef.current.push(toastId.id);
+        } else {
+          throw error;
+        }
+      }
 
       // Update both tables atomically to ensure consistency
       const completionTime = new Date().toISOString();
@@ -271,16 +336,37 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       await queryClient.invalidateQueries({ queryKey: ['current-user-profile'] });
       await queryClient.invalidateQueries({ queryKey: ['profile', session.user.id] });
 
-      // Show success message
-      showOnboardingComplete();
+      // Show success message only if profile was created
+      if (profileCreated) {
+        showOnboardingComplete();
+      }
 
-      // Complete onboarding flow
+      // Complete onboarding flow - always call onDone if we have a viable state
       console.log('🚀 Calling onDone to complete onboarding');
       onDone();
 
     } catch (error: any) {
       console.error('💥 Error completing onboarding:', error);
       setIsCompleting(false);
+      
+      // If we've gotten this far but still failed, try to salvage the situation
+      // by completing onboarding anyway if it's a non-critical error
+      const isRecoverableError = error?.message?.includes('Failed to update') && 
+                                !error?.message?.includes('Username already taken') &&
+                                !error?.message?.includes('Authentication error');
+      
+      if (isRecoverableError) {
+        console.log('🆘 Attempting to recover from non-critical error...');
+        const toastId = toast({
+          title: 'Setup Partially Complete',
+          description: 'Your profile was created but some settings may need to be finalized in Settings.',
+        });
+        if (toastId) toastIdsRef.current.push(toastId.id);
+        
+        // Still call onDone to prevent UX dead-end
+        onDone();
+        return;
+      }
       
       // Handle specific error codes
       if (error?.message?.includes('Username already taken') || 

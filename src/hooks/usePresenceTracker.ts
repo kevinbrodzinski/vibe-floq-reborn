@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Mount once (eg. in App.tsx) to keep *your* row in user_online_status alive.
@@ -7,10 +8,22 @@ import { supabase } from '@/integrations/supabase/client';
  *  – Marks you offline on `beforeunload`
  */
 export function usePresenceTracker(heartbeatMs = 30_000) {
+  const { user } = useAuth();
+  
   useEffect(() => {
+    // Only run if we have a valid authenticated user
+    if (!user?.id) {
+      return;
+    }
+    
     let hb: NodeJS.Timeout | null = null;
 
     const upsert = async (online: boolean) => {
+      // Double-check user exists before making the call
+      if (!user?.id) {
+        return;
+      }
+      
       try {
         const { error } = await supabase.rpc('upsert_online_status', { p_is_online: online });
         if (error) {
@@ -65,7 +78,9 @@ export function usePresenceTracker(heartbeatMs = 30_000) {
       stopHeartbeat();
       document.removeEventListener('visibilitychange', handleVis);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      upsert(false);
+      if (user?.id) {
+        upsert(false);
+      }
     };
-  }, [heartbeatMs]);
+  }, [heartbeatMs, user?.id]);
 }

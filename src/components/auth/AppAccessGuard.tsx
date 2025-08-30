@@ -230,7 +230,8 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
               console.log('🔄 Redirecting to:', redirect);
               window.location.href = redirect;
             } else {
-              console.log('🏠 No redirect, staying on current page');
+              console.log('🏠 No redirect, navigating to main app');
+              window.location.href = '/floqs';
             }
           } catch (error) {
             console.error('💥 Error in onboarding completion callback:', error);
