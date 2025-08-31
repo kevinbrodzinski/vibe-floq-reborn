@@ -73,26 +73,52 @@ export const VibeSummaryCard = memo(
 
           <motion.button
             onClick={onOpenVibeSelector}
-            className="relative px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105"
+            className="relative px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 overflow-hidden"
             style={{
-              backgroundColor: `${vibeColor}15`,
-              borderColor: `${vibeColor}30`,
+              backgroundColor: `${vibeColor}25`,
+              borderColor: `${vibeColor}50`,
               color: vibeColor,
+              boxShadow: `0 0 15px ${vibeColor}40`,
+              background: `radial-gradient(ellipse at top left, ${vibeColor}25, ${vibeColor}15)`
             }}
             animate={
               shouldPulse
                 ? {
                     boxShadow: [
-                      `0 0 0 0 ${vibeColor}30`,
-                      `0 0 0 8px ${vibeColor}00`,
-                      `0 0 0 0 ${vibeColor}00`,
+                      `0 0 15px ${vibeColor}40, 0 0 0 0 ${vibeColor}30`,
+                      `0 0 25px ${vibeColor}60, 0 0 0 8px ${vibeColor}00`,
+                      `0 0 15px ${vibeColor}40, 0 0 0 0 ${vibeColor}00`,
                     ],
                   }
-                : {}
+                : {
+                    boxShadow: `0 0 15px ${vibeColor}40`
+                  }
             }
             transition={{ duration: 0.5 }}
           >
-            {currentVibe || 'None'}
+            {/* Animated outer ring */}
+            <motion.div
+              className="absolute inset-0 rounded-full border opacity-50"
+              style={{ borderColor: `${vibeColor}60` }}
+              animate={{
+                rotate: [0, 360],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{
+                rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+              }}
+            />
+            
+            {/* Inner glow overlay */}
+            <div 
+              className="absolute inset-0 rounded-full opacity-30"
+              style={{
+                background: `radial-gradient(circle at 30% 30%, ${vibeColor}40, transparent 60%)`
+              }}
+            />
+            
+            <span className="relative z-10">{currentVibe || 'None'}</span>
           </motion.button>
         </div>
 
