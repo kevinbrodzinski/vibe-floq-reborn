@@ -5631,6 +5631,51 @@ export type Database = {
         }
         Relationships: []
       }
+      location_dwell_sessions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          detection_method: string | null
+          dwell_duration_seconds: number | null
+          end_location: unknown | null
+          ended_at: string | null
+          id: string
+          metadata: Json | null
+          profile_id: string
+          start_location: unknown
+          started_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          detection_method?: string | null
+          dwell_duration_seconds?: number | null
+          end_location?: unknown | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id: string
+          start_location: unknown
+          started_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          detection_method?: string | null
+          dwell_duration_seconds?: number | null
+          end_location?: unknown | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id?: string
+          start_location?: unknown
+          started_at?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       location_history: {
         Row: {
           accuracy: number | null
@@ -5981,6 +6026,89 @@ export type Database = {
           privacy_budget?: number
           profile_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      momentary_flock_participants: {
+        Row: {
+          created_at: string | null
+          flock_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string
+          left_at: string | null
+          location_at_join: unknown | null
+          profile_id: string
+          vibe_at_join: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flock_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          left_at?: string | null
+          location_at_join?: unknown | null
+          profile_id: string
+          vibe_at_join?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flock_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          left_at?: string | null
+          location_at_join?: unknown | null
+          profile_id?: string
+          vibe_at_join?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentary_flock_participants_flock_id_fkey"
+            columns: ["flock_id"]
+            isOneToOne: false
+            referencedRelation: "momentary_flocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentary_flocks: {
+        Row: {
+          center_point: unknown
+          created_at: string | null
+          dominant_vibe: string | null
+          ended_at: string | null
+          geofence_data: Json | null
+          id: string
+          is_active: boolean | null
+          participant_count: number | null
+          radius_meters: number
+          started_at: string
+        }
+        Insert: {
+          center_point: unknown
+          created_at?: string | null
+          dominant_vibe?: string | null
+          ended_at?: string | null
+          geofence_data?: Json | null
+          id?: string
+          is_active?: boolean | null
+          participant_count?: number | null
+          radius_meters?: number
+          started_at?: string
+        }
+        Update: {
+          center_point?: unknown
+          created_at?: string | null
+          dominant_vibe?: string | null
+          ended_at?: string | null
+          geofence_data?: Json | null
+          id?: string
+          is_active?: boolean | null
+          participant_count?: number | null
+          radius_meters?: number
+          started_at?: string
         }
         Relationships: []
       }
@@ -13132,6 +13260,116 @@ export type Database = {
           },
         ]
       }
+      vibe_pairing_patterns: {
+        Row: {
+          created_at: string | null
+          day_of_week: number | null
+          frequency_score: number | null
+          id: string
+          last_interaction_at: string | null
+          partner_user_id: string | null
+          time_of_day: string
+          updated_at: string | null
+          user_id: string | null
+          vibe_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week?: number | null
+          frequency_score?: number | null
+          id?: string
+          last_interaction_at?: string | null
+          partner_user_id?: string | null
+          time_of_day: string
+          updated_at?: string | null
+          user_id?: string | null
+          vibe_type: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number | null
+          frequency_score?: number | null
+          id?: string
+          last_interaction_at?: string | null
+          partner_user_id?: string | null
+          time_of_day?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vibe_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibe_pairing_patterns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vibe_similarity: {
         Row: {
           profile_id: string | null
@@ -13842,6 +14080,30 @@ export type Database = {
           starts_at: string | null
           status: string | null
           visibility: string | null
+        }
+        Relationships: []
+      }
+      friends: {
+        Row: {
+          created_at: string | null
+          friend_id: string | null
+          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          profile_id: string | null
+          responded_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          friend_id?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          profile_id?: string | null
+          responded_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          friend_id?: string | null
+          friend_state?: Database["public"]["Enums"]["friend_state"] | null
+          profile_id?: string | null
+          responded_at?: string | null
         }
         Relationships: []
       }
@@ -14941,13 +15203,6 @@ export type Database = {
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -14957,8 +15212,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -14971,8 +15226,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -14985,7 +15240,7 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -14998,13 +15253,20 @@ export type Database = {
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_participants_profile_id_fkey"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -16127,13 +16389,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -16143,8 +16398,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -16157,8 +16412,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -16171,7 +16426,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -16184,13 +16439,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: true
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -16918,8 +17180,8 @@ export type Database = {
         Returns: string[]
       }
       accept_friend_request: {
-        Args: { _friend: string }
-        Returns: Json
+        Args: { _from: string }
+        Returns: undefined
       }
       accept_friend_request_atomic: {
         Args:
@@ -17163,6 +17425,10 @@ export type Database = {
         Args: { days_since_last_interaction: number; interaction_count: number }
         Returns: number
       }
+      calculate_resonance_score: {
+        Args: { p_partner_id: string; p_user_id: string }
+        Returns: Json
+      }
       call_weekly_ai_suggestion: {
         Args: { p_profile_id: string }
         Returns: undefined
@@ -17174,6 +17440,10 @@ export type Database = {
       can_user_access_floq: {
         Args: { p_floq_id: string; p_user_id: string }
         Returns: boolean
+      }
+      cancel_friend_request: {
+        Args: { _to: string }
+        Returns: undefined
       }
       canonicalize_venue_enum: {
         Args: { p_name: string; p_provider: string; p_raw: string[] }
@@ -17395,6 +17665,10 @@ export type Database = {
       current_profile_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      decline_friend_request: {
+        Args: { _from: string }
+        Returns: undefined
       }
       delete_floq: {
         Args: { p_floq_id: string }
@@ -19677,7 +19951,7 @@ export type Database = {
       }
       remove_friend: {
         Args: { _friend: string }
-        Returns: Json
+        Returns: undefined
       }
       reorder_plan_stops: {
         Args: { p_plan_id: string; p_stop_orders: Json }
@@ -20028,7 +20302,7 @@ export type Database = {
       }
       send_friend_request: {
         Args: { _target: string }
-        Returns: Json
+        Returns: undefined
       }
       send_friend_request_with_rate_limit: {
         Args:
@@ -21524,6 +21798,10 @@ export type Database = {
         Args: { p_plan_id: string }
         Returns: undefined
       }
+      validate_uuid_param: {
+        Args: { input_text: string }
+        Returns: string
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
@@ -21860,6 +22138,7 @@ export type Database = {
           owner: string | null
           owner_id: string | null
           public: boolean | null
+          type: Database["storage"]["Enums"]["buckettype"]
           updated_at: string | null
         }
         Insert: {
@@ -21872,6 +22151,7 @@ export type Database = {
           owner?: string | null
           owner_id?: string | null
           public?: boolean | null
+          type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
         }
         Update: {
@@ -21884,7 +22164,32 @@ export type Database = {
           owner?: string | null
           owner_id?: string | null
           public?: boolean | null
+          type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      buckets_analytics: {
+        Row: {
+          created_at: string
+          format: string
+          id: string
+          type: Database["storage"]["Enums"]["buckettype"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          format?: string
+          id: string
+          type?: Database["storage"]["Enums"]["buckettype"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          format?: string
+          id?: string
+          type?: Database["storage"]["Enums"]["buckettype"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -21915,6 +22220,7 @@ export type Database = {
           created_at: string | null
           id: string
           last_accessed_at: string | null
+          level: number | null
           metadata: Json | null
           name: string | null
           owner: string | null
@@ -21929,6 +22235,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_accessed_at?: string | null
+          level?: number | null
           metadata?: Json | null
           name?: string | null
           owner?: string | null
@@ -21943,6 +22250,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_accessed_at?: string | null
+          level?: number | null
           metadata?: Json | null
           name?: string | null
           owner?: string | null
@@ -21955,6 +22263,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "objects_bucketId_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prefixes: {
+        Row: {
+          bucket_id: string
+          created_at: string | null
+          level: number
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string | null
+          level?: number
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string | null
+          level?: number
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prefixes_bucketId_fkey"
             columns: ["bucket_id"]
             isOneToOne: false
             referencedRelation: "buckets"
@@ -22065,9 +22405,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_prefixes: {
+        Args: { _bucket_id: string; _name: string }
+        Returns: undefined
+      }
       can_insert_object: {
         Args: { bucketid: string; metadata: Json; name: string; owner: string }
         Returns: undefined
+      }
+      delete_prefix: {
+        Args: { _bucket_id: string; _name: string }
+        Returns: boolean
       }
       extension: {
         Args: { name: string }
@@ -22078,6 +22426,18 @@ export type Database = {
         Returns: string
       }
       foldername: {
+        Args: { name: string }
+        Returns: string[]
+      }
+      get_level: {
+        Args: { name: string }
+        Returns: number
+      }
+      get_prefix: {
+        Args: { name: string }
+        Returns: string
+      }
+      get_prefixes: {
         Args: { name: string }
         Returns: string[]
       }
@@ -22143,9 +22503,66 @@ export type Database = {
           updated_at: string
         }[]
       }
+      search_legacy_v1: {
+        Args: {
+          bucketname: string
+          levels?: number
+          limits?: number
+          offsets?: number
+          prefix: string
+          search?: string
+          sortcolumn?: string
+          sortorder?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          last_accessed_at: string
+          metadata: Json
+          name: string
+          updated_at: string
+        }[]
+      }
+      search_v1_optimised: {
+        Args: {
+          bucketname: string
+          levels?: number
+          limits?: number
+          offsets?: number
+          prefix: string
+          search?: string
+          sortcolumn?: string
+          sortorder?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          last_accessed_at: string
+          metadata: Json
+          name: string
+          updated_at: string
+        }[]
+      }
+      search_v2: {
+        Args: {
+          bucket_name: string
+          levels?: number
+          limits?: number
+          prefix: string
+          start_after?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          key: string
+          metadata: Json
+          name: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      buckettype: "STANDARD" | "ANALYTICS"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -22462,6 +22879,8 @@ export const Constants = {
     },
   },
   storage: {
-    Enums: {},
+    Enums: {
+      buckettype: ["STANDARD", "ANALYTICS"],
+    },
   },
 } as const
