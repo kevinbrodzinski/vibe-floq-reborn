@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { toast } from 'sonner';
+import { assertUuid } from '@/lib/ids';
 
 interface FriendshipMutationContext {
   previousFriends?: any;
@@ -15,13 +16,15 @@ export function useAtomicFriendships() {
   // Send friend request with rate limiting and duplicate prevention
   const sendFriendRequest = useMutation({
     mutationFn: async (targetUserId: string) => {
-      if (!currentUserId) throw new Error('User not authenticated');
-      if (!targetUserId) throw new Error('Target user ID is required');
-      if (currentUserId === targetUserId) throw new Error('Cannot send request to yourself');
+      const me = currentUserId;
+      const target = assertUuid(targetUserId, 'targetUserId');
+      if (me && target && me === target) {
+        throw new Error('Cannot send a friend request to yourself');
+      }
 
       // Use the corrected send_friend_request function
       const { data, error } = await (supabase.rpc('send_friend_request', {
-        _target: targetUserId
+        _target: target
       }) as any);
 
       if (error) {

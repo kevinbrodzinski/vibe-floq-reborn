@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { limitedSendMessage } from "@/services/messages";
 import type { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { assertUuid } from "@/lib/ids";
 
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
@@ -19,9 +20,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       console.log('[useSendMessage] Starting mutation:', { threadId, content, replyTo });
       
       // Validate required parameters
-      if (!threadId || threadId === 'null') {
-        throw new Error("Thread ID is required and cannot be null");
-      }
+      assertUuid(threadId, 'threadId');
       if (!content?.trim()) {
         throw new Error("Message content is required");
       }
