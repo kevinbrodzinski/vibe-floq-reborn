@@ -102,7 +102,7 @@ export function useAtomicFriendships() {
 
       // Use the corrected accept_friend_request function
       const { data, error } = await (supabase.rpc('accept_friend_request', {
-        _friend: fromUserId
+        _from: fromUserId
       }) as any);
 
       if (error) {

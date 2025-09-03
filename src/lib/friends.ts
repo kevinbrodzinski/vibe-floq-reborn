@@ -42,7 +42,7 @@ export async function sendFriendRequest(profileId: string): Promise<FriendReques
 export async function acceptFriendRequest(requestId: string): Promise<FriendRequestResponse> {
   try {
     const { data, error } = await supabase.rpc('accept_friend_request', {
-      _friend: requestId
+      _from: requestId
     });
 
     if (error) {
