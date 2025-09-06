@@ -27,6 +27,7 @@ import { ClusterTooltip } from '@/components/field/ClusterTooltip';
 import { ConstellationRenderer } from './ConstellationRenderer';
 import { useClusters } from '@/hooks/useClusters';
 import { useClustersLive } from '@/hooks/useClustersLive';
+import { ParticleTrailSystem } from '@/lib/field/ParticleTrailSystem';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -107,6 +108,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
   const constellationContainerRef = useRef<Container | null>(null);
+  const trailContainerRef = useRef<Container | null>(null); // Phase 1: Particle trails
   const userDotRef = useRef<Graphics | null>(null);  // User location dot
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
@@ -116,6 +118,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Reusable graphics objects for performance
   const debugGraphicsRef = useRef<Graphics | null>(null);
   const glowFilterRef = useRef<any>(null);
+  // Phase 1: Particle trail system
+  const trailSystemRef = useRef<ParticleTrailSystem | null>(null);
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -178,11 +182,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
         // Create containers in proper z-order
         const heatContainer = new Container();
+        const trailContainer = new Container(); // Phase 1: Particle trails (under clusters)
         const constellationContainer = new Container(); // For constellation effects
         const peopleContainer = new Container();
         const userContainer = new Container(); // For user location dot
         
         // Add containers in proper order (last = top layer)
+        app.stage.addChild(trailContainer); // Trails at bottom
         app.stage.addChild(heatContainer);
         app.stage.addChild(constellationContainer); // Constellation effects between heat and people
         app.stage.addChild(peopleContainer);
@@ -191,6 +197,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         heatContainerRef.current = heatContainer;
         peopleContainerRef.current = peopleContainer;
         constellationContainerRef.current = constellationContainer;
+        trailContainerRef.current = trailContainer;
+        
+        // Phase 1: Initialize particle trail system
+        trailSystemRef.current = new ParticleTrailSystem(trailContainer);
         
         // Create user location dot
         const userDot = new Graphics();
@@ -495,8 +505,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 sprite.position.set(c.x - c.r, c.y - c.r);
                 sprite.width = sprite.height = c.r * 2;
 
-                // Enhanced color and fade with constellation mode
+                // Phase 1: Enhanced breathing and glow effects
                 let targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
+                
+                // Phase 1: Breathing animation based on cohesion
+                const breathingScale = 1 + (c.cohesionScore || 0) * 0.2 * Math.sin((c.breathingPhase || 0));
+                sprite.scale.set(breathingScale);
                 
                 if (isConstellationMode) {
                   // Constellation mode: pulsing effect and enhanced glow
@@ -513,6 +527,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 
                 sprite.tint = vibeColor;
                 sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
+                
+                // Phase 1: Add particle trail if cluster has momentum
+                if (trailSystemRef.current && c.momentum && c.momentum > 0.5) {
+                  trailSystemRef.current.addPosition(key, c.x, c.y, c.vibe);
+                }
                 
                 // Debug visualization with reused graphics
                 if (showDebugVisuals && debugGraphicsRef.current) {
@@ -685,6 +704,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // ---- USER LOCATION DOT ----
       // Now handled separately in useEffect hooks for better reactivity
 
+      // Phase 1: Update particle trail system
+      if (trailSystemRef.current) {
+        trailSystemRef.current.update(16); // Assume 60fps (16ms)
+      }
+
       // Performance mark: First successful render completed
       if (!firstRenderCompleted) {
         performance.mark('field_overlay_first_render_end');
@@ -741,8 +765,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         try {
           heatContainerRef.current?.removeChildren();
           peopleContainerRef.current?.removeChildren();
+          trailContainerRef.current?.removeChildren(); // Phase 1: Clean trails
           if (tilePoolRef.current && typeof tilePoolRef.current.clearAll === "function") {
             tilePoolRef.current.clearAll();
+          }
+          // Phase 1: Clean particle trail system
+          if (trailSystemRef.current) {
+            trailSystemRef.current.clearAll();
           }
         } catch (e) {
           console.warn('[CLEANUP] Error clearing containers:', e);

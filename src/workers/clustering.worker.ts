@@ -17,6 +17,11 @@ export interface Cluster {
   count: number;                      // how many tiles merged
   vibe: { h: number; s: number; l: number };
   ids: string[];                      // merged tile_ids  (hit-test)
+  // Phase 1: Social physics
+  velocity?: { vx: number; vy: number };
+  cohesionScore?: number;
+  breathingPhase?: number;
+  momentum?: number;
 }
 
 /* ────────────── helpers ────────────── */
@@ -28,10 +33,11 @@ let lastClusters: Cluster[] | null = null;
 
 /* ────────────── API ────────────── */
 const api = {
-  /** spatial merge – keeps provenance (ids) for hit-testing */
+  /** spatial merge with social physics – keeps provenance (ids) for hit-testing */
   cluster(tiles: RawTile[], zoom = 11): Cluster[] {
     const threshold = mergeDistanceForZoom(zoom);
     const clusters: Cluster[] = [];
+    const currentTime = Date.now();
 
     try {
       tiles.forEach(t => {
@@ -44,6 +50,9 @@ const api = {
         if (hit) {
           /* running-average merge */
           const n   = hit.count + 1;
+          const prevX = hit.x;
+          const prevY = hit.y;
+          
           hit.x     = (hit.x * hit.count + t.x) / n;
           hit.y     = (hit.y * hit.count + t.y) / n;
           hit.r     = Math.max(hit.r, t.r);
@@ -54,8 +63,38 @@ const api = {
           };
           hit.count = n;
           hit.ids.push(t.id);
+
+          // Phase 1: Compute basic velocity from center shift
+          hit.velocity = {
+            vx: (hit.x - prevX) * 0.1, // Smooth velocity
+            vy: (hit.y - prevY) * 0.1
+          };
+
+          // Phase 1: Cohesion score based on density
+          hit.cohesionScore = Math.min(hit.count / 10, 1.0);
+
+          // Phase 1: Breathing phase for animation
+          hit.breathingPhase = (currentTime / 3000) % (Math.PI * 2);
+
+          // Phase 1: Momentum based on count and velocity
+          const speed = Math.hypot(hit.velocity.vx, hit.velocity.vy);
+          hit.momentum = hit.count * speed;
+
         } else {
-          clusters.push({ x: t.x, y: t.y, r: t.r, count: 1, vibe: t.vibe, ids: [t.id] });
+          const newCluster: Cluster = { 
+            x: t.x, 
+            y: t.y, 
+            r: t.r, 
+            count: 1, 
+            vibe: t.vibe, 
+            ids: [t.id],
+            // Phase 1: Initialize physics
+            velocity: { vx: 0, vy: 0 },
+            cohesionScore: 0.1, // Low for single particles
+            breathingPhase: (currentTime / 3000) % (Math.PI * 2),
+            momentum: 0.1
+          };
+          clusters.push(newCluster);
         }
       });
     } catch (err) {
