@@ -1,27 +1,14 @@
- 
 import * as Comlink from 'comlink';
+import type { SocialCluster, VibeToken } from '@/types/field';
+import { stableClusterId } from '@/lib/field/clusterId';
 
 /* ────────────── types ────────────── */
 export interface RawTile {
-  id:   string;                       // tile_id (kept for provenance / hit-test)
-  x:    number;                       // screen-space px  (projectToScreen)
-  y:    number;
-  r:    number;                       // radius  (crowdCountToRadius)
-  vibe: { h: number; s: number; l: number };
-}
-
-export interface Cluster {
-  x: number;
+  id: string;                       // tile_id (kept for provenance / hit-test)
+  x: number;                        // screen-space px  (projectToScreen)
   y: number;
-  r: number;
-  count: number;                      // how many tiles merged
-  vibe: { h: number; s: number; l: number };
-  ids: string[];                      // merged tile_ids  (hit-test)
-  // Phase 1: Social physics
-  velocity?: { vx: number; vy: number };
-  cohesionScore?: number;
-  breathingPhase?: number;
-  momentum?: number;
+  r: number;                        // radius  (crowdCountToRadius)
+  vibe: VibeToken;                  // design token, not raw HSL
 }
 
 /* ────────────── helpers ────────────── */
@@ -29,15 +16,17 @@ const BASE_DIST = 32;                 // px at zoom 11
 const mergeDistanceForZoom = (zoom: number) =>
   BASE_DIST * Math.pow(2, 11 - zoom); // shrinks as we zoom in
 
-let lastClusters: Cluster[] | null = null;
+let lastClusters: SocialCluster[] | null = null;
 
 /* ────────────── API ────────────── */
 const api = {
-  /** spatial merge with social physics – keeps provenance (ids) for hit-testing */
-  cluster(tiles: RawTile[], zoom = 11): Cluster[] {
+  /** 
+   * Spatial merge with stable IDs and cohesion - NO velocity computation here
+   * Velocity will be computed cross-frame on client
+   */
+  cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
-    const clusters: Cluster[] = [];
-    const currentTime = Date.now();
+    const clusters: Array<Omit<SocialCluster, 'id' | 'ids'> & { _ids: string[] }> = [];
 
     try {
       tiles.forEach(t => {
@@ -48,62 +37,46 @@ const api = {
         });
 
         if (hit) {
-          /* running-average merge */
-          const n   = hit.count + 1;
-          const prevX = hit.x;
-          const prevY = hit.y;
-          
-          hit.x     = (hit.x * hit.count + t.x) / n;
-          hit.y     = (hit.y * hit.count + t.y) / n;
-          hit.r     = Math.max(hit.r, t.r);
-          hit.vibe  = {
-            h: (hit.vibe.h * hit.count + t.vibe.h) / n,
-            s: (hit.vibe.s * hit.count + t.vibe.s) / n,
-            l: (hit.vibe.l * hit.count + t.vibe.l) / n,
-          };
+          // Running-average merge
+          const n = hit.count + 1;
+          hit.x = (hit.x * hit.count + t.x) / n;
+          hit.y = (hit.y * hit.count + t.y) / n;
+          hit.r = Math.max(hit.r, t.r);
           hit.count = n;
-          hit.ids.push(t.id);
-
-          // Phase 1: Compute basic velocity from center shift
-          hit.velocity = {
-            vx: (hit.x - prevX) * 0.1, // Smooth velocity
-            vy: (hit.y - prevY) * 0.1
-          };
-
-          // Phase 1: Cohesion score based on density
-          hit.cohesionScore = Math.min(hit.count / 10, 1.0);
-
-          // Phase 1: Breathing phase for animation
-          hit.breathingPhase = (currentTime / 3000) % (Math.PI * 2);
-
-          // Phase 1: Momentum based on count and velocity
-          const speed = Math.hypot(hit.velocity.vx, hit.velocity.vy);
-          hit.momentum = hit.count * speed;
-
+          hit._ids.push(t.id);
+          
+          // Lightweight cohesion proxy based on density
+          hit.cohesionScore = Math.min(n / 10, 1.0);
         } else {
-          const newCluster: Cluster = { 
+          clusters.push({ 
             x: t.x, 
             y: t.y, 
             r: t.r, 
             count: 1, 
             vibe: t.vibe, 
-            ids: [t.id],
-            // Phase 1: Initialize physics
-            velocity: { vx: 0, vy: 0 },
             cohesionScore: 0.1, // Low for single particles
-            breathingPhase: (currentTime / 3000) % (Math.PI * 2),
-            momentum: 0.1
-          };
-          clusters.push(newCluster);
+            _ids: [t.id]
+          });
         }
       });
     } catch (err) {
-       
       console.error('[cluster-worker]', err);
     }
 
-    lastClusters = clusters;
-    return clusters;
+    // Convert to final format with stable IDs
+    const finalClusters: SocialCluster[] = clusters.map(c => ({
+      id: stableClusterId(c._ids),
+      x: c.x,
+      y: c.y,
+      r: c.r,
+      count: c.count,
+      vibe: c.vibe,
+      cohesionScore: c.cohesionScore,
+      ids: c._ids
+    }));
+
+    lastClusters = finalClusters;
+    return finalClusters;
   },
 
   /** cursor hit-test → returns tile_ids within `radius` px */

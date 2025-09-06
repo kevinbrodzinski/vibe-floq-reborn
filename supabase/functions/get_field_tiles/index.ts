@@ -22,9 +22,7 @@ interface FieldTileResponse {
     avg_vibe: { h: number; s: number; l: number }
     active_floq_ids: string[]
     updated_at: string
-    // Phase 1: Velocity and momentum data
-    velocity?: { vx: number; vy: number }
-    momentum?: number
+    // NO synthetic velocity/momentum - computed client-side only
   }>
 }
 
@@ -196,24 +194,11 @@ Deno.serve(async (req) => {
       const avgVibe = calculateAverageVibe(vibes)
       const activeFloqIds = tileFloqs.map(f => f.id)
 
-      // Phase 1: Calculate basic velocity from presence movement
-      // For now, use a simple heuristic based on recent activity
-      const recentPresence = tilePresence.filter(p => {
-        const timeDiff = Date.now() - new Date(p.updated_at).getTime()
-        return timeDiff < 5 * 60 * 1000 // Last 5 minutes
-      })
-      
-      // Simple velocity approximation based on activity density
-      const velocity = {
-        vx: (Math.random() - 0.5) * crowdCount * 0.01, // Small random velocity for now
-        vy: (Math.random() - 0.5) * crowdCount * 0.01
-      }
-      
-      // Momentum based on crowd count and activity
-      const momentum = crowdCount * Math.hypot(velocity.vx, velocity.vy)
+      // NO synthetic velocity/momentum generation - violates "no mock data in prod"
+      // All physics computation happens client-side from real position deltas
 
       if (logLevel === 'debug') {
-        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs, momentum: ${momentum.toFixed(2)}`)
+        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
       }
 
       return {
@@ -221,9 +206,8 @@ Deno.serve(async (req) => {
         crowd_count: crowdCount,
         avg_vibe: avgVibe,
         active_floq_ids: activeFloqIds,
-        updated_at: new Date().toISOString(),
-        velocity: crowdCount > 0 ? velocity : undefined,
-        momentum: crowdCount > 0 ? momentum : undefined
+        updated_at: new Date().toISOString()
+        // No synthetic velocity/momentum - pure factual data only
       }
     })
 

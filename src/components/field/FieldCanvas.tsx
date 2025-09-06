@@ -481,7 +481,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           return {
             id: tile.tile_id,
             x, y, r: adjustedRadius,
-            vibe: adjustedVibe,
+            vibe: 'social' as const, // TODO: Convert HSL to vibe token
             opacity: isConstellationMode ? 0.6 : 1.0
           };
         }).filter(Boolean); // Remove null entries when map not ready
@@ -522,15 +522,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   // Note: In a real implementation, you'd add a glow filter here
                 }
                 
-                const [red, green, blue] = hslToRgb(c.vibe.h, c.vibe.s, c.vibe.l);
-                const vibeColor = (red << 16) + (green << 8) + blue;
+                const vibeColor = 0x3B82F6; // TODO: Convert vibe token to color
                 
                 sprite.tint = vibeColor;
                 sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
                 
                 // Phase 1: Add particle trail if cluster has momentum
                 if (trailSystemRef.current && c.momentum && c.momentum > 0.5) {
-                  trailSystemRef.current.addPosition(key, c.x, c.y, c.vibe);
+                  // trailSystemRef.current.addPosition(key, c.x, c.y, c.vibe); // TODO: Fix trail integration
                 }
                 
                 // Debug visualization with reused graphics

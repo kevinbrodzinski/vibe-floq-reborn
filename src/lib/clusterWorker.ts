@@ -1,9 +1,10 @@
 import * as Comlink from 'comlink';
-import type { RawTile, Cluster } from '@/workers/clustering.worker';
+import type { RawTile } from '@/workers/clustering.worker';
+import type { SocialCluster } from '@/types/field';
 
 // Define the clustering API interface
 export interface ClusteringAPI {
-  cluster: (tiles: RawTile[], zoom?: number) => Promise<Cluster[]>;
+  cluster: (tiles: RawTile[], zoom?: number) => Promise<SocialCluster[]>;
   hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
 }
 
@@ -11,12 +12,12 @@ export interface ClusteringAPI {
  * Fallback clustering implementation for when Web Workers aren't available
  */
 class ClusteringFallback {
-  private lastClusters: Cluster[] | null = null;
+  private lastClusters: SocialCluster[] | null = null;
   
-  async cluster(tiles: RawTile[], zoom = 11): Promise<Cluster[]> {
+  async cluster(tiles: RawTile[], zoom = 11): Promise<SocialCluster[]> {
     const BASE_DIST = 32;
     const threshold = BASE_DIST * Math.pow(2, 11 - zoom);
-    const clusters: Cluster[] = [];
+    const clusters: SocialCluster[] = [];
 
     tiles.forEach(t => {
       const hit = clusters.find(c => {
@@ -30,21 +31,20 @@ class ClusteringFallback {
         hit.x = (hit.x * hit.count + t.x) / n;
         hit.y = (hit.y * hit.count + t.y) / n;
         hit.r = Math.max(hit.r, t.r);
-        hit.vibe = {
-          h: (hit.vibe.h * hit.count + t.vibe.h) / n,
-          s: (hit.vibe.s * hit.count + t.vibe.s) / n,
-          l: (hit.vibe.l * hit.count + t.vibe.l) / n,
-        };
+        // For now, keep the existing vibe (tokens don't average)
+        // TODO: Implement proper vibe blending logic
         hit.count = n;
         hit.ids.push(t.id);
       } else {
         clusters.push({
+          id: `fallback_${t.id}`,
           x: t.x,
           y: t.y,
           r: t.r,
           count: 1,
-          vibe: { ...t.vibe },
+          vibe: t.vibe,
           ids: [t.id],
+          cohesionScore: 0.1
         });
       }
     });
