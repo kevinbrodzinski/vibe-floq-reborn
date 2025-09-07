@@ -30,10 +30,10 @@ export class TradeWindOverlay {
     this.capacity = Math.max(0, Math.min(n * 20, this.arrows.length)); 
   }
 
-  update(paths: WindPath[], zoom: number) {
+  update(paths: WindPath[], zoom: number): number {
     if (zoom < P4.WINDS.MIN_ZOOM) { 
       for (const s of this.arrows) s.visible = false; 
-      return; 
+      return 0; 
     }
     
     // Sample each path into oriented "arrow" sprites at stride K
@@ -68,6 +68,8 @@ export class TradeWindOverlay {
     for (; idx < this.arrows.length; idx++) {
       this.arrows[idx].visible = false;
     }
+    
+    return idx; // return visible arrows count for HUD
   }
 
   tick(_deltaMS: number) { 

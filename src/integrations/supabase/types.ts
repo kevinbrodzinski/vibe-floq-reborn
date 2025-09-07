@@ -17890,6 +17890,19 @@ export type Database = {
         }
         Returns: string
       }
+      flow_cells_k5: {
+        Args: { p_city_id: string; p_dow: number; p_hour: number; p_k?: number }
+        Returns: {
+          cell_x: number
+          cell_y: number
+          city_id: string
+          dow: number
+          hour_bucket: number
+          samples: number
+          vx_avg: number
+          vy_avg: number
+        }[]
+      }
       fn_emit_notification: {
         Args: { p_kind: string; p_payload?: Json; p_profile_id: string }
         Returns: undefined
