@@ -20018,6 +20018,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      refresh_trade_winds: {
+        Args: { p_city_id: string; p_k?: number; p_path_limit?: number }
+        Returns: number
+      }
+      refresh_trade_winds_all: {
+        Args: { p_k?: number; p_path_limit?: number }
+        Returns: number
+      }
       refresh_v_friend_visits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
