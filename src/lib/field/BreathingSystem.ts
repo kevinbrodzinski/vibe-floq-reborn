@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import type { SocialCluster } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
-import { ATMO } from '@/lib/field/constants';
+import { ATMO, FIELD_LOD } from '@/lib/field/constants';
 
 interface BreathingState {
   phase: number;
@@ -183,20 +183,24 @@ export class BreathingSystem {
   }
 
   private emitParticles(cluster: SocialCluster, state: BreathingState) {
+    // Privacy and performance gates
+    if (cluster.count < FIELD_LOD.K_MIN) return;
+    
     const count = Math.floor(2 + (cluster.energyLevel || 0.5) * 4);
     
     for (let i = 0; i < count && this.particles.length < this.maxParticles; i++) {
+      // O(1) acquire from free list
       const sprite = this.freeParticles.pop();
       if (!sprite) continue;
 
       const angle = Math.random() * Math.PI * 2;
       const dist = Math.random() * (cluster.glowRadius || 40) * 0.5;
       const speed = 20 + Math.random() * 20;
-      const baseScale = 0.6 + Math.random() * 0.4; // pick once
+      const baseScale = 0.6 + Math.random() * 0.4;
       
       const particle: ParticleState = {
-        x: cluster.x + Math.cos(angle) * dist,
-        y: cluster.y + Math.sin(angle) * dist,
+        x: cluster.x + Math.cos(angle) * dist, // Already in pixel space
+        y: cluster.y + Math.sin(angle) * dist, // Already in pixel space  
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 15, // Slight upward bias
         life: 1,
@@ -205,6 +209,7 @@ export class BreathingSystem {
         sprite
       };
 
+      // Static properties already set at pool creation
       sprite.position.set(particle.x, particle.y);
       sprite.scale.set(baseScale);
       sprite.alpha = 1;
@@ -227,13 +232,13 @@ export class BreathingSystem {
       particle.life -= dt / particle.maxLife;
       
       if (particle.life <= 0) {
-        // Remove dead particle
+        // O(1) recycle to free list
         particle.sprite.visible = false;
         this.particleContainer.removeChild(particle.sprite);
         this.freeParticles.push(particle.sprite);
         this.particles.splice(i, 1);
       } else {
-        // Update visual properties
+        // Update visual properties only for live particles
         particle.sprite.position.set(particle.x, particle.y);
         particle.sprite.alpha = particle.life * particle.life; // Fade out quadratically
         particle.sprite.scale.set(particle.baseScale * particle.life);
@@ -242,13 +247,14 @@ export class BreathingSystem {
   }
 
   private synchronizeBreathing(clusters: SocialCluster[], dt: number) {
-    const CELL = 150;
+    // Use pixel-space grid for proper neighborhood coupling
+    const CELL = 150; // pixels
     const K = 0.05 * dt;
     const bins = new Map<string, string[]>();
     
-    // Spatial binning
+    // Spatial binning in pixel coordinates
     for (const c of clusters) {
-      const gx = (c.x / CELL) | 0;
+      const gx = (c.x / CELL) | 0; // x,y already in pixel space from worker
       const gy = (c.y / CELL) | 0;
       const k = `${gx}:${gy}`;
       const bucket = bins.get(k) ?? [];
@@ -256,7 +262,7 @@ export class BreathingSystem {
       bins.set(k, bucket);
     }
     
-    // Accumulate phase adjustments
+    // Order-independent phase adjustments
     const delta = new Map<string, number>();
     const neigh = [[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1],[-1,-1],[1,-1],[-1,1]];
     

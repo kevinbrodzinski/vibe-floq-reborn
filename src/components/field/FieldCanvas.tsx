@@ -610,26 +610,23 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 }
               });
 
-              // Phase 2: Update breathing system with velocity-enhanced clusters (LOD + privacy gates)
+              // Phase 2: Update breathing system with pixel-space clusters (LOD + privacy gates)
               const breathingSystem = breathingSystemRef.current;
-              if (breathingSystem) {
-                const allowedClusters = clusters.filter(c => 
-                  currentZoom >= ATMO.BREATH_ZOOM_MIN && 
-                  c.count >= FIELD_LOD.K_MIN
-                );
+              if (breathingSystem && currentZoom >= ATMO.BREATH_ZOOM_MIN) {
+                const allowedClusters = clusters.filter(c => c.count >= FIELD_LOD.K_MIN);
                 if (allowedClusters.length > 0) {
                   const allowedSprites = new Map<string, any>();
                   for (const c of allowedClusters) {
-                    const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
-                    const sprite = clusterSprites.get(c.id) || tilePool.active.get(key);
+                    const sprite = clusterSprites.get(c.id);
                     if (sprite) allowedSprites.set(c.id, sprite);
                   }
+                  // Clusters already have x,y in pixel space from worker
                   breathingSystem.updateSprites(allowedClusters, allowedSprites, app.ticker.deltaMS);
                 }
               }
               
-              // Phase 2: Render convergence overlay
-              if (convergenceOverlayRef.current) {
+              // Phase 2: Render convergence overlay with LOD gate
+              if (convergenceOverlayRef.current && currentZoom >= ATMO.BREATH_ZOOM_MIN) {
                 convergenceOverlayRef.current.render(convergences, currentZoom);
               }
               
