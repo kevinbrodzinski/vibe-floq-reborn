@@ -442,8 +442,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       
       if (!hasChanged) {
         // No changes, just continue the loop without re-rendering
-        animationId = requestAnimationFrame(animate);
-        return;
+        return; // Skip frame - PIXI ticker will call us again
       }
       
       // Update hashes
@@ -717,7 +716,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         firstRenderCompleted = true;
       }
 
-      animationId = requestAnimationFrame(animate);
+      // PIXI ticker handles next frame - no RAF needed
     };
 
     animate();
