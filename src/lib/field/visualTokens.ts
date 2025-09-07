@@ -20,3 +20,18 @@ export const momentumTokens = {
   alpha: 0.9,
   color: '#ffffff',
 } as const;
+
+export const pressureTokens = {
+  // soft, cool neutrals — adjust via design system later
+  color: { low: '#c7d2fe', mid: '#93c5fd', high: '#60a5fa' },
+  alpha: 0.6,
+  cellRadiusPx: 42,      // base cloud radius
+  glowBoost: 1.2,        // optional scale for strong cells
+} as const;
+
+export const stormTokens = {
+  haloColor: '#fbbf24',  // semantic amber glow
+  haloAlpha: 0.85,
+  haloRadiusPx: 64,      // base halo radius (scaled by intensity)
+  ttlMs: 2200,           // UI fade TTL when stale
+} as const;

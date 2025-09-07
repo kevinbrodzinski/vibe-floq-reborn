@@ -31,12 +31,14 @@ import { ParticleTrailSystem } from '@/lib/field/ParticleTrailSystem';
 import { ConvergenceOverlay } from './overlays/ConvergenceOverlay';
 import { FlowFieldOverlay } from './overlays/FlowFieldOverlay';
 import { ConvergenceLanes } from './overlays/ConvergenceLanes';
+import { PressureOverlay } from './overlays/PressureOverlay';
+import { StormOverlay } from './overlays/StormOverlay';
 import { MomentumBadge } from './badges/MomentumBadge';
 import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
-import { ATMO, FIELD_LOD, P3 } from '@/lib/field/constants';
+import { ATMO, FIELD_LOD, P3, P3B } from '@/lib/field/constants';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -141,6 +143,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const flowFieldOverlayRef = useRef<FlowFieldOverlay | null>(null);
   const convergenceLanesRef = useRef<ConvergenceLanes | null>(null);
   const momentumBadgeRef = useRef<MomentumBadge | null>(null);
+  // Phase 3B: Atmospheric overlays
+  const pressureOverlayRef = useRef<PressureOverlay | null>(null);
+  const stormOverlayRef = useRef<StormOverlay | null>(null);
   const clustersRef = useRef<SocialCluster[]>([]);
   const previousClustersRef = useRef<SocialCluster[]>([]);
   const clusterVelocitiesRef = useRef<Map<string, { vx: number; vy: number; momentum: number }>>(new Map());
@@ -149,6 +154,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 3: Throttled worker calls
   const lastFlowRef = useRef(0);
   const lastLaneRef = useRef(0);
+  // Phase 3B: Atmospheric throttling
+  const lastPressureRef = useRef(0);
+  const lastStormRef = useRef(0);
   const FLOW_INTERVAL_MS = 1000 / P3.FLOW.UPDATE_HZ;
   const LANE_INTERVAL_MS = 100; // ~10 Hz, worker throttles internally
   
@@ -251,6 +259,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         flowFieldOverlayRef.current = new FlowFieldOverlay(overlayContainer);
         convergenceLanesRef.current = new ConvergenceLanes(overlayContainer);
         momentumBadgeRef.current = new MomentumBadge(overlayContainer);
+        
+        // Phase 3B: Initialize atmospheric overlays
+        pressureOverlayRef.current = new PressureOverlay(overlayContainer, app.renderer);
+        stormOverlayRef.current = new StormOverlay(overlayContainer);
         
         // Create user location dot
         const userDot = new Graphics();

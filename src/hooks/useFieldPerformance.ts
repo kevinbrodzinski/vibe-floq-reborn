@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import * as PIXI from 'pixi.js';
-import { PERF_BUDGETS, P3 } from '@/lib/field/constants';
+import { PERF_BUDGETS, P3, P3B } from '@/lib/field/constants';
 
 interface PerformanceMetrics {
   fps: number;
@@ -120,19 +120,29 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
       particles: PERF_BUDGETS.PARTICLES.LOW, 
       flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.LOW,
       maxArrows: Math.floor(P3.FLOW.MAX_ARROWS * 0.5),
-      maxLanes: Math.floor(P3.LANES.MAX_LANES * 0.5)
+      maxLanes: Math.floor(P3.LANES.MAX_LANES * 0.5),
+      // Phase 3B atmospheric settings
+      pressureGrid: Math.floor(P3B.PRESSURE.GRID_PX * 1.5),
+      maxPressureCells: Math.floor(P3B.PRESSURE.MAX_CELLS * 0.5),
+      maxStormGroups: Math.floor(P3B.STORMS.MAX_GROUPS * 0.5)
     },
     mid: { 
       particles: PERF_BUDGETS.PARTICLES.MID, 
       flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.MID,
       maxArrows: P3.FLOW.MAX_ARROWS,
-      maxLanes: P3.LANES.MAX_LANES
+      maxLanes: P3.LANES.MAX_LANES,
+      pressureGrid: P3B.PRESSURE.GRID_PX,
+      maxPressureCells: P3B.PRESSURE.MAX_CELLS,
+      maxStormGroups: P3B.STORMS.MAX_GROUPS
     },
     high: { 
       particles: PERF_BUDGETS.PARTICLES.HIGH, 
       flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.HIGH,
       maxArrows: P3.FLOW.MAX_ARROWS,
-      maxLanes: P3.LANES.MAX_LANES
+      maxLanes: P3.LANES.MAX_LANES,
+      pressureGrid: P3B.PRESSURE.GRID_PX,
+      maxPressureCells: P3B.PRESSURE.MAX_CELLS,
+      maxStormGroups: P3B.STORMS.MAX_GROUPS
     }
   }[deviceTier];
   
@@ -142,12 +152,16 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
       flowGrid: base.flowGrid * 1.5, // Coarser grid
       maxArrows: Math.floor(base.maxArrows * 0.6),
       maxLanes: Math.floor(base.maxLanes * 0.6),
+      pressureGrid: base.pressureGrid * 1.5, // Coarser pressure grid
+      maxPressureCells: Math.floor(base.maxPressureCells * 0.6),
+      maxStormGroups: Math.floor(base.maxStormGroups * 0.6),
       disableGlow: true,
-      reducedLanes: true
+      reducedLanes: true,
+      reducedAtmosphere: true
     };
   }
   
-  return { ...base, disableGlow: false, reducedLanes: false };
+  return { ...base, disableGlow: false, reducedLanes: false, reducedAtmosphere: false };
 }
 
 // Helper to emit worker performance events

@@ -5,6 +5,8 @@ export function FieldDebugHUD({
   metrics, 
   flowCellsRendered = 0, 
   lanesRendered = 0,
+  pressureCellsRendered = 0,
+  stormGroupsRendered = 0,
   className 
 }: { 
   metrics?: {
@@ -14,6 +16,8 @@ export function FieldDebugHUD({
   };
   flowCellsRendered?: number;
   lanesRendered?: number;
+  pressureCellsRendered?: number;
+  stormGroupsRendered?: number;
   className?: string;
 }) {
   // Only show in dev with debug flag
@@ -33,6 +37,8 @@ export function FieldDebugHUD({
         <div>Device: {metrics?.deviceTier ?? 'unknown'}</div>
         <div>Flow: {flowCellsRendered} arrows</div>
         <div>Lanes: {lanesRendered}</div>
+        <div>Pressure: {pressureCellsRendered} cells</div>
+        <div>Storms: {stormGroupsRendered} groups</div>
       </div>
     </div>
   );

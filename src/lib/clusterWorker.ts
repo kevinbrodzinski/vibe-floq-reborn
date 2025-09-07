@@ -12,6 +12,9 @@ export interface ClusteringAPI {
   flowGrid: (clusters: SocialCluster[], zoom: number) => Promise<import('@/lib/field/types').FlowCell[]>;
   lanes: (clusters: SocialCluster[], zoom: number, now?: number) => Promise<import('@/lib/field/types').LaneSegment[]>;
   momentum: (clusters: SocialCluster[]) => Promise<import('@/lib/field/types').MomentumStat[]>;
+  // Phase 3B API extensions (atmospheric)
+  pressureGrid: (clusters: SocialCluster[], zoom: number) => Promise<import('@/lib/field/types').PressureCell[]>;
+  stormGroups: (lanes: import('@/lib/field/types').LaneSegment[], zoom: number) => Promise<import('@/lib/field/types').StormGroup[]>;
 }
 
 /**
@@ -88,6 +91,16 @@ class ClusteringFallback {
 
   async momentum(clusters: SocialCluster[]): Promise<import('@/lib/field/types').MomentumStat[]> {
     // Fallback implementation - no momentum in fallback mode
+    return [];
+  }
+
+  async pressureGrid(clusters: SocialCluster[], zoom: number): Promise<import('@/lib/field/types').PressureCell[]> {
+    // Fallback implementation - no pressure grid in fallback mode
+    return [];
+  }
+
+  async stormGroups(lanes: import('@/lib/field/types').LaneSegment[], zoom: number): Promise<import('@/lib/field/types').StormGroup[]> {
+    // Fallback implementation - no storm groups in fallback mode
     return [];
   }
 

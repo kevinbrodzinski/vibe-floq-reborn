@@ -1,0 +1,77 @@
+import * as PIXI from 'pixi.js';
+import { P3B } from '@/lib/field/constants';
+import { pressureTokens } from '@/lib/field/visualTokens';
+import { ADD_BLEND } from '@/lib/pixi/blendModes';
+import type { PressureCell } from '@/lib/field/types';
+
+export class PressureOverlay {
+  private container: PIXI.ParticleContainer;
+  private sprites: PIXI.Sprite[] = [];
+  private circle: PIXI.Texture;
+
+  constructor(parent: PIXI.Container, renderer: PIXI.Renderer, capacity = P3B.PRESSURE.MAX_CELLS) {
+    this.container = new (PIXI as any).ParticleContainer(capacity, {
+      position: true, rotation: true, alpha: true, tint: true, scale: true
+    });
+    parent.addChild(this.container);
+
+    // RN-safe soft circle texture
+    const g = new PIXI.Graphics();
+    g.beginFill(0xffffff, 0.06); g.drawCircle(0, 0, 64); g.endFill();
+    g.beginFill(0xffffff, 0.18); g.drawCircle(0, 0, 42); g.endFill();
+    g.beginFill(0xffffff, 0.45); g.drawCircle(0, 0, 24); g.endFill();
+    this.circle = renderer.generateTexture(g);
+    g.destroy();
+
+    for (let i = 0; i < capacity; i++) {
+      const s = new PIXI.Sprite(this.circle);
+      s.anchor.set(0.5);
+      s.visible = false;
+      s.blendMode = ADD_BLEND;
+      this.sprites.push(s);
+      this.container.addChild(s);
+    }
+  }
+
+  update(cells: PressureCell[], zoom: number) {
+    if (zoom < P3B.PRESSURE.MIN_ZOOM || cells.length === 0) {
+      for (const s of this.sprites) s.visible = false;
+      return;
+    }
+
+    // normalize pressure to [0..1] per frame using top-k
+    const top = Math.max(0.0001, cells[0]?.p ?? 0.0001);
+    const toHex = (hex: string) => parseInt(hex.slice(1), 16);
+
+    for (let i = 0; i < this.sprites.length; i++) {
+      const s = this.sprites[i];
+      const c = cells[i];
+      if (!c) { 
+        s.visible = false; 
+        continue; 
+      }
+
+      // alpha & scale by normalized pressure
+      const norm = Math.max(0, Math.min(1, c.p / top));
+      const r = pressureTokens.cellRadiusPx * (1 + norm * pressureTokens.glowBoost);
+      s.position.set(c.x, c.y);
+      s.scale.set(r / 64);
+
+      // orient a hint toward wind = -∇p (use gradient angle)
+      const angle = Math.atan2(-c.gy, -c.gx);
+      if (isFinite(angle)) s.rotation = angle;
+
+      // tint by intensity band
+      const tint = norm > 0.66 ? pressureTokens.color.high
+                  : norm > 0.33 ? pressureTokens.color.mid
+                                 : pressureTokens.color.low;
+      s.tint = toHex(tint);
+      s.alpha = pressureTokens.alpha * (0.6 + 0.4 * norm);
+      s.visible = true;
+    }
+  }
+
+  destroy() { 
+    this.container.destroy({ children: true }); 
+  }
+}

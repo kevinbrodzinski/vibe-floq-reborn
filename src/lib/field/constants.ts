@@ -66,3 +66,22 @@ export const PERF_BUDGETS = {
     HIGH: 48
   }
 } as const;
+
+// Phase 3B constants (atmospheric effects)
+export const P3B = {
+  PRESSURE: {
+    MIN_ZOOM: 13,
+    GRID_PX: 72,         // coarse sampling in pixels
+    SMOOTH: 0.6,         // EMA smoothing (0..1, higher = stickier)
+    MAX_CELLS: 800,      // cap per frame after culling/sorting
+    UPDATE_HZ: 6,        // throttle worker
+  },
+  STORMS: {
+    MIN_ZOOM: 15,
+    K_MIN: 5,
+    ETA_MAX_MS: 300000,  // 5m horizon
+    GROUP_RADIUS_PX: 120,// meeting point radius for grouping lanes
+    CONF_MIN: 0.55,      // min confidence to contribute
+    MAX_GROUPS: 24,      // cap per frame
+  },
+} as const;

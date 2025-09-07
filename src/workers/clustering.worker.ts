@@ -1,8 +1,8 @@
 import * as Comlink from 'comlink';
 import type { SocialCluster, VibeToken, ConvergenceEvent, CentroidState } from '@/types/field';
-import type { FlowCell, LaneSegment, MomentumStat } from '@/lib/field/types';
+import type { FlowCell, LaneSegment, MomentumStat, PressureCell, StormGroup } from '@/lib/field/types';
 import { stableClusterId } from '@/lib/field/clusterId';
-import { CLUSTER, PHASE2, FIELD_LOD, P3, ATMO } from '@/lib/field/constants';
+import { CLUSTER, PHASE2, FIELD_LOD, P3, ATMO, P3B } from '@/lib/field/constants';
 
 /* ────────────── types ────────────── */
 export interface RawTile {
@@ -109,6 +109,11 @@ class ClusteringWorker {
   private lastFlowTs = 0;
   private lastFlowCells: FlowCell[] = [];
   private laneCache = new Map<string, LaneSegment & { lastSeen: number }>();
+
+  // Phase 3B caches (atmospheric)
+  private pressureEma = new Map<string, number>();
+  private lastPressureTs = 0;
+  private lastPressureCells: PressureCell[] = [];
 
   // Make helper methods available to class
   private buildVelocityMap = buildVelocityMap;
@@ -296,7 +301,13 @@ class ClusteringWorker {
     this.lastFlowCells = [];
     this.laneCache.clear();
     this.lastFlowTs = 0;
+    this.pressureEma.clear();
+    this.lastPressureCells = [];
+    this.lastPressureTs = 0;
   }
+
+  // Phase 3B helper method
+  private cellKey(gx: number, gy: number) { return `${gx}:${gy}`; }
 
   // Phase 3 helper methods
   private gridIndex(x: number, y: number, gridPx: number) {
@@ -536,6 +547,157 @@ class ClusteringWorker {
       })
       .filter(m => m.speed >= P3.MOMENTUM.SPEED_MIN);
   }
+
+  /** Phase 3B: Pressure grid with EMA smoothing and gradient calculation */
+  pressureGrid(clusters: SocialCluster[], zoom: number): PressureCell[] {
+    const now = performance.now();
+    const INTERVAL = 1000 / P3B.PRESSURE.UPDATE_HZ;
+    if (now - this.lastPressureTs < INTERVAL) return this.lastPressureCells;
+
+    if (zoom < P3B.PRESSURE.MIN_ZOOM || clusters.length === 0) {
+      this.lastPressureTs = now;
+      return this.lastPressureCells = [];
+    }
+
+    // bounds from current clusters (pixel space), padded by ~2 cells
+    const GRID = P3B.PRESSURE.GRID_PX;
+    const { minX, minY, maxX, maxY } = this.boundsFromClusters(clusters, GRID * 2);
+
+    // grid index range (integers)
+    const gx0 = Math.floor(minX / GRID), gy0 = Math.floor(minY / GRID);
+    const gx1 = Math.ceil(maxX / GRID), gy1 = Math.ceil(maxY / GRID);
+
+    // Build velocity for sigma/weight heuristics if needed
+    const vel = this.buildVelocityMap(now, clusters);
+
+    // Pass 1: accumulate raw pressure per cell (gaussian by distance; weight by cohesion * size)
+    const pMap = new Map<string, number>();
+    const K_MIN = FIELD_LOD.K_MIN;
+
+    const addP = (key: string, v: number) => pMap.set(key, (pMap.get(key) ?? 0) + v);
+
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        const cx = gx * GRID, cy = gy * GRID;
+        let p = 0;
+
+        for (const c of clusters) {
+          if ((c.count ?? 0) < K_MIN) continue;
+
+          const dx = c.x - cx, dy = c.y - cy;
+          const d2 = dx * dx + dy * dy;
+
+          // influence radius ~ cluster size; clamp lower bound
+          const sigma = Math.max(c.r, 40);
+          const wSpatial = Math.exp(-d2 / (2 * sigma * sigma));
+
+          const coh = Math.min(1, Math.max(0, c.cohesionScore ?? 0.5));
+          const sizeW = Math.min(1, (c.count ?? 0) / 20);
+          const wAttr = 0.3 + 0.7 * coh * sizeW;
+
+          const v = wSpatial * wAttr;
+          if (v > 1e-4) p += v;
+        }
+
+        if (p <= 0) continue;
+
+        // EMA smoothing (pressureEma keyed by cell)
+        const key = this.cellKey(gx, gy);
+        const prev = this.pressureEma.get(key);
+        const alpha = P3B.PRESSURE.SMOOTH;
+        const smoothed = prev == null ? p : (alpha * prev + (1 - alpha) * p);
+        this.pressureEma.set(key, smoothed);
+        addP(key, smoothed);
+      }
+    }
+
+    // Pass 2: central differences to derive gradients
+    const cells: PressureCell[] = [];
+    const toP = (x: number, y: number) => pMap.get(this.cellKey(x, y)) ?? 0;
+
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        const key = this.cellKey(gx, gy);
+        const p = pMap.get(key);
+        if (p == null) continue;
+
+        // central diff (scaled by grid size)
+        const left = toP(gx - 1, gy), right = toP(gx + 1, gy);
+        const up = toP(gx, gy - 1), down = toP(gx, gy + 1);
+
+        // gradient = ∇p (positive means increasing). We'll use -∇p for wind direction.
+        const gxv = (right - left) / (2 * GRID);
+        const gyv = (down - up) / (2 * GRID);
+
+        const cx = gx * GRID, cy = gy * GRID;
+        cells.push({ x: cx, y: cy, p, gx: gxv, gy: gyv });
+        if (cells.length >= P3B.PRESSURE.MAX_CELLS) break;
+      }
+      if (cells.length >= P3B.PRESSURE.MAX_CELLS) break;
+    }
+
+    // Optionally sort by pressure magnitude and cap
+    cells.sort((a, b) => b.p - a.p);
+    this.lastPressureTs = now;
+    return this.lastPressureCells = cells.slice(0, P3B.PRESSURE.MAX_CELLS);
+  }
+
+  /** Phase 3B: Storm groups from convergence lanes */
+  stormGroups(lanes: LaneSegment[], zoom: number): StormGroup[] {
+    const out: StormGroup[] = [];
+    if (zoom < P3B.STORMS.MIN_ZOOM || lanes.length === 0) return out;
+
+    // Filter strong lanes
+    const strong = lanes.filter(l =>
+      l.conf >= P3B.STORMS.CONF_MIN && l.etaMs <= P3B.STORMS.ETA_MAX_MS
+    );
+    if (!strong.length) return out;
+
+    // Spatial hashing around lane endpoints (use lane end as meet point proxy)
+    const R = P3B.STORMS.GROUP_RADIUS_PX;
+    const invR = 1 / R;
+    const bins = new Map<string, LaneSegment[]>();
+    const keyFor = (x: number, y: number) => `${Math.round(x * invR)}:${Math.round(y * invR)}`;
+
+    for (const ln of strong) {
+      const end = ln.pts[ln.pts.length - 1];
+      const key = keyFor(end.x, end.y);
+      (bins.get(key) ?? bins.set(key, []).get(key)!).push(ln);
+    }
+
+    // Build groups per bin; compute intensity = normalized count * avg conf
+    for (const [k, list] of bins) {
+      if (!list.length) continue;
+
+      const endPts = list.map(l => l.pts[l.pts.length - 1]);
+      const cx = endPts.reduce((s, p) => s + p.x, 0) / endPts.length;
+      const cy = endPts.reduce((s, p) => s + p.y, 0) / endPts.length;
+
+      const confAvg = list.reduce((s, l) => s + l.conf, 0) / list.length;
+      const etaAvg = list.reduce((s, l) => s + l.etaMs, 0) / list.length;
+
+      // radius tied to spread; clamp
+      const spread = Math.sqrt(
+        endPts.reduce((s, p) => s + ((p.x - cx) ** 2 + (p.y - cy) ** 2), 0) / endPts.length
+      );
+      const radius = Math.max(32, Math.min(160, spread * 1.2));
+
+      // intensity = confAvg scaled by lane density (soft log)
+      const intensity = Math.max(0, Math.min(1, confAvg * Math.log(2 + list.length) / Math.log(10)));
+
+      out.push({
+        id: `storm_${k}`,
+        x: cx, y: cy,
+        radius,
+        intensity,
+        conf: confAvg,
+        etaMs: etaAvg,
+      });
+      if (out.length >= P3B.STORMS.MAX_GROUPS) break;
+    }
+
+    return out;
+  }
 }
 
 // Persistent worker instance
@@ -550,6 +712,9 @@ const api = {
   flowGrid: (clusters: SocialCluster[], zoom: number) => workerInstance.flowGrid(clusters, zoom),
   lanes: (clusters: SocialCluster[], zoom: number, now = performance.now()) => workerInstance.lanes(clusters, zoom, now),
   momentum: (clusters: SocialCluster[]) => workerInstance.momentum(clusters),
+  // Phase 3B API extensions (atmospheric)
+  pressureGrid: (clusters: SocialCluster[], zoom: number) => workerInstance.pressureGrid(clusters, zoom),
+  stormGroups: (lanes: LaneSegment[], zoom: number) => workerInstance.stormGroups(lanes, zoom),
 };
 
 Comlink.expose(api);
