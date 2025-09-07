@@ -43,7 +43,7 @@ export class ConvergenceLanes {
       // Rebuild geometry (cheap polyline)
       g.clear();
       const col = ln.conf >= 0.7 ? strongHex : baseHex;
-      g.lineStyle(laneTokens.strokePx, col, 0.85);
+      g.stroke({ width: laneTokens.strokePx, color: col, alpha: 0.85 });
       const first = ln.pts[0];
       g.moveTo(first.x, first.y);
       for (let j = 1; j < ln.pts.length; j++) {
@@ -52,9 +52,7 @@ export class ConvergenceLanes {
 
       // Small meet dot
       const end = ln.pts[ln.pts.length - 1];
-      g.beginFill(col, 1);
-      g.drawCircle(end.x, end.y, laneTokens.dotRadiusPx);
-      g.endFill();
+      g.circle(end.x, end.y, laneTokens.dotRadiusPx).fill({ color: col, alpha: 1 });
 
       this.ttl.set(ln.id, now); // refresh life
     }

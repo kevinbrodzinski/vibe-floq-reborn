@@ -37,11 +37,9 @@ export class StormOverlay {
       // rebuild halo each update (cheap)
       h.clear();
       const alpha = stormTokens.haloAlpha * (0.6 + 0.4 * g.intensity);
-      h.lineStyle(3, color, alpha);
-      h.drawCircle(g.x, g.y, g.radius);
-      h.beginFill(color, alpha * 0.15);
-      h.drawCircle(g.x, g.y, Math.max(6, g.radius * 0.25));
-      h.endFill();
+      h.stroke({ width: 3, color, alpha });
+      h.circle(g.x, g.y, g.radius);
+      h.circle(g.x, g.y, Math.max(6, g.radius * 0.25)).fill({ color, alpha: alpha * 0.15 });
 
       this.lastSeen.set(id, now);
     }

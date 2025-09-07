@@ -3,6 +3,7 @@ import { P3B } from '@/lib/field/constants';
 import { pressureTokens } from '@/lib/field/visualTokens';
 import { ADD_BLEND } from '@/lib/pixi/blendModes';
 import { safeAngle } from '@/lib/math/safety';
+import { generateTexture } from '@/lib/pixi/textureHelpers';
 import type { PressureCell } from '@/lib/field/types';
 
 export class PressureOverlay {
@@ -18,10 +19,11 @@ export class PressureOverlay {
 
     // RN-safe soft circle texture
     const g = new PIXI.Graphics();
-    g.beginFill(0xffffff, 0.06); g.drawCircle(0, 0, 64); g.endFill();
-    g.beginFill(0xffffff, 0.18); g.drawCircle(0, 0, 42); g.endFill();
-    g.beginFill(0xffffff, 0.45); g.drawCircle(0, 0, 24); g.endFill();
-    this.circle = renderer.generateTexture(g);
+    g.clear();
+    g.circle(0, 0, 64).fill({ color: 0xffffff, alpha: 0.06 });
+    g.circle(0, 0, 42).fill({ color: 0xffffff, alpha: 0.18 });
+    g.circle(0, 0, 24).fill({ color: 0xffffff, alpha: 0.45 });
+    this.circle = generateTexture(renderer, g);
     g.destroy();
 
     for (let i = 0; i < capacity; i++) {
@@ -75,10 +77,11 @@ export class PressureOverlay {
   refreshTextures(renderer: PIXI.Renderer) {
     // Re-create texture for DPR/renderer changes
     const g = new PIXI.Graphics();
-    g.beginFill(0xffffff, 0.06); g.drawCircle(0, 0, 64); g.endFill();
-    g.beginFill(0xffffff, 0.18); g.drawCircle(0, 0, 42); g.endFill();
-    g.beginFill(0xffffff, 0.45); g.drawCircle(0, 0, 24); g.endFill();
-    this.circle = renderer.generateTexture(g);
+    g.clear();
+    g.circle(0, 0, 64).fill({ color: 0xffffff, alpha: 0.06 });
+    g.circle(0, 0, 42).fill({ color: 0xffffff, alpha: 0.18 });
+    g.circle(0, 0, 24).fill({ color: 0xffffff, alpha: 0.45 });
+    this.circle = generateTexture(renderer, g);
     g.destroy();
     
     // Update all sprites with new texture

@@ -3,6 +3,8 @@ import type { SocialCluster } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
 import { ATMO, FIELD_LOD } from '@/lib/field/constants';
 import { visualTokens } from '@/lib/vibe/tokens';
+import { generateTexture } from '@/lib/pixi/textureHelpers';
+import { ADD_BLEND } from '@/lib/pixi/blendModes';
 
 interface BreathingState {
   phase: number;
@@ -43,17 +45,11 @@ export class BreathingSystem {
   constructor(parent: PIXI.Container, private renderer: PIXI.Renderer) {
     // Build RN-safe glow texture using Graphics + renderer
     const g = new PIXI.Graphics();
-    // Create three concentric circles to simulate radial gradient
-    g.beginFill(0xffffff, 0.08);
-    g.drawCircle(0, 0, 64);
-    g.endFill();
-    g.beginFill(0xffffff, 0.20);
-    g.drawCircle(0, 0, 42);
-    g.endFill();
-    g.beginFill(0xffffff, 0.50);
-    g.drawCircle(0, 0, 21);
-    g.endFill();
-    this.circleTex = this.renderer.generateTexture(g);
+    g.clear();
+    g.circle(0, 0, 64).fill({ color: 0xffffff, alpha: 0.08 });
+    g.circle(0, 0, 42).fill({ color: 0xffffff, alpha: 0.20 });
+    g.circle(0, 0, 21).fill({ color: 0xffffff, alpha: 0.50 });
+    this.circleTex = generateTexture(this.renderer, g);
     g.destroy();
 
     // Layers
@@ -70,7 +66,7 @@ export class BreathingSystem {
     for (let i = 0; i < this.maxParticles; i++) {
       const particle = new PIXI.Sprite(PIXI.Texture.WHITE);
       particle.anchor.set(0.5);
-      particle.blendMode = 'add';
+      particle.blendMode = ADD_BLEND;
       particle.width = visualTokens.atmo.particleSize;
       particle.height = visualTokens.atmo.particleSize;
       particle.visible = false;
@@ -174,7 +170,7 @@ export class BreathingSystem {
     if (!glow) {
       glow = new PIXI.Sprite(this.circleTex);
       glow.anchor.set(0.5);
-      glow.blendMode = 'add';
+      glow.blendMode = ADD_BLEND;
       this.glowContainer.addChild(glow);
       this.glowSprites.set(cluster.id, glow);
     }
