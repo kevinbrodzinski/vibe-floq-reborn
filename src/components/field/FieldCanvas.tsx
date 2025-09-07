@@ -638,6 +638,19 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 console.log(`[Debug] ${convergences.length} convergence events predicted`);
               }
 
+              // Phase 2: Performance monitoring for dev
+              if (import.meta.env.DEV && Math.random() < 0.01) { // 1% sample rate
+                const stats = {
+                  zoom: currentZoom,
+                  fps: Math.round(app.ticker.FPS),
+                  clusters: clusters.length,
+                  convergences: convergences.length,
+                  breathingStates: breathingSystem?.getStats().activeBreathingStates ?? 0,
+                  particles: breathingSystem?.getStats().activeParticles ?? 0
+                };
+                console.log('[FieldCanvas] Performance stats:', stats);
+              }
+
               /* fast viewport cull – if sprite is way outside screen we drop immediately */
               tilePool.active.forEach((sprite, id) => {
                 if (!id.startsWith('c:')) return;

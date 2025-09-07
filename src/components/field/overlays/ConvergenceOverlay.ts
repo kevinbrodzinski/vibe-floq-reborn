@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import type { ConvergenceEvent } from '@/types/field';
-import { PHASE2 } from '@/lib/field/constants';
+import { PHASE2, FIELD_LOD, ATMO } from '@/lib/field/constants';
 
 export class ConvergenceOverlay {
   private container: PIXI.Container;
@@ -31,8 +31,11 @@ export class ConvergenceOverlay {
     // LOD gate - don't show anything below minimum zoom
     if (zoom < S.ZOOM_MIN) return;
 
-    // Render active convergence events
+    // Render active convergence events with privacy gates
     for (const e of events) {
+      // Privacy gate: only show convergences with sufficient k-anonymity 
+      if (!e.confidence || e.confidence < 0.3) continue; // Low confidence filter
+      
       // Reuse existing sprite or create new one
       const rec = this.active.get(e.id) ?? this.add(e.id);
       if (!rec) continue; // Pool exhausted
@@ -48,8 +51,8 @@ export class ConvergenceOverlay {
       const baseAlpha = Math.min(0.85, 0.4 + 0.6 * e.confidence);
       s.alpha = baseAlpha * k;
       
-      // Use semantic convergence color
-      s.tint = 0xf59e0b; // TODO: Route through design tokens
+      // Use semantic convergence color from design tokens
+      s.tint = ATMO.CONVERGENCE.COLOR;
       
       rec.t = now;
     }

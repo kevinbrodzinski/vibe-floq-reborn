@@ -92,6 +92,9 @@ export class BreathingSystem {
     const activeIds = new Set<string>();
 
     clusters.forEach(cluster => {
+      // Privacy gate: only process clusters with sufficient count
+      if (cluster.count < FIELD_LOD.K_MIN) return;
+      
       activeIds.add(cluster.id);
       this.updateClusterBreathingSprite(cluster, clusterSprites, dt, now);
     });

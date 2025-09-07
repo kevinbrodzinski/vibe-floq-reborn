@@ -39,5 +39,8 @@ export const ATMO = {
   GLOW_ALPHA_BASE: 0.3,
   PARTICLE_SIZE: 2,
   PARTICLE_CAP: 200,             // Max particles across all systems
-  CONV_MAX_PER_FRAME: 64,
+  CONVERGENCE: {
+    MAX_PER_FRAME: 64,
+    COLOR: 0xfbbf24,             // amber-400 semantic token
+  },
 };
