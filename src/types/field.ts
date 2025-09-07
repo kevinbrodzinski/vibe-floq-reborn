@@ -53,7 +53,7 @@ export interface ScreenTile extends EnhancedFieldTile {
   };
 }
 
-// Phase 1: Social cluster with stable ID and physics
+// Phase 2: Enhanced social cluster with breathing and lifecycle
 export interface SocialCluster {
   id: string; // stable hash from tile IDs
   x: number;
@@ -61,11 +61,26 @@ export interface SocialCluster {
   r: number;
   count: number;
   vibe: VibeToken;
-  // Client-computed physics (no intra-batch velocity)
+  
+  // Phase 2: Social Physics Properties
+  cohesionScore?: number;           // 0-1, spatial + vibe tightness
+  breathingPhase?: number;          // 0-2π, current phase in cycle
+  breathingRate?: number;           // breaths per minute (20-40 BPM)
+  energyLevel?: number;             // 0-1, activity intensity
+  momentum?: number;                // 0-1, movement consistency
+  lifecycleStage?: 'forming' | 'stable' | 'peaking' | 'dispersing';
+  socialGravity?: number;           // 0-1, attraction to other clusters
+  pulseIntensity?: number;          // 0-1, breathing amplitude
+  glowRadius?: number;              // pixels, visual glow size
+  formationTime?: number;           // timestamp when cluster formed
+  
+  // Client-computed physics
   velocity?: { vx: number; vy: number };
-  cohesionScore?: number;
-  breathingPhase?: number; // seeded per cluster
-  momentum?: number;
+  convergenceTargets?: Array<{
+    targetId: string;
+    timeToMeet: number;
+    probability: number;
+  }>;
 }
 
 // Phase 2: Convergence prediction

@@ -18,6 +18,14 @@ const mergeDistanceForZoom = (zoom: number) =>
 
 let lastClusters: SocialCluster[] | null = null;
 
+// Phase 2: Cluster history for lifecycle tracking
+const clusterHistory = new Map<string, {
+  count: number;
+  timestamp: number;
+  formationTime: number;
+  lastGrowth: number;
+}>();
+
 /* ────────────── Phase 2: Velocity tracking & convergence ────────────── */
 const lastMap = new Map<string, CentroidState>();
 
@@ -91,10 +99,10 @@ let lastEmit = 0;
 /* ────────────── API ────────────── */
 const api = {
   /** 
-   * Spatial merge with stable IDs and cohesion - NO velocity computation here
-   * Velocity will be computed cross-frame on client
+   * Phase 2: Enhanced clustering with social physics and lifecycle tracking
+   * Velocity computed cross-frame on client side
    */
-  cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
+  cluster(tiles: RawTile[], zoom = 11, previousClusters?: SocialCluster[]): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
     const work: Array<{x:number;y:number;r:number;count:number;vibe:VibeToken;_ids:string[];cohesionScore:number}> = [];
 
@@ -121,14 +129,87 @@ const api = {
       console.error('[cluster-worker]', err);
     }
 
-    // Convert to final format with stable IDs (no _ids exposed for privacy)
-    const finalClusters: SocialCluster[] = work.map(c => ({
-      id: stableClusterId(c._ids),
-      x: c.x, y: c.y, r: c.r, count: c.count, vibe: c.vibe,
-      cohesionScore: c.cohesionScore
-      // No ids field - keep provenance private
-    }));
+    // Phase 2: Convert to enhanced format with social physics
+    const now = Date.now();
+    const finalClusters: SocialCluster[] = work.map(c => {
+      const id = stableClusterId(c._ids);
+      const history = clusterHistory.get(id);
+      
+      // Calculate spatial density for better cohesion
+      const spatialDensity = c.count / (Math.PI * c.r * c.r);
+      const normalizedDensity = Math.min(1, spatialDensity / 0.01);
+      const enhancedCohesion = Math.min(1, normalizedDensity * 0.7 + c.cohesionScore * 0.3);
+      
+      // Determine lifecycle stage
+      let lifecycleStage: SocialCluster['lifecycleStage'] = 'forming';
+      let formationTime = now;
+      
+      if (history) {
+        const age = now - history.formationTime;
+        const growth = (c.count - history.count) / Math.max(history.count, 1);
+        formationTime = history.formationTime;
+        
+        if (age < 30000) lifecycleStage = 'forming';  // First 30s
+        else if (growth > 0.3) lifecycleStage = 'forming'; // Growing rapidly
+        else if (growth < -0.3) lifecycleStage = 'dispersing'; // Shrinking
+        else if (c.count > 15 && enhancedCohesion > 0.7) lifecycleStage = 'peaking';
+        else lifecycleStage = 'stable';
+      }
+      
+      // Calculate breathing parameters based on cluster properties
+      const baseRate = 20 + Math.min(15, c.count / 3); // 20-35 BPM
+      const energyLevel = Math.min(1, c.count / 25 + (lifecycleStage === 'peaking' ? 0.3 : 0));
+      const pulseIntensity = 0.3 + enhancedCohesion * 0.4 + energyLevel * 0.3;
+      
+      // Continue breathing phase from previous frame if available
+      let breathingPhase = Math.random() * Math.PI * 2;
+      if (previousClusters) {
+        const prev = previousClusters.find(p => p.id === id);
+        if (prev && prev.breathingPhase !== undefined) {
+          const dt = history ? (now - history.timestamp) / 1000 : 0.016;
+          const phaseAdvance = (baseRate / 60) * 2 * Math.PI * dt;
+          breathingPhase = (prev.breathingPhase + phaseAdvance) % (2 * Math.PI);
+        }
+      }
+      
+      // Update history
+      clusterHistory.set(id, {
+        count: c.count,
+        timestamp: now,
+        formationTime,
+        lastGrowth: history ? (c.count - history.count) : 0
+      });
+      
+      return {
+        id,
+        x: c.x, 
+        y: c.y, 
+        r: c.r, 
+        count: c.count, 
+        vibe: c.vibe,
+        
+        // Phase 2: Social Physics Properties
+        cohesionScore: enhancedCohesion,
+        breathingPhase,
+        breathingRate: baseRate,
+        energyLevel,
+        lifecycleStage,
+        socialGravity: Math.min(1, c.count / 40),
+        pulseIntensity,
+        glowRadius: Math.sqrt(c.count) * 12 * (1 + energyLevel * 0.4),
+        formationTime
+        
+        // No ids field - keep provenance private
+      };
+    });
 
+    // Clean old history entries (older than 2 minutes)
+    for (const [id, history] of clusterHistory) {
+      if (now - history.timestamp > 120000) {
+        clusterHistory.delete(id);
+      }
+    }
+    
     lastClusters = finalClusters;
     return finalClusters;
   },

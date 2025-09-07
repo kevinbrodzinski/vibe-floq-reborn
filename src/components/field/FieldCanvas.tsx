@@ -29,6 +29,7 @@ import { useClusters } from '@/hooks/useClusters';
 import { useClustersLive } from '@/hooks/useClustersLive';
 import { ParticleTrailSystem } from '@/lib/field/ParticleTrailSystem';
 import { ConvergenceOverlay } from './overlays/ConvergenceOverlay';
+import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 
@@ -124,9 +125,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const glowFilterRef = useRef<any>(null);
   // Phase 1: Particle trail system
   const trailSystemRef = useRef<ParticleTrailSystem | null>(null);
-  // Phase 2: Convergence overlay
+  // Phase 2: Convergence overlay and breathing system
   const convergenceOverlayRef = useRef<ConvergenceOverlay | null>(null);
+  const breathingSystemRef = useRef<BreathingSystem | null>(null);
   const clustersRef = useRef<SocialCluster[]>([]);
+  const previousClustersRef = useRef<SocialCluster[]>([]);
   const currentZoomRef = useRef<number>(11);
   
   const spatialPeople = useMemo(() => 
@@ -213,8 +216,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Phase 1: Initialize particle trail system
         trailSystemRef.current = new ParticleTrailSystem(trailContainer);
         
-        // Phase 2: Initialize convergence overlay
+        // Phase 2: Initialize convergence overlay and breathing system
         convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
+        breathingSystemRef.current = new BreathingSystem(app.stage);
         
         // Create user location dot
         const userDot = new Graphics();
@@ -506,7 +510,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
             clusterWorker.cluster(rawTiles, currentZoom).then(async (clusters) => {
-              // Update cluster refs for convergence
+              // Update cluster refs for convergence and breathing
+              const prevClusters = clustersRef.current;
               clustersRef.current = clusters;
               currentZoomRef.current = currentZoom;
               
@@ -521,8 +526,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               }
               
               const keysThisFrame = new Set<string>();
+              const clusterGraphics = new Map<string, Graphics>();
               
-              // Draw clusters with constellation mode support
+              // Draw clusters with Phase 2 social physics
               clusters.forEach(c => {
                 const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
                 keysThisFrame.add(key);
@@ -531,6 +537,19 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 
                 sprite.position.set(c.x - c.r, c.y - c.r);
                 sprite.width = sprite.height = c.r * 2;
+
+                // Create graphics for breathing system
+                const graphics = graphicsPool.acquire();
+                if (!graphics.parent) heatContainer.addChild(graphics);
+                
+                // Base cluster rendering
+                graphics.clear();
+                graphics.beginFill(0x3B82F6, 0.6); // Default blue color
+                graphics.drawCircle(0, 0, c.r);
+                graphics.endFill();
+                graphics.position.set(c.x, c.y);
+                
+                clusterGraphics.set(c.id, graphics);
 
                 // Phase 1: Enhanced breathing and glow effects
                 let targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
@@ -808,6 +827,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           // Phase 1: Clean particle trail system
           if (trailSystemRef.current) {
             trailSystemRef.current.clearAll();
+          }
+          // Phase 2: Clean breathing system
+          if (breathingSystemRef.current) {
+            breathingSystemRef.current.destroy();
           }
         } catch (e) {
           console.warn('[CLEANUP] Error clearing containers:', e);
