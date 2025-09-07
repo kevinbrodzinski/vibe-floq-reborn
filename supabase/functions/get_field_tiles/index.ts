@@ -12,7 +12,6 @@ const RES = 7; // ~1.2km hexagons for social venue mapping
 
 import { corsHeaders, respondWithCors } from '../_shared/cors.ts';
 
-
 interface FieldTileRequest {
   tile_ids: string[]
 }
@@ -28,26 +27,25 @@ interface FieldTileResponse {
   }>
 }
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''  // Service role for database access
-)
-
-// Convert vibe string to HSL values (0-100 scale for consistency)
+// Central vibe token HSL mapping (matches design system)
 const vibeToHSL = (vibe: string): { h: number; s: number; l: number } => {
-  const vibeMap: Record<'hype' | 'social' | 'chill' | 'flowing' | 'open' | 'curious' | 'solo' | 'romantic' | 'weird' | 'down', { h: number; s: number; l: number }> = {
-    'hype': { h: 280, s: 70, l: 60 },
-    'social': { h: 30, s: 70, l: 60 },
-    'chill': { h: 240, s: 70, l: 60 },
-    'flowing': { h: 200, s: 70, l: 60 },
-    'open': { h: 120, s: 70, l: 60 },
-    'curious': { h: 260, s: 70, l: 60 },
-    'solo': { h: 180, s: 70, l: 60 },
-    'romantic': { h: 320, s: 70, l: 60 },
-    'weird': { h: 60, s: 70, l: 60 },
-    'down': { h: 210, s: 30, l: 40 },
+  // Convert RGB from VIBE_RGB to HSL approximation
+  const vibeMap: Record<string, { h: number; s: number; l: number }> = {
+    'chill': { h: 214, s: 70, l: 60 },     // blue
+    'flowing': { h: 186, s: 70, l: 60 },   // cyan  
+    'romantic': { h: 330, s: 70, l: 60 },  // pink
+    'hype': { h: 354, s: 70, l: 60 },      // red
+    'weird': { h: 267, s: 70, l: 60 },     // purple
+    'solo': { h: 0, s: 0, l: 56 },         // gray
+    'social': { h: 145, s: 70, l: 60 },    // green
+    'open': { h: 280, s: 70, l: 60 },      // violet
+    'down': { h: 248, s: 50, l: 40 },      // dark blue
+    'curious': { h: 43, s: 70, l: 60 },    // yellow-orange
+    'energetic': { h: 39, s: 70, l: 60 },  // orange
+    'excited': { h: 328, s: 70, l: 60 },   // deep pink
+    'focused': { h: 120, s: 70, l: 60 },   // lime green
   }
-  return vibeMap[vibe?.toLowerCase() as keyof typeof vibeMap] || { h: 240, s: 70, l: 60 }
+  return vibeMap[vibe?.toLowerCase()] || { h: 214, s: 70, l: 60 } // default to chill
 }
 
 // Calculate average HSL from multiple vibes
@@ -78,36 +76,13 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
 
 // Convert lat/lng to H3 index at resolution 7
 const latLngToH3 = (lat: number, lng: number): string => {
-  return geoToH3(lat, lng, RES)
-}
-
-// Parse location safely handling different formats
-const parseLocation = (location: any): [number, number] | null => {
-  if (!location) return null
-  
-  // Handle PostGIS geometry string format
-  if (typeof location === 'string') {
-    try {
-      const parsed = JSON.parse(location)
-      if (parsed.type === 'Point' && parsed.coordinates) {
-        return [parsed.coordinates[0], parsed.coordinates[1]]
-      }
-    } catch {
-      return null
-    }
+  try {
+    // Use real H3 API when available
+    return h3.latLngToCell(lat, lng, RES);
+  } catch {
+    // Fallback to mock for development
+    return geoToH3(lat, lng, RES);
   }
-  
-  // Handle GeoJSON Point format
-  if (location.type === 'Point' && location.coordinates) {
-    return [location.coordinates[0], location.coordinates[1]]
-  }
-  
-  // Handle direct coordinate array
-  if (Array.isArray(location.coordinates) && location.coordinates.length >= 2) {
-    return [location.coordinates[0], location.coordinates[1]]
-  }
-  
-  return null
 }
 
 Deno.serve(async (req) => {
@@ -115,13 +90,27 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Create authenticated client
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { 
+      global: { 
+        headers: { 
+          Authorization: req.headers.get('Authorization') ?? '' 
+        } 
+      } 
+    }
+  )
+
   const logLevel = Deno.env.get('LOG_LEVEL') || 'info'
   if (logLevel === 'debug') {
     console.log('[GET_FIELD_TILES] Request received:', req.method)
   }
 
   try {
-    // No auth required for field tiles (public data)
+    // Authentication handled via client authorization header
 
     // Simple rate limiting - 20 requests per 10 seconds per IP
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
@@ -142,12 +131,11 @@ Deno.serve(async (req) => {
     // Build H3 tile filter for efficient querying
     const h3Tiles = tile_ids.filter(id => typeof id === 'string' && id.length > 0)
     
-    // Get presence data filtered by tile boundaries and H3 tiles
+    // Get presence data filtered by H3 tiles (no redundant location parsing)
     const { data: presenceData, error: presenceError } = await supabase
       .from('vibes_now')
-      .select('profile_id, location, vibe, updated_at, h3_7')
-      .not('location', 'is', null)
-      .in('h3_7', h3Tiles)  // Filter by H3 tiles for efficiency
+      .select('h3_7, vibe, updated_at')
+      .in('h3_7', h3Tiles)  // Direct H3 filter - no location parsing needed
       .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()) // Only recent data
 
     if (presenceError) {
@@ -158,37 +146,22 @@ Deno.serve(async (req) => {
       }, 500)
     }
 
-    // Get active floq data filtered by H3 tiles
+    // Get active floq data filtered by H3 tiles (no redundant location parsing)
     const { data: floqData, error: floqError } = await supabase
       .from('floqs')
-      .select('id, location, h3_7')
-      .not('location', 'is', null)
-      .in('h3_7', h3Tiles)  // Filter by H3 tiles for efficiency
+      .select('id, h3_7')
+      .in('h3_7', h3Tiles)  // Direct H3 filter - no location parsing needed
 
     if (floqError) {
       console.error('[GET_FIELD_TILES] Error fetching floq data:', floqError)
       return respondWithCors({ error: 'Database error' }, 500)
     }
 
-    // Process each requested tile with real H3 centroids
+    // Process each requested tile using existing H3 indices (no redundant parsing)
     const tiles = tile_ids.map(tileId => {
-      // Find all presence points in this tile
-      const tilePresence = (presenceData || []).filter(presence => {
-        const coords = parseLocation(presence.location)
-        if (!coords) return false
-        const [lng, lat] = coords
-        const presenceTileId = latLngToH3(lat, lng)
-        return presenceTileId === tileId
-      })
-
-      // Find all floqs in this tile
-      const tileFloqs = (floqData || []).filter(floq => {
-        const coords = parseLocation(floq.location)
-        if (!coords) return false
-        const [lng, lat] = coords
-        const floqTileId = latLngToH3(lat, lng)
-        return floqTileId === tileId
-      })
+      // Use existing h3_7 column directly - no coordinate parsing needed
+      const tilePresence = (presenceData || []).filter(p => p.h3_7 === tileId)
+      const tileFloqs = (floqData || []).filter(f => f.h3_7 === tileId)
 
       // Calculate crowd count and average vibe
       const crowdCount = tilePresence.length + tileFloqs.length
@@ -196,7 +169,7 @@ Deno.serve(async (req) => {
       const avgVibe = calculateAverageVibe(vibes)
       const activeFloqIds = tileFloqs.map(f => f.id)
 
-      // REAL H3 centroid computation
+      // REAL H3 centroid computation using consistent API
       let center: [number, number] = [0, 0];
       try {
         // For H3 mock IDs, extract coordinates back
@@ -208,7 +181,7 @@ Deno.serve(async (req) => {
             center = [lng, lat];
           }
         } else {
-          // Use H3 centroid calculation for real H3 indices
+          // Use H3 v4 API for real H3 indices
           const [lat, lng] = h3.cellToLatLng(tileId);
           center = [lng, lat];
         }

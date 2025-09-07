@@ -5,19 +5,25 @@
 
 import type { VibeToken } from '@/types/field';
 
-// TODO: Import from central vibe token map (e.g. src/lib/vibeConstants.ts)
-// For now, using design-system-aligned colors
+import { VIBE_RGB } from '@/lib/vibes';
+
+// Convert RGB to hex for PIXI compatibility
+const rgbToHex = ([r, g, b]: [number, number, number]): string => {
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+// Central vibe token map using canonical design system colors
 export const vibeTokens: Record<VibeToken, string> = {
-  hype: '#7C3AED',      // violet-600
-  social: '#F59E0B',    // amber-500
-  chill: '#3B82F6',     // blue-500
-  flowing: '#06B6D4',   // cyan-500
-  open: '#10B981',      // emerald-500
-  curious: '#8B5CF6',   // violet-500
-  solo: '#6B7280',      // gray-500
-  romantic: '#EC4899',  // pink-500
-  weird: '#EAB308',     // yellow-500
-  down: '#374151',      // gray-700
+  hype: rgbToHex(VIBE_RGB.hype),
+  social: rgbToHex(VIBE_RGB.social),
+  chill: rgbToHex(VIBE_RGB.chill),
+  flowing: rgbToHex(VIBE_RGB.flowing),
+  open: rgbToHex(VIBE_RGB.open),
+  curious: rgbToHex(VIBE_RGB.curious),
+  solo: rgbToHex(VIBE_RGB.solo),
+  romantic: rgbToHex(VIBE_RGB.romantic),
+  weird: rgbToHex(VIBE_RGB.weird),
+  down: rgbToHex(VIBE_RGB.down),
 };
 
 export const vibeToTint = (vibe: VibeToken): number => {

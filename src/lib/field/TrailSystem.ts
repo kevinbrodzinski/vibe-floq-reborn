@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import type { VibeToken } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
-import { FIELD_LOD, PARTICLE } from '@/lib/field/constants';
+import { PARTICLE, FIELD_LOD } from '@/lib/field/constants';
 
 interface TrailSegment {
   sprite: PIXI.Sprite;
