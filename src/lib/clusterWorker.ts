@@ -1,6 +1,10 @@
 import * as Comlink from 'comlink';
 import type { RawTile } from '@/workers/clustering.worker';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
+// Vite-friendly same-origin worker URL to avoid CSP/sandbox issues
+// This emits a bundled worker under the app origin
+// @ts-ignore - Vite query import
+import WorkerURL from '@/workers/clustering.worker?worker&url';
 
 // Define the clustering API interface
 export interface ClusteringAPI {
@@ -116,9 +120,6 @@ const isWorkerSupported = (): boolean => {
   if (typeof Worker === 'undefined') return false;
   if (typeof window === 'undefined') return false;
   
-  // Disable workers in Lovable preview for better compatibility
-  if (window.location.hostname.includes('lovable')) return false;
-  
   // Check if we can actually create a worker
   try {
     const testWorker = new Worker(
@@ -135,9 +136,11 @@ const isWorkerSupported = (): boolean => {
 /**
  * Singleton / HMR-safe worker wrapper with fallback support
  */
+let isWorkerFallbackInternal = false;
 const createClusterWorker = (): ClusteringAPI => {
   if (!isWorkerSupported()) {
     console.warn('[ClusterWorker] Web Workers not supported, using fallback implementation');
+    isWorkerFallbackInternal = true;
     return new ClusteringFallback();
   }
 
@@ -147,21 +150,21 @@ const createClusterWorker = (): ClusteringAPI => {
   if (g[key]) return Comlink.wrap<ClusteringAPI>(g[key] as Worker);
 
   try {
-    const w = new Worker(
-      new URL('../workers/clustering.worker.ts', import.meta.url),
-      { type: 'module' },
-    );
+    const w = new Worker(WorkerURL as any, { type: 'module', name: 'clustering' });
 
     if (import.meta.hot) {
       import.meta.hot.dispose(() => w.terminate());
     }
 
     g[key] = w;
+    isWorkerFallbackInternal = false;
     return Comlink.wrap<ClusteringAPI>(w);
   } catch (error) {
     console.warn('[ClusterWorker] Failed to create worker, using fallback:', error);
+    isWorkerFallbackInternal = true;
     return new ClusteringFallback();
   }
 };
 
+export const isWorkerFallback = () => isWorkerFallbackInternal;
 export const clusterWorker = createClusterWorker();
