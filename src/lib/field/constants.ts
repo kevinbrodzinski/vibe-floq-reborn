@@ -14,5 +14,5 @@ export const PARTICLE = {
 export const CLUSTER = {
   BASE_MERGE_DISTANCE: 42, // px at zoom 11
   MAX_BREATHING_SCALE: 0.18, // 18% scale variation
-  BREATHING_FREQUENCY: 0.003, // breathing speed multiplier
+  BREATHING_FREQUENCY: 0.003, // radians/ms breathing speed multiplier
 };

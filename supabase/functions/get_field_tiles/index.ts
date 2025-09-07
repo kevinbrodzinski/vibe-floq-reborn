@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import * as h3 from "https://esm.sh/h3-js@4.1.0";
+
 // Temporarily use coordinate-based hashing until H3 extension is available
 const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
   const latInt = Math.floor(lat * 10000);
@@ -22,7 +24,7 @@ interface FieldTileResponse {
     avg_vibe: { h: number; s: number; l: number }
     active_floq_ids: string[]
     updated_at: string
-    // NO synthetic velocity/momentum - computed client-side only
+    center: [number, number] // [lng, lat] - REAL centroid from H3
   }>
 }
 
@@ -168,7 +170,7 @@ Deno.serve(async (req) => {
       return respondWithCors({ error: 'Database error' }, 500)
     }
 
-    // Process each requested tile with improved location parsing
+    // Process each requested tile with real H3 centroids
     const tiles = tile_ids.map(tileId => {
       // Find all presence points in this tile
       const tilePresence = (presenceData || []).filter(presence => {
@@ -194,11 +196,30 @@ Deno.serve(async (req) => {
       const avgVibe = calculateAverageVibe(vibes)
       const activeFloqIds = tileFloqs.map(f => f.id)
 
-      // NO synthetic velocity/momentum generation - violates "no mock data in prod"
-      // All physics computation happens client-side from real position deltas
+      // REAL H3 centroid computation
+      let center: [number, number] = [0, 0];
+      try {
+        // For H3 mock IDs, extract coordinates back
+        if (tileId.startsWith('h3_')) {
+          const parts = tileId.split('_');
+          if (parts.length >= 4) {
+            const lat = Number(parts[2]) * 0.0001;
+            const lng = Number(parts[3]) * 0.0001;
+            center = [lng, lat];
+          }
+        } else {
+          // Use H3 centroid calculation for real H3 indices
+          const [lat, lng] = h3.cellToLatLng(tileId);
+          center = [lng, lat];
+        }
+      } catch (error) {
+        console.warn(`[GET_FIELD_TILES] Could not get centroid for tile ${tileId}:`, error);
+        // Fallback to [0, 0] if centroid calculation fails
+        center = [0, 0];
+      }
 
       if (logLevel === 'debug') {
-        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
+        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs, center: ${center}`)
       }
 
       return {
@@ -206,8 +227,8 @@ Deno.serve(async (req) => {
         crowd_count: crowdCount,
         avg_vibe: avgVibe,
         active_floq_ids: activeFloqIds,
-        updated_at: new Date().toISOString()
-        // No synthetic velocity/momentum - pure factual data only
+        updated_at: new Date().toISOString(),
+        center // Real centroid [lng, lat]
       }
     })
 

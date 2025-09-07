@@ -51,19 +51,19 @@ const api = {
       console.error('[cluster-worker]', err);
     }
 
-    // Convert to final format with stable IDs (no _ids exposed)
+    // Convert to final format with stable IDs (no _ids exposed for privacy)
     const finalClusters: SocialCluster[] = work.map(c => ({
       id: stableClusterId(c._ids),
       x: c.x, y: c.y, r: c.r, count: c.count, vibe: c.vibe,
-      cohesionScore: c.cohesionScore,
-      ids: c._ids // Only expose ids in final interface
+      cohesionScore: c.cohesionScore
+      // No ids field - keep provenance private
     }));
 
     lastClusters = finalClusters;
     return finalClusters;
   },
 
-  /** cursor hit-test → returns tile_ids within `radius` px */
+  /** cursor hit-test → returns cluster_ids within `radius` px (dev only) */
   hitTest(x: number, y: number, radius = 12): string[] {
     if (!lastClusters) return [];
     const r2 = radius * radius;
@@ -73,7 +73,7 @@ const api = {
         const dy = c.y - y;
         return dx * dx + dy * dy <= r2;
       })
-      .flatMap(c => c.ids);
+      .map(c => c.id); // Return cluster IDs only, not tile provenance
   },
 };
 

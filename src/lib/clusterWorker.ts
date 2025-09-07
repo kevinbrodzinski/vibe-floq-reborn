@@ -34,7 +34,6 @@ class ClusteringFallback {
         // For now, keep the existing vibe (tokens don't average)
         // TODO: Implement proper vibe blending logic
         hit.count = n;
-        hit.ids.push(t.id);
       } else {
         clusters.push({
           id: `fallback_${t.id}`,
@@ -43,7 +42,6 @@ class ClusteringFallback {
           r: t.r,
           count: 1,
           vibe: t.vibe,
-          ids: [t.id],
           cohesionScore: 0.1
         });
       }
@@ -61,7 +59,7 @@ class ClusteringFallback {
       const dx = c.x - x;
       const dy = c.y - y;
       if (Math.hypot(dx, dy) <= radius) {
-        hits.push(...c.ids);
+        hits.push(c.id); // Return cluster ID only, not tile provenance
       }
     });
     return hits;

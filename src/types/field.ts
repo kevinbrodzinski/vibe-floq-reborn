@@ -27,6 +27,7 @@ export interface FieldTile {
   };
   active_floq_ids: string[];
   updated_at: string;
+  center?: [number, number]; // [lng, lat] - real H3 centroid from server
   // NO synthetic velocity/momentum from server - computed client-side only
 }
 
@@ -60,7 +61,6 @@ export interface SocialCluster {
   r: number;
   count: number;
   vibe: VibeToken;
-  ids: string[];
   // Client-computed physics (no intra-batch velocity)
   velocity?: { vx: number; vy: number };
   cohesionScore?: number;
