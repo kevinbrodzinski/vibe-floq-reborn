@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 
 // Import debug helpers in development only
 if (import.meta.env.DEV) {
@@ -28,8 +28,10 @@ import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
+import { BootScreen } from "@/components/ui/BootScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
+import { waitForAuthReady } from "@/lib/auth/authBootstrap";
 
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -43,11 +45,23 @@ const App = () => {
   // Create a stable QueryClient instance using useMemo
   const queryClient = useMemo(() => new QueryClient(), []);
   
+  // Non-blocking auth initialization with timeout
+  const [authReady, setAuthReady] = useState(false);
+  
   // Auto-join presence channels for all users
   usePresenceChannel();
   
   // Track online status
   usePresenceTracker();
+
+  // Wait for auth ready with fail-open timeout
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    waitForAuthReady(setAuthReady).then(cleanupFn => {
+      cleanup = cleanupFn;
+    });
+    return () => cleanup?.();
+  }, []);
 
   // Pre-warm the clustering worker
   useEffect(() => {
@@ -89,6 +103,11 @@ const App = () => {
       supabase.removeChannel(channel);
     }
   }, [queryClient]);
+
+  // Show boot screen until auth is ready
+  if (!authReady) {
+    return <BootScreen text="Authenticating…" timeoutText="Continue as guest" />;
+  }
   
   return (
     <ProductionModeGuard>
