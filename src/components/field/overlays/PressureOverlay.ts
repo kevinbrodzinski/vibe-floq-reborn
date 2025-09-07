@@ -10,10 +10,12 @@ export class PressureOverlay {
   private container: PIXI.ParticleContainer;
   private sprites: PIXI.Sprite[] = [];
   private circle: PIXI.Texture;
+  private capacity: number = P3B.PRESSURE.MAX_CELLS;
 
   constructor(parent: PIXI.Container, renderer: PIXI.Renderer, capacity = P3B.PRESSURE.MAX_CELLS) {
     if (!renderer) throw new Error('Renderer not ready for PressureOverlay');
-    this.container = new (PIXI as any).ParticleContainer(capacity, {
+    this.capacity = capacity;
+    this.container = new (PIXI as any).ParticleContainer(this.capacity, {
       position: true, rotation: true, alpha: true, tint: true, scale: true
     });
     parent.addChild(this.container);
@@ -27,7 +29,7 @@ export class PressureOverlay {
     this.circle = generateTexture(renderer, g);
     g.destroy();
 
-    for (let i = 0; i < capacity; i++) {
+    for (let i = 0; i < this.capacity; i++) {
       const s = new PIXI.Sprite(this.circle);
       s.anchor.set(0.5);
       s.visible = false;
@@ -35,6 +37,11 @@ export class PressureOverlay {
       this.sprites.push(s);
       this.container.addChild(s);
     }
+  }
+
+  // Allow dynamic capacity adjustment for device tiers
+  setCapacity(capacity: number) {
+    this.capacity = Math.min(capacity, P3B.PRESSURE.MAX_CELLS);
   }
 
   update(cells: PressureCell[], zoom: number) {

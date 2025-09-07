@@ -43,11 +43,11 @@ export const ATMO = {
   },
 };
 
-// Phase 3 constants (perf/privacy thresholds only)
+// Phase 3 constants (perf/privacy thresholds only) - canary caps for performance
 export const P3 = {
-  FLOW: { MIN_ZOOM: 13, MAX_ARROWS: 900, UPDATE_HZ: 8, SMOOTH: 0.65 },
-  LANES: { MIN_ZOOM: 15, K_MIN: 5, PROB_MIN: 0.45, ETA_MAX_MS: 300000, MAX_LANES: 64, MAX_DIST_PX: 140 },
-  MOMENTUM: { MIN_ZOOM: 16, SPEED_MIN: 0.12 }, // px/ms
+  FLOW: { MIN_ZOOM: 13, MAX_ARROWS: 500, UPDATE_HZ: 6, SMOOTH: 0.65 }, // reduced from 900/8
+  LANES: { MIN_ZOOM: 15, K_MIN: 5, PROB_MIN: 0.45, ETA_MAX_MS: 300000, MAX_LANES: 32, MAX_DIST_PX: 140 }, // reduced from 64
+  MOMENTUM: { MIN_ZOOM: 16, SPEED_MIN: 0.16 }, // raised from 0.12 - fewer badges
 } as const;
 
 // Performance budgets (enforced)
@@ -67,14 +67,14 @@ export const PERF_BUDGETS = {
   }
 } as const;
 
-// Phase 3B constants (atmospheric effects)
+// Phase 3B constants (atmospheric effects) - canary caps for performance  
 export const P3B = {
   PRESSURE: {
     MIN_ZOOM: 13,
     GRID_PX: 72,         // coarse sampling in pixels
     SMOOTH: 0.6,         // EMA smoothing (0..1, higher = stickier)
-    MAX_CELLS: 800,      // cap per frame after culling/sorting
-    UPDATE_HZ: 6,        // throttle worker
+    MAX_CELLS: 400,      // reduced from 800 for performance
+    UPDATE_HZ: 5,        // reduced from 6, throttle worker
   },
   STORMS: {
     MIN_ZOOM: 15,

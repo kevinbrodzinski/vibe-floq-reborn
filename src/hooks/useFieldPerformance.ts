@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import * as PIXI from 'pixi.js';
 import { PERF_BUDGETS, P3, P3B } from '@/lib/field/constants';
 
@@ -52,64 +52,58 @@ export function useFieldPerformance(app: PIXI.Application | null) {
   const [metrics, setMetrics] = useState<PerformanceMetrics>();
   const deviceTier = useDeviceTier();
   
+  // Stable refs to prevent re-registration
+  const onTickRef = useRef<() => void>(() => {});
+  const workerTimeAccum = useRef(0);
+  const sampleCount = useRef(0);
+
+  // Update tick handler when deviceTier changes
   useEffect(() => {
-    // Bail if app not ready or ticker missing
-    if (!app || !(app as any).ticker) return;
-    
     let frames = 0;
-    let workerTimeAccum = 0;
-    let sampleCount = 0;
-    
-    const onTick = () => {
+    onTickRef.current = () => {
       frames++;
-      
-      // Sample every 60 frames (roughly 1 second at 60fps)
       if (frames % 60 === 0) {
         const stats: PerformanceMetrics = {
-          fps: Math.round(app.ticker.FPS),
-          workerTime: sampleCount > 0 ? workerTimeAccum / sampleCount : 0,
-          renderTime: (app.renderer as any).plugins?.metrics?.renderTime || 0,
-          drawCalls: (app.renderer as any).plugins?.metrics?.drawCalls || 0,
+          fps: Math.round(app?.ticker?.FPS ?? 0),
+          workerTime: sampleCount.current ? workerTimeAccum.current / sampleCount.current : 0,
+          renderTime: (app?.renderer as any)?.plugins?.metrics?.renderTime || 0,
+          drawCalls: (app?.renderer as any)?.plugins?.metrics?.drawCalls || 0,
           particleCount: getActiveParticleCount(),
           clusterCount: getClusterCount(),
-          deviceTier
+          deviceTier,
         };
-        
         setMetrics(stats);
-        
-        // Log if degraded (1% sample rate in dev)
         if (import.meta.env.DEV && Math.random() < 0.01) {
           if (stats.fps < 50 || stats.workerTime > PERF_BUDGETS.WORKER_MS) {
             console.warn('[field.atmo] Performance degradation:', stats);
           }
         }
-        
-        // Reset accumulators
-        workerTimeAccum = 0;
-        sampleCount = 0;
-      }
-    };
-    
-    app.ticker.add(onTick);
-    
-    // Listen for worker performance updates
-    const handleWorkerPerf = (event: CustomEvent<{ duration: number }>) => {
-      workerTimeAccum += event.detail.duration;
-      sampleCount++;
-    };
-    
-    window.addEventListener('field-worker-perf', handleWorkerPerf as EventListener);
-    
-    return () => {
-      window.removeEventListener('field-worker-perf', handleWorkerPerf as EventListener);
-      // Guard on cleanup too
-      try { 
-        (app as any)?.ticker?.remove(onTick); 
-      } catch {
-        // Ignore cleanup errors
+        workerTimeAccum.current = 0; 
+        sampleCount.current = 0;
       }
     };
   }, [app, deviceTier]);
+
+  // Single ticker registration
+  useEffect(() => {
+    // bail if app not ready or ticker missing
+    if (!app || !(app as any).ticker) return;
+
+    const bound = () => onTickRef.current?.();
+    app.ticker.add(bound);
+
+    const handleWorkerPerf = (e: CustomEvent<{ duration: number }>) => {
+      workerTimeAccum.current += e.detail.duration; 
+      sampleCount.current++;
+    };
+    window.addEventListener('field-worker-perf', handleWorkerPerf as EventListener);
+
+    return () => {
+      window.removeEventListener('field-worker-perf', handleWorkerPerf as EventListener);
+      // guard on cleanup too
+      try { (app as any)?.ticker?.remove(bound); } catch {}
+    };
+  }, [app]);
   
   return { metrics, deviceTier };
 }

@@ -7,16 +7,16 @@ import type { FlowCell } from '@/lib/field/types';
 export class FlowFieldOverlay {
   private container: PIXI.ParticleContainer;
   private sprites: PIXI.Sprite[] = [];
-  private max = P3.FLOW.MAX_ARROWS;
+  private capacity: number = P3.FLOW.MAX_ARROWS;
 
   constructor(parent: PIXI.Container) {
-    this.container = new (PIXI as any).ParticleContainer(this.max, {
+    this.container = new (PIXI as any).ParticleContainer(this.capacity, {
       position: true, rotation: true, alpha: true, scale: true, tint: true
     });
     parent.addChild(this.container);
     
     // Prewarm sprites
-    for (let i = 0; i < this.max; i++) {
+    for (let i = 0; i < this.capacity; i++) {
       const s = new PIXI.Sprite(PIXI.Texture.WHITE);
       s.anchor.set(0.5, 0.5);
       s.blendMode = ADD_BLEND;
@@ -26,6 +26,11 @@ export class FlowFieldOverlay {
     }
   }
 
+  // Allow dynamic capacity adjustment for device tiers
+  setCapacity(capacity: number) {
+    this.capacity = Math.min(capacity, P3.FLOW.MAX_ARROWS);
+  }
+
   update(cells: FlowCell[], zoom: number) {
     // LOD gate
     if (zoom < P3.FLOW.MIN_ZOOM) { 
@@ -33,8 +38,8 @@ export class FlowFieldOverlay {
       return; 
     }
     
-    // Sort by magnitude, render top-K
-    const sorted = cells.slice().sort((a, b) => b.mag - a.mag).slice(0, this.max);
+    // Sort by magnitude, render top-K with capacity limit
+    const sorted = cells.slice().sort((a, b) => b.mag - a.mag).slice(0, this.capacity);
     const toHex = (hex: string) => parseInt(hex.slice(1), 16);
 
     for (let i = 0; i < this.sprites.length; i++) {

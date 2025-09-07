@@ -158,8 +158,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 3B: Atmospheric throttling
   const lastPressureRef = useRef(0);
   const lastStormRef = useRef(0);
-  const FLOW_INTERVAL_MS = 1000 / P3.FLOW.UPDATE_HZ;
-  const LANE_INTERVAL_MS = 100; // ~10 Hz, worker throttles internally
+  const FLOW_INTERVAL_MS = 1000 / P3.FLOW.UPDATE_HZ;   // ~166 ms (6 Hz)
+  const LANE_INTERVAL_MS = 250;                        // 4 Hz
+  const PRESS_INTERVAL_MS = 1000 / P3B.PRESSURE.UPDATE_HZ; // ~200 ms (5 Hz)
+  const MOMENTUM_INTERVAL_MS = 400;                     // 2.5 Hz
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -496,6 +498,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     };
     
     const animate = () => {
+      // Frame budget tracking
+      const frameStart = performance.now();
       // Update cached user position if new data is available
           if (userLocation.coords?.lat && userLocation.coords?.lng) {
       lastUserPosRef.current = { lat: userLocation.coords.lat, lng: userLocation.coords.lng };
@@ -856,6 +860,54 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // Phase 1: Update particle trail system
       if (trailSystemRef.current) {
         trailSystemRef.current.update(16); // Assume 60fps (16ms)
+      }
+
+      // Frame budget check - skip non-essential overlays if frame is already heavy
+      const spent = performance.now() - frameStart;
+      
+      // Phase 3: Essential overlays (if budget allows)
+      if (spent < 6.0) {
+        const now = performance.now();
+        
+        // Flow field (6 Hz throttled)
+        if (now - lastFlowRef.current >= FLOW_INTERVAL_MS && flowFieldOverlayRef.current) {
+          lastFlowRef.current = now;
+          // TODO: Add flow grid worker call here when implemented
+          // flowFieldOverlayRef.current.update(flowCells, currentZoomRef.current);
+        }
+        
+        // Lanes and momentum (combined for efficiency, 4 Hz)
+        if (now - lastLaneRef.current >= LANE_INTERVAL_MS && convergenceLanesRef.current) {
+          lastLaneRef.current = now;
+          // TODO: Add lanes worker call here when implemented
+          // convergenceLanesRef.current.update(lanes, currentZoomRef.current);
+          
+          // Momentum piggybacks on lanes tick (2.5 Hz effective)
+          if (now - lastLaneRef.current >= MOMENTUM_INTERVAL_MS && momentumBadgeRef.current) {
+            // TODO: Add momentum worker call here when implemented
+            // momentumBadgeRef.current.update(momentum, currentZoomRef.current, kById, xyById);
+          }
+        }
+      }
+      
+      // Phase 3B: Atmospheric overlays (if budget still allows)
+      const spent2 = performance.now() - frameStart;
+      if (spent2 < 7.0) {
+        const now = performance.now();
+        
+        // Pressure clouds (5 Hz throttled) 
+        if (now - lastPressureRef.current >= PRESS_INTERVAL_MS && pressureOverlayRef.current) {
+          lastPressureRef.current = now;
+          // TODO: Add pressure grid worker call here when implemented
+          // pressureOverlayRef.current.update(pressureCells, currentZoomRef.current);
+        }
+        
+        // Storm groups (derived from lanes, ~10 Hz)
+        if (now - lastStormRef.current >= 100 && stormOverlayRef.current) {
+          lastStormRef.current = now;
+          // TODO: Add storm groups worker call here when implemented
+          // stormOverlayRef.current.update(stormGroups, currentZoomRef.current);
+        }
       }
 
       // Performance mark: First successful render completed
