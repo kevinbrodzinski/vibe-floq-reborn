@@ -7,8 +7,7 @@ export const FIELD_LOD = {
 };
 
 export const PARTICLE = {
-  // route through design tokens if you already have size tokens; placeholder constants here
-  SIZE_SM: 2,  // replace with token map when available
+  SIZE_SM: 2,  // route through design tokens if you already have size tokens; placeholder constants here
 };
 
 export const CLUSTER = {

@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import * as h3 from "https://esm.sh/h3-js@4.1.0";
+import * as h3 from 'npm:h3-js';
 
 // Temporarily use coordinate-based hashing until H3 extension is available
 const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
@@ -154,7 +154,10 @@ Deno.serve(async (req) => {
 
     if (floqError) {
       console.error('[GET_FIELD_TILES] Error fetching floq data:', floqError)
-      return respondWithCors({ error: 'Database error' }, 500)
+      return respondWithCors({ 
+        error: 'Database error', 
+        details: floqError.message 
+      }, 500)
     }
 
     // Process each requested tile using existing H3 indices (no redundant parsing)
