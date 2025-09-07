@@ -34,7 +34,7 @@ import { ConvergenceLanes } from './overlays/ConvergenceLanes';
 import { MomentumBadge } from './badges/MomentumBadge';
 import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
-import { useFieldPerformance, setPerformanceCounters } from '@/hooks/useFieldPerformance';
+import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 import { ATMO, FIELD_LOD, P3 } from '@/lib/field/constants';
 
@@ -76,6 +76,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   });    // Get live GPS position
   const lastUserPosRef = useRef<{lat: number, lng: number} | null>(null);
 
+  const appRef = useRef<Application | null>(null);
+  
+  // Phase 3: Performance monitoring
+  const { metrics, deviceTier } = useFieldPerformance(appRef.current);
+
   // 🛰️ TASK: Wire up live cluster system for constellation overlay
   const bbox: [number, number, number, number] = useMemo(() => {
     if (!viewportGeo) {
@@ -100,7 +105,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   [clustersLoading]);
 
   useClustersLive(clusters, () => {}, throttledRefetch);
-  const appRef = useRef<Application | null>(null);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
   
   /* tooltip helper */
@@ -141,6 +145,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const previousClustersRef = useRef<SocialCluster[]>([]);
   const clusterVelocitiesRef = useRef<Map<string, { vx: number; vy: number; momentum: number }>>(new Map());
   const currentZoomRef = useRef<number>(11);
+  
+  // Phase 3: Throttled worker calls
+  const lastFlowRef = useRef(0);
+  const lastLaneRef = useRef(0);
+  const FLOW_INTERVAL_MS = 1000 / P3.FLOW.UPDATE_HZ;
+  const LANE_INTERVAL_MS = 100; // ~10 Hz, worker throttles internally
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({

@@ -109,6 +109,10 @@ class ClusteringWorker {
   private lastFlowTs = 0;
   private lastFlowCells: FlowCell[] = [];
   private laneCache = new Map<string, LaneSegment & { lastSeen: number }>();
+
+  // Make helper methods available to class
+  private buildVelocityMap = buildVelocityMap;
+  private closestApproach = closestApproach;
   
   cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
@@ -349,7 +353,7 @@ class ClusteringWorker {
       return this.lastFlowCells;
     }
 
-    const vel = buildVelocityMap(now, clusters);
+    const vel = this.buildVelocityMap(now, clusters);
     const GRID = 56;
     const { minX, minY, maxX, maxY } = this.boundsFromClusters(clusters, GRID * 1.5);
 
@@ -420,7 +424,7 @@ class ClusteringWorker {
     const HORIZON = P3.LANES.ETA_MAX_MS;
     const CONF_MIN = P3.LANES.PROB_MIN;
 
-    const vel = buildVelocityMap(now, clusters);
+    const vel = this.buildVelocityMap(now, clusters);
     const G = ATMO.BREATHING?.GRID_PX ?? 150;
     const bins = new Map<string, string[]>();
     
@@ -455,7 +459,7 @@ class ClusteringWorker {
           const dist = Math.hypot(dxp, dyp);
           if (dist > MAX_DIST) continue;
 
-          const { tStar, d2, mx, my } = closestApproach(va, vb);
+          const { tStar, d2, mx, my } = this.closestApproach(va, vb);
           if (!isFinite(tStar) || tStar <= 0 || tStar > HORIZON) continue;
 
           const dStar = Math.sqrt(d2);
@@ -520,7 +524,7 @@ class ClusteringWorker {
   /** Phase 3: Momentum statistics for badges */
   momentum(clusters: SocialCluster[]): MomentumStat[] {
     const now = performance.now();
-    const vel = buildVelocityMap(now, clusters);
+    const vel = this.buildVelocityMap(now, clusters);
     
     return clusters
       .filter(c => (c.count ?? 0) >= FIELD_LOD.K_MIN)

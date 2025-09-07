@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import * as PIXI from 'pixi.js';
-import { PERF_BUDGETS } from '@/lib/field/constants';
+import { PERF_BUDGETS, P3 } from '@/lib/field/constants';
 
 interface PerformanceMetrics {
   fps: number;
@@ -10,12 +10,6 @@ interface PerformanceMetrics {
   particleCount: number;
   clusterCount: number;
   deviceTier: 'low' | 'mid' | 'high';
-}
-
-interface DeviceInfo {
-  cores: number;
-  memory: number;
-  gpu: 'low' | 'mid' | 'high';
 }
 
 // Device tier detection
@@ -122,19 +116,45 @@ export function shouldReduceQuality(metrics?: PerformanceMetrics): boolean {
 
 export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded: boolean) {
   const base = {
-    low: { particles: PERF_BUDGETS.PARTICLES.LOW, flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.LOW },
-    mid: { particles: PERF_BUDGETS.PARTICLES.MID, flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.MID },
-    high: { particles: PERF_BUDGETS.PARTICLES.HIGH, flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.HIGH }
+    low: { 
+      particles: PERF_BUDGETS.PARTICLES.LOW, 
+      flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.LOW,
+      maxArrows: Math.floor(P3.FLOW.MAX_ARROWS * 0.5),
+      maxLanes: Math.floor(P3.LANES.MAX_LANES * 0.5)
+    },
+    mid: { 
+      particles: PERF_BUDGETS.PARTICLES.MID, 
+      flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.MID,
+      maxArrows: P3.FLOW.MAX_ARROWS,
+      maxLanes: P3.LANES.MAX_LANES
+    },
+    high: { 
+      particles: PERF_BUDGETS.PARTICLES.HIGH, 
+      flowGrid: PERF_BUDGETS.FLOW_GRID_SIZE.HIGH,
+      maxArrows: P3.FLOW.MAX_ARROWS,
+      maxLanes: P3.LANES.MAX_LANES
+    }
   }[deviceTier];
   
   if (degraded) {
     return {
       particles: Math.floor(base.particles * 0.6),
       flowGrid: base.flowGrid * 1.5, // Coarser grid
+      maxArrows: Math.floor(base.maxArrows * 0.6),
+      maxLanes: Math.floor(base.maxLanes * 0.6),
       disableGlow: true,
       reducedLanes: true
     };
   }
   
   return { ...base, disableGlow: false, reducedLanes: false };
+}
+
+// Helper to emit worker performance events
+export function emitWorkerPerfEvent(duration: number) {
+  if (import.meta.env.DEV) {
+    window.dispatchEvent(new CustomEvent('field-worker-perf', { 
+      detail: { duration } 
+    }));
+  }
 }
