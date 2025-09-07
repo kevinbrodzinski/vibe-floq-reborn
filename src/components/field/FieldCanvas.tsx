@@ -8,7 +8,7 @@ import { TileSpritePool } from '@/utils/tileSpritePool';
 import { SpritePool } from '@/lib/pixi/SpritePool';
 import { projectToScreen, getMapInstance, metersToPixelsAtLat } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
-import { clusterWorker, isWorkerFallback } from '@/lib/clusterWorker';
+import { getClusterWorker, isWorkerFallback } from '@/lib/clusterWorker';
 import { throttle } from '@/utils/timing';
 import { useFieldHitTest } from '@/hooks/useFieldHitTest';
 import { useAddRipple } from '@/hooks/useAddRipple';
@@ -158,12 +158,20 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 3B: Atmospheric throttling
   const lastPressureRef = useRef(0);
   const lastStormRef = useRef(0);
-  // Adjust performance caps based on worker fallback and device tier
+  // Adjust intervals based on worker fallback
   const isFallback = isWorkerFallback();
-  const adjustedFlowInterval = isFallback ? 250 : (1000 / P3.FLOW.UPDATE_HZ);   // 250ms fallback, ~166ms normal
-  const adjustedLaneInterval = isFallback ? 300 : 250;                        // 300ms fallback, 250ms normal  
-  const adjustedPressureInterval = isFallback ? 250 : (1000 / P3B.PRESSURE.UPDATE_HZ); // 250ms fallback, ~200ms normal
-  const MOMENTUM_INTERVAL_MS = 400;                     // 2.5 Hz
+  
+  // Dynamic caps based on fallback mode (don't mutate readonly constants)
+  const maxArrows = isFallback ? Math.min(P3.FLOW.MAX_ARROWS, 300) : P3.FLOW.MAX_ARROWS;
+  const flowUpdateHz = isFallback ? Math.min(P3.FLOW.UPDATE_HZ, 4) : P3.FLOW.UPDATE_HZ;
+  const maxLanes = isFallback ? Math.min(P3.LANES.MAX_LANES, 20) : P3.LANES.MAX_LANES;
+  const maxPressureCells = isFallback ? Math.min(P3B.PRESSURE.MAX_CELLS, 250) : P3B.PRESSURE.MAX_CELLS;
+  const pressureUpdateHz = isFallback ? Math.min(P3B.PRESSURE.UPDATE_HZ, 4) : P3B.PRESSURE.UPDATE_HZ;
+
+  const FLOW_INTERVAL_MS = 1000 / flowUpdateHz;
+  const LANE_INTERVAL_MS = isFallback ? 300 : 250;
+  const PRESS_INTERVAL_MS = 1000 / pressureUpdateHz;
+  const MOMENTUM_INTERVAL_MS = 450;
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -574,7 +582,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           requestAnimationFrame(() => {
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
-            clusterWorker.cluster(rawTiles, currentZoom).then(async (clusters) => {
+            getClusterWorker().then(worker => worker.cluster(rawTiles, currentZoom)).then(async (clusters) => {
               // Phase 2: Calculate velocities and momentum from previous frame
               const now = performance.now();
               const prevClusters = previousClustersRef.current;
@@ -603,7 +611,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               // Phase 2: Get convergence predictions
               let convergences: ConvergenceEvent[] = [];
               try {
-                const signalsResult = await clusterWorker.signals(clusters, currentZoom);
+                const worker = await getClusterWorker();
+                const signalsResult = await worker.signals(clusters, currentZoom);
                 convergences = signalsResult.convergences;
               } catch (error) {
                 // Graceful fallback if signals method fails
@@ -878,47 +887,40 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         const now = performance.now();
         
         // Flow field (throttled based on worker fallback)
-        if (now - lastFlowRef.current >= adjustedFlowInterval && flowFieldOverlayRef.current) {
+        if (now - lastFlowRef.current >= FLOW_INTERVAL_MS && flowFieldOverlayRef.current) {
           lastFlowRef.current = now;
-          // Async worker call - don't await in animation loop
-          clusterWorker.flowGrid(clustersRef.current, currentZoomRef.current).then(flowCells => {
-            const elapsed = performance.now() - now;
-            emitWorkerPerfEvent(elapsed);
+          const t0 = performance.now();
+          getClusterWorker().then(worker => 
+            worker.flowGrid(clustersRef.current, currentZoomRef.current)
+          ).then(flowCells => {
+            emitWorkerPerfEvent(performance.now() - t0);
             flowFieldOverlayRef.current?.update(flowCells, currentZoomRef.current);
-          }).catch(error => {
-            console.warn('[FieldCanvas] Flow grid update failed:', error);
+          }).catch(e => {
+            if (import.meta.env.DEV) console.warn('[flowGrid] worker error:', e);
           });
         }
         
         // Lanes and momentum (combined for efficiency)
-        if (now - lastLaneRef.current >= adjustedLaneInterval && convergenceLanesRef.current) {
+        if (now - lastLaneRef.current >= LANE_INTERVAL_MS && convergenceLanesRef.current) {
           lastLaneRef.current = now;
-          // Async worker call - don't await in animation loop
-          clusterWorker.lanes(clustersRef.current, currentZoomRef.current).then(lanes => {
-            const elapsed = performance.now() - now;
-            emitWorkerPerfEvent(elapsed);
+          const t0 = performance.now();
+          getClusterWorker().then(worker => 
+            worker.lanes(clustersRef.current, currentZoomRef.current)
+          ).then(lanes => {
+            emitWorkerPerfEvent(performance.now() - t0);
             convergenceLanesRef.current?.update(lanes, currentZoomRef.current);
-            
-            // Momentum piggybacks on lanes tick (2.5 Hz effective)
-            if (now - lastLaneRef.current >= MOMENTUM_INTERVAL_MS && momentumBadgeRef.current) {
-              clusterWorker.momentum(clustersRef.current).then(momentum => {
-                momentumBadgeRef.current?.update(
-                  momentum,
-                  currentZoomRef.current,
-                  new Map(clustersRef.current.map(c => [c.id, c.count])),
-                  new Map(clustersRef.current.map(c => [c.id, { x: c.x, y: c.y }]))
-                );
-              });
-            }
-            
-            // Storms at same cadence from lanes
-            if (stormOverlayRef.current) {
-              clusterWorker.stormGroups(lanes, currentZoomRef.current).then(groups => {
-                stormOverlayRef.current?.update(groups, currentZoomRef.current);
-              });
-            }
-          }).catch(error => {
-            console.warn('[FieldCanvas] Lanes/momentum update failed:', error);
+
+            // momentum piggyback
+            return getClusterWorker().then(worker => worker.momentum(clustersRef.current));
+          }).then(m => {
+            momentumBadgeRef.current?.update(
+              m,
+              currentZoomRef.current,
+              new Map(clustersRef.current.map(c => [c.id, c.count])),
+              new Map(clustersRef.current.map(c => [c.id, { x: c.x, y: c.y }]))
+            );
+          }).catch(e => {
+            if (import.meta.env.DEV) console.warn('[lanes/momentum] worker error:', e);
           });
         }
       }
@@ -929,15 +931,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         const now = performance.now();
         
         // Pressure clouds (throttled based on worker fallback) 
-        if (now - lastPressureRef.current >= adjustedPressureInterval && pressureOverlayRef.current) {
+        if (now - lastPressureRef.current >= PRESS_INTERVAL_MS && pressureOverlayRef.current) {
           lastPressureRef.current = now;
-          // Async worker call - don't await in animation loop
-          clusterWorker.pressureGrid(clustersRef.current, currentZoomRef.current).then(pressureCells => {
-            const elapsed = performance.now() - now;
-            emitWorkerPerfEvent(elapsed);
-            pressureOverlayRef.current?.update(pressureCells, currentZoomRef.current);
-          }).catch(error => {
-            console.warn('[FieldCanvas] Pressure grid update failed:', error);
+          const t0 = performance.now();
+          getClusterWorker().then(worker => 
+            worker.pressureGrid(clustersRef.current, currentZoomRef.current)
+          ).then(pcells => {
+            emitWorkerPerfEvent(performance.now() - t0);
+            pressureOverlayRef.current?.update(pcells, currentZoomRef.current);
+          }).catch(e => {
+            if (import.meta.env.DEV) console.warn('[pressureGrid] worker error:', e);
           });
         }
       }
@@ -1058,7 +1061,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         app.renderer.resize(window.innerWidth, window.innerHeight);
         // Reset worker state to prevent velocity spikes across projection changes
         try {
-          await clusterWorker.reset();
+          getClusterWorker().then(worker => worker.reset());
         } catch (error) {
           console.warn('[field.atmo] Worker reset failed:', error);
         }

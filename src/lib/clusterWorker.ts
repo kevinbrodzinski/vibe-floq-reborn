@@ -2,8 +2,6 @@ import * as Comlink from 'comlink';
 import type { RawTile } from '@/workers/clustering.worker';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 // Vite-friendly same-origin worker URL to avoid CSP/sandbox issues
-// This emits a bundled worker under the app origin
-// @ts-ignore - Vite query import
 import WorkerURL from '@/workers/clustering.worker?worker&url';
 
 // Define the clustering API interface
@@ -137,34 +135,52 @@ const isWorkerSupported = (): boolean => {
  * Singleton / HMR-safe worker wrapper with fallback support
  */
 let isWorkerFallbackInternal = false;
-const createClusterWorker = (): ClusteringAPI => {
+
+// HMR/singleton guard
+const g = globalThis as any;
+const KEY = '__clusterWorkerPromise';
+
+function makeWorker(): Promise<Comlink.Remote<ClusteringAPI> | ClusteringAPI> {
   if (!isWorkerSupported()) {
-    console.warn('[ClusterWorker] Web Workers not supported, using fallback implementation');
+    console.warn('[ClusterWorker] Workers unsupported → fallback');
     isWorkerFallbackInternal = true;
-    return new ClusteringFallback();
+    return Promise.resolve(new ClusteringFallback());
   }
-
-  const g = globalThis as any;
-  const key = '__clusterWorker';
-
-  if (g[key]) return Comlink.wrap<ClusteringAPI>(g[key] as Worker);
-
   try {
-    const w = new Worker(WorkerURL as any, { type: 'module', name: 'clustering' });
-
-    if (import.meta.hot) {
-      import.meta.hot.dispose(() => w.terminate());
-    }
-
-    g[key] = w;
+    const w = new Worker(WorkerURL, { type: 'module', name: 'clustering' });
+    if (import.meta.hot) import.meta.hot.dispose(() => w.terminate());
     isWorkerFallbackInternal = false;
-    return Comlink.wrap<ClusteringAPI>(w);
-  } catch (error) {
-    console.warn('[ClusterWorker] Failed to create worker, using fallback:', error);
+    return Promise.resolve(Comlink.wrap<ClusteringAPI>(w));
+  } catch (e) {
+    console.warn('[ClusterWorker] Worker instantiation failed → fallback', e);
     isWorkerFallbackInternal = true;
-    return new ClusteringFallback();
+    return Promise.resolve(new ClusteringFallback());
   }
-};
+}
+
+export async function getClusterWorker() {
+  g[KEY] ||= makeWorker();
+  return g[KEY] as Promise<Comlink.Remote<ClusteringAPI> | ClusteringAPI>;
+}
 
 export const isWorkerFallback = () => isWorkerFallbackInternal;
-export const clusterWorker = createClusterWorker();
+
+// Debug mode info
+if (import.meta.env.DEV) {
+  getClusterWorker().then(() => {
+    console.info('[ClusterWorker] mode:', isWorkerFallback() ? 'fallback' : 'web-worker');
+  });
+}
+
+// Legacy export for backwards compatibility
+export const clusterWorker = {
+  async cluster(tiles: RawTile[], zoom?: number) { return (await getClusterWorker()).cluster(tiles, zoom); },
+  async hitTest(x: number, y: number, radius?: number) { return (await getClusterWorker()).hitTest(x, y, radius); },
+  async signals(curr: SocialCluster[], zoom: number, now?: number) { return (await getClusterWorker()).signals(curr, zoom, now); },
+  async reset() { return (await getClusterWorker()).reset(); },
+  async flowGrid(clusters: SocialCluster[], zoom: number) { return (await getClusterWorker()).flowGrid(clusters, zoom); },
+  async lanes(clusters: SocialCluster[], zoom: number, now?: number) { return (await getClusterWorker()).lanes(clusters, zoom, now); },
+  async momentum(clusters: SocialCluster[]) { return (await getClusterWorker()).momentum(clusters); },
+  async pressureGrid(clusters: SocialCluster[], zoom: number) { return (await getClusterWorker()).pressureGrid(clusters, zoom); },
+  async stormGroups(lanes: import('@/lib/field/types').LaneSegment[], zoom: number) { return (await getClusterWorker()).stormGroups(lanes, zoom); },
+};
