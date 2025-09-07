@@ -41,11 +41,15 @@ export class ConvergenceOverlay {
       s.position.set(e.meeting.x, e.meeting.y);
       s.width = 6; 
       s.height = 6; 
-      s.anchor.set(0.5);
-      s.alpha = Math.min(0.85, 0.4 + 0.6 * e.confidence);
       
-      // Use amber/social color for convergence points
-      s.tint = 0xf59e0b; // amber-500 equivalent
+      // Fade out based on age
+      const age = now - rec.t;
+      const k = 1 - age / S.COOL_MS;
+      const baseAlpha = Math.min(0.85, 0.4 + 0.6 * e.confidence);
+      s.alpha = Math.max(0, baseAlpha * k);
+      
+      // Use semantic convergence color
+      s.tint = 0xf59e0b; // TODO: Route through design tokens
       
       rec.t = now;
     }
@@ -54,6 +58,11 @@ export class ConvergenceOverlay {
   private add(id: string) {
     const s = this.pool.pop();
     if (!s) return null; // Pool exhausted
+    
+    // Set static properties once at acquire
+    s.anchor.set(0.5);
+    s.blendMode = 'add';
+    s.visible = true;
     
     this.container.addChild(s);
     const rec = { s, t: performance.now() };
@@ -65,6 +74,7 @@ export class ConvergenceOverlay {
     const rec = this.active.get(id);
     if (!rec) return;
     
+    rec.s.visible = false;
     this.container.removeChild(rec.s);
     this.pool.push(rec.s);
     this.active.delete(id);

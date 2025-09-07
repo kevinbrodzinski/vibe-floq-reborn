@@ -32,6 +32,7 @@ export class BreathingSystem {
   private glowSprites = new Map<string, PIXI.Sprite>();
   private particles: ParticleState[] = [];
   private particlePool: PIXI.Sprite[] = [];
+  private freeParticles: PIXI.Sprite[] = [];
   
   private glowContainer: PIXI.Container;
   private particleContainer: PIXI.ParticleContainer;
@@ -65,11 +66,14 @@ export class BreathingSystem {
     for (let i = 0; i < this.maxParticles; i++) {
       const particle = new PIXI.Sprite(PIXI.Texture.WHITE);
       particle.anchor.set(0.5);
+      particle.blendMode = 'add';
       particle.width = ATMO.PARTICLE_SIZE;
       particle.height = ATMO.PARTICLE_SIZE;
       particle.visible = false;
       this.particlePool.push(particle);
     }
+    // Initialize free list with all sprites
+    this.freeParticles = [...this.particlePool];
   }
 
   /**
@@ -178,7 +182,7 @@ export class BreathingSystem {
     const count = Math.floor(2 + (cluster.energyLevel || 0.5) * 4);
     
     for (let i = 0; i < count && this.particles.length < this.maxParticles; i++) {
-      const sprite = this.particlePool.find(p => !p.visible);
+      const sprite = this.freeParticles.pop();
       if (!sprite) continue;
 
       const angle = Math.random() * Math.PI * 2;
@@ -222,6 +226,7 @@ export class BreathingSystem {
         // Remove dead particle
         particle.sprite.visible = false;
         this.particleContainer.removeChild(particle.sprite);
+        this.freeParticles.push(particle.sprite);
         this.particles.splice(i, 1);
       } else {
         // Update visual properties
@@ -234,24 +239,51 @@ export class BreathingSystem {
 
   private synchronizeBreathing(clusters: SocialCluster[], dt: number) {
     const CELL = 150;
+    const K = 0.05 * dt;
     const bins = new Map<string, string[]>();
+    
+    // Spatial binning
     for (const c of clusters) {
-      const gx = Math.floor(c.x / CELL), gy = Math.floor(c.y / CELL);
-      const key = `${gx}:${gy}`; (bins.get(key) ?? bins.set(key, []).get(key)!).push(c.id);
+      const gx = (c.x / CELL) | 0;
+      const gy = (c.y / CELL) | 0;
+      const k = `${gx}:${gy}`;
+      const bucket = bins.get(k) ?? [];
+      bucket.push(c.id);
+      bins.set(k, bucket);
     }
+    
+    // Accumulate phase adjustments
+    const delta = new Map<string, number>();
     const neigh = [[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1],[-1,-1],[1,-1],[-1,1]];
+    
     for (const [bk, ids] of bins) {
       const [gx, gy] = bk.split(':').map(Number);
       for (const [dx,dy] of neigh) {
-        const other = bins.get(`${gx+dx}:${gy+dy}`); if (!other) continue;
-        for (const a of ids) for (const b of other) if (a < b) {
-          const sa = this.states.get(a); const sb = this.states.get(b);
-          if (!sa || !sb) continue;
-          const influence = 0.05 * dt;
-          const diff = sb.phase - sa.phase;
-          const adjust = Math.sin(diff) * influence;
-          sa.phase += adjust; sb.phase -= adjust;
+        const other = bins.get(`${gx+dx}:${gy+dy}`);
+        if (!other) continue;
+        
+        for (const a of ids) {
+          for (const b of other) {
+            if (a < b) {
+              const sa = this.states.get(a);
+              const sb = this.states.get(b);
+              if (!sa || !sb) continue;
+              
+              const diff = sb.phase - sa.phase;
+              const adj = Math.sin(diff) * K;
+              delta.set(a, (delta.get(a) ?? 0) + adj);
+              delta.set(b, (delta.get(b) ?? 0) - adj);
+            }
+          }
         }
+      }
+    }
+    
+    // Apply accumulated adjustments
+    for (const [id, d] of delta) {
+      const s = this.states.get(id);
+      if (s) {
+        s.phase = (s.phase + d) % (Math.PI * 2);
       }
     }
   }
