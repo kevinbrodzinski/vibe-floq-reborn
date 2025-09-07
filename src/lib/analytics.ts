@@ -3,8 +3,20 @@
 
 const isWeb = typeof window !== 'undefined';
 
-// PostHog capture function - handles both web and mobile
+// PostHog capture function - handles both web and mobile with sandbox detection
 export const capture = (event: string, props?: Record<string, any>) => {
+  // Skip analytics in sandbox/preview to avoid rate limiting
+  const isSandbox = isWeb && (
+    /sandbox\.lovable\.dev$/.test(window.location.host) || 
+    window.location.host.includes('preview') ||
+    import.meta.env.VITE_SANDBOX === '1'
+  );
+
+  if (isSandbox) {
+    console.log('[PostHog] Sandbox mode - event not captured:', event, props);
+    return;
+  }
+
   try {
     if (isWeb) {
       import('posthog-js').then((ph) => {
@@ -19,8 +31,20 @@ export const capture = (event: string, props?: Record<string, any>) => {
   }
 };
 
-// PostHog identify function
+// PostHog identify function with sandbox detection
 export const identify = (profileId: string, traits?: Record<string, any>) => {
+  // Skip analytics in sandbox/preview to avoid rate limiting
+  const isSandbox = isWeb && (
+    /sandbox\.lovable\.dev$/.test(window.location.host) || 
+    window.location.host.includes('preview') ||
+    import.meta.env.VITE_SANDBOX === '1'
+  );
+
+  if (isSandbox) {
+    console.log('[PostHog] Sandbox mode - identify not called:', profileId, traits);
+    return;
+  }
+
   try {
     if (isWeb) {
       import('posthog-js').then((ph) => {

@@ -4,7 +4,19 @@ import { track } from './analytics'
 export function trackError(error: unknown, context?: Record<string, any>) {
   const err = error instanceof Error ? error : new Error(String(error))
 
-  // Track to our analytics system
+  // Skip tracking in sandbox/preview to avoid rate limiting
+  const isSandbox = typeof window !== 'undefined' && (
+    /sandbox\.lovable\.dev$/.test(window.location.host) || 
+    window.location.host.includes('preview') ||
+    import.meta.env.VITE_SANDBOX === '1'
+  );
+
+  if (isSandbox) {
+    console.warn('🚨 Error (sandbox - not tracked):', err, context);
+    return;
+  }
+
+  // Track to our analytics system only outside sandbox
   try {
     track({
       name: 'Error Encountered',
