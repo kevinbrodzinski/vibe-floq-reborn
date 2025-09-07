@@ -24,6 +24,7 @@ const clusterHistory = new Map<string, {
   timestamp: number;
   formationTime: number;
   lastGrowth: number;
+  breathingPhase?: number;
 }>();
 
 /* ────────────── Phase 2: Velocity tracking & convergence ────────────── */
@@ -102,7 +103,7 @@ const api = {
    * Phase 2: Enhanced clustering with social physics and lifecycle tracking
    * Velocity computed cross-frame on client side
    */
-  cluster(tiles: RawTile[], zoom = 11, previousClusters?: SocialCluster[]): SocialCluster[] {
+  cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
     const work: Array<{x:number;y:number;r:number;count:number;vibe:VibeToken;_ids:string[];cohesionScore:number}> = [];
 
@@ -161,19 +162,20 @@ const api = {
       const energyLevel = Math.min(1, c.count / 25 + (lifecycleStage === 'peaking' ? 0.3 : 0));
       const pulseIntensity = 0.3 + enhancedCohesion * 0.4 + energyLevel * 0.3;
       
-      // Continue breathing phase from previous frame if available
-      let breathingPhase = Math.random() * Math.PI * 2;
-      if (previousClusters) {
-        const prev = previousClusters.find(p => p.id === id);
-        if (prev && prev.breathingPhase !== undefined) {
-          const dt = history ? (now - history.timestamp) / 1000 : 0.016;
-          const phaseAdvance = (baseRate / 60) * 2 * Math.PI * dt;
-          breathingPhase = (prev.breathingPhase + phaseAdvance) % (2 * Math.PI);
-        }
-      }
+      // Advance breathing phase using history timestamp only
+      const prevPhase = history?.breathingPhase ?? Math.random() * Math.PI * 2;
+      const dt = history ? (now - history.timestamp) / 1000 : 0.016;
+      const phaseAdvance = (baseRate / 60) * 2 * Math.PI * dt;
+      const breathingPhase = (prevPhase + phaseAdvance) % (2 * Math.PI);
       
       // Update history
       clusterHistory.set(id, {
+        count: c.count,
+        timestamp: now,
+        formationTime,
+        lastGrowth: history ? (c.count - history.count) : 0,
+        breathingPhase
+      });
         count: c.count,
         timestamp: now,
         formationTime,

@@ -4,7 +4,7 @@ import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 
 // Define the clustering API interface
 export interface ClusteringAPI {
-  cluster: (tiles: RawTile[], zoom?: number, previousClusters?: SocialCluster[]) => Promise<SocialCluster[]>;
+  cluster: (tiles: RawTile[], zoom?: number) => Promise<SocialCluster[]>;
   hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
   signals: (curr: SocialCluster[], zoom: number, now?: number) => Promise<{ convergences: ConvergenceEvent[] }>;
 }
@@ -15,7 +15,7 @@ export interface ClusteringAPI {
 class ClusteringFallback {
   private lastClusters: SocialCluster[] | null = null;
   
-  async cluster(tiles: RawTile[], zoom = 11, previousClusters?: SocialCluster[]): Promise<SocialCluster[]> {
+  async cluster(tiles: RawTile[], zoom = 11): Promise<SocialCluster[]> {
     const BASE_DIST = 32;
     const threshold = BASE_DIST * Math.pow(2, 11 - zoom);
     const clusters: SocialCluster[] = [];

@@ -28,3 +28,12 @@ export const PHASE2 = {
   },
   DEBUG: { VECTORS_MAX: 600 },
 };
+
+// Atmosphere and animation tokens
+export const ATMO = {
+  BREATH_ZOOM_MIN: 14,
+  GLOW_ALPHA_BASE: 0.3,
+  PARTICLE_SIZE: 2,
+  PARTICLE_CAP: 200,
+  CONV_MAX_PER_FRAME: 64,
+};

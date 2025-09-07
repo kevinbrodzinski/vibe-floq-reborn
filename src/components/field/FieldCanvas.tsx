@@ -32,6 +32,8 @@ import { ConvergenceOverlay } from './overlays/ConvergenceOverlay';
 import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
+import { ATMO, FIELD_LOD } from '@/lib/field/constants';
+import { ATMO, FIELD_LOD } from '@/lib/field/constants';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -217,7 +219,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         trailSystemRef.current = new ParticleTrailSystem(trailContainer);
         
         // Phase 2: Initialize breathing system after containers are ready
-        breathingSystemRef.current = new BreathingSystem(heatContainer);
+        breathingSystemRef.current = new BreathingSystem(heatContainer, app.renderer);
         
         // Phase 2: Initialize convergence overlay
         convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
@@ -511,7 +513,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           requestAnimationFrame(() => {
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
-            clusterWorker.cluster(rawTiles, currentZoom, previousClustersRef.current).then(async (clusters) => {
+            clusterWorker.cluster(rawTiles, currentZoom).then(async (clusters) => {
               // Update cluster refs for convergence and breathing
               clustersRef.current = clusters;
               currentZoomRef.current = currentZoom;
@@ -581,10 +583,19 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 }
               });
 
-              // Phase 2: Update breathing system with existing sprites
+              // Phase 2: Update breathing system with existing sprites (LOD + privacy gates)
               const breathingSystem = breathingSystemRef.current;
-              if (breathingSystem && clusterSprites.size > 0) {
-                breathingSystem.updateSprites(clusters, clusterSprites, app.ticker.deltaMS);
+              if (breathingSystem) {
+                const allowedClusters = clusters.filter(c => currentZoom >= ATMO.BREATH_ZOOM_MIN && c.count >= FIELD_LOD.K_MIN);
+                if (allowedClusters.length > 0) {
+                  const allowedSprites = new Map<string, any>();
+                  for (const c of allowedClusters) {
+                    const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
+                    const sprite = tilePool.active.get(key);
+                    if (sprite) allowedSprites.set(c.id, sprite);
+                  }
+                  breathingSystem.updateSprites(allowedClusters, allowedSprites, app.ticker.deltaMS);
+                }
               }
               
               // Phase 2: Render convergence overlay

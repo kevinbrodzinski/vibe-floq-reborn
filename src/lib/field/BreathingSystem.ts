@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import type { SocialCluster } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
+import { ATMO } from '@/lib/field/constants';
 
 interface BreathingState {
   phase: number;
@@ -18,13 +19,13 @@ interface ParticleState {
   vy: number;
   life: number;
   maxLife: number;
+  baseScale: number;
   sprite: PIXI.Sprite;
 }
 
 /**
  * Phase 2: Breathing and particle system for living social clusters
- * Creates organic breathing animations with synchronized phases and particle emission
- * Simplified to work with existing PIXI Sprites instead of Graphics
+ * Uses pre-baked circle texture and sprites (RN-safe), no DOM canvas
  */
 export class BreathingSystem {
   private states = new Map<string, BreathingState>();
@@ -34,26 +35,38 @@ export class BreathingSystem {
   
   private glowContainer: PIXI.Container;
   private particleContainer: PIXI.ParticleContainer;
-  private maxParticles = 100; // Reduced for better performance
+  private maxParticles = ATMO.PARTICLE_CAP;
+  private circleTex: PIXI.Texture;
 
-  constructor(parent: PIXI.Container) {
-    // Glow layer with subtle blur effect
+  constructor(parent: PIXI.Container, private renderer: PIXI.Renderer) {
+    // Build a circle texture once via renderer (RN-safe)
+    const g = new PIXI.Graphics();
+    g.beginFill(0xffffff, 1);
+    g.drawCircle(0, 0, 64);
+    g.endFill();
+    this.circleTex = this.renderer.generateTexture(g);
+    g.destroy();
+
+    // Layers
     this.glowContainer = new PIXI.Container();
     this.glowContainer.label = 'ClusterGlow';
-    
-    // High-performance particle container
-    this.particleContainer = new PIXI.ParticleContainer();
+
+    try {
+      this.particleContainer = new (PIXI as any).ParticleContainer(this.maxParticles, { position: true, scale: true, alpha: true, tint: true });
+    } catch {
+      this.particleContainer = new PIXI.ParticleContainer();
+    }
     this.particleContainer.label = 'BreathingParticles';
-    
+
     parent.addChild(this.glowContainer);
     parent.addChild(this.particleContainer);
-    
+
     // Pre-populate particle pool
     for (let i = 0; i < this.maxParticles; i++) {
       const particle = new PIXI.Sprite(PIXI.Texture.WHITE);
       particle.anchor.set(0.5);
-      particle.width = 2;
-      particle.height = 2;
+      particle.width = ATMO.PARTICLE_SIZE;
+      particle.height = ATMO.PARTICLE_SIZE;
       particle.visible = false;
       this.particlePool.push(particle);
     }
@@ -129,11 +142,12 @@ export class BreathingSystem {
     state.scale += (baseScale - state.scale) * dt * 8;
     state.alpha += (baseAlpha - state.alpha) * dt * 8;
 
-    // Apply to sprite
+    // Apply to sprite (assumes sprite is a round texture)
     sprite.scale.set(state.scale);
     sprite.alpha = state.alpha;
+    sprite.tint = vibeToTint(cluster.vibe);
 
-    // Update glow
+    // Update glow via separate sprite using circle texture
     this.updateGlow(cluster, state, easedBreath);
 
     // Emit particles for high-energy clusters
@@ -146,42 +160,18 @@ export class BreathingSystem {
 
   private updateGlow(cluster: SocialCluster, state: BreathingState, breath: number) {
     let glow = this.glowSprites.get(cluster.id);
-    
     if (!glow) {
-      glow = this.createGlowSprite();
+      glow = new PIXI.Sprite(this.circleTex);
+      glow.anchor.set(0.5);
       this.glowContainer.addChild(glow);
       this.glowSprites.set(cluster.id, glow);
     }
 
     const glowRadius = cluster.glowRadius || Math.sqrt(cluster.count) * 12;
-    
     glow.position.set(cluster.x, cluster.y);
     glow.scale.set((glowRadius * state.scale) / 64);
-    glow.alpha = state.alpha * 0.3 * (0.8 + breath * 0.2);
+    glow.alpha = ATMO.GLOW_ALPHA_BASE * (0.8 + breath * 0.2);
     glow.tint = vibeToTint(cluster.vibe);
-  }
-
-  private createGlowSprite(): PIXI.Sprite {
-    // Create radial gradient texture for glow
-    const canvas = document.createElement('canvas');
-    const size = 128;
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext('2d')!;
-    
-    const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.3, 'rgba(255,255,255,0.6)');
-    gradient.addColorStop(0.7, 'rgba(255,255,255,0.2)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-    
-    const texture = PIXI.Texture.from(canvas);
-    const sprite = new PIXI.Sprite(texture);
-    sprite.anchor.set(0.5);
-    
-    return sprite;
   }
 
   private emitParticles(cluster: SocialCluster, state: BreathingState) {
@@ -194,6 +184,7 @@ export class BreathingSystem {
       const angle = Math.random() * Math.PI * 2;
       const dist = Math.random() * (cluster.glowRadius || 40) * 0.5;
       const speed = 20 + Math.random() * 20;
+      const baseScale = 0.6 + Math.random() * 0.4; // pick once
       
       const particle: ParticleState = {
         x: cluster.x + Math.cos(angle) * dist,
@@ -201,12 +192,13 @@ export class BreathingSystem {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 15, // Slight upward bias
         life: 1,
-        maxLife: 1.5 + Math.random() * 1, // 1.5-2.5 second lifetime
+        maxLife: 1.5 + Math.random() * 1,
+        baseScale,
         sprite
       };
 
       sprite.position.set(particle.x, particle.y);
-      sprite.scale.set(0.5 + Math.random() * 0.3);
+      sprite.scale.set(baseScale);
       sprite.alpha = 1;
       sprite.tint = vibeToTint(cluster.vibe);
       sprite.visible = true;
@@ -235,38 +227,30 @@ export class BreathingSystem {
         // Update visual properties
         particle.sprite.position.set(particle.x, particle.y);
         particle.sprite.alpha = particle.life * particle.life; // Fade out quadratically
-        
-        // Shrink over time
-        const scale = particle.life * (0.5 + Math.random() * 0.3);
-        particle.sprite.scale.set(scale);
+        particle.sprite.scale.set(particle.baseScale * particle.life);
       }
     }
   }
 
   private synchronizeBreathing(clusters: SocialCluster[], dt: number) {
-    const SYNC_RADIUS = 120;
-    const SYNC_STRENGTH = 0.03;
-    
-    for (let i = 0; i < clusters.length; i++) {
-      for (let j = i + 1; j < clusters.length; j++) {
-        const dist = Math.hypot(
-          clusters[i].x - clusters[j].x,
-          clusters[i].y - clusters[j].y
-        );
-        
-        if (dist < SYNC_RADIUS) {
-          const state1 = this.states.get(clusters[i].id);
-          const state2 = this.states.get(clusters[j].id);
-          
-          if (state1 && state2) {
-            // Pull phases together based on proximity
-            const influence = 1 - (dist / SYNC_RADIUS);
-            const phaseDiff = state2.phase - state1.phase;
-            const adjustment = Math.sin(phaseDiff) * SYNC_STRENGTH * influence * dt;
-            
-            state1.phase += adjustment;
-            state2.phase -= adjustment;
-          }
+    const CELL = 150;
+    const bins = new Map<string, string[]>();
+    for (const c of clusters) {
+      const gx = Math.floor(c.x / CELL), gy = Math.floor(c.y / CELL);
+      const key = `${gx}:${gy}`; (bins.get(key) ?? bins.set(key, []).get(key)!).push(c.id);
+    }
+    const neigh = [[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1],[-1,-1],[1,-1],[-1,1]];
+    for (const [bk, ids] of bins) {
+      const [gx, gy] = bk.split(':').map(Number);
+      for (const [dx,dy] of neigh) {
+        const other = bins.get(`${gx+dx}:${gy+dy}`); if (!other) continue;
+        for (const a of ids) for (const b of other) if (a < b) {
+          const sa = this.states.get(a); const sb = this.states.get(b);
+          if (!sa || !sb) continue;
+          const influence = 0.05 * dt;
+          const diff = sb.phase - sa.phase;
+          const adjust = Math.sin(diff) * influence;
+          sa.phase += adjust; sb.phase -= adjust;
         }
       }
     }
