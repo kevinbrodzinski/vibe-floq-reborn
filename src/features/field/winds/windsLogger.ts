@@ -16,6 +16,11 @@ export function startWindsLogger(opts: { enabled:boolean; getClusters:()=>Array<
   if (!opts.enabled) return () => {};
   let alive = true;
 
+  // Add pipeline health tracking
+  let lastSuccessfulFlush = 0;
+  let totalSamplesSent = 0;
+  let flushAttempts = 0;
+
   const tick = async () => {
     if (!alive) return;
     const clusters = opts.getClusters();
@@ -35,14 +40,64 @@ export function startWindsLogger(opts: { enabled:boolean; getClusters:()=>Array<
     if (batch.length >= BATCH_MAX || (t - lastFlush) > FLUSH_MS) {
       const payload = { cityId: opts.cityId, samples: batch.splice(0, BATCH_MAX) };
       lastFlush = t;
+      flushAttempts++;
+      
+      // Enhanced logging for pipeline health
+      if (import.meta.env.DEV) {
+        console.log(`[windsLogger] Flushing ${payload.samples.length} samples for city ${payload.cityId}`, {
+          totalClusters: clusters.length,
+          batchSize: payload.samples.length,
+          flushAttempt: flushAttempts
+        });
+      }
+      
       // auth: user-JWT comes from supabase client automatically in invoke
       supabase.functions.invoke('log-flow-samples', { body: payload })
-        .catch(e => import.meta.env.DEV && console.warn('[windsLogger] flush failed', e));
+        .then((result) => {
+          lastSuccessfulFlush = t;
+          totalSamplesSent += payload.samples.length;
+          if (import.meta.env.DEV) {
+            console.log(`[windsLogger] Success: ${payload.samples.length} samples sent (total: ${totalSamplesSent})`);
+          }
+        })
+        .catch(e => {
+          if (import.meta.env.DEV) {
+            console.warn('[windsLogger] flush failed:', e);
+            console.warn('[windsLogger] Pipeline health check: last success was', 
+              Math.round((t - lastSuccessfulFlush) / 1000), 'seconds ago');
+          }
+        });
     }
     // schedule next
     setTimeout(tick, 5_000);
   };
 
   tick();
+  
+  // Pipeline health monitoring (dev only)
+  if (import.meta.env.DEV) {
+    console.log('[windsLogger] Started for city:', opts.cityId);
+    // Health check every 60 seconds in development
+    const healthCheck = setInterval(() => {
+      if (!alive) {
+        clearInterval(healthCheck);
+        return;
+      }
+      const timeSinceLastFlush = performance.now() - lastSuccessfulFlush;
+      console.log('[windsLogger] Health check:', {
+        samplesInBatch: batch.length,
+        totalSamplesSent,
+        flushAttempts,
+        timeSinceLastSuccess: Math.round(timeSinceLastFlush / 1000) + 's',
+        pipelineHealthy: timeSinceLastFlush < 120000 // 2 minutes threshold
+      });
+    }, 60000);
+    
+    return () => { 
+      alive = false; 
+      clearInterval(healthCheck);
+    };
+  }
+  
   return () => { alive = false; };
 }

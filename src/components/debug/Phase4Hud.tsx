@@ -1,6 +1,6 @@
 export function Phase4Hud({ metrics, counters }:{
   metrics?: { fps?:number; workerTime?:number; drawCalls?:number };
-  counters: { windsPaths:number; auroraActive:number };
+  counters: { windsPaths:number; auroraActive:number; arrowsVisible:number };
 }) {
   if (!import.meta.env.DEV) return null;
   
@@ -16,6 +16,7 @@ export function Phase4Hud({ metrics, counters }:{
       <div>worker: {(metrics?.workerTime ?? 0).toFixed(1)} ms</div>
       <div>draws: {metrics?.drawCalls ?? 0}</div>
       <div>winds.paths: {counters.windsPaths}</div>
+      <div>arrows.visible: {counters.arrowsVisible}</div>
       <div>aurora.active: {counters.auroraActive}</div>
     </div>
   );

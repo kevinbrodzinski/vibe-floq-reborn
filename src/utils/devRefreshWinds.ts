@@ -23,6 +23,27 @@ export async function devRefreshWindsNow(): Promise<void> {
     const pathsCreated = data || 0;
     console.info(`[devRefreshWinds] Success! Created ${pathsCreated} wind paths`);
     
+    // Also check pipeline health after refresh
+    setTimeout(async () => {
+      try {
+        const { data: samplesCount } = await supabase
+          .from('flow_samples')
+          .select('*', { count: 'exact', head: true });
+          
+        const { data: windsCount } = await supabase
+          .from('trade_winds')
+          .select('*', { count: 'exact', head: true });
+          
+        console.info('[devRefreshWinds] Pipeline status:', {
+          flowSamples: samplesCount?.length || 0,
+          tradePaths: windsCount?.length || 0,
+          pathsJustCreated: pathsCreated
+        });
+      } catch (e) {
+        console.warn('[devRefreshWinds] Could not check pipeline status:', e);
+      }
+    }, 2000);
+    
   } catch (e) {
     console.error('[devRefreshWinds] Exception:', e);
   }

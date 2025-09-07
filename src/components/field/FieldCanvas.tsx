@@ -176,7 +176,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     tint_enabled: true,
     weather_enabled: true,
     winds_enabled: true, // Enable for testing
-    aurora_enabled: false // Start with canary
+    aurora_enabled: true // Enable for testing - was false
   });
   const clustersRef = useRef<SocialCluster[]>([]);
   const previousClustersRef = useRef<SocialCluster[]>([]);
@@ -1317,7 +1317,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     
     // Resolve city ID (use viewport resolver or default)
     const resolveCityId = (): string => {
-      return resolveFromViewport() || 'default';
+      return resolveFromViewport(viewportGeo) || 'default';
     };
     
     const detach = startWindsLogger({
@@ -1327,7 +1327,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     });
     
     return detach;
-  }, [user?.id, pixiApp]);
+  }, [pixiApp, viewportGeo]); // Remove user?.id dependency for anonymous access
 
   // DEV: Keyboard shortcut for manual winds refresh (Shift+W)
   useEffect(() => {
