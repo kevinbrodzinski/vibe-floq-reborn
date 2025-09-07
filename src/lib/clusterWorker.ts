@@ -7,6 +7,7 @@ export interface ClusteringAPI {
   cluster: (tiles: RawTile[], zoom?: number) => Promise<SocialCluster[]>;
   hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
   signals: (curr: SocialCluster[], zoom: number, now?: number) => Promise<{ convergences: ConvergenceEvent[] }>;
+  reset: () => Promise<void>;
 }
 
 /**
@@ -69,6 +70,10 @@ class ClusteringFallback {
   async signals(curr: SocialCluster[], zoom: number, now = performance.now()): Promise<{ convergences: ConvergenceEvent[] }> {
     // Fallback implementation - no convergence prediction in fallback mode
     return { convergences: [] };
+  }
+
+  async reset(): Promise<void> {
+    this.lastClusters = null;
   }
 }
 

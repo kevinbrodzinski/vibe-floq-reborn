@@ -648,7 +648,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   breathingStates: breathingSystem?.getStats().activeBreathingStates ?? 0,
                   particles: breathingSystem?.getStats().activeParticles ?? 0
                 };
-                console.log('[FieldCanvas] Performance stats:', stats);
+                console.log('[field.atmo] Performance stats:', stats);
               }
 
               /* fast viewport cull – if sprite is way outside screen we drop immediately */
@@ -911,6 +911,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     };
   }, []);
 
+  
   // Add periodic garbage collection for sprite pool
   useEffect(() => {
     const interval = setInterval(() => {
@@ -920,6 +921,25 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     }, 30_000); // Every 30 seconds
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Reset worker on projection changes (resize, DPR change)
+  useEffect(() => {
+    const handleResize = async () => {
+      const app = appRef.current;
+      if (app) {
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+        // Reset worker state to prevent velocity spikes across projection changes
+        try {
+          await clusterWorker.reset();
+        } catch (error) {
+          console.warn('[field.atmo] Worker reset failed:', error);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m

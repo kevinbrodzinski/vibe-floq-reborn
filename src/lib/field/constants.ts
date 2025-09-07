@@ -41,6 +41,6 @@ export const ATMO = {
   PARTICLE_CAP: 200,             // Max particles across all systems
   CONVERGENCE: {
     MAX_PER_FRAME: 64,
-    COLOR: 0xfbbf24,             // amber-400 semantic token
+    COOL_MS: 2_000,              // Fade duration for convergence markers
   },
 };

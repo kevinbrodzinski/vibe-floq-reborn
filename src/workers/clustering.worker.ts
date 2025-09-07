@@ -274,6 +274,14 @@ class ClusteringWorker {
     // hysteresis (cooldown) will be handled on the UI side with TTL if desired
     return { convergences: out };
   }
+
+  /** Reset worker state on projection/scale changes */
+  reset(): void {
+    clusterHistory.clear();
+    lastMap.clear();
+    lastClusters = null;
+    lastEmit = 0;
+  }
 }
 
 // Persistent worker instance
@@ -283,6 +291,7 @@ const api = {
   cluster: (tiles: RawTile[], zoom = 11) => workerInstance.cluster(tiles, zoom),
   hitTest: (x: number, y: number, radius = 12) => workerInstance.hitTest(x, y, radius),
   signals: (curr: SocialCluster[], zoom: number, now = performance.now()) => workerInstance.signals(curr, zoom, now),
+  reset: () => workerInstance.reset(),
 };
 
 Comlink.expose(api);

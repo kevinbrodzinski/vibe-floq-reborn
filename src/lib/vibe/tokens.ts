@@ -39,3 +39,10 @@ export const normalizeVibeToken = (vibe: string): VibeToken => {
   const normalized = vibe?.toLowerCase() as VibeToken;
   return vibeTokens[normalized] ? normalized : 'social';
 };
+
+// Atmosphere/Field visual tokens (design system)
+export const atmoTokens = {
+  convergencePrimary: '#fbbf24', // amber-400 semantic token
+  convergenceSecondary: '#f59e0b', // amber-500 
+  breathingGlow: '#ffffff', // white for base glow
+} as const;
