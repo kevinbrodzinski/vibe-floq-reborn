@@ -50,6 +50,7 @@ import { devRefreshWindsNow } from '@/utils/devRefreshWinds';
 import { fetchTradeWindsForViewport, hourBucket, currentPixelBBox, seedTradeWindsIfEmpty } from '@/features/field/winds/windsHelpers';
 import { resolveFromViewport } from '@/lib/field/cityResolver';
 import { Phase4Hud } from '@/components/debug/Phase4Hud';
+import { detectAurorasFromStorms } from '@/features/field/aurora/auroraDetect';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -192,6 +193,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const lastAtmoTintRef = useRef(0);
   const lastWeatherRef = useRef(0);
   const lastWindsRef = useRef(0);
+  
+  // Phase 4: Storm groups for aurora detection
+  const lastStormGroupsRef = useRef<any[]>([]);
   
   // Phase 4: HUD counters for performance monitoring
   const [phase4HudCounters, setPhase4HudCounters] = useState({
@@ -998,7 +1002,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   // storms at same cadence from lanes
                   if (stormOverlayRef.current) {
                     return getClusterWorker().then(w => w.stormGroups(lanes, currentZoomRef.current))
-                      .then(groups => stormOverlayRef.current?.update(groups, currentZoomRef.current));
+                      .then(groups => {
+                        lastStormGroupsRef.current = groups; // Store for aurora detection
+                        return stormOverlayRef.current?.update(groups, currentZoomRef.current);
+                      });
                   }
                 });
             })
@@ -1084,7 +1091,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       }
       
       if (phase4Flags.aurora_enabled && auroraOverlayRef.current) {
-        const activeAurora = auroraOverlayRef.current.update([], currentZoomRef.current); // Mock data for now
+        const auroraEvents = detectAurorasFromStorms(lastStormGroupsRef.current ?? [], {
+          minIntensity: auroraOverlayRef.current['q']?.intensityMin ?? P4.AURORA.INTENSITY_MIN,
+          maxConcurrent: 3, 
+          zoom: currentZoomRef.current
+        });
+        const activeAurora = auroraOverlayRef.current.update(auroraEvents, currentZoomRef.current);
+        auroraOverlayRef.current.autoTune({ fps: metrics?.fps }, activeAurora);
         setPhase4HudCounters(prev => ({
           ...prev,
           auroraActive: activeAurora,
@@ -1253,6 +1266,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         maxConcurrent: deviceTier === 'low' ? 1 : deviceTier === 'high' ? 3 : 2,
         intensityMin: deviceTier === 'low' ? 0.8 : P4.AURORA.INTENSITY_MIN,
         shader: deviceTier === 'high',
+      });
+      auroraOverlayRef.current.setTuner({
+        enabled: deviceTier !== 'low', // keep off on very low devices
+        target: deviceTier === 'high' ? 2 : 1,  // per-tier desired actives
+        min: 0.65, max: 0.9,
+        stepUp: 0.02, stepDown: 0.01,
+        cooldownMs: 1500,
       });
     }
   }, [deviceTier, pixiApp, metrics]);

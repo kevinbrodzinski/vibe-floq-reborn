@@ -12,10 +12,31 @@ type AuroraQuality = {
   shader: boolean;           // reserved for high-tier shader path
 };
 
+type AuroraTuner = {
+  enabled: boolean;
+  min: number;     // lower bound for intensityMin
+  max: number;     // upper bound
+  stepUp: number;  // how fast to raise threshold under load
+  stepDown: number;// how fast to lower threshold when safe
+  target: number;  // desired active auroras by tier
+  cooldownMs: number;
+  lastTune: number;
+};
+
 export class AuroraOverlay {
   private container: PIXI.Container;
   private rings: PIXI.Graphics[] = [];
   private q: AuroraQuality;
+  private tuner: AuroraTuner = {
+    enabled: false, 
+    min: 0.65, 
+    max: 0.9, 
+    stepUp: 0.02, 
+    stepDown: 0.01, 
+    target: 2, 
+    cooldownMs: 1500, 
+    lastTune: 0
+  };
 
   constructor(parent: PIXI.Container) {
     this.container = new PIXI.Container();
@@ -26,6 +47,35 @@ export class AuroraOverlay {
   /** Apply device-tier quality (call on tier changes) */
   setQuality(q: Partial<AuroraQuality>) {
     this.q = { ...this.q, ...q };
+  }
+
+  /** Optional: configure auto-tuner per tier (call on tier change) */
+  setTuner(t?: Partial<AuroraTuner>) { 
+    this.tuner = { ...this.tuner, ...t, enabled: true }; 
+  }
+
+  /** Auto-tune threshold by fps + active count (call after update()) */
+  autoTune(metrics: { fps?: number }, activeCount: number) {
+    if (!this.tuner.enabled) return;
+    const now = performance.now();
+    if (now - this.tuner.lastTune < this.tuner.cooldownMs) return;
+
+    let thr = this.q.intensityMin;
+    const fps = metrics.fps ?? 60;
+
+    if (fps < 55) {
+      // under load: raise intensity threshold (fewer auroras)
+      thr = Math.min(this.tuner.max, thr + this.tuner.stepUp);
+    } else if (fps > 59 && activeCount < this.tuner.target) {
+      // plenty of headroom: allow a bit more by lowering threshold
+      thr = Math.max(this.tuner.min, thr - this.tuner.stepDown);
+    }
+
+    if (thr !== this.q.intensityMin) {
+      this.q.intensityMin = +thr.toFixed(2);
+      this.tuner.lastTune = now;
+      if (import.meta.env.DEV) console.info('[aurora] tuned intensityMin →', this.q.intensityMin);
+    }
   }
 
   update(events: AuroraEventLite[], zoom: number): number {

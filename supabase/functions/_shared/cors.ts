@@ -16,12 +16,15 @@ export function allowedOrigin(origin: string | null): string {
 export function corsHeadersFor(req: Request) {
   const origin = req.headers.get('origin');
   const allow = allowedOrigin(origin);
+  // echo requested headers to satisfy arbitrary preview/client headers
+  const reqHeaders = req.headers.get('access-control-request-headers');
+
   return {
     'Access-Control-Allow-Origin': allow,
-    'Vary': 'Origin',
+    'Vary': 'Origin, Access-Control-Request-Headers',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': reqHeaders || 'authorization, x-client-info, apikey, content-type, range, range-unit',
   };
 }
 
