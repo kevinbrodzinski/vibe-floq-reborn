@@ -6,67 +6,48 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const headers = { ...corsHeaders, 'Cache-Control': 'public, max-age=900' }; // 15 min cache
   try {
-    const { lat, lng } = await req.json();
-    
-    // Validate inputs
-    if (!lat || !lng) {
-      return new Response(
-        JSON.stringify({ error: 'Missing lat/lng parameters' }), 
-        { status: 400, headers: corsHeaders }
-      );
+    const { lat, lng } = await req.json().catch(() => ({}));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return new Response(JSON.stringify({ error: 'Missing or invalid lat/lng' }), { status: 400, headers });
     }
 
-    // Use Open-Meteo API (free weather API)
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,precipitation,visibility,wind_speed_10m&timezone=auto`;
-    
-    const response = await fetch(weatherUrl);
-    const data = await response.json();
-    
-    if (!data.current) {
-      throw new Error('Invalid weather data received');
+    const url =
+      `https://api.open-meteo.com/v1/forecast` +
+      `?latitude=${lat}&longitude=${lng}` +
+      `&current=temperature_2m,precipitation,visibility,wind_speed_10m` + // Fixed 'current=' (not '¤t=')
+      `&timezone=auto`;
+
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), 3500);
+    const resp = await fetch(url, { signal: ac.signal }).catch(() => null);
+    clearTimeout(timeout);
+
+    const data = await resp?.json().catch(() => null);
+    const cur = data?.current;
+    if (!cur) {
+      // graceful fallback
+      return new Response(JSON.stringify({
+        condition: 'clear', temperatureF: 70, feelsLikeF: 70, humidity: 50,
+        windMph: 5, precipitationMm: 0, visibilityKm: 10, updated_at: new Date().toISOString()
+      }), { status: 200, headers });
     }
 
-    const weatherData = {
-      condition: getConditionFromData(data.current),
-      temperatureF: Math.round(data.current.temperature_2m * 9/5 + 32),
-      feelsLikeF: Math.round(data.current.temperature_2m * 9/5 + 32), // Simplified
-      humidity: 50, // Open-Meteo doesn't provide this in free tier
-      windMph: Math.round(data.current.wind_speed_10m * 0.621371),
-      precipitationMm: data.current.precipitation || 0,
-      visibilityKm: data.current.visibility || 10,
-      updated_at: new Date().toISOString()
-    };
+    const precipitationMm = Number(cur.precipitation ?? 0);
+    const visibilityKm    = Number(cur.visibility ?? 10);
+    const windMph         = Math.round((cur.wind_speed_10m ?? 2) * 0.621371);
+    const temperatureF    = Math.round((cur.temperature_2m ?? 21) * 9/5 + 32);
 
-    const headers = { 
-      ...corsHeaders, 
-      'Cache-Control': 'public, max-age=900' // 15 minutes cache
-    };
+    return new Response(JSON.stringify({
+      condition: precipitationMm > 0.5 ? 'rainy' : visibilityKm < 5 ? 'foggy' : windMph > 20 ? 'windy' : 'clear',
+      temperatureF, feelsLikeF: temperatureF, humidity: 50,
+      windMph, precipitationMm, visibilityKm, updated_at: new Date().toISOString()
+    }), { status: 200, headers });
 
-    return new Response(JSON.stringify(weatherData), { 
-      status: 200, 
-      headers 
-    });
-
-  } catch (error) {
-    console.error('Weather fetch error:', error);
-    
-    // Return fallback weather data
-    const fallbackData = {
-      condition: 'clear',
-      temperatureF: 70,
-      feelsLikeF: 70,
-      humidity: 50,
-      windMph: 5,
-      precipitationMm: 0,
-      visibilityKm: 10,
-      updated_at: new Date().toISOString()
-    };
-
-    return new Response(JSON.stringify(fallbackData), { 
-      status: 200, 
-      headers: corsHeaders 
-    });
+  } catch (e) {
+    console.error('[fetch-weather] error:', e);
+    return new Response(JSON.stringify({ error: 'internal' }), { status: 500, headers });
   }
 });
 

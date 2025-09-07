@@ -154,6 +154,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const tradeWindOverlayRef = useRef<TradeWindOverlay | null>(null);
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
+  
+  // Feature flags for Phase 4
+  const [phase4Flags] = useState({
+    tint_enabled: true,
+    weather_enabled: true,
+    winds_enabled: false, // Start with canary
+    aurora_enabled: false // Start with canary
+  });
   const clustersRef = useRef<SocialCluster[]>([]);
   const previousClustersRef = useRef<SocialCluster[]>([]);
   const clusterVelocitiesRef = useRef<Map<string, { vx: number; vy: number; momentum: number }>>(new Map());
@@ -296,10 +304,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         pressureOverlayRef.current = new PressureOverlay(overlayContainer, app.renderer, pressureCapacity);
         stormOverlayRef.current = new StormOverlay(overlayContainer);
         
-        // Phase 4: Initialize atmospheric memory & mood overlays
-        tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, P4.WINDS.MAX_PATHS * 20);
-        auroraOverlayRef.current = new AuroraOverlay(overlayContainer);
-        atmoTintOverlayRef.current = new AtmoTintOverlay(app.stage, app.renderer); // Full-screen tint
+        // Phase 4: Initialize atmospheric memory & mood overlays based on flags
+        if (phase4Flags.winds_enabled) {
+          tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, P4.WINDS.MAX_PATHS * 20);
+        }
+        if (phase4Flags.aurora_enabled) {
+          auroraOverlayRef.current = new AuroraOverlay(overlayContainer);
+        }
+        if (phase4Flags.tint_enabled) {
+          atmoTintOverlayRef.current = new AtmoTintOverlay(app.stage, app.renderer); // Full-screen tint
+        }
         
         
         // Create user location dot
@@ -961,6 +975,22 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         }
       }
 
+      // Phase 4: Update atmospheric overlays
+      const qualitySettings = getQualitySettings(deviceTier, shouldReduceQuality(metrics));
+      
+      if (phase4Flags.winds_enabled && tradeWindOverlayRef.current) {
+        tradeWindOverlayRef.current.setCapacity(qualitySettings.maxWindPaths || P4.WINDS.MAX_PATHS);
+        tradeWindOverlayRef.current.update([], currentZoomRef.current); // Mock data for now
+      }
+      
+      if (phase4Flags.aurora_enabled && auroraOverlayRef.current) {
+        auroraOverlayRef.current.update([], currentZoomRef.current); // Mock data for now
+      }
+      
+      if (phase4Flags.tint_enabled && atmoTintOverlayRef.current) {
+        atmoTintOverlayRef.current.update(new Date());
+      }
+
       // Performance mark: First successful render completed
       if (!firstRenderCompleted) {
         performance.mark('field_overlay_first_render_end');
@@ -1029,6 +1059,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           if (breathingSystemRef.current) {
             breathingSystemRef.current.destroy();
           }
+          // Phase 4: Clean atmospheric overlays
+          tradeWindOverlayRef.current?.destroy();
+          auroraOverlayRef.current?.destroy();
+          atmoTintOverlayRef.current?.destroy();
         } catch (e) {
           console.warn('[CLEANUP] Error clearing containers:', e);
         }

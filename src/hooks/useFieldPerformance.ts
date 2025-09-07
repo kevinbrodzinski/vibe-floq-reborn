@@ -115,6 +115,8 @@ export function shouldReduceQuality(metrics?: PerformanceMetrics): boolean {
 }
 
 export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded: boolean) {
+  const { P4 } = require('@/lib/field/constants');
+  
   const base = {
     low: { 
       particles: PERF_BUDGETS.PARTICLES.LOW, 
@@ -124,7 +126,10 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
       // Phase 3B atmospheric settings
       pressureGrid: Math.floor(P3B.PRESSURE.GRID_PX * 1.5),
       maxPressureCells: Math.floor(P3B.PRESSURE.MAX_CELLS * 0.5),
-      maxStormGroups: Math.floor(P3B.STORMS.MAX_GROUPS * 0.5)
+      maxStormGroups: Math.floor(P3B.STORMS.MAX_GROUPS * 0.5),
+      // Phase 4 atmospheric settings
+      maxWindPaths: Math.floor(P4.WINDS.MAX_PATHS * 0.5),
+      maxAuroras: Math.floor(P4.AURORA.MAX_CONCURRENT * 0.5)
     },
     mid: { 
       particles: PERF_BUDGETS.PARTICLES.MID, 
@@ -133,7 +138,9 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
       maxLanes: P3.LANES.MAX_LANES,
       pressureGrid: P3B.PRESSURE.GRID_PX,
       maxPressureCells: P3B.PRESSURE.MAX_CELLS,
-      maxStormGroups: P3B.STORMS.MAX_GROUPS
+      maxStormGroups: P3B.STORMS.MAX_GROUPS,
+      maxWindPaths: P4.WINDS.MAX_PATHS,
+      maxAuroras: P4.AURORA.MAX_CONCURRENT
     },
     high: { 
       particles: PERF_BUDGETS.PARTICLES.HIGH, 
@@ -142,7 +149,9 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
       maxLanes: P3.LANES.MAX_LANES,
       pressureGrid: P3B.PRESSURE.GRID_PX,
       maxPressureCells: P3B.PRESSURE.MAX_CELLS,
-      maxStormGroups: P3B.STORMS.MAX_GROUPS
+      maxStormGroups: P3B.STORMS.MAX_GROUPS,
+      maxWindPaths: P4.WINDS.MAX_PATHS,
+      maxAuroras: P4.AURORA.MAX_CONCURRENT
     }
   }[deviceTier];
   
@@ -155,6 +164,8 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
       pressureGrid: base.pressureGrid * 1.5, // Coarser pressure grid
       maxPressureCells: Math.floor(base.maxPressureCells * 0.6),
       maxStormGroups: Math.floor(base.maxStormGroups * 0.6),
+      maxWindPaths: Math.floor(base.maxWindPaths * 0.6),
+      maxAuroras: Math.floor(base.maxAuroras * 0.6),
       disableGlow: true,
       reducedLanes: true,
       reducedAtmosphere: true
