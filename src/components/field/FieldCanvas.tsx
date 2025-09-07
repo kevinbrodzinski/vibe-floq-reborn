@@ -80,6 +80,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
   // Use state for PIXI app to trigger re-renders when ready
   const [pixiApp, setPixiApp] = useState<Application | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   
   // Phase 3: Performance monitoring
   const { metrics, deviceTier } = useFieldPerformance(pixiApp);
@@ -175,11 +176,18 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     })), [people]
   );
 
+  // Wait for map to be ready before initializing PIXI
+  useEffect(() => {
+    // For now, assume map is ready immediately
+    // In a real Mapbox integration, you'd listen for map 'load' event
+    setMapReady(true);
+  }, []);
+
   const { searchViewport } = useSpatialIndex(spatialPeople);
 
-  // Initialize PIXI app
+  // Initialize PIXI app only after map is ready
   useEffect(() => {
-    if (!actualRef.current) return;
+    if (!actualRef.current || !mapReady || pixiApp) return;
 
     const app = new Application();
     let cancelled = false; // Guard against unmount before init completes
@@ -207,9 +215,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         if (cancelled) {
           // Unmounted while awaiting - clean up immediately
-          const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
-          const lifecycleManager = PixiLifecycleManager.getInstance();
-          lifecycleManager.destroyApp(app);
+          try { app.destroy(true); } catch {}
           return;
         }
         
@@ -409,7 +415,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       cancelled = true; // Prevent async init completion after unmount
       safelyDestroyPixi();
     };
-  }, [pixiApp]); // Updated dependency
+  }, [mapReady]); // Updated dependency
 
   // Update user dot when GPS position changes
   useEffect(() => {
@@ -924,22 +930,23 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           console.warn('[CLEANUP] Error clearing containers:', e);
         }
         
-        // 3️⃣ Destroy the PIXI Application after cleanup
-        if (pixiApp) {
-          try {
-            // Clear pooled sprite maps to prevent texture leaks
-            if (floqSpritesRef.current) {
-              floqSpritesRef.current.forEach(sprite => sprite.destroy());
-              floqSpritesRef.current.clear();
-            }
-            
-            pixiApp.destroy(true, {
-              children: true,
-              texture: true
-            });
-          } catch (e) {
-            console.warn('[CLEANUP] Error destroying PIXI app:', e);
+        // 3️⃣ Destroy the PIXI Application after cleanup - idempotent
+        const app = pixiApp;
+        setPixiApp(null);
+        if (!app) return;
+        
+        try {
+          // Clear pooled sprite maps to prevent texture leaks
+          if (floqSpritesRef.current) {
+            floqSpritesRef.current.forEach(sprite => sprite.destroy());
+            floqSpritesRef.current.clear();
           }
+          
+          app.ticker?.stop();
+          app.stage?.removeChildren();
+          app.destroy(true);
+        } catch (e) {
+          console.warn('[CLEANUP] Error destroying PIXI app:', e);
         }
       } catch (e) {
         console.error('[CLEANUP] Critical cleanup error:', e);

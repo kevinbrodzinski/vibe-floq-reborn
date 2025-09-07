@@ -1,21 +1,18 @@
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Vary': 'Origin'
-};
+// v8 deno deploy friendly
+export function corsHeadersFor(req: Request) {
+  const origin = req.headers.get('origin') ?? '*';
+  return {
+    'Access-Control-Allow-Origin': origin,               // or a whitelist below
+    'Vary': 'Origin',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
-/**
- * Helper to return JSON with the shared CORS headers.
- *
- * @param data   – Any serializable data (will be JSON-stringified)
- * @param status – HTTP status code (defaults to 200)
- */
-export const respondWithCors = (data: unknown, status: number = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
-  });
+export function handlePreflight(req: Request) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeadersFor(req) });
+  }
+  return null;
+}

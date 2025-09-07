@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as geohash from "https://esm.sh/ngeohash@0.6.3";
-import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { corsHeadersFor, handlePreflight } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -38,7 +38,7 @@ async function fetchFromOpenWeatherMap(lat: number, lng: number) {
 }
 
 serve(async req => {
-  const preflight = handleOptions(req);
+  const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
   try {
@@ -47,9 +47,10 @@ serve(async req => {
     
     if (typeof lat !== "number" || typeof lng !== "number") {
       console.error("[weather] Invalid input:", { lat, lng });
+      const headers = corsHeadersFor(req);
       return new Response(
         JSON.stringify({ error: "Valid lat/lng numbers required" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -72,8 +73,9 @@ serve(async req => {
 
     if (cached) {
       console.log(`[weather] Cache hit for ${geohash6}`);
+      const headers = corsHeadersFor(req);
       return new Response(JSON.stringify(cached.payload), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -97,8 +99,9 @@ serve(async req => {
       console.log(`[weather] Cached fresh data for ${geohash6}`);
     }
 
+    const headers = corsHeadersFor(req);
     return new Response(JSON.stringify(weatherData), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("[weather] Error:", err);
@@ -115,9 +118,10 @@ serve(async req => {
       statusCode = 502;
     }
     
+    const headers = corsHeadersFor(req);
     return new Response(
       JSON.stringify({ error: errorMessage, details: err.message }),
-      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: statusCode, headers: { ...headers, 'Content-Type': 'application/json' } },
     );
   }
 });

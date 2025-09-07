@@ -12,6 +12,7 @@ export class PressureOverlay {
   private circle: PIXI.Texture;
 
   constructor(parent: PIXI.Container, renderer: PIXI.Renderer, capacity = P3B.PRESSURE.MAX_CELLS) {
+    if (!renderer) throw new Error('Renderer not ready for PressureOverlay');
     this.container = new (PIXI as any).ParticleContainer(capacity, {
       position: true, rotation: true, alpha: true, tint: true, scale: true
     });

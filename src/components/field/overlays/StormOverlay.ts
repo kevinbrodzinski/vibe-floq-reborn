@@ -10,6 +10,7 @@ export class StormOverlay {
   private lastSeen = new Map<string, number>();
 
   constructor(parent: PIXI.Container) {
+    if (!parent) throw new Error('Parent container not ready for StormOverlay');
     this.container = new PIXI.Container();
     parent.addChild(this.container);
   }
