@@ -216,9 +216,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Phase 1: Initialize particle trail system
         trailSystemRef.current = new ParticleTrailSystem(trailContainer);
         
-        // Phase 2: Initialize convergence overlay and breathing system
+        // Phase 2: Initialize breathing system after containers are ready
+        breathingSystemRef.current = new BreathingSystem(heatContainer);
+        
+        // Phase 2: Initialize convergence overlay
         convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
-        breathingSystemRef.current = new BreathingSystem(app.stage);
         
         // Create user location dot
         const userDot = new Graphics();
@@ -509,9 +511,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           requestAnimationFrame(() => {
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
-            clusterWorker.cluster(rawTiles, currentZoom).then(async (clusters) => {
+            clusterWorker.cluster(rawTiles, currentZoom, previousClustersRef.current).then(async (clusters) => {
               // Update cluster refs for convergence and breathing
-              const prevClusters = clustersRef.current;
               clustersRef.current = clusters;
               currentZoomRef.current = currentZoom;
               
@@ -526,9 +527,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               }
               
               const keysThisFrame = new Set<string>();
-              const clusterGraphics = new Map<string, Graphics>();
+              const clusterSprites = new Map<string, any>();
               
-              // Draw clusters with Phase 2 social physics
+              // Draw clusters with Phase 2 breathing integration
               clusters.forEach(c => {
                 const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
                 keysThisFrame.add(key);
@@ -538,18 +539,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 sprite.position.set(c.x - c.r, c.y - c.r);
                 sprite.width = sprite.height = c.r * 2;
 
-                // Create graphics for breathing system
-                const graphics = graphicsPool.acquire();
-                if (!graphics.parent) heatContainer.addChild(graphics);
-                
-                // Base cluster rendering
-                graphics.clear();
-                graphics.beginFill(0x3B82F6, 0.6); // Default blue color
-                graphics.drawCircle(0, 0, c.r);
-                graphics.endFill();
-                graphics.position.set(c.x, c.y);
-                
-                clusterGraphics.set(c.id, graphics);
+                // Store sprite for breathing system
+                clusterSprites.set(c.id, sprite);
 
                 // Phase 1: Enhanced breathing and glow effects
                 let targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
@@ -590,10 +581,19 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 }
               });
 
+              // Phase 2: Update breathing system with existing sprites
+              const breathingSystem = breathingSystemRef.current;
+              if (breathingSystem && clusterSprites.size > 0) {
+                breathingSystem.updateSprites(clusters, clusterSprites, app.ticker.deltaMS);
+              }
+              
               // Phase 2: Render convergence overlay
               if (convergenceOverlayRef.current) {
                 convergenceOverlayRef.current.render(convergences, currentZoom);
               }
+              
+              // Store previous clusters for next frame
+              previousClustersRef.current = clusters;
               
               // Debug vectors overlay (dev only)
               if (debugFieldVectors() && convergences.length > 0) {

@@ -24,6 +24,7 @@ interface ParticleState {
 /**
  * Phase 2: Breathing and particle system for living social clusters
  * Creates organic breathing animations with synchronized phases and particle emission
+ * Simplified to work with existing PIXI Sprites instead of Graphics
  */
 export class BreathingSystem {
   private states = new Map<string, BreathingState>();
@@ -33,7 +34,7 @@ export class BreathingSystem {
   
   private glowContainer: PIXI.Container;
   private particleContainer: PIXI.ParticleContainer;
-  private maxParticles = 200;
+  private maxParticles = 100; // Reduced for better performance
 
   constructor(parent: PIXI.Container) {
     // Glow layer with subtle blur effect
@@ -58,43 +59,43 @@ export class BreathingSystem {
     }
   }
 
-  update(
+  /**
+   * Update breathing system using existing PIXI sprites instead of Graphics
+   */
+  updateSprites(
     clusters: SocialCluster[],
-    clusterGraphics: Map<string, PIXI.Graphics>,
+    clusterSprites: Map<string, any>,
     deltaMS: number
   ) {
-    const dt = deltaMS / 1000; // Convert to seconds
+    const dt = deltaMS / 1000;
     const now = performance.now();
     const activeIds = new Set<string>();
 
-    // Update breathing for each cluster
     clusters.forEach(cluster => {
       activeIds.add(cluster.id);
-      this.updateClusterBreathing(cluster, clusterGraphics, dt, now);
+      this.updateClusterBreathingSprite(cluster, clusterSprites, dt, now);
     });
 
-    // Update particles
     this.updateParticles(dt);
-
-    // Synchronize nearby clusters
     this.synchronizeBreathing(clusters, dt);
-
-    // Clean up inactive states
     this.cleanupInactive(activeIds);
   }
 
-  private updateClusterBreathing(
+  private updateClusterBreathingSprite(
     cluster: SocialCluster,
-    clusterGraphics: Map<string, PIXI.Graphics>,
+    clusterSprites: Map<string, any>,
     dt: number,
     now: number
   ) {
+    const sprite = clusterSprites.get(cluster.id);
+    if (!sprite) return;
+
     // Get or create breathing state
     let state = this.states.get(cluster.id);
     if (!state) {
       state = {
         phase: cluster.breathingPhase || Math.random() * Math.PI * 2,
-        rate: cluster.breathingRate || 25, // Default 25 BPM
+        rate: cluster.breathingRate || 25,
         intensity: cluster.pulseIntensity || 0.5,
         scale: 1,
         alpha: 0.6,
@@ -111,40 +112,32 @@ export class BreathingSystem {
     state.intensity += (targetIntensity - state.intensity) * dt * 2;
 
     // Advance breathing phase
-    const freq = state.rate / 60; // Convert BPM to Hz
+    const freq = state.rate / 60;
     state.phase += freq * 2 * Math.PI * dt;
     state.phase %= (2 * Math.PI);
 
-    // Calculate breathing effect with easing
+    // Calculate breathing effect
     const breath = (Math.sin(state.phase) + 1) / 2;
     const easedBreath = this.easeInOutSine(breath);
 
-    // Update visual properties
+    // Update sprite visual properties
     const energyLevel = cluster.energyLevel || 0.5;
-    const baseScale = 1 + (0.2 * easedBreath * state.intensity);
-    const baseAlpha = 0.4 + (0.4 * easedBreath * state.intensity);
+    const baseScale = 1 + (0.15 * easedBreath * state.intensity);
+    const baseAlpha = 0.6 + (0.3 * easedBreath * state.intensity);
 
     // Smooth transitions
     state.scale += (baseScale - state.scale) * dt * 8;
     state.alpha += (baseAlpha - state.alpha) * dt * 8;
 
-    // Apply to cluster graphics
-    const graphics = clusterGraphics.get(cluster.id);
-    if (graphics) {
-      graphics.scale.set(state.scale);
-      graphics.alpha = state.alpha;
-
-      // Enhance color intensity based on energy
-      const baseTint = vibeToTint(cluster.vibe);
-      const intensity = 1 + energyLevel * 0.3;
-      graphics.tint = this.adjustTintIntensity(baseTint, intensity);
-    }
+    // Apply to sprite
+    sprite.scale.set(state.scale);
+    sprite.alpha = state.alpha;
 
     // Update glow
     this.updateGlow(cluster, state, easedBreath);
 
-    // Emit particles on breath peaks for high-energy clusters
-    if (breath > 0.9 && energyLevel > 0.6 && Math.random() < 0.3) {
+    // Emit particles for high-energy clusters
+    if (breath > 0.9 && energyLevel > 0.6 && Math.random() < 0.2) {
       this.emitParticles(cluster, state);
     }
 
@@ -192,7 +185,7 @@ export class BreathingSystem {
   }
 
   private emitParticles(cluster: SocialCluster, state: BreathingState) {
-    const count = Math.floor(2 + (cluster.energyLevel || 0.5) * 6);
+    const count = Math.floor(2 + (cluster.energyLevel || 0.5) * 4);
     
     for (let i = 0; i < count && this.particles.length < this.maxParticles; i++) {
       const sprite = this.particlePool.find(p => !p.visible);
@@ -200,20 +193,20 @@ export class BreathingSystem {
 
       const angle = Math.random() * Math.PI * 2;
       const dist = Math.random() * (cluster.glowRadius || 40) * 0.5;
-      const speed = 20 + Math.random() * 30;
+      const speed = 20 + Math.random() * 20;
       
       const particle: ParticleState = {
         x: cluster.x + Math.cos(angle) * dist,
         y: cluster.y + Math.sin(angle) * dist,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 20, // Slight upward bias
+        vy: Math.sin(angle) * speed - 15, // Slight upward bias
         life: 1,
-        maxLife: 1.5 + Math.random() * 1.5, // 1.5-3 second lifetime
+        maxLife: 1.5 + Math.random() * 1, // 1.5-2.5 second lifetime
         sprite
       };
 
       sprite.position.set(particle.x, particle.y);
-      sprite.scale.set(0.5 + Math.random() * 0.5);
+      sprite.scale.set(0.5 + Math.random() * 0.3);
       sprite.alpha = 1;
       sprite.tint = vibeToTint(cluster.vibe);
       sprite.visible = true;
@@ -230,7 +223,7 @@ export class BreathingSystem {
       // Update physics
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
-      particle.vy += 50 * dt; // Gravity
+      particle.vy += 40 * dt; // Gravity
       particle.life -= dt / particle.maxLife;
       
       if (particle.life <= 0) {
@@ -244,15 +237,15 @@ export class BreathingSystem {
         particle.sprite.alpha = particle.life * particle.life; // Fade out quadratically
         
         // Shrink over time
-        const scale = particle.life * (0.5 + Math.random() * 0.5);
+        const scale = particle.life * (0.5 + Math.random() * 0.3);
         particle.sprite.scale.set(scale);
       }
     }
   }
 
   private synchronizeBreathing(clusters: SocialCluster[], dt: number) {
-    const SYNC_RADIUS = 150;
-    const SYNC_STRENGTH = 0.05;
+    const SYNC_RADIUS = 120;
+    const SYNC_STRENGTH = 0.03;
     
     for (let i = 0; i < clusters.length; i++) {
       for (let j = i + 1; j < clusters.length; j++) {
@@ -296,14 +289,6 @@ export class BreathingSystem {
 
   private easeInOutSine(t: number): number {
     return -(Math.cos(Math.PI * t) - 1) / 2;
-  }
-
-  private adjustTintIntensity(color: number, intensity: number): number {
-    const r = ((color >> 16) & 0xFF) * intensity;
-    const g = ((color >> 8) & 0xFF) * intensity;
-    const b = (color & 0xFF) * intensity;
-    
-    return ((Math.min(255, r) << 16) | (Math.min(255, g) << 8) | Math.min(255, b)) >>> 0;
   }
 
   /**

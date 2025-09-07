@@ -1,12 +1,12 @@
 import * as Comlink from 'comlink';
 import type { RawTile } from '@/workers/clustering.worker';
-import type { SocialCluster } from '@/types/field';
+import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 
 // Define the clustering API interface
 export interface ClusteringAPI {
-  cluster: (tiles: RawTile[], zoom?: number) => Promise<SocialCluster[]>;
+  cluster: (tiles: RawTile[], zoom?: number, previousClusters?: SocialCluster[]) => Promise<SocialCluster[]>;
   hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
-  signals: (curr: SocialCluster[], zoom: number, now?: number) => Promise<{ convergences: import('@/types/field').ConvergenceEvent[] }>;
+  signals: (curr: SocialCluster[], zoom: number, now?: number) => Promise<{ convergences: ConvergenceEvent[] }>;
 }
 
 /**
@@ -15,7 +15,7 @@ export interface ClusteringAPI {
 class ClusteringFallback {
   private lastClusters: SocialCluster[] | null = null;
   
-  async cluster(tiles: RawTile[], zoom = 11): Promise<SocialCluster[]> {
+  async cluster(tiles: RawTile[], zoom = 11, previousClusters?: SocialCluster[]): Promise<SocialCluster[]> {
     const BASE_DIST = 32;
     const threshold = BASE_DIST * Math.pow(2, 11 - zoom);
     const clusters: SocialCluster[] = [];
@@ -66,7 +66,7 @@ class ClusteringFallback {
     return hits;
   }
 
-  async signals(curr: SocialCluster[], zoom: number, now = performance.now()): Promise<{ convergences: import('@/types/field').ConvergenceEvent[] }> {
+  async signals(curr: SocialCluster[], zoom: number, now = performance.now()): Promise<{ convergences: ConvergenceEvent[] }> {
     // Fallback implementation - no convergence prediction in fallback mode
     return { convergences: [] };
   }
