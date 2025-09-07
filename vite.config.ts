@@ -17,8 +17,24 @@ export default defineConfig(({ mode, command }) => {
     if (process.env.TARGET === "native" || command === "build") return false;
     if (DISABLE_HMR === "false") return false;
 
+    // Detect sandbox environment and disable HMR to avoid 502s
+    const isSandbox = process.env.VITE_SANDBOX === '1'
+                   || /sandbox\.lovable\.dev$/.test(process.env.HOST ?? '')
+                   || IS_HOSTED_PREVIEW;
+
+    if (isSandbox) {
+      console.log('[Vite] Disabling HMR in sandbox environment');
+      return false;
+    }
+
     if (PREVIEW_HMR_HOST) {
-      return { protocol: "wss", host: PREVIEW_HMR_HOST, port: 443, clientPort: 443 };
+      return { 
+        protocol: "wss", 
+        host: PREVIEW_HMR_HOST, 
+        port: 443, 
+        clientPort: 443,
+        overlay: false // silence error overlay in iframe
+      };
     }
     return true; // local dev
   };

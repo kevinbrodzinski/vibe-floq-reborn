@@ -63,6 +63,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 );
 
+// Dev-only HMR guard for sandbox stability
+if (import.meta.env.DEV) {
+  import('./lib/dev/hmrGuard');
+}
+
 // Initialize performance monitoring after React is loaded
 if (import.meta.env.DEV) {
   // Map diagnostics helper
