@@ -29,15 +29,13 @@ export const PHASE2 = {
   DEBUG: { VECTORS_MAX: 600 },
 };
 
-// Atmosphere and animation tokens - unified with breathing system
+// Atmosphere and animation constants - thresholds and timing only
 export const ATMO = {
   BREATH_ZOOM_MIN: 14,           // Unified LOD gate for all Phase 2 effects
   BREATHING: {
     MIN_ZOOM: 14,                // Same as BREATH_ZOOM_MIN for consistency
     GRID_PX: 150,                // Pixel-space grid for phase sync
   },
-  GLOW_ALPHA_BASE: 0.3,
-  PARTICLE_SIZE: 2,
   PARTICLE_CAP: 200,             // Max particles across all systems
   CONVERGENCE: {
     MAX_PER_FRAME: 64,

@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import type { SocialCluster } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
 import { ATMO, FIELD_LOD } from '@/lib/field/constants';
+import { visualTokens } from '@/lib/vibe/tokens';
 
 interface BreathingState {
   phase: number;
@@ -70,8 +71,8 @@ export class BreathingSystem {
       const particle = new PIXI.Sprite(PIXI.Texture.WHITE);
       particle.anchor.set(0.5);
       particle.blendMode = 'add';
-      particle.width = ATMO.PARTICLE_SIZE;
-      particle.height = ATMO.PARTICLE_SIZE;
+      particle.width = visualTokens.atmo.particleSize;
+      particle.height = visualTokens.atmo.particleSize;
       particle.visible = false;
       this.particlePool.push(particle);
     }
@@ -181,7 +182,7 @@ export class BreathingSystem {
     const glowRadius = cluster.glowRadius || Math.sqrt(cluster.count) * 12;
     glow.position.set(cluster.x, cluster.y);
     glow.scale.set((glowRadius * state.scale) / 64);
-    glow.alpha = ATMO.GLOW_ALPHA_BASE * (0.8 + breath * 0.2);
+    glow.alpha = visualTokens.atmo.glowAlphaBase * (0.8 + breath * 0.2);
     glow.tint = vibeToTint(cluster.vibe);
   }
 

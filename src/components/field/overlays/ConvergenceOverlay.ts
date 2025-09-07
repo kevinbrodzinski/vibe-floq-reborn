@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import type { ConvergenceEvent } from '@/types/field';
 import { PHASE2, FIELD_LOD, ATMO } from '@/lib/field/constants';
-import { atmoTokens } from '@/lib/vibe/tokens';
+import { atmoTokens, visualTokens } from '@/lib/vibe/tokens';
 
 export class ConvergenceOverlay {
   private container: PIXI.Container;
@@ -59,8 +59,8 @@ export class ConvergenceOverlay {
       
       const s = rec.s;
       s.position.set(e.meeting.x, e.meeting.y);
-      s.width = 6; 
-      s.height = 6; 
+      s.width = visualTokens.atmo.convergenceMarkerSize; 
+      s.height = visualTokens.atmo.convergenceMarkerSize;
       
       // Calculate base alpha and apply fade
       const baseAlpha = Math.min(0.85, 0.4 + 0.6 * e.confidence);
@@ -97,25 +97,13 @@ export class ConvergenceOverlay {
     return rec;
   }
 
-  private recycle(id: string) {
-    const rec = this.active.get(id);
-    if (!rec) return;
-    
-    // Fade out smoothly instead of abrupt removal
-    const age = performance.now() - rec.t;
-    const coolMs = PHASE2.CONVERGENCE.COOL_MS;
-    if (age >= coolMs) {
-      rec.s.visible = false;
-      this.container.removeChild(rec.s);
-      this.pool.push(rec.s);
-      this.active.delete(id);
-    }
-  }
 
   clear() {
-    for (const id of this.active.keys()) {
-      this.recycle(id);
+    // No hot-path removeChild - just mark invisible for performance
+    for (const [id, rec] of this.active) {
+      rec.s.visible = false;
     }
+    this.active.clear();
   }
 
   destroy() {

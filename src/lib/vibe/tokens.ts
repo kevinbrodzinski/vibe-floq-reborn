@@ -46,3 +46,17 @@ export const atmoTokens = {
   convergenceSecondary: '#f59e0b', // amber-500 
   breathingGlow: '#ffffff', // white for base glow
 } as const;
+
+// Visual sizing tokens for atmospheric effects
+export const visualTokens = {
+  atmo: {
+    particleSize: 2,
+    convergenceMarkerSize: 6,
+    glowAlphaBase: 0.3,
+    breathingScaleVariation: 0.18, // 18% max scale variation
+  },
+  cluster: {
+    baseMergeDistance: 42, // px at zoom 11
+    breathingFrequency: 0.003, // radians/ms
+  },
+} as const;
