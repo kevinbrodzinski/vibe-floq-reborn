@@ -166,9 +166,7 @@ export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded:
 
 // Helper to emit worker performance events
 export function emitWorkerPerfEvent(duration: number) {
-  if (import.meta.env.DEV) {
-    window.dispatchEvent(new CustomEvent('field-worker-perf', { 
-      detail: { duration } 
-    }));
-  }
+  window.dispatchEvent(new CustomEvent('field-worker-perf', { 
+    detail: { duration } 
+  }));
 }
