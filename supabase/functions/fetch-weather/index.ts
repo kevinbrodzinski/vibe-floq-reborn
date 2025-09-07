@@ -1,12 +1,10 @@
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeadersFor, handlePreflight } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf) return pf;
 
-  const headers = { ...corsHeaders, 'Cache-Control': 'public, max-age=900' }; // 15 min cache
+  const headers = { ...corsHeadersFor(req), 'Cache-Control': 'public, max-age=900' }; // 15 min cache
   try {
     const { lat, lng } = await req.json().catch(() => ({}));
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
