@@ -42,3 +42,27 @@ export const ATMO = {
     COOL_MS: 2_000,              // Fade duration for convergence markers
   },
 };
+
+// Phase 3 constants (perf/privacy thresholds only)
+export const P3 = {
+  FLOW: { MIN_ZOOM: 13, MAX_ARROWS: 900, UPDATE_HZ: 8, SMOOTH: 0.65 },
+  LANES: { MIN_ZOOM: 15, K_MIN: 5, PROB_MIN: 0.45, ETA_MAX_MS: 300000, MAX_LANES: 64, MAX_DIST_PX: 140 },
+  MOMENTUM: { MIN_ZOOM: 16, SPEED_MIN: 0.12 }, // px/ms
+} as const;
+
+// Performance budgets (enforced)
+export const PERF_BUDGETS = {
+  WORKER_MS: 8,          // Max worker time per batch
+  RENDER_MS: 7.5,        // P95 render at street zoom  
+  DRAW_CALLS: 450,       // Max draw calls
+  PARTICLES: {
+    LOW: 30,
+    MID: 50,
+    HIGH: 100
+  },
+  FLOW_GRID_SIZE: {
+    LOW: 96,             // Coarser grid for low-end
+    MID: 72,
+    HIGH: 48
+  }
+} as const;

@@ -29,10 +29,14 @@ import { useClusters } from '@/hooks/useClusters';
 import { useClustersLive } from '@/hooks/useClustersLive';
 import { ParticleTrailSystem } from '@/lib/field/ParticleTrailSystem';
 import { ConvergenceOverlay } from './overlays/ConvergenceOverlay';
+import { FlowFieldOverlay } from './overlays/FlowFieldOverlay';
+import { ConvergenceLanes } from './overlays/ConvergenceLanes';
+import { MomentumBadge } from './badges/MomentumBadge';
 import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
+import { useFieldPerformance, setPerformanceCounters } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
-import { ATMO, FIELD_LOD } from '@/lib/field/constants';
+import { ATMO, FIELD_LOD, P3 } from '@/lib/field/constants';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -129,6 +133,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 2: Convergence overlay and breathing system
   const convergenceOverlayRef = useRef<ConvergenceOverlay | null>(null);
   const breathingSystemRef = useRef<BreathingSystem | null>(null);
+  // Phase 3: Flow field, lanes, and momentum
+  const flowFieldOverlayRef = useRef<FlowFieldOverlay | null>(null);
+  const convergenceLanesRef = useRef<ConvergenceLanes | null>(null);
+  const momentumBadgeRef = useRef<MomentumBadge | null>(null);
   const clustersRef = useRef<SocialCluster[]>([]);
   const previousClustersRef = useRef<SocialCluster[]>([]);
   const clusterVelocitiesRef = useRef<Map<string, { vx: number; vy: number; momentum: number }>>(new Map());
@@ -228,6 +236,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         // Phase 2: Initialize convergence overlay
         convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
+        
+        // Phase 3: Initialize new overlays
+        flowFieldOverlayRef.current = new FlowFieldOverlay(overlayContainer);
+        convergenceLanesRef.current = new ConvergenceLanes(overlayContainer);
+        momentumBadgeRef.current = new MomentumBadge(overlayContainer);
         
         // Create user location dot
         const userDot = new Graphics();

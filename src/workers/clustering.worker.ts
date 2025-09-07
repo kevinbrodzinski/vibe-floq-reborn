@@ -1,7 +1,8 @@
 import * as Comlink from 'comlink';
 import type { SocialCluster, VibeToken, ConvergenceEvent, CentroidState } from '@/types/field';
+import type { FlowCell, LaneSegment, MomentumStat } from '@/lib/field/types';
 import { stableClusterId } from '@/lib/field/clusterId';
-import { CLUSTER, PHASE2, FIELD_LOD } from '@/lib/field/constants';
+import { CLUSTER, PHASE2, FIELD_LOD, P3, ATMO } from '@/lib/field/constants';
 
 /* ────────────── types ────────────── */
 export interface RawTile {
@@ -102,6 +103,12 @@ let lastEmit = 0;
 class ClusteringWorker {
   private lastProcessTime = Date.now();
   private clusters = new Map<string, SocialCluster>();
+  
+  // Phase 3 caches/throttle
+  private flowEma = new Map<string, { vx: number; vy: number; mag: number }>();
+  private lastFlowTs = 0;
+  private lastFlowCells: FlowCell[] = [];
+  private laneCache = new Map<string, LaneSegment & { lastSeen: number }>();
   
   cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
@@ -281,6 +288,249 @@ class ClusteringWorker {
     lastMap.clear();
     lastClusters = null;
     lastEmit = 0;
+    this.flowEma.clear();
+    this.lastFlowCells = [];
+    this.laneCache.clear();
+    this.lastFlowTs = 0;
+  }
+
+  // Phase 3 helper methods
+  private gridIndex(x: number, y: number, gridPx: number) {
+    const gx = Math.round(x / gridPx);
+    const gy = Math.round(y / gridPx);
+    return { gx, gy, key: `${gx}:${gy}` };
+  }
+
+  private emaUpdate(prev: {vx: number; vy: number; mag: number} | undefined,
+                    cur: {vx: number; vy: number}, alpha: number) {
+    if (!prev) {
+      const mag = Math.hypot(cur.vx, cur.vy);
+      return { vx: cur.vx, vy: cur.vy, mag };
+    }
+    const vx = alpha * prev.vx + (1 - alpha) * cur.vx;
+    const vy = alpha * prev.vy + (1 - alpha) * cur.vy;
+    const mag = Math.hypot(vx, vy);
+    return { vx, vy, mag };
+  }
+
+  private boundsFromClusters(curr: SocialCluster[], margin = 64) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const c of curr) {
+      if (c.x < minX) minX = c.x;
+      if (c.y < minY) minY = c.y;
+      if (c.x > maxX) maxX = c.x;
+      if (c.y > maxY) maxY = c.y;
+    }
+    if (!isFinite(minX)) { minX = minY = 0; maxX = maxY = 0; }
+    return { minX: minX - margin, minY: minY - margin, maxX: maxX + margin, maxY: maxY + margin };
+  }
+
+  private quadBezier(a: {x: number; y: number}, b: {x: number; y: number}, c: {x: number; y: number}, segments = 12) {
+    const out: Array<{x: number; y: number}> = [];
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const u = 1 - t;
+      const x = u * u * a.x + 2 * u * t * b.x + t * t * c.x;
+      const y = u * u * a.y + 2 * u * t * b.y + t * t * c.y;
+      out.push({ x, y });
+    }
+    return out;
+  }
+
+  /** Phase 3: Flow field with EMA smoothing and proximity weighting */
+  flowGrid(clusters: SocialCluster[], zoom: number): FlowCell[] {
+    const now = performance.now();
+    const FLOW_INTERVAL_MS = 1000 / P3.FLOW.UPDATE_HZ;
+    if (now - this.lastFlowTs < FLOW_INTERVAL_MS) return this.lastFlowCells;
+
+    if (!clusters.length || zoom < P3.FLOW.MIN_ZOOM) {
+      this.lastFlowTs = now;
+      this.lastFlowCells = [];
+      return this.lastFlowCells;
+    }
+
+    const vel = buildVelocityMap(now, clusters);
+    const GRID = 56;
+    const { minX, minY, maxX, maxY } = this.boundsFromClusters(clusters, GRID * 1.5);
+
+    const gx0 = Math.floor(minX / GRID), gy0 = Math.floor(minY / GRID);
+    const gx1 = Math.ceil(maxX / GRID), gy1 = Math.ceil(maxY / GRID);
+
+    const maxCells = Math.max(P3.FLOW.MAX_ARROWS, 256);
+    const cells: FlowCell[] = [];
+    const K_MIN = FIELD_LOD.K_MIN;
+    const alpha = P3.FLOW.SMOOTH;
+
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        if (cells.length >= maxCells) break;
+
+        const cx = gx * GRID, cy = gy * GRID;
+        let sumVX = 0, sumVY = 0, sumW = 0;
+
+        for (const c of clusters) {
+          if ((c.count ?? 0) < K_MIN) continue;
+
+          const dx = c.x - cx, dy = c.y - cy;
+          const d2 = dx * dx + dy * dy;
+          const sigma = Math.max(c.r, 40);
+          const wSpatial = Math.exp(-d2 / (2 * sigma * sigma));
+
+          const coh = Math.min(1, Math.max(0, c.cohesionScore ?? 0.5));
+          const wAttr = (0.3 + 0.7 * coh) * Math.min(1, (c.count ?? 0) / 20);
+
+          const w = wSpatial * wAttr;
+          if (w < 1e-4) continue;
+
+          const v = vel.get(c.id);
+          if (!v) continue;
+
+          sumVX += w * v.vx;
+          sumVY += w * v.vy;
+          sumW += w;
+        }
+
+        if (sumW <= 0) continue;
+
+        const vx = sumVX / sumW;
+        const vy = sumVY / sumW;
+        const { key } = this.gridIndex(cx, cy, GRID);
+        const prev = this.flowEma.get(key);
+        const ema = this.emaUpdate(prev, { vx, vy }, alpha);
+        this.flowEma.set(key, ema);
+
+        cells.push({ x: cx, y: cy, vx: ema.vx, vy: ema.vy, mag: ema.mag });
+      }
+    }
+
+    cells.sort((a, b) => b.mag - a.mag);
+    this.lastFlowCells = cells.slice(0, P3.FLOW.MAX_ARROWS);
+    this.lastFlowTs = now;
+    return this.lastFlowCells;
+  }
+
+  /** Phase 3: Convergence lanes with polyline generation */
+  lanes(clusters: SocialCluster[], zoom: number, now = performance.now()): LaneSegment[] {
+    const out: LaneSegment[] = [];
+    if (zoom < P3.LANES.MIN_ZOOM || clusters.length < 2) return out;
+
+    const K_MIN = P3.LANES.K_MIN;
+    const MAX_DIST = P3.LANES.MAX_DIST_PX;
+    const MIN_SPEED = PHASE2.CONVERGENCE.MIN_APPROACH_SPEED;
+    const HORIZON = P3.LANES.ETA_MAX_MS;
+    const CONF_MIN = P3.LANES.PROB_MIN;
+
+    const vel = buildVelocityMap(now, clusters);
+    const G = ATMO.BREATHING?.GRID_PX ?? 150;
+    const bins = new Map<string, string[]>();
+    
+    for (const c of clusters) {
+      const gx = (c.x / G) | 0, gy = (c.y / G) | 0;
+      const k = `${gx}:${gy}`;
+      (bins.get(k) ?? bins.set(k, []).get(k)!).push(c.id);
+    }
+    
+    const neigh = [[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1],[-1,-1],[1,-1],[-1,1]];
+    const seen = new Set<string>();
+    const pickCluster = (id: string) => clusters.find(c => c.id === id)!;
+
+    for (const [key, ids] of bins) {
+      const [gx, gy] = key.split(':').map(Number);
+      for (const [dx, dy] of neigh) {
+        const other = bins.get(`${gx+dx}:${gy+dy}`);
+        if (!other) continue;
+        for (const aId of ids) for (const bId of other) if (aId < bId) {
+          const pairKey = `${aId}|${bId}`;
+          if (seen.has(pairKey)) continue;
+          seen.add(pairKey);
+
+          const a = pickCluster(aId), b = pickCluster(bId);
+          if (!a || !b) continue;
+          if ((a.count ?? 0) < K_MIN || (b.count ?? 0) < K_MIN) continue;
+
+          const va = vel.get(aId), vb = vel.get(bId);
+          if (!va || !vb) continue;
+
+          const dxp = b.x - a.x, dyp = b.y - a.y;
+          const dist = Math.hypot(dxp, dyp);
+          if (dist > MAX_DIST) continue;
+
+          const { tStar, d2, mx, my } = closestApproach(va, vb);
+          if (!isFinite(tStar) || tStar <= 0 || tStar > HORIZON) continue;
+
+          const dStar = Math.sqrt(d2);
+          if (dStar > MAX_DIST) continue;
+
+          const approachSpeed = Math.hypot(vb.vx - va.vx, vb.vy - va.vy);
+          if (approachSpeed < MIN_SPEED) continue;
+
+          const coh = Math.max(a.cohesionScore ?? 0.5, b.cohesionScore ?? 0.5);
+          const conf =
+            0.35 * Math.min(1, (MAX_DIST - dStar) / MAX_DIST) +
+            0.35 * Math.min(1, approachSpeed / (MIN_SPEED * 6)) +
+            0.30 * coh;
+
+          if (conf < CONF_MIN) continue;
+
+          const ax = a.x, ay = a.y;
+          const bx = b.x, by = b.y;
+          const ex = mx, ey = my;
+
+          const dirx = (ex - ax) / (dist || 1), diry = (ey - ay) / (dist || 1);
+          const overshoot = Math.max(12, Math.min(40, dist * 0.15));
+          const end = { x: ex + dirx * overshoot, y: ey + diry * overshoot };
+
+          const relAng = Math.atan2(vb.vy - va.vy, vb.vx - va.vx);
+          const orthx = -Math.sin(relAng), orthy = Math.cos(relAng);
+          const mid = {
+            x: (ax + ex) * 0.5 + orthx * 18,
+            y: (ay + ey) * 0.5 + orthy * 18,
+          };
+
+          const pts = this.quadBezier({ x: ax, y: ay }, mid, end, 14);
+
+          const laneId = `lane_${aId}_${bId}`;
+          const lane: LaneSegment = {
+            id: laneId,
+            a: aId,
+            b: bId,
+            pts,
+            conf: Math.max(0, Math.min(1, conf)),
+            etaMs: tStar,
+          };
+
+          this.laneCache.set(laneId, { ...lane, lastSeen: now });
+          out.push(lane);
+
+          if (out.length >= P3.LANES.MAX_LANES) return out;
+        }
+      }
+    }
+
+    // Clean old cached lanes
+    for (const [id, cached] of this.laneCache) {
+      if (now - cached.lastSeen > 5000) {
+        this.laneCache.delete(id);
+      }
+    }
+
+    return out;
+  }
+
+  /** Phase 3: Momentum statistics for badges */
+  momentum(clusters: SocialCluster[]): MomentumStat[] {
+    const now = performance.now();
+    const vel = buildVelocityMap(now, clusters);
+    
+    return clusters
+      .filter(c => (c.count ?? 0) >= FIELD_LOD.K_MIN)
+      .map(c => {
+        const v = vel.get(c.id);
+        const speed = v ? Math.hypot(v.vx, v.vy) : 0;
+        const heading = v ? Math.atan2(v.vy, v.vx) : 0;
+        return { id: c.id, speed, heading };
+      })
+      .filter(m => m.speed >= P3.MOMENTUM.SPEED_MIN);
   }
 }
 
@@ -292,6 +542,10 @@ const api = {
   hitTest: (x: number, y: number, radius = 12) => workerInstance.hitTest(x, y, radius),
   signals: (curr: SocialCluster[], zoom: number, now = performance.now()) => workerInstance.signals(curr, zoom, now),
   reset: () => workerInstance.reset(),
+  // Phase 3 API extensions
+  flowGrid: (clusters: SocialCluster[], zoom: number) => workerInstance.flowGrid(clusters, zoom),
+  lanes: (clusters: SocialCluster[], zoom: number, now = performance.now()) => workerInstance.lanes(clusters, zoom, now),
+  momentum: (clusters: SocialCluster[]) => workerInstance.momentum(clusters),
 };
 
 Comlink.expose(api);

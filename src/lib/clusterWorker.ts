@@ -8,6 +8,10 @@ export interface ClusteringAPI {
   hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
   signals: (curr: SocialCluster[], zoom: number, now?: number) => Promise<{ convergences: ConvergenceEvent[] }>;
   reset: () => Promise<void>;
+  // Phase 3 API extensions
+  flowGrid: (clusters: SocialCluster[], zoom: number) => Promise<import('@/lib/field/types').FlowCell[]>;
+  lanes: (clusters: SocialCluster[], zoom: number, now?: number) => Promise<import('@/lib/field/types').LaneSegment[]>;
+  momentum: (clusters: SocialCluster[]) => Promise<import('@/lib/field/types').MomentumStat[]>;
 }
 
 /**
@@ -70,6 +74,21 @@ class ClusteringFallback {
   async signals(curr: SocialCluster[], zoom: number, now = performance.now()): Promise<{ convergences: ConvergenceEvent[] }> {
     // Fallback implementation - no convergence prediction in fallback mode
     return { convergences: [] };
+  }
+
+  async flowGrid(clusters: SocialCluster[], zoom: number): Promise<import('@/lib/field/types').FlowCell[]> {
+    // Fallback implementation - no flow vectors in fallback mode
+    return [];
+  }
+
+  async lanes(clusters: SocialCluster[], zoom: number, now = performance.now()): Promise<import('@/lib/field/types').LaneSegment[]> {
+    // Fallback implementation - no lanes in fallback mode
+    return [];
+  }
+
+  async momentum(clusters: SocialCluster[]): Promise<import('@/lib/field/types').MomentumStat[]> {
+    // Fallback implementation - no momentum in fallback mode
+    return [];
   }
 
   async reset(): Promise<void> {
