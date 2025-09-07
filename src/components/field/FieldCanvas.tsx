@@ -44,6 +44,8 @@ import { AuroraOverlay } from './overlays/AuroraOverlay';
 import { AtmoTintOverlay } from './overlays/AtmoTintOverlay';
 import { useWeatherModulation } from '@/hooks/useWeatherModulation';
 import { logWorkerModeOnce } from '@/lib/debug/workerMode';
+import { startWindsLogger } from '@/features/field/winds/windsLogger';
+import { useAuth } from '@/hooks/useAuth';
 import { fetchTradeWindsForViewport, hourBucket, currentPixelBBox, seedTradeWindsIfEmpty } from '@/features/field/winds/windsHelpers';
 import { resolveFromViewport } from '@/lib/field/cityResolver';
 import { Phase4Hud } from '@/components/debug/Phase4Hud';
@@ -157,6 +159,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const flowFieldOverlayRef = useRef<FlowFieldOverlay | null>(null);
   const convergenceLanesRef = useRef<ConvergenceLanes | null>(null);
   const momentumBadgeRef = useRef<MomentumBadge | null>(null);
+  const { user } = useAuth();
+  
   // Phase 3B: Atmospheric overlays
   const pressureOverlayRef = useRef<PressureOverlay | null>(null);
   const stormOverlayRef = useRef<StormOverlay | null>(null);
@@ -1270,6 +1274,25 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Initialize winds data logger (DEV/staging only)
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const detach = startWindsLogger({
+      enabled: import.meta.env.DEV || import.meta.env.VITE_WINDS_LOGGER === '1',
+      cityId: resolveFromViewport() || 'default',
+      getClusters: () => (clustersRef.current ?? []).map(cluster => {
+        // Calculate velocity from cluster velocities ref for data collection
+        const velocity = clusterVelocitiesRef.current.get(cluster.id);
+        const vx = velocity ? velocity.vx : 0;
+        const vy = velocity ? velocity.vy : 0;
+        return { x: cluster.x, y: cluster.y, vx, vy };
+      }),
+    });
+    
+    return detach;
+  }, [user?.id]);
 
   //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m
   return (

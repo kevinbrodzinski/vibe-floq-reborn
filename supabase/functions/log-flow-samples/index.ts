@@ -22,48 +22,30 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const { cityId, samples }: { cityId: string; samples: CellSample[] } = await req.json();
-    
-    if (!cityId || !Array.isArray(samples) || samples.length === 0) {
-      return new Response(JSON.stringify({ ok: false, inserted: 0 }), { status: 400, headers });
+    const { cityId, samples } = await req.json().catch(() => ({}));
+    if (!cityId || !Array.isArray(samples) || !samples.length) {
+      return new Response(JSON.stringify({ error: 'bad_payload' }), { status: 400, headers });
     }
 
-    // Validate and insert flow samples with k-safety client-side gating
-    const validSamples = samples
-      .filter(s => 
-        Number.isFinite(s.vx) && Number.isFinite(s.vy) && 
-        s.hour_bucket >= 0 && s.hour_bucket <= 23 &&
-        s.dow >= 0 && s.dow <= 6 &&
-        s.weight > 0
-      )
-      .slice(0, 120) // safety cap
-      .map(s => ({
-        city_id: cityId,
-        hour_bucket: s.hour_bucket,
-        dow: s.dow,
-        cell_x: s.cell_x,
-        cell_y: s.cell_y,
-        vx: s.vx,
-        vy: s.vy,
-        weight: s.weight
-      }));
+    // Basic shape check and clamp with recorded_at timestamp
+    const rows = samples.slice(0, 500).map((s: any) => ({
+      city_id: cityId,
+      hour_bucket: Math.max(0, Math.min(23, s.hour_bucket|0)),
+      dow: Math.max(0, Math.min(6, s.dow|0)),
+      cell_x: s.cell_x|0,
+      cell_y: s.cell_y|0,
+      vx: Number.isFinite(s.vx) ? s.vx : 0,
+      vy: Number.isFinite(s.vy) ? s.vy : 0,
+      weight: Math.max(0.1, Math.min(5, Number(s.weight ?? 1))),
+      recorded_at: new Date().toISOString()
+    }));
 
-    if (validSamples.length === 0) {
-      return new Response(JSON.stringify({ ok: true, inserted: 0 }), { status: 200, headers });
-    }
+    const { error } = await supabase.from('flow_samples').insert(rows);
+    if (error) throw error;
 
-    const { data, error } = await supabase
-      .from('flow_samples')
-      .insert(validSamples);
-
-    if (error) {
-      console.error('[log-flow-samples] insert error:', error);
-      return new Response(JSON.stringify({ ok: false, inserted: 0, error: error.message }), { status: 200, headers });
-    }
-
-    return new Response(JSON.stringify({ ok: true, inserted: validSamples.length }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: true, count: rows.length }), { status: 200, headers });
   } catch (e) {
-    console.error('[log-flow-samples] error:', e);
-    return new Response(JSON.stringify({ ok: false, inserted: 0 }), { status: 500, headers });
+    console.error('[log-flow-samples] err', e);
+    return new Response(JSON.stringify({ ok: false, error: 'internal' }), { status: 500, headers });
   }
 });

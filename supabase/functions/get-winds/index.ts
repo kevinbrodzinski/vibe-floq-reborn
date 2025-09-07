@@ -12,17 +12,22 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const { cityId, hour, dow, k = 5 } = await req.json().catch(() => ({}));
+    const { cityId, hour, dow, limit = 48 } = await req.json().catch(() => ({}));
     if (!cityId || hour == null || dow == null) {
-      return new Response(JSON.stringify({ error: 'Missing cityId/hour/dow' }), { status: 400, headers });
+      return new Response(JSON.stringify({ error: 'bad_payload' }), { status: 400, headers });
     }
 
-    const { data, error } = await supabase.rpc('flow_cells_k5', { p_city_id: cityId, p_hour: hour, p_dow: dow, p_k: k });
-    if (error) throw error;
+    const { data, error } = await supabase
+      .from('trade_winds')
+      .select('path_id, points, strength, avg_speed, support')
+      .eq('city_id', cityId).eq('hour_bucket', hour).eq('dow', dow)
+      .order('strength', { ascending: false })
+      .limit(Math.min(200, limit));
 
-    return new Response(JSON.stringify({ ok:true, cells:data ?? [] }), { status: 200, headers });
+    if (error) throw error;
+    return new Response(JSON.stringify({ ok: true, paths: data ?? [] }), { status: 200, headers });
   } catch (e) {
     console.error('[get-winds] error:', e);
-    return new Response(JSON.stringify({ ok:false, cells:[] }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: false, paths: [] }), { status: 200, headers });
   }
 });
