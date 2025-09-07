@@ -53,13 +53,14 @@ export function useFieldPerformance(app: PIXI.Application | null) {
   const deviceTier = useDeviceTier();
   
   useEffect(() => {
-    if (!app) return;
+    // Bail if app not ready or ticker missing
+    if (!app || !(app as any).ticker) return;
     
     let frames = 0;
     let workerTimeAccum = 0;
     let sampleCount = 0;
     
-    const ticker = (ticker: PIXI.Ticker) => {
+    const onTick = () => {
       frames++;
       
       // Sample every 60 frames (roughly 1 second at 60fps)
@@ -89,7 +90,7 @@ export function useFieldPerformance(app: PIXI.Application | null) {
       }
     };
     
-    app.ticker.add(ticker);
+    app.ticker.add(onTick);
     
     // Listen for worker performance updates
     const handleWorkerPerf = (event: CustomEvent<{ duration: number }>) => {
@@ -100,8 +101,13 @@ export function useFieldPerformance(app: PIXI.Application | null) {
     window.addEventListener('field-worker-perf', handleWorkerPerf as EventListener);
     
     return () => {
-      app.ticker.remove(ticker);
       window.removeEventListener('field-worker-perf', handleWorkerPerf as EventListener);
+      // Guard on cleanup too
+      try { 
+        (app as any)?.ticker?.remove(onTick); 
+      } catch {
+        // Ignore cleanup errors
+      }
     };
   }, [app, deviceTier]);
   

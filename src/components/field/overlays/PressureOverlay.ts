@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { P3B } from '@/lib/field/constants';
 import { pressureTokens } from '@/lib/field/visualTokens';
 import { ADD_BLEND } from '@/lib/pixi/blendModes';
+import { safeAngle } from '@/lib/math/safety';
 import type { PressureCell } from '@/lib/field/types';
 
 export class PressureOverlay {
@@ -58,8 +59,8 @@ export class PressureOverlay {
       s.scale.set(r / 64);
 
       // orient a hint toward wind = -∇p (use gradient angle)
-      const angle = Math.atan2(-c.gy, -c.gx);
-      if (isFinite(angle)) s.rotation = angle;
+      const angle = safeAngle(Math.atan2(-c.gy, -c.gx));
+      s.rotation = angle;
 
       // tint by intensity band
       const tint = norm > 0.66 ? pressureTokens.color.high
@@ -68,6 +69,21 @@ export class PressureOverlay {
       s.tint = toHex(tint);
       s.alpha = pressureTokens.alpha * (0.6 + 0.4 * norm);
       s.visible = true;
+    }
+  }
+
+  refreshTextures(renderer: PIXI.Renderer) {
+    // Re-create texture for DPR/renderer changes
+    const g = new PIXI.Graphics();
+    g.beginFill(0xffffff, 0.06); g.drawCircle(0, 0, 64); g.endFill();
+    g.beginFill(0xffffff, 0.18); g.drawCircle(0, 0, 42); g.endFill();
+    g.beginFill(0xffffff, 0.45); g.drawCircle(0, 0, 24); g.endFill();
+    this.circle = renderer.generateTexture(g);
+    g.destroy();
+    
+    // Update all sprites with new texture
+    for (const sprite of this.sprites) {
+      sprite.texture = this.circle;
     }
   }
 

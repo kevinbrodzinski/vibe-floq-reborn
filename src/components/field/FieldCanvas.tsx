@@ -78,10 +78,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   });    // Get live GPS position
   const lastUserPosRef = useRef<{lat: number, lng: number} | null>(null);
 
-  const appRef = useRef<Application | null>(null);
+  // Use state for PIXI app to trigger re-renders when ready
+  const [pixiApp, setPixiApp] = useState<Application | null>(null);
   
   // Phase 3: Performance monitoring
-  const { metrics, deviceTier } = useFieldPerformance(appRef.current);
+  const { metrics, deviceTier } = useFieldPerformance(pixiApp);
 
   // 🛰️ TASK: Wire up live cluster system for constellation overlay
   const bbox: [number, number, number, number] = useMemo(() => {
@@ -108,7 +109,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
   useClustersLive(clusters, () => {}, throttledRefetch);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
-  
   /* tooltip helper */
   const [tooltip, setTooltip] = useState<{
     x: number; y: number; count: number; vibeTag: string;
@@ -182,7 +182,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     if (!actualRef.current) return;
 
     const app = new Application();
-    appRef.current = app;
     let cancelled = false; // Guard against unmount before init completes
 
     /* will be assigned after init so we can remove cleanly */
@@ -214,10 +213,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           return;
         }
         
-        // Register app with lifecycle manager
+        // Register app with lifecycle manager and set state
         const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
         const lifecycleManager = PixiLifecycleManager.getInstance();
         lifecycleManager.registerApp(app);
+        
+        // Set the app in state to trigger re-renders
+        setPixiApp(app);
 
         // Create containers in proper z-order
         const heatContainer = new Container();
@@ -385,17 +387,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
     /* ---------- cleanup ---------- */
     const safelyDestroyPixi = () => {
-      const pixiApp = appRef.current;
-      if (!pixiApp) return;
+      const pixiAppToDestroy = app; // Capture the app reference
+      if (!pixiAppToDestroy) return;
 
       console.log('[FieldCanvas] Starting safe PIXI destroy');
 
       // Use PixiLifecycleManager for safe destruction
       import('@/lib/pixi/PixiLifecycleManager').then(({ PixiLifecycleManager }) => {
         const lifecycleManager = PixiLifecycleManager.getInstance();
-        lifecycleManager.destroyApp(pixiApp);
+        lifecycleManager.destroyApp(pixiAppToDestroy);
       });
-      appRef.current = null;
+      setPixiApp(null); // Clear state
     };
 
     // Hot-reload guard for development
@@ -407,7 +409,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       cancelled = true; // Prevent async init completion after unmount
       safelyDestroyPixi();
     };
-  }, [hitTest]);
+  }, [pixiApp]); // Updated dependency
 
   // Update user dot when GPS position changes
   useEffect(() => {
@@ -461,7 +463,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
   // Animation loop
   useEffect(() => {
-    const app = appRef.current;
+    const app = pixiApp; // Use state instead of ref
     const heatContainer = heatContainerRef.current;
     const peopleContainer = peopleContainerRef.current;
     const tilePool = tilePoolRef.current;
@@ -923,7 +925,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         }
         
         // 3️⃣ Destroy the PIXI Application after cleanup
-        if (appRef.current) {
+        if (pixiApp) {
           try {
             // Clear pooled sprite maps to prevent texture leaks
             if (floqSpritesRef.current) {
@@ -931,14 +933,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               floqSpritesRef.current.clear();
             }
             
-            appRef.current.destroy(true, {
+            pixiApp.destroy(true, {
               children: true,
               texture: true
             });
           } catch (e) {
             console.warn('[CLEANUP] Error destroying PIXI app:', e);
           }
-          appRef.current = null;
         }
       } catch (e) {
         console.error('[CLEANUP] Critical cleanup error:', e);
@@ -961,7 +962,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Reset worker on projection changes (resize, DPR change)
   useEffect(() => {
     const handleResize = async () => {
-      const app = appRef.current;
+      const app = pixiApp;
       if (app) {
         app.renderer.resize(window.innerWidth, window.innerHeight);
         // Reset worker state to prevent velocity spikes across projection changes
@@ -996,7 +997,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           people={people}
           fieldTiles={fieldTiles}
           clusters={clusters}
-          app={appRef.current}
+          app={pixiApp}
           container={constellationContainerRef.current}
         />
       )}

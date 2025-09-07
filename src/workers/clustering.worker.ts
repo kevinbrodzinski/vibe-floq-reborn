@@ -3,6 +3,7 @@ import type { SocialCluster, VibeToken, ConvergenceEvent, CentroidState } from '
 import type { FlowCell, LaneSegment, MomentumStat, PressureCell, StormGroup } from '@/lib/field/types';
 import { stableClusterId } from '@/lib/field/clusterId';
 import { CLUSTER, PHASE2, FIELD_LOD, P3, ATMO, P3B } from '@/lib/field/constants';
+import { safe, safeAngle } from '@/lib/math/safety';
 
 /* ────────────── types ────────────── */
 export interface RawTile {
@@ -411,7 +412,7 @@ class ClusteringWorker {
         const vy = sumVY / sumW;
         const { key } = this.gridIndex(cx, cy, GRID);
         const prev = this.flowEma.get(key);
-        const ema = this.emaUpdate(prev, { vx, vy }, alpha);
+        const ema = this.emaUpdate(prev, { vx: safe(vx), vy: safe(vy) }, alpha);
         this.flowEma.set(key, ema);
 
         cells.push({ x: cx, y: cy, vx: ema.vx, vy: ema.vy, mag: ema.mag });
@@ -636,10 +637,20 @@ class ClusteringWorker {
       if (cells.length >= P3B.PRESSURE.MAX_CELLS) break;
     }
 
-    // Optionally sort by pressure magnitude and cap
+    // Sort by pressure magnitude and cap
     cells.sort((a, b) => b.p - a.p);
+    this.lastPressureCells = cells.slice(0, P3B.PRESSURE.MAX_CELLS);
+    
+    // Evict old EMA cells to prevent memory leaks
+    const live = new Set(this.lastPressureCells.map(c => 
+      `${Math.round(c.x / P3B.PRESSURE.GRID_PX)}:${Math.round(c.y / P3B.PRESSURE.GRID_PX)}`
+    ));
+    for (const key of this.pressureEma.keys()) {
+      if (!live.has(key)) this.pressureEma.delete(key);
+    }
+    
     this.lastPressureTs = now;
-    return this.lastPressureCells = cells.slice(0, P3B.PRESSURE.MAX_CELLS);
+    return this.lastPressureCells;
   }
 
   /** Phase 3B: Storm groups from convergence lanes */
