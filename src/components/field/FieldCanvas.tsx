@@ -318,12 +318,31 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         // Phase 4: Initialize atmospheric memory & mood overlays based on flags
         if (phase4Flags.winds_enabled) {
-          tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, P4.WINDS.MAX_PATHS * 20);
+          const windsCapacity = (q.maxWindPaths ?? P4.WINDS.MAX_PATHS) * 20;
+          tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, windsCapacity);
+          
+          // Apply initial quality settings
+          tradeWindOverlayRef.current.setQuality({
+            tier: deviceTier,
+            maxArrows: windsCapacity,
+            strideBase: deviceTier === 'low' ? 8 : deviceTier === 'high' ? 6 : 7,
+            strideMin: 4,
+            strideMax: 18,
+          });
+          
           // Seed trade winds data if empty (dev only)
           seedTradeWindsIfEmpty();
         }
         if (phase4Flags.aurora_enabled) {
           auroraOverlayRef.current = new AuroraOverlay(overlayContainer);
+          
+          // Apply initial quality settings
+          auroraOverlayRef.current.setQuality({
+            tier: deviceTier,
+            maxConcurrent: deviceTier === 'low' ? 1 : deviceTier === 'high' ? 3 : 2,
+            intensityMin: deviceTier === 'low' ? 0.8 : P4.AURORA.INTENSITY_MIN,
+            shader: deviceTier === 'high', // Reserved for future shader path
+          });
         }
         if (phase4Flags.tint_enabled) {
           atmoTintOverlayRef.current = new AtmoTintOverlay(app.stage, app.renderer); // Full-screen tint
@@ -1013,7 +1032,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         .then(paths => {
           emitWorkerPerfEvent(performance.now() - t0);
           tradeWindOverlayRef.current?.setCapacity(paths.length * 20);
-          tradeWindOverlayRef.current?.update(paths, currentZoomRef.current);
+          tradeWindOverlayRef.current?.update(paths, currentZoomRef.current, {
+            fps: metrics?.fps,
+            drawCalls: metrics?.drawCalls,
+            workerTime: metrics?.workerTime
+          });
           
           if (import.meta.env.DEV && paths.length > 0) {
             console.log('[winds] Updated with', paths.length, 'trade wind paths');
@@ -1022,7 +1045,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         .catch(e => {
           if (import.meta.env.DEV) console.warn('[winds] fetch error:', e);
           // Graceful fallback to empty array
-          tradeWindOverlayRef.current?.update([], currentZoomRef.current);
+          tradeWindOverlayRef.current?.update([], currentZoomRef.current, {
+            fps: metrics?.fps,
+            drawCalls: metrics?.drawCalls,
+            workerTime: metrics?.workerTime
+          });
         });
       }
       
@@ -1163,6 +1190,35 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     
     return () => clearInterval(interval);
   }, []);
+
+  // Update overlay quality settings when device tier changes
+  useEffect(() => {
+    if (!pixiApp) return;
+    
+    const q = getQualitySettings(deviceTier, shouldReduceQuality(metrics));
+    
+    // Update winds overlay quality
+    if (tradeWindOverlayRef.current) {
+      const windsCapacity = (q.maxWindPaths ?? P4.WINDS.MAX_PATHS) * 20;
+      tradeWindOverlayRef.current.setQuality({
+        tier: deviceTier,
+        maxArrows: windsCapacity,
+        strideBase: deviceTier === 'low' ? 8 : deviceTier === 'high' ? 6 : 7,
+        strideMin: 4,
+        strideMax: 18,
+      });
+    }
+    
+    // Update aurora overlay quality
+    if (auroraOverlayRef.current) {
+      auroraOverlayRef.current.setQuality({
+        tier: deviceTier,
+        maxConcurrent: deviceTier === 'low' ? 1 : deviceTier === 'high' ? 3 : 2,
+        intensityMin: deviceTier === 'low' ? 0.8 : P4.AURORA.INTENSITY_MIN,
+        shader: deviceTier === 'high',
+      });
+    }
+  }, [deviceTier, pixiApp, metrics]);
 
   // Reset worker on projection changes (resize, DPR change)
   useEffect(() => {
