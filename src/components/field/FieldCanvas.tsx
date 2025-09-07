@@ -46,6 +46,7 @@ import { useWeatherModulation } from '@/hooks/useWeatherModulation';
 import { logWorkerModeOnce } from '@/lib/debug/workerMode';
 import { startWindsLogger } from '@/features/field/winds/windsLogger';
 import { useAuth } from '@/hooks/useAuth';
+import { devRefreshWindsNow } from '@/utils/devRefreshWinds';
 import { fetchTradeWindsForViewport, hourBucket, currentPixelBBox, seedTradeWindsIfEmpty } from '@/features/field/winds/windsHelpers';
 import { resolveFromViewport } from '@/lib/field/cityResolver';
 import { Phase4Hud } from '@/components/debug/Phase4Hud';
@@ -1279,20 +1280,49 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   useEffect(() => {
     if (!user?.id) return;
     
-    const detach = startWindsLogger({
-      enabled: import.meta.env.DEV || import.meta.env.VITE_WINDS_LOGGER === '1',
-      cityId: resolveFromViewport() || 'default',
-      getClusters: () => (clustersRef.current ?? []).map(cluster => {
-        // Calculate velocity from cluster velocities ref for data collection
-        const velocity = clusterVelocitiesRef.current.get(cluster.id);
+    // Helper to build a light snapshot for logging with real velocity data
+    const getClustersForLogger = () => {
+      const out: Array<{x:number;y:number;vx:number;vy:number}> = [];
+      const curr = clustersRef.current ?? [];
+      const dt = Math.max(16, pixiApp?.ticker?.deltaMS ?? 100); // ms
+      
+      for (const c of curr) {
+        const velocity = clusterVelocitiesRef.current.get(c.id);
         const vx = velocity ? velocity.vx : 0;
         const vy = velocity ? velocity.vy : 0;
-        return { x: cluster.x, y: cluster.y, vx, vy };
-      }),
+        out.push({ x: c.x, y: c.y, vx, vy });
+      }
+      return out;
+    };
+    
+    // Resolve city ID (use viewport resolver or default)
+    const resolveCityId = (): string => {
+      return resolveFromViewport() || 'default';
+    };
+    
+    const detach = startWindsLogger({
+      enabled: import.meta.env.DEV || import.meta.env.VITE_WINDS_LOGGER === '1',
+      cityId: resolveCityId(),
+      getClusters: getClustersForLogger,
     });
     
     return detach;
-  }, [user?.id]);
+  }, [user?.id, pixiApp]);
+
+  // DEV: Keyboard shortcut for manual winds refresh (Shift+W)
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'W') {
+        e.preventDefault();
+        devRefreshWindsNow();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m
   return (
