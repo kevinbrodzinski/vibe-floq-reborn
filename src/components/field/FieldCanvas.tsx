@@ -33,7 +33,6 @@ import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 import { ATMO, FIELD_LOD } from '@/lib/field/constants';
-import { ATMO, FIELD_LOD } from '@/lib/field/constants';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -132,6 +131,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const breathingSystemRef = useRef<BreathingSystem | null>(null);
   const clustersRef = useRef<SocialCluster[]>([]);
   const previousClustersRef = useRef<SocialCluster[]>([]);
+  const clusterVelocitiesRef = useRef<Map<string, { vx: number; vy: number; momentum: number }>>(new Map());
   const currentZoomRef = useRef<number>(11);
   
   const spatialPeople = useMemo(() => 
@@ -218,8 +218,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Phase 1: Initialize particle trail system
         trailSystemRef.current = new ParticleTrailSystem(trailContainer);
         
-        // Phase 2: Initialize breathing system after containers are ready
+        // Phase 2: Initialize breathing system with renderer (RN-safe)
         breathingSystemRef.current = new BreathingSystem(heatContainer, app.renderer);
+        
+        // Phase 2: Expose breathing system for debugging
+        if (import.meta.env.DEV) {
+          (window as any).__breathingSystem = breathingSystemRef.current;
+        }
         
         // Phase 2: Initialize convergence overlay
         convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
@@ -514,7 +519,28 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
             clusterWorker.cluster(rawTiles, currentZoom).then(async (clusters) => {
-              // Update cluster refs for convergence and breathing
+              // Phase 2: Calculate velocities and momentum from previous frame
+              const now = performance.now();
+              const prevClusters = previousClustersRef.current;
+              const velocities = clusterVelocitiesRef.current;
+              
+              clusters.forEach(cluster => {
+                const prev = prevClusters.find(p => p.id === cluster.id);
+                if (prev) {
+                  const dt = Math.max(0.016, (now - (prev.formationTime || now)) / 1000);
+                  const vx = (cluster.x - prev.x) / dt;
+                  const vy = (cluster.y - prev.y) / dt;
+                  const speed = Math.hypot(vx, vy);
+                  const momentum = Math.min(1, speed / 50); // Scale to 0-1
+                  
+                  velocities.set(cluster.id, { vx, vy, momentum });
+                  cluster.momentum = momentum;
+                } else {
+                  velocities.set(cluster.id, { vx: 0, vy: 0, momentum: 0 });
+                  cluster.momentum = 0;
+                }
+              });
+              
               clustersRef.current = clusters;
               currentZoomRef.current = currentZoom;
               
@@ -583,15 +609,18 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 }
               });
 
-              // Phase 2: Update breathing system with existing sprites (LOD + privacy gates)
+              // Phase 2: Update breathing system with velocity-enhanced clusters (LOD + privacy gates)
               const breathingSystem = breathingSystemRef.current;
               if (breathingSystem) {
-                const allowedClusters = clusters.filter(c => currentZoom >= ATMO.BREATH_ZOOM_MIN && c.count >= FIELD_LOD.K_MIN);
+                const allowedClusters = clusters.filter(c => 
+                  currentZoom >= ATMO.BREATH_ZOOM_MIN && 
+                  c.count >= FIELD_LOD.K_MIN
+                );
                 if (allowedClusters.length > 0) {
                   const allowedSprites = new Map<string, any>();
                   for (const c of allowedClusters) {
                     const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
-                    const sprite = tilePool.active.get(key);
+                    const sprite = clusterSprites.get(c.id) || tilePool.active.get(key);
                     if (sprite) allowedSprites.set(c.id, sprite);
                   }
                   breathingSystem.updateSprites(allowedClusters, allowedSprites, app.ticker.deltaMS);
@@ -603,7 +632,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 convergenceOverlayRef.current.render(convergences, currentZoom);
               }
               
-              // Store previous clusters for next frame
+              // Store previous clusters for next frame velocity calculation
               previousClustersRef.current = clusters;
               
               // Debug vectors overlay (dev only)

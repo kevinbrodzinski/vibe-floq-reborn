@@ -176,11 +176,6 @@ const api = {
         lastGrowth: history ? (c.count - history.count) : 0,
         breathingPhase
       });
-        count: c.count,
-        timestamp: now,
-        formationTime,
-        lastGrowth: history ? (c.count - history.count) : 0
-      });
       
       return {
         id,
@@ -205,9 +200,9 @@ const api = {
       };
     });
 
-    // Clean old history entries (older than 2 minutes)
+    // Clean old history entries (older than 5 minutes for better lifecycle tracking)
     for (const [id, history] of clusterHistory) {
-      if (now - history.timestamp > 120000) {
+      if (now - history.timestamp > 300000) {
         clusterHistory.delete(id);
       }
     }

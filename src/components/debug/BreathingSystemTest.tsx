@@ -30,7 +30,7 @@ export const BreathingSystemTest: React.FC = () => {
       app.stage.addChild(container);
 
       // Initialize breathing system
-      breathingSystemRef.current = new BreathingSystem(container);
+      breathingSystemRef.current = new BreathingSystem(container, app.renderer);
 
       // Create test clusters
       const testClusters: SocialCluster[] = [
