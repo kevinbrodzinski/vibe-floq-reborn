@@ -1,7 +1,7 @@
 // supabase/functions/recommend/index.ts
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { corsHeadersFor, handlePreflight } from "../_shared/cors.ts";
 
 type UUID = string;
 
@@ -9,14 +9,14 @@ const DO_RERANK = (Deno.env.get("LLM_RERANK") || "").toLowerCase() === "true";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
 serve(async (req) => {
-  // Handle preflight requests
-  const optionsResponse = handleOptions(req);
-  if (optionsResponse) return optionsResponse;
+  const pf = handlePreflight(req);
+  if (pf) return pf;
   
   if (req.method !== "POST") {
+    const headers = corsHeadersFor(req);
     return new Response("Method Not Allowed", { 
       status: 405, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
+      headers: { ...headers, "Content-Type": "application/json" }
     });
   }
 
@@ -59,16 +59,18 @@ serve(async (req) => {
     });
     
     if (error) {
+      const headers = corsHeadersFor(req);
       return new Response(JSON.stringify({ error }), { 
         status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: { ...headers, "Content-Type": "application/json" }
       });
     }
 
     const recs = data ?? [];
+    const headers = corsHeadersFor(req);
     if (recs.length === 0) return new Response(JSON.stringify({ items: [] }), { 
       status: 200, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      headers: { ...headers, "Content-Type": "application/json" } 
     });
 
     // --- Pull extra signals for explanations ---------------------------------
@@ -226,12 +228,13 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ items }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const headers = corsHeadersFor(req);
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   }
 });
