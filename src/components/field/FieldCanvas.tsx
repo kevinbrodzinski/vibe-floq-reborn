@@ -45,6 +45,8 @@ import { AtmoTintOverlay } from './overlays/AtmoTintOverlay';
 import { useWeatherModulation } from '@/hooks/useWeatherModulation';
 import { logWorkerModeOnce } from '@/lib/debug/workerMode';
 import { fetchTradeWindsForViewport, hourBucket, currentPixelBBox, seedTradeWindsIfEmpty } from '@/features/field/winds/windsHelpers';
+import { resolveFromViewport } from '@/lib/field/cityResolver';
+import { Phase4Hud } from '@/components/debug/Phase4Hud';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -185,6 +187,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const lastAtmoTintRef = useRef(0);
   const lastWeatherRef = useRef(0);
   const lastWindsRef = useRef(0);
+  
+  // Phase 4: HUD counters for performance monitoring
+  const [phase4HudCounters, setPhase4HudCounters] = useState({
+    windsPaths: 0,
+    arrowsVisible: 0,
+    auroraActive: 0,
+  });
   // Adjust intervals based on worker fallback
   const isFallback = isWorkerFallback();
   
@@ -318,7 +327,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         // Phase 4: Initialize atmospheric memory & mood overlays based on flags
         if (phase4Flags.winds_enabled) {
-          const windsCapacity = (q.maxWindPaths ?? P4.WINDS.MAX_PATHS) * 20;
+          const windsCapacity = Math.min(
+            (q.maxWindPaths ?? P4.WINDS.MAX_PATHS) * 20,
+            tradeWindOverlayRef.current?.getMaxCapacity?.() ?? Infinity
+          );
           tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, windsCapacity);
           
           // Apply initial quality settings
@@ -1017,8 +1029,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         lastWindsRef.current = now;
         const t0 = performance.now();
         
-        // Use default city for now - TODO: derive from user location or viewport
-        const currentCityId = 'default-city-id';
+        // Resolve city ID from viewport or use default
+        const currentCityId = resolveFromViewport(viewportGeo);
         const bbox = currentPixelBBox(pixiApp.renderer);
         const cap = qualitySettings.maxWindPaths ?? P4.WINDS.MAX_PATHS;
         
@@ -1032,29 +1044,46 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         .then(paths => {
           emitWorkerPerfEvent(performance.now() - t0);
           tradeWindOverlayRef.current?.setCapacity(paths.length * 20);
-          tradeWindOverlayRef.current?.update(paths, currentZoomRef.current, {
+          const visibleArrows = tradeWindOverlayRef.current?.update(paths, currentZoomRef.current, {
             fps: metrics?.fps,
             drawCalls: metrics?.drawCalls,
             workerTime: metrics?.workerTime
-          });
+          }) ?? 0;
+          
+          // Update HUD counters with actual counts
+          setPhase4HudCounters(prev => ({
+            ...prev,
+            windsPaths: paths.length,
+            arrowsVisible: visibleArrows,
+          }));
           
           if (import.meta.env.DEV && paths.length > 0) {
-            console.log('[winds] Updated with', paths.length, 'trade wind paths');
+            console.log('[winds] Updated with', paths.length, 'trade wind paths,', visibleArrows, 'visible arrows');
           }
         })
         .catch(e => {
           if (import.meta.env.DEV) console.warn('[winds] fetch error:', e);
           // Graceful fallback to empty array
-          tradeWindOverlayRef.current?.update([], currentZoomRef.current, {
+          const visibleArrows = tradeWindOverlayRef.current?.update([], currentZoomRef.current, {
             fps: metrics?.fps,
             drawCalls: metrics?.drawCalls,
             workerTime: metrics?.workerTime
-          });
+          }) ?? 0;
+          
+          setPhase4HudCounters(prev => ({
+            ...prev,
+            windsPaths: 0,
+            arrowsVisible: visibleArrows,
+          }));
         });
       }
       
       if (phase4Flags.aurora_enabled && auroraOverlayRef.current) {
-        auroraOverlayRef.current.update([], currentZoomRef.current); // Mock data for now
+        const activeAurora = auroraOverlayRef.current.update([], currentZoomRef.current); // Mock data for now
+        setPhase4HudCounters(prev => ({
+          ...prev,
+          auroraActive: activeAurora,
+        }));
       }
       
       if (phase4Flags.tint_enabled && atmoTintOverlayRef.current) {
@@ -1199,7 +1228,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     
     // Update winds overlay quality
     if (tradeWindOverlayRef.current) {
-      const windsCapacity = (q.maxWindPaths ?? P4.WINDS.MAX_PATHS) * 20;
+      const windsCapacity = Math.min(
+        (q.maxWindPaths ?? P4.WINDS.MAX_PATHS) * 20,
+        tradeWindOverlayRef.current.getMaxCapacity()
+      );
       tradeWindOverlayRef.current.setQuality({
         tier: deviceTier,
         maxArrows: windsCapacity,
@@ -1268,6 +1300,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       <AnimatePresence>
         {tooltip && <ClusterTooltip {...tooltip} />}
       </AnimatePresence>
+      
+      {/* Phase 4 Debug HUD */}
+      <Phase4Hud 
+        metrics={{
+          fps: metrics?.fps,
+          workerTime: metrics?.workerTime,
+          drawCalls: metrics?.drawCalls,
+        }}
+        counters={phase4HudCounters}
+      />
     </>
   );
 });

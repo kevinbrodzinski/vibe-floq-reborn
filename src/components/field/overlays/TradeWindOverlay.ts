@@ -27,6 +27,7 @@ export class TradeWindOverlay {
   private capacity: number;
   private q: WindsQuality;
   private lastStride = new Map<string, number>();   // hysteresis cache
+  private lastBudget = 1; // budget hysteresis
 
   constructor(parent: PIXI.Container, capacity = P4.WINDS.MAX_PATHS * 20) {
     this.capacity = capacity;
@@ -58,15 +59,24 @@ export class TradeWindOverlay {
     if (q.maxArrows != null) this.setCapacity(q.maxArrows);
   }
 
+  /** Get max capacity for safe bounds checking */
+  getMaxCapacity(): number {
+    return this.arrows.length;
+  }
+
   /** Derive a budget factor from live metrics ( >1 = lighten workload ) */
   private budgetFactor(m?: WindsMetrics): number {
-    if (!m) return 1;
+    if (!m) return this.lastBudget;
     let f = 1;
     if ((m.fps ?? 60) < 55) f *= 1.25;
     if ((m.fps ?? 60) < 50) f *= 1.5;
     if ((m.drawCalls ?? 0) > 400) f *= 1.15;
     if ((m.workerTime ?? 0) > 8) f *= 1.1;
-    return Math.min(2, Math.max(1, f));
+    f = Math.min(2, Math.max(1, f));
+    // Soften jumps by blending 70/30 with previous budget
+    const out = 0.7 * this.lastBudget + 0.3 * f;
+    this.lastBudget = out;
+    return out;
   }
 
   /** Compute stride for a path (higher=skip more points) */
@@ -103,10 +113,10 @@ export class TradeWindOverlay {
   }
 
   /** Update with optional perf metrics for adaptive stride */
-  update(paths: WindPath[], zoom: number, metrics?: WindsMetrics) {
+  update(paths: WindPath[], zoom: number, metrics?: WindsMetrics): number {
     if (!paths?.length || zoom < P4.WINDS.MIN_ZOOM) {
       for (const s of this.arrows) s.visible = false;
-      return;
+      return 0;
     }
 
     // cap number of path samples by quality.maxArrows
@@ -159,6 +169,9 @@ export class TradeWindOverlay {
         if (!used.has(id)) this.lastStride.delete(id);
       }
     }
+
+    // Return actual visible arrow count
+    return Math.min(idx, this.capacity);
   }
 
   tick(_deltaMS: number) { 

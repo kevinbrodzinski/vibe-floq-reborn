@@ -28,8 +28,8 @@ export class AuroraOverlay {
     this.q = { ...this.q, ...q };
   }
 
-  update(events: AuroraEventLite[], zoom: number) {
-    if (zoom < P4.AURORA.MIN_ZOOM) { this.clear(); return; }
+  update(events: AuroraEventLite[], zoom: number): number {
+    if (zoom < P4.AURORA.MIN_ZOOM) { this.clear(); return 0; }
 
     // intensity gating + capacity
     const list = (events ?? [])
@@ -56,6 +56,8 @@ export class AuroraOverlay {
 
     // hide extras
     for (let i=list.length;i<this.rings.length;i++) this.rings[i].clear();
+    
+    return list.length; // active auroras
   }
 
   clear() { 
