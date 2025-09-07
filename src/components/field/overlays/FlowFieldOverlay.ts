@@ -9,7 +9,8 @@ export class FlowFieldOverlay {
   private sprites: PIXI.Sprite[] = [];
   private capacity: number = P3.FLOW.MAX_ARROWS;
 
-  constructor(parent: PIXI.Container) {
+  constructor(parent: PIXI.Container, capacity?: number) {
+    this.capacity = capacity || P3.FLOW.MAX_ARROWS;
     this.container = new (PIXI as any).ParticleContainer(this.capacity, {
       position: true, rotation: true, alpha: true, scale: true, tint: true
     });

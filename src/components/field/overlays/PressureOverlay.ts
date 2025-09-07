@@ -12,9 +12,9 @@ export class PressureOverlay {
   private circle: PIXI.Texture;
   private capacity: number = P3B.PRESSURE.MAX_CELLS;
 
-  constructor(parent: PIXI.Container, renderer: PIXI.Renderer, capacity = P3B.PRESSURE.MAX_CELLS) {
+  constructor(parent: PIXI.Container, renderer: PIXI.Renderer, capacity?: number) {
     if (!renderer) throw new Error('Renderer not ready for PressureOverlay');
-    this.capacity = capacity;
+    this.capacity = capacity || P3B.PRESSURE.MAX_CELLS;
     this.container = new (PIXI as any).ParticleContainer(this.capacity, {
       position: true, rotation: true, alpha: true, tint: true, scale: true
     });
@@ -51,12 +51,13 @@ export class PressureOverlay {
     }
 
     // normalize pressure to [0..1] per frame using top-k
-    const top = Math.max(0.0001, cells[0]?.p ?? 0.0001);
+    const top = Math.max(0.0001, cells.slice(0, this.capacity)[0]?.p ?? 0.0001);
     const toHex = (hex: string) => parseInt(hex.slice(1), 16);
 
+    const topCells = cells.slice(0, this.capacity);
     for (let i = 0; i < this.sprites.length; i++) {
       const s = this.sprites[i];
-      const c = cells[i];
+      const c = topCells[i];
       if (!c) { 
         s.visible = false; 
         continue; 

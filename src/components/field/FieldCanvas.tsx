@@ -275,20 +275,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Phase 2: Initialize convergence overlay
         convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
         
-        // Phase 3: Initialize new overlays
-        flowFieldOverlayRef.current = new FlowFieldOverlay(overlayContainer);
-        convergenceLanesRef.current = new ConvergenceLanes(overlayContainer);
+        // Phase 3: Initialize new overlays with dynamic capacities
+        const q = getQualitySettings(deviceTier, shouldReduceQuality(metrics));
+        flowFieldOverlayRef.current = new FlowFieldOverlay(overlayContainer, q.maxArrows);
+        convergenceLanesRef.current = new ConvergenceLanes(overlayContainer, q.maxLanes);
         momentumBadgeRef.current = new MomentumBadge(overlayContainer);
         
-        // Phase 3B: Initialize atmospheric overlays
-        pressureOverlayRef.current = new PressureOverlay(overlayContainer, app.renderer);
+        // Phase 3B: Initialize atmospheric overlays with dynamic capacities
+        const pressureCapacity = Math.floor(P3B.PRESSURE.MAX_CELLS * (q.maxArrows / P3.FLOW.MAX_ARROWS));
+        pressureOverlayRef.current = new PressureOverlay(overlayContainer, app.renderer, pressureCapacity);
         stormOverlayRef.current = new StormOverlay(overlayContainer);
         
-        // Apply device tier capacity settings
-        const q = getQualitySettings(deviceTier, shouldReduceQuality(metrics));
-        flowFieldOverlayRef.current?.setCapacity?.(q.maxArrows);
-        convergenceLanesRef.current?.setCapacity?.(q.maxLanes);
-        pressureOverlayRef.current?.setCapacity?.(Math.floor(q.maxPressureCells || P3B.PRESSURE.MAX_CELLS));
         
         // Create user location dot
         const userDot = new Graphics();
@@ -890,38 +887,43 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         if (now - lastFlowRef.current >= FLOW_INTERVAL_MS && flowFieldOverlayRef.current) {
           lastFlowRef.current = now;
           const t0 = performance.now();
-          getClusterWorker().then(worker => 
-            worker.flowGrid(clustersRef.current, currentZoomRef.current)
-          ).then(flowCells => {
-            emitWorkerPerfEvent(performance.now() - t0);
-            flowFieldOverlayRef.current?.update(flowCells, currentZoomRef.current);
-          }).catch(e => {
-            if (import.meta.env.DEV) console.warn('[flowGrid] worker error:', e);
-          });
+          getClusterWorker()
+            .then(w => w.flowGrid(clustersRef.current, currentZoomRef.current))
+            .then(flowCells => {
+              emitWorkerPerfEvent(performance.now() - t0);
+              flowFieldOverlayRef.current?.update(flowCells, currentZoomRef.current);
+            })
+            .catch(e => { if (import.meta.env.DEV) console.warn('[flowGrid] worker error:', e); });
         }
         
         // Lanes and momentum (combined for efficiency)
         if (now - lastLaneRef.current >= LANE_INTERVAL_MS && convergenceLanesRef.current) {
           lastLaneRef.current = now;
           const t0 = performance.now();
-          getClusterWorker().then(worker => 
-            worker.lanes(clustersRef.current, currentZoomRef.current)
-          ).then(lanes => {
-            emitWorkerPerfEvent(performance.now() - t0);
-            convergenceLanesRef.current?.update(lanes, currentZoomRef.current);
+          getClusterWorker()
+            .then(w => w.lanes(clustersRef.current, currentZoomRef.current))
+            .then(lanes => {
+              emitWorkerPerfEvent(performance.now() - t0);
+              convergenceLanesRef.current?.update(lanes, currentZoomRef.current);
 
-            // momentum piggyback
-            return getClusterWorker().then(worker => worker.momentum(clustersRef.current));
-          }).then(m => {
-            momentumBadgeRef.current?.update(
-              m,
-              currentZoomRef.current,
-              new Map(clustersRef.current.map(c => [c.id, c.count])),
-              new Map(clustersRef.current.map(c => [c.id, { x: c.x, y: c.y }]))
-            );
-          }).catch(e => {
-            if (import.meta.env.DEV) console.warn('[lanes/momentum] worker error:', e);
-          });
+              // momentum piggyback
+              return getClusterWorker().then(w => w.momentum(clustersRef.current))
+                .then(m => {
+                  momentumBadgeRef.current?.update(
+                    m,
+                    currentZoomRef.current,
+                    new Map(clustersRef.current.map(c => [c.id, c.count])),
+                    new Map(clustersRef.current.map(c => [c.id, { x: c.x, y: c.y }]))
+                  );
+                  
+                  // storms at same cadence from lanes
+                  if (stormOverlayRef.current) {
+                    return getClusterWorker().then(w => w.stormGroups(lanes, currentZoomRef.current))
+                      .then(groups => stormOverlayRef.current?.update(groups, currentZoomRef.current));
+                  }
+                });
+            })
+            .catch(e => { if (import.meta.env.DEV) console.warn('[lanes/momentum] worker error:', e); });
         }
       }
       
@@ -934,14 +936,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         if (now - lastPressureRef.current >= PRESS_INTERVAL_MS && pressureOverlayRef.current) {
           lastPressureRef.current = now;
           const t0 = performance.now();
-          getClusterWorker().then(worker => 
-            worker.pressureGrid(clustersRef.current, currentZoomRef.current)
-          ).then(pcells => {
-            emitWorkerPerfEvent(performance.now() - t0);
-            pressureOverlayRef.current?.update(pcells, currentZoomRef.current);
-          }).catch(e => {
-            if (import.meta.env.DEV) console.warn('[pressureGrid] worker error:', e);
-          });
+          getClusterWorker()
+            .then(w => w.pressureGrid(clustersRef.current, currentZoomRef.current))
+            .then(pcells => {
+              emitWorkerPerfEvent(performance.now() - t0);
+              pressureOverlayRef.current?.update(pcells, currentZoomRef.current);
+            })
+            .catch(e => { if (import.meta.env.DEV) console.warn('[pressureGrid] worker error:', e); });
         }
       }
 

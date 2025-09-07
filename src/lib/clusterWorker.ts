@@ -159,8 +159,8 @@ function makeWorker(): Promise<Comlink.Remote<ClusteringAPI> | ClusteringAPI> {
 }
 
 export async function getClusterWorker() {
-  g[KEY] ||= makeWorker();
-  return g[KEY] as Promise<Comlink.Remote<ClusteringAPI> | ClusteringAPI>;
+  (globalThis as any)[KEY] ||= makeWorker();
+  return (globalThis as any)[KEY] as Promise<Comlink.Remote<ClusteringAPI> | ClusteringAPI>;
 }
 
 export const isWorkerFallback = () => isWorkerFallbackInternal;

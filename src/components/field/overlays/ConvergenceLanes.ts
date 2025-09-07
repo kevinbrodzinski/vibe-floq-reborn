@@ -11,8 +11,9 @@ export class ConvergenceLanes {
   private laneHash = new Map<string, string>(); // Cache geometry hash to avoid rebuilds
   private capacity: number = P3.LANES.MAX_LANES;
 
-  constructor(parent: PIXI.Container) {
+  constructor(parent: PIXI.Container, capacity?: number) {
     this.container = new PIXI.Container();
+    this.capacity = capacity || P3.LANES.MAX_LANES;
     parent.addChild(this.container);
   }
 
@@ -94,6 +95,7 @@ export class ConvergenceLanes {
         g.destroy();
         this.graphicsById.delete(id);
         this.ttl.delete(id);
+        this.laneHash.delete(id); // Clear cached hash
       }
     }
   }
