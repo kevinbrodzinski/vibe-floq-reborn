@@ -35,3 +35,30 @@ export const stormTokens = {
   haloRadiusPx: 64,      // base halo radius (scaled by intensity)
   ttlMs: 2200,           // UI fade TTL when stale
 } as const;
+
+// Phase 4 visual tokens
+export const windTokens = {
+  colorLow:  '#93c5fd',
+  colorMid:  '#60a5fa',
+  colorHigh: '#3b82f6',
+  alpha: 0.75,
+  widthPx: 3,
+  arrowLenPx: 22,
+  dashHz: 0.8,
+} as const;
+
+export const auroraTokens = {
+  colors: ['#a78bfa','#60a5fa','#34d399'], // themed gradients
+  alpha: 0.85,
+  maxRadiusPx: 180,
+  waveHz: 1.2,
+} as const;
+
+export const atmoTintTokens = {
+  // linear gradient [top,bottom], multiply/mix on top layers
+  dawn:   { top:'#fde68a', bottom:'#93c5fd', alpha:0.16 },
+  morning:{ top:'#bfdbfe', bottom:'#e0f2fe', alpha:0.14 },
+  noon:   { top:'#e5e7eb', bottom:'#bfdbfe', alpha:0.12 },
+  dusk:   { top:'#c7d2fe', bottom:'#fca5a5', alpha:0.18 },
+  night:  { top:'#111827', bottom:'#1f2937', alpha:0.20 },
+} as const;

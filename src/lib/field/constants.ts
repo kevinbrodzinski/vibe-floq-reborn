@@ -85,3 +85,16 @@ export const P3B = {
     MAX_GROUPS: 24,      // cap per frame
   },
 } as const;
+
+// Phase 4 constants (atmospheric memory and mood)
+export const P4 = {
+  WINDS: { MIN_ZOOM: 13, MAX_PATHS: 24, UPDATE_HZ: 2 },
+  AURORA: { MIN_ZOOM: 15, INTENSITY_MIN: 0.70, MAX_CONCURRENT: 3, UPDATE_HZ: 4 },
+  TINT: { UPDATE_MS: 60_000 },
+  WEATHER: {
+    CACHE_MIN: 15,        // minutes
+    UPDATE_MIN: 15,
+    RAIN_THRESHOLD: 0.2,  // mm/hr
+    LOW_VIS_KM: 3         // km
+  },
+} as const;

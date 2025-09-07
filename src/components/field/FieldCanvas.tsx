@@ -38,7 +38,10 @@ import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
-import { ATMO, FIELD_LOD, P3, P3B } from '@/lib/field/constants';
+import { ATMO, FIELD_LOD, P3, P3B, P4 } from '@/lib/field/constants';
+import { TradeWindOverlay } from './overlays/TradeWindOverlay';
+import { AuroraOverlay } from './overlays/AuroraOverlay';
+import { AtmoTintOverlay } from './overlays/AtmoTintOverlay';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -147,6 +150,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 3B: Atmospheric overlays
   const pressureOverlayRef = useRef<PressureOverlay | null>(null);
   const stormOverlayRef = useRef<StormOverlay | null>(null);
+  // Phase 4: Atmospheric memory & mood overlays
+  const tradeWindOverlayRef = useRef<TradeWindOverlay | null>(null);
+  const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
+  const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
   const clustersRef = useRef<SocialCluster[]>([]);
   const previousClustersRef = useRef<SocialCluster[]>([]);
   const clusterVelocitiesRef = useRef<Map<string, { vx: number; vy: number; momentum: number }>>(new Map());
@@ -158,6 +165,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 3B: Atmospheric throttling
   const lastPressureRef = useRef(0);
   const lastStormRef = useRef(0);
+  // Phase 4: Atmospheric throttling
+  const lastAtmoTintRef = useRef(0);
+  const lastWeatherRef = useRef(0);
   // Adjust intervals based on worker fallback
   const isFallback = isWorkerFallback();
   
@@ -285,6 +295,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         const pressureCapacity = Math.floor(P3B.PRESSURE.MAX_CELLS * (q.maxArrows / P3.FLOW.MAX_ARROWS));
         pressureOverlayRef.current = new PressureOverlay(overlayContainer, app.renderer, pressureCapacity);
         stormOverlayRef.current = new StormOverlay(overlayContainer);
+        
+        // Phase 4: Initialize atmospheric memory & mood overlays
+        tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, P4.WINDS.MAX_PATHS * 20);
+        auroraOverlayRef.current = new AuroraOverlay(overlayContainer);
+        atmoTintOverlayRef.current = new AtmoTintOverlay(app.stage, app.renderer); // Full-screen tint
         
         
         // Create user location dot

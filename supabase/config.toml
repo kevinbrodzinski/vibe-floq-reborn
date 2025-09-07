@@ -120,3 +120,9 @@ verify_jwt = false
 
 [functions.sync-places]
 verify_jwt = false
+
+[functions.fetch-weather]
+verify_jwt = false
+
+[functions.log-flow-samples]
+verify_jwt = false

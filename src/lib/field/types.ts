@@ -25,5 +25,25 @@ export type StormGroup = {
   etaMs: number;               // representative ETA
 };
 
+// Phase 4 types for atmospheric effects
+export type PixelPoint = { x: number; y: number };
+export type PixelBBox = { xMin:number; yMin:number; xMax:number; yMax:number };
+
+export type WindPath = {
+  id: string;
+  pts: PixelPoint[];     // polyline in pixel space (Catmull-Rom → Bezier sampled)
+  strength: number;      // 0..1
+  avgSpeed: number;      // px/ms (smoothed)
+  support: number;       // normalized path support (0..1)
+};
+
+export type AuroraEventLite = {
+  id: string;
+  center: PixelPoint;
+  radiusPx: number;
+  intensity: number;     // 0..1
+  hue: number;           // 0..360 (from vibe/arousal)
+};
+
 // Re-export existing field types for convenience
 export type { SocialCluster, ConvergenceEvent, VibeToken, FieldTile } from '@/types/field';
