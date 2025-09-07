@@ -44,6 +44,7 @@ import { AuroraOverlay } from './overlays/AuroraOverlay';
 import { AtmoTintOverlay } from './overlays/AtmoTintOverlay';
 import { useWeatherModulation } from '@/hooks/useWeatherModulation';
 import { logWorkerModeOnce } from '@/lib/debug/workerMode';
+import { fetchTradeWindsForViewport, hourBucket, currentPixelBBox, seedTradeWindsIfEmpty } from '@/features/field/winds/windsHelpers';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -166,7 +167,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const [phase4Flags] = useState({
     tint_enabled: true,
     weather_enabled: true,
-    winds_enabled: false, // Start with canary
+    winds_enabled: true, // Enable for testing
     aurora_enabled: false // Start with canary
   });
   const clustersRef = useRef<SocialCluster[]>([]);
@@ -183,6 +184,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 4: Atmospheric throttling
   const lastAtmoTintRef = useRef(0);
   const lastWeatherRef = useRef(0);
+  const lastWindsRef = useRef(0);
   // Adjust intervals based on worker fallback
   const isFallback = isWorkerFallback();
   
@@ -317,6 +319,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Phase 4: Initialize atmospheric memory & mood overlays based on flags
         if (phase4Flags.winds_enabled) {
           tradeWindOverlayRef.current = new TradeWindOverlay(overlayContainer, P4.WINDS.MAX_PATHS * 20);
+          // Seed trade winds data if empty (dev only)
+          seedTradeWindsIfEmpty();
         }
         if (phase4Flags.aurora_enabled) {
           auroraOverlayRef.current = new AuroraOverlay(overlayContainer);
@@ -987,10 +991,39 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // Phase 4: Update atmospheric overlays
       const qualitySettings = getQualitySettings(deviceTier, shouldReduceQuality(metrics));
+      const now = performance.now(); // Define now for Phase 4 timing
       
-      if (phase4Flags.winds_enabled && tradeWindOverlayRef.current) {
-        tradeWindOverlayRef.current.setCapacity(qualitySettings.maxWindPaths || P4.WINDS.MAX_PATHS);
-        tradeWindOverlayRef.current.update([], currentZoomRef.current); // Mock data for now
+      // Phase 4: Trade winds (throttled to P4.WINDS.UPDATE_HZ = 2 Hz)
+      if (phase4Flags.winds_enabled && tradeWindOverlayRef.current && now - lastWindsRef.current >= 1000 / P4.WINDS.UPDATE_HZ) {
+        lastWindsRef.current = now;
+        const t0 = performance.now();
+        
+        // Use default city for now - TODO: derive from user location or viewport
+        const currentCityId = 'default-city-id';
+        const bbox = currentPixelBBox(pixiApp.renderer);
+        const cap = qualitySettings.maxWindPaths ?? P4.WINDS.MAX_PATHS;
+        
+        fetchTradeWindsForViewport({
+          cityId: currentCityId,
+          hour: hourBucket(new Date()),
+          dow: new Date().getDay(),
+          bbox,
+          cap,
+        })
+        .then(paths => {
+          emitWorkerPerfEvent(performance.now() - t0);
+          tradeWindOverlayRef.current?.setCapacity(paths.length * 20);
+          tradeWindOverlayRef.current?.update(paths, currentZoomRef.current);
+          
+          if (import.meta.env.DEV && paths.length > 0) {
+            console.log('[winds] Updated with', paths.length, 'trade wind paths');
+          }
+        })
+        .catch(e => {
+          if (import.meta.env.DEV) console.warn('[winds] fetch error:', e);
+          // Graceful fallback to empty array
+          tradeWindOverlayRef.current?.update([], currentZoomRef.current);
+        });
       }
       
       if (phase4Flags.aurora_enabled && auroraOverlayRef.current) {
