@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { P3 } from '@/lib/field/constants';
 import { laneTokens } from '@/lib/field/visualTokens';
+import { ADD_BLEND } from '@/lib/pixi/blendModes';
 import type { LaneSegment } from '@/lib/field/types';
 
 export class ConvergenceLanes {
@@ -34,7 +35,7 @@ export class ConvergenceLanes {
       let g = this.graphicsById.get(ln.id);
       if (!g) {
         g = new PIXI.Graphics();
-        g.blendMode = 'add';
+        g.blendMode = ADD_BLEND;
         this.graphicsById.set(ln.id, g);
         this.container.addChild(g);
       }

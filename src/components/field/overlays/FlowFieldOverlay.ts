@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { FIELD_LOD, P3 } from '@/lib/field/constants';
 import { flowTokens } from '@/lib/field/visualTokens';
+import { ADD_BLEND } from '@/lib/pixi/blendModes';
 import type { FlowCell } from '@/lib/field/types';
 
 export class FlowFieldOverlay {
@@ -18,7 +19,7 @@ export class FlowFieldOverlay {
     for (let i = 0; i < this.max; i++) {
       const s = new PIXI.Sprite(PIXI.Texture.WHITE);
       s.anchor.set(0.5, 0.5);
-      s.blendMode = 'add';
+      s.blendMode = ADD_BLEND;
       s.visible = false;
       this.sprites.push(s);
       this.container.addChild(s);

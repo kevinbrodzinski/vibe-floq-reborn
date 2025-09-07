@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { FIELD_LOD, P3 } from '@/lib/field/constants';
 import { momentumTokens } from '@/lib/field/visualTokens';
+import { ADD_BLEND } from '@/lib/pixi/blendModes';
 import type { MomentumStat } from '@/lib/field/types';
 
 export class MomentumBadge {
@@ -42,7 +43,7 @@ export class MomentumBadge {
         s.height = momentumTokens.strokeWidth;
         s.alpha = momentumTokens.alpha;
         s.tint = toHex(momentumTokens.color);
-        s.blendMode = 'add';
+        s.blendMode = ADD_BLEND;
         this.map.set(m.id, s);
         this.container.addChild(s);
       }
