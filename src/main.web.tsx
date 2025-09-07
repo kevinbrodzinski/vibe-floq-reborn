@@ -66,6 +66,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 // Dev-only HMR guard for sandbox stability
 if (import.meta.env.DEV) {
   import('./lib/dev/hmrGuard');
+  // Silence analytics in sandbox
+  import('./lib/debug/sandboxAnalyticsGuard');
 }
 
 // Initialize performance monitoring after React is loaded

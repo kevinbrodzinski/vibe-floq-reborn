@@ -106,7 +106,7 @@ const App = () => {
 
   // Show boot screen until auth is ready
   if (!authReady) {
-    return <BootScreen text="Authenticating…" timeoutText="Continue as guest" />;
+    return <BootScreen text="Authenticating…" timeoutText="Continue as guest" onContinue={() => setAuthReady(true)} />;
   }
   
   return (

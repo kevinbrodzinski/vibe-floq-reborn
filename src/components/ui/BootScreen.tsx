@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 interface BootScreenProps {
   text: string;
   timeoutText: string;
+  onContinue?: () => void;
 }
 
-export const BootScreen = ({ text, timeoutText }: BootScreenProps) => {
+export const BootScreen = ({ text, timeoutText, onContinue }: BootScreenProps) => {
   const [showTimeout, setShowTimeout] = useState(false);
 
   useEffect(() => {
@@ -28,13 +29,14 @@ export const BootScreen = ({ text, timeoutText }: BootScreenProps) => {
       />
       <p className="text-muted-foreground text-sm">{text}</p>
       {showTimeout && (
-        <motion.p 
+        <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-xs text-muted-foreground/60 mt-2"
+          onClick={onContinue}
+          className="text-xs text-muted-foreground/60 mt-2 hover:text-muted-foreground transition-colors underline"
         >
           {timeoutText}
-        </motion.p>
+        </motion.button>
       )}
     </motion.div>
   );
