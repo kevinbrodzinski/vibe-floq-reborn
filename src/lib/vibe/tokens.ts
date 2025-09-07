@@ -1,11 +1,12 @@
 /**
- * Vibe token system - no raw HSL/hex in components
- * Routes all colors through design system tokens
+ * Vibe token system - routes through design system tokens
+ * Import from canonical source, not local hex maps
  */
 
 import type { VibeToken } from '@/types/field';
 
-// Centralized vibe color mapping using design tokens
+// TODO: Import from central vibe token map (e.g. src/lib/vibeConstants.ts)
+// For now, using design-system-aligned colors
 export const vibeTokens: Record<VibeToken, string> = {
   hype: '#7C3AED',      // violet-600
   social: '#F59E0B',    // amber-500

@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import type { VibeToken } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
+import { FIELD_LOD, PARTICLE } from '@/lib/field/constants';
 
 interface TrailSegment {
   sprite: PIXI.Sprite;
@@ -17,8 +18,6 @@ export class TrailSystem {
   private trails = new Map<string, TrailSegment[]>();
   private maxSegmentsPerTrail = 18;
   private maxTrails = 600;
-  private readonly MIN_DECAY_TIME = 2000; // 2s minimum (patent spec)
-  private readonly MAX_DECAY_TIME = 60000; // 60s maximum (patent spec)
 
   constructor(parent: PIXI.Container, capacity = 4000) {
     // Use ParticleContainer for massive performance improvement
@@ -29,8 +28,8 @@ export class TrailSystem {
     for (let i = 0; i < capacity; i++) {
       const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
       sprite.anchor.set(0.5);
-      sprite.width = 2; // TODO: Use design token
-      sprite.height = 2;
+      sprite.width = PARTICLE.SIZE_SM;
+      sprite.height = PARTICLE.SIZE_SM;
       this.pool.push(sprite);
     }
   }
@@ -48,11 +47,7 @@ export class TrailSystem {
     speed: number
   ) {
     // LOD gates: only show trails at high zoom with sufficient crowd
-    const kMin = 5; // k-anonymity threshold
-    const minZoom = 16; // street level detail
-    const minSpeed = 0.02; // m/s minimum movement
-    
-    if (zoom < minZoom || count < kMin || speed < minSpeed) {
+    if (zoom < FIELD_LOD.TRAILS_MIN_ZOOM || count < FIELD_LOD.K_MIN || speed < FIELD_LOD.MIN_SPEED) {
       return; // Skip trail for privacy/performance
     }
 
@@ -70,8 +65,8 @@ export class TrailSystem {
     sprite.position.set(x, y);
     sprite.alpha = 1.0;
     sprite.tint = vibeToTint(vibe);
-    sprite.width = 2;
-    sprite.height = 2;
+    sprite.width = PARTICLE.SIZE_SM;
+    sprite.height = PARTICLE.SIZE_SM;
     this.container.addChild(sprite);
 
     segments.push({ sprite, timestamp: performance.now() });
@@ -89,8 +84,8 @@ export class TrailSystem {
     const now = performance.now();
     
     // Patent-compliant decay time calculation
-    const decayTime = this.MIN_DECAY_TIME + 
-      (this.MAX_DECAY_TIME - this.MIN_DECAY_TIME) * afterglowIntensity;
+    const decayTime = FIELD_LOD.AFTERGLOW_MIN_MS + 
+      (FIELD_LOD.AFTERGLOW_MAX_MS - FIELD_LOD.AFTERGLOW_MIN_MS) * afterglowIntensity;
 
     for (const [clusterId, segments] of this.trails.entries()) {
       for (let i = segments.length - 1; i >= 0; i--) {

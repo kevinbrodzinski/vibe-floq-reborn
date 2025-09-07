@@ -1,6 +1,7 @@
 import * as Comlink from 'comlink';
 import type { SocialCluster, VibeToken } from '@/types/field';
 import { stableClusterId } from '@/lib/field/clusterId';
+import { CLUSTER } from '@/lib/field/constants';
 
 /* ────────────── types ────────────── */
 export interface RawTile {
@@ -12,9 +13,8 @@ export interface RawTile {
 }
 
 /* ────────────── helpers ────────────── */
-const BASE_DIST = 32;                 // px at zoom 11
 const mergeDistanceForZoom = (zoom: number) =>
-  BASE_DIST * Math.pow(2, 11 - zoom); // shrinks as we zoom in
+  CLUSTER.BASE_MERGE_DISTANCE * Math.pow(2, 11 - zoom); // shrinks as we zoom in
 
 let lastClusters: SocialCluster[] | null = null;
 
@@ -26,53 +26,37 @@ const api = {
    */
   cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
-    const clusters: Array<Omit<SocialCluster, 'id' | 'ids'> & { _ids: string[] }> = [];
+    const work: Array<{x:number;y:number;r:number;count:number;vibe:VibeToken;_ids:string[];cohesionScore:number}> = [];
 
     try {
-      tiles.forEach(t => {
-        const hit = clusters.find(c => {
-          const dx = c.x - t.x;
-          const dy = c.y - t.y;
-          return Math.hypot(dx, dy) < threshold;
+      for (const t of tiles) {
+        const hit = work.find(c => {
+          const dx = c.x - t.x, dy = c.y - t.y;
+          return (dx*dx + dy*dy) < (threshold*threshold);
         });
-
+        
         if (hit) {
-          // Running-average merge
           const n = hit.count + 1;
           hit.x = (hit.x * hit.count + t.x) / n;
           hit.y = (hit.y * hit.count + t.y) / n;
           hit.r = Math.max(hit.r, t.r);
           hit.count = n;
           hit._ids.push(t.id);
-          
-          // Lightweight cohesion proxy based on density
-          hit.cohesionScore = Math.min(n / 10, 1.0);
+          hit.cohesionScore = Math.min(n / 10, 1);
         } else {
-          clusters.push({ 
-            x: t.x, 
-            y: t.y, 
-            r: t.r, 
-            count: 1, 
-            vibe: t.vibe, 
-            cohesionScore: 0.1, // Low for single particles
-            _ids: [t.id]
-          });
+          work.push({ x:t.x, y:t.y, r:t.r, count:1, vibe:t.vibe, _ids:[t.id], cohesionScore:0.1 });
         }
-      });
+      }
     } catch (err) {
       console.error('[cluster-worker]', err);
     }
 
-    // Convert to final format with stable IDs
-    const finalClusters: SocialCluster[] = clusters.map(c => ({
+    // Convert to final format with stable IDs (no _ids exposed)
+    const finalClusters: SocialCluster[] = work.map(c => ({
       id: stableClusterId(c._ids),
-      x: c.x,
-      y: c.y,
-      r: c.r,
-      count: c.count,
-      vibe: c.vibe,
+      x: c.x, y: c.y, r: c.r, count: c.count, vibe: c.vibe,
       cohesionScore: c.cohesionScore,
-      ids: c._ids
+      ids: c._ids // Only expose ids in final interface
     }));
 
     lastClusters = finalClusters;
