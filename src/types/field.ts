@@ -67,3 +67,23 @@ export interface SocialCluster {
   breathingPhase?: number; // seeded per cluster
   momentum?: number;
 }
+
+// Phase 2: Convergence prediction
+export interface ConvergenceEvent {
+  id: string;                    // deterministic from pair ids
+  a: string; b: string;          // cluster ids (not exposed in UI copies if you prefer)
+  meeting: { x: number; y: number };
+  etaMs: number;                 // time-to-meet
+  dStar: number;                 // distance at closest approach
+  confidence: number;            // 0..1
+}
+
+export interface CentroidState {
+  x: number; 
+  y: number; 
+  vx: number; 
+  vy: number; 
+  t: number; 
+  cohesion: number; 
+  k: number;
+}

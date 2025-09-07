@@ -6,6 +6,7 @@ import type { SocialCluster } from '@/types/field';
 export interface ClusteringAPI {
   cluster: (tiles: RawTile[], zoom?: number) => Promise<SocialCluster[]>;
   hitTest: (x: number, y: number, radius?: number) => Promise<string[]>;
+  signals: (curr: SocialCluster[], zoom: number, now?: number) => Promise<{ convergences: import('@/types/field').ConvergenceEvent[] }>;
 }
 
 /**
@@ -63,6 +64,11 @@ class ClusteringFallback {
       }
     });
     return hits;
+  }
+
+  async signals(curr: SocialCluster[], zoom: number, now = performance.now()): Promise<{ convergences: import('@/types/field').ConvergenceEvent[] }> {
+    // Fallback implementation - no convergence prediction in fallback mode
+    return { convergences: [] };
   }
 }
 

@@ -28,6 +28,9 @@ import { ConstellationRenderer } from './ConstellationRenderer';
 import { useClusters } from '@/hooks/useClusters';
 import { useClustersLive } from '@/hooks/useClustersLive';
 import { ParticleTrailSystem } from '@/lib/field/ParticleTrailSystem';
+import { ConvergenceOverlay } from './overlays/ConvergenceOverlay';
+import { debugFieldVectors } from '@/lib/debug/flags';
+import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -109,6 +112,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const heatContainerRef = useRef<Container | null>(null);
   const constellationContainerRef = useRef<Container | null>(null);
   const trailContainerRef = useRef<Container | null>(null); // Phase 1: Particle trails
+  const overlayContainerRef = useRef<Container | null>(null); // Phase 2: Convergence overlay
   const userDotRef = useRef<Graphics | null>(null);  // User location dot
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
@@ -120,6 +124,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const glowFilterRef = useRef<any>(null);
   // Phase 1: Particle trail system
   const trailSystemRef = useRef<ParticleTrailSystem | null>(null);
+  // Phase 2: Convergence overlay
+  const convergenceOverlayRef = useRef<ConvergenceOverlay | null>(null);
+  const clustersRef = useRef<SocialCluster[]>([]);
+  const currentZoomRef = useRef<number>(11);
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -183,6 +191,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Create containers in proper z-order
         const heatContainer = new Container();
         const trailContainer = new Container(); // Phase 1: Particle trails (under clusters)
+        const overlayContainer = new Container(); // Phase 2: Convergence overlay (above clusters)
         const constellationContainer = new Container(); // For constellation effects
         const peopleContainer = new Container();
         const userContainer = new Container(); // For user location dot
@@ -190,6 +199,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Add containers in proper order (last = top layer)
         app.stage.addChild(trailContainer); // Trails at bottom
         app.stage.addChild(heatContainer);
+        app.stage.addChild(overlayContainer); // Convergence overlay above clusters
         app.stage.addChild(constellationContainer); // Constellation effects between heat and people
         app.stage.addChild(peopleContainer);
         app.stage.addChild(userContainer); // User dot on top
@@ -198,9 +208,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         peopleContainerRef.current = peopleContainer;
         constellationContainerRef.current = constellationContainer;
         trailContainerRef.current = trailContainer;
+        overlayContainerRef.current = overlayContainer;
         
         // Phase 1: Initialize particle trail system
         trailSystemRef.current = new ParticleTrailSystem(trailContainer);
+        
+        // Phase 2: Initialize convergence overlay
+        convergenceOverlayRef.current = new ConvergenceOverlay(overlayContainer);
         
         // Create user location dot
         const userDot = new Graphics();
@@ -491,7 +505,21 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           requestAnimationFrame(() => {
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
-            clusterWorker.cluster(rawTiles, currentZoom).then(clusters => {
+            clusterWorker.cluster(rawTiles, currentZoom).then(async (clusters) => {
+              // Update cluster refs for convergence
+              clustersRef.current = clusters;
+              currentZoomRef.current = currentZoom;
+              
+              // Phase 2: Get convergence predictions
+              let convergences: ConvergenceEvent[] = [];
+              try {
+                const signalsResult = await clusterWorker.signals(clusters, currentZoom);
+                convergences = signalsResult.convergences;
+              } catch (error) {
+                // Graceful fallback if signals method fails
+                console.warn('[FieldCanvas] Convergence signals unavailable:', error);
+              }
+              
               const keysThisFrame = new Set<string>();
               
               // Draw clusters with constellation mode support
@@ -542,6 +570,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   }
                 }
               });
+
+              // Phase 2: Render convergence overlay
+              if (convergenceOverlayRef.current) {
+                convergenceOverlayRef.current.render(convergences, currentZoom);
+              }
+              
+              // Debug vectors overlay (dev only)
+              if (debugFieldVectors() && convergences.length > 0) {
+                console.log(`[Debug] ${convergences.length} convergence events predicted`);
+              }
 
               /* fast viewport cull – if sprite is way outside screen we drop immediately */
               tilePool.active.forEach((sprite, id) => {
