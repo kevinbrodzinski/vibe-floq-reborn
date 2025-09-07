@@ -126,3 +126,6 @@ verify_jwt = false
 
 [functions.log-flow-samples]
 verify_jwt = false
+
+[functions.get-winds]
+verify_jwt = false

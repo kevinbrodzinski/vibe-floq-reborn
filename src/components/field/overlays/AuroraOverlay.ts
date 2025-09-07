@@ -54,6 +54,11 @@ export class AuroraOverlay {
     this.tuner = { ...this.tuner, ...t, enabled: true }; 
   }
 
+  /** Get current quality settings for external access */
+  getQuality(): AuroraQuality {
+    return { ...this.q };
+  }
+
   /** Auto-tune threshold by fps + active count (call after update()) */
   autoTune(metrics: { fps?: number }, activeCount: number) {
     if (!this.tuner.enabled) return;

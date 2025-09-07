@@ -1092,7 +1092,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       
       if (phase4Flags.aurora_enabled && auroraOverlayRef.current) {
         const auroraEvents = detectAurorasFromStorms(lastStormGroupsRef.current ?? [], {
-          minIntensity: auroraOverlayRef.current['q']?.intensityMin ?? P4.AURORA.INTENSITY_MIN,
+          minIntensity: auroraOverlayRef.current.getQuality().intensityMin,
           maxConcurrent: 3, 
           zoom: currentZoomRef.current
         });
