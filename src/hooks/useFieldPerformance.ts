@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import * as PIXI from 'pixi.js';
-import { PERF_BUDGETS, P3, P3B } from '@/lib/field/constants';
+import { PERF_BUDGETS, P3, P3B, P4 } from '@/lib/field/constants';
 
 interface PerformanceMetrics {
   fps: number;
@@ -115,8 +115,6 @@ export function shouldReduceQuality(metrics?: PerformanceMetrics): boolean {
 }
 
 export function getQualitySettings(deviceTier: 'low' | 'mid' | 'high', degraded: boolean) {
-  const { P4 } = require('@/lib/field/constants');
-  
   const base = {
     low: { 
       particles: PERF_BUDGETS.PARTICLES.LOW, 
