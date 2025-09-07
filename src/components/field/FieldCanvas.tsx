@@ -42,6 +42,8 @@ import { ATMO, FIELD_LOD, P3, P3B, P4 } from '@/lib/field/constants';
 import { TradeWindOverlay } from './overlays/TradeWindOverlay';
 import { AuroraOverlay } from './overlays/AuroraOverlay';
 import { AtmoTintOverlay } from './overlays/AtmoTintOverlay';
+import { useWeatherModulation } from '@/hooks/useWeatherModulation';
+import { logWorkerModeOnce } from '@/lib/debug/workerMode';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -87,6 +89,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   
   // Phase 3: Performance monitoring
   const { metrics, deviceTier } = useFieldPerformance(pixiApp);
+  
+  // Phase 4: Weather modulation
+  const centerLat = viewportGeo ? (viewportGeo.minLat + viewportGeo.maxLat) / 2 : undefined;
+  const centerLng = viewportGeo ? (viewportGeo.minLng + viewportGeo.maxLng) / 2 : undefined;
+  const { weather, modulation } = useWeatherModulation(centerLat, centerLng);
 
   // 🛰️ TASK: Wire up live cluster system for constellation overlay
   const bbox: [number, number, number, number] = useMemo(() => {
@@ -208,6 +215,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
   // Wait for map to be ready before initializing PIXI
   useEffect(() => {
+    // Log worker mode once at boot
+    logWorkerModeOnce();
+    
     // For now, assume map is ready immediately
     // In a real Mapbox integration, you'd listen for map 'load' event
     setMapReady(true);
@@ -989,6 +999,24 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       
       if (phase4Flags.tint_enabled && atmoTintOverlayRef.current) {
         atmoTintOverlayRef.current.update(new Date());
+      }
+
+      // Apply weather modulation to overlays (subtle effects)
+      if (phase4Flags.weather_enabled && weather) {
+        // Modulate pressure alpha based on precipitation
+        if (pressureOverlayRef.current) {
+          // pressureOverlayRef.current.setAlphaMod(modulation.precipMod); // TODO: Add alpha modulation
+        }
+        
+        // Log weather conditions for debugging (once per update)
+        if (import.meta.env.DEV && Math.random() < 0.001) {
+          console.log('[Weather] Current conditions:', {
+            condition: weather.condition,
+            precip: weather.precipitationMm,
+            vis: weather.visibilityKm,
+            modulation
+          });
+        }
       }
 
       // Performance mark: First successful render completed
