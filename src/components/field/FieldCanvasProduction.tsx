@@ -174,9 +174,10 @@ export const FieldCanvasProduction: React.FC<FieldCanvasProductionProps> = ({
             x,
             y,
             r,
+            count: tile.crowd_count || 1,
             vibe: vibeToken as VibeToken
           };
-        }).filter(Boolean) as Array<{id: string; x: number; y: number; r: number; vibe: VibeToken}>;
+        }).filter(Boolean);
 
         // Only recluster when tiles change or LOD boundary crossed
         const tilesKey = enhancedTiles.map(t => t.tile_id).join(',');

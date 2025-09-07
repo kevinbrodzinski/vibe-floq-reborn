@@ -507,6 +507,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           return {
             id: tile.tile_id,
             x, y, r: adjustedRadius,
+            count: tile.crowd_count || 1,
             vibe: 'social' as const, // TODO: Convert HSL to vibe token
             opacity: isConstellationMode ? 0.6 : 1.0
           };

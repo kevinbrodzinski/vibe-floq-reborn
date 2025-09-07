@@ -42,11 +42,11 @@ export class ConvergenceOverlay {
       s.width = 6; 
       s.height = 6; 
       
-      // Fade out based on age
+      // Fade out based on age with smooth transition
       const age = now - rec.t;
-      const k = 1 - age / S.COOL_MS;
+      const k = Math.max(0, 1 - age / S.COOL_MS);
       const baseAlpha = Math.min(0.85, 0.4 + 0.6 * e.confidence);
-      s.alpha = Math.max(0, baseAlpha * k);
+      s.alpha = baseAlpha * k;
       
       // Use semantic convergence color
       s.tint = 0xf59e0b; // TODO: Route through design tokens
@@ -74,10 +74,15 @@ export class ConvergenceOverlay {
     const rec = this.active.get(id);
     if (!rec) return;
     
-    rec.s.visible = false;
-    this.container.removeChild(rec.s);
-    this.pool.push(rec.s);
-    this.active.delete(id);
+    // Fade out smoothly instead of abrupt removal
+    const age = performance.now() - rec.t;
+    const coolMs = PHASE2.CONVERGENCE.COOL_MS;
+    if (age >= coolMs) {
+      rec.s.visible = false;
+      this.container.removeChild(rec.s);
+      this.pool.push(rec.s);
+      this.active.delete(id);
+    }
   }
 
   clear() {

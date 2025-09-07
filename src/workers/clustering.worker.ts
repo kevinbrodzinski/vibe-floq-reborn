@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink';
 import type { SocialCluster, VibeToken, ConvergenceEvent, CentroidState } from '@/types/field';
 import { stableClusterId } from '@/lib/field/clusterId';
-import { CLUSTER, PHASE2 } from '@/lib/field/constants';
+import { CLUSTER, PHASE2, FIELD_LOD } from '@/lib/field/constants';
 
 /* ────────────── types ────────────── */
 export interface RawTile {
@@ -9,6 +9,7 @@ export interface RawTile {
   x: number;                        // screen-space px  (projectToScreen)
   y: number;
   r: number;                        // radius  (crowdCountToRadius)
+  count: number;                    // member count for k-anon gates
   vibe: VibeToken;                  // design token, not raw HSL
 }
 
@@ -97,33 +98,35 @@ function closestApproach(a: CentroidState, b: CentroidState) {
 
 let lastEmit = 0;
 
-/* ────────────── API ────────────── */
-const api = {
-  /** 
-   * Phase 2: Enhanced clustering with social physics and lifecycle tracking
-   * Velocity computed cross-frame on client side
-   */
+/* ────────────── Persistent worker instance ────────────── */
+class ClusteringWorker {
+  private lastProcessTime = Date.now();
+  private clusters = new Map<string, SocialCluster>();
+  
   cluster(tiles: RawTile[], zoom = 11): SocialCluster[] {
     const threshold = mergeDistanceForZoom(zoom);
     const work: Array<{x:number;y:number;r:number;count:number;vibe:VibeToken;_ids:string[];cohesionScore:number}> = [];
 
     try {
       for (const t of tiles) {
+        // Privacy gate: only process tiles with sufficient count
+        if (t.count < FIELD_LOD.K_MIN) continue;
+        
         const hit = work.find(c => {
           const dx = c.x - t.x, dy = c.y - t.y;
           return (dx*dx + dy*dy) < (threshold*threshold);
         });
         
         if (hit) {
-          const n = hit.count + 1;
-          hit.x = (hit.x * hit.count + t.x) / n;
-          hit.y = (hit.y * hit.count + t.y) / n;
+          const n = hit.count + t.count;
+          hit.x = (hit.x * hit.count + t.x * t.count) / n;
+          hit.y = (hit.y * hit.count + t.y * t.count) / n;
           hit.r = Math.max(hit.r, t.r);
           hit.count = n;
           hit._ids.push(t.id);
           hit.cohesionScore = Math.min(n / 10, 1);
         } else {
-          work.push({ x:t.x, y:t.y, r:t.r, count:1, vibe:t.vibe, _ids:[t.id], cohesionScore:0.1 });
+          work.push({ x:t.x, y:t.y, r:t.r, count:t.count, vibe:t.vibe, _ids:[t.id], cohesionScore:0.1 });
         }
       }
     } catch (err) {
@@ -209,7 +212,7 @@ const api = {
     
     lastClusters = finalClusters;
     return finalClusters;
-  },
+  }
 
   /** cursor hit-test → returns cluster_ids within `radius` px (dev only) */
   hitTest(x: number, y: number, radius = 12): string[] {
@@ -222,7 +225,7 @@ const api = {
         return dx * dx + dy * dy <= r2;
       })
       .map(c => c.id); // Return cluster IDs only, not tile provenance
-  },
+  }
 
   /** Phase 2: convergence prediction with social physics */
   signals(curr: SocialCluster[], zoom: number, now = performance.now()): { convergences: ConvergenceEvent[] } {
@@ -270,7 +273,16 @@ const api = {
     }
     // hysteresis (cooldown) will be handled on the UI side with TTL if desired
     return { convergences: out };
-  },
+  }
+}
+
+// Persistent worker instance
+const workerInstance = new ClusteringWorker();
+
+const api = {
+  cluster: (tiles: RawTile[], zoom = 11) => workerInstance.cluster(tiles, zoom),
+  hitTest: (x: number, y: number, radius = 12) => workerInstance.hitTest(x, y, radius),
+  signals: (curr: SocialCluster[], zoom: number, now = performance.now()) => workerInstance.signals(curr, zoom, now),
 };
 
 Comlink.expose(api);

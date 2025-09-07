@@ -40,10 +40,17 @@ export class BreathingSystem {
   private circleTex: PIXI.Texture;
 
   constructor(parent: PIXI.Container, private renderer: PIXI.Renderer) {
-    // Build a circle texture once via renderer (RN-safe)
+    // Build RN-safe glow texture using Graphics + renderer
     const g = new PIXI.Graphics();
-    g.beginFill(0xffffff, 1);
+    // Create three concentric circles to simulate radial gradient
+    g.beginFill(0xffffff, 0.08);
     g.drawCircle(0, 0, 64);
+    g.endFill();
+    g.beginFill(0xffffff, 0.20);
+    g.drawCircle(0, 0, 42);
+    g.endFill();
+    g.beginFill(0xffffff, 0.50);
+    g.drawCircle(0, 0, 21);
     g.endFill();
     this.circleTex = this.renderer.generateTexture(g);
     g.destroy();
@@ -52,17 +59,13 @@ export class BreathingSystem {
     this.glowContainer = new PIXI.Container();
     this.glowContainer.label = 'ClusterGlow';
 
-    try {
-      this.particleContainer = new (PIXI as any).ParticleContainer(this.maxParticles, { position: true, scale: true, alpha: true, tint: true });
-    } catch {
-      this.particleContainer = new PIXI.ParticleContainer();
-    }
+    this.particleContainer = new PIXI.ParticleContainer();
     this.particleContainer.label = 'BreathingParticles';
 
     parent.addChild(this.glowContainer);
     parent.addChild(this.particleContainer);
 
-    // Pre-populate particle pool
+    // Pre-populate particle pool with static properties set once
     for (let i = 0; i < this.maxParticles; i++) {
       const particle = new PIXI.Sprite(PIXI.Texture.WHITE);
       particle.anchor.set(0.5);
@@ -167,6 +170,7 @@ export class BreathingSystem {
     if (!glow) {
       glow = new PIXI.Sprite(this.circleTex);
       glow.anchor.set(0.5);
+      glow.blendMode = 'add';
       this.glowContainer.addChild(glow);
       this.glowSprites.set(cluster.id, glow);
     }
