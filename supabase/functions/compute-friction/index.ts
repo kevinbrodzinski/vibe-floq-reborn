@@ -21,6 +21,22 @@ serve(async (req) => {
   try {
     const auth = req.headers.get("Authorization") ?? "";
     const body = await req.json() as ReqBody;
+    
+    // Validate payload size
+    if (!Array.isArray(body.paths) || body.paths.length === 0 || body.paths.length > 6) {
+      return new Response(JSON.stringify({ error: "Invalid paths (1–6 allowed)" }), { 
+        status: 400, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    for (const p of body.paths) {
+      if (!Array.isArray(p.stops) || p.stops.length === 0 || p.stops.length > 10) {
+        return new Response(JSON.stringify({ error: "Each path must have 1–10 stops" }), { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: auth } },
     });
