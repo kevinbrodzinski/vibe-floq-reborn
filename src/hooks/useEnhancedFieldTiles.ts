@@ -8,9 +8,7 @@ import {
   TemporalBuffer 
 } from '@/lib/field/physics';
 import { EnhancedFieldSystem } from '@/lib/field/EnhancedFieldSystem';
-import type { 
-  EnhancedFieldTile
-} from '../../packages/types/domain/enhanced-field';
+import type { EnhancedFieldTile } from '../../packages/types/domain/enhanced-field';
 import { validateEnhancedTiles } from '@/lib/field/validateEnhancedTiles';
 import { boundsToGridCells } from '@/lib/field/boundsToGridCells';
 
@@ -88,8 +86,8 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
         return rawTiles;
       }
       
-      // Process through enhanced field system
-      const result = fieldSystemRef.current!.updateTiles(rawTiles);
+      // Process through enhanced field system (cast to handle schema differences)
+      const result = fieldSystemRef.current!.updateTiles(rawTiles as EnhancedFieldTile[]);
       
       // Store convergences for aggregate metrics
       const convergenceData = result.convergences;
@@ -109,8 +107,7 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
   useEffect(() => {
     if (!tileIds.length) return;
     
-    // Use Set for efficient grid cell filtering
-    const gridCellSet = new Set(tileIds);
+    const tileIdSet = new Set(tileIds);
     
     const channel = supabase
       .channel('vibes-now-field-updates')
@@ -122,9 +119,12 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
           table: 'vibes_now'
         },
         (payload) => {
-          // Check if the update affects any of our grid cells
+          // Check if the update affects any of our grid cells with Set lookup
           const newRecord = payload.new as any;
-          if (newRecord?.h3_7 && gridCellSet.has(newRecord.h3_7)) {
+          const oldRecord = payload.old as any;
+          const tileId = newRecord?.h3_7 || oldRecord?.h3_7;
+          
+          if (tileId && tileIdSet.has(tileId)) {
             // Invalidate and refetch on real-time update
             queryClient.invalidateQueries({
               queryKey: ['enhanced-field-tiles']
@@ -177,7 +177,7 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
     // Enhanced system methods
     updateTrailRendering: (screenProjection: (lat: number, lng: number) => { x: number; y: number }) => {
       if (fieldSystemRef.current) {
-        fieldSystemRef.current.updateTrailRendering(tileData, screenProjection);
+        fieldSystemRef.current.updateTrailRendering(tileData as EnhancedFieldTile[], screenProjection);
       }
     },
     getActiveConvergences: () => fieldSystemRef.current?.getActiveConvergences() || [],
@@ -199,8 +199,16 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
         if (tile.trail_segments && tile.trail_segments.length > 0) {
           trails.push({
             tileId: tile.tile_id,
-            segments: tile.trail_segments,
-            renderableSegments: AfterglowTrailManager.getRenderableSegments(tile)
+            segments: tile.trail_segments.filter(seg => 
+              seg.x !== undefined && seg.y !== undefined && 
+              seg.timestamp !== undefined && seg.alpha !== undefined
+            ).map(seg => ({
+              x: seg.x!,
+              y: seg.y!,
+              timestamp: seg.timestamp!,
+              alpha: seg.alpha!
+            })),
+            renderableSegments: AfterglowTrailManager.getRenderableSegments(tile as EnhancedFieldTile)
           });
         }
       });

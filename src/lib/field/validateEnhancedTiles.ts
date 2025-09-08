@@ -3,7 +3,7 @@ import {
   EnhancedFieldTileSchema,
   EnhancedFieldTilesResponseSchema,
 } from "../../../packages/types/domain/enhanced-field.schemas";
-import type { EnhancedFieldTile, EnhancedFieldTilesResponse } from "../../../packages/types/domain/enhanced-field";
+import type { EnhancedFieldTile, EnhancedFieldTilesResponse } from '../../../packages/types/domain/enhanced-field';
 
 // Dev log throttling
 let lastLog = 0;

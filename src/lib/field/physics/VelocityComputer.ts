@@ -1,4 +1,4 @@
-import type { TemporalSnapshot, VelocityVector, MovementMode } from '../../../packages/types/domain/enhanced-field';
+import type { TemporalSnapshot, VelocityVector, EnhancedFieldTile } from '@/types/field';
 
 /**
  * Advanced velocity computation with enhanced Haversine calculations
@@ -76,7 +76,7 @@ export class VelocityComputer {
   /**
    * Enhanced movement classification with fine-grained thresholds
    */
-  static classifyMovement(velocity: VelocityVector): MovementMode {
+  static classifyMovement(velocity: VelocityVector): EnhancedFieldTile['movement_mode'] {
     const speed = velocity.magnitude;
     
     if (speed < this.MOVEMENT_THRESHOLDS.STATIONARY) return 'stationary';

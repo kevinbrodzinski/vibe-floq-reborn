@@ -13,6 +13,7 @@
       "@ui/*": ["packages/ui/*"],
       "@ui": ["packages/ui/index.ts"],
       "@maps/*": ["packages/ui/src/maps/*"],
+      "@types": ["packages/types/index.ts"],
       "@types/*": ["packages/types/*"]
     }
   },

@@ -45,7 +45,7 @@ export function FieldCanvasIntegration({
     predictions,
     getHighConfidencePredictions,
     getImminentPredictions 
-  } = useConvergencePredictions(enhancedTiles);
+  } = useConvergencePredictions(enhancedTiles as EnhancedFieldTile[]);
 
   // Initialize trail system
   useEffect(() => {
@@ -78,14 +78,14 @@ export function FieldCanvasIntegration({
       }
     });
 
-    // Update trail system
-    trailSystemRef.current.updateTrails(enhancedTiles, screenCoords);
+    // Update trail system (cast to handle type differences)
+    trailSystemRef.current.updateTrails(enhancedTiles as EnhancedFieldTile[], screenCoords);
   }, [enhancedTiles]);
 
   // Notify parent components of updates
   useEffect(() => {
     if (onTileUpdate && enhancedTiles.length > 0) {
-      onTileUpdate(enhancedTiles);
+      onTileUpdate(enhancedTiles as EnhancedFieldTile[]);
     }
   }, [enhancedTiles, onTileUpdate]);
 
@@ -150,7 +150,7 @@ export function useEnhancedFieldIntegration(
     predictions,
     getHighConfidencePredictions,
     getImminentPredictions 
-  } = useConvergencePredictions(tiles);
+  } = useConvergencePredictions(tiles as EnhancedFieldTile[]);
 
   return {
     // Enhanced tiles data

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { AfterglowTrailManager } from './physics/AfterglowTrailManager';
-import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field';
+import type { EnhancedFieldTile } from '@/types/field';
 
 /**
  * Enhanced particle trail system integrating with social physics
@@ -42,6 +42,10 @@ export class EnhancedParticleTrailSystem {
     screenCoords: Map<string, { x: number; y: number }>,
     currentTime: number = Date.now()
   ) {
+    // Performance guard - skip if container is nearly invisible
+    if (this.container.alpha < 0.05) return;
+    if (tiles.length === 0) return;
+    
     const activeTileIds = new Set<string>();
 
     tiles.forEach(tile => {
