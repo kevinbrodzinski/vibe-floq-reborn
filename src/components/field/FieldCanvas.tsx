@@ -40,6 +40,7 @@ import { PrecipOverlay } from './overlays/PrecipOverlay';
 import { VibeCompassOverlay } from './overlays/VibeCompassOverlay';
 import { AltitudeController } from '@/features/field/layers/AltitudeController';
 import { SocialWeatherTracker } from '@/features/field/status/SocialWeatherComposer';
+import { aggregateWeatherMetrics } from '@/features/field/status/metricsAggregator';
 import { placeLabelFromViewport } from '@/lib/geo/placeLabel';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { debugFieldVectors } from '@/lib/debug/flags';
@@ -214,6 +215,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 4: Storm groups for aurora detection
   const lastStormGroupsRef = useRef<any[]>([]);
   
+  // Data refs for social weather metrics
+  const flowCellsRef = useRef<any[]>([]);
+  const pressureCellsRef = useRef<any[]>([]);
+  
   // Phase 4: HUD counters for performance monitoring
   const [phase4HudCounters, setPhase4HudCounters] = useState({
     windsPaths: 0,
@@ -387,11 +392,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         }
 
         // Social Weather System: Initialize altitude controller and new overlays
-        altitudeControllerRef.current = new AltitudeController();
-        lightningOverlayRef.current = new LightningOverlay(overlayContainer);
-        precipOverlayRef.current = new PrecipOverlay(overlayContainer, app.renderer);
-        vibeCompassOverlayRef.current = new VibeCompassOverlay(overlayContainer);
-        socialWeatherTrackerRef.current = new SocialWeatherTracker();
+        altitudeControllerRef.current ??= new AltitudeController();
+        lightningOverlayRef.current ??= new LightningOverlay(overlayContainer);
+        precipOverlayRef.current ??= new PrecipOverlay(overlayContainer, app.renderer);
+        vibeCompassOverlayRef.current ??= new VibeCompassOverlay(overlayContainer);
+        socialWeatherTrackerRef.current ??= new SocialWeatherTracker();
         
         // Apply initial quality settings to new overlays
         const tier = deviceTier as 'low' | 'mid' | 'high';
@@ -849,16 +854,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                     const center = map.getCenter();
                     const placeLabel = placeLabelFromViewport(center.lat, center.lng);
                     
-                    // Mock weather metrics - TODO: wire to real pressure/flow data
-                    const weatherMetrics = {
-                      meanPressure: Math.random() * 0.3 + 0.4, // 0.4-0.7
-                      stdPressure: Math.random() * 0.2 + 0.1,  // 0.1-0.3
-                      meanGradient: Math.random() * 0.4 + 0.2, // 0.2-0.6
-                      windsStrength: Math.random() * 0.3 + 0.3, // 0.3-0.6
-                      laneDensity: convergences.length / 20, // Normalize lane count
-                      auroraActive: 0, // No aurora system yet
+                    // Aggregate real metrics from existing field data
+                    const weatherMetrics = aggregateWeatherMetrics({
+                      pressureCells: pressureCellsRef.current ?? [],
+                      flowCells: flowCellsRef.current ?? [],
+                      convergences: convergences ?? [],
+                      auroraActive: phase4HudCounters.auroraActive ?? 0,
                       placeLabel
-                    };
+                    });
                     
                     const phrase = socialWeatherTrackerRef.current.update(weatherMetrics);
                     
@@ -1072,6 +1075,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             .then(w => w.flowGrid(clustersRef.current, currentZoomRef.current))
             .then(flowCells => {
               emitWorkerPerfEvent(performance.now() - t0);
+              flowCellsRef.current = flowCells; // Store for social weather
               flowFieldOverlayRef.current?.update(flowCells, currentZoomRef.current);
             })
             .catch(e => { if (import.meta.env.DEV) console.warn('[flowGrid] worker error:', e); });
@@ -1124,6 +1128,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             .then(w => w.pressureGrid(clustersRef.current, currentZoomRef.current))
             .then(pcells => {
               emitWorkerPerfEvent(performance.now() - t0);
+              pressureCellsRef.current = pcells; // Store for social weather
               pressureOverlayRef.current?.update(pcells, currentZoomRef.current);
             })
             .catch(e => { if (import.meta.env.DEV) console.warn('[pressureGrid] worker error:', e); });

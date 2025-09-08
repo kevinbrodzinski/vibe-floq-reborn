@@ -37,6 +37,11 @@ export class LightningOverlay {
     this.container.addChild(this.graphics);
     
     parent.addChild(this.container);
+    
+    // Set DEV global for debugging
+    if (import.meta.env.DEV) {
+      (window as any).__lightningOverlay = this;
+    }
   }
 
   /**

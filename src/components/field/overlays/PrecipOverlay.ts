@@ -24,8 +24,8 @@ interface RainDrop {
 export class PrecipOverlay {
   private container: PIXI.Container;
   private drops: RainDrop[] = [];
-  private dropPool: PIXI.Sprite[] = [];
-  private freeDrops: PIXI.Sprite[] = [];
+  private pool: PIXI.Sprite[] = [];
+  private free: PIXI.Sprite[] = [];
   private maxDrops = 150;
   private precipTexture: PIXI.Texture;
   private tier: 'low' | 'mid' | 'high' = 'high';
@@ -44,10 +44,15 @@ export class PrecipOverlay {
       drop.blendMode = ADD_BLEND;
       drop.scale.set(0.8 + Math.random() * 0.4); // Vary size
       drop.visible = false;
-      this.dropPool.push(drop);
+      this.pool.push(drop);
     }
     
-    this.freeDrops = [...this.dropPool];
+    this.free = [...this.pool];
+    
+    // Set DEV global for debugging
+    if (import.meta.env.DEV) {
+      (window as any).__precipOverlay = this;
+    }
     parent.addChild(this.container);
   }
 
@@ -100,9 +105,9 @@ export class PrecipOverlay {
   }
 
   private emitDrop(cluster: SocialCluster) {
-    if (this.drops.length >= this.maxDrops || this.freeDrops.length === 0) return;
+    if (this.drops.length >= this.maxDrops || this.free.length === 0) return;
     
-    const sprite = this.freeDrops.pop()!;
+    const sprite = this.free.pop()!;
     
     // Spawn around cluster perimeter, falling inward
     const spawnRadius = (cluster.glowRadius ?? 40) * 1.2;
@@ -155,7 +160,7 @@ export class PrecipOverlay {
         // Recycle drop
         drop.sprite.visible = false;
         this.container.removeChild(drop.sprite);
-        this.freeDrops.push(drop.sprite);
+        this.free.push(drop.sprite);
         this.drops.splice(i, 1);
       } else {
         // Update visual properties
@@ -199,7 +204,7 @@ export class PrecipOverlay {
   getStats() {
     return {
       activeDrops: this.drops.length,
-      poolAvailable: this.freeDrops.length
+      poolAvailable: this.free.length
     };
   }
 
@@ -217,9 +222,9 @@ export class PrecipOverlay {
     this.drops.length = 0;
     
     // Clear pools
-    this.dropPool.forEach(sprite => sprite.destroy());
-    this.dropPool.length = 0;
-    this.freeDrops.length = 0;
+    this.pool.forEach(sprite => sprite.destroy());
+    this.pool.length = 0;
+    this.free.length = 0;
     
     // Clean up texture and container
     this.precipTexture.destroy();
