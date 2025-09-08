@@ -129,3 +129,9 @@ verify_jwt = false
 
 [functions.get-winds]
 verify_jwt = false
+
+[functions.get_weather]
+verify_jwt = false
+
+[functions.recommend]
+verify_jwt = false
