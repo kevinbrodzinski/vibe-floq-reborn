@@ -19567,6 +19567,21 @@ export type Database = {
         Args: { f_id: string; who: string }
         Returns: boolean
       }
+      fn_suggest_subgroups: {
+        Args: {
+          p_coplan_days?: number
+          p_home_days?: number
+          p_min_members?: number
+          p_plan_id: string
+          p_time_days?: number
+        }
+        Returns: {
+          cohesion: number
+          group_label: string
+          members: string[]
+          reasons: string[]
+        }[]
+      }
       friend_count: {
         Args: Record<PropertyKey, never>
         Returns: number
