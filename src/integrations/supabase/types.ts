@@ -18736,6 +18736,13 @@ export type Database = {
         Args: { tname: string }
         Returns: undefined
       }
+      _friend_pair: {
+        Args: { a: string; b: string }
+        Returns: {
+          high: string
+          low: string
+        }[]
+      }
       _norm_text: {
         Args: { t: string }
         Returns: string
@@ -19594,6 +19601,17 @@ export type Database = {
           group_label: string
           members: string[]
           reasons: string[]
+        }[]
+      }
+      friend_audience: {
+        Args: { a: string; b: string }
+        Returns: string
+      }
+      friend_audience_batch: {
+        Args: { pairs_sql: string }
+        Returns: {
+          audience: string
+          other: string
         }[]
       }
       friend_count: {
@@ -21228,6 +21246,10 @@ export type Database = {
       invite_friends: {
         Args: { p_plan_id: string; p_profile_ids: string[] }
         Returns: Json
+      }
+      is_close_friend: {
+        Args: { a: string; b: string }
+        Returns: boolean
       }
       is_floq_participant: {
         Args: { p_floq_id: string; p_user_id: string }
