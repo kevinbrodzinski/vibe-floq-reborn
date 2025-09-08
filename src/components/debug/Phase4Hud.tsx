@@ -7,6 +7,11 @@ export function Phase4Hud({ metrics, counters }:{
   const urlParams = new URLSearchParams(window.location.search);
   if (!urlParams.get('debug')?.includes('phase4')) return null;
 
+  const hud = { metrics, counters };
+  
+  // Expose HUD data globally for console access
+  if (import.meta.env.DEV) (window as any).__hud = hud;
+
   return (
     <div style={{
       position:'fixed', bottom:12, left:12, zIndex:9999, font:'12px system-ui',

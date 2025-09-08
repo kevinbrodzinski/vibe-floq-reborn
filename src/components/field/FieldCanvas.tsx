@@ -1003,7 +1003,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   if (stormOverlayRef.current) {
                     return getClusterWorker().then(w => w.stormGroups(lanes, currentZoomRef.current))
                       .then(groups => {
-                        lastStormGroupsRef.current = groups; // Store for aurora detection
+                        lastStormGroupsRef.current = groups.map(g => ({ ...g, lastUpdate: performance.now() })); // Store for aurora detection
                         return stormOverlayRef.current?.update(groups, currentZoomRef.current);
                       });
                   }
