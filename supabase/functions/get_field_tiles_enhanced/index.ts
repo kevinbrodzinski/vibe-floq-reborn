@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { friendshipCache } from "../_shared/friendshipCache.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +11,7 @@ interface EnhancedFieldTileRequest {
   grid_cells: string[]
   include_history?: boolean
   time_window_minutes?: number
-  audience?: 'public' | 'close'
+  audience?: 'public' | 'friends' | 'close'
 }
 
 serve(async (req) => {
@@ -45,6 +46,26 @@ serve(async (req) => {
 
     console.log(`[ENHANCED_FIELD_TILES] Processing ${grid_cells.length} grid cells with time window: ${time_window_minutes} minutes`)
 
+    // Get caller's authentication and profile
+    const { data: userResp } = await supabaseClient.auth.getUser()
+    const user = userResp?.user
+
+    let callerProfileId: string | null = null
+    if (user) {
+      const { data: prof } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      callerProfileId = prof?.id ?? null
+    }
+
+    // Fetch audience sets (cached)
+    let relSets = { close: new Set<string>(), friends: new Set<string>() }
+    if (callerProfileId) {
+      relSets = await friendshipCache.getSets(supabaseClient, callerProfileId)
+    }
+
     try {
       // Use the new database function for k-anonymous field tiles
       const { data: tiles, error } = await supabaseClient.rpc('get_enhanced_field_tiles', {
@@ -56,8 +77,8 @@ serve(async (req) => {
 
       if (error) throw error
 
-      // Compute velocity and physics in TypeScript for better unit consistency
-      const enhancedTiles = computeEnhancedTiles(tiles || [], include_history)
+      // Compute velocity and physics in TypeScript with relationship-aware active IDs
+      const enhancedTiles = computeEnhancedTiles(tiles || [], include_history, relSets, audience, callerProfileId)
 
       console.log(`[ENHANCED_FIELD_TILES] Successfully computed ${enhancedTiles.length} enhanced tiles`)
 
@@ -82,10 +103,29 @@ serve(async (req) => {
       )
     }
 
-}
+  } catch (error) {
+    console.error('[ENHANCED_FIELD_TILES] Error:', error)
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to fetch enhanced field tiles',
+        details: error.message 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
+  }
+})
 
 // Compute enhanced tile physics in TypeScript for unit consistency
-function computeEnhancedTiles(baseTiles: any[], includeHistory: boolean) {
+function computeEnhancedTiles(
+  baseTiles: any[], 
+  includeHistory: boolean, 
+  relSets: { close: Set<string>, friends: Set<string> },
+  audience: string,
+  callerProfileId: string | null
+) {
   return baseTiles.map(tile => {
     // Mock velocity computation (real velocity needs historical data)
     const mockVelocity = {
@@ -106,11 +146,27 @@ function computeEnhancedTiles(baseTiles: any[], includeHistory: boolean) {
       Math.min(1, (tile.crowd_count / 10) * 0.8)
     )
 
+    // Audience-aware active_floq_ids filtering
+    const underK = tile.crowd_count < 5 // k-anonymity threshold
+    const allIds = tile.active_floq_ids || []
+    let activeIds: string[] = []
+
+    if (!underK && callerProfileId) {
+      if (audience === 'close') {
+        // Only caller's close circle present in this tile
+        activeIds = allIds.filter((id: string) => relSets.close.has(id))
+      } else if (audience === 'friends') {
+        // Friends include close relationships
+        activeIds = allIds.filter((id: string) => relSets.friends.has(id))
+      }
+      // audience === 'public' returns [] (no IDs exposed)
+    }
+
     return {
       tile_id: tile.tile_id,
       crowd_count: tile.crowd_count,
       avg_vibe: tile.avg_vibe,
-      active_floq_ids: tile.active_floq_ids || [],
+      active_floq_ids: activeIds,
       updated_at: tile.updated_at,
       center: [tile.center_lng, tile.center_lat],
       velocity: mockVelocity,
@@ -123,18 +179,3 @@ function computeEnhancedTiles(baseTiles: any[], includeHistory: boolean) {
     }
   })
 }
-
-  } catch (error) {
-    console.error('[ENHANCED_FIELD_TILES] Error:', error)
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to fetch enhanced field tiles',
-        details: error.message 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    )
-  }
-})
