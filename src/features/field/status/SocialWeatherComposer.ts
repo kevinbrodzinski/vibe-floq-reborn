@@ -34,7 +34,6 @@ export function composeSocialWeather(m: SocialWeatherMetrics): SocialWeatherPhra
   const w = clamp01(m.windsStrength);
   const L = clamp01(m.laneDensity);
   const a = clamp01(m.auroraActive);
-  const where = m.placeLabel ? ` in ${m.placeLabel}` : '';
 
   // Pick base type by gradient (fronts) then pressure
   let type: WeatherType;
@@ -54,16 +53,18 @@ export function composeSocialWeather(m: SocialWeatherMetrics): SocialWeatherPhra
     clearing: '🌤️' 
   } as const;
 
-  // Headlines
+  // Headlines with place label fallback (trim if undefined)
   let headline = 'Stable conditions';
+  const whereSuffix = m.placeLabel ? ` in ${m.placeLabel}` : '';
+  
   if (type === 'storm_front') {
-    headline = L > 0.35 ? `Convergence front forming${where}` : `Energy front detected${where}`;
+    headline = L > 0.35 ? `Convergence front forming${whereSuffix}` : `Energy front detected${whereSuffix}`;
   } else if (type === 'high_pressure') {
-    headline = w > 0.4 ? `Peak social energy${where}` : `Perfect conditions building${where}`;
+    headline = w > 0.4 ? `Peak social energy${whereSuffix}` : `Perfect conditions building${whereSuffix}`;
   } else if (type === 'low_pressure') {
-    headline = `Winding down${where}`;
+    headline = `Winding down${whereSuffix}`;
   } else {
-    headline = w > 0.35 ? `Clear skies with steady flow${where}` : `Calm conditions${where}`;
+    headline = w > 0.35 ? `Clear skies with steady flow${whereSuffix}` : `Calm conditions${whereSuffix}`;
   }
 
   // Detail (optional)

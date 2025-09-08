@@ -66,14 +66,19 @@ export function StatusReplayHeader({ phrase, replay, compact }: StatusReplayHead
 
   if (!p) return null;
 
-  // UI colors & subtle background
+  // UI colors & background with fallback for older WebViews
   const border = COLORS[p.type];
-  const bg = useMemo(() => `${COLORS[p.type]}1A`, [p.type]); // ~10% alpha background
+  const bg = useMemo(() => {
+    const color = COLORS[p.type];
+    // Modern: color-mix, fallback: rgba for older Android WebViews
+    return `color-mix(in oklab, ${color}, transparent 90%)`;
+  }, [p.type]);
   const intensityPct = Math.round(p.intensity * 100);
 
   const tsText = useMemo(() => {
-    if (!replay.isReplay || !replay.getRangeTs || !replay.getFrameTs) return '';
+    if (!replay.isReplay || !replay.getFrameTs) return '';
     const ts = replay.getFrameTs();
+    // Prefer getFrameTs() over progress math; show "Replay" if undefined
     return ts ? new Date(ts).toLocaleTimeString() : '';
   }, [replay]);
 

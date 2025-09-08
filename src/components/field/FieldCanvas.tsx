@@ -49,7 +49,7 @@ import { TimeLapseController } from '@/features/field/timelapse/TimeLapseControl
 import { StatusReplayHeader } from '@/features/field/status/StatusReplayHeader';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { ModeFader } from '@/features/field/mode/ModeFader';
-import { debugFieldVectors } from '@/lib/debug/flags';
+import { atmoTelemetry } from '@/features/field/telemetry/AtmoTelemetry';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 import { ATMO, FIELD_LOD, P3, P3B, P4 } from '@/lib/field/constants';
@@ -231,9 +231,15 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     (window as any).__timeLapseController = tlCtrlRef.current;
   }, [enterReplay, backToLive, replayMode]);
   
-  // Mode Fader: Update goal when replay mode changes
+  // Mode Fader: Update goal when replay mode changes + unsubscribe hygiene
   useEffect(() => {
     faderRef.current.setGoal(replayMode ? 'replay' : 'live');
+    
+    // Clean return function for unsubscribe hygiene
+    return () => {
+      // Cleanup any mode listeners to avoid orphan callbacks
+      faderRef.current.setGoal('live');
+    };
   }, [replayMode]);
   const [phase4Flags] = useState({
     tint_enabled: true,
@@ -881,21 +887,24 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 convergenceOverlayRef.current.render(convergences, currentZoom);
               }
 
-              // Social Weather System: Update altitude controller and new overlays with frame budget
-              const frameStart = performance.now();
-              
-              // Update mode fader for smooth live/replay transitions
-              faderRef.current.update(app.ticker.deltaMS);
-              const liveAlpha = faderRef.current.liveAlpha;
-              const replayAlpha = faderRef.current.replayAlpha;
-              
-              const altitudeController = altitudeControllerRef.current;
-              if (altitudeController) {
-                const activeLayers = altitudeController.computeActiveLayers(currentZoom);
-                const layerAlphas = altitudeController.updateLayerAlphas(app.ticker.deltaMS);
+                // Social Weather System: Update altitude controller and new overlays with frame budget
+                const frameStart = performance.now();
                 
-                // Frame budget gate: only update heavy overlays if we have time
-                const frameSpent = performance.now() - frameStart;
+                // Update mode fader for smooth live/replay transitions
+                faderRef.current.update(app.ticker.deltaMS);
+                const liveAlpha = faderRef.current.liveAlpha;
+                const replayAlpha = faderRef.current.replayAlpha;
+                
+                const altitudeController = altitudeControllerRef.current;
+                if (altitudeController) {
+                  const activeLayers = altitudeController.computeActiveLayers(currentZoom);
+                  const layerAlphas = altitudeController.updateLayerAlphas(app.ticker.deltaMS);
+                  
+                  // Frame budget gate: only update heavy overlays if we have time
+                  const frameSpent = performance.now() - frameStart;
+                  
+                  // Telemetry logging (dev-only, 1% sample)
+                  atmoTelemetry.log({ frame_spent_ms: frameSpent });
                 
                 // Live mode updates (only if liveAlpha > 0.05)
                 if (!replayMode && liveAlpha > 0.05) {
@@ -922,6 +931,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                     cascadeOverlayRef.current.spawn(hotspots);
                     cascadeOverlayRef.current.update(app.ticker.deltaMS);
                     cascadeOverlayRef.current.setAlpha((layerAlphas.get('Cascade') ?? 0) * liveAlpha);
+                    
+                    // Log cascade hotspots for telemetry
+                    atmoTelemetry.log({ cascade_hotspots: hotspots.length });
                   }
                 }
                 
@@ -938,11 +950,19 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   }
                 }
                 
-                // Update Vibe Compass overlay (lightweight)
+                // Update Vibe Compass overlay (lightweight) with quorum gating
                 if (vibeCompassOverlayRef.current && userLocation?.coords && frameSpent < 7.5) {
-                  const userScreenPos = projectToScreen(userLocation.coords.lat, userLocation.coords.lng);
-                  const viewport = { width: canvasRef.current?.width ?? 800, height: canvasRef.current?.height ?? 600 };
-                  vibeCompassOverlayRef.current.update(clusters, userScreenPos, viewport, app.ticker.deltaMS, currentZoom);
+                  // Gate by flow cell quorum, not just cluster count
+                  const hasQuorum = (flowCellsRef.current?.length ?? 0) >= 8;
+                  
+                  if (hasQuorum) {
+                    const userScreenPos = projectToScreen(userLocation.coords.lat, userLocation.coords.lng);
+                    const viewport = { width: canvasRef.current?.width ?? 800, height: canvasRef.current?.height ?? 600 };
+                    vibeCompassOverlayRef.current.update(clusters, userScreenPos, viewport, app.ticker.deltaMS, currentZoom);
+                  } else {
+                    // No quorum - fade compass out
+                    vibeCompassOverlayRef.current.setAlpha?.(0);
+                  }
                 }
 
                 // Update Social Weather Status (throttled to 1Hz)
@@ -994,7 +1014,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               previousClustersRef.current = clusters;
               
               // Debug vectors overlay (dev only)
-              if (debugFieldVectors() && convergences.length > 0) {
+              if (import.meta.env.DEV && convergences.length > 0) {
                 console.log(`[Debug] ${convergences.length} convergence events predicted`);
               }
 
