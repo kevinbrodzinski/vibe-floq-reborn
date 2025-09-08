@@ -12,7 +12,9 @@
       "@/*": ["src/*"],
       "@ui/*": ["packages/ui/*"],
       "@ui": ["packages/ui/index.ts"],
-      "@maps/*": ["packages/ui/src/maps/*"]
+      "@maps/*": ["packages/ui/src/maps/*"],
+      "@types": ["packages/types/index.ts"],
+      "@types/*": ["packages/types/*"]
     }
   },
   "include": ["src/types/global.d.ts", "**/*.ts", "**/*.tsx"]

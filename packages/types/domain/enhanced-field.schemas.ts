@@ -83,5 +83,6 @@ export const EnhancedFieldTilesResponseSchema = z.object({
   })).optional(),
 });
 
-// Runtime helper types - re-export from main domain types to avoid conflicts
-export type { EnhancedFieldTile, EnhancedFieldTilesResponse } from './enhanced-field';
+// Inferred types from schemas
+export type EnhancedFieldTile = z.infer<typeof EnhancedFieldTileSchema>;
+export type EnhancedFieldTilesResponse = z.infer<typeof EnhancedFieldTilesResponseSchema>;

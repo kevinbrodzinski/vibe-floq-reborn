@@ -9,10 +9,12 @@ import {
 } from '@/lib/field/physics';
 import { EnhancedFieldSystem } from '@/lib/field/EnhancedFieldSystem';
 import type { 
-  EnhancedFieldTile, 
+  EnhancedFieldTile
+} from '../../packages/types/domain/enhanced-field.schemas';
+import type {
   VelocityVector, 
   TemporalSnapshot 
-} from '../../../packages/types/domain/enhanced-field';
+} from '../../packages/types/domain/enhanced-field';
 import { validateEnhancedTiles } from '@/lib/field/validateEnhancedTiles';
 import { boundsToGridCells } from '@/lib/field/boundsToGridCells';
 
