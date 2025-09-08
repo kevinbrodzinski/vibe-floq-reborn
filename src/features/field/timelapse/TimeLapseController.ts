@@ -88,16 +88,41 @@ export class TimeLapseController {
   }
 
   /**
-   * Get controller stats
+   * Get controller stats for header display
    */
   getStats() {
+    const newest = this.buf.newest();
+    const oldest = this.buf.oldest();
+    let validFrames = 0; 
+    for (const _ of this.buf.iterNewToOld()) { 
+      validFrames++; 
+    }
+    
     return {
-      ...this.buf.getStats(),
       playing: this.playing,
       playIdx: this.playIdx,
+      validFrames,
+      newestTime: newest?.t,
+      oldestTime: oldest?.t,
       lastCapture: this.lastCapture,
       timeSinceLastCapture: performance.now() - this.lastCapture
     };
+  }
+
+  /**
+   * Get timestamp range for header
+   */
+  getRangeTs(): [number, number] {
+    const stats = this.getStats();
+    return [stats.oldestTime || Date.now(), stats.newestTime || Date.now()];
+  }
+
+  /**
+   * Get current frame timestamp for header
+   */
+  getFrameTs(): number | undefined {
+    const frame = this.buf.getBack(this.playIdx - 1);
+    return frame?.t;
   }
 
   /**

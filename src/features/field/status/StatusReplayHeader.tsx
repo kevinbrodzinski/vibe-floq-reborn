@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { LiveReplayBadge } from './LiveReplayBadge';
 
 type PhraseType = 'storm_front' | 'high_pressure' | 'low_pressure' | 'clearing';
 
@@ -151,6 +152,11 @@ export function StatusReplayHeader({ phrase, replay, compact }: StatusReplayHead
 
       {/* Replay control */}
       <div style={{ display: 'flex', gap: 8 }}>
+        <LiveReplayBadge 
+          isReplay={replay.isReplay} 
+          ts={replay.getFrameTs?.()} 
+          compact={compact}
+        />
         <button
           onClick={replay.isReplay ? replay.onBackToLive : replay.onEnterReplay}
           aria-pressed={replay.isReplay}

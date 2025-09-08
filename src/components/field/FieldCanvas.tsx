@@ -41,6 +41,7 @@ import { VibeCompassOverlay } from './overlays/VibeCompassOverlay';
 import { ProximityCascadeOverlay } from './overlays/ProximityCascadeOverlay';
 import { AltitudeController } from '@/features/field/layers/AltitudeController';
 import { SocialWeatherTracker } from '@/features/field/status/SocialWeatherComposer';
+import type { SocialWeatherPhrase } from '@/features/field/status/SocialWeatherComposer';
 import { aggregateWeatherMetrics } from '@/features/field/status/metricsAggregator';
 import { placeLabelFromViewport } from '@/lib/geo/placeLabel';
 import { detectCascadeHotspots } from '@/features/field/detect/detectCascade';
@@ -196,11 +197,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Social Weather Tracker
   const socialWeatherTrackerRef = useRef<SocialWeatherTracker | null>(null);
   const lastWeatherUpdateRef = useRef<number>(0);
-  const socialWeatherTracker = useSocialWeather();
-  const { phrase: socialWeatherPhrase } = socialWeatherTracker;
+  const [socialWeatherPhrase, setSocialWeatherPhrase] = useState<SocialWeatherPhrase | null>(null);
+  const { updatePhrase } = useSocialWeather();
   
-  // Replay mode callbacks
-  const enterReplay = useCallback(() => {
+  // Update context with phrase changes
+  useEffect(() => {
+    updatePhrase(socialWeatherPhrase);
+  }, [socialWeatherPhrase, updatePhrase]);
     if (tlCtrlRef.current) {
       tlCtrlRef.current.startPlayback();
       setReplayMode(true);
@@ -422,7 +425,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         precipOverlayRef.current ??= new PrecipOverlay(overlayContainer, app.renderer);
         vibeCompassOverlayRef.current ??= new VibeCompassOverlay(overlayContainer);
         cascadeOverlayRef.current ??= new ProximityCascadeOverlay(overlayContainer);
-        socialWeatherTrackerRef.current ??= new SocialWeatherTracker();
+        socialWeatherTrackerRef.current ??= new SocialWeatherTracker((phrase) => {
+          setSocialWeatherPhrase(phrase);
+        });
         
         // Time-Lapse System: Initialize controller
         tlCtrlRef.current ??= new TimeLapseController(() => ({
@@ -918,12 +923,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                       placeLabel
                     });
                     
-                    const phrase = socialWeatherTrackerRef.current.update(weatherMetrics);
-                    
-                    // Update context instead of local state
-                    if (socialWeatherTracker) {
-                      socialWeatherTracker.updatePhrase(phrase);
-                    }
+                    socialWeatherTrackerRef.current.update(weatherMetrics);
                     
                     lastWeatherUpdateRef.current = now;
                   }
@@ -1534,9 +1534,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [replayMode, enterReplay, backToLive]);
 
-  //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m
   return (
-    <>
+    <div
+      className={`field-canvas-container ${isConstellationMode ? 'constellation-mode' : ''}`}
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        position: 'relative',
+        zIndex: zIndex.mapOverlay,
+        border: import.meta.env.DEV ? '1px dashed rgba(0, 255, 0, 0.3)' : 'none'
+      }}
+    >
       {/* Status + Replay Header */}
       {socialWeatherPhrase && (
         <StatusReplayHeader
@@ -1545,22 +1553,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             isReplay: replayMode,
             onEnterReplay: enterReplay,
             onBackToLive: backToLive,
-            getRangeTs: () => {
-              const stats = tlCtrlRef.current?.getStats();
-              if (!stats?.oldestTime || !stats?.newestTime) return [Date.now(), Date.now()];
-              return [stats.oldestTime, stats.newestTime];
-            },
-            getFrameTs: () => {
-              // Get current frame timestamp if in replay mode
-              if (!replayMode || !tlCtrlRef.current) return undefined;
-              const stats = tlCtrlRef.current.getStats();
-              if (!stats?.playing) return undefined;
-              // Estimate current frame time based on playback position
-              const progress = stats.playIdx / Math.max(1, stats.validFrames - 1);
-              const range = stats.newestTime && stats.oldestTime ? 
-                [stats.oldestTime, stats.newestTime] : [Date.now(), Date.now()];
-              return range[1] - (progress * (range[1] - range[0]));
-            }
+            getRangeTs: () => tlCtrlRef.current?.getRangeTs() ?? [Date.now(), Date.now()],
+            getFrameTs: () => tlCtrlRef.current?.getFrameTs()
           }}
           compact={false}
         />
@@ -1587,12 +1581,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         />
       )}
       
-      {/* Debug info */}
-      {/* tooltip portal */}
-      <AnimatePresence>
-        {tooltip && <ClusterTooltip {...tooltip} />}
-      </AnimatePresence>
-      
       {/* Phase 4 Debug HUD */}
       <Phase4Hud 
         metrics={{
@@ -1602,6 +1590,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         }}
         counters={phase4HudCounters}
       />
-    </>
+      
+      {/* Tooltip */}
+      <ClusterTooltip tooltip={tooltip} />
+    </div>
   );
 });
+
+FieldCanvas.displayName = 'FieldCanvas';
+
+export { FieldCanvas };
