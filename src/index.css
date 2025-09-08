@@ -4,6 +4,14 @@
 
 :root {
   --neon: hsl(199 100% 60%); /* sky-400 looks good on both dark & light */
+  
+  /* ===== Z-Index System ===== */
+  --z-map: 0;
+  --z-canvas: 20;
+  --z-ui: 320;
+  --z-replay: 420;
+  --z-popover: 920;
+  --z-modal: 1000;
 }
 
 /* Silence ResizeObserver loop limit exceeded warnings */
@@ -494,6 +502,76 @@ All colors MUST be HSL.
     .fullscreen-map-wrapper {
       padding-top: env(safe-area-inset-top);
     }
+  }
+
+  /* ===== Enhanced Field CSS ===== */
+  .presence-field { 
+    position: relative; 
+    width: 100%; 
+    height: 100vh; 
+    overflow: hidden; 
+    background: #0a0a0a; 
+  }
+
+  /* PIXI canvas host */
+  .presence-field canvas {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-canvas);
+  }
+
+  /* Status + Weather */
+  .weather-overlay { 
+    position: absolute; 
+    top: 20px; 
+    left: 20px; 
+    z-index: var(--z-ui);
+    pointer-events: auto;
+  }
+
+  /* Layer controls */
+  .layer-controls { 
+    position: absolute; 
+    top: 20px; 
+    right: 20px; 
+    z-index: var(--z-ui);
+    pointer-events: auto;
+  }
+
+  /* Venue stories (display only) */
+  .venue-stories { 
+    position: absolute; 
+    bottom: 120px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    z-index: var(--z-ui); 
+    pointer-events: none; 
+  }
+
+  /* Replay bar + markers */
+  .time-lapse-scrubber { 
+    position: absolute; 
+    bottom: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    z-index: var(--z-replay);
+    pointer-events: auto;
+  }
+
+  /* Zoom controls */
+  .zoom-controls { 
+    position: absolute; 
+    bottom: 20px; 
+    right: 20px; 
+    z-index: var(--z-ui);
+    pointer-events: auto;
+  }
+
+  /* Tooltips/popovers */
+  .tooltip-portal { 
+    position: absolute; 
+    inset: auto; 
+    z-index: var(--z-popover); 
   }
 
   .pulse-glow {

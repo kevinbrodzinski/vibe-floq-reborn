@@ -18995,7 +18995,7 @@ export type Database = {
         }[]
       }
       are_friends: {
-        Args: { user_a: string; user_b: string }
+        Args: { a: string; b: string }
         Returns: boolean
       }
       arr_to_tsv: {
