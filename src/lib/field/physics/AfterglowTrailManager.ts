@@ -1,4 +1,4 @@
-import type { EnhancedFieldTile } from '@/types/field';
+import type { EnhancedFieldTile } from '../../../../packages/types/domain/enhanced-field';
 
 /**
  * Afterglow trail management based on patent τ: 2-60s decay
@@ -92,40 +92,31 @@ export class AfterglowTrailManager {
   /**
    * Get trail segments ready for rendering
    */
-  static getRenderableSegments(
-    tile: EnhancedFieldTile,
-    velocityScale: number = 1.0
-  ): Array<{
-    x: number;
-    y: number;
-    alpha: number;
-    thickness: number;
-    color: number;
+  /**
+   * Map raw segments to draw-ready geometry with thickness/alpha.
+   * Returns oldest→newest in array order.
+   */
+  static getRenderableSegments(tile: EnhancedFieldTile, headScale = 1.0): Array<{
+    x:number; y:number; alpha:number; thickness:number;
   }> {
-    if (!tile.trail_segments || tile.trail_segments.length === 0) {
-      return [];
+    const segs = tile.trail_segments ?? [];
+    if (segs.length < 2) return [];
+    const maxW = 4; // px line width budget
+    const speed = tile.velocity?.magnitude ?? 0;
+    const baseW = Math.min(maxW, 1 + (speed/10) * 3);
+
+    const out: Array<{x:number;y:number;alpha:number;thickness:number}> = [];
+    for (let i=0;i<segs.length;i++){
+      const s = segs[i];
+      const t = i / Math.max(1, segs.length - 1);           // 0..1 along trail
+      const thickness = Math.max(1, baseW * (0.4 + 0.6*t)); // thinner at tail
+      const alpha = s.alpha * (0.5 + 0.5*t);                 // brighter near head
+      out.push({ x: s.x, y: s.y, alpha, thickness });
     }
-    
-    const baseColor = this.hslToHex(
-      tile.avg_vibe.h,
-      tile.avg_vibe.s,
-      tile.avg_vibe.l
-    );
-    
-    return tile.trail_segments.map((segment, index) => {
-      // Thickness based on velocity and position in trail
-      const velocityFactor = Math.min(2, (tile.velocity?.magnitude || 1) / 5);
-      const positionFactor = (index + 1) / tile.trail_segments!.length;
-      const thickness = Math.max(1, velocityFactor * positionFactor * 4 * velocityScale);
-      
-      return {
-        x: segment.x,
-        y: segment.y,
-        alpha: segment.alpha,
-        thickness,
-        color: baseColor
-      };
-    });
+    // punch up the head slightly
+    out[out.length-1].thickness *= (1.0 + 0.25*headScale);
+    out[out.length-1].alpha     *= (1.0 + 0.15*headScale);
+    return out;
   }
   
   /**

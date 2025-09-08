@@ -1,4 +1,4 @@
-import type { EnhancedFieldTile, TemporalSnapshot } from '@/types/field';
+import type { EnhancedFieldTile, TemporalSnapshot } from '../../../../packages/types/domain/enhanced-field';
 
 /**
  * Social cohesion and convergence calculations
@@ -161,37 +161,21 @@ export class SocialPhysicsCalculator {
     };
   }
   
-  /**
-   * Predict meeting point for converging tiles
-   */
-  static predictMeetingPoint(
-    tileA: EnhancedFieldTile,
-    tileB: EnhancedFieldTile,
-    timeToMeet: number
-  ): { lat: number; lng: number } | undefined {
-    if (!tileA.velocity || !tileB.velocity || !tileA.history?.[0] || !tileB.history?.[0]) {
-      return undefined;
-    }
-    
-    const posA = tileA.history[0].centroid;
-    const posB = tileB.history[0].centroid;
-    
-    // Calculate future positions
-    const futureA = {
-      lat: posA.lat + (tileA.velocity.vy * timeToMeet) / 111320,
-      lng: posA.lng + (tileA.velocity.vx * timeToMeet) / (111320 * Math.cos(posA.lat * Math.PI / 180))
-    };
-    
-    const futureB = {
-      lat: posB.lat + (tileB.velocity.vy * timeToMeet) / 111320,
-      lng: posB.lng + (tileB.velocity.vx * timeToMeet) / (111320 * Math.cos(posB.lat * Math.PI / 180))
-    };
-    
-    // Return midpoint
-    return {
-      lat: (futureA.lat + futureB.lat) / 2,
-      lng: (futureA.lng + futureB.lng) / 2
-    };
+  static predictMeetingPoint(a: EnhancedFieldTile, b: EnhancedFieldTile, timeSec: number):
+    { lat: number; lng: number } | null
+  {
+    if (!a.velocity || !a.history?.[0]) return null;
+    const origin = a.history[0].centroid;
+    const latRad = origin.lat * Math.PI/180;
+    const metersToLat = 1 / 111320;                  // ~m to deg
+    const metersToLng = 1 / (111320 * Math.cos(latRad));
+
+    const dx = a.velocity.vx * timeSec;              // east meters
+    const dy = a.velocity.vy * timeSec;              // north meters
+
+    const lng = origin.lng + dx * metersToLng;
+    const lat = origin.lat + dy * metersToLat;
+    return { lat, lng };
   }
   
   /**

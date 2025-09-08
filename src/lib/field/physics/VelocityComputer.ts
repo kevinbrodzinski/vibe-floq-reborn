@@ -1,4 +1,4 @@
-import type { TemporalSnapshot, VelocityVector, EnhancedFieldTile } from '@/types/field';
+import type { EnhancedFieldTile, VelocityVector, TemporalSnapshot } from '../../../../packages/types/domain/enhanced-field';
 
 /**
  * Advanced velocity computation with enhanced Haversine calculations
@@ -135,37 +135,34 @@ export class VelocityComputer {
   /**
    * Smooth velocity using exponential moving average
    */
-  static smoothVelocity(
-    current: VelocityVector, 
-    previous: VelocityVector, 
-    alpha: number = 0.3
-  ): VelocityVector {
-    if (!previous || previous.confidence === 0) return current;
-    
-    const vx = alpha * current.vx + (1 - alpha) * previous.vx;
-    const vy = alpha * current.vy + (1 - alpha) * previous.vy;
-    const magnitude = Math.sqrt(vx * vx + vy * vy);
-    const heading = Math.atan2(vx, vy);
-    const confidence = Math.max(current.confidence, previous.confidence * 0.8);
-    
+  static smoothVelocity(curr: VelocityVector, prev: VelocityVector, alpha = 0.3): VelocityVector {
+    const vx = alpha * curr.vx + (1 - alpha) * prev.vx;
+    const vy = alpha * curr.vy + (1 - alpha) * prev.vy;
+    const magnitude = Math.hypot(vx, vy);
+    const heading   = Math.atan2(vx, vy); // 0 = north
+    // confidence: decay slightly for smoothed signals
+    const confidence = Math.min(1, (curr.confidence * 0.85) + (prev.confidence * 0.15));
     return { vx, vy, magnitude, heading, confidence };
   }
   
   /**
-   * Calculate momentum stability (consistency of movement pattern)
+   * Momentum ~ stability of recent velocity direction/length.
+   * Return 0..1; higher = steadier flow.
    */
-  static calculateMomentum(velocityHistory: VelocityVector[]): number {
-    if (velocityHistory.length < 2) return 0;
-    
-    // Calculate variance in velocity vectors
-    const avgVx = velocityHistory.reduce((sum, v) => sum + v.vx, 0) / velocityHistory.length;
-    const avgVy = velocityHistory.reduce((sum, v) => sum + v.vy, 0) / velocityHistory.length;
-    
-    const variance = velocityHistory.reduce((sum, v) => {
-      return sum + Math.pow(v.vx - avgVx, 2) + Math.pow(v.vy - avgVy, 2);
-    }, 0) / velocityHistory.length;
-    
-    // Convert variance to momentum score (0-1, lower variance = higher momentum)
-    return Math.max(0, Math.min(1, Math.exp(-variance / 100)));
+  static calculateMomentum(history: Array<VelocityVector | undefined>, span = 6): number {
+    const v = history.filter(Boolean).slice(-span) as VelocityVector[];
+    if (v.length < 2) return 0.5;
+    let dirVar = 0, spdVar = 0;
+    const meanSpd = v.reduce((s,a)=> s + a.magnitude, 0) / v.length;
+    for (let i=1;i<v.length;i++){
+      const a=v[i-1], b=v[i];
+      const dθ = Math.atan2(Math.sin(b.heading-a.heading), Math.cos(b.heading-a.heading)); // wrap
+      dirVar += Math.abs(dθ);
+      spdVar += Math.abs(b.magnitude - a.magnitude);
+    }
+    dirVar /= (v.length-1); spdVar /= (v.length-1);
+    // map to 0..1, favoring low variance
+    const stability = 1 - Math.min(1, (dirVar/Math.PI)*0.6 + (spdVar/10)*0.4);
+    return Math.max(0, Math.min(1, stability));
   }
 }
