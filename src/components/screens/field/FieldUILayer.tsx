@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
+import { useSocialWeather } from "@/components/field/contexts/SocialWeatherContext";
 // import { WaveDiscoveryOverlay } from "@/components/field/WaveDiscoveryOverlay"; // Removed - using dedicated /discover page
 
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
@@ -25,6 +26,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   /* ——— state ——————————————————————————————————— */
   const { location, lastHeartbeat, isLocationReady } = useFieldLocation();
   const { people } = useFieldSocial();
+  const { phrase: socialWeatherPhrase } = useSocialWeather();
   const {
     isFull, currentVibe, debug, timeState,
     constellationMode,
@@ -76,6 +78,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
             error={location.error}
             debug={debug}
             onVibeChange={setCurrentVibe}
+            socialWeatherPhrase={socialWeatherPhrase}
           />
         </motion.div>
       )}

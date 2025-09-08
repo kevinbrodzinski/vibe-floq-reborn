@@ -40,6 +40,8 @@ import { PrecipOverlay } from './overlays/PrecipOverlay';
 import { VibeCompassOverlay } from './overlays/VibeCompassOverlay';
 import { AltitudeController } from '@/features/field/layers/AltitudeController';
 import { SocialWeatherTracker } from '@/features/field/status/SocialWeatherComposer';
+import { placeLabelFromViewport } from '@/lib/geo/placeLabel';
+import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
@@ -183,6 +185,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   
   // Social Weather Tracker
   const socialWeatherTrackerRef = useRef<SocialWeatherTracker | null>(null);
+  const lastWeatherUpdateRef = useRef<number>(0);
+  const socialWeatherTracker = useSocialWeather();
   
   // Feature flags for Phase 4
   const [phase4Flags] = useState({
@@ -393,6 +397,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         const tier = deviceTier as 'low' | 'mid' | 'high';
         lightningOverlayRef.current.setQuality({ tier });
         precipOverlayRef.current.setQuality({ tier });
+        
+        // Expose for dev controls (DEV only)
+        if (import.meta.env.DEV) {
+          (window as any).__lightningOverlay = lightningOverlayRef.current;
+          (window as any).__precipOverlay = precipOverlayRef.current;
+          (window as any).__socialWeatherTracker = socialWeatherTrackerRef.current;
+        }
         
         
         // Create user location dot
@@ -827,6 +838,37 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   const userScreenPos = projectToScreen(userLocation.coords.lat, userLocation.coords.lng);
                   const viewport = { width: canvasRef.current?.width ?? 800, height: canvasRef.current?.height ?? 600 };
                   vibeCompassOverlayRef.current.update(clusters, userScreenPos, viewport, app.ticker.deltaMS, currentZoom);
+                }
+
+                // Update Social Weather Status (throttled to 1Hz)
+                const now = performance.now();
+                if (socialWeatherTrackerRef.current && now - lastWeatherUpdateRef.current > 1000) {
+                  // Get viewport center for place label
+                  const map = getMapInstance();
+                  if (map) {
+                    const center = map.getCenter();
+                    const placeLabel = placeLabelFromViewport(center.lat, center.lng);
+                    
+                    // Mock weather metrics - TODO: wire to real pressure/flow data
+                    const weatherMetrics = {
+                      meanPressure: Math.random() * 0.3 + 0.4, // 0.4-0.7
+                      stdPressure: Math.random() * 0.2 + 0.1,  // 0.1-0.3
+                      meanGradient: Math.random() * 0.4 + 0.2, // 0.2-0.6
+                      windsStrength: Math.random() * 0.3 + 0.3, // 0.3-0.6
+                      laneDensity: convergences.length / 20, // Normalize lane count
+                      auroraActive: 0, // No aurora system yet
+                      placeLabel
+                    };
+                    
+                    const phrase = socialWeatherTrackerRef.current.update(weatherMetrics);
+                    
+                    // Update context instead of local state
+                    if (socialWeatherTracker) {
+                      socialWeatherTracker.updatePhrase(phrase);
+                    }
+                    
+                    lastWeatherUpdateRef.current = now;
+                  }
                 }
               }
               

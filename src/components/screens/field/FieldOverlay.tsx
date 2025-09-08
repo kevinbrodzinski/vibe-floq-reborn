@@ -3,7 +3,7 @@ import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { VibeSummaryCard } from "@/components/vibe/VibeSummaryCard";
 import { VibeSelectionSheet } from "@/components/vibe/VibeSelectionSheet";
-import { SocialWeatherStatus } from "@/components/field/overlays/SocialWeatherStatus";
+import { SocialWeatherStatus } from "@/features/field/status/SocialWeatherStatus";
 import type { Vibe } from "@/types";
 import type { SocialWeatherPhrase } from "@/features/field/status/SocialWeatherComposer";
 import isEqual from 'react-fast-compare';

@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { DevControls } from "@/components/dev/DevControls";
 import { FieldDataProvider } from "./field/FieldDataProvider";
 import { FieldLayout } from "./field/FieldLayout";
 import { FieldGestureProvider } from "./field/FieldGestureProvider";
 import { FieldUIProvider } from "@/components/field/contexts/FieldUIContext";
 import { FieldLocationProvider } from "@/components/field/contexts/FieldLocationContext";
 import { FieldSocialProvider } from "@/components/field/contexts/FieldSocialContext";
+import { SocialWeatherProvider } from "@/components/field/contexts/SocialWeatherContext";
 import { useSyncedVisibility } from "@/hooks/useSyncedVisibility";
 import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
 import { useAutoDiscoveryNotifications } from "@/hooks/useAutoDiscoveryNotifications";
@@ -27,16 +28,19 @@ export const FieldScreen = () => {
   }));
 
   return (
-    <FieldDataProvider>
-      <FieldUIProvider>
-        <FieldLocationProvider friendIds={friendIds}>
-          <FieldSocialProvider profiles={profiles}>
-            <FieldGestureProvider>
-              <FieldLayout />
-            </FieldGestureProvider>
-          </FieldSocialProvider>
-        </FieldLocationProvider>
-      </FieldUIProvider>
-    </FieldDataProvider>
+    <SocialWeatherProvider>
+      <FieldDataProvider>
+        <FieldUIProvider>
+          <FieldLocationProvider friendIds={friendIds}>
+            <FieldSocialProvider profiles={profiles}>
+              <FieldGestureProvider>
+                <FieldLayout />
+                <DevControls />
+              </FieldGestureProvider>
+            </FieldSocialProvider>
+          </FieldLocationProvider>
+        </FieldUIProvider>
+      </FieldDataProvider>
+    </SocialWeatherProvider>
   );
 };
