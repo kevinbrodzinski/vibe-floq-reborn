@@ -3146,6 +3146,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "floq_activity_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+          {
             foreignKeyName: "floq_activity_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -4953,6 +4960,48 @@ export type Database = {
           },
         ]
       }
+      flow_samples: {
+        Row: {
+          cell_x: number
+          cell_y: number
+          city_id: string
+          created_at: string
+          dow: number
+          hour_bucket: number
+          id: string
+          recorded_at: string
+          vx: number
+          vy: number
+          weight: number
+        }
+        Insert: {
+          cell_x: number
+          cell_y: number
+          city_id?: string
+          created_at?: string
+          dow: number
+          hour_bucket: number
+          id?: string
+          recorded_at?: string
+          vx: number
+          vy: number
+          weight?: number
+        }
+        Update: {
+          cell_x?: number
+          cell_y?: number
+          city_id?: string
+          created_at?: string
+          dow?: number
+          hour_bucket?: number
+          id?: string
+          recorded_at?: string
+          vx?: number
+          vy?: number
+          weight?: number
+        }
+        Relationships: []
+      }
       frequency_caps: {
         Row: {
           cap_per_day: number
@@ -5588,6 +5637,108 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      group_policy_decisions: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          decided_by: string
+          explanation: string | null
+          fallback: string | null
+          id: string
+          omega_g: number
+          p_g: number
+          plan_id: string
+          redaction: string | null
+        }
+        Insert: {
+          allowed: boolean
+          created_at?: string
+          decided_by: string
+          explanation?: string | null
+          fallback?: string | null
+          id?: string
+          omega_g: number
+          p_g: number
+          plan_id: string
+          redaction?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          decided_by?: string
+          explanation?: string | null
+          fallback?: string | null
+          id?: string
+          omega_g?: number
+          p_g?: number
+          plan_id?: string
+          redaction?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_policy_decisions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_policy_decisions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+        ]
+      }
+      group_snapshot_tokens: {
+        Row: {
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          member_passport_ids: string[]
+          plan_id: string
+          policy_version: string
+          ttl_ms: number
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          expires_at: string
+          id?: string
+          member_passport_ids: string[]
+          plan_id: string
+          policy_version?: string
+          ttl_ms: number
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          expires_at?: string
+          id?: string
+          member_passport_ids?: string[]
+          plan_id?: string
+          policy_version?: string
+          ttl_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_snapshot_tokens_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_snapshot_tokens_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+        ]
       }
       live_positions: {
         Row: {
@@ -6482,6 +6633,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_activities_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       plan_afterglow: {
@@ -6531,6 +6689,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_plan_afterglow_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
           {
             foreignKeyName: "fk_plan_afterglow_profile_id"
@@ -6643,6 +6808,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_ai_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: true
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       plan_check_ins: {
@@ -6727,6 +6899,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_check_ins_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
           {
             foreignKeyName: "plan_check_ins_stop_id_fkey"
@@ -6815,6 +6994,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+          {
             foreignKeyName: "plan_comments_reply_to_id_fkey"
             columns: ["reply_to_id"]
             isOneToOne: false
@@ -6901,6 +7087,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_drafts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       plan_feedback: {
@@ -6973,6 +7166,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_feedback_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
         ]
       }
@@ -7089,6 +7289,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_floqs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
         ]
       }
@@ -7216,6 +7423,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_invitations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       plan_invites: {
@@ -7282,6 +7496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_invites_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
         ]
       }
@@ -7379,6 +7600,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_participants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
         ]
       }
@@ -7524,6 +7752,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_stop_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
           {
             foreignKeyName: "plan_stop_comments_stop_id_fkey"
@@ -7714,6 +7949,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_stops_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+          {
             foreignKeyName: "plan_stops_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -7821,6 +8063,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       plan_transit_cache: {
@@ -7917,6 +8166,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_transit_cache_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+          {
             foreignKeyName: "plan_transit_cache_to_stop_id_fkey"
             columns: ["to_stop_id"]
             isOneToOne: false
@@ -8004,6 +8260,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_votes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
           {
             foreignKeyName: "plan_votes_stop_id_fkey"
@@ -9778,6 +10041,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "snap_suggestion_logs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+          {
             foreignKeyName: "snap_suggestion_logs_stop_id_fkey"
             columns: ["stop_id"]
             isOneToOne: false
@@ -10096,6 +10366,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trade_winds: {
+        Row: {
+          avg_speed: number
+          city_id: string
+          created_at: string
+          dow: number
+          hour_bucket: number
+          id: string
+          path_id: string
+          points: Json
+          strength: number
+          support: number
+          updated_at: string
+        }
+        Insert: {
+          avg_speed?: number
+          city_id: string
+          created_at?: string
+          dow: number
+          hour_bucket: number
+          id?: string
+          path_id?: string
+          points?: Json
+          strength?: number
+          support?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_speed?: number
+          city_id?: string
+          created_at?: string
+          dow?: number
+          hour_bucket?: number
+          id?: string
+          path_id?: string
+          points?: Json
+          strength?: number
+          support?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_achievements: {
         Row: {
@@ -10714,6 +11026,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
         ]
       }
@@ -11560,6 +11879,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
           },
         ]
       }
@@ -14825,13 +15151,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -14841,8 +15160,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -14855,8 +15174,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -14869,7 +15188,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -14882,13 +15201,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -15454,6 +15780,18 @@ export type Database = {
           started_at: string | null
           username: string | null
           vibe_tag: string | null
+        }
+        Relationships: []
+      }
+      v_plan_predictability: {
+        Row: {
+          allowed: boolean | null
+          decided_at: string | null
+          explanation: string | null
+          fallback: string | null
+          omega_g: number | null
+          p_g: number | null
+          plan_id: string | null
         }
         Relationships: []
       }
@@ -16344,6 +16682,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_participants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
         ]
       }
       v_user_vibe_states: {
@@ -16389,13 +16734,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -16405,8 +16743,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -16419,8 +16757,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -16433,7 +16771,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -16446,13 +16784,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -17805,6 +18150,19 @@ export type Database = {
           p_starts_at: string
         }
         Returns: string
+      }
+      flow_cells_k5: {
+        Args: { p_city_id: string; p_dow: number; p_hour: number; p_k?: number }
+        Returns: {
+          cell_x: number
+          cell_y: number
+          city_id: string
+          dow: number
+          hour_bucket: number
+          samples: number
+          vx_avg: number
+          vy_avg: number
+        }[]
       }
       fn_emit_notification: {
         Args: { p_kind: string; p_payload?: Json; p_profile_id: string }
@@ -19920,6 +20278,14 @@ export type Database = {
       refresh_time_in_venue: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      refresh_trade_winds: {
+        Args: { p_city_id: string; p_k?: number; p_path_limit?: number }
+        Returns: number
+      }
+      refresh_trade_winds_all: {
+        Args: { p_k?: number; p_path_limit?: number }
+        Returns: number
       }
       refresh_v_friend_visits: {
         Args: Record<PropertyKey, never>
