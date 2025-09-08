@@ -133,7 +133,8 @@ function parseCentroid(row: any): { lat: number; lng: number } {
 /** util: velocity from two samples */
 function velocityFromSamples(curr: any, prev: any) {
   const dt = (new Date(curr.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
-  if (dt <= 0) return undefined;
+  if (dt <= 0 || !isFinite(curr.centroid.lat) || !isFinite(curr.centroid.lng) ||
+               !isFinite(prev.centroid.lat) || !isFinite(prev.centroid.lng)) return undefined;
   
   const dx = (curr.centroid.lng - prev.centroid.lng) * 111320 * Math.cos(curr.centroid.lat * Math.PI / 180);
   const dy = (curr.centroid.lat - prev.centroid.lat) * 111320;

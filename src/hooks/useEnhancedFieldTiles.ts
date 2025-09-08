@@ -99,7 +99,7 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
       .on('postgres_changes', { event: '*', schema: 'public', table: 'field_tiles' }, (payload) => {
         const id = (payload as any).new?.tile_id || (payload as any).old?.tile_id;
         if (id && tileIdSet.has(id)) {
-          queryClient.invalidateQueries({ queryKey: ['enhanced-field-tiles'] });
+          queryClient.invalidateQueries({ queryKey: ['enhanced-field-tiles', resolvedTileIds] });
         }
       })
       .subscribe();
