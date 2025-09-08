@@ -21754,7 +21754,11 @@ export type Database = {
         Returns: number
       }
       refresh_trade_winds_all: {
-        Args: { p_k?: number; p_path_limit?: number }
+        Args: { p_city: string } | { p_k?: number; p_path_limit?: number }
+        Returns: number
+      }
+      refresh_trade_winds_hour: {
+        Args: { p_city: string; p_dow: number; p_hour: number }
         Returns: number
       }
       refresh_v_friend_visits: {
