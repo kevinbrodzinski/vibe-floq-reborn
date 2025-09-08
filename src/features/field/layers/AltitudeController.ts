@@ -23,7 +23,7 @@ const bands: Band[] = [
   { 
     name: 'troposphere', 
     range: [15, 17], 
-    on: new Set(['Winds', 'Storms', 'Lanes', 'Lightning']) 
+    on: new Set(['Winds', 'Storms', 'Lanes', 'Lightning', 'Cascade']) 
   },
   { 
     name: 'ground', 

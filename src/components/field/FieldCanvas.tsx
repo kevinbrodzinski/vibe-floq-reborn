@@ -38,10 +38,13 @@ import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { LightningOverlay } from './overlays/LightningOverlay';
 import { PrecipOverlay } from './overlays/PrecipOverlay';
 import { VibeCompassOverlay } from './overlays/VibeCompassOverlay';
+import { ProximityCascadeOverlay } from './overlays/ProximityCascadeOverlay';
 import { AltitudeController } from '@/features/field/layers/AltitudeController';
 import { SocialWeatherTracker } from '@/features/field/status/SocialWeatherComposer';
 import { aggregateWeatherMetrics } from '@/features/field/status/metricsAggregator';
 import { placeLabelFromViewport } from '@/lib/geo/placeLabel';
+import { detectCascadeHotspots } from '@/features/field/detect/detectCascade';
+import { TimeLapseController } from '@/features/field/timelapse/TimeLapseController';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
@@ -181,6 +184,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const precipOverlayRef = useRef<PrecipOverlay | null>(null);
   const altitudeControllerRef = useRef<AltitudeController | null>(null);
   const vibeCompassOverlayRef = useRef<VibeCompassOverlay | null>(null);
+  const cascadeOverlayRef = useRef<ProximityCascadeOverlay | null>(null);
+  
+  // Time-Lapse System
+  const tlCtrlRef = useRef<TimeLapseController | null>(null);
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
   
@@ -396,17 +403,32 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         lightningOverlayRef.current ??= new LightningOverlay(overlayContainer);
         precipOverlayRef.current ??= new PrecipOverlay(overlayContainer, app.renderer);
         vibeCompassOverlayRef.current ??= new VibeCompassOverlay(overlayContainer);
+        cascadeOverlayRef.current ??= new ProximityCascadeOverlay(overlayContainer);
         socialWeatherTrackerRef.current ??= new SocialWeatherTracker();
+        
+        // Time-Lapse System: Initialize controller
+        tlCtrlRef.current ??= new TimeLapseController(() => ({
+          flows: flowCellsRef.current ?? [],
+          storms: (lastStormGroupsRef.current ?? []).map(s => ({ 
+            x: s.x, 
+            y: s.y, 
+            intensity: s.intensity ?? 0.6 
+          })),
+          auroraActive: phase4HudCounters.auroraActive ?? 0
+        }));
         
         // Apply initial quality settings to new overlays
         const tier = deviceTier as 'low' | 'mid' | 'high';
         lightningOverlayRef.current.setQuality({ tier });
         precipOverlayRef.current.setQuality({ tier });
+        cascadeOverlayRef.current.setQuality({ tier });
         
         // Expose for dev controls (DEV only)
         if (import.meta.env.DEV) {
           (window as any).__lightningOverlay = lightningOverlayRef.current;
           (window as any).__precipOverlay = precipOverlayRef.current;
+          (window as any).__cascadeOverlay = cascadeOverlayRef.current;
+          (window as any).__timeLapseController = tlCtrlRef.current;
           (window as any).__socialWeatherTracker = socialWeatherTrackerRef.current;
         }
         
@@ -838,6 +860,18 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   precipOverlayRef.current.setAlpha(layerAlphas.get('Precip') ?? 0);
                 }
                 
+                // Update Proximity Cascade overlay (check frame budget)
+                if (cascadeOverlayRef.current && activeLayers.has('Cascade') && frameSpent < 6.5) {
+                  const hotspots = detectCascadeHotspots(convergences, { 
+                    maxDistPx: 80, 
+                    minActors: 3, 
+                    maxEtaMs: 120000 
+                  });
+                  cascadeOverlayRef.current.spawn(hotspots);
+                  cascadeOverlayRef.current.update(app.ticker.deltaMS);
+                  cascadeOverlayRef.current.setAlpha(layerAlphas.get('Cascade') ?? 0);
+                }
+                
                 // Update Vibe Compass overlay (lightweight)
                 if (vibeCompassOverlayRef.current && userLocation?.coords && frameSpent < 7.5) {
                   const userScreenPos = projectToScreen(userLocation.coords.lat, userLocation.coords.lng);
@@ -871,6 +905,23 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                     }
                     
                     lastWeatherUpdateRef.current = now;
+                  }
+                }
+                
+                // Time-lapse capture (when idle and not playing back)
+                if (tlCtrlRef.current && frameSpent < 6.0) {
+                  tlCtrlRef.current.captureIfDue();
+                }
+                
+                // Time-lapse playback mode
+                if (tlCtrlRef.current?.isPlaying()) {
+                  const frame = tlCtrlRef.current.step();
+                  if (frame) {
+                    // During playback, overlays render historical data instead of live
+                    // This could be extended to show historical flows, storms, etc.
+                    if (import.meta.env.DEV) {
+                      console.log(`[TimeLapse] Playing frame from ${new Date(frame.t).toLocaleTimeString()}`);
+                    }
                   }
                 }
               }
@@ -1301,6 +1352,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           tradeWindOverlayRef.current?.destroy();
           auroraOverlayRef.current?.destroy();
           atmoTintOverlayRef.current?.destroy();
+          
+          // Clean social weather overlays
+          cascadeOverlayRef.current?.destroy();
         } catch (e) {
           console.warn('[CLEANUP] Error clearing containers:', e);
         }

@@ -38,6 +38,33 @@ export function DevControls() {
           }
           break;
           
+        case 'c':
+          // Toggle cascade ripples
+          console.log('[DevControls] Toggling cascade ripples');
+          if ((window as any).__cascadeOverlay) {
+            const overlay = (window as any).__cascadeOverlay;
+            const currentTier = overlay.tier || 'high';
+            const nextTier = currentTier === 'high' ? 'low' : 'high';
+            overlay.setQuality({ tier: nextTier });
+            console.log(`[DevControls] Cascade tier: ${currentTier} → ${nextTier}`);
+          }
+          break;
+          
+        case 't':
+          // Toggle time-lapse playback
+          console.log('[DevControls] Toggling time-lapse playback');
+          if ((window as any).__timeLapseController) {
+            const controller = (window as any).__timeLapseController;
+            if (controller.isPlaying()) {
+              controller.stopPlayback();
+              console.log('[DevControls] Time-lapse playback stopped');
+            } else {
+              controller.startPlayback();
+              console.log('[DevControls] Time-lapse playback started');
+            }
+          }
+          break;
+          
         case 'w':
           // Force weather update
           console.log('[DevControls] Forcing weather status update');
@@ -74,7 +101,9 @@ export function DevControls() {
     console.log(`
 🌦️ Social Weather Dev Controls:
   Shift+P: Toggle precipitation density
-  Shift+L: Toggle lightning frequency  
+  Shift+L: Toggle lightning frequency
+  Shift+C: Toggle cascade ripples
+  Shift+T: Toggle time-lapse playback
   Shift+W: Force weather status update
     `);
   }, []);
