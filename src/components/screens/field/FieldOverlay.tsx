@@ -3,7 +3,9 @@ import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { VibeSummaryCard } from "@/components/vibe/VibeSummaryCard";
 import { VibeSelectionSheet } from "@/components/vibe/VibeSelectionSheet";
+import { SocialWeatherStatus } from "@/components/field/overlays/SocialWeatherStatus";
 import type { Vibe } from "@/types";
+import type { SocialWeatherPhrase } from "@/features/field/status/SocialWeatherComposer";
 import isEqual from 'react-fast-compare';
 import { zIndex } from "@/constants/z";
 import { AvatarDropdown } from '@/components/AvatarDropdown';
@@ -17,6 +19,7 @@ interface FieldOverlayProps {
   error: string | null;
   debug: boolean;
   onVibeChange: (vibe: Vibe) => void;
+  socialWeatherPhrase?: SocialWeatherPhrase | null;
   children?: React.ReactNode;
 }
 
@@ -29,6 +32,7 @@ export const FieldOverlay = memo(({
   error,
   debug,
   onVibeChange,
+  socialWeatherPhrase,
   children
 }: FieldOverlayProps) => {
   const [vibeSheetOpen, setVibeSheetOpen] = useState(false);
@@ -69,6 +73,13 @@ export const FieldOverlay = memo(({
       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-auto w-12" {...zIndex('uiInteractive')}>
         {children}
       </div>
+
+      {/* Social Weather Status - Top center */}
+      {socialWeatherPhrase && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-auto" {...zIndex('overlay')}>
+          <SocialWeatherStatus phrase={socialWeatherPhrase} />
+        </div>
+      )}
 
       {/* Vibe Selection Sheet */}
       <VibeSelectionSheet

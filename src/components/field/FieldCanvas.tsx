@@ -37,7 +37,9 @@ import { MomentumBadge } from './badges/MomentumBadge';
 import { BreathingSystem } from '@/lib/field/BreathingSystem';
 import { LightningOverlay } from './overlays/LightningOverlay';
 import { PrecipOverlay } from './overlays/PrecipOverlay';
+import { VibeCompassOverlay } from './overlays/VibeCompassOverlay';
 import { AltitudeController } from '@/features/field/layers/AltitudeController';
+import { SocialWeatherTracker } from '@/features/field/status/SocialWeatherComposer';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
@@ -175,8 +177,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const lightningOverlayRef = useRef<LightningOverlay | null>(null);
   const precipOverlayRef = useRef<PrecipOverlay | null>(null);
   const altitudeControllerRef = useRef<AltitudeController | null>(null);
+  const vibeCompassOverlayRef = useRef<VibeCompassOverlay | null>(null);
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
+  
+  // Social Weather Tracker
+  const socialWeatherTrackerRef = useRef<SocialWeatherTracker | null>(null);
   
   // Feature flags for Phase 4
   const [phase4Flags] = useState({
@@ -380,6 +386,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         altitudeControllerRef.current = new AltitudeController();
         lightningOverlayRef.current = new LightningOverlay(overlayContainer);
         precipOverlayRef.current = new PrecipOverlay(overlayContainer, app.renderer);
+        vibeCompassOverlayRef.current = new VibeCompassOverlay(overlayContainer);
+        socialWeatherTrackerRef.current = new SocialWeatherTracker();
         
         
         // Create user location dot
@@ -803,6 +811,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   const allowedClustersForPrecip = clusters.filter(c => c.count >= FIELD_LOD.K_MIN);
                   precipOverlayRef.current.update(allowedClustersForPrecip, app.ticker.deltaMS, currentZoom, deviceTier);
                   precipOverlayRef.current.setAlpha(layerAlphas.get('Precip') ?? 0);
+                }
+                
+                // Update Vibe Compass overlay
+                if (vibeCompassOverlayRef.current && userLocation?.coords) {
+                  const userScreenPos = projectToScreen(userLocation.coords.lat, userLocation.coords.lng);
+                  const viewport = { width: canvasRef.current?.width ?? 800, height: canvasRef.current?.height ?? 600 };
+                  vibeCompassOverlayRef.current.update(clusters, userScreenPos, viewport, app.ticker.deltaMS, currentZoom);
                 }
               }
               
