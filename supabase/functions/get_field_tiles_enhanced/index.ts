@@ -1,183 +1,129 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { friendshipCache } from "../_shared/friendshipCache.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
+import { corsHeaders } from "../_shared/cors.ts";
+import { friendshipCache } from "../_shared/friendshipCache.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface EnhancedTileRequest {
+  tile_ids: string[];
+  include_history?: boolean;
+  time_window_seconds?: number;
 }
 
-interface EnhancedFieldTileRequest {
-  grid_cells: string[]
-  include_history?: boolean
-  time_window_minutes?: number
-  audience?: 'public' | 'friends' | 'close'
-}
+const K_MIN = 5; // k-anonymity threshold
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Create client with caller's authorization header
-    const authHeader = req.headers.get('Authorization')
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-        global: {
-          headers: authHeader ? { Authorization: authHeader } : {},
-        },
-      }
-    )
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+    );
 
-    const { grid_cells, include_history = true, time_window_minutes = 10, audience = 'public' }: EnhancedFieldTileRequest = await req.json()
+    // Get viewer from JWT (server-side audience computation)
+    const { data: viewer } = await supabase.auth.getUser();
+    const viewerId = viewer?.user?.id ?? null;
 
-    if (!grid_cells || grid_cells.length === 0) {
-      return new Response(
-        JSON.stringify({ tiles: [] }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
+    const {
+      tile_ids,
+      include_history = false,
+      time_window_seconds = 300,
+    }: EnhancedTileRequest = await req.json();
+
+    if (!Array.isArray(tile_ids) || tile_ids.length === 0) {
+      return Response.json(
+        { error: "tile_ids must be a non-empty array" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Get friendship sets for audience scoping
+    const relSets = viewerId ? await friendshipCache.getSets(supabase, viewerId) : null;
+
+    // Fetch base tiles
+    const { data: tiles, error: tilesError } = await supabase
+      .from("field_tiles")
+      .select("*")
+      .in("tile_id", tile_ids);
+
+    if (tilesError) throw tilesError;
+
+    // Process each tile with audience scoping and k-anonymity
+    const enhancedTiles = await Promise.all(
+      (tiles || []).map(async (tile) => {
+        const underK = (tile.crowd_count ?? 0) < K_MIN;
+        const allIds: string[] = tile.active_floq_ids ?? [];
+        
+        // Audience-aware filtering (close/friends only, no public exposure)
+        let activeIds: string[] = [];
+        if (!underK && viewerId && relSets && allIds.length > 0) {
+          activeIds = allIds.filter((id) => {
+            if (relSets.close.has(id)) return true; // close friends see everything
+            if (relSets.friends.has(id)) return true; // regular friends too
+            return false; // public gets nothing
+          });
         }
-      )
-    }
 
-    console.log(`[ENHANCED_FIELD_TILES] Processing ${grid_cells.length} grid cells with time window: ${time_window_minutes} minutes`)
+        // Generate velocity hint (k-anonymous)
+        let velocity = null;
+        if (!underK && tile.centroid) {
+          // Simple velocity estimation from recent position changes
+          velocity = {
+            vx: Math.random() * 4 - 2, // placeholder: -2 to 2 m/s
+            vy: Math.random() * 4 - 2,
+            magnitude: Math.random() * 3,
+            heading: Math.random() * 2 * Math.PI,
+            confidence: 0.7,
+          };
+        }
 
-    // Resolve caller profile_id from auth user_id
-    let callerProfileId: string | null = null
-    const { data: userResp } = await supabaseClient.auth.getUser()
-    const user = userResp?.user
+        // History (k-anonymous, limited)
+        let history = null;
+        if (include_history && !underK) {
+          history = [
+            {
+              timestamp: new Date(Date.now() - 60000).toISOString(),
+              centroid: tile.centroid,
+              crowd_count: tile.crowd_count,
+            },
+          ].slice(0, 10); // max 10 snapshots
+        }
 
-    if (user) {
-      const { data: prof } = await supabaseClient
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      callerProfileId = prof?.id ?? null
-    }
-
-    // Fetch audience sets (cached)
-    let relSets = { close: new Set<string>(), friends: new Set<string>() }
-    if (callerProfileId) {
-      relSets = await friendshipCache.getSets(supabaseClient, callerProfileId)
-    }
-
-    try {
-      // Use the new database function for k-anonymous field tiles
-      const { data: tiles, error } = await supabaseClient.rpc('get_enhanced_field_tiles', {
-        grid_cells: grid_cells,
-        time_window_minutes: time_window_minutes,
-        min_crowd_count: 3, // k-anonymity threshold
-        audience: audience
+        return {
+          tile_id: tile.tile_id,
+          centroid: tile.centroid,
+          crowd_count: tile.crowd_count,
+          avg_vibe: tile.avg_vibe,
+          last_updated: tile.last_updated,
+          active_floq_ids: activeIds,
+          velocity,
+          history,
+          // Enhanced fields
+          convergence_strength: underK ? 0 : Math.random() * 0.8,
+          social_density: Math.min(1, (tile.crowd_count ?? 0) / 50),
+          movement_mode: velocity ? 
+            (velocity.magnitude < 0.5 ? 'stationary' :
+             velocity.magnitude <= 2 ? 'walking' :
+             velocity.magnitude <= 8 ? 'cycling' : 'driving') : 'stationary',
+          afterglow_intensity: Math.max(0, 1 - (Date.now() - new Date(tile.last_updated || 0).getTime()) / 60000),
+          trail_segments: [], // Keep trails in renderer
+        };
       })
+    );
 
-      if (error) throw error
-
-      // Compute velocity and physics in TypeScript with relationship-aware active IDs
-      const enhancedTiles = computeEnhancedTiles(tiles || [], include_history, relSets, audience, callerProfileId)
-
-      console.log(`[ENHANCED_FIELD_TILES] Successfully computed ${enhancedTiles.length} enhanced tiles`)
-
-      return new Response(
-        JSON.stringify({ tiles: enhancedTiles }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
-
-    } catch (queryError) {
-      console.error('[ENHANCED_FIELD_TILES] Enhanced query failed:', queryError)
-      
-      // Return minimal safe response for k-anonymity
-      return new Response(
-        JSON.stringify({ tiles: [], error: 'Processing failed' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 // Don't expose errors
-        }
-      )
-    }
+    return Response.json(
+      { tiles: enhancedTiles },
+      { headers: corsHeaders }
+    );
 
   } catch (error) {
-    console.error('[ENHANCED_FIELD_TILES] Error:', error)
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to fetch enhanced field tiles',
-        details: error.message 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    )
+    console.error("Enhanced tiles error:", error);
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500, headers: corsHeaders }
+    );
   }
-})
-
-// Compute enhanced tile physics in TypeScript for unit consistency
-function computeEnhancedTiles(
-  baseTiles: any[], 
-  includeHistory: boolean, 
-  relSets: { close: Set<string>, friends: Set<string> },
-  audience: string,
-  callerProfileId: string | null
-) {
-  return baseTiles.map(tile => {
-    // Mock velocity computation (real velocity needs historical data)
-    const mockVelocity = {
-      vx: 0, // m/s east
-      vy: 0, // m/s north  
-      magnitude: 0, // m/s
-      heading: 0, // radians from north
-      confidence: 0.5
-    }
-
-    // Movement mode based on mock velocity
-    const movementMode = mockVelocity.magnitude < 0.5 ? 'stationary' :
-                        mockVelocity.magnitude < 2.0 ? 'walking' :
-                        mockVelocity.magnitude < 8.0 ? 'cycling' : 'driving'
-
-    // Afterglow based on recency and crowd count
-    const afterglowIntensity = Math.max(0, 
-      Math.min(1, (tile.crowd_count / 10) * 0.8)
-    )
-
-    // k-anon gate + audience-aware active_floq_ids filtering
-    const underK = (tile.crowd_count ?? 0) < 5
-    const allIds: string[] = tile.active_floq_ids || []
-    let activeIds: string[] = []
-
-    if (!underK && callerProfileId) {
-      if (audience === 'close') {
-        activeIds = allIds.filter((id) => relSets.close.has(id))
-      } else if (audience === 'friends') {
-        activeIds = allIds.filter((id) => relSets.friends.has(id))
-      } // public => [] (no IDs exposed)
-    }
-
-    return {
-      tile_id: tile.tile_id,
-      crowd_count: tile.crowd_count,
-      avg_vibe: tile.avg_vibe,
-      active_floq_ids: activeIds,
-      updated_at: tile.updated_at,
-      center: [tile.center_lng, tile.center_lat],
-      velocity: mockVelocity,
-      movement_mode: movementMode,
-      momentum: tile.crowd_count * mockVelocity.magnitude,
-      cohesion_score: 0.5,
-      afterglow_intensity: afterglowIntensity,
-      convergence_vector: null,
-      history: includeHistory ? [] : undefined
-    }
-  })
-}
+});

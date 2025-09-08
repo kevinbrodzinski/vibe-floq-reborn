@@ -64,33 +64,23 @@ class FriendshipCache {
     return task;
   }
 
-  /** Default DB fetch (adjust column names to your schema once) */
-  private async defaultFetch(
-    supabase: any,
-    profileId: string
-  ): Promise<AudienceSets> {
-    // Schema: friendships(profile_low uuid, profile_high uuid, friend_state text)
+  private async defaultFetch(supabase: any, profileId: string): Promise<AudienceSets> {
     const { data, error } = await supabase
-      .from("friendships")
-      .select("profile_low,profile_high,friend_state")
+      .from('friendships')
+      .select('profile_low,profile_high,friend_state,is_close')
       .or(`profile_low.eq.${profileId},profile_high.eq.${profileId}`)
       .eq('friend_state', 'accepted');
-
-    if (error || !data?.length) return this.empty();
-
-    const close = new Set<string>();
+    
+    if (error) throw error;
+    
     const friends = new Set<string>();
-
-    for (const row of data) {
+    const close = new Set<string>();
+    
+    for (const row of data || []) {
       const other = row.profile_low === profileId ? row.profile_high : row.profile_low;
       if (!other) continue;
-
-      // Could extend with relationship strength/level column
-      // For now, treat all accepted friendships as 'friends' level
       friends.add(other);
-      
-      // Future: add logic for 'close' based on interaction frequency
-      // or explicit relationship level column
+      if (row.is_close === true) close.add(other); // leverage schema flag
     }
     
     return { close, friends };
