@@ -35,6 +35,9 @@ import { PressureOverlay } from './overlays/PressureOverlay';
 import { StormOverlay } from './overlays/StormOverlay';
 import { MomentumBadge } from './badges/MomentumBadge';
 import { BreathingSystem } from '@/lib/field/BreathingSystem';
+import { LightningOverlay } from './overlays/LightningOverlay';
+import { PrecipOverlay } from './overlays/PrecipOverlay';
+import { AltitudeController } from '@/features/field/layers/AltitudeController';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
@@ -168,6 +171,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const stormOverlayRef = useRef<StormOverlay | null>(null);
   // Phase 4: Atmospheric memory & mood overlays
   const tradeWindOverlayRef = useRef<TradeWindOverlay | null>(null);
+  // Social Weather System: Lightning, Precip, and Altitude Controller
+  const lightningOverlayRef = useRef<LightningOverlay | null>(null);
+  const precipOverlayRef = useRef<PrecipOverlay | null>(null);
+  const altitudeControllerRef = useRef<AltitudeController | null>(null);
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
   
@@ -368,6 +375,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         if (phase4Flags.tint_enabled) {
           atmoTintOverlayRef.current = new AtmoTintOverlay(app.stage, app.renderer); // Full-screen tint
         }
+
+        // Social Weather System: Initialize altitude controller and new overlays
+        altitudeControllerRef.current = new AltitudeController();
+        lightningOverlayRef.current = new LightningOverlay(overlayContainer);
+        precipOverlayRef.current = new PrecipOverlay(overlayContainer, app.renderer);
         
         
         // Create user location dot
@@ -772,6 +784,26 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               // Phase 2: Render convergence overlay with LOD gate
               if (convergenceOverlayRef.current && currentZoom >= ATMO.BREATH_ZOOM_MIN) {
                 convergenceOverlayRef.current.render(convergences, currentZoom);
+              }
+
+              // Social Weather System: Update altitude controller and new overlays
+              const altitudeController = altitudeControllerRef.current;
+              if (altitudeController) {
+                const activeLayers = altitudeController.computeActiveLayers(currentZoom);
+                const layerAlphas = altitudeController.updateLayerAlphas(app.ticker.deltaMS);
+                
+                // Update Lightning overlay
+                if (lightningOverlayRef.current && activeLayers.has('Lightning')) {
+                  lightningOverlayRef.current.update(convergences, app.ticker.deltaMS, currentZoom);
+                  lightningOverlayRef.current.setAlpha(layerAlphas.get('Lightning') ?? 0);
+                }
+                
+                // Update Precipitation overlay  
+                if (precipOverlayRef.current && activeLayers.has('Precip')) {
+                  const allowedClustersForPrecip = clusters.filter(c => c.count >= FIELD_LOD.K_MIN);
+                  precipOverlayRef.current.update(allowedClustersForPrecip, app.ticker.deltaMS, currentZoom, deviceTier);
+                  precipOverlayRef.current.setAlpha(layerAlphas.get('Precip') ?? 0);
+                }
               }
               
               // Store previous clusters for next frame velocity calculation
