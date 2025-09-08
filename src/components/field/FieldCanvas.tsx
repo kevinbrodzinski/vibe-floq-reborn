@@ -45,6 +45,7 @@ import { aggregateWeatherMetrics } from '@/features/field/status/metricsAggregat
 import { placeLabelFromViewport } from '@/lib/geo/placeLabel';
 import { detectCascadeHotspots } from '@/features/field/detect/detectCascade';
 import { TimeLapseController } from '@/features/field/timelapse/TimeLapseController';
+import { StatusReplayHeader } from '@/features/field/status/StatusReplayHeader';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
@@ -188,6 +189,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   
   // Time-Lapse System
   const tlCtrlRef = useRef<TimeLapseController | null>(null);
+  const [replayMode, setReplayMode] = useState(false);
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
   
@@ -195,6 +197,22 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const socialWeatherTrackerRef = useRef<SocialWeatherTracker | null>(null);
   const lastWeatherUpdateRef = useRef<number>(0);
   const socialWeatherTracker = useSocialWeather();
+  const { phrase: socialWeatherPhrase } = socialWeatherTracker;
+  
+  // Replay mode callbacks
+  const enterReplay = useCallback(() => {
+    if (tlCtrlRef.current) {
+      tlCtrlRef.current.startPlayback();
+      setReplayMode(true);
+    }
+  }, []);
+  
+  const backToLive = useCallback(() => {
+    if (tlCtrlRef.current) {
+      tlCtrlRef.current.stopPlayback();
+      setReplayMode(false);
+    }
+  }, []);
   
   // Feature flags for Phase 4
   const [phase4Flags] = useState({
@@ -430,6 +448,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           (window as any).__cascadeOverlay = cascadeOverlayRef.current;
           (window as any).__timeLapseController = tlCtrlRef.current;
           (window as any).__socialWeatherTracker = socialWeatherTrackerRef.current;
+          (window as any).__replayMode = replayMode;
+          (window as any).__enterReplay = enterReplay;
+          (window as any).__backToLive = backToLive;
         }
         
         
@@ -922,6 +943,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                     if (import.meta.env.DEV) {
                       console.log(`[TimeLapse] Playing frame from ${new Date(frame.t).toLocaleTimeString()}`);
                     }
+                  } else {
+                    // Playback ended, return to live mode
+                    setReplayMode(false);
                   }
                 }
               }
@@ -1486,25 +1510,63 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     return detach;
   }, [pixiApp, viewportGeo]); // Remove user?.id dependency for anonymous access
 
-  // DEV: Keyboard shortcut for manual winds refresh (Shift+W)
+  // DEV: Keyboard shortcuts
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'W') {
+      if (!e.shiftKey) return;
+      
+      // Shift+W: Manual winds refresh
+      if (e.key === 'W') {
         e.preventDefault();
         devRefreshWindsNow();
+      }
+      
+      // Shift+R: Toggle replay mode
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        replayMode ? backToLive() : enterReplay();
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [replayMode, enterReplay, backToLive]);
 
   //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m
   return (
     <>
-      <canvas 
+      {/* Status + Replay Header */}
+      {socialWeatherPhrase && (
+        <StatusReplayHeader
+          phrase={socialWeatherPhrase}
+          replay={{
+            isReplay: replayMode,
+            onEnterReplay: enterReplay,
+            onBackToLive: backToLive,
+            getRangeTs: () => {
+              const stats = tlCtrlRef.current?.getStats();
+              if (!stats?.oldestTime || !stats?.newestTime) return [Date.now(), Date.now()];
+              return [stats.oldestTime, stats.newestTime];
+            },
+            getFrameTs: () => {
+              // Get current frame timestamp if in replay mode
+              if (!replayMode || !tlCtrlRef.current) return undefined;
+              const stats = tlCtrlRef.current.getStats();
+              if (!stats?.playing) return undefined;
+              // Estimate current frame time based on playback position
+              const progress = stats.playIdx / Math.max(1, stats.validFrames - 1);
+              const range = stats.newestTime && stats.oldestTime ? 
+                [stats.oldestTime, stats.newestTime] : [Date.now(), Date.now()];
+              return range[1] - (progress * (range[1] - range[0]));
+            }
+          }}
+          compact={false}
+        />
+      )}
+
+      <canvas
         ref={actualRef}
         onClick={handleCanvasClick}
         style={{ 

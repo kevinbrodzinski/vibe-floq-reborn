@@ -16,7 +16,6 @@ export function DevControls() {
         case 'p':
           // Toggle precipitation intensity
           console.log('[DevControls] Toggling precipitation density');
-          // Access precipitation overlay through global reference if available
           if ((window as any).__precipOverlay) {
             const overlay = (window as any).__precipOverlay;
             const currentTier = overlay._tier || 'high';
@@ -50,9 +49,22 @@ export function DevControls() {
           }
           break;
           
+        case 'r':
+          // Toggle time-lapse replay mode (UI controlled)
+          console.log('[DevControls] Toggling replay mode');
+          if ((window as any).__replayMode !== undefined) {
+            const isReplay = (window as any).__replayMode;
+            if (isReplay && (window as any).__backToLive) {
+              (window as any).__backToLive();
+            } else if (!isReplay && (window as any).__enterReplay) {
+              (window as any).__enterReplay();
+            }
+          }
+          break;
+          
         case 't':
-          // Toggle time-lapse playback
-          console.log('[DevControls] Toggling time-lapse playback');
+          // Manual time-lapse control (direct controller access)
+          console.log('[DevControls] Manual time-lapse toggle');
           if ((window as any).__timeLapseController) {
             const controller = (window as any).__timeLapseController;
             if (controller.isPlaying()) {
@@ -64,7 +76,7 @@ export function DevControls() {
             }
           }
           break;
-          
+
         case 'w':
           // Force weather update
           console.log('[DevControls] Forcing weather status update');
@@ -103,7 +115,8 @@ export function DevControls() {
   Shift+P: Toggle precipitation density
   Shift+L: Toggle lightning frequency
   Shift+C: Toggle cascade ripples
-  Shift+T: Toggle time-lapse playback
+  Shift+R: Toggle replay mode (UI)
+  Shift+T: Toggle time-lapse (direct)
   Shift+W: Force weather status update
     `);
   }, []);
