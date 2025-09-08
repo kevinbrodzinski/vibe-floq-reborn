@@ -1,17 +1,25 @@
 import type { TemporalSnapshot, VelocityVector, EnhancedFieldTile } from '@/types/field';
 
 /**
- * Velocity computation based on patent specifications
- * Implements Haversine calculations and movement classification
+ * Advanced velocity computation with enhanced Haversine calculations
+ * Implements patent-compliant movement classification and GPS noise filtering
  */
 export class VelocityComputer {
-  private static readonly WALKING_SPEED_RANGE = { min: 1, max: 2 }; // m/s
-  private static readonly CYCLING_SPEED_RANGE = { min: 3, max: 8 }; // m/s
-  private static readonly DRIVING_SPEED_RANGE = { min: 8, max: 30 }; // m/s
   private static readonly EARTH_RADIUS = 6371000; // meters
+  private static readonly MIN_MOVEMENT_THRESHOLD = 0.8; // m/s minimum to register movement
+  private static readonly GPS_NOISE_FILTER = 2.0; // meters - filter GPS jitter
+  
+  // Enhanced movement classification thresholds (m/s)
+  private static readonly MOVEMENT_THRESHOLDS = {
+    STATIONARY: 0.8,    // < 2.88 km/h
+    WALKING: 2.0,       // < 7.2 km/h  
+    CYCLING: 8.0,       // < 28.8 km/h
+    DRIVING: 25.0,      // < 90 km/h
+    TRANSIT: 50.0       // High-speed transit
+  };
   
   /**
-   * Compute velocity vector between two temporal snapshots
+   * Enhanced velocity computation with GPS noise filtering
    */
   static computeVelocity(
     current: TemporalSnapshot,
@@ -20,8 +28,19 @@ export class VelocityComputer {
     const dt = (new Date(current.timestamp).getTime() - 
                 new Date(previous.timestamp).getTime()) / 1000; // seconds
     
-    if (dt === 0 || dt < 0) {
+    if (dt <= 0 || dt > 300) { // Max 5 minute gap
       return { vx: 0, vy: 0, magnitude: 0, heading: 0, confidence: 0 };
+    }
+    
+    // Calculate raw distance first for GPS noise filtering
+    const rawDistance = this.haversineDistance(
+      previous.centroid.lat, previous.centroid.lng,
+      current.centroid.lat, current.centroid.lng
+    );
+    
+    // Filter GPS noise - ignore micro-movements
+    if (rawDistance < this.GPS_NOISE_FILTER) {
+      return { vx: 0, vy: 0, magnitude: 0, heading: 0, confidence: 0.3 };
     }
     
     // Convert to radians
@@ -55,16 +74,62 @@ export class VelocityComputer {
   }
   
   /**
-   * Classify movement mode based on velocity magnitude
+   * Enhanced movement classification with fine-grained thresholds
    */
   static classifyMovement(velocity: VelocityVector): EnhancedFieldTile['movement_mode'] {
     const speed = velocity.magnitude;
     
-    if (speed < 0.5) return 'stationary';
-    if (speed <= this.WALKING_SPEED_RANGE.max) return 'walking';
-    if (speed <= this.CYCLING_SPEED_RANGE.max) return 'cycling';
-    if (speed <= this.DRIVING_SPEED_RANGE.max) return 'driving';
+    if (speed < this.MOVEMENT_THRESHOLDS.STATIONARY) return 'stationary';
+    if (speed <= this.MOVEMENT_THRESHOLDS.WALKING) return 'walking';
+    if (speed <= this.MOVEMENT_THRESHOLDS.CYCLING) return 'cycling';
+    if (speed <= this.MOVEMENT_THRESHOLDS.DRIVING) return 'driving';
     return 'transit';
+  }
+  
+  /**
+   * Calculate movement confidence based on data quality
+   */
+  static calculateConfidence(
+    velocity: VelocityVector,
+    deltaTime: number,
+    distance: number
+  ): number {
+    // Base confidence on time delta (prefer recent data)
+    let confidence = Math.min(1, Math.exp(-deltaTime / 30));
+    
+    // Factor in speed reasonableness (suspicious if too fast)
+    if (velocity.magnitude > this.MOVEMENT_THRESHOLDS.TRANSIT) {
+      confidence *= 0.3; // Low confidence for extreme speeds
+    }
+    
+    // Distance consistency check
+    const expectedDistance = velocity.magnitude * deltaTime;
+    const distanceError = Math.abs(distance - expectedDistance) / Math.max(distance, expectedDistance);
+    confidence *= Math.max(0.2, 1 - distanceError);
+    
+    return Math.max(0, Math.min(1, confidence));
+  }
+  
+  /**
+   * Enhanced Haversine distance with precise Earth radius
+   */
+  private static haversineDistance(
+    lat1: number, lng1: number, 
+    lat2: number, lng2: number
+  ): number {
+    const R = this.EARTH_RADIUS;
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLng = this.toRadians(lng2 - lng1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+  
+  private static toRadians(degrees: number): number {
+    return degrees * Math.PI / 180;
   }
   
   /**

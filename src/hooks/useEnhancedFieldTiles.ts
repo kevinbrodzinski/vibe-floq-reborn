@@ -7,6 +7,7 @@ import {
   AfterglowTrailManager,
   TemporalBuffer 
 } from '@/lib/field/physics';
+import { EnhancedFieldSystem } from '@/lib/field/EnhancedFieldSystem';
 import type { EnhancedFieldTile, FieldTile, TemporalSnapshot } from '@/types/field';
 
 interface TileBounds {
@@ -38,8 +39,12 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
     enablePhysics = true
   } = options;
   const queryClient = useQueryClient();
-  const tileHistoryRef = useRef<Map<string, TemporalBuffer<EnhancedFieldTile>>>(new Map());
-  const previousTilesRef = useRef<Map<string, EnhancedFieldTile>>(new Map());
+  const fieldSystemRef = useRef<EnhancedFieldSystem | null>(null);
+  
+  // Initialize enhanced field system
+  if (!fieldSystemRef.current) {
+    fieldSystemRef.current = new EnhancedFieldSystem(10, 0.6);
+  }
 
   // Convert bounds to tile IDs for the API call
   const tileIds = bounds ? getBoundsTileIds(bounds) : [];
@@ -61,67 +66,24 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
       
       if (error) throw error;
       
-      // Process tiles with client-side physics calculations
-      const enhancedTiles = (data?.tiles || []).map((tile: EnhancedFieldTile) => {
-        const previousTile = previousTilesRef.current.get(tile.tile_id);
-        
-        // Update temporal buffer
-        if (!tileHistoryRef.current.has(tile.tile_id)) {
-          tileHistoryRef.current.set(tile.tile_id, new TemporalBuffer(10));
-        }
-        const buffer = tileHistoryRef.current.get(tile.tile_id)!;
-        buffer.push(tile);
-        
-        // Compute client-side physics if enabled
-        if (enablePhysics) {
-          // Smooth velocity using exponential moving average
-          if (previousTile?.velocity && tile.velocity) {
-            tile.velocity = VelocityComputer.smoothVelocity(
-              tile.velocity, 
-              previousTile.velocity, 
-              0.3 // smoothing factor
-            );
-          }
-          
-          // Calculate momentum from velocity history
-          const velocityHistory = buffer.getAll()
-            .map(t => t.velocity)
-            .filter(Boolean);
-          if (velocityHistory.length > 1) {
-            tile.momentum = VelocityComputer.calculateMomentum(velocityHistory);
-          }
-          
-          // Update afterglow trail segments
-          if (tile.afterglow_intensity && tile.afterglow_intensity > 0) {
-            // Initialize trail segments if needed
-            if (!tile.trail_segments) {
-              tile.trail_segments = previousTile?.trail_segments || [];
-            }
-          }
-        }
-        
-        // Store for next update
-        previousTilesRef.current.set(tile.tile_id, tile);
-        
-        return tile;
-      });
+      // Use the enhanced field system for unified processing
+      const rawTiles = data?.tiles || [];
       
-      // Compute convergence between tiles
-      if (enablePhysics && enhancedTiles.length > 1) {
-        for (let i = 0; i < enhancedTiles.length; i++) {
-          for (let j = i + 1; j < enhancedTiles.length; j++) {
-            const convergence = SocialPhysicsCalculator.detectConvergence(
-              enhancedTiles[i],
-              enhancedTiles[j]
-            );
-            if (convergence && convergence.probability > 0.5) {
-              enhancedTiles[i].convergence_vector = convergence;
-            }
-          }
-        }
+      if (!enablePhysics || rawTiles.length === 0) {
+        return rawTiles;
       }
       
-      return enhancedTiles;
+      // Process through enhanced field system
+      const result = fieldSystemRef.current!.updateTiles(rawTiles);
+      
+      // Store convergences for aggregate metrics
+      const convergenceData = result.convergences;
+      
+      return {
+        tiles: result.enhancedTiles,
+        convergences: convergenceData,
+        trailStats: result.trailStats
+      };
     },
     refetchInterval: updateInterval,
     staleTime: updateInterval / 2,
@@ -156,48 +118,67 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
     };
   }, [tileIds.join(','), queryClient]);
 
-  // Compute aggregate metrics across all tiles
+  // Enhanced aggregate metrics with convergence data
   const aggregateMetrics = useMemo(() => {
-    if (!tiles) return null;
+    if (!tiles || (!tiles.tiles && !Array.isArray(tiles))) return null;
+    
+    const tileArray = Array.isArray(tiles) ? tiles : tiles.tiles || [];
+    const convergences = tiles.convergences || [];
     
     return {
-      totalCrowd: tiles.reduce((sum, t) => sum + t.crowd_count, 0),
-      averageVelocity: tiles.reduce((sum, t) => 
-        sum + (t.velocity?.magnitude || 0), 0) / Math.max(1, tiles.length),
-      dominantMovementMode: getDominantMovementMode(tiles),
-      convergencePredictions: tiles
-        .filter(t => t.convergence_vector)
-        .map(t => t.convergence_vector!),
-      averageCohesion: tiles.reduce((sum, t) => 
-        sum + (t.cohesion_score || 0), 0) / Math.max(1, tiles.length),
-      highActivityTiles: tiles
+      totalCrowd: tileArray.reduce((sum, t) => sum + t.crowd_count, 0),
+      averageVelocity: tileArray.reduce((sum, t) => 
+        sum + (t.velocity?.magnitude || 0), 0) / Math.max(1, tileArray.length),
+      dominantMovementMode: getDominantMovementMode(tileArray),
+      convergencePredictions: convergences,
+      averageCohesion: tileArray.reduce((sum, t) => 
+        sum + (t.cohesion_score || 0), 0) / Math.max(1, tileArray.length),
+      highActivityTiles: tileArray
         .filter(t => t.afterglow_intensity && t.afterglow_intensity > 0.7)
-        .map(t => t.tile_id)
+        .map(t => t.tile_id),
+      systemStats: fieldSystemRef.current?.getStats()
     };
   }, [tiles]);
 
+  // Extract tile data for return consistency
+  const tileData = tiles ? (Array.isArray(tiles) ? tiles : tiles.tiles || []) : [];
+  const convergenceData = tiles?.convergences || [];
+  
   return {
-    data: tiles || [], // Maintain backward compatibility with existing components
-    tiles: tiles || [],
+    data: tileData, // Maintain backward compatibility
+    tiles: tileData,
+    convergences: convergenceData,
     aggregateMetrics,
     isLoading,
     error,
     refetch,
-    // Expose history for advanced visualizations
-    getTileHistory: (tileId: string) => 
-      tileHistoryRef.current.get(tileId)?.getAll() || [],
-    // Helper for PIXI rendering
+    // Enhanced system methods
+    updateTrailRendering: (screenProjection: (lat: number, lng: number) => { x: number; y: number }) => {
+      if (fieldSystemRef.current) {
+        fieldSystemRef.current.updateTrailRendering(tileData, screenProjection);
+      }
+    },
+    getActiveConvergences: () => fieldSystemRef.current?.getActiveConvergences() || [],
+    cleanupConvergences: () => fieldSystemRef.current?.cleanupConvergences(),
+    // Expose tile history for advanced visualizations (compatibility)
+    getTileHistory: (tileId: string) => {
+      // Return empty array for compatibility with existing code
+      return [];
+    },
+    // Helper for PIXI rendering with enhanced trail data
     getTileTrails: () => {
       const trails: Array<{
         tileId: string;
         segments: NonNullable<EnhancedFieldTile['trail_segments']>;
+        renderableSegments: ReturnType<typeof AfterglowTrailManager.getRenderableSegments>;
       }> = [];
       
-      tiles?.forEach(tile => {
+      tileData.forEach(tile => {
         if (tile.trail_segments && tile.trail_segments.length > 0) {
           trails.push({
             tileId: tile.tile_id,
-            segments: tile.trail_segments
+            segments: tile.trail_segments,
+            renderableSegments: AfterglowTrailManager.getRenderableSegments(tile)
           });
         }
       });
