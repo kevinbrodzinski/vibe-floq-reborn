@@ -6154,6 +6154,90 @@ export type Database = {
           },
         ]
       }
+      group_receipts: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          plan_id: string
+          profile_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          plan_id: string
+          profile_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          plan_id?: string
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_receipts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_receipts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_plan_predictability"
+            referencedColumns: ["plan_id"]
+          },
+          {
+            foreignKeyName: "group_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "group_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "group_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_snapshot_tokens: {
         Row: {
           created_at: string
@@ -19406,6 +19490,31 @@ export type Database = {
           samples: number
           vx_avg: number
           vy_avg: number
+        }[]
+      }
+      fn_ai_suggest_venues: {
+        Args: {
+          p_categories?: string[]
+          p_group_size?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_max_price_level?: number
+          p_radius_m?: number
+          p_when?: string
+        }
+        Returns: {
+          dist_m: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          photo_url: string
+          price_level: number
+          reasons: string[]
+          score: number
+          trend_score: number
+          vibe_score: number
         }[]
       }
       fn_emit_notification: {
