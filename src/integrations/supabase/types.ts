@@ -11251,6 +11251,7 @@ export type Database = {
       }
       trade_winds: {
         Row: {
+          ang_bin: number | null
           avg_speed: number
           city_id: string
           created_at: string
@@ -11264,6 +11265,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ang_bin?: number | null
           avg_speed?: number
           city_id: string
           created_at?: string
@@ -11277,6 +11279,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ang_bin?: number | null
           avg_speed?: number
           city_id?: string
           created_at?: string
