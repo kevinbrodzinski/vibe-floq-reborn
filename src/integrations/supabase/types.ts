@@ -19518,11 +19518,21 @@ export type Database = {
         }[]
       }
       fn_compute_friction: {
-        Args: {
-          p_budget_per_person?: number
-          p_paths_json: Json
-          p_plan_id: string
-        }
+        Args:
+          | {
+              p_budget_per_person?: number
+              p_paths_json: Json
+              p_plan_id: string
+            }
+          | {
+              p_budget_per_person?: number
+              p_paths_json: Json
+              p_plan_id: string
+              p_w_coord?: number
+              p_w_fin?: number
+              p_w_logi?: number
+              p_w_soc?: number
+            }
         Returns: {
           coordination: number
           financial: number
