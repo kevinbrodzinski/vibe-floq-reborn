@@ -96,26 +96,27 @@ export class AfterglowTrailManager {
    * Map raw segments to draw-ready geometry with thickness/alpha.
    * Returns oldest→newest in array order.
    */
-  static getRenderableSegments(tile: EnhancedFieldTile, headScale = 1.0): Array<{
-    x:number; y:number; alpha:number; thickness:number;
-  }> {
+  static getRenderableSegments(
+    tile: EnhancedFieldTile,
+    headScale = 1.0
+  ): Array<{ x: number; y: number; alpha: number; thickness: number }> {
     const segs = tile.trail_segments ?? [];
     if (segs.length < 2) return [];
-    const maxW = 4; // px line width budget
-    const speed = tile.velocity?.magnitude ?? 0;
-    const baseW = Math.min(maxW, 1 + (speed/10) * 3);
 
-    const out: Array<{x:number;y:number;alpha:number;thickness:number}> = [];
-    for (let i=0;i<segs.length;i++){
+    const maxW = 4;                                // px line width budget
+    const speed = tile.velocity?.magnitude ?? 0;
+    const baseW = Math.min(maxW, 1 + (speed / 10) * 3);
+
+    const out: Array<{ x: number; y: number; alpha: number; thickness: number }> = [];
+    for (let i = 0; i < segs.length; i++) {
       const s = segs[i];
-      const t = i / Math.max(1, segs.length - 1);           // 0..1 along trail
-      const thickness = Math.max(1, baseW * (0.4 + 0.6*t)); // thinner at tail
-      const alpha = s.alpha * (0.5 + 0.5*t);                 // brighter near head
+      const t = i / Math.max(1, segs.length - 1);  // 0..1 from tail→head
+      const thickness = Math.max(1, baseW * (0.4 + 0.6 * t));
+      const alpha = Math.max(0, s.alpha * (0.5 + 0.5 * t));
       out.push({ x: s.x, y: s.y, alpha, thickness });
     }
-    // punch up the head slightly
-    out[out.length-1].thickness *= (1.0 + 0.25*headScale);
-    out[out.length-1].alpha     *= (1.0 + 0.15*headScale);
+    out[out.length - 1].thickness *= (1 + 0.25 * headScale);
+    out[out.length - 1].alpha     *= (1 + 0.15 * headScale);
     return out;
   }
   

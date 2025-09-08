@@ -152,17 +152,22 @@ export class VelocityComputer {
   static calculateMomentum(history: Array<VelocityVector | undefined>, span = 6): number {
     const v = history.filter(Boolean).slice(-span) as VelocityVector[];
     if (v.length < 2) return 0.5;
-    let dirVar = 0, spdVar = 0;
-    const meanSpd = v.reduce((s,a)=> s + a.magnitude, 0) / v.length;
-    for (let i=1;i<v.length;i++){
-      const a=v[i-1], b=v[i];
-      const dθ = Math.atan2(Math.sin(b.heading-a.heading), Math.cos(b.heading-a.heading)); // wrap
+
+    let dirVar = 0;
+    let spdVar = 0;
+    const meanSpd = v.reduce((s, a) => s + a.magnitude, 0) / v.length;
+
+    for (let i = 1; i < v.length; i++) {
+      const a = v[i - 1], b = v[i];
+      const dθ = Math.atan2(Math.sin(b.heading - a.heading), Math.cos(b.heading - a.heading)); // wrap
       dirVar += Math.abs(dθ);
       spdVar += Math.abs(b.magnitude - a.magnitude);
     }
-    dirVar /= (v.length-1); spdVar /= (v.length-1);
-    // map to 0..1, favoring low variance
-    const stability = 1 - Math.min(1, (dirVar/Math.PI)*0.6 + (spdVar/10)*0.4);
+    dirVar /= (v.length - 1);
+    spdVar /= (v.length - 1);
+
+    // map to 0..1; lower variance ⇒ higher momentum
+    const stability = 1 - Math.min(1, (dirVar / Math.PI) * 0.6 + (spdVar / Math.max(1, meanSpd + 1e-6)) * 0.4);
     return Math.max(0, Math.min(1, stability));
   }
 }
