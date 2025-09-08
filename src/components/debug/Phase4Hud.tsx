@@ -1,6 +1,6 @@
 export function Phase4Hud({ metrics, counters }:{
   metrics?: { fps?:number; workerTime?:number; drawCalls?:number };
-  counters: { windsPaths:number; auroraActive:number; arrowsVisible:number };
+  counters: { windsPaths:number; auroraActive:number; arrowsVisible:number; heavyOn?:boolean };
 }) {
   if (!import.meta.env.DEV) return null;
   
@@ -17,6 +17,14 @@ export function Phase4Hud({ metrics, counters }:{
       position:'fixed', bottom:12, left:12, zIndex:9999, font:'12px system-ui',
       background:'rgba(17,24,39,.6)', color:'#e5e7eb', padding:'8px 10px', borderRadius:8
     }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        heavy: 
+        <div style={{
+          width: '6px', height: '6px', borderRadius: '50%',
+          backgroundColor: counters.heavyOn ? '#10b981' : '#ef4444', // green/red
+          boxShadow: counters.heavyOn ? '0 0 4px #10b981' : '0 0 4px #ef4444'
+        }} />
+      </div>
       <div>fps: {metrics?.fps ?? 0}</div>
       <div>worker: {(metrics?.workerTime ?? 0).toFixed(1)} ms</div>
       <div>draws: {metrics?.drawCalls ?? 0}</div>

@@ -288,6 +288,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     windsPaths: 0,
     arrowsVisible: 0,
     auroraActive: 0,
+    heavyOn: true, // tracks if heavy overlays are enabled (frameSpent < 6.0)
   });
   // Adjust intervals based on worker fallback
   const isFallback = isWorkerFallback();
@@ -925,6 +926,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   
                   // Frame budget gate: only update heavy overlays if we have time
                   const frameSpent = performance.now() - frameStart;
+                  
+                  // Dev: Track heavy overlay availability for LED indicator
+                  if (import.meta.env.DEV) {
+                    setPhase4HudCounters(prev => ({ ...prev, heavyOn: frameSpent < 6.0 }));
+                  }
                   
                   // Telemetry logging (dev-only, 1% sample)
                   atmoTelemetry.log({ frame_spent_ms: frameSpent });
