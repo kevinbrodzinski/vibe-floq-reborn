@@ -21,13 +21,18 @@ serve(async (req) => {
   }
 
   try {
+    // Create client with caller's authorization header
+    const authHeader = req.headers.get('Authorization')
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
           persistSession: false,
+        },
+        global: {
+          headers: authHeader ? { Authorization: authHeader } : {},
         },
       }
     )
@@ -46,11 +51,11 @@ serve(async (req) => {
 
     console.log(`[ENHANCED_FIELD_TILES] Processing ${grid_cells.length} grid cells with time window: ${time_window_minutes} minutes`)
 
-    // Get caller's authentication and profile
+    // Resolve caller profile_id from auth user_id
+    let callerProfileId: string | null = null
     const { data: userResp } = await supabaseClient.auth.getUser()
     const user = userResp?.user
 
-    let callerProfileId: string | null = null
     if (user) {
       const { data: prof } = await supabaseClient
         .from('profiles')
@@ -146,20 +151,17 @@ function computeEnhancedTiles(
       Math.min(1, (tile.crowd_count / 10) * 0.8)
     )
 
-    // Audience-aware active_floq_ids filtering
-    const underK = tile.crowd_count < 5 // k-anonymity threshold
-    const allIds = tile.active_floq_ids || []
+    // k-anon gate + audience-aware active_floq_ids filtering
+    const underK = (tile.crowd_count ?? 0) < 5
+    const allIds: string[] = tile.active_floq_ids || []
     let activeIds: string[] = []
 
     if (!underK && callerProfileId) {
       if (audience === 'close') {
-        // Only caller's close circle present in this tile
-        activeIds = allIds.filter((id: string) => relSets.close.has(id))
+        activeIds = allIds.filter((id) => relSets.close.has(id))
       } else if (audience === 'friends') {
-        // Friends include close relationships
-        activeIds = allIds.filter((id: string) => relSets.friends.has(id))
-      }
-      // audience === 'public' returns [] (no IDs exposed)
+        activeIds = allIds.filter((id) => relSets.friends.has(id))
+      } // public => [] (no IDs exposed)
     }
 
     return {
