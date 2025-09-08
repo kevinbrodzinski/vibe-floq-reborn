@@ -50,6 +50,7 @@ import { StatusReplayHeader } from '@/features/field/status/StatusReplayHeader';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { ModeFader } from '@/features/field/mode/ModeFader';
 import { atmoTelemetry } from '@/features/field/telemetry/AtmoTelemetry';
+import { downsampleFlows, downsampleStorms } from '@/features/field/timelapse/downsample';
 import { extractMarkers } from '@/features/field/timelapse/markers';
 import { FogOverlay } from './overlays/FogOverlay';
 import { DriftOverlay } from './overlays/DriftOverlay';
@@ -475,7 +476,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           driftOverlayRef.current.resetField(app.screen.width, app.screen.height);
         }
         
-        // Time-Lapse System: Initialize controller
+        // Time-Lapse System: Initialize controller with proper data format
         tlCtrlRef.current ??= new TimeLapseController(() => ({
           flows: flowCellsRef.current ?? [],
           storms: (lastStormGroupsRef.current ?? []).map(s => ({ 
@@ -991,8 +992,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 if (frameSpent < 7.5) {
                   // Fog overlay: based on sparsity and visibility
                   if (fogOverlayRef.current) {
-                    const sparsity = Math.max(0, 1 - (clusters.length / 20)); // Inverse of cluster density
-                    const fogLevel = Math.min(0.6, sparsity * 0.4 + (clusters.length < 3 ? 0.35 : 0));
+                    const visibilityKm = weather?.visibilityKm ?? 10;
+                    const cellCount = flowCellsRef.current?.length ?? 0;
+                    const sparsity = Math.max(0, 1 - (cellCount / 64)); // 0..1
+                    
+                    const fogLevel = Math.min(
+                      0.6,
+                      (visibilityKm < 3 ? 0.35 : 0) + sparsity * 0.4
+                    );
                     fogOverlayRef.current.setLevel(fogLevel);
                     fogOverlayRef.current.update(app.ticker.deltaMS);
                     fogOverlayRef.current.setAlpha(altitudeController ? (altitudeController.getLayerAlpha('Fog') ?? 0.5) : 0.5);
@@ -1043,21 +1050,37 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 
                 // Time-lapse capture (when idle and not playing back)
                 if (tlCtrlRef.current && frameSpent < 6.0) {
-                  tlCtrlRef.current.captureIfDue();
-                  
-                  // Extract and add markers for replay navigation
                   const controller = tlCtrlRef.current;
-                  const newestFrame = controller.getStats().newestTime;
-                  if (newestFrame) {
-                    const markers = extractMarkers({
-                      t: newestFrame,
-                      storms: new Float32Array((lastStormGroupsRef.current ?? []).flatMap(s => [s.x, s.y, s.intensity ?? 0.5])),
-                      aurora: new Uint8Array([phase4HudCounters.auroraActive ?? 0]),
-                      cascadeHotspots: convergences?.length ?? 0
-                    });
-                    if (markers.length > 0) {
-                      controller.addMarkers(markers);
-                    }
+                  const now = performance.now();
+                  
+                  // Use typed arrays for efficient storage
+                  const flowsTyped = downsampleFlows(flowCellsRef.current ?? [], 72, 256);
+                  const stormsTyped = downsampleStorms(
+                    (lastStormGroupsRef.current ?? []).map(s => ({ 
+                      x: s.x, 
+                      y: s.y, 
+                      intensity: s.intensity ?? 0.6 
+                    })),
+                    32
+                  );
+                  
+                  // Push frame with typed arrays  
+                  controller.push({ 
+                    t: now, 
+                    flows: flowsTyped, 
+                    storms: stormsTyped, 
+                    aurora: new Uint8Array([phase4HudCounters.auroraActive ?? 0]) 
+                  });
+
+                  // Extract and add markers for replay navigation
+                  const markers = extractMarkers({
+                    t: now,
+                    storms: stormsTyped,
+                    aurora: new Uint8Array([phase4HudCounters.auroraActive ?? 0]),
+                    cascadeHotspots: convergences?.length ?? 0
+                  });
+                  if (markers.length > 0) {
+                    controller.addMarkers(markers);
                   }
                 }
                 

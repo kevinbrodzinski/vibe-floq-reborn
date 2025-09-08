@@ -41,8 +41,8 @@ export class TimeLapseController {
       aurora: new Uint8Array([Math.min(255, d.auroraActive | 0)])
     };
     
-    this.buf.push(frame);
-    this.lastCapture = now;
+    // Use the new push method that handles marker pruning
+    this.push(frame);
     
     if (import.meta.env.DEV) {
       console.log(`[TimeLapse] Captured frame: ${d.flows.length} flows, ${d.storms.length} storms, ${d.auroraActive} aurora`);
@@ -142,6 +142,17 @@ export class TimeLapseController {
    */
   addMarkers(ms: TLMarker[]) { 
     if (ms?.length) this.markers.push(...ms); 
+  }
+
+  /**
+   * Push frame and prune old markers
+   */
+  push(frame: TLFrame) {
+    this.buf.push(frame);
+    this.lastCapture = performance.now();
+    // prune markers older than oldest frame time
+    const oldest = this.buf.oldest()?.t ?? frame.t;
+    this.markers = this.markers.filter(m => m.t >= oldest);
   }
 
   /**

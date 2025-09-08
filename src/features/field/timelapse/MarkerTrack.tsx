@@ -19,6 +19,7 @@ export function MarkerTrack({
   const items = useMemo(() => markers.map(m => ({
     left: Math.round(((m.t - t0) / Math.max(1, t1 - t0)) * width),
     color: COLOR[m.kind],
+    kind: m.kind,
     ts: m.t,
     size: 6 + Math.round(m.strength * 6)
   })), [markers, range, width]);
@@ -48,7 +49,7 @@ export function MarkerTrack({
             cursor: 'pointer', 
             pointerEvents: 'auto'
           }}
-          title={new Date(it.ts).toLocaleTimeString()}
+          title={`${it.kind} - ${new Date(it.ts).toLocaleTimeString()}`}
         />
       ))}
     </div>

@@ -18,17 +18,17 @@ const bands: Band[] = [
   { 
     name: 'mesosphere', 
     range: [13, 15], 
-    on: new Set(['Pressure', 'Winds', 'Storms']) 
+    on: new Set(['Pressure', 'Winds', 'Storms', 'Drift']) 
   },
   { 
     name: 'troposphere', 
     range: [15, 17], 
-    on: new Set(['Winds', 'Storms', 'Lanes', 'Lightning', 'Cascade']) 
+    on: new Set(['Winds', 'Storms', 'Lanes', 'Lightning', 'Cascade', 'Drift']) 
   },
   { 
     name: 'ground', 
     range: [17, 22], 
-    on: new Set(['Lanes', 'Breathing', 'Lightning', 'Precip']) 
+    on: new Set(['Lanes', 'Breathing', 'Lightning', 'Precip', 'Rainbow', 'Drift', 'Fog']) 
   },
 ];
 

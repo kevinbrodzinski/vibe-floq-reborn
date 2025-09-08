@@ -45,6 +45,13 @@ export class DriftOverlay extends OverlayBase {
     }
   }
 
+  updateVisibility() {
+    const visibilityRate = this.tier === 'mid' ? 0.5 : 1;
+    this.sprites.forEach(d => { 
+      d.s.visible = this.tier !== 'low' && Math.random() < visibilityRate; 
+    });
+  }
+
   update(deltaMS: number, flowCells: Array<{ x: number; y: number; vx: number; vy: number }>, width: number, height: number) {
     if (this.shouldSkipRender() || this.tier === 'low') return;
     

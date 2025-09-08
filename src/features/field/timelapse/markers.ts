@@ -30,15 +30,17 @@ export function extractMarkers(frame: {
 
   // Storm intensity "peak": mean intensity > .75
   const storms = frame.storms ?? new Float32Array(0);
-  let mean = 0, n = (storms.length/3)|0;
-  for (let i=2; i<storms.length; i+=3) mean += storms[i];
-  if (n) mean /= n;
-  if (mean > 0.75) {
-    out.push({ 
-      t: frame.t, 
-      kind: 'peak', 
-      strength: Math.min(1, (mean - 0.75)/0.25) 
-    });
+  let mean = 0, n = (storms.length / 3) | 0;
+  for (let i = 2; i < storms.length; i += 3) mean += storms[i];
+  if (n > 0) {
+    mean /= n;
+    if (mean > 0.75) {
+      out.push({ 
+        t: frame.t, 
+        kind: 'peak', 
+        strength: Math.min(1, (mean - 0.75) / 0.25) 
+      });
+    }
   }
 
   return out;
