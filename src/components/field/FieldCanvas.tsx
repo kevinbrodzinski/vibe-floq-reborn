@@ -204,6 +204,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   useEffect(() => {
     updatePhrase(socialWeatherPhrase);
   }, [socialWeatherPhrase, updatePhrase]);
+  const enterReplay = useCallback(() => {
     if (tlCtrlRef.current) {
       tlCtrlRef.current.startPlayback();
       setReplayMode(true);
@@ -425,9 +426,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         precipOverlayRef.current ??= new PrecipOverlay(overlayContainer, app.renderer);
         vibeCompassOverlayRef.current ??= new VibeCompassOverlay(overlayContainer);
         cascadeOverlayRef.current ??= new ProximityCascadeOverlay(overlayContainer);
-        socialWeatherTrackerRef.current ??= new SocialWeatherTracker((phrase) => {
-          setSocialWeatherPhrase(phrase);
-        });
+        socialWeatherTrackerRef.current ??= new SocialWeatherTracker();
         
         // Time-Lapse System: Initialize controller
         tlCtrlRef.current ??= new TimeLapseController(() => ({
@@ -1541,7 +1540,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         width: '100%', 
         height: '100%', 
         position: 'relative',
-        zIndex: zIndex.mapOverlay,
+        ...zIndex('mapOverlay'),
         border: import.meta.env.DEV ? '1px dashed rgba(0, 255, 0, 0.3)' : 'none'
       }}
     >
@@ -1592,11 +1591,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       />
       
       {/* Tooltip */}
-      <ClusterTooltip tooltip={tooltip} />
+      {tooltip && <ClusterTooltip {...tooltip} />}
     </div>
   );
 });
 
 FieldCanvas.displayName = 'FieldCanvas';
-
-export { FieldCanvas };
