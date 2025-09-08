@@ -96,10 +96,30 @@ export class SocialWeatherTracker {
   private lastPhrase: SocialWeatherPhrase | null = null;
   private lastUpdate = 0;
   private minDwellMs = 2000; // Don't change status for 2 seconds
+  private forecastHints: { next20: any[]; next40: any[]; } | null = null;
+  
+  setForecastHints(hints: { next20: any[]; next40: any[]; }) {
+    this.forecastHints = hints;
+  }
   
   update(metrics: SocialWeatherMetrics): SocialWeatherPhrase {
     const now = performance.now();
-    const newPhrase = composeSocialWeather(metrics);
+    let newPhrase = composeSocialWeather(metrics);
+    
+    // Enhance with forecast hints if available
+    if (this.forecastHints && newPhrase.type === 'clearing') {
+      const meanNext20 = this.forecastHints.next20.length > 0 
+        ? this.forecastHints.next20.reduce((sum, cell) => sum + (cell.p || 0), 0) / this.forecastHints.next20.length
+        : 0;
+      const meanCurrent = metrics.meanPressure;
+      
+      if (meanNext20 > meanCurrent + 0.15) {
+        newPhrase = {
+          ...newPhrase,
+          detail: 'Energy building in ~20min — ' + newPhrase.detail
+        };
+      }
+    }
     
     // First time or enough time has passed
     if (!this.lastPhrase || 

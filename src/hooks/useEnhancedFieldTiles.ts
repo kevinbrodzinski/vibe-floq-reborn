@@ -21,9 +21,25 @@ interface UseEnhancedFieldTilesOptions {
 }
 
 function getBoundsTileIds(bounds: TileBounds): string[] {
-  // TODO: wire to existing H3 function:
-  // return h3.polyfill([...], precision ?? 7);
-  return []; // use tileIds path until H3 is plumbed here
+  try {
+    // Use dynamic import to avoid build issues if h3-js isn't available
+    const h3 = require('h3-js');
+    
+    // Build bbox polygon (lng,lat order for H3)
+    const poly = [[
+      [bounds.minLng, bounds.minLat],
+      [bounds.maxLng, bounds.minLat], 
+      [bounds.maxLng, bounds.maxLat],
+      [bounds.minLng, bounds.maxLat],
+      [bounds.minLng, bounds.minLat],
+    ]];
+    
+    const resolution = bounds.precision ?? 7;
+    return h3.polygonToCells({ type: 'Polygon', coordinates: poly }, resolution);
+  } catch (error) {
+    console.warn('[getBoundsTileIds] H3 not available, falling back to empty array:', error);
+    return []; // Fallback to tileIds path
+  }
 }
 
 export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}) {

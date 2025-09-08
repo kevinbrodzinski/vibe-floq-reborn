@@ -42,6 +42,7 @@ import { ProximityCascadeOverlay } from './overlays/ProximityCascadeOverlay';
 import { AltitudeController } from '@/features/field/layers/AltitudeController';
 import { SocialWeatherTracker } from '@/features/field/status/SocialWeatherComposer';
 import type { SocialWeatherPhrase } from '@/features/field/status/SocialWeatherComposer';
+import { PressureForecast } from '@/features/field/systems/PressureForecast';
 import { aggregateWeatherMetrics } from '@/features/field/status/metricsAggregator';
 import { placeLabelFromViewport } from '@/lib/geo/placeLabel';
 import { detectCascadeHotspots } from '@/features/field/detect/detectCascade';
@@ -210,6 +211,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   
   // Social Weather Tracker
   const socialWeatherTrackerRef = useRef<SocialWeatherTracker | null>(null);
+  const pressureForecastRef = useRef<PressureForecast | null>(null);
   const lastWeatherUpdateRef = useRef<number>(0);
   const [socialWeatherPhrase, setSocialWeatherPhrase] = useState<SocialWeatherPhrase | null>(null);
   const { updatePhrase } = useSocialWeather();
@@ -463,6 +465,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         vibeCompassOverlayRef.current ??= new VibeCompassOverlay(overlayContainer);
         cascadeOverlayRef.current ??= new ProximityCascadeOverlay(overlayContainer);
         socialWeatherTrackerRef.current ??= new SocialWeatherTracker();
+        pressureForecastRef.current ??= new PressureForecast({ 
+          horizonMinutes: 60, 
+          stepMinutes: 10 
+        });
         
         // Polish overlays: Fog, Drift, Rainbow
         fogOverlayRef.current ??= new FogOverlay(overlayContainer);
@@ -1039,6 +1045,34 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                     const center = map.getCenter();
                     const placeLabel = placeLabelFromViewport(center.lat, center.lng);
                     
+                    // Generate pressure forecasts for next 60 minutes
+                    // Convert pressure cells to forecast format by adding mock coordinates
+                    const adaptedPressureCells = (pressureCellsRef.current ?? []).map((cell, i) => ({
+                      x: i % 10,  // Simple grid layout
+                      y: Math.floor(i / 10),
+                      p: cell.p,
+                      gx: cell.gx,
+                      gy: cell.gy
+                    }));
+                    
+                    const adaptedFlowCells = (flowCellsRef.current ?? []).map(cell => ({
+                      x: cell.x,
+                      y: cell.y,
+                      vx: cell.vx,
+                      vy: cell.vy
+                    }));
+                    
+                    const forecastFrames = pressureForecastRef.current?.forecast(
+                      Date.now(),
+                      adaptedPressureCells,
+                      adaptedFlowCells
+                    ) ?? [];
+                    
+                    // Derive forecast hints from first 2 frames for status hints
+                    const next20 = forecastFrames[1]?.cells ?? [];
+                    const next40 = forecastFrames[2]?.cells ?? [];
+                    const forecastHints = { next20, next40 };
+                    
                     // Aggregate real metrics from existing field data
                     const weatherMetrics = aggregateWeatherMetrics({
                       pressureCells: pressureCellsRef.current ?? [],
@@ -1048,6 +1082,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                       placeLabel
                     });
                     
+                    socialWeatherTrackerRef.current.setForecastHints(forecastHints);
                     socialWeatherTrackerRef.current.update(weatherMetrics);
                     
                     lastWeatherUpdateRef.current = now;
