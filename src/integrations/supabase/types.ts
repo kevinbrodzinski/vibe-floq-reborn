@@ -15025,6 +15025,7 @@ export type Database = {
           geohash6: string | null
           gh5: string | null
           h3_7: string | null
+          h3_grid: string | null
           h3_idx: number | null
           location: unknown
           profile_id: string | null
@@ -15034,6 +15035,7 @@ export type Database = {
           vibe_h: number | null
           vibe_l: number | null
           vibe_s: number | null
+          vibe_vector: Json | null
           visibility: string | null
         }
         Insert: {
@@ -15043,6 +15045,7 @@ export type Database = {
           geohash6?: string | null
           gh5?: string | null
           h3_7?: string | null
+          h3_grid?: string | null
           h3_idx?: number | null
           location: unknown
           profile_id?: string | null
@@ -15052,6 +15055,7 @@ export type Database = {
           vibe_h?: number | null
           vibe_l?: number | null
           vibe_s?: number | null
+          vibe_vector?: Json | null
           visibility?: string | null
         }
         Update: {
@@ -15061,6 +15065,7 @@ export type Database = {
           geohash6?: string | null
           gh5?: string | null
           h3_7?: string | null
+          h3_grid?: string | null
           h3_idx?: number | null
           location?: unknown
           profile_id?: string | null
@@ -15070,6 +15075,7 @@ export type Database = {
           vibe_h?: number | null
           vibe_l?: number | null
           vibe_s?: number | null
+          vibe_vector?: Json | null
           visibility?: string | null
         }
         Relationships: [
@@ -19254,6 +19260,14 @@ export type Database = {
         Args: { p?: number }
         Returns: number
       }
+      compute_h3_grid: {
+        Args: { lat: number; lng: number }
+        Returns: string
+      }
+      compute_vibe_vector: {
+        Args: { vibe_input: Database["public"]["Enums"]["vibe_enum"] }
+        Returns: Json
+      }
       count_unseen_notifications: {
         Args: { p_profile_id: string }
         Returns: number
@@ -20350,6 +20364,23 @@ export type Database = {
           message_id: string
           profile_id: string
           reacted_at: string
+        }[]
+      }
+      get_enhanced_field_tiles: {
+        Args: {
+          audience?: string
+          grid_cells: string[]
+          min_crowd_count?: number
+          time_window_minutes?: number
+        }
+        Returns: {
+          active_floq_ids: string[]
+          avg_vibe: Json
+          center_lat: number
+          center_lng: number
+          crowd_count: number
+          tile_id: string
+          updated_at: string
         }[]
       }
       get_enhanced_vibe_clusters: {

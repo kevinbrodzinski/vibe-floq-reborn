@@ -8,7 +8,13 @@ import {
   TemporalBuffer 
 } from '@/lib/field/physics';
 import { EnhancedFieldSystem } from '@/lib/field/EnhancedFieldSystem';
-import type { EnhancedFieldTile, FieldTile, TemporalSnapshot } from '@/types/field';
+import type { 
+  EnhancedFieldTile, 
+  VelocityVector, 
+  TemporalSnapshot 
+} from '../../../packages/types/domain/enhanced-field';
+import { validateEnhancedTiles } from '@/lib/field/validateEnhancedTiles';
+import { boundsToGridCells } from '@/lib/field/boundsToGridCells';
 
 interface TileBounds {
   minLat: number;
@@ -24,6 +30,15 @@ interface UseEnhancedFieldTilesOptions {
   timeWindow?: string; // e.g., '5 minutes'
   updateInterval?: number; // milliseconds
   enablePhysics?: boolean;
+}
+
+interface ConvergenceEvent {
+  id: string;
+  tileA: string;
+  tileB: string;
+  meetingPoint: { lat: number; lng: number };
+  timeToMeet: number;
+  probability: number;
 }
 
 /**
@@ -46,7 +61,7 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
     fieldSystemRef.current = new EnhancedFieldSystem(10, 0.6);
   }
 
-  // Convert bounds to tile IDs for the API call
+  // Convert bounds to grid cell IDs for the API call
   const tileIds = bounds ? getBoundsTileIds(bounds) : [];
 
   // Main query for enhanced field tiles
@@ -58,16 +73,18 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
       // Call enhanced edge function
       const { data, error } = await supabase.functions.invoke('get_field_tiles_enhanced', {
         body: {
-          tile_ids: tileIds,
+          grid_cells: tileIds,
           include_history: includeHistory,
-          time_window: timeWindow
+          time_window_minutes: parseTimeWindowToMinutes(timeWindow),
+          audience: 'public' // TODO: derive from user permissions
         }
       });
       
       if (error) throw error;
       
-      // Use the enhanced field system for unified processing
-      const rawTiles = data?.tiles || [];
+      // Validate the response schema
+      const validated = validateEnhancedTiles(data, { allowPartial: true });
+      const rawTiles = validated.tiles;
       
       if (!enablePhysics || rawTiles.length === 0) {
         return rawTiles;
@@ -90,25 +107,31 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
     enabled: tileIds.length > 0
   });
 
-  // Set up real-time subscription for instant updates
+  // Set up real-time subscription for vibes_now updates
   useEffect(() => {
     if (!tileIds.length) return;
     
+    // Use Set for efficient grid cell filtering
+    const gridCellSet = new Set(tileIds);
+    
     const channel = supabase
-      .channel('field-tiles-enhanced')
+      .channel('vibes-now-field-updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'field_tiles',
-          filter: `tile_id=in.(${tileIds.join(',')})`
+          table: 'vibes_now'
         },
-        () => {
-          // Invalidate and refetch on real-time update
-          queryClient.invalidateQueries({
-            queryKey: ['enhanced-field-tiles']
-          });
+        (payload) => {
+          // Check if the update affects any of our grid cells
+          const newRecord = payload.new as any;
+          if (newRecord?.h3_grid && gridCellSet.has(newRecord.h3_grid)) {
+            // Invalidate and refetch on real-time update
+            queryClient.invalidateQueries({
+              queryKey: ['enhanced-field-tiles']
+            });
+          }
         }
       )
       .subscribe();
@@ -120,29 +143,30 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
 
   // Enhanced aggregate metrics with convergence data
   const aggregateMetrics = useMemo(() => {
-    if (!tiles || (!tiles.tiles && !Array.isArray(tiles))) return null;
+    if (!tiles) return null;
     
-    const tileArray = Array.isArray(tiles) ? tiles : tiles.tiles || [];
-    const convergences = tiles.convergences || [];
+    // Handle both array and object responses consistently
+    const tileArray = Array.isArray(tiles) ? tiles : (tiles.tiles || []);
+    const convergences = Array.isArray(tiles) ? [] : (tiles.convergences || []);
     
     return {
-      totalCrowd: tileArray.reduce((sum, t) => sum + t.crowd_count, 0),
-      averageVelocity: tileArray.reduce((sum, t) => 
+      totalCrowd: tileArray.reduce((sum: number, t: EnhancedFieldTile) => sum + t.crowd_count, 0),
+      averageVelocity: tileArray.reduce((sum: number, t: EnhancedFieldTile) => 
         sum + (t.velocity?.magnitude || 0), 0) / Math.max(1, tileArray.length),
       dominantMovementMode: getDominantMovementMode(tileArray),
       convergencePredictions: convergences,
-      averageCohesion: tileArray.reduce((sum, t) => 
+      averageCohesion: tileArray.reduce((sum: number, t: EnhancedFieldTile) => 
         sum + (t.cohesion_score || 0), 0) / Math.max(1, tileArray.length),
       highActivityTiles: tileArray
-        .filter(t => t.afterglow_intensity && t.afterglow_intensity > 0.7)
-        .map(t => t.tile_id),
+        .filter((t: EnhancedFieldTile) => t.afterglow_intensity && t.afterglow_intensity > 0.7)
+        .map((t: EnhancedFieldTile) => t.tile_id),
       systemStats: fieldSystemRef.current?.getStats()
     };
   }, [tiles]);
 
   // Extract tile data for return consistency
-  const tileData = tiles ? (Array.isArray(tiles) ? tiles : tiles.tiles || []) : [];
-  const convergenceData = tiles?.convergences || [];
+  const tileData = tiles ? (Array.isArray(tiles) ? tiles : (tiles.tiles || [])) : [];
+  const convergenceData = Array.isArray(tiles) ? [] : (tiles?.convergences || []);
   
   return {
     data: tileData, // Maintain backward compatibility
@@ -169,7 +193,7 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
     getTileTrails: () => {
       const trails: Array<{
         tileId: string;
-        segments: NonNullable<EnhancedFieldTile['trail_segments']>;
+        segments: Array<{ x: number; y: number; timestamp: number; alpha: number; }>;
         renderableSegments: ReturnType<typeof AfterglowTrailManager.getRenderableSegments>;
       }> = [];
       
@@ -190,23 +214,24 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
 
 // Helper functions
 function getBoundsTileIds(bounds: TileBounds): string[] {
-  // Integrate with existing viewportToTileIds function
   if (!bounds) return [];
   
   try {
-    // Import the existing function
-    const { viewportToTileIds } = require('@/lib/geo');
-    return viewportToTileIds(
-      bounds.minLat,
-      bounds.maxLat,
-      bounds.minLng,
-      bounds.maxLng,
-      bounds.precision ?? 6
-    ).sort();
+    return boundsToGridCells(bounds);
   } catch (error) {
-    console.warn('Failed to get tile IDs from bounds:', error);
+    console.warn('Failed to get grid cells from bounds:', error);
     return [];
   }
+}
+
+function parseTimeWindowToMinutes(timeWindow: string): number {
+  const match = timeWindow.match(/(\d+)\s*(minute|hour)s?/);
+  if (!match) return 10; // default 10 minutes
+  
+  const value = parseInt(match[1]);
+  const unit = match[2];
+  
+  return unit === 'hour' ? value * 60 : value;
 }
 
 function getDominantMovementMode(tiles: EnhancedFieldTile[]): string {
@@ -219,5 +244,5 @@ function getDominantMovementMode(tiles: EnhancedFieldTile[]): string {
     }, {} as Record<string, number>);
     
   return Object.entries(modes)
-    .sort(([,a], [,b]) => b - a)[0]?.[0] || 'stationary';
+    .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'stationary';
 }
