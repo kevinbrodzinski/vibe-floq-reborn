@@ -1,118 +1,102 @@
 // supabase/functions/ai-suggest-venues/index.ts
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+type Req = {
+  center: { lat: number; lng: number };
+  when: string;                      // ISO
+  groupSize?: number;
+  maxPriceTier?: "$"|"$$"|"$$$"|"$$$$";
+  categories?: string[];
+  radiusM?: number;
+  limit?: number;
 };
 
-type ReqBody = {
-  center: { lat: number; lng: number };
-  when: string;
-  groupSize?: number;
-  maxPriceTier?: "$" | "$$" | "$$$" | "$$$$";
-  categories?: string[];
-  limit?: number;
-  radiusM?: number;
-};
+const PRICE_MAX = { "$":1, "$$":2, "$$$":3, "$$$$":4 } as const;
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status:405 });
 
   try {
-    if (req.method !== "POST") {
-      return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
-    }
-
     const auth = req.headers.get("Authorization") ?? "";
-    const { 
-      center, 
-      when, 
-      groupSize = 4, 
-      maxPriceTier = "$$$", 
-      categories = [], 
-      limit = 24, 
-      radiusM = 2000 
-    } = await req.json() as ReqBody;
-
+    const body = await req.json() as Req;
+    const { center, when, categories = [], groupSize = 4, radiusM = 2000, limit = 24, maxPriceTier = "$$$" } = body;
     if (!center?.lat || !center?.lng || !when) {
-      return Response.json(
-        { error: "center{lat,lng} and when are required" }, 
-        { status: 400, headers: corsHeaders }
-      );
+      return Response.json({ error: "center{lat,lng} and when required" }, { status:400 });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      {
-        global: { headers: { Authorization: auth } },
-      }
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: auth } },
+    });
 
-    // For MVP, we'll use the existing venues table with basic filtering
-    // Convert price tier to numeric for comparison
-    const priceMap = { "$": 1, "$$": 2, "$$$": 3, "$$$$": 4 };
-    const maxPrice = priceMap[maxPriceTier] || 3;
+    // crude bbox around center
+    const dLat = radiusM / 111_000; // ~meters->deg
+    const dLng = radiusM / (111_000 * Math.cos(center.lat * Math.PI/180));
+    const latMin = center.lat - dLat, latMax = center.lat + dLat;
+    const lngMin = center.lng - dLng, lngMax = center.lng + dLng;
 
-    const { data: venues, error } = await supabase
-      .from("venues")
-      .select("*")
-      .not('location', 'is', null)
-      .lte('price_level', maxPrice)
-      .limit(limit);
-
-    if (error) {
-      console.error("Venue query error:", error);
-      throw error;
+    // try enriched trending view first
+    let rows: any[] = [];
+    {
+      const q = supabase
+        .from("v_trending_venues_enriched")
+        .select("venue_id,name,provider,categories,photo_url,vibe_tag,vibe_score,live_count,trend_score")
+        .gte("vibe_score", 0)
+        .limit(200);
+      const { data, error } = await q;
+      if (!error && data) rows = data.map((r:any) => ({
+        id: r.venue_id, name: r.name, categories: r.categories, photo_url: r.photo_url,
+        vibe_score: r.vibe_score ?? 50, live_count: r.live_count ?? 0, trend_score: Number(r.trend_score ?? 0)
+      }));
     }
 
-    // Calculate distances and filter by radius
-    const venuesWithDistance = (venues || [])
-      .map((venue: any) => {
-        if (!venue.location) return null;
-        
-        // Extract lat/lng from PostGIS point (simplified)
-        const lat = venue.lat || 0;
-        const lng = venue.lng || 0;
-        
-        // Haversine distance calculation
-        const R = 6371000; // Earth radius in meters
-        const dLat = (lat - center.lat) * Math.PI / 180;
-        const dLng = (lng - center.lng) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(center.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
-                  Math.sin(dLng/2) * Math.sin(dLng/2);
-        const distance = 2 * R * Math.asin(Math.sqrt(a));
-        
-        return {
-          ...venue,
-          distance_m: Math.round(distance),
-          vibe_score: venue.vibe_score || Math.random() * 100, // Fallback score
-          reasons: [`${Math.round(distance)}m away`, `${venue.name} matches your group size`]
-        };
+    // fallback to venues if enriched view is empty
+    if (!rows.length) {
+      const { data } = await supabase
+        .from("venues")
+        .select("id,name,lat,lng,photo_url,categories,vibe_score,price_level,popularity")
+        .gte("lat", latMin).lte("lat", latMax)
+        .gte("lng", lngMin).lte("lng", lngMax)
+        .limit(400);
+      rows = (data ?? []).map((v:any) => ({
+        id: v.id, name: v.name, lat: v.lat, lng: v.lng, photo_url: v.photo_url,
+        categories: v.categories, vibe_score: v.vibe_score ?? 50,
+        price_level: v.price_level ?? 2, trend_score: Number(v.popularity ?? 0)
+      }));
+    }
+
+    // score: distance + trend + price fit
+    const deg2m = (la:number, lo:number) => {
+      const dLa = (la - center.lat) * 111_000;
+      const dLo = (lo - center.lng) * 111_000 * Math.cos(center.lat * Math.PI/180);
+      return Math.sqrt(dLa*dLa + dLo*dLo);
+    };
+    const maxPrice = PRICE_MAX[maxPriceTier];
+    const scored = rows
+      .map((r:any) => {
+        const dist = (typeof r.lat === "number" && typeof r.lng === "number") ? deg2m(r.lat, r.lng) : radiusM*2;
+        const price = typeof r.price_level === "number" ? r.price_level : 2;
+        const pricePenalty = Math.max(0, (price - maxPrice)) * 0.6;
+        const distPenalty = Math.min(1, dist / radiusM);
+        const trendBoost = Math.min(1, (Number(r.trend_score || 0) / 100));
+        const score = 0.45*(1 - distPenalty) + 0.35*(trendBoost) + 0.20*(1 - pricePenalty);
+        return { ...r, dist, score };
       })
-      .filter((venue: any) => venue && venue.distance_m <= radiusM)
-      .sort((a: any, b: any) => {
-        // Sort by combination of distance and vibe score
-        const scoreA = (100 - a.vibe_score) + (a.distance_m / 100);
-        const scoreB = (100 - b.vibe_score) + (b.distance_m / 100);
-        return scoreA - scoreB;
-      });
+      .sort((a:any,b:any) => b.score - a.score)
+      .slice(0, limit);
 
-    return Response.json(
-      { venues: venuesWithDistance },
-      { headers: corsHeaders }
-    );
+    return Response.json({
+      venues: scored.map((v:any) => ({
+        id: v.id, name: v.name, photo_url: v.photo_url,
+        vibe_score: v.vibe_score, score: Number(v.score?.toFixed(3) ?? 0),
+        dist_m: Math.round(v.dist || 0), reasons: [
+          v.score > 0.7 ? "Hot right now" : "Solid pick",
+          v.dist ? `${Math.round(v.dist)}m away` : undefined
+        ].filter(Boolean)
+      }))
+    });
   } catch (e) {
-    console.error("AI suggest venues error:", e);
-    return Response.json(
-      { error: String(e?.message ?? e) },
-      { status: 500, headers: corsHeaders }
-    );
+    return Response.json({ error: String(e?.message ?? e) }, { status:500 });
   }
 });
