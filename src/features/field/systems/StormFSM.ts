@@ -23,7 +23,7 @@ export class StormFSM {
   
   constructor(private now = () => performance.now()) {}
 
-  update(inputs: StormInput[]): Storm[] {
+  update(inputs: StormInput[], deltaMS = 16.7): Storm[] {
     const t = this.now();
 
     // reinforce or create
@@ -52,7 +52,7 @@ export class StormFSM {
     // evolve states and prune
     const out: Storm[] = [];
     for (const [id, st] of this.storms) {
-      st.lastSupport += 1000/60; // assume ~60fps; adjust if you have delta
+      st.lastSupport += deltaMS;
 
       if (st.state === 'active' && st.lastSupport > 3000) st.state = 'dissipating';
       if (st.state === 'forming' && st.intensity < 0.2 && st.lastSupport > 4000) {
@@ -61,7 +61,7 @@ export class StormFSM {
       }
 
       if (st.state === 'dissipating') {
-        st.intensity *= 0.96;
+        st.intensity *= 1 - Math.min(1, deltaMS / 2000); // ~0.96 per 60fps
         if (st.intensity < 0.1) { 
           this.storms.delete(id); 
           continue; 
