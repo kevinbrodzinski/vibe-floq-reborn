@@ -39,6 +39,16 @@ serve(async (req) => {
     const total = Math.max(1, counts.yes+counts.maybe+counts.pending+counts.declined);
     const coordination = 1 - ((counts.yes + 0.5*counts.maybe)/total); // 0 good → 1 bad
 
+    // Prefetch all venue prices to avoid N queries per path
+    const allVenueIds = Array.from(new Set(
+      body.paths.flatMap(p => p.stops.map(s => s.venue_id))
+    ));
+    const { data: priceRows } = await supabase
+      .from("venues")
+      .select("id, price_level")
+      .in("id", allVenueIds);
+    const priceMap = new Map((priceRows ?? []).map(r => [r.id, r.price_level ?? 2]));
+
     const results:any[] = [];
     for (const path of body.paths) {
       let meters = 0;
@@ -48,10 +58,8 @@ serve(async (req) => {
       let financial = 0;
       const budget = body.budget_per_person ?? null;
       if (budget !== null) {
-        const ids = path.stops.map(s=>s.venue_id);
-        const { data: priceRows } = await supabase.from("venues").select("id,price_level").in("id", ids);
-        const avg = (priceRows ?? []).reduce((acc:any,v:any)=>acc + (v.price_level ?? 2)*30, 0) / Math.max(1, ids.length);
-        financial = Math.min(1, avg>0 ? Math.max(0,(avg-budget)/Math.max(20,budget)) : 0);
+        const avg = path.stops.reduce((acc, s) => acc + (priceMap.get(s.venue_id) ?? 2) * 30, 0) / Math.max(1, path.stops.length);
+        financial = Math.min(1, avg > 0 ? Math.max(0, (avg - budget) / Math.max(20, budget)) : 0);
       }
 
       const social = Math.min(1, 0.15 + 0.5 * (counts.maybe + counts.pending) / total);

@@ -54,14 +54,35 @@ serve(async (req) => {
     const gatePass = (omega_G<=OMEGA_MAX) && (P_G>=TAU_MIN);
 
     const nextPath = (shouldSwitch && (candidate_paths.B || candidate_paths.C)) ? (candidate_paths.B ?? candidate_paths.C)! : active_path_id;
-    const decision = (shouldSwitch && gatePass && nextPath!==active_path_id) ? "SWITCH" : "STAY";
+    const action = (shouldSwitch && gatePass && nextPath!==active_path_id) ? "SWITCH" : "STAY";
 
-    const receipt = {
-      event_type: "GROUP_SIMULATE", plan_id, omega_G, P_G, crowd, rainProb,
-      decision, nextPath, reasons, policy_version: "mvp-2025-09", created_at: new Date().toISOString()
-    };
+    // Hysteresis: skip suggestion if we emitted a SWITCH_* in last 10 minutes
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: recent } = await supabase
+      .from("group_receipts")
+      .select("event_type, created_at")
+      .eq("plan_id", plan_id)
+      .gte("created_at", tenMinAgo)
+      .in("event_type", ["SWITCH_SUGGESTED","SWITCH_ACCEPTED","SWITCH_REJECTED"])
+      .limit(1);
 
-    return new Response(JSON.stringify({ gatePass, omega_G, P_G, crowd, rainProb, decision, nextPath, reasons, receipt }), { 
+    const finalDecision = (recent?.length && action === "SWITCH") ? "STAY" : action;
+
+    // Persist receipt
+    try {
+      await supabase.from("group_receipts").insert({
+        plan_id,
+        event_type: finalDecision === "SWITCH" ? "SWITCH_SUGGESTED" : "GROUP_SIMULATE",
+        payload: { omega_G, P_G, crowd, rainProb, nextPath, reasons, policy_version: "mvp-2025-09" }
+      });
+    } catch (e) {
+      console.warn('[group_receipts] insert failed:', e);
+    }
+
+    return new Response(JSON.stringify({ 
+      gatePass, omega_G, P_G, crowd, rainProb, 
+      decision: finalDecision, nextPath, reasons
+    }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (e) {
