@@ -4,7 +4,7 @@ import {
   EnhancedFieldTilesResponseSchema,
   type EnhancedFieldTile,
   type EnhancedFieldTilesResponse,
-} from "../../../packages/types";
+} from "../../../packages/types/domain/enhanced-field.schemas";
 
 // Dev log throttling
 let lastLog = 0;
