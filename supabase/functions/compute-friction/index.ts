@@ -7,12 +7,7 @@ type Stop = { venue_id: string; lat: number; lng: number; eta: string };
 type Path = { id: string; label?: string; stops: Stop[]; };
 type ReqBody = { plan_id: string; paths: Path[]; budget_per_person?: number|null; };
 
-const EARTH_R = 6371000;
-const toRad = (d:number)=>d*Math.PI/180;
-const hav = (a:Stop,b:Stop)=>2*EARTH_R*Math.asin(Math.sqrt(
-  Math.sin((toRad(b.lat-a.lat))/2)**2 +
-  Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin((toRad(b.lng-a.lng))/2)**2
-));
+// Legacy constants (now handled in SQL)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
