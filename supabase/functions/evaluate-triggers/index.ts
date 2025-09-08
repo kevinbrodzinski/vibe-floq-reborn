@@ -19,8 +19,15 @@ const entropy = (p:number[])=>{
 };
 const omegaSpread = (p:number[])=>{ const s=[...p].sort((a,b)=>a-b); const q=(t:number)=>s[Math.min(s.length-1,Math.floor(t*(s.length-1)))]; return q(0.9)-q(0.1); };
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 serve(async (req) => {
-  if (req.method!=="POST") return new Response("Method Not Allowed",{status:405});
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method!=="POST") return new Response("Method Not Allowed",{status:405, headers: corsHeaders});
   try {
     const auth = req.headers.get("Authorization") ?? "";
     const { plan_id, active_path_id, candidate_paths, trigger_rules, context } = await req.json() as ReqBody;
@@ -54,8 +61,12 @@ serve(async (req) => {
       decision, nextPath, reasons, policy_version: "mvp-2025-09", created_at: new Date().toISOString()
     };
 
-    return Response.json({ gatePass, omega_G, P_G, crowd, rainProb, decision, nextPath, reasons, receipt });
+    return new Response(JSON.stringify({ gatePass, omega_G, P_G, crowd, rainProb, decision, nextPath, reasons, receipt }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   } catch (e) {
-    return Response.json({ error: String(e?.message ?? e) }, { status:500 });
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), { 
+      status:500, headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   }
 });

@@ -14,8 +14,15 @@ const hav = (a:Stop,b:Stop)=>2*EARTH_R*Math.asin(Math.sqrt(
   Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin((toRad(b.lng-a.lng))/2)**2
 ));
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 serve(async (req) => {
-  if (req.method!=="POST") return new Response("Method Not Allowed",{status:405});
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method!=="POST") return new Response("Method Not Allowed",{status:405, headers: corsHeaders});
   try {
     const auth = req.headers.get("Authorization") ?? "";
     const body = await req.json() as ReqBody;
@@ -57,8 +64,12 @@ serve(async (req) => {
       });
     }
     results.sort((a,b)=>a.friction-b.friction);
-    return Response.json({ results });
+    return new Response(JSON.stringify({ results }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   } catch (e) {
-    return Response.json({ error: String(e?.message ?? e) }, { status:500 });
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), { 
+      status:500, headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   }
 });

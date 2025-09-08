@@ -15,8 +15,15 @@ type Req = {
 
 const PRICE_MAX = { "$":1, "$$":2, "$$$":3, "$$$$":4 } as const;
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 serve(async (req) => {
-  if (req.method !== "POST") return new Response("Method Not Allowed", { status:405 });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status:405, headers: corsHeaders });
 
   try {
     const auth = req.headers.get("Authorization") ?? "";
@@ -86,7 +93,7 @@ serve(async (req) => {
       .sort((a:any,b:any) => b.score - a.score)
       .slice(0, limit);
 
-    return Response.json({
+    return new Response(JSON.stringify({
       venues: scored.map((v:any) => ({
         id: v.id, name: v.name, photo_url: v.photo_url,
         vibe_score: v.vibe_score, score: Number(v.score?.toFixed(3) ?? 0),
@@ -95,8 +102,10 @@ serve(async (req) => {
           v.dist ? `${Math.round(v.dist)}m away` : undefined
         ].filter(Boolean)
       }))
-    });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
-    return Response.json({ error: String(e?.message ?? e) }, { status:500 });
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), { 
+      status:500, headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   }
 });
