@@ -5,6 +5,7 @@
 
 import { TimeLapseBuffer, TLFrame } from './TimeLapseBuffer';
 import { downsampleFlows, downsampleStorms } from './downsample';
+import type { TLMarker } from './markers';
 
 export class TimeLapseController {
   private buf = new TimeLapseBuffer(240); // ~2h @ 30s
@@ -14,6 +15,7 @@ export class TimeLapseController {
   private playIdx = 0; // 0 newest .. capacity older
   private lastStep = 0;
   private STEP_MS = 100; // ~10fps playback
+  private markers: TLMarker[] = [];
 
   constructor(private getData: () => ({
     flows: Array<{ x: number; y: number; vx: number; vy: number }>;
@@ -133,5 +135,38 @@ export class TimeLapseController {
     if (!this.playing) return;
     const maxIdx = this.buf.getStats().validFrames - 1;
     this.playIdx = Math.round(position * maxIdx);
+  }
+
+  /**
+   * Add markers from frame analysis
+   */
+  addMarkers(ms: TLMarker[]) { 
+    if (ms?.length) this.markers.push(...ms); 
+  }
+
+  /**
+   * Get all markers for visualization
+   */
+  getMarkers(): TLMarker[] { 
+    return this.markers; 
+  }
+
+  /**
+   * Seek to specific timestamp
+   */
+  seekToTs(ts: number) {
+    // pick nearest frame time
+    let bestIdx = 0, best = Number.POSITIVE_INFINITY;
+    const stats = this.buf.getStats();
+    for (let i = 0; i < stats.validFrames; i++) {
+      const f = this.buf.getBack(i); 
+      if (!f) break;
+      const d = Math.abs(f.t - ts);
+      if (d < best) { 
+        best = d; 
+        bestIdx = i; 
+      }
+    }
+    this.playIdx = bestIdx;
   }
 }

@@ -50,6 +50,10 @@ import { StatusReplayHeader } from '@/features/field/status/StatusReplayHeader';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
 import { ModeFader } from '@/features/field/mode/ModeFader';
 import { atmoTelemetry } from '@/features/field/telemetry/AtmoTelemetry';
+import { extractMarkers } from '@/features/field/timelapse/markers';
+import { FogOverlay } from './overlays/FogOverlay';
+import { DriftOverlay } from './overlays/DriftOverlay';
+import { RainbowOverlay } from './overlays/RainbowOverlay';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
 import { ATMO, FIELD_LOD, P3, P3B, P4 } from '@/lib/field/constants';
@@ -194,6 +198,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const [replayMode, setReplayMode] = useState(false);
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
+  
+  // Polish overlays: Fog, Drift, Rainbow
+  const fogOverlayRef = useRef<FogOverlay | null>(null);
+  const driftOverlayRef = useRef<DriftOverlay | null>(null);
+  const rainbowOverlayRef = useRef<RainbowOverlay | null>(null);
   
   // Mode Fader for smooth live/replay transitions
   const faderRef = useRef(new ModeFader(220));
@@ -452,6 +461,19 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         vibeCompassOverlayRef.current ??= new VibeCompassOverlay(overlayContainer);
         cascadeOverlayRef.current ??= new ProximityCascadeOverlay(overlayContainer);
         socialWeatherTrackerRef.current ??= new SocialWeatherTracker();
+        
+        // Polish overlays: Fog, Drift, Rainbow
+        fogOverlayRef.current ??= new FogOverlay(overlayContainer);
+        driftOverlayRef.current ??= new DriftOverlay(overlayContainer, 120);
+        rainbowOverlayRef.current ??= new RainbowOverlay(overlayContainer);
+        
+        // Initialize fog and drift overlay dimensions
+        if (fogOverlayRef.current) {
+          fogOverlayRef.current.resize(app.screen.width, app.screen.height);
+        }
+        if (driftOverlayRef.current) {
+          driftOverlayRef.current.resetField(app.screen.width, app.screen.height);
+        }
         
         // Time-Lapse System: Initialize controller
         tlCtrlRef.current ??= new TimeLapseController(() => ({
@@ -965,6 +987,36 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                   }
                 }
 
+                // Update Polish overlays (fog, drift, rainbow) with frame budget
+                if (frameSpent < 7.5) {
+                  // Fog overlay: based on sparsity and visibility
+                  if (fogOverlayRef.current) {
+                    const sparsity = Math.max(0, 1 - (clusters.length / 20)); // Inverse of cluster density
+                    const fogLevel = Math.min(0.6, sparsity * 0.4 + (clusters.length < 3 ? 0.35 : 0));
+                    fogOverlayRef.current.setLevel(fogLevel);
+                    fogOverlayRef.current.update(app.ticker.deltaMS);
+                    fogOverlayRef.current.setAlpha(altitudeController ? (altitudeController.getLayerAlpha('Fog') ?? 0.5) : 0.5);
+                  }
+
+                  // Drift overlay: ambient flow particles
+                  if (driftOverlayRef.current && flowCellsRef.current?.length) {
+                    driftOverlayRef.current.setQuality({ tier: deviceTier });
+                    driftOverlayRef.current.update(
+                      app.ticker.deltaMS, 
+                      flowCellsRef.current, 
+                      app.screen.width, 
+                      app.screen.height
+                    );
+                    driftOverlayRef.current.setAlpha(altitudeController ? (altitudeController.getLayerAlpha('Drift') ?? 0.3) : 0.3);
+                  }
+
+                  // Rainbow overlay: post-storm effects (simple update)
+                  if (rainbowOverlayRef.current) {
+                    rainbowOverlayRef.current.update();
+                    rainbowOverlayRef.current.setAlpha(altitudeController ? (altitudeController.getLayerAlpha('Rainbow') ?? 0.6) : 0.6);
+                  }
+                }
+
                 // Update Social Weather Status (throttled to 1Hz)
                 const now = performance.now();
                 if (socialWeatherTrackerRef.current && now - lastWeatherUpdateRef.current > 1000) {
@@ -992,6 +1044,21 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 // Time-lapse capture (when idle and not playing back)
                 if (tlCtrlRef.current && frameSpent < 6.0) {
                   tlCtrlRef.current.captureIfDue();
+                  
+                  // Extract and add markers for replay navigation
+                  const controller = tlCtrlRef.current;
+                  const newestFrame = controller.getStats().newestTime;
+                  if (newestFrame) {
+                    const markers = extractMarkers({
+                      t: newestFrame,
+                      storms: new Float32Array((lastStormGroupsRef.current ?? []).flatMap(s => [s.x, s.y, s.intensity ?? 0.5])),
+                      aurora: new Uint8Array([phase4HudCounters.auroraActive ?? 0]),
+                      cascadeHotspots: convergences?.length ?? 0
+                    });
+                    if (markers.length > 0) {
+                      controller.addMarkers(markers);
+                    }
+                  }
                 }
                 
                 // Time-lapse playback mode
@@ -1439,6 +1506,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           
           // Clean social weather overlays
           cascadeOverlayRef.current?.destroy();
+          
+          // Clean polish overlays
+          fogOverlayRef.current?.destroy();
+          driftOverlayRef.current?.destroy();
+          rainbowOverlayRef.current?.destroy();
         } catch (e) {
           console.warn('[CLEANUP] Error clearing containers:', e);
         }
@@ -1524,6 +1596,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       const app = pixiApp;
       if (app) {
         app.renderer.resize(window.innerWidth, window.innerHeight);
+        
+        // Resize fog overlay to match new screen dimensions
+        if (fogOverlayRef.current) {
+          fogOverlayRef.current.resize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Reset drift overlay field with new dimensions  
+        if (driftOverlayRef.current) {
+          driftOverlayRef.current.resetField(window.innerWidth, window.innerHeight);
+        }
+        
         // Reset worker state to prevent velocity spikes across projection changes
         try {
           getClusterWorker().then(worker => worker.reset());
