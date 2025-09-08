@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SocialPhysicsCalculator } from '@/lib/field/physics';
-import type { EnhancedFieldTile } from '@/types/field';
+import type { EnhancedFieldTile } from '../../packages/types/domain/enhanced-field';
 
 interface ConvergencePrediction {
   tileA: string;

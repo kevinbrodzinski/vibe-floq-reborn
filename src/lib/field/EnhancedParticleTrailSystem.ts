@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { AfterglowTrailManager } from './physics/AfterglowTrailManager';
-import type { EnhancedFieldTile } from '@/types/field';
+import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field';
 
 /**
  * Enhanced particle trail system integrating with social physics

@@ -1,10 +1,22 @@
-import type { EnhancedFieldTile, ConvergenceEvent, SocialCluster } from '@/types/field';
+import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field';
 import { VelocityComputer, SocialPhysicsCalculator, AfterglowTrailManager } from './physics';
 
 /**
  * Unified enhanced field tiles system manager
  * Coordinates physics calculations, trail management, and convergence detection
  */
+
+// Local lightweight type for convergence events used internally
+interface ConvergenceEvent {
+  id: string;
+  a: string;
+  b: string;
+  meeting: { x: number; y: number };
+  etaMs: number;
+  dStar: number;
+  confidence: number;
+}
+
 export class EnhancedFieldSystem {
   private tileHistory = new Map<string, EnhancedFieldTile[]>();
   private convergenceEvents = new Map<string, ConvergenceEvent>();

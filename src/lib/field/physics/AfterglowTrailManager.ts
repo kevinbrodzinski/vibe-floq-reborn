@@ -1,4 +1,4 @@
-import type { EnhancedFieldTile } from '@/types/field';
+import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field';
 
 /**
  * Afterglow trail management based on patent τ: 2-60s decay

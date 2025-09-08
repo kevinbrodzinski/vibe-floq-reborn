@@ -10,10 +10,6 @@ import {
 import { EnhancedFieldSystem } from '@/lib/field/EnhancedFieldSystem';
 import type { 
   EnhancedFieldTile
-} from '../../packages/types/domain/enhanced-field.schemas';
-import type {
-  VelocityVector, 
-  TemporalSnapshot 
 } from '../../packages/types/domain/enhanced-field';
 import { validateEnhancedTiles } from '@/lib/field/validateEnhancedTiles';
 import { boundsToGridCells } from '@/lib/field/boundsToGridCells';
@@ -128,7 +124,7 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
         (payload) => {
           // Check if the update affects any of our grid cells
           const newRecord = payload.new as any;
-          if (newRecord?.h3_grid && gridCellSet.has(newRecord.h3_grid)) {
+          if (newRecord?.h3_7 && gridCellSet.has(newRecord.h3_7)) {
             // Invalidate and refetch on real-time update
             queryClient.invalidateQueries({
               queryKey: ['enhanced-field-tiles']

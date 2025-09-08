@@ -2,9 +2,8 @@ import { z } from "zod";
 import {
   EnhancedFieldTileSchema,
   EnhancedFieldTilesResponseSchema,
-  type EnhancedFieldTile,
-  type EnhancedFieldTilesResponse,
 } from "../../../packages/types/domain/enhanced-field.schemas";
+import type { EnhancedFieldTile, EnhancedFieldTilesResponse } from "../../../packages/types/domain/enhanced-field";
 
 // Dev log throttling
 let lastLog = 0;

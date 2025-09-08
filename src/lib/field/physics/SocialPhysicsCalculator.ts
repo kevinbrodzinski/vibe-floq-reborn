@@ -1,4 +1,4 @@
-import type { EnhancedFieldTile, TemporalSnapshot } from '@/types/field';
+import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field';
 
 /**
  * Social cohesion and convergence calculations

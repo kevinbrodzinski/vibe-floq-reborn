@@ -3,7 +3,7 @@ import * as PIXI from 'pixi.js';
 import { useEnhancedFieldTiles } from '@/hooks/useEnhancedFieldTiles';
 import { useConvergencePredictions } from '@/hooks/useConvergencePredictions';
 import { EnhancedParticleTrailSystem } from '@/lib/field/EnhancedParticleTrailSystem';
-import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field.schemas';
+import type { EnhancedFieldTile } from '../../../packages/types/domain/enhanced-field';
 
 interface FieldCanvasIntegrationProps {
   pixiApp: PIXI.Application;
