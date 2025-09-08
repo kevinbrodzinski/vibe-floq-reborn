@@ -42,19 +42,29 @@ export interface LayerState {
 export class AltitudeController {
   private currentBand: Band | null = null;
   private layerStates = new Map<string, LayerState>();
-  private fadeSpeed = 0.08; // Alpha change per frame
+  private fadeSpeed = 0.08; // Base alpha change per frame
+  private lastZoom = 0; // For hysteresis
   
   /**
    * Get active layers for current zoom level
    */
   computeActiveLayers(zoom: number): Set<string> {
-    const band = bands.find(b => zoom >= b.range[0] && zoom < b.range[1]) ?? bands[0];
+    // Quantize zoom to reduce flicker at boundaries
+    const quantizedZoom = Math.round(zoom * 10) / 10;
+    
+    // Hysteresis: offset thresholds slightly based on zoom direction
+    const zoomDelta = quantizedZoom - this.lastZoom;
+    const hysteresisOffset = zoomDelta > 0 ? 0.1 : zoomDelta < 0 ? -0.1 : 0;
+    const adjustedZoom = quantizedZoom + hysteresisOffset;
+    
+    const band = bands.find(b => adjustedZoom >= b.range[0] && adjustedZoom < b.range[1]) ?? bands[0];
     
     // Trigger layer transitions if band changed
     if (this.currentBand?.name !== band.name) {
       this.transitionToBand(band);
     }
     
+    this.lastZoom = quantizedZoom;
     return band.on;
   }
 
@@ -64,14 +74,18 @@ export class AltitudeController {
   updateLayerAlphas(deltaMS: number): Map<string, number> {
     const alphas = new Map<string, number>();
     
+    // Scale fade speed by frame time for smooth 60fps behavior
+    const frameScale = Math.max(0.5, Math.min(2, deltaMS / 16));
+    const fadeStep = this.fadeSpeed * frameScale;
+    
     for (const [layerName, state] of this.layerStates) {
       if (state.fadingIn) {
-        state.alpha = Math.min(1, state.alpha + this.fadeSpeed);
+        state.alpha = Math.min(1, state.alpha + fadeStep);
         if (state.alpha >= 1) {
           state.fadingIn = false;
         }
       } else if (state.fadingOut) {
-        state.alpha = Math.max(0, state.alpha - this.fadeSpeed);
+        state.alpha = Math.max(0, state.alpha - fadeStep);
         if (state.alpha <= 0) {
           state.fadingOut = false;
           state.enabled = false;

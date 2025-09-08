@@ -5,8 +5,9 @@
 
 import * as PIXI from 'pixi.js';
 import type { SocialCluster } from '@/types/field';
-import { ADD_BLEND } from '@/lib/pixi/blendModes';
 import { vibeToTint } from '@/lib/vibe/tokens';
+
+const ADD_BLEND = 'add' as any; // PIXI v8 compatibility
 
 interface RainDrop {
   x: number;
@@ -27,6 +28,7 @@ export class PrecipOverlay {
   private freeDrops: PIXI.Sprite[] = [];
   private maxDrops = 150;
   private precipTexture: PIXI.Texture;
+  private tier: 'low' | 'mid' | 'high' = 'high';
   
   constructor(parent: PIXI.Container, renderer: PIXI.Renderer) {
     this.container = new PIXI.Container();
@@ -55,20 +57,29 @@ export class PrecipOverlay {
   update(clusters: SocialCluster[], deltaMS: number, zoom: number, deviceTier: string) {
     const dt = deltaMS / 1000;
     
+    // Filter clusters properly for precip effects
+    const validClusters = clusters.filter(c => 
+      c.count >= 5 && // k-anon gate
+      (c.energyLevel ?? 0.5) > 0.75 && // intensity threshold
+      zoom >= 15 // zoom gate
+    );
+    
     // Spawn drops from high-intensity clusters
-    this.spawnDrops(clusters, dt, deviceTier);
+    this.spawnDrops(validClusters, dt, deviceTier);
     
     // Update existing drops
     this.updateDrops(dt);
   }
 
   private spawnDrops(clusters: SocialCluster[], dt: number, deviceTier: string) {
-    // Tier-based spawn rate limits
+    // Tier-based caps
+    if (this.tier === 'low') return; // No precip on low tier
+    
     const maxSpawnRate = {
-      low: 0.3,
-      mid: 0.6,
+      low: 0,
+      mid: 0.4,
       high: 1.0
-    }[deviceTier] ?? 0.6;
+    }[this.tier];
     
     for (const cluster of clusters) {
       const intensity = cluster.energyLevel ?? 0.5;
@@ -175,6 +186,14 @@ export class PrecipOverlay {
   }
 
   /**
+   * Set quality based on device tier
+   */
+  setQuality(options: { tier: 'low' | 'mid' | 'high' }) {
+    this.tier = options.tier;
+    this.maxDrops = options.tier === 'low' ? 0 : options.tier === 'mid' ? 100 : 200;
+  }
+
+  /**
    * Get performance stats
    */
   getStats() {
@@ -188,17 +207,23 @@ export class PrecipOverlay {
    * Clean up resources
    */
   destroy() {
+    // Clear drops
     this.drops.forEach(drop => {
       drop.sprite.visible = false;
-      this.container.removeChild(drop.sprite);
+      if (drop.sprite.parent) {
+        this.container.removeChild(drop.sprite);
+      }
     });
     this.drops.length = 0;
     
+    // Clear pools
     this.dropPool.forEach(sprite => sprite.destroy());
     this.dropPool.length = 0;
     this.freeDrops.length = 0;
     
+    // Clean up texture and container
     this.precipTexture.destroy();
+    this.container.removeChildren();
     this.container.destroy({ children: true });
   }
 }

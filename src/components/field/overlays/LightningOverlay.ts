@@ -5,7 +5,8 @@
 
 import * as PIXI from 'pixi.js';
 import type { ConvergenceEvent } from '@/types/field';
-import { ADD_BLEND } from '@/lib/pixi/blendModes';
+
+const ADD_BLEND = 'add' as any; // PIXI v8 compatibility
 
 interface LightningBolt {
   id: string;
@@ -24,6 +25,8 @@ export class LightningOverlay {
   private graphics: PIXI.Graphics;
   private maxBolts = 8;
   private maxPerFrame = 2;
+  private cooldown = new Set<string>(); // Prevent immediate retrigger
+  private tier: 'low' | 'mid' | 'high' = 'high';
   
   constructor(parent: PIXI.Container) {
     this.container = new PIXI.Container();
@@ -55,18 +58,22 @@ export class LightningOverlay {
   private triggerLightning(convergences: ConvergenceEvent[], zoom: number) {
     if (this.bolts.length >= this.maxBolts) return;
     
+    // Tier-based caps
+    const maxPerFrameForTier = this.tier === 'low' ? 0 : this.tier === 'mid' ? 1 : 2;
+    if (maxPerFrameForTier === 0) return;
+    
     let triggered = 0;
     
     for (const conv of convergences) {
-      if (triggered >= this.maxPerFrame) break;
+      if (triggered >= maxPerFrameForTier) break;
       
       // Lightning conditions: high confidence, short ETA, close approach
       if (conv.confidence >= 0.6 && 
           conv.etaMs < 60_000 && 
           conv.dStar < 100) {
         
-        // Don't retrigger same convergence
-        if (this.bolts.some(b => b.id === conv.id)) continue;
+        // Check cooldown and existing bolts
+        if (this.cooldown.has(conv.id) || this.bolts.some(b => b.id === conv.id)) continue;
         
         const bolt = this.createBolt(conv, zoom);
         this.bolts.push(bolt);
@@ -133,6 +140,10 @@ export class LightningOverlay {
       bolt.life -= dt;
       
       if (bolt.life <= 0) {
+        // Add to cooldown to prevent immediate retrigger
+        this.cooldown.add(bolt.id);
+        setTimeout(() => this.cooldown.delete(bolt.id), 800);
+        
         this.bolts.splice(i, 1);
         continue;
       }
@@ -197,11 +208,22 @@ export class LightningOverlay {
   }
 
   /**
+   * Set quality based on device tier
+   */
+  setQuality(options: { tier: 'low' | 'mid' | 'high' }) {
+    this.tier = options.tier;
+    this.maxPerFrame = options.tier === 'low' ? 0 : options.tier === 'mid' ? 1 : 2;
+    this.maxBolts = options.tier === 'low' ? 0 : options.tier === 'mid' ? 4 : 8;
+  }
+
+  /**
    * Clean up resources
    */
   destroy() {
     this.bolts.length = 0;
+    this.cooldown.clear();
     this.graphics.clear();
+    this.container.removeChild(this.graphics);
     this.container.destroy({ children: true });
   }
 }

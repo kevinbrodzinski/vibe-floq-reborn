@@ -389,6 +389,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         vibeCompassOverlayRef.current = new VibeCompassOverlay(overlayContainer);
         socialWeatherTrackerRef.current = new SocialWeatherTracker();
         
+        // Apply initial quality settings to new overlays
+        const tier = deviceTier as 'low' | 'mid' | 'high';
+        lightningOverlayRef.current.setQuality({ tier });
+        precipOverlayRef.current.setQuality({ tier });
+        
         
         // Create user location dot
         const userDot = new Graphics();
@@ -794,27 +799,31 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 convergenceOverlayRef.current.render(convergences, currentZoom);
               }
 
-              // Social Weather System: Update altitude controller and new overlays
+              // Social Weather System: Update altitude controller and new overlays with frame budget
+              const frameStart = performance.now();
               const altitudeController = altitudeControllerRef.current;
               if (altitudeController) {
                 const activeLayers = altitudeController.computeActiveLayers(currentZoom);
                 const layerAlphas = altitudeController.updateLayerAlphas(app.ticker.deltaMS);
                 
-                // Update Lightning overlay
-                if (lightningOverlayRef.current && activeLayers.has('Lightning')) {
+                // Frame budget gate: only update heavy overlays if we have time
+                const frameSpent = performance.now() - frameStart;
+                
+                // Update Lightning overlay (lightweight)
+                if (lightningOverlayRef.current && activeLayers.has('Lightning') && frameSpent < 6.0) {
                   lightningOverlayRef.current.update(convergences, app.ticker.deltaMS, currentZoom);
                   lightningOverlayRef.current.setAlpha(layerAlphas.get('Lightning') ?? 0);
                 }
                 
-                // Update Precipitation overlay  
-                if (precipOverlayRef.current && activeLayers.has('Precip')) {
+                // Update Precipitation overlay (heavier - check frame budget)
+                if (precipOverlayRef.current && activeLayers.has('Precip') && frameSpent < 7.0) {
                   const allowedClustersForPrecip = clusters.filter(c => c.count >= FIELD_LOD.K_MIN);
                   precipOverlayRef.current.update(allowedClustersForPrecip, app.ticker.deltaMS, currentZoom, deviceTier);
                   precipOverlayRef.current.setAlpha(layerAlphas.get('Precip') ?? 0);
                 }
                 
-                // Update Vibe Compass overlay
-                if (vibeCompassOverlayRef.current && userLocation?.coords) {
+                // Update Vibe Compass overlay (lightweight)
+                if (vibeCompassOverlayRef.current && userLocation?.coords && frameSpent < 7.5) {
                   const userScreenPos = projectToScreen(userLocation.coords.lat, userLocation.coords.lng);
                   const viewport = { width: canvasRef.current?.width ?? 800, height: canvasRef.current?.height ?? 600 };
                   vibeCompassOverlayRef.current.update(clusters, userScreenPos, viewport, app.ticker.deltaMS, currentZoom);
