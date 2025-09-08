@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LiveReplayBadge } from './LiveReplayBadge';
 import type { SocialWeatherPhrase } from './SocialWeatherComposer';
+import './statusPulse.css';
 
 type PhraseType = 'storm_front' | 'high_pressure' | 'low_pressure' | 'clearing';
 
@@ -29,6 +30,30 @@ const COLORS: Record<PhraseType, string> = {
   low_pressure: '#64748b',  // slate-500
   clearing: '#22c55e',      // emerald-500
 };
+
+const fgByType: Record<PhraseType, string> = {
+  storm_front: 'var(--sw-color-storm)',
+  high_pressure: 'var(--sw-color-high)',
+  low_pressure: 'var(--sw-color-low)',
+  clearing: 'var(--sw-color-clear)'
+};
+
+function IntensityMeter({ type, intensity, isReplay }: {
+  type: PhraseType; 
+  intensity: number; 
+  isReplay: boolean;
+}) {
+  const style = {
+    // map to CSS variables once; CSS runs the pulse
+    ['--sw-bar-fg' as any]: fgByType[type],
+    ['--sw-progress' as any]: Math.max(0, Math.min(1, intensity)),
+  };
+  return (
+    <div className={`sw-meter ${isReplay ? 'sw-meter--replay' : ''}`} style={style}>
+      <div className="sw-meter__fill" />
+    </div>
+  );
+}
 
 export function StatusReplayHeader({ phrase, replay, compact }: StatusReplayHeaderProps) {
   const p = phrase;
@@ -98,26 +123,12 @@ export function StatusReplayHeader({ phrase, replay, compact }: StatusReplayHead
             {p.headline}
           </div>
 
-          {/* Intensity meter (thin pill) */}
-          <div 
-            aria-label="Intensity" 
-            title={`${intensityPct}%`} 
-            style={{
-              width: compact ? 60 : 80, 
-              height: 6, 
-              borderRadius: 999,
-              border: '1px solid rgba(255,255,255,0.25)', 
-              overflow: 'hidden'
-            }}
-          >
-            <div style={{
-              width: `${intensityPct}%`, 
-              height: '100%',
-              background: border, 
-              opacity: 0.9,
-              transition: 'width 0.3s ease-out'
-            }} />
-          </div>
+          {/* Intensity meter with pulse */}
+          <IntensityMeter 
+            type={p.type} 
+            intensity={p.intensity} 
+            isReplay={replay.isReplay}
+          />
         </div>
 
         {p.detail && showDetail && (

@@ -1,0 +1,76 @@
+:root {
+  /* semantic color tokens map to weather types */
+  --sw-color-storm: #4f46e5;        /* indigo-600 */
+  --sw-color-high:  #f59e0b;        /* amber-500  */
+  --sw-color-low:   #64748b;        /* slate-500  */
+  --sw-color-clear: #22c55e;        /* emerald-500 */
+  /* bar vars (overridden inline) */
+  --sw-bar-bg: rgba(255,255,255,.14);
+  --sw-bar-fg: #22c55e;             /* default */
+  --sw-progress: 0.35;              /* 0..1 */
+  --sw-pulse-alpha: .9;
+  --sw-height: 6px;
+  --sw-radius: 999px;
+}
+
+.sw-meter {
+  position: relative;
+  width: 84px;
+  height: var(--sw-height);
+  border-radius: var(--sw-radius);
+  border: 1px solid rgba(255,255,255,.25);
+  background: var(--sw-bar-bg);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.sw-meter__fill {
+  position: absolute;
+  inset: 0;
+  width: calc(var(--sw-progress) * 100%);
+  background: var(--sw-bar-fg);
+  opacity: .92;
+  transition: width .25s ease, opacity .2s ease;
+}
+
+/* subtle pulse "breath" using a masked conic gradient */
+.sw-meter::after {
+  content: '';
+  position: absolute; 
+  inset: 0;
+  background:
+    radial-gradient(120% 60% at 0% 50%,
+      color-mix(in oklab, var(--sw-bar-fg), transparent 70%) 0%,
+      transparent 60%);
+  mix-blend-mode: screen;
+  opacity: calc(var(--sw-progress) * .35);
+  animation: sw-breathe 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sw-breathe {
+  0%   { transform: translateX(-10%) scaleX(1.00); opacity: calc(var(--sw-progress) * .30); }
+  50%  { transform: translateX(  0%) scaleX(1.06); opacity: calc(var(--sw-progress) * .45); }
+  100% { transform: translateX( 10%) scaleX(1.00); opacity: calc(var(--sw-progress) * .30); }
+}
+
+/* Replay mode: remove the organic pulse; use a clean striped shimmer */
+.sw-meter--replay::after {
+  animation: none; 
+  opacity: .25;
+  background:
+    repeating-linear-gradient( 90deg,
+      color-mix(in oklab, var(--sw-bar-fg), transparent 80%) 0 8px,
+      transparent 8px 16px );
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .sw-meter::after,
+  .sw-meter--replay::after {
+    animation: none;
+  }
+  .sw-meter__fill { 
+    transition: width .0s; 
+  }
+}

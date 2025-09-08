@@ -48,6 +48,7 @@ import { detectCascadeHotspots } from '@/features/field/detect/detectCascade';
 import { TimeLapseController } from '@/features/field/timelapse/TimeLapseController';
 import { StatusReplayHeader } from '@/features/field/status/StatusReplayHeader';
 import { useSocialWeather } from '@/components/field/contexts/SocialWeatherContext';
+import { ModeFader } from '@/features/field/mode/ModeFader';
 import { debugFieldVectors } from '@/lib/debug/flags';
 import { useFieldPerformance, setPerformanceCounters, emitWorkerPerfEvent, getQualitySettings, shouldReduceQuality } from '@/hooks/useFieldPerformance';
 import type { SocialCluster, ConvergenceEvent } from '@/types/field';
@@ -194,6 +195,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const auroraOverlayRef = useRef<AuroraOverlay | null>(null);
   const atmoTintOverlayRef = useRef<AtmoTintOverlay | null>(null);
   
+  // Mode Fader for smooth live/replay transitions
+  const faderRef = useRef(new ModeFader(220));
+  
   // Social Weather Tracker
   const socialWeatherTrackerRef = useRef<SocialWeatherTracker | null>(null);
   const lastWeatherUpdateRef = useRef<number>(0);
@@ -226,6 +230,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     (window as any).__replayMode = () => replayMode;
     (window as any).__timeLapseController = tlCtrlRef.current;
   }, [enterReplay, backToLive, replayMode]);
+  
+  // Mode Fader: Update goal when replay mode changes
+  useEffect(() => {
+    faderRef.current.setGoal(replayMode ? 'replay' : 'live');
+  }, [replayMode]);
   const [phase4Flags] = useState({
     tint_enabled: true,
     weather_enabled: true,
@@ -874,6 +883,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
               // Social Weather System: Update altitude controller and new overlays with frame budget
               const frameStart = performance.now();
+              
+              // Update mode fader for smooth live/replay transitions
+              faderRef.current.update(app.ticker.deltaMS);
+              const liveAlpha = faderRef.current.liveAlpha;
+              const replayAlpha = faderRef.current.replayAlpha;
+              
               const altitudeController = altitudeControllerRef.current;
               if (altitudeController) {
                 const activeLayers = altitudeController.computeActiveLayers(currentZoom);
@@ -882,29 +897,45 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 // Frame budget gate: only update heavy overlays if we have time
                 const frameSpent = performance.now() - frameStart;
                 
-                // Update Lightning overlay (lightweight)
-                if (lightningOverlayRef.current && activeLayers.has('Lightning') && frameSpent < 6.0) {
-                  lightningOverlayRef.current.update(convergences, app.ticker.deltaMS, currentZoom);
-                  lightningOverlayRef.current.setAlpha(layerAlphas.get('Lightning') ?? 0);
+                // Live mode updates (only if liveAlpha > 0.05)
+                if (!replayMode && liveAlpha > 0.05) {
+                  // Update Lightning overlay (lightweight)
+                  if (lightningOverlayRef.current && activeLayers.has('Lightning') && frameSpent < 6.0) {
+                    lightningOverlayRef.current.update(convergences, app.ticker.deltaMS, currentZoom);
+                    lightningOverlayRef.current.setAlpha((layerAlphas.get('Lightning') ?? 0) * liveAlpha);
+                  }
+                  
+                  // Update Precipitation overlay (heavier - check frame budget)
+                  if (precipOverlayRef.current && activeLayers.has('Precip') && frameSpent < 7.0) {
+                    const allowedClustersForPrecip = clusters.filter(c => c.count >= FIELD_LOD.K_MIN);
+                    precipOverlayRef.current.update(allowedClustersForPrecip, app.ticker.deltaMS, currentZoom, deviceTier);
+                    precipOverlayRef.current.setAlpha((layerAlphas.get('Precip') ?? 0) * liveAlpha);
+                  }
+                  
+                  // Update Proximity Cascade overlay (check frame budget)
+                  if (cascadeOverlayRef.current && activeLayers.has('Cascade') && frameSpent < 6.5) {
+                    const hotspots = detectCascadeHotspots(convergences, { 
+                      maxDistPx: 80, 
+                      minActors: 3, 
+                      maxEtaMs: 120000 
+                    });
+                    cascadeOverlayRef.current.spawn(hotspots);
+                    cascadeOverlayRef.current.update(app.ticker.deltaMS);
+                    cascadeOverlayRef.current.setAlpha((layerAlphas.get('Cascade') ?? 0) * liveAlpha);
+                  }
                 }
                 
-                // Update Precipitation overlay (heavier - check frame budget)
-                if (precipOverlayRef.current && activeLayers.has('Precip') && frameSpent < 7.0) {
-                  const allowedClustersForPrecip = clusters.filter(c => c.count >= FIELD_LOD.K_MIN);
-                  precipOverlayRef.current.update(allowedClustersForPrecip, app.ticker.deltaMS, currentZoom, deviceTier);
-                  precipOverlayRef.current.setAlpha(layerAlphas.get('Precip') ?? 0);
-                }
-                
-                // Update Proximity Cascade overlay (check frame budget)
-                if (cascadeOverlayRef.current && activeLayers.has('Cascade') && frameSpent < 6.5) {
-                  const hotspots = detectCascadeHotspots(convergences, { 
-                    maxDistPx: 80, 
-                    minActors: 3, 
-                    maxEtaMs: 120000 
-                  });
-                  cascadeOverlayRef.current.spawn(hotspots);
-                  cascadeOverlayRef.current.update(app.ticker.deltaMS);
-                  cascadeOverlayRef.current.setAlpha(layerAlphas.get('Cascade') ?? 0);
+                // Replay mode updates (only if replayAlpha > 0.05 and in replay)
+                if (replayMode && replayAlpha > 0.05 && tlCtrlRef.current) {
+                  const frame = tlCtrlRef.current.step();
+                  if (frame && frame.flows?.length && frameSpent < 6.5) {
+                    // Render time-lapse winds with replay alpha (if overlay supports it)
+                    const windOverlay = tradeWindOverlayRef.current;
+                    if (windOverlay && 'setAlpha' in windOverlay) {
+                      (windOverlay as any).setAlpha(replayAlpha);
+                    }
+                    // Note: typedFlowsToWindPaths would be called here if available
+                  }
                 }
                 
                 // Update Vibe Compass overlay (lightweight)
