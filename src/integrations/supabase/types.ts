@@ -20380,6 +20380,27 @@ export type Database = {
         Args: { p_ts: string }
         Returns: Json
       }
+      get_field_tiles_enhanced: {
+        Args: {
+          p_include_history?: boolean
+          p_tile_ids: string[]
+          p_time_window?: unknown
+        }
+        Returns: {
+          active_floq_ids: string[]
+          afterglow_intensity: number
+          avg_vibe: Json
+          cohesion_score: number
+          convergence_vector: Json
+          crowd_count: number
+          history: Json
+          momentum: number
+          movement_mode: string
+          tile_id: string
+          updated_at: string
+          velocity: Json
+        }[]
+      }
       get_field_tiles_optimized_v2: {
         Args: {
           p_bbox_lat_max: number

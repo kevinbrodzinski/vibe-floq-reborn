@@ -39,6 +39,21 @@ export interface EnhancedFieldTile extends FieldTile {
   cohesion_score?: number; // 0-1, how tightly grouped
   afterglow_intensity?: number; // 0-1, decays over time
   history?: TemporalSnapshot[]; // Keep last 10 snapshots
+  
+  // Trail segments for rendering
+  trail_segments?: Array<{
+    x: number;
+    y: number;
+    timestamp: number;
+    alpha: number;
+  }>;
+  
+  // Convergence prediction
+  convergence_vector?: {
+    target_tile_id: string;
+    time_to_converge: number; // seconds
+    probability: number; // 0-1
+  };
 }
 
 export interface ScreenTile extends EnhancedFieldTile {

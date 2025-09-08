@@ -54,7 +54,7 @@ export const FieldCanvasProduction: React.FC<FieldCanvasProductionProps> = ({
   const lastKeyRef = useRef<string>('');
 
   // Get enhanced field tiles  
-  const { data: enhancedTiles } = useEnhancedFieldTiles(viewportGeo);
+  const { data: enhancedTiles } = useEnhancedFieldTiles({ bounds: viewportGeo });
 
   // Initialize PIXI app
   useEffect(() => {
