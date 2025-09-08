@@ -218,7 +218,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     }
   }, []);
   
-  // Feature flags for Phase 4
+  // DEV globals setup (expose replay functions once)
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (window as any).__enterReplay = enterReplay;
+    (window as any).__backToLive = backToLive;
+    (window as any).__replayMode = () => replayMode;
+    (window as any).__timeLapseController = tlCtrlRef.current;
+  }, [enterReplay, backToLive, replayMode]);
   const [phase4Flags] = useState({
     tint_enabled: true,
     weather_enabled: true,
@@ -244,9 +251,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Phase 4: Storm groups for aurora detection
   const lastStormGroupsRef = useRef<any[]>([]);
   
-  // Data refs for social weather metrics
-  const flowCellsRef = useRef<any[]>([]);
-  const pressureCellsRef = useRef<any[]>([]);
+  // Data refs for social weather metrics (properly typed)
+  type FlowCell = { x: number; y: number; vx: number; vy: number };
+  type PressureCell = { p: number; gx: number; gy: number };
+  
+  const flowCellsRef = useRef<FlowCell[]>([]);
+  const pressureCellsRef = useRef<PressureCell[]>([]);
   
   // Phase 4: HUD counters for performance monitoring
   const [phase4HudCounters, setPhase4HudCounters] = useState({

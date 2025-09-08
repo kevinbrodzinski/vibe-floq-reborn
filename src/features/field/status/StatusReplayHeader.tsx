@@ -5,15 +5,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { LiveReplayBadge } from './LiveReplayBadge';
+import type { SocialWeatherPhrase } from './SocialWeatherComposer';
 
 type PhraseType = 'storm_front' | 'high_pressure' | 'low_pressure' | 'clearing';
-
-export type SocialWeatherPhrase = {
-  type: PhraseType;
-  headline: string;
-  detail?: string;
-  intensity: number; // 0..1
-};
 
 export type StatusReplayHeaderProps = {
   phrase?: SocialWeatherPhrase | null;

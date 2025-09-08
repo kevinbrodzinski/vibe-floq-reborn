@@ -110,19 +110,20 @@ export class TimeLapseController {
   }
 
   /**
+   * Get current replay frame timestamp
+   */
+  getFrameTs(): number | undefined {
+    if (!this.playing) return undefined;
+    const frame = this.buf.getBack(this.playIdx - 1);
+    return frame?.t;
+  }
+  
+  /**
    * Get timestamp range for header
    */
   getRangeTs(): [number, number] {
     const stats = this.getStats();
     return [stats.oldestTime || Date.now(), stats.newestTime || Date.now()];
-  }
-
-  /**
-   * Get current frame timestamp for header
-   */
-  getFrameTs(): number | undefined {
-    const frame = this.buf.getBack(this.playIdx - 1);
-    return frame?.t;
   }
 
   /**
