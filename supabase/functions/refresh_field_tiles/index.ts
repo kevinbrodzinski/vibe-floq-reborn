@@ -1,9 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, handleOptions } from '../_shared/cors.ts';
+import { corsHeadersFor, handlePreflight } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
-  const preflight = handleOptions(req);
+  const preflight = handlePreflight(req);
   if (preflight) return preflight;
+
+  const headers = { ...corsHeadersFor(req), 'Content-Type': 'application/json' };
 
   try {
     const supabase = createClient(
@@ -30,7 +32,7 @@ Deno.serve(async (req) => {
       console.log('No active hexes found, field tiles refresh complete');
       return new Response(
         JSON.stringify({ success: true, message: 'No active tiles to refresh' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers }
       );
     }
 
@@ -144,7 +146,7 @@ Deno.serve(async (req) => {
         processed,
         total: uniqueHexes.length
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers }
     );
 
   } catch (error) {
@@ -155,7 +157,7 @@ Deno.serve(async (req) => {
         error: error.message,
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers,
         status: 500,
       }
     );
