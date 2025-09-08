@@ -19517,6 +19517,24 @@ export type Database = {
           vibe_score: number
         }[]
       }
+      fn_compute_friction: {
+        Args: {
+          p_budget_per_person?: number
+          p_paths_json: Json
+          p_plan_id: string
+        }
+        Returns: {
+          coordination: number
+          financial: number
+          friction: number
+          friction_score_pct: number
+          label: string
+          logistics: number
+          meters: number
+          path_id: string
+          social: number
+        }[]
+      }
       fn_emit_notification: {
         Args: { p_kind: string; p_payload?: Json; p_profile_id: string }
         Returns: undefined

@@ -30,50 +30,23 @@ serve(async (req) => {
       global: { headers: { Authorization: auth } },
     });
 
-    const { data: rsvps } = await supabase.from("plan_participants").select("rsvp_status").eq("plan_id", body.plan_id);
-    const counts = { yes:0, maybe:0, pending:0, declined:0 };
-    for (const r of rsvps ?? []) {
-      const s = (r as any).rsvp_status ?? "pending";
-      if (s==="accepted") counts.yes++; else if (s==="maybe") counts.maybe++; else if (s==="declined") counts.declined++; else counts.pending++;
-    }
-    const total = Math.max(1, counts.yes+counts.maybe+counts.pending+counts.declined);
-    const coordination = 1 - ((counts.yes + 0.5*counts.maybe)/total); // 0 good → 1 bad
+    // Use the SQL RPC function for friction calculation
+    const { data, error } = await supabase.rpc('fn_compute_friction', {
+      p_plan_id: body.plan_id,
+      p_paths_json: body.paths,
+      p_budget_per_person: body.budget_per_person ?? null
+    });
 
-    // Prefetch all venue prices to avoid N queries per path
-    const allVenueIds = Array.from(new Set(
-      body.paths.flatMap(p => p.stops.map(s => s.venue_id))
-    ));
-    const { data: priceRows } = await supabase
-      .from("venues")
-      .select("id, price_level")
-      .in("id", allVenueIds);
-    const priceMap = new Map((priceRows ?? []).map(r => [r.id, r.price_level ?? 2]));
-
-    const results:any[] = [];
-    for (const path of body.paths) {
-      let meters = 0;
-      for (let i=1;i<path.stops.length;i++) meters += hav(path.stops[i-1], path.stops[i]);
-      const logistics = Math.min(1, Math.max(0, (meters-800)/(6000-800)));
-
-      let financial = 0;
-      const budget = body.budget_per_person ?? null;
-      if (budget !== null) {
-        const avg = path.stops.reduce((acc, s) => acc + (priceMap.get(s.venue_id) ?? 2) * 30, 0) / Math.max(1, path.stops.length);
-        financial = Math.min(1, avg > 0 ? Math.max(0, (avg - budget) / Math.max(20, budget)) : 0);
-      }
-
-      const social = Math.min(1, 0.15 + 0.5 * (counts.maybe + counts.pending) / total);
-      const friction = 0.30*coordination + 0.40*logistics + 0.15*social + 0.15*financial;
-
-      results.push({
-        path_id: path.id, label: path.label ?? "Path",
-        meters, breakdown: { coordination, logistics, social, financial },
-        friction, friction_score_pct: Math.round(friction*100)
+    if (error) {
+      console.error('[compute-friction] RPC error:', error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
-    results.sort((a,b)=>a.friction-b.friction);
-    return new Response(JSON.stringify({ results }), { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+
+    return new Response(JSON.stringify({ results: data }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e?.message ?? e) }), { 
