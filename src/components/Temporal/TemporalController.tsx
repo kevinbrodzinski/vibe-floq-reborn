@@ -5,6 +5,7 @@ import { useForecastLayer } from '@/map/layers/useForecastLayer';
 import { useQuery } from '@tanstack/react-query';
 import { fetchForecast, type ForecastResp } from '@/lib/api/forecastClient';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
+import { TemporalConfidenceHUD } from './TemporalConfidenceHUD';
 
 type Horizon = 'now'|'p30'|'p120'|'historic';
 
@@ -44,6 +45,11 @@ export function TemporalController({ map, onInsight, pixiLayerRef }: {
     });
   }, [pixiLayerRef, q.data, h]);
 
+  // Helper for horizon labels
+  const horizonText = (h: Horizon) => {
+    return h === 'p30' ? '+30m' : h === 'p120' ? '+2h' : h === 'now' ? 'Now' : 'Historic'
+  }
+
   return (
     <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[580] flex items-center gap-3 bg-black/35 backdrop-blur px-3 py-2 rounded-xl">
     {(['now','p30','p120','historic'] as Horizon[]).map(x => (
@@ -52,9 +58,14 @@ export function TemporalController({ map, onInsight, pixiLayerRef }: {
         onClick={() => setH(x)}
         className={`px-3 py-2 rounded-md text-sm ${h===x?'bg-white/25 text-white':'bg-white/10 text-white/80'}`}
       >
-        {x==='p30'?'+30m':x==='p120'?'+2h':x}
+        {horizonText(x)}
       </button>
     ))}
+      
+      {/* Confidence HUD */}
+      <div className="ml-2">
+        <TemporalConfidenceHUD confidence={q.data?.confidence} horizonLabel={horizonText(h)} />
+      </div>
       {h==='historic' && (
         <select
           value={preset}
