@@ -1,0 +1,31 @@
+/* Badge pulse animations for relationship health indicators */
+@keyframes pulseGold {
+  0%, 100% { 
+    box-shadow: 0 0 6px rgba(250, 204, 21, 0.7); 
+  }
+  50% { 
+    box-shadow: 0 0 10px rgba(250, 204, 21, 1); 
+  }
+}
+
+@keyframes pulseWarm {
+  0%, 100% { 
+    box-shadow: 0 0 6px rgba(251, 146, 60, 0.6); 
+  }
+  50% { 
+    box-shadow: 0 0 9px rgba(251, 146, 60, 0.9); 
+  }
+}
+
+.badge-pulse-strong {
+  animation: pulseGold 1.2s ease-in-out infinite;
+}
+
+.badge-pulse-warming {
+  animation: pulseWarm 1.6s ease-in-out infinite;
+}
+
+/* Cooling badges stay static (no animation) */
+.badge-pulse-cooling {
+  /* No animation for cooling relationships */
+}

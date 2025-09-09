@@ -546,6 +546,7 @@ function GroupAvatarStrip({
               <div aria-hidden>
                 {/* outer halo (soft) */}
                 <span
+                  aria-hidden
                   className="absolute"
                   style={{
                     right: -4, bottom: -4,
@@ -555,6 +556,7 @@ function GroupAvatarStrip({
                 />
                 {/* outer donut ring */}
                 <span
+                  aria-hidden
                   className="absolute"
                   style={{
                     right: -2, bottom: -2,
@@ -566,6 +568,7 @@ function GroupAvatarStrip({
                 />
                 {/* inner core (health) */}
                 <span
+                  aria-hidden
                   className="absolute"
                   style={{
                     right: 0, bottom: 0,
