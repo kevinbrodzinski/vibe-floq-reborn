@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchConstellation, type ConstellationEdge } from '@/lib/api/constellationClient';
 import { ConstellationCanvas } from './ConstellationCanvas';
 import { QuickInvitePopover } from './QuickInvitePopover';
+import { useToast } from '@/components/system/toast/useToast';
 
 type Party = { id: string; mass?: number; vibe?: string };
 
@@ -14,8 +15,12 @@ export function ConstellationController({
   party: Party[];
   edges?: ConstellationEdge[];
   seed?: string;
-  onInvite?: (userId: string) => void;
+  onInvite?: (id: string) => void;
 }) {
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [showInvite, setShowInvite] = React.useState(false);
+  const { info, error } = useToast();
+
   const q = useQuery({
     queryKey: ['constellation', party.map(p => p.id).join(','), edges.length, seed],
     queryFn: () => fetchConstellation({ party, edges, seed }),
@@ -23,8 +28,6 @@ export function ConstellationController({
     enabled: active && party.length > 0,
   });
 
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [showInvite, setShowInvite] = React.useState(false);
   const hitRef = React.useRef<HTMLDivElement | null>(null);
 
   const onClick = (e: React.MouseEvent) => {
@@ -46,15 +49,27 @@ export function ConstellationController({
   const closePopover = () => setShowInvite(false);
   const sendInvite = (id: string) => { onInvite?.(id); setShowInvite(false); };
 
+  const handleRetryVenue = React.useCallback(async () => {
+    try {
+      info('Refreshing picks…', 1400);
+      // Mock retry - in a real app this would call your actual redecorator
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network call
+      return [];
+    } catch {
+      error('Retry failed');
+      return [];
+    }
+  }, [info, error]);
+
   return (
     <>
-      <ConstellationCanvas
-        active={active}
-        party={party}
-        edges={edges}
-        seed={seed}
-        highlightId={selectedId ?? undefined}
-      />
+        <ConstellationCanvas
+          active={active}
+          party={party}
+          edges={edges}
+          seed={seed}
+          highlightId={selectedId ?? undefined}
+        />
       <div
         ref={hitRef}
         onClick={active ? onClick : undefined}
@@ -65,6 +80,7 @@ export function ConstellationController({
           userId={selectedId}
           onClose={closePopover}
           onInvite={sendInvite}
+          onRetryVenue={handleRetryVenue}
         />
       )}
     </>

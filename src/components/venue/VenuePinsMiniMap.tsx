@@ -13,6 +13,9 @@ export function VenuePinsMiniMap({
   height?: number
   style?: string
 }) {
+  // Only render if we have venues with locations
+  const hasLoc = pins.some(p => p.loc)
+  if (!hasLoc) return null
   const divRef = React.useRef<HTMLDivElement | null>(null)
   const mapRef = React.useRef<mapboxgl.Map | null>(null)
   const [tokenReady, setTokenReady] = React.useState(false)

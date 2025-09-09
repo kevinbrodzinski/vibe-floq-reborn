@@ -1,6 +1,7 @@
 import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
 import { useCurrentProfileId } from "@/hooks/useCurrentUser";
 import { usePresenceTracker } from '@/hooks/usePresenceTracker';
+import { ToastProvider } from "@/components/system/toast/useToast";
 
 function PresenceHeartbeatMount() {
   // Sends periodic heartbeats to user_online_status.
@@ -17,10 +18,10 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
   useUnreadBadgeRealtime(currentProfileId);
 
   return (
-    <>
+    <ToastProvider>
       {/* Global online presence heartbeat */}
       <PresenceHeartbeatMount />
       {children}
-    </>
+    </ToastProvider>
   );
 };

@@ -113,6 +113,9 @@ export class TimeCrystal {
     const g = rec.mesh
     g.clear()
 
+    // Enhanced confidence gating
+    const conf = Math.max(0, Math.min(1, rec.confidence ?? 0.7))
+    
     // Create faceted crystal shape with enhanced effects
     const step = (Math.PI * 2) / this.segs
     const points: { x: number; y: number }[] = []
@@ -139,27 +142,34 @@ export class TimeCrystal {
     const edgeColor = this.vec4ToHex(rec.edgeCol)
     const specColor = this.vec4ToHex(rec.specCol)
     
-    // Core fill
-    g.beginFill(coreColor, rec.opacity * 0.6)
+    // Apply confidence modulation to all effects
+    const confScale = 0.5 + 0.5 * conf
+    const specScale = 0.6 + 0.4 * conf
+    const edgeScale = 0.5 + 0.5 * conf
+
+    // Core fill (confidence affects opacity)
+    g.beginFill(coreColor, rec.opacity * 0.6 * confScale)
     g.drawPolygon(points.flatMap(p => [p.x, p.y]))
     g.endFill()
 
-    // Edge highlight
-    g.lineStyle(2, edgeColor, rec.opacity * 0.8)
+    // Edge highlight (confidence affects intensity)
+    g.lineStyle(2, edgeColor, rec.opacity * 0.8 * edgeScale)
     g.drawPolygon(points.flatMap(p => [p.x, p.y]))
     g.lineStyle()
 
-    // Specular glints at vertices
-    for (let i = 0; i < points.length; i += 3) { // Every 3rd vertex
-      const p = points[i]
-      const glintAlpha = rec.opacity * 0.4 * (0.7 + 0.3 * Math.sin(this.time * 0.003 + i))
-      g.beginFill(specColor, glintAlpha)
-      g.drawCircle(p.x, p.y, 2)
-      g.endFill()
+    // Specular glints at vertices (confidence gates sparkle)
+    if (conf > 0.3) { // Only show sparkles above low confidence
+      for (let i = 0; i < points.length; i += 3) { // Every 3rd vertex
+        const p = points[i]
+        const glintAlpha = rec.opacity * 0.4 * specScale * (0.7 + 0.3 * Math.sin(this.time * 0.003 + i))
+        g.beginFill(specColor, glintAlpha)
+        g.drawCircle(p.x, p.y, 2)
+        g.endFill()
+      }
     }
 
-    // Rim lighting effect
-    g.lineStyle(1, edgeColor, rec.opacity * 0.3)
+    // Rim lighting effect (confidence affects edge definition)
+    g.lineStyle(1, edgeColor, rec.opacity * 0.3 * edgeScale)
     const rimRadius = rec.radius * 1.1
     g.drawCircle(0, 0, rimRadius)
     g.lineStyle()
