@@ -22524,18 +22524,28 @@ export type Database = {
         Returns: Json
       }
       recent_convergence: {
-        Args: {
-          east: number
-          north: number
-          since: string
-          south: number
-          west: number
-        }
+        Args:
+          | {
+              east: number
+              north: number
+              res?: number
+              since: string
+              south: number
+              west: number
+            }
+          | {
+              east: number
+              north: number
+              since: string
+              south: number
+              west: number
+            }
         Returns: {
-          h3_key: string
+          eta_min: number
+          group_min: number
           lat: number
           lng: number
-          n: number
+          prob: number
         }[]
       }
       recent_friend_venue_counts: {
@@ -22944,19 +22954,24 @@ export type Database = {
         }[]
       }
       search_venues_bbox: {
-        Args: {
-          east: number
-          lim?: number
-          north: number
-          q?: string
-          south: number
-          west: number
-        }
+        Args:
+          | {
+              bbox_geojson: Json
+              center_lat?: number
+              center_lng?: number
+              radius_m?: number
+            }
+          | {
+              east: number
+              lim?: number
+              north: number
+              q?: string
+              south: number
+              west: number
+            }
         Returns: {
           category: string
           id: string
-          lat: number
-          lng: number
           name: string
           open_now: boolean
         }[]
