@@ -2,7 +2,11 @@
 // Input: { bbox? | center+radius?, zoom }
 // Output: { venues: TileVenue[], ttlSec, attribution[] }
 
-import { corsHeaders } from '../_shared/cors.ts';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 type GPlace = {
   place_id: string; 
@@ -52,6 +56,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  if (!GOOGLE_KEY) return bad('GOOGLE_PLACES_KEY missing', 500);
 
   try {
     if (req.method !== "POST") return bad("POST required", 405);

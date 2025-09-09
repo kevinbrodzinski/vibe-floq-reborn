@@ -1,7 +1,7 @@
 import { useFieldData } from '@/components/screens/field/FieldDataProvider';
 
 export function useVenueSync() {
-  const { fieldData } = useFieldData();
+  const fieldData = useFieldData();
   
   return {
     isLoading: fieldData.loading,

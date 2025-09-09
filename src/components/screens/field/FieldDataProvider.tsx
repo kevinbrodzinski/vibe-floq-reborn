@@ -38,7 +38,7 @@ export function useFieldData() {
   if (!context) {
     throw new Error('useFieldData must be used within a FieldDataProvider');
   }
-  return context;
+  return context.fieldData;
 }
 
 interface FieldDataProviderProps {

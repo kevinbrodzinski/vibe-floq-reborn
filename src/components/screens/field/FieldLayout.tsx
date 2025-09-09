@@ -33,7 +33,7 @@ interface FieldLayoutProps {
 }
 
 export const FieldLayout = () => {
-  const { fieldData: data } = useFieldData();
+  const data = useFieldData();
   const { 
     location, 
     isLocationReady, 

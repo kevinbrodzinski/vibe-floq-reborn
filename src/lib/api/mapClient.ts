@@ -4,25 +4,19 @@ import type {
 } from './mapContracts';
 
 export async function fetchTileVenues(vp: ViewportInput): Promise<TileVenuesResponse> {
-  const { data, error } = await supabase.functions.invoke('venues-tile', {
-    body: vp,
-  });
+  const { data, error } = await supabase.functions.invoke<TileVenuesResponse>('venues-tile', { body: vp });
   if (error) throw new Error(error.message);
-  return data;
+  return data as TileVenuesResponse;
 }
 
 export async function fetchVenueDetail(pid: string): Promise<VenueDetailResponse> {
-  const { data, error } = await supabase.functions.invoke('venue-detail', {
-    body: { pid },
-  });
+  const { data, error } = await supabase.functions.invoke<VenueDetailResponse>('venue-detail', { body: { pid } });
   if (error) throw new Error(error.message);
-  return data;
+  return data as VenueDetailResponse;
 }
 
 export async function fetchSocialWeather(vp: ViewportInput): Promise<SocialWeatherResponse> {
-  const { data, error } = await supabase.functions.invoke('social-weather', {
-    body: vp,
-  });
+  const { data, error } = await supabase.functions.invoke<SocialWeatherResponse>('social-weather', { body: vp });
   if (error) throw new Error(error.message);
-  return data;
+  return data as SocialWeatherResponse;
 }

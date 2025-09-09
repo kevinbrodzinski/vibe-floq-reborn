@@ -62,7 +62,7 @@ export const VIBE_TOKENS: Record<Vibe, VibeToken> = Object.fromEntries(
 export function getVibeToken(vibe: Vibe): VibeToken {
   const t = VIBE_TOKENS[vibe];
   if (!t) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (import.meta.env.MODE !== 'production') {
       console.warn(`Missing VIBE_TOKENS for vibe="${vibe}". Check src/lib/vibes.ts`);
     }
     // Fallback: neutral-ish token

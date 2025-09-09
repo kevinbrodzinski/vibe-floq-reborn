@@ -2,7 +2,11 @@
 // Input: { bbox|center+radius, zoom }
 // Output: { cells: PressureCell[], ttlSec }
 
-import { corsHeaders } from '../_shared/cors.ts';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 function okJson(body: unknown, ttlSec = 300) {
   return new Response(JSON.stringify(body), {
@@ -57,7 +61,7 @@ Deno.serve(async (req) => {
   try {
     if (req.method !== "POST") return bad("POST required", 405);
     
-    const { bbox, center, radius, zoom } = await req.json();
+    const { bbox, center, radius, zoom = 14 } = await req.json();
     const ctr = center ?? (bbox ? [ (bbox[0]+bbox[2])/2, (bbox[1]+bbox[3])/2 ] as [number,number] : [-118.4695,33.9855] as [number,number]);
 
     const cells = cellsFor(ctr, zoom);
