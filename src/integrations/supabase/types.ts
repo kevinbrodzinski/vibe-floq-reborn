@@ -22538,6 +22538,13 @@ export type Database = {
           n: number
         }[]
       }
+      recent_friend_venue_counts: {
+        Args: { profile: string; since: string }
+        Returns: {
+          friend_count: number
+          venue_id: string
+        }[]
+      }
       refresh_field_tiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined

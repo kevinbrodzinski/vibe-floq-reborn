@@ -18,9 +18,10 @@ import { mapTileToLite } from '@/lib/venues/mapTileToLite'
 // Flow system imports
 import { FlowExploreChips } from '@/components/flow/FlowExploreChips'
 import { FlowMapOverlay } from '@/components/flow/FlowMapOverlay'
-import { useFlowExplore } from '@/hooks/useFlowExplore'
 import { useFlowFilters } from '@/hooks/useFlowFilters'
+import { useFlowExplore } from '@/hooks/useFlowExplore'
 import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary'
+import { FlowDebugBadge } from '@/components/flow/FlowDebugBadge'
 
 export function FieldUILayer() {
   const data = useFieldData()
@@ -38,20 +39,11 @@ export function FieldUILayer() {
   const changeBtnRef = React.useRef<HTMLButtonElement>(null)
   const firstChooserBtnRef = React.useRef<HTMLButtonElement>(null)
 
-  // Flow state for explore lens - now managed by hook
-  const { filters, setFilters } = useFlowFilters()
-  const { 
-    venues: flowVenues, 
-    convergence, 
-    clusterRes, 
-    loading,
-    error 
-  } = useFlowExplore({ 
-    lens, 
-    map, 
-    initialFilters: filters,
-    debounceMs: 250 
-  })
+  // Flow state for explore lens - now managed by hooks  
+  const { filters, setFilters, loaded: filtersLoaded } = useFlowFilters()
+  const [lastMs, setLastMs] = React.useState<number|undefined>()
+  const { venues, convergence, clusterRes, loading, error } =
+    useFlowExplore({ lens, map, filters, onLatencyMs: setLastMs })
   // Memoized venue mapping for performance
   const venueLite = useMemo(() => {
     return data.nearbyVenues?.map(mapTileToLite) ?? []
@@ -59,8 +51,8 @@ export function FieldUILayer() {
 
   // Combined venues: prioritize Flow venues when available, fallback to static venues
   const displayVenues = useMemo(() => {
-    return flowVenues.length > 0 ? flowVenues : data.nearbyVenues ?? []
-  }, [flowVenues, data.nearbyVenues])
+    return venues.length > 0 ? venues : data.nearbyVenues ?? []
+  }, [venues, data.nearbyVenues])
 
   React.useEffect(() => {
     let mounted = true
@@ -123,7 +115,7 @@ export function FieldUILayer() {
   return (
     <>
       {/* Flow explore chips - only show in explore lens */}
-      {lens === 'explore' && (
+      {lens === 'explore' && filtersLoaded && (
         <FlowErrorBoundary>
           <FlowExploreChips 
             value={filters} 
@@ -166,6 +158,9 @@ export function FieldUILayer() {
               {error}
             </div>
           )}
+
+          {/* Dev HUD */}
+          <FlowDebugBadge zoom={map?.getZoom?.() ?? 14} res={clusterRes} lastMs={lastMs} />
 
           {/* Venue chooser overlay (inline) */}
           {chooserOpen && (

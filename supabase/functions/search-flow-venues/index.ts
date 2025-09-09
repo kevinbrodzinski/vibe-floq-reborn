@@ -1,19 +1,17 @@
-import { serve } from 'https://deno.land/std/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, handleOptions } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-type Req = {
-  bbox?: [number, number, number, number] // [minLng,minLat,maxLng,maxLat]
-  center?: [number, number]               // [lng,lat]
-  radius?: number                         // meters
-  filters?: {
-    vibeRange?: [number, number]
-    timeWindow?: { start: string; end: string } // ISO
-    friendFlows?: boolean
-    queue?: 'any'|'short'|'none'
-    weatherPref?: string[]
-  }
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const ok = (body: unknown) => new Response(JSON.stringify(body), { 
+  headers: { ...CORS, 'content-type': 'application/json' } 
+})
+const bad = (msg: string, code = 400) => new Response(JSON.stringify({ error: msg }), { 
+  status: code, 
+  headers: { ...CORS, 'content-type': 'application/json' } 
+})
 
 type TileVenue = {
   pid: string
@@ -23,102 +21,89 @@ type TileVenue = {
   busy_band?: 0|1|2|3|4
 }
 
-serve(async (req) => {
-  const preflight = handleOptions(req);
-  if (preflight) return preflight;
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+  if (req.method !== 'POST') return bad('POST required', 405)
 
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'POST required' }), 
-      { status: 405, headers: { ...corsHeaders, 'content-type': 'application/json' } }
-    );
+  const { bbox, center, radius, filters } = await req.json()
+  
+  if (!bbox && !center) {
+    return bad('bbox or center required')
   }
+
+  const url = Deno.env.get('SUPABASE_URL')!
+  const anon = Deno.env.get('SUPABASE_ANON_KEY')!
+  const supa = createClient(url, anon, { 
+    global: { headers: { Authorization: req.headers.get('Authorization') || '' } } 
+  })
 
   try {
-    const { bbox, center, radius = 900, filters }: Req = await req.json();
+    // Fetch venues from RPC
+    const { data: venuesRaw, error: venuesError } = await supa.rpc('search_venues_bbox', { 
+      bbox_geojson: bbox ? {
+        type: 'Polygon',
+        coordinates: [[
+          [bbox[0], bbox[1]], [bbox[2], bbox[1]], 
+          [bbox[2], bbox[3]], [bbox[0], bbox[3]], 
+          [bbox[0], bbox[1]]
+        ]]
+      } : null,
+      center_lat: center?.[1],
+      center_lng: center?.[0], 
+      radius_m: radius || 1000
+    })
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { 
-        auth: { persistSession: false },
-        global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
+    if (venuesError) throw venuesError
+
+    // Get busy bands from flow segments (45min window)
+    const sinceIso = new Date(Date.now() - 45 * 60 * 1000).toISOString()
+    const [{ data: segAgg }, { data: friendAgg }] = await Promise.all([
+      supa.rpc('get_venue_flow_counts', { since_timestamp: sinceIso }),
+      // Load friend venue counts only if friendFlows filter is enabled
+      (filters?.friendFlows
+        ? (async () => {
+            const { data: auth } = await supa.auth.getUser()
+            const pid = auth?.user?.id
+            if (!pid) return { data: [] as any[] }
+            return await supa.rpc('recent_friend_venue_counts', { profile: pid, since: sinceIso })
+          })()
+        : Promise.resolve({ data: [] as any[] }))
+    ])
+
+    // Build count maps
+    const counts = new Map<string, number>()
+    ;(segAgg ?? []).forEach((r: any) => counts.set(r.venue_id, Number(r.count) || 0))
+    
+    const friendCounts = new Map<string, number>()
+    ;(friendAgg ?? []).forEach((r: any) => friendCounts.set(r.venue_id, Number(r.friend_count) || 0))
+
+    // Map to TileVenue format with busy bands
+    let venues: TileVenue[] = (venuesRaw ?? []).map((v: any) => {
+      const c = counts.get(v.id) ?? 0
+      const band = c === 0 ? 0 : c === 1 ? 1 : c <= 3 ? 2 : c <= 6 ? 3 : 4
+      return { 
+        pid: v.id, 
+        name: v.name, 
+        category: v.category, 
+        open_now: v.open_now ?? null, 
+        busy_band: band 
       }
-    );
+    })
 
-    // Compute bbox from center+radius if not provided
-    let qbbox = bbox;
-    if (!qbbox && center) {
-      const deg = radius / 111_000; // rough conversion
-      qbbox = [center[0] - deg, center[1] - deg, center[0] + deg, center[1] + deg];
-    }
-    if (!qbbox) {
-      return new Response(
-        JSON.stringify({ venues: [] }), 
-        { headers: { ...corsHeaders, 'content-type': 'application/json', 'cache-control': 'public, max-age=60' } }
-      );
-    }
-
-    // Use RPC for geometry-safe venue search
-    const q = undefined; // TODO: derive from filters later
-    const { data: venuesRaw, error: vErr } = await supabase.rpc('search_venues_bbox', {
-      west: qbbox[0], south: qbbox[1], east: qbbox[2], north: qbbox[3],
-      q, lim: 200
-    });
-
-    if (vErr) throw vErr;
-
-    // Get active flow segments in last 45 minutes for busy_band calculation
-    const sinceIso = new Date(Date.now() - 45 * 60 * 1000).toISOString();
-    const { data: segAgg, error: sErr } = await supabase
-      .rpc('get_venue_flow_counts', { since_timestamp: sinceIso });
-
-    if (sErr) {
-      console.warn('[search-flow-venues] Could not get flow counts:', sErr);
-    }
-
-    const counts = new Map<string, number>();
-    (segAgg ?? []).forEach((r: any) => counts.set(r.venue_id, Number(r.count) || 0));
-
-    // Map to TileVenue format
-    const venues: TileVenue[] = (venuesRaw ?? []).map((v: any) => {
-      const c = counts.get(v.id) ?? 0;
-      const band = c === 0 ? 0 : c === 1 ? 1 : c <= 3 ? 2 : c <= 6 ? 3 : 4;
-      
-      return {
-        pid: v.id,
-        name: v.name,
-        category: v.category,
-        open_now: v.open_now ?? null,
-        busy_band: band,
-      };
-    });
-
-    // Apply basic filters (more sophisticated filtering can be added later)
-    let filteredVenues = venues;
+    // Apply FriendFlows boost if enabled
     if (filters?.friendFlows) {
-      // TODO: Filter to venues where friends have recent flows
+      venues.sort((a, b) => {
+        const fa = friendCounts.get(a.pid) ?? 0
+        const fb = friendCounts.get(b.pid) ?? 0
+        if (fb !== fa) return fb - fa
+        return (b.busy_band ?? 0) - (a.busy_band ?? 0)
+      })
     }
 
-    return new Response(
-      JSON.stringify({ venues: filteredVenues, ttlSec: 60 }), 
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'content-type': 'application/json', 
-          'cache-control': 'public, max-age=60' 
-        } 
-      }
-    );
+    return ok({ venues, ttlSec: 60 })
 
-  } catch (e: any) {
-    console.error('[search-flow-venues]', e);
-    return new Response(
-      JSON.stringify({ error: e?.message ?? 'Internal server error' }), 
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'content-type': 'application/json' } 
-      }
-    );
+  } catch (error) {
+    console.error('[search-flow-venues] error:', error)
+    return bad(error.message || 'Failed to search venues', 500)
   }
-});
+})
