@@ -25,16 +25,24 @@ export function TemporalController({ map }: { map: any }) {
 
   return (
     <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[580] flex items-center gap-3 bg-black/35 backdrop-blur px-3 py-2 rounded-xl">
-      {(['now','p30','p120','historic'] as Horizon[]).map(x => (
-        <button key={x} onClick={() => setH(x)}
-          className={`px-3 py-2 rounded-md text-sm ${h===x?'bg-white/25 text-white':'bg-white/10 text-white/80'}`}>
-          {x==='p30'?'+30m':x==='p120'?'+2h':x}
-        </button>
-      ))}
+    {(['now','p30','p120','historic'] as Horizon[]).map(x => (
+      <button
+        key={x}
+        onClick={() => setH(x)}
+        className={`px-3 py-2 rounded-md text-sm ${h===x?'bg-white/25 text-white':'bg-white/10 text-white/80'}`}
+      >
+        {x==='p30'?'+30m':x==='p120'?'+2h':x}
+      </button>
+    ))}
       {h==='historic' && (
-        <select value={preset} onChange={e=>setPreset(e.target.value as any)}
-                className="bg-white/10 text-white/90 px-2 py-1 rounded-md">
-          <option>LastThursday</option><option>LastMonth</option><option>LastYear</option>
+        <select
+          value={preset}
+          onChange={e=>setPreset(e.target.value as any)}
+          className="bg-white/10 text-white/90 px-2 py-1 rounded-md"
+        >
+          <option>LastThursday</option>
+          <option>LastMonth</option>
+          <option>LastYear</option>
         </select>
       )}
       {q.isLoading && <span className="ml-2 text-white/80 text-sm">Loading…</span>}

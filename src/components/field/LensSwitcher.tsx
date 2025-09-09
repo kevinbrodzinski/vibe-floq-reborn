@@ -22,7 +22,9 @@ export function LensSwitcher() {
           key={k}
           onClick={() => setLens(k)}
           aria-pressed={lens === k}
-          className={`px-3 py-2 rounded-lg text-sm ${lens===k ? 'bg-white/25 text-white' : 'bg-white/10 text-white/80'} focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
+          className={`px-3 py-2 rounded-lg text-sm ${
+            lens === k ? 'bg-white/25 text-white' : 'bg-white/10 text-white/80'
+          } focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
         >
           {LABELS[k]}
         </button>
