@@ -1,7 +1,11 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { safeVibe } from '@/lib/vibes';
 import type { Vibe } from '@/lib/vibes';
+import { fetchTileVenues, fetchSocialWeather } from '@/lib/api/mapClient';
+import { useViewportInput } from '@/lib/map/useViewportInput';
+import type { TileVenue, PressureCell } from '@/lib/api/mapContracts';
 
 export interface FieldData {
   currentVibe: Vibe;
@@ -17,7 +21,8 @@ export interface FieldData {
   walkableFloqs?: any[];
   realtime?: any;
   currentEvent?: any;
-  nearbyVenues?: any[];
+  nearbyVenues?: TileVenue[];
+  weatherCells?: PressureCell[];
 }
 
 interface FieldDataContextType {
@@ -41,12 +46,33 @@ interface FieldDataProviderProps {
 }
 
 export function FieldDataProvider({ children }: FieldDataProviderProps) {
-  const [fieldData, setFieldData] = useState<FieldData>({
-    currentVibe: 'chill',
-    vibeStrength: 0.5,
+  const [currentVibe, setCurrentVibe] = useState<Vibe>('chill');
+  const [vibeStrength, setVibeStrength] = useState(0.5);
+
+  // Get viewport data from map
+  const { viewport, viewportKey } = useViewportInput({ defaultRadius: 900 });
+
+  // Fetch venues and weather data
+  const qVenues = useQuery({
+    queryKey: ['tile-venues', viewportKey],
+    queryFn: () => fetchTileVenues(viewport),
+    staleTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const qWeather = useQuery({
+    queryKey: ['social-weather', viewportKey],
+    queryFn: () => fetchSocialWeather(viewport),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const fieldData = useMemo<FieldData>(() => ({
+    currentVibe,
+    vibeStrength,
     nearbyFloqs: [],
-    loading: true,
-    // Default values for compatibility
+    loading: qVenues.isLoading || qWeather.isLoading,
+    // Additional properties for compatibility
     fieldTiles: [],
     tileIds: [],
     viewport: null,
@@ -55,30 +81,19 @@ export function FieldDataProvider({ children }: FieldDataProviderProps) {
     walkableFloqs: [],
     realtime: null,
     currentEvent: null,
-    nearbyVenues: [],
-  });
+    nearbyVenues: qVenues.data?.venues ?? [],
+    weatherCells: qWeather.data?.cells ?? [],
+  }), [currentVibe, vibeStrength, qVenues.isLoading, qWeather.isLoading, qVenues.data, qWeather.data]);
 
   const updateVibe = (vibe: Vibe) => {
-    // Ensure vibe is valid before updating
     const validVibe = safeVibe(vibe);
-    setFieldData(prev => ({
-      ...prev,
-      currentVibe: validVibe,
-    }));
+    setCurrentVibe(validVibe);
   };
 
   const refreshData = () => {
-    setFieldData(prev => ({ ...prev, loading: true }));
-    // Simulate data refresh
-    setTimeout(() => {
-      setFieldData(prev => ({ ...prev, loading: false }));
-    }, 1000);
+    qVenues.refetch();
+    qWeather.refetch();
   };
-
-  useEffect(() => {
-    // Initialize with default data
-    refreshData();
-  }, []);
 
   return (
     <FieldDataContext.Provider value={{
