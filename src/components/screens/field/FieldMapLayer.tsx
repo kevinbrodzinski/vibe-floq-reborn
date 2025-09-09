@@ -129,7 +129,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
       <VenueLoadingOverlay isLoading={isVenueSyncing} />
       
       {/* Layer 3: UI Controls */}
-      <FieldUILayer data={data} />
+      <FieldUILayer />
       
       {/* Data Flow Test Panel (dev only) */}
       {process.env.NODE_ENV === 'development' && isDebugVisible && (

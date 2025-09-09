@@ -44,10 +44,17 @@ html, body, #root {
   background: hsl(var(--muted));
 }
 
-/* Ripple animation */
-@keyframes ripple {
-  to {
-    transform: scale(4);
+/* Mapbox & Pixi canvases */
+#map { z-index: 200; }
+#pixi { z-index: 220; pointer-events: none; }  /* MUST be none so UI is clickable */
+
+/* UI overlays */
+.hud, .drawer, .lens-switcher { z-index: 600; pointer-events: auto; }
+
+/* Safe area padding */
+:root { 
+  --safe-bottom: env(safe-area-inset-bottom); 
+}
     opacity: 0;
   }
 }

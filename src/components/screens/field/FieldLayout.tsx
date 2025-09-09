@@ -213,7 +213,7 @@ export const FieldLayout = () => {
           </div>
 
           {/* UI Content Layer - z-10 to z-30 */}
-          <FieldUILayer data={data} />
+          <FieldUILayer />
 
           {/* Modal/Sheet Layer - z-40 to z-60 */}
           <FieldModalLayer data={data} />
