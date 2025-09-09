@@ -92,17 +92,12 @@ export function QuickInvitePopover({
   }
 
   const handleRetryVenue = async () => {
-    if (!onRetryVenue) { 
-      setChooserOpen(true)
-      return 
-    }
+    if (!onRetryVenue) { setChooserOpen(true); return }
     try {
       setRetrying(true)
       const red = await onRetryVenue()
-      if (red?.length) setCurrentTop(red[0])
-    } finally { 
-      setRetrying(false) 
-    }
+      if (Array.isArray(red) && red.length) setCurrentTop(red[0])
+    } finally { setRetrying(false) }
   }
 
   // Venue chooser integration

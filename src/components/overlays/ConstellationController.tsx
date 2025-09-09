@@ -63,13 +63,13 @@ export function ConstellationController({
 
   return (
     <>
-        <ConstellationCanvas
-          active={active}
-          party={party}
-          edges={edges}
-          seed={seed}
-          highlightId={selectedId ?? undefined}
-        />
+      <ConstellationCanvas
+        active={active}
+        party={party}
+        edges={edges}
+        seed={seed}
+        highlightId={selectedId ?? undefined}
+      />
       <div
         ref={hitRef}
         onClick={active ? onClick : undefined}

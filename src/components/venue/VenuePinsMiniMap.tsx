@@ -1,20 +1,13 @@
 'use client'
 import React from 'react'
 import mapboxgl from 'mapbox-gl'
-import { getMapboxToken } from '@/lib/geo/getMapboxToken'
 
 type Pin = { id: string; loc?: { lng: number; lat: number } }
-type TokenResp = { token: string }
 
-async function getMapboxTokenSafe(): Promise<TokenResp> {
-  try {
-    return await getMapboxToken()
-  } catch {
-    // Fallback to env var
-    const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-    if (!token) throw new Error('No Mapbox token available')
-    return { token }
-  }
+async function getMapboxToken() {
+  const env = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+  if (!env) throw new Error('Missing NEXT_PUBLIC_MAPBOX_TOKEN')
+  return { token: env }
 }
 
 export function VenuePinsMiniMap({ 
@@ -37,7 +30,7 @@ export function VenuePinsMiniMap({
   // Initialize Mapbox token
   React.useEffect(() => {
     let mounted = true
-    getMapboxTokenSafe().then(({ token }) => {
+    getMapboxToken().then(({ token }) => {
       if (!mounted) return
       mapboxgl.accessToken = token
       setTokenReady(true)
