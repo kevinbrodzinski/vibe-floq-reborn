@@ -158,3 +158,9 @@ verify_jwt = true
 
 [functions.rally-create]
 verify_jwt = true
+
+[functions.venue-favorite]
+verify_jwt = true
+
+[functions.venue-favorites]
+verify_jwt = true

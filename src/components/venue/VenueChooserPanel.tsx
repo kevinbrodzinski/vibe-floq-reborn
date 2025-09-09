@@ -49,7 +49,9 @@ type Props = {
   maxDistanceM?: number
   /** Optional vibe to tint header */
   currentVibe?: string
-  bias?: Bias                   
+  bias?: Bias
+  favoriteIds?: Set<string>           // 👈 NEW
+  onToggleFavorite?: (venueId: string, next: boolean) => void  // 👈 NEW
 }
 
 // Simple vibe token getter for the panel styling
@@ -77,7 +79,8 @@ export function VenueChooserPanel({
   onSelect, onPreview, onClose,
   walkMpm = 75, maxDistanceM = 1200,
   currentVibe = 'calm',
-  bias = 'neutral'
+  bias = 'neutral',
+  favoriteIds, onToggleFavorite
 }: Props) {
   const t = getVibeToken(currentVibe)
   const [page, setPage] = React.useState(0) // 0: main, 1: alt "more like this"
@@ -89,7 +92,7 @@ export function VenueChooserPanel({
       .map(v => ({
         v,
         dM: distanceMeters(v.loc, focus),
-        s: biasedVenueScore(option, v, bucket, bias),
+        s: biasedVenueScore(option, v, bucket, bias, favoriteIds?.has(v.id) ?? false),
       }))
       .filter(x => x.dM <= maxDistanceM)
       .sort((a, b) => (b.s - a.s) || (a.dM - b.dM))
@@ -178,6 +181,18 @@ export function VenueChooserPanel({
 
               {/* Actions */}
               <div className="flex items-center gap-2">
+                {/* Favorite star */}
+                <button
+                  className="px-2 py-1 rounded-md text-[12px] bg-white/10 text-white/85 hover:bg-white/15"
+                  aria-label="Toggle favorite"
+                  onClick={() => {
+                    const next = !(favoriteIds?.has(row.v.id) ?? false)
+                    onToggleFavorite?.(row.v.id, next)
+                  }}
+                  title={(favoriteIds?.has(row.v.id) ?? false) ? 'Unfavorite' : 'Favorite'}
+                >
+                  {(favoriteIds?.has(row.v.id) ?? false) ? '★' : '☆'}
+                </button>
                 {onPreview && (
                   <button
                     className="px-2 py-1 rounded-md text-[12px] bg-white/10 text-white/85 hover:bg-white/15"
@@ -245,7 +260,7 @@ function biasLabel(b: Bias) {
          b === 'coffee' ? 'coffee' : 'cocktails';
 }
 
-function biasedVenueScore(opt: InviteOption, v: VenueLite, bucket: TimeBucket, bias: Bias): number {
+function biasedVenueScore(opt: InviteOption, v: VenueLite, bucket: TimeBucket, bias: Bias, isFav: boolean): number {
   const tags = new Set((v.vibeTags ?? []).map(s => s.trim().toLowerCase()))
   const live = clamp01(v.popularityLive ?? 0.5)
 
@@ -276,7 +291,8 @@ function biasedVenueScore(opt: InviteOption, v: VenueLite, bucket: TimeBucket, b
   const open = v.openNow ? 1.0 : 0.75
   const price = 1.0 - ((v.priceLevel ?? 2) * 0.05)
 
-  return clamp01(0.5 * tod + 0.3 * intent + 0.15 * open + 0.05 * price)
+  const base = clamp01(0.5 * tod + 0.3 * intent + 0.15 * open + 0.05 * price)
+  return isFav ? clamp01(base * 1.12) : base   // small favorite boost
 }
 
 /* ----------------------- Distance / math utils ------------------------------ */

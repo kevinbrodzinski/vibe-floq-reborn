@@ -13332,6 +13332,24 @@ export type Database = {
           },
         ]
       }
+      venue_favorites: {
+        Row: {
+          created_at: string
+          profile_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id?: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          venue_id?: string
+        }
+        Relationships: []
+      }
       venue_feed_posts: {
         Row: {
           content_type: string
