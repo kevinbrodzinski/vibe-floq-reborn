@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import type { FeatureCollection } from 'geojson';
 import type { TileVenue } from '@/lib/api/mapContracts';
 import { brand } from '@/lib/tokens/brand';
 import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerId } from '@/lib/map/stylePersistence';
@@ -6,7 +7,7 @@ import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerI
 const SRC_ID = 'floq:venues';
 const LYR_ID = 'floq:venues:circles';
 
-function toGeoJSON(venues: TileVenue[]) {
+function toGeoJSON(venues: TileVenue[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: venues.map(v => ({
@@ -20,21 +21,21 @@ function toGeoJSON(venues: TileVenue[]) {
         score: v.score ?? 0,
       },
     })),
-  } as const;
+  };
 }
 
 export function useTileVenuesLayer(map: any, venues?: TileVenue[]) {
-  const data = useMemo(
-    () => (venues?.length ? toGeoJSON(venues) : ({ type: 'FeatureCollection', features: [] } as const)),
-    [venues]
-  );
+  const data = useMemo(() => {
+    if (!venues?.length) return { type: 'FeatureCollection', features: [] } as FeatureCollection;
+    return toGeoJSON(venues);
+  }, [venues]);
 
   useEffect(() => {
     if (!map) return;
 
     const readd = () => {
       // 1) (Re)create source and set latest data
-      ensureGeoJSONSource(map, SRC_ID, data as any);
+      ensureGeoJSONSource(map, SRC_ID, data);
 
       // 2) (Re)create layer
       const beforeId = findFirstSymbolLayerId(map); // optional anchor
@@ -69,7 +70,7 @@ export function useTileVenuesLayer(map: any, venues?: TileVenue[]) {
 
     // Also update data on every venues change (without waiting for style events)
     const src: any = map.getSource(SRC_ID);
-    if (src?.setData) src.setData(data as any);
+    if (src?.setData) src.setData(data);
 
     return cleanup;
   }, [map, data]);

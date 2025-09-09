@@ -1,6 +1,8 @@
 // src/lib/map/stylePersistence.ts
 // Utilities to re-attach custom sources/layers after a Mapbox style change.
 
+import type { FeatureCollection } from 'geojson';
+
 export type ReaddFn = () => void;
 
 /** Re-run `readd()` whenever the style is (re)loaded. Returns a cleanup fn. */
@@ -32,7 +34,7 @@ export function findFirstSymbolLayerId(map: mapboxgl.Map): string | undefined {
 }
 
 /** Ensure a GeoJSON source exists, otherwise add it. Then set its data. */
-export function ensureGeoJSONSource(map: mapboxgl.Map, sourceId: string, data: GeoJSON.FeatureCollection) {
+export function ensureGeoJSONSource(map: mapboxgl.Map, sourceId: string, data: FeatureCollection) {
   const existing = map.getSource(sourceId) as any;
   if (!existing) {
     map.addSource(sourceId, { type: 'geojson', data });

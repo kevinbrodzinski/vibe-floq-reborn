@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import type { FeatureCollection } from 'geojson';
 import type { PressureCell } from '@/lib/api/mapContracts';
 import { brand } from '@/lib/tokens/brand';
 import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerId } from '@/lib/map/stylePersistence';
@@ -6,7 +7,7 @@ import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerI
 const SRC_ID = 'floq:social-weather';
 const LYR_ID = 'floq:social-weather:circles';
 
-function toGeoJSON(cells: PressureCell[]) {
+function toGeoJSON(cells: PressureCell[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: cells.map(c => ({
@@ -19,20 +20,20 @@ function toGeoJSON(cells: PressureCell[]) {
         humidity: c.humidity,
       },
     })),
-  } as const;
+  };
 }
 
 export function useSocialWeatherLayer(map: any, cells?: PressureCell[]) {
-  const data = useMemo(
-    () => (cells?.length ? toGeoJSON(cells) : ({ type: 'FeatureCollection', features: [] } as const)),
-    [cells]
-  );
+  const data = useMemo(() => {
+    if (!cells?.length) return { type: 'FeatureCollection', features: [] } as FeatureCollection;
+    return toGeoJSON(cells);
+  }, [cells]);
 
   useEffect(() => {
     if (!map) return;
 
     const readd = () => {
-      ensureGeoJSONSource(map, SRC_ID, data as any);
+      ensureGeoJSONSource(map, SRC_ID, data);
 
       const beforeId = findFirstSymbolLayerId(map);
       ensureLayer(
@@ -57,7 +58,7 @@ export function useSocialWeatherLayer(map: any, cells?: PressureCell[]) {
     const cleanup = persistOnStyle(map, readd);
 
     const src: any = map.getSource(SRC_ID);
-    if (src?.setData) src.setData(data as any);
+    if (src?.setData) src.setData(data);
 
     return cleanup;
   }, [map, data]);
