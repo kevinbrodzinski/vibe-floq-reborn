@@ -4,6 +4,8 @@ export type FlowFilters = {
   friendFlows?: boolean
   queue?: 'any'|'short'|'none'
   weatherPref?: string[]
+  /** NEW: clustering density preference */
+  clusterDensity?: 'loose' | 'normal' | 'tight'
 }
 
 export type TileVenue = {

@@ -70,6 +70,9 @@ export function FieldUILayer() {
     let cancel = false
     let t: number | undefined
     
+    const densityOffset = (d?: 'loose'|'normal'|'tight') =>
+      d === 'tight' ? +1 : d === 'loose' ? -1 : 0
+    
     const loadFlowData = async () => {
       try {
         const bounds = map.getBounds?.()
@@ -83,9 +86,13 @@ export function FieldUILayer() {
           bounds.getNorth()
         ]
         
+        // Base res from zoom (edge has same mapping), then apply density offset
+        const baseRes = zoom >= 15 ? 10 : zoom >= 13 ? 9 : 8
+        const res = Math.max(7, Math.min(11, baseRes + densityOffset(filters.clusterDensity)))
+        
         const [{ venues }, { points }] = await Promise.all([
           fetchFlowVenues({ bbox, filters }),
-          fetchConvergence({ bbox, zoom })
+          fetchConvergence({ bbox, zoom, res })   // ← pass override
         ])
         
         if (!cancel) { 

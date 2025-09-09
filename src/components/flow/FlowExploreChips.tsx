@@ -9,6 +9,10 @@ interface FlowExploreChipsProps {
 export function FlowExploreChips({ value, onChange }: FlowExploreChipsProps) {
   const set = (patch: Partial<FlowFilters>) => onChange({ ...value, ...patch })
   
+  // NEW: cycle density
+  const nextDensity = (d?: 'loose'|'normal'|'tight'): 'loose'|'normal'|'tight' =>
+    d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
+  
   return (
     <div className="fixed left-1/2 -translate-x-1/2 top-[calc(64px+env(safe-area-inset-top))] z-[590] flex gap-2 px-4">
       <button
@@ -55,6 +59,20 @@ export function FlowExploreChips({ value, onChange }: FlowExploreChipsProps) {
         }`}
       >
         High energy
+      </button>
+      
+      {/* NEW: Density chip */}
+      <button
+        onClick={() => set({ clusterDensity: nextDensity(value.clusterDensity) })}
+        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+          value.clusterDensity 
+            ? 'bg-white/25 text-white shadow-lg backdrop-blur-sm' 
+            : 'bg-white/10 text-white/80 hover:bg-white/15'
+        }`}
+        aria-label="Convergence density"
+        title="Convergence density"
+      >
+        Density: {value.clusterDensity ?? 'normal'}
       </button>
     </div>
   )

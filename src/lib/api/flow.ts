@@ -24,6 +24,8 @@ export async function fetchConvergence(args: {
   bbox?: [number, number, number, number]
   center?: [number, number]
   zoom?: number
+  /** NEW: override H3 resolution computed from zoom */
+  res?: number
 }): Promise<{ points: ConvergencePoint[] }> {
   try {
     const { data, error } = await supabase.functions.invoke<{ points: ConvergencePoint[] }>('detect-convergence', { 

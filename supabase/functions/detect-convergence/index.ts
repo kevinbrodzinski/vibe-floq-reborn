@@ -28,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    const { bbox, center, zoom = 14 }: Req = await req.json();
+    const { bbox, center, zoom = 14, res: resOverride }: { bbox?: [number,number,number,number]; center?: [number,number]; zoom?: number; res?: number } = await req.json();
 
     // fallback bbox if only center is provided
     let qbbox = bbox;
@@ -54,13 +54,20 @@ serve(async (req) => {
 
     const sinceIso = new Date(Date.now() - 45 * 60 * 1000).toISOString();
     
+    // Zoom → default H3 res
+    const baseRes = zoom >= 15 ? 10 : zoom >= 13 ? 9 : 8;
+    const res = typeof resOverride === 'number'
+      ? Math.max(7, Math.min(11, resOverride))  // clamp for safety
+      : baseRes;
+    
     // Use the SQL RPC for precise centroids
     const { data, error } = await supabase.rpc('recent_convergence', {
       west:  qbbox[0],
       south: qbbox[1],
       east:  qbbox[2],
       north: qbbox[3],
-      since: sinceIso
+      since: sinceIso,
+      res
     });
 
     if (error) throw error;
