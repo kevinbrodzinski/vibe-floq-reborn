@@ -1,8 +1,7 @@
-
 project_id = "reztyrrafsmlvvlqvsqt"
 
 [functions.get_field_tiles_enhanced]
-verify_jwt = false  # Allow public access with custom audience filtering
+verify_jwt = false
 
 [functions.fetch_google_places]
 verify_jwt = false
@@ -154,5 +153,8 @@ verify_jwt = true
 [functions.convergence-zones]
 verify_jwt = false
 
-[functions.perfect-storm-gate]
+[functions.rare-aurora-gate]
+verify_jwt = true
+
+[functions.rally-create]
 verify_jwt = true

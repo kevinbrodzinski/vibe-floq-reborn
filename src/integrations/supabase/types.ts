@@ -6286,6 +6286,24 @@ export type Database = {
           },
         ]
       }
+      kv_flags: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Relationships: []
+      }
       live_positions: {
         Row: {
           accuracy: number | null

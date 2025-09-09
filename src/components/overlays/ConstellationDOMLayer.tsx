@@ -65,9 +65,8 @@ export function ConstellationDOMLayer({
   const [dragging, setDragging] = React.useState(false)
   const [lasso, setLasso] = React.useState<{ path: Array<[number, number]>; ready: boolean }>({ path: [], ready: false })
   const [selectedIds, setSelectedIds] = React.useState<string[]>([])
-  
-  // NEW state near other useState hooks:
-  const [lassoMode, setLassoMode] = React.useState<'add'|'subtract'>('add')  // Alt = subtract
+  const [lassoMode, setLassoMode] = React.useState<'add'|'subtract'>('add')
+  const [shiftConstrain, setShiftConstrain] = React.useState(false)
   const [pinOffsets, setPinOffsets] = React.useState<Record<string,{dx:number;dy:number}>>({})
 
   // Resize & recompute
@@ -141,7 +140,8 @@ export function ConstellationDOMLayer({
 
     const onDown = (ev: PointerEvent) => {
       if (!active) return
-      setLassoMode(ev.altKey ? 'subtract' : 'add')  // hold Alt to subtract
+      setLassoMode(ev.altKey ? 'subtract' : 'add')
+      setShiftConstrain(ev.shiftKey)
       setDragging(true)
       setLasso({ path: [], ready: false })
       const rect = el.getBoundingClientRect()
@@ -155,11 +155,24 @@ export function ConstellationDOMLayer({
       if (raf) cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const rect = el.getBoundingClientRect()
-        const x = ev.clientX - rect.left
-        const y = ev.clientY - rect.top
-        if (Math.hypot(x-lastX, y-lastY) >= MIN_STEP) {
+        let x = ev.clientX - rect.left
+        let y = ev.clientY - rect.top
+
+        if (shiftConstrain) {
+          // Snap to nearest 0°, 45°, 90°, ... relative to last point
+          const dx = x - lastX, dy = y - lastY
+          if (Math.hypot(dx,dy) > 2) {
+            const ang = Math.atan2(dy, dx)
+            const snap = Math.round(ang / (Math.PI/4)) * (Math.PI/4)
+            const dist = Math.hypot(dx, dy)
+            x = lastX + Math.cos(snap) * dist
+            y = lastY + Math.sin(snap) * dist
+          }
+        }
+
+        if (Math.hypot(x - lastX, y - lastY) >= MIN_STEP) {
           lastX = x; lastY = y
-          setLasso(prev => ({ path: [...prev.path, [x,y]], ready: false }))
+          setLasso(prev => ({ path: [...prev.path, [x, y]], ready: false }))
         }
       })
     }
@@ -169,12 +182,12 @@ export function ConstellationDOMLayer({
       setLasso(prev => ({ ...prev, ready: true }))
       const picked = pointInPolygonSelect(nodes, lasso.path, box.w, box.h)
       setSelectedIds(prev => {
-        if (lassoMode === 'subtract') {
-          const set = new Set(prev); for (const id of picked) set.delete(id); return Array.from(set)
-        } else {
-          const set = new Set(prev); for (const id of picked) set.add(id);    return Array.from(set)
-        }
+        const set = new Set(prev)
+        if (lassoMode === 'subtract') for (const id of picked) set.delete(id)
+        else for (const id of picked) set.add(id)
+        return Array.from(set)
       })
+      setShiftConstrain(false)
       try { el.releasePointerCapture(ev.pointerId) } catch {}
     }
 
@@ -189,7 +202,7 @@ export function ConstellationDOMLayer({
       el.removeEventListener('pointercancel', onUp)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [active, dragging, nodes, lasso.path, box.w, box.h, lassoMode])
+  }, [active, dragging, nodes, lasso.path, box.w, box.h, lassoMode, shiftConstrain])
 
   // Clear selection with ESC
   React.useEffect(() => {
