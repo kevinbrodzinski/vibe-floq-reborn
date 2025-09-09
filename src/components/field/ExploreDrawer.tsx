@@ -15,6 +15,7 @@ type ExploreDrawerProps = {
   onSave: (pid: string) => void
   onPlan: (pid: string) => void
   onChangeVenue: (pid: string) => void
+  changeBtnRef?: React.RefObject<HTMLButtonElement>
 }
 
 export function ExploreDrawer({
@@ -23,6 +24,7 @@ export function ExploreDrawer({
   onSave,
   onPlan,
   onChangeVenue,
+  changeBtnRef,
 }: ExploreDrawerProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const t = getVibeToken('social' as any)
@@ -109,6 +111,7 @@ export function ExploreDrawer({
                   Plan
                 </button>
                 <button
+                  ref={changeBtnRef}
                   onClick={() => onChangeVenue(primary.pid)}
                   className="ml-auto text-[11px] underline text-white/85 hover:text-white/95"
                 >

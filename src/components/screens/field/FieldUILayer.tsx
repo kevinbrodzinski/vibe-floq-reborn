@@ -28,7 +28,8 @@ export function FieldUILayer() {
   const [chooserAnchorPid, setChooserAnchorPid] = React.useState<string | null>(null)
   
   // Focus management refs
-  const firstFocusRef = useRef<HTMLButtonElement>(null)
+  const changeBtnRef = React.useRef<HTMLButtonElement>(null)
+  const firstChooserBtnRef = React.useRef<HTMLButtonElement>(null)
   
   // Memoized venue mapping for performance
   const venueLite = useMemo(() => {
@@ -64,21 +65,34 @@ export function FieldUILayer() {
 
   const closeChooser = useCallback(() => {
     setChooserOpen(false)
+    changeBtnRef.current?.focus()
   }, [])
 
-  // Focus management - focus first button when chooser opens
+  // Focus management + ESC handler + scroll lock
   React.useEffect(() => {
-    if (chooserOpen) {
-      const timer = setTimeout(() => {
-        // Find first focusable element in the chooser panel
-        const chooserEl = document.querySelector('[data-testid="venue-chooser-panel"]') || 
-                          document.querySelector('.pointer-events-auto button')
-        const focusable = chooserEl?.querySelector('button, [tabindex]:not([tabindex="-1"])')
-        ;(focusable as HTMLElement)?.focus()
-      }, 100)
-      return () => clearTimeout(timer)
+    if (!chooserOpen) return
+    
+    // Focus first button
+    const timer = setTimeout(() => {
+      firstChooserBtnRef.current?.focus()
+    }, 100)
+    
+    // ESC to close
+    const onKey = (e: KeyboardEvent) => { 
+      if (e.key === 'Escape') closeChooser() 
     }
-  }, [chooserOpen])
+    document.addEventListener('keydown', onKey)
+    
+    // Scroll lock
+    const orig = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    
+    return () => { 
+      clearTimeout(timer)
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = orig
+    }
+  }, [chooserOpen, closeChooser])
 
   return (
     <>
@@ -91,6 +105,7 @@ export function FieldUILayer() {
             onSave={(pid) => { handleToggleFavorite(pid, true) }}
             onPlan={(pid) => { /* TODO: planning flow */ }}
             onChangeVenue={handleChangeVenue}
+            changeBtnRef={changeBtnRef}
           />
 
           {/* Venue chooser overlay (inline) */}
@@ -112,7 +127,7 @@ export function FieldUILayer() {
                   excludeVenueId={(chooserAnchorPid ?? undefined) || null}
                   onSelect={(venue) => {
                     toast({ title: 'Selected', description: `Selected ${venue.name}` })
-                    setChooserOpen(false)
+                    closeChooser()
                   }}
                   onPreview={(venue) => {
                     toast({ title: 'Preview', description: `Preview ${venue.name}` })
@@ -124,6 +139,7 @@ export function FieldUILayer() {
                   favoriteIds={favoriteIds}
                   onToggleFavorite={handleToggleFavorite}
                   onSaveShortlist={handleSaveShortlist}
+                  firstFocusRef={firstChooserBtnRef}
                 />
               </div>
             </div>

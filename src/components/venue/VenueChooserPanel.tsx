@@ -53,6 +53,7 @@ type Props = {
   favoriteIds?: Set<string>           // 👈 NEW
   onToggleFavorite?: (venueId: string, next: boolean) => void  // 👈 NEW
   onSaveShortlist?: (name: string, venueIds: string[]) => void // 👈 NEW
+  firstFocusRef?: React.RefObject<HTMLButtonElement>  // 👈 NEW
 }
 
 // Simple vibe token getter for the panel styling
@@ -81,7 +82,8 @@ export function VenueChooserPanel({
   walkMpm = 75, maxDistanceM = 1200,
   currentVibe = 'calm',
   bias = 'neutral',
-  favoriteIds, onToggleFavorite, onSaveShortlist
+  favoriteIds, onToggleFavorite, onSaveShortlist,
+  firstFocusRef
 }: Props) {
   const t = getVibeToken(currentVibe)
   const [page, setPage] = React.useState(0) // 0: main, 1: alt "more like this"
@@ -159,7 +161,7 @@ export function VenueChooserPanel({
 
       {/* Rows */}
       <ul className="divide-y divide-white/10" role="listbox" aria-label="Venue alternatives">
-        {top.map((row) => {
+        {top.map((row, index) => {
           const mins = Math.max(1, Math.round(row.dM / walkMpm))
           const distText = mins <= 1 ? '1 min walk' : `${mins} min walk`
           return (
@@ -222,6 +224,7 @@ export function VenueChooserPanel({
                   </button>
                 )}
                 <button
+                  ref={index === 0 ? firstFocusRef : undefined}
                   className="px-3 py-1.5 rounded-md text-[12px]"
                   style={{ background: t.base, color: t.fg }}
                   aria-label={`Select ${row.v.name}`}
