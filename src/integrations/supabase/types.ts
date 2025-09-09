@@ -22920,6 +22920,16 @@ export type Database = {
         Args:
           | {
               east: number
+              limit_n?: number
+              min_points?: number
+              north: number
+              res?: number
+              since_minutes?: number
+              south: number
+              west: number
+            }
+          | {
+              east: number
               north: number
               res?: number
               since: string
