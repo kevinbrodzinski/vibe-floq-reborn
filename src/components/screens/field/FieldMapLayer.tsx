@@ -13,17 +13,27 @@ import { useFieldLocation } from '@/components/field/contexts/FieldLocationConte
 import { useVenueSync } from '@/hooks/useVenueSync';
 import { LayersRuntime } from './LayersRuntime';
 import { TemporalController } from '@/components/Temporal/TemporalController';
+import { AtmosphereLayer, type PixiLayerHandle } from './AtmosphereLayer';
 import type { FieldData } from '../field/FieldDataProvider';
 
-// Wrapper to handle LayersRuntime return value and pass pixiLayerRef to TemporalController
+// Fixed wrapper that uses proper React patterns
 function LayersRuntimeWrapper({ data }: { data: FieldData }) {
-  const { pixiLayerRef } = LayersRuntime({ data });
+  const pixiRef = React.useRef<PixiLayerHandle>(null);
   
   return (
-    <TemporalController 
-      map={null} // Will get map from singleton
-      pixiLayerRef={pixiLayerRef}
-    />
+    <>
+      {/* Standard map layers */}
+      <LayersRuntime data={data} />
+      
+      {/* Pixi Atmospherics */}
+      <AtmosphereLayer ref={pixiRef} weatherCells={data.weatherCells} />
+      
+      {/* Temporal controller (can emit to Pixi via ref) */}
+      <TemporalController 
+        map={null} // Will get map from singleton
+        pixiLayerRef={pixiRef}
+      />
+    </>
   );
 }
 

@@ -4,14 +4,16 @@ import { useViewportInput } from '@/lib/map/useViewportInput';
 import { useForecastLayer } from '@/map/layers/useForecastLayer';
 import { useQuery } from '@tanstack/react-query';
 import { fetchForecast, type ForecastResp } from '@/lib/api/forecastClient';
+import { getCurrentMap } from '@/lib/geo/mapSingleton';
 
 type Horizon = 'now'|'p30'|'p120'|'historic';
 
 export function TemporalController({ map, onInsight, pixiLayerRef }: { 
-  map: any; 
+  map?: any; 
   onInsight?: (s?:string)=>void;
   pixiLayerRef?: React.MutableRefObject<any | null>;
 }) {
+  const currentMap = map || getCurrentMap();
   const { viewport, viewportKey } = useViewportInput({ defaultRadius: 900 });
   const [h, setH] = React.useState<Horizon>('p30');
   const [preset, setPreset] = React.useState<'LastThursday'|'LastMonth'|'LastYear'>('LastThursday');
@@ -25,7 +27,7 @@ export function TemporalController({ map, onInsight, pixiLayerRef }: {
     staleTime: 5 * 60_000
   });
 
-  useForecastLayer(map, q.data?.cells);
+  useForecastLayer(currentMap, q.data?.cells);
 
   React.useEffect(() => { 
     if (q.data?.insights?.[0]) onInsight?.(q.data.insights[0]) 

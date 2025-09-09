@@ -11,6 +11,7 @@ export function QuickInvitePopover({
   focus,          // [lng,lat] centroid for distance calc (optional)
   confidence,     // 0..1 (optional)
   horizonLabel,   // 'Now' | '+30m' | '+2h' (optional)
+  onRetryVenue,   // () => Promise<InviteOption[]> (optional)
 }: {
   userId: string
   onClose: () => void
@@ -22,10 +23,12 @@ export function QuickInvitePopover({
   focus?: [number, number]
   confidence?: number
   horizonLabel?: string
+  onRetryVenue?: () => Promise<InviteOption[]>
 }) {
   const top = invites?.[0]
   const [chooserOpen, setChooserOpen] = React.useState(false)
   const [currentTop, setCurrentTop] = React.useState<InviteOption | undefined>(top)
+  const [retrying, setRetrying] = React.useState(false)
 
   // Fallback to simple invite if no smart invites provided
   if (!top || !invites) {
@@ -64,24 +67,42 @@ export function QuickInvitePopover({
     )
   }
 
+  // Secondary suggestion: prefer a planned option if top isn't planned, else next best
+  const secondary = React.useMemo(() => {
+    if (!invites?.length) return undefined
+    if (top?.kind !== 'planned') {
+      const planned = invites.find(o => o.kind === 'planned' && o !== top)
+      if (planned) return planned
+    }
+    return invites[1] && invites[1] !== top ? invites[1] : undefined
+  }, [invites, top])
+
+  const hasVenue = !!(currentTop?.payload?.venueId)
+
   // Primary action dispatch
   const handlePrimary = (opt: InviteOption) => {
-    switch (opt.kind) {
-      case 'spontaneous':
-      case 'lowkey':
-      case 'highenergy':
-      case 'reconnect':
-        // Single-user rally/invite flows; you already wire these up in parent
-        onInvite(userId)
-        break
-      case 'planned':
-        // Let parent open planned window flow (opt.at or opt.when is provided)
-        onInvite(userId)
-        break
-      default:
-        onInvite(userId)
-    }
+    onInvite(userId)
     onClose()
+  }
+
+  const handleSecondary = (opt: InviteOption) => {
+    // If it's a planned suggestion, you may want to open a planner UI here.
+    onInvite(userId)
+    onClose()
+  }
+
+  const handleRetryVenue = async () => {
+    if (!onRetryVenue) { 
+      setChooserOpen(true)
+      return 
+    }
+    try {
+      setRetrying(true)
+      const red = await onRetryVenue()
+      if (red?.length) setCurrentTop(red[0])
+    } finally { 
+      setRetrying(false) 
+    }
   }
 
   // Venue chooser integration
@@ -100,11 +121,16 @@ export function QuickInvitePopover({
       role="dialog" aria-label="Invite"
     >
       <InvitePopoverBody
-        top={currentTop}
+        top={currentTop!}
         confidence={confidence}
         horizonLabel={horizonLabel}
         onPrimary={handlePrimary}
         onChangeVenue={venues ? () => setChooserOpen(true) : undefined}
+        secondary={secondary}
+        onSecondary={secondary ? handleSecondary : undefined}
+        hasVenue={hasVenue}
+        onRetryVenue={handleRetryVenue}
+        retrying={retrying}
       />
 
       {/* Footer actions (optional): DM / Add to plan / Cancel */}

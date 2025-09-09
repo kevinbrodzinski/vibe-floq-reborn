@@ -14,6 +14,12 @@ export function InvitePopoverBody({
   currentVibe = 'social',
   onPrimary,                   // handle main CTA by kind
   onChangeVenue,               // open venue chooser
+  // NEW
+  secondary,
+  onSecondary,
+  hasVenue,
+  onRetryVenue,
+  retrying,
 }: {
   top: InviteOption
   confidence?: number
@@ -21,6 +27,12 @@ export function InvitePopoverBody({
   currentVibe?: string
   onPrimary: (opt: InviteOption) => void
   onChangeVenue?: () => void
+  // NEW
+  secondary?: InviteOption
+  onSecondary?: (opt: InviteOption) => void
+  hasVenue?: boolean
+  onRetryVenue?: () => void
+  retrying?: boolean
 }) {
   const t = getVibeToken(currentVibe as Vibe)
   const venueName = (top.payload?.venueName as string) || undefined
@@ -59,6 +71,47 @@ export function InvitePopoverBody({
           {primaryCtaLabel(top)}
         </button>
       </div>
+
+      {/* Mini stacked actions (secondary pill + retry when no venue) */}
+      {(secondary || (!hasVenue && (onRetryVenue || onChangeVenue))) && (
+        <div className="flex items-center gap-2">
+          {secondary && onSecondary && (
+            <button
+              onClick={() => onSecondary(secondary)}
+              className="px-2.5 py-1 rounded-md text-[11px] bg-white/10 text-white/85 hover:bg-white/15"
+              aria-label="Secondary action"
+            >
+              {secondaryCtaLabel(secondary)}
+            </button>
+          )}
+          {!hasVenue && (
+            onRetryVenue ? (
+              <button
+                onClick={onRetryVenue}
+                disabled={retrying}
+                className="px-2.5 py-1 rounded-md text-[11px] bg-white/10 text-white/85 hover:bg-white/15 disabled:opacity-50"
+                aria-label="Retry venue suggestion"
+              >
+                {retrying ? 'Retrying…' : 'Retry venue'}
+              </button>
+            ) : (
+              onChangeVenue && (
+                <button
+                  onClick={onChangeVenue}
+                  className="px-2.5 py-1 rounded-md text-[11px] bg-white/10 text-white/85 hover:bg-white/15"
+                  aria-label="Choose venue"
+                >
+                  Choose venue
+                </button>
+              )
+            )
+          )}
+          {/* Optional offline hint */}
+          {typeof navigator !== 'undefined' && !navigator.onLine && (
+            <span className="text-[11px] text-red-300/90">Offline</span>
+          )}
+        </div>
+      )}
 
       {/* Venue block (if present) */}
       {venueName && (
@@ -104,6 +157,12 @@ function primaryCtaLabel(opt: InviteOption) {
     case 'highenergy':  return 'Invite'
     default:            return 'Invite'
   }
+}
+
+function secondaryCtaLabel(opt: InviteOption) {
+  if (opt.kind === 'planned') return opt.when ? `Plan ${opt.when}` : 'Plan later'
+  if (opt.kind === 'lowkey')  return 'Low-key'
+  return 'Later'
 }
 
 function confidenceChip(conf?: number, horizonLabel?: string) {
