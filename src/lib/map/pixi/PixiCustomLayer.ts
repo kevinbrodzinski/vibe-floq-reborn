@@ -8,6 +8,8 @@ export interface AtmoSystem {
   onFrame(dt: number, project: (lng: number, lat: number) => { x: number; y: number }, zoom: number): void
   onUpdateCells?(cells: PressureCell[], zoom: number): void
   onRemove(): void
+  // NEW (optional)
+  onMessage?(type: string, payload: unknown): void
 }
 // -----------------------------------------------------------------------------
 
@@ -29,6 +31,7 @@ export type PixiAtmoOptions = {
 export interface CustomLayerWithAPI extends mapboxgl.CustomLayerInterface {
   updateCells: (cells: PressureCell[] | undefined, zoom?: number) => void
   attach: (system: AtmoSystem) => void
+  emit: (type: string, payload: unknown) => void
 }
 
 export function createPixiCustomLayer(opts: PixiAtmoOptions = {}): CustomLayerWithAPI {
@@ -175,7 +178,11 @@ export function createPixiCustomLayer(opts: PixiAtmoOptions = {}): CustomLayerWi
       syncFromCells(mapRef, lastCells, z)
     },
 
-    attach
+    attach,
+
+    emit(type: string, payload: unknown) {
+      for (const s of systems) s.onMessage?.(type, payload)
+    }
   }
 
   return layer
