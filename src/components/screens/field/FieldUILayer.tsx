@@ -15,6 +15,12 @@ import { createShortlist } from '@/lib/api/venueShortlists'
 import { useToast } from '@/hooks/use-toast'
 import { mapTileToLite } from '@/lib/venues/mapTileToLite'
 
+// Flow system imports
+import { FlowExploreChips } from '@/components/flow/FlowExploreChips'
+import { FlowMapOverlay } from '@/components/flow/FlowMapOverlay'
+import { fetchFlowVenues, fetchConvergence } from '@/lib/api/flow'
+import type { FlowFilters, ConvergencePoint, TileVenue } from '@/lib/flow/types'
+
 export function FieldUILayer() {
   const data = useFieldData()
   const { lens } = useFieldLens()
@@ -30,11 +36,24 @@ export function FieldUILayer() {
   // Focus management refs
   const changeBtnRef = React.useRef<HTMLButtonElement>(null)
   const firstChooserBtnRef = React.useRef<HTMLButtonElement>(null)
+
+  // Flow state for explore lens
+  const [filters, setFilters] = React.useState<FlowFilters>({ 
+    friendFlows: true, 
+    weatherPref: [] 
+  })
+  const [flowVenues, setFlowVenues] = React.useState<TileVenue[]>([])
+  const [convergence, setConvergence] = React.useState<ConvergencePoint[]>([])
   
   // Memoized venue mapping for performance
   const venueLite = useMemo(() => {
     return data.nearbyVenues?.map(mapTileToLite) ?? []
   }, [data.nearbyVenues])
+
+  // Combined venues: prioritize Flow venues when available, fallback to static venues
+  const displayVenues = useMemo(() => {
+    return flowVenues.length > 0 ? flowVenues : data.nearbyVenues ?? []
+  }, [flowVenues, data.nearbyVenues])
 
   React.useEffect(() => {
     let mounted = true
@@ -43,6 +62,58 @@ export function FieldUILayer() {
       .catch(()=>{})
     return () => { mounted = false }
   }, [])
+
+  // Fetch flow data when map moves or filters change (explore lens only)
+  React.useEffect(() => {
+    if (!map || lens !== 'explore') return
+    
+    let cancel = false
+    const loadFlowData = async () => {
+      try {
+        const bounds = map.getBounds?.()
+        const zoom = map.getZoom?.() ?? 14
+        if (!bounds) return
+        
+        const bbox: [number,number,number,number] = [
+          bounds.getWest(), 
+          bounds.getSouth(), 
+          bounds.getEast(), 
+          bounds.getNorth()
+        ]
+        
+        const [{ venues }, { points }] = await Promise.all([
+          fetchFlowVenues({ bbox, filters }),
+          fetchConvergence({ bbox, zoom })
+        ])
+        
+        if (!cancel) { 
+          setFlowVenues(venues)
+          setConvergence(points)
+        }
+      } catch (error) {
+        console.error('Failed to load flow data:', error)
+        // Gracefully degrade to static venues
+        if (!cancel) {
+          setFlowVenues([])
+          setConvergence([])
+        }
+      }
+    }
+
+    const debounced = () => { 
+      clearTimeout((debounced as any)._t)
+      ;(debounced as any)._t = setTimeout(loadFlowData, 250)
+    }
+
+    debounced()
+    map.on?.('moveend', debounced)
+    
+    return () => { 
+      cancel = true
+      map.off?.('moveend', debounced)
+      clearTimeout((debounced as any)._t)
+    }
+  }, [map, filters, lens])
 
   const handleToggleFavorite = useCallback(async (venueId: string, next: boolean) => {
     setFavoriteIds(prev => { const n = new Set(prev); next ? n.add(venueId) : n.delete(venueId); return n })
@@ -96,17 +167,25 @@ export function FieldUILayer() {
 
   return (
     <>
+      {/* Flow explore chips - only show in explore lens */}
+      {lens === 'explore' && (
+        <FlowExploreChips value={filters} onChange={setFilters} />
+      )}
+
       {/* Explore lens */}
-      {lens === 'explore' && (data.nearbyVenues?.length ?? 0) > 0 && (
+      {lens === 'explore' && displayVenues.length > 0 && (
         <div id="lens-panel-explore" role="tabpanel" aria-labelledby="tab-explore">
           <ExploreDrawer
-            venues={data.nearbyVenues!}
+            venues={displayVenues}
             onJoin={(pid) => { /* TODO: join flow */ }}
             onSave={(pid) => { handleToggleFavorite(pid, true) }}
             onPlan={(pid) => { /* TODO: planning flow */ }}
             onChangeVenue={handleChangeVenue}
             changeBtnRef={changeBtnRef}
           />
+
+          {/* Flow convergence overlay */}
+          <FlowMapOverlay points={convergence} map={map} />
 
           {/* Venue chooser overlay (inline) */}
           {chooserOpen && (
