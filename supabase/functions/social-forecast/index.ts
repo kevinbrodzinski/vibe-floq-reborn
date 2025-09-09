@@ -1,6 +1,7 @@
 // supabase/functions/social-forecast/index.ts
 // POST { t: 'now' | 'p30' | 'p120' | 'historic', range?: 'LastThursday'|'LastMonth'|'LastYear', center? | bbox? | zoom }
 // -> { cells:[{key,center,pressure,temperature,humidity,wind}], ttlSec:number }
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,11 +41,25 @@ Deno.serve(async (req) => {
     const j = await req.json() as Req;
     const zoom = j.zoom ?? 14;
     const ctr  = j.center ?? (j.bbox ? [ (j.bbox[0]+j.bbox[2])/2, (j.bbox[1]+j.bbox[3])/2 ] as [number,number] : [-118.4695,33.9855] as [number,number]);
-    let bias = 0;
-    if (j.t === 'p30')  bias = 0.05;
-    if (j.t === 'p120') bias = 0.12;
-    if (j.t === 'historic') bias = -0.03; // slightly calmer by default
-    const cells = synthCells(ctr, zoom, bias);
+
+    // Try real model via RPC/view if present (user JWT)
+    let modelCells: any[] | null = null;
+    try {
+      const url  = Deno.env.get('SUPABASE_URL')!;
+      const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const supabase = createClient(url, anon, { global: { headers: { Authorization: req.headers.get('Authorization')! } } });
+      // Prefer an RPC if available: get_social_forecast(t, range, center, bbox, zoom)
+      const { data, error } = await supabase.rpc('get_social_forecast', {
+        t: j.t, range: j.range ?? null, center: ctr, bbox: j.bbox ?? null, zoom
+      });
+      if (!error && Array.isArray(data)) modelCells = data;
+    } catch { /* silently fall back */ }
+
+    let cells = modelCells ?? ((): any[] => {
+      let bias = 0; if (j.t === 'p30') bias = 0.05; if (j.t === 'p120') bias = 0.12; if (j.t === 'historic') bias = -0.03;
+      return synthCells(ctr, zoom, bias);
+    })();
+
     const insights = (j.t === 'historic' && j.range) ? [`You often converge near the centroid during ${j.range}`] : [];
     return okJson({ cells, insights, ttlSec: 300 }, 300);
   } catch (e) {

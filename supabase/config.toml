@@ -138,3 +138,12 @@ verify_jwt = false
 
 [functions.recommend]
 verify_jwt = false
+
+[functions.constellation-edges]
+verify_jwt = true
+
+[functions.constellation]
+verify_jwt = false
+
+[functions.social-forecast]
+verify_jwt = false
