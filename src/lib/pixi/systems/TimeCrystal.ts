@@ -15,6 +15,7 @@ type CellRec = {
   facets: number
   shimmer: number
   mode: number // 0 now, 1 p30, 2 p120
+  confidence?: number // NEW: 0..1 confidence from forecast
 }
 
 export class TimeCrystal {
@@ -46,15 +47,15 @@ export class TimeCrystal {
   onMessage(type: string, payload: any) {
     if (type !== 'temporal') return
     if (payload?.now || payload?.p30 || payload?.p120) {
-      if (payload.now)  this.data.now  = this.build(payload.now as PressureCell[], 'now')
-      if (payload.p30)  this.data.p30  = this.build(payload.p30 as PressureCell[], 'p30')
-      if (payload.p120) this.data.p120 = this.build(payload.p120 as PressureCell[], 'p120')
+      if (payload.now)  this.data.now  = this.build(payload.now as PressureCell[], 'now', payload.confidence)
+      if (payload.p30)  this.data.p30  = this.build(payload.p30 as PressureCell[], 'p30', payload.confidence)
+      if (payload.p120) this.data.p120 = this.build(payload.p120 as PressureCell[], 'p120', payload.confidence)
       if (!this.active) this.active = 'p30'
       return
     }
     if (payload?.horizon && payload?.cells) {
       const h = payload.horizon as Horizon
-      this.data[h] = this.build(payload.cells as PressureCell[], h)
+      this.data[h] = this.build(payload.cells as PressureCell[], h, payload.confidence)
       this.active ??= h
     }
   }
@@ -76,16 +77,19 @@ export class TimeCrystal {
 
   // ---------- build ----------
 
-  private build(cells: PressureCell[], h: Horizon): CellRec[] {
+  private build(cells: PressureCell[], h: Horizon, confidence?: number): CellRec[] {
     // clear old horizon
     for (const r of this.data[h]) r.mesh.destroy()
 
     const out: CellRec[] = []
     const list = cells.slice(0, this.maxCells)
+    const conf = confidence ?? 0.7 // default confidence if not provided
+    
     for (const c of list) {
       const radius = 10 + (c.pressure ?? 0.5) * 28 // px baseline
       const { coreCol, edgeCol, specCol } = this.paletteFor(h)
-      const opacity = h === 'now' ? 1.0 : h === 'p30' ? 0.78 : 0.5
+      const baseOpacity = h === 'now' ? 1.0 : h === 'p30' ? 0.78 : 0.5
+      const opacity = baseOpacity * (0.5 + 0.5 * conf) // scale by confidence
       const facets  = h === 'now' ? 14 : h === 'p30' ? 10 : 7
       const shimmer = h === 'p30' ? 1.0 : (h === 'p120' ? 0.6 : 0.0)
       const mode = h === 'now' ? 0 : h === 'p30' ? 1 : 2
@@ -98,7 +102,8 @@ export class TimeCrystal {
         mesh,
         centerLngLat: c.center as [number, number],
         radius, coreCol, edgeCol, specCol,
-        opacity, facets, shimmer, mode
+        opacity, facets, shimmer, mode,
+        confidence: conf
       })
     }
     return out

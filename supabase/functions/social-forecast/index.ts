@@ -61,7 +61,12 @@ Deno.serve(async (req) => {
     })();
 
     const insights = (j.t === 'historic' && j.range) ? [`You often converge near the centroid during ${j.range}`] : [];
-    return okJson({ cells, insights, ttlSec: 300 }, 300);
+    
+    // Calculate confidence based on momentum and data quality
+    const momentum = Math.min(1, cells.reduce((s: number, c: any) => s + c.pressure, 0) / Math.max(1, cells.length));
+    const confidence = Math.max(0.2, 0.6 + 0.4 * momentum); // 0.2..1 range
+    
+    return okJson({ cells, insights, confidence, ttlSec: 300 }, 300);
   } catch (e) {
     return bad(e?.message ?? 'error', 500);
   }

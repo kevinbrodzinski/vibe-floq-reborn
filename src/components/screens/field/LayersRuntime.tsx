@@ -5,6 +5,7 @@ import { useSocialWeatherLayer } from '@/map/layers/useSocialWeatherLayer';
 import { createPixiCustomLayer } from '@/lib/map/pixi/PixiCustomLayer';
 import { BreathingSystem } from '@/lib/map/pixi/systems/BreathingSystem';
 import { LightningSystem } from '@/lib/map/pixi/systems/LightningSystem';
+import { TimeCrystal } from '@/lib/pixi/systems/TimeCrystal';
 import { brand } from '@/lib/tokens/brand';
 import { PIXI_ENABLED } from '@/lib/map/pixi/flags';
 import type { FieldData } from './FieldDataProvider';
@@ -34,10 +35,8 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       
       // Attach atmospheric systems
       layer.attach(new BreathingSystem({ colorHex: brand.primary }));
-      layer.attach(new LightningSystem({ 
-        colorHex: brand.accent, 
-        maxBoltsPerFrame: 1 
-      }));
+      // Attach TimeCrystal for temporal forecasting
+      layer.attach(new TimeCrystal({ tier: 'mid' }));
       
       return layer;
     };
@@ -96,5 +95,5 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     pixiLayerRef.current.updateCells(data.weatherCells, zoom);
   }, [data.weatherCells, map]);
 
-  return null;
+  return { pixiLayerRef };
 }

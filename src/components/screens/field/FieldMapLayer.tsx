@@ -12,7 +12,20 @@ import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useVenueSync } from '@/hooks/useVenueSync';
 import { LayersRuntime } from './LayersRuntime';
+import { TemporalController } from '@/components/Temporal/TemporalController';
 import type { FieldData } from '../field/FieldDataProvider';
+
+// Wrapper to handle LayersRuntime return value and pass pixiLayerRef to TemporalController
+function LayersRuntimeWrapper({ data }: { data: FieldData }) {
+  const { pixiLayerRef } = LayersRuntime({ data });
+  
+  return (
+    <TemporalController 
+      map={null} // Will get map from singleton
+      pixiLayerRef={pixiLayerRef}
+    />
+  );
+}
 
 interface FieldMapLayerProps {
   data: FieldData;
@@ -95,8 +108,8 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         
         {/* Layer 3: Map Data Layers (Venues & Weather) */}
         <div className="pointer-events-none absolute inset-0 z-20">
-          {/* This component mounts the new map layers */}
-          <LayersRuntime data={data} />
+          {/* This component mounts the new map layers and returns pixiLayerRef */}
+          <LayersRuntimeWrapper data={data} />
         </div>
       </FieldWebMap>
 

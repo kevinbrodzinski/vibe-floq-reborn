@@ -7,7 +7,11 @@ import { fetchForecast, type ForecastResp } from '@/lib/api/forecastClient';
 
 type Horizon = 'now'|'p30'|'p120'|'historic';
 
-export function TemporalController({ map, onInsight }: { map: any; onInsight?: (s?:string)=>void }) {
+export function TemporalController({ map, onInsight, pixiLayerRef }: { 
+  map: any; 
+  onInsight?: (s?:string)=>void;
+  pixiLayerRef?: React.MutableRefObject<any | null>;
+}) {
   const { viewport, viewportKey } = useViewportInput({ defaultRadius: 900 });
   const [h, setH] = React.useState<Horizon>('p30');
   const [preset, setPreset] = React.useState<'LastThursday'|'LastMonth'|'LastYear'>('LastThursday');
@@ -26,6 +30,17 @@ export function TemporalController({ map, onInsight }: { map: any; onInsight?: (
   React.useEffect(() => { 
     if (q.data?.insights?.[0]) onInsight?.(q.data.insights[0]) 
   }, [q.data, onInsight]);
+
+  // Emit temporal data to PIXI layer with confidence
+  React.useEffect(() => {
+    if (!pixiLayerRef?.current || !q.data?.cells) return;
+    
+    pixiLayerRef.current.emit('temporal', { 
+      horizon: h, 
+      cells: q.data.cells, 
+      confidence: q.data.confidence ?? 0.7 
+    });
+  }, [pixiLayerRef, q.data, h]);
 
   return (
     <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[580] flex items-center gap-3 bg-black/35 backdrop-blur px-3 py-2 rounded-xl">
