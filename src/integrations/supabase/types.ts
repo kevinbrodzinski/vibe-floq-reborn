@@ -932,6 +932,13 @@ export type Database = {
             foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -5614,6 +5621,13 @@ export type Database = {
             foreignKeyName: "flow_segments_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_segments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -7395,6 +7409,13 @@ export type Database = {
             foreignKeyName: "place_banners_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_banners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -9011,6 +9032,13 @@ export type Database = {
             foreignKeyName: "plan_stops_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_stops_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -9450,6 +9478,13 @@ export type Database = {
             foreignKeyName: "presence_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -9565,6 +9600,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -10170,6 +10212,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pulse_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -11062,6 +11111,13 @@ export type Database = {
             foreignKeyName: "ripple_signals_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -11376,6 +11432,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -12954,6 +13017,13 @@ export type Database = {
             foreignKeyName: "user_venue_interactions_fk_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -13032,6 +13102,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -13144,6 +13221,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_stats_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -13371,6 +13455,13 @@ export type Database = {
             foreignKeyName: "venue_aliases_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_aliases_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -13459,6 +13550,13 @@ export type Database = {
             foreignKeyName: "venue_bumps_fk_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -13537,6 +13635,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_bumps_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -13749,6 +13854,13 @@ export type Database = {
             foreignKeyName: "venue_discoveries_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_discoveries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -13900,6 +14012,13 @@ export type Database = {
             foreignKeyName: "venue_feed_posts_fk_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_fk_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -13936,6 +14055,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -14000,6 +14126,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_hours_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -14145,6 +14278,13 @@ export type Database = {
             foreignKeyName: "venue_interactions_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -14263,6 +14403,13 @@ export type Database = {
             foreignKeyName: "venue_live_presence_venue_fk"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -14299,6 +14446,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -14372,6 +14526,13 @@ export type Database = {
             foreignKeyName: "venue_metrics_daily_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -14430,6 +14591,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: true
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_presence_snapshot_venue_fk"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -14631,6 +14799,13 @@ export type Database = {
             foreignKeyName: "fk_venue_stays_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -14667,6 +14842,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -14797,6 +14979,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -14833,6 +15022,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -15108,6 +15304,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venues_near_me_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -15753,6 +15956,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibes_now_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -16414,6 +16624,13 @@ export type Database = {
             foreignKeyName: "ripple_signals_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ripple_signals_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -16467,6 +16684,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -16503,6 +16727,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -16559,6 +16790,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_clusters_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18056,6 +18294,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18092,6 +18337,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18148,6 +18400,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18184,6 +18443,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18257,6 +18523,13 @@ export type Database = {
             foreignKeyName: "fk_venue_stays_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_stays_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18293,6 +18566,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18392,6 +18672,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18428,6 +18715,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18487,6 +18781,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18523,6 +18824,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18590,6 +18898,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18626,6 +18941,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18890,6 +19212,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -18926,6 +19255,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -18978,6 +19314,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_metrics_daily_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -19167,6 +19510,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -19203,6 +19553,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -19345,6 +19702,13 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_venue"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -19381,6 +19745,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
             referencedColumns: ["id"]
           },
           {
@@ -19459,6 +19830,13 @@ export type Database = {
             foreignKeyName: "presence_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venue_social_metrics"
             referencedColumns: ["venue_id"]
           },
@@ -19470,6 +19848,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      venue_is_outdoor: {
+        Row: {
+          id: string | null
+          outdoorish: boolean | null
+        }
+        Insert: {
+          id?: string | null
+          outdoorish?: never
+        }
+        Update: {
+          id?: string | null
+          outdoorish?: never
+        }
+        Relationships: []
       }
       venue_signature_performance_stats: {
         Row: {
@@ -22921,6 +23314,27 @@ export type Database = {
           starts_at: string
           title: string
           user_joined_floq_id: string
+        }[]
+      }
+      search_flow_venues_enriched: {
+        Args: {
+          bbox_geojson?: Json
+          center_lat?: number
+          center_lng?: number
+          include_friend_boost?: boolean
+          limit_n?: number
+          radius_m?: number
+          since_minutes?: number
+          wants_sun?: boolean
+        }
+        Returns: {
+          busy_band: number
+          category: string
+          friend_count: number
+          id: string
+          lat: number
+          lng: number
+          name: string
         }[]
       }
       search_profiles: {

@@ -38,91 +38,35 @@ Deno.serve(async (req) => {
   const supa = createClient(url, anon, { global: { headers: { Authorization: req.headers.get('Authorization') || '' } } })
 
   try {
-    // Compute bbox from center if needed
-    const bbox = hasBbox ? body.bbox! : (() => {
-      const [lng, lat] = body.center!
-      const deg = radius / 111_000
-      return [lng - deg, lat - deg, lng + deg, lat + deg] as [number,number,number,number]
-    })()
+    // Extract filter preferences
+    const sinceMinutes = 45
+    const wantsSun = Array.isArray(filters?.weatherPref) && filters!.weatherPref!.includes('sun')
+    const includeFriend = !!filters?.friendFlows
 
-    // RPC search_venues_bbox (assumes your SQL view handles geometry)
-    const { data: venuesRaw, error: venuesError } = await supa.rpc('search_venues_bbox', {
-      bbox_geojson: {
+    // Single enriched RPC call - handles search + count + boost + sort server-side
+    const { data, error } = await supa.rpc('search_flow_venues_enriched', {
+      bbox_geojson: hasBbox ? {
         type: 'Polygon',
-        coordinates: [[
-          [bbox[0], bbox[1]],[bbox[2], bbox[1]],
-          [bbox[2], bbox[3]],[bbox[0], bbox[3]],
-          [bbox[0], bbox[1]],
-        ]]
-      },
+        coordinates: [[[body.bbox![0],body.bbox![1]],[body.bbox![2],body.bbox![1]],[body.bbox![2],body.bbox![3]],[body.bbox![0],body.bbox![3]],[body.bbox![0],body.bbox![1]]]]
+      } : null,
       center_lat: hasCenter ? body.center![1] : null,
       center_lng: hasCenter ? body.center![0] : null,
-      radius_m: radius
+      radius_m: radius,
+      since_minutes: sinceMinutes,
+      include_friend_boost: includeFriend,
+      wants_sun: wantsSun,
+      limit_n: 200
     })
-    if (venuesError) throw venuesError
+    if (error) throw error
 
-    // Flow activity (45 min window)
-    const sinceIso = new Date(Date.now() - 45 * 60 * 1000).toISOString()
-    const [{ data: segAgg }, { data: friendAgg }] = await Promise.all([
-      supa.rpc('get_venue_flow_counts', { since_timestamp: sinceIso }),
-      (filters.friendFlows
-        ? (async () => {
-            const { data: auth } = await supa.auth.getUser()
-            const pid = auth?.user?.id
-            if (!pid) return { data: [] as any[] }
-            return await supa.rpc('recent_friend_venue_counts', { profile: pid, since: sinceIso })
-          })()
-        : Promise.resolve({ data: [] as any[] }))
-    ])
-
-    const counts       = new Map<string, number>()
-    const friendCounts = new Map<string, number>()
-    ;(segAgg     ?? []).forEach((r: any) => counts.set(String(r.venue_id), Number(r.count) || 0))
-    ;(friendAgg  ?? []).forEach((r: any) => friendCounts.set(String(r.venue_id), Number(r.friend_count) || 0))
-
-    type TileVenue = { pid: string; name: string; category?: string|null; open_now?: boolean|null; busy_band?: 0|1|2|3|4 }
-    let venues: TileVenue[] = (venuesRaw ?? []).map((v: any) => {
-      const c = counts.get(String(v.id)) ?? 0
-      const band: 0|1|2|3|4 = (c === 0 ? 0 : c === 1 ? 1 : c <= 3 ? 2 : c <= 6 ? 3 : 4)
-      return {
-        pid: String(v.id),
-        name: String(v.name ?? ''),
-        category: v.category ?? null,
-        open_now: v.open_now ?? null,
-        busy_band: band,
-      }
-    })
-
-    // Apply sorting boosts
-    if (filters.friendFlows) {
-      venues.sort((a, b) => {
-        const fa = friendCounts.get(a.pid) ?? 0
-        const fb = friendCounts.get(b.pid) ?? 0
-        if (fb !== fa) return fb - fa
-        // tie-breakers to reduce flicker:
-        if ((b.busy_band ?? 0) !== (a.busy_band ?? 0)) return (b.busy_band ?? 0) - (a.busy_band ?? 0)
-        return a.name.localeCompare(b.name)
-      })
-    }
-
-    // Simple boost: outdoor categories first when sun is on
-    const wantsSun = Array.isArray(filters?.weatherPref) && filters!.weatherPref!.includes('sun')
-    if (wantsSun) {
-      const outdoor = new Set(['patio','beer garden','rooftop','outdoor','park','beach'])
-      const score = (v: TileVenue) => {
-        const cat = (v.category || '').toString().toLowerCase()
-        let s = 0
-        outdoor.forEach(k => { if (cat.includes(k)) s += 1 })
-        // blend busy band a bit to avoid empty spots
-        s += (v.busy_band ?? 0) * 0.1
-        return s
-      }
-      venues.sort((a, b) => {
-        const sa = score(a), sb = score(b)
-        if (sb !== sa) return sb - sa
-        return a.name.localeCompare(b.name)
-      })
-    }
+    // Map to TileVenue format
+    type TileVenue = { pid: string; name: string; category?: string|null; busy_band?: 0|1|2|3|4 }
+    const venues: TileVenue[] = (data ?? []).map((v: any) => ({
+      pid: String(v.id),
+      name: String(v.name ?? ''),
+      category: v.category ?? null,
+      busy_band: v.busy_band as 0|1|2|3|4,
+    }))
 
     return ok({ venues, ttlSec: 60 })
   } catch (error: any) {
