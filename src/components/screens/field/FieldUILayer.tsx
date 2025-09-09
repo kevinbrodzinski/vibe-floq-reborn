@@ -20,6 +20,7 @@ import { FlowExploreChips } from '@/components/flow/FlowExploreChips'
 import { FlowMapOverlay } from '@/components/flow/FlowMapOverlay'
 import { useFlowFilters } from '@/hooks/useFlowFilters'
 import { useFlowExplore } from '@/hooks/useFlowExplore'
+import { useSunOpportunity } from '@/hooks/useSunOpportunity'
 import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary'
 import { FlowDebugBadge } from '@/components/flow/FlowDebugBadge'
 
@@ -41,6 +42,8 @@ export function FieldUILayer() {
 
   // Flow state for explore lens - now managed by hooks  
   const { filters, setFilters, loaded: filtersLoaded } = useFlowFilters()
+  const sunEnabled = filters.weatherPref?.[0] === 'sun'
+  const { score: sunScore } = useSunOpportunity(lens === 'explore' && sunEnabled)
   const [lastMs, setLastMs] = React.useState<number|undefined>()
   const { venues, convergence, clusterRes, loading, error } =
     useFlowExplore({ lens, map, filters, onLatencyMs: setLastMs })
@@ -122,6 +125,7 @@ export function FieldUILayer() {
             onChange={setFilters} 
             clusterRes={clusterRes}
             loading={loading}
+            sunScore={sunScore ?? undefined}
           />
         </FlowErrorBoundary>
       )}

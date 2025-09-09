@@ -1,6 +1,12 @@
 import React from 'react'
 
-export function FlowHUD({ state, segments }: { state: 'idle'|'recording'|'paused'|'ended', segments: any[] }) {
+export function FlowHUD({
+  state, segments, sunScore
+}: {
+  state: 'idle'|'recording'|'paused'|'ended',
+  segments: any[],
+  sunScore?: number | null
+}) {
   if (state === 'idle' || state === 'ended') return null
   const elapsed = segments.length
   return (
@@ -9,6 +15,7 @@ export function FlowHUD({ state, segments }: { state: 'idle'|'recording'|'paused
                     shadow-lg backdrop-blur flex items-center gap-3">
       <span>{state === 'recording' ? '● REC' : 'II PAUSED'}</span>
       <span>segments: {elapsed}</span>
+      {typeof sunScore === 'number' && <span>sun: {Math.round(sunScore*100)}%</span>}
     </div>
   )
 }

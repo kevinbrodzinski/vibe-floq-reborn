@@ -6,9 +6,11 @@ interface Props {
   onChange: (filters: FlowFilters) => void
   clusterRes?: number
   loading?: boolean
+  /** NEW: 0..1 sun opportunity */
+  sunScore?: number
 }
 
-export function FlowExploreChips({ value, onChange, clusterRes, loading }: Props) {
+export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScore }: Props) {
   const set = (patch: Partial<FlowFilters>) => onChange({ ...value, ...patch })
   const nextDensity = (d?: 'loose'|'normal'|'tight'): 'loose'|'normal'|'tight' =>
     d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
@@ -38,7 +40,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading }: Props
         disabled={loading}
         className={`${chipBase} ${value.weatherPref?.[0] === 'sun' ? 'bg-white/25 text-white shadow-lg backdrop-blur-sm' : 'bg-white/10 text-white/80 hover:bg-white/15'} disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation`}
       >
-        ☀️ Sun
+        ☀️ Sun{typeof sunScore === 'number' ? ` · ${Math.round(sunScore*100)}%` : ''}
       </button>
 
       <button

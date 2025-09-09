@@ -90,15 +90,30 @@ Deno.serve(async (req) => {
       }
     })
 
-    // Apply FriendFlows boost if enabled
-    if (filters?.friendFlows) {
-      venues.sort((a, b) => {
-        const fa = friendCounts.get(a.pid) ?? 0
-        const fb = friendCounts.get(b.pid) ?? 0
-        if (fb !== fa) return fb - fa
-        return (b.busy_band ?? 0) - (a.busy_band ?? 0)
-      })
-    }
+// After mapping venues[] and optional FriendFlows sort:
+if (filters?.friendFlows) {
+  venues.sort((a, b) => {
+    const fa = friendCounts.get(a.pid) ?? 0
+    const fb = friendCounts.get(b.pid) ?? 0
+    if (fb !== fa) return fb - fa
+    return (b.busy_band ?? 0) - (a.busy_band ?? 0)
+  })
+}
+
+// Simple boost: outdoor categories first when sun is on
+const wantsSun = Array.isArray(filters?.weatherPref) && filters!.weatherPref!.includes('sun')
+if (wantsSun) {
+  const outdoor = new Set(['patio','beer garden','rooftop','outdoor','park','beach'])
+  const score = (v: any) => {
+    const cat = (v.category || '').toString().toLowerCase()
+    let s = 0
+    outdoor.forEach(k => { if (cat.includes(k)) s += 1 })
+    // blend busy band a bit to avoid empty spots
+    s += (v.busy_band ?? 0) * 0.1
+    return s
+  }
+  venues.sort((a, b) => score(b) - score(a))
+}
 
     return ok({ venues, ttlSec: 60 })
 
