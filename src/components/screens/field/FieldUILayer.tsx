@@ -68,6 +68,8 @@ export function FieldUILayer() {
     if (!map || lens !== 'explore') return
     
     let cancel = false
+    let t: number | undefined
+    
     const loadFlowData = async () => {
       try {
         const bounds = map.getBounds?.()
@@ -101,8 +103,8 @@ export function FieldUILayer() {
     }
 
     const debounced = () => { 
-      clearTimeout((debounced as any)._t)
-      ;(debounced as any)._t = setTimeout(loadFlowData, 250)
+      window.clearTimeout(t)
+      t = window.setTimeout(loadFlowData, 250)
     }
 
     debounced()
@@ -111,7 +113,7 @@ export function FieldUILayer() {
     return () => { 
       cancel = true
       map.off?.('moveend', debounced)
-      clearTimeout((debounced as any)._t)
+      window.clearTimeout(t)
     }
   }, [map, filters, lens])
 
