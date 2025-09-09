@@ -348,6 +348,7 @@ export function ConstellationDOMLayer({
             getLabel={getName}
             max={8}
             onToggle={toggleSelected}
+            edgesForRanking={edgesForRanking}
           />
 
           {onGroupInvite && (
@@ -427,6 +428,38 @@ function rankSelectedByStrength(selectedIds: string[], edges: RankEdge[]) {
   return [...selectedIds].sort((i1, i2) => (score.get(i2)! - score.get(i1)!));
 }
 
+// Same decay we used for ordering: half-life ~21d (exp(-days/30)).
+function scoreSelectedIds(ids: string[], edges: RankEdge[]) {
+  const sel = new Set(ids);
+  const now = Date.now();
+  const raw = new Map<string, number>();
+  for (const id of ids) raw.set(id, 0);
+
+  for (const e of edges ?? []) {
+    if (!sel.has(e.a) || !sel.has(e.b)) continue;
+    const last = e.lastSync ? Date.parse(e.lastSync) : now;
+    const days = Math.max(0, (now - last) / (1000 * 60 * 60 * 24));
+    const rec = Math.exp(-days / 30); // 30-day decay
+    const w = Math.max(0, Math.min(1, e.strength)) * rec;
+    raw.set(e.a, (raw.get(e.a) || 0) + w);
+    raw.set(e.b, (raw.get(e.b) || 0) + w);
+  }
+
+  // Normalize to 0..1
+  let max = 0;
+  raw.forEach(v => { if (v > max) max = v; });
+  const norm = new Map<string, number>();
+  raw.forEach((v, k) => norm.set(k, max > 0 ? v / max : 0));
+  return norm; // Map<id, 0..1>
+}
+
+// Map score → badge color & label
+function healthFromScore(s: number) {
+  if (s >= 0.66) return { label: 'strong',  color: '#facc15' }; // gold
+  if (s >= 0.33) return { label: 'warming', color: '#fb923c' }; // orange
+  return            { label: 'cooling', color: '#9ca3af' };      // gray
+}
+
 function GroupAvatarStrip({
   ids,
   getAvatar,
@@ -435,16 +468,22 @@ function GroupAvatarStrip({
   ring = 'rgba(255,255,255,0.35)',
   bg  = 'rgba(0,0,0,0.35)',
   onToggle,
+  edgesForRanking,              // 👈 NEW: edges for strength ranking
 }: {
   ids: string[];
   getAvatar?: (id: string) => string | null;
   getLabel?: (id: string) => string;
   max?: number;
-  ring?: string; // outline color
-  bg?: string;   // background behind images/initials
+  ring?: string;
+  bg?: string;
   onToggle?: (id: string) => void;
+  edgesForRanking?: RankEdge[]; // 👈 NEW
 }) {
-  const shown = ids.slice(0, max);
+  const scores = React.useMemo(() => scoreSelectedIds(ids, edgesForRanking ?? []), [ids, edgesForRanking]);
+  const shown = React.useMemo(() => {
+    // Sort by normalized score desc, then keep top max
+    return [...ids].sort((a, b) => (scores.get(b)! - scores.get(a)!)).slice(0, max);
+  }, [ids, scores, max]);
   const extra = ids.length - shown.length;
 
   return (
@@ -454,20 +493,19 @@ function GroupAvatarStrip({
           const avatar = getAvatar?.(id) ?? null;
           const label  = getLabel?.(id)  ?? id;
           const initial = label?.slice(0,1).toUpperCase() ?? '•';
+          const sc = scores.get(id) ?? 0;
+          const health = healthFromScore(sc);
 
           const onKey = (e: React.KeyboardEvent) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onToggle?.(id);
-            }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle?.(id); }
           };
 
           return (
             <button
               key={id}
               type="button"
-              title={label}
-              aria-label={`Toggle ${label}`}
+              title={`${label} — ${health.label}`}
+              aria-label={`${label}: relationship strength ${health.label}`}
               aria-pressed={true}
               onClick={() => onToggle?.(id)}
               onKeyDown={onKey}
@@ -482,17 +520,22 @@ function GroupAvatarStrip({
                   {initial}
                 </div>
               )}
-              {/* tiny remove hint */}
+
+              {/* Mini badge (bottom-right) */}
               <span
+                className="absolute"
                 aria-hidden
-                className="absolute -right-0.5 -top-0.5 w-3.5 h-3.5 rounded-full bg-black/70 text-white text-[9px] leading-[14px] text-center"
-                style={{ border: `1px solid ${ring}` }}
-              >
-                −
-              </span>
+                style={{
+                  right: -2, bottom: -2,
+                  width: 8, height: 8, borderRadius: 9999,
+                  background: health.color,
+                  outline: '1px solid rgba(255,255,255,0.9)',
+                }}
+              />
             </button>
           );
         })}
+
         {extra > 0 && (
           <div
             className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-[10px] font-semibold"
