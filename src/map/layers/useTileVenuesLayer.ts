@@ -66,6 +66,9 @@ export function useTileVenuesLayer(map: any, venues?: TileVenue[]) {
         },
         beforeId
       );
+
+      // Debug telemetry
+      console.debug('[floq] readded venues layer', { src: SRC_ID, lyr: LYR_ID, t: Date.now() });
     };
 
     // Persist layer across style changes

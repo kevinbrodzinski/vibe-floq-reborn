@@ -6,6 +6,7 @@ import { createPixiCustomLayer } from '@/lib/map/pixi/PixiCustomLayer';
 import { BreathingSystem } from '@/lib/map/pixi/systems/BreathingSystem';
 import { LightningSystem } from '@/lib/map/pixi/systems/LightningSystem';
 import { brand } from '@/lib/tokens/brand';
+import { PIXI_ENABLED } from '@/lib/map/pixi/flags';
 import type { FieldData } from './FieldDataProvider';
 
 interface LayersRuntimeProps {
@@ -22,7 +23,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
 
   // Mount Pixi atmospheric effects layer
   useEffect(() => {
-    if (!map || pixiLayerRef.current) return;
+    if (!map || pixiLayerRef.current || !PIXI_ENABLED) return;
 
     const layerFactory = () => {
       const layer = createPixiCustomLayer({ 

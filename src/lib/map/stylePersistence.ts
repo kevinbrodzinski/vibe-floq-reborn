@@ -50,7 +50,7 @@ export function findFirstSymbolLayerId(map: mapboxgl.Map): string | undefined {
 export function ensureGeoJSONSource(map: mapboxgl.Map, sourceId: string, data: FeatureCollection) {
   const existing = map.getSource(sourceId) as any;
   if (!existing) {
-    map.addSource(sourceId, { type: 'geojson', data });
+    safeAddSource(map, sourceId, { type: 'geojson', data });
   } else if (typeof existing.setData === 'function') {
     existing.setData(data);
   }
@@ -58,8 +58,19 @@ export function ensureGeoJSONSource(map: mapboxgl.Map, sourceId: string, data: F
 
 /** Add a layer if missing (optionally positioned before an anchor layer). */
 export function ensureLayer(map: mapboxgl.Map, layer: mapboxgl.AnyLayer, beforeId?: string) {
-  if (!map.getLayer(layer.id)) {
-    if (beforeId) map.addLayer(layer, beforeId);
-    else map.addLayer(layer);
-  }
+  safeAddLayer(map, layer, beforeId);
+}
+
+/** Fail-safe source addition to avoid errors during rapid style swaps */
+function safeAddSource(map: mapboxgl.Map, id: string, spec: any) {
+  try { if (!map.getSource(id)) map.addSource(id, spec); } catch {}
+}
+
+/** Fail-safe layer addition to avoid errors during rapid style swaps */
+function safeAddLayer(map: mapboxgl.Map, layer: mapboxgl.AnyLayer, beforeId?: string) {
+  try { 
+    if (!map.getLayer(layer.id)) {
+      beforeId ? map.addLayer(layer, beforeId) : map.addLayer(layer);
+    }
+  } catch {}
 }

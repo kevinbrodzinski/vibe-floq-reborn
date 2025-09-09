@@ -56,6 +56,9 @@ export function useSocialWeatherLayer(map: any, cells?: PressureCell[]) {
         },
         beforeId
       );
+
+      // Debug telemetry
+      console.debug('[floq] readded weather layer', { src: SRC_ID, lyr: LYR_ID, t: Date.now() });
     };
 
     const cleanup = persistOnStyle(map, readd);
