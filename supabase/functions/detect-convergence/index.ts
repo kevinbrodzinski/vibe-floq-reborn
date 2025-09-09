@@ -29,10 +29,23 @@ serve(async (req) => {
 
   try {
     const { bbox, center, zoom = 14 }: Req = await req.json();
-    
+
+    // fallback bbox if only center is provided
+    let qbbox = bbox;
+    if (!qbbox && center) {
+      const deg = 0.01 - Math.max(0, (zoom - 12)) * 0.0006;
+      qbbox = [center[0]-deg, center[1]-deg, center[0]+deg, center[1]+deg];
+    }
+    if (!qbbox) {
+      return new Response(
+        JSON.stringify({ points: [] }), 
+        { headers: { ...corsHeaders, 'content-type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
       { 
         auth: { persistSession: false },
         global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
@@ -40,57 +53,25 @@ serve(async (req) => {
     );
 
     const sinceIso = new Date(Date.now() - 45 * 60 * 1000).toISOString();
-
-    // Fetch recent flow segments
-    const { data: segs, error } = await supabase
-      .from('flow_segments')
-      .select('flow_id, h3_idx, center, arrived_at')
-      .gte('arrived_at', sinceIso)
-      .limit(2000);
+    
+    // Use the SQL RPC for precise centroids
+    const { data, error } = await supabase.rpc('recent_convergence', {
+      west:  qbbox[0],
+      south: qbbox[1],
+      east:  qbbox[2],
+      north: qbbox[3],
+      since: sinceIso
+    });
 
     if (error) throw error;
 
-    // Cluster by h3_idx or fallback to rounded coordinates
-    const bins = new Map<string, { lng: number; lat: number; n: number }>();
-    
-    for (const s of segs ?? []) {
-      let key = s.h3_idx as string | null;
-      let lng = 0, lat = 0;
-
-      if (key) {
-        // Use h3_idx for clustering - generate pseudo coordinates for demo
-        const h = hash(key);
-        const dx = ((h & 0xffff) / 0xffff) - 0.5;
-        const dy = (((h >>> 16) & 0xffff) / 0xffff) - 0.5;
-        const baseLng = (center?.[0] ?? -118.4695);
-        const baseLat = (center?.[1] ?? 33.9855);
-        const deg = Math.max(0.002, 0.01 - 0.0006 * (zoom - 12));
-        lng = baseLng + dx * deg;
-        lat = baseLat + dy * deg;
-      } else if (s.center) {
-        // For geometry points, we'd need a proper conversion
-        // For now, skip non-h3 entries or add ST_X/ST_Y to the select
-        continue;
-      } else {
-        continue;
-      }
-
-      const b = bins.get(key!) ?? { lng, lat, n: 0 };
-      b.n += 1;
-      bins.set(key!, b);
-    }
-
-    // Generate convergence points from clusters with sufficient activity
-    const points: ConvergencePoint[] = Array.from(bins.values())
-      .filter(b => b.n >= 3)   // minimum group threshold
-      .slice(0, 12)            // limit results
-      .map(b => ({
-        lng: b.lng, 
-        lat: b.lat,
-        groupMin: b.n,
-        prob: Math.max(0.25, Math.min(0.95, 0.25 + 0.12 * b.n)), // probability heuristic
-        etaMin: Math.max(3, 15 - Math.min(10, Math.round(b.n / 2))), // ETA heuristic
-      }));
+    // Map -> ConvergencePoint with simple prob/eta heuristics (tune later)
+    const points: ConvergencePoint[] = (data ?? []).map((r: any) => {
+      const n = Number(r.n) || 0;
+      const prob = Math.max(0.25, Math.min(0.95, 0.25 + 0.12 * n));
+      const eta  = Math.max(3, 15 - Math.min(10, Math.round(n / 2)));
+      return { lng: Number(r.lng), lat: Number(r.lat), prob, etaMin: eta, groupMin: n };
+    });
 
     return new Response(
       JSON.stringify({ points, ttlSec: 30 }), 
@@ -106,7 +87,7 @@ serve(async (req) => {
   } catch (e: any) {
     console.error('[detect-convergence]', e);
     return new Response(
-      JSON.stringify({ error: e?.message ?? 'Internal server error' }), 
+      JSON.stringify({ error: e?.message ?? 'error' }), 
       { 
         status: 500, 
         headers: { ...corsHeaders, 'content-type': 'application/json' } 
@@ -114,9 +95,3 @@ serve(async (req) => {
     );
   }
 });
-
-function hash(s: string) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
-}

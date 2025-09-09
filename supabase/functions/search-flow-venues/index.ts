@@ -39,7 +39,7 @@ serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
       { 
         auth: { persistSession: false },
         global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
@@ -59,13 +59,12 @@ serve(async (req) => {
       );
     }
 
-    // Fetch venues within bbox - adjust for your venue schema
-    const { data: venuesRaw, error: vErr } = await supabase
-      .from('venues')
-      .select('id,name,categories,lat,lng')
-      .gte('lng', qbbox[0]).gte('lat', qbbox[1])
-      .lte('lng', qbbox[2]).lte('lat', qbbox[3])
-      .limit(200);
+    // Use RPC for geometry-safe venue search
+    const q = undefined; // TODO: derive from filters later
+    const { data: venuesRaw, error: vErr } = await supabase.rpc('search_venues_bbox', {
+      west: qbbox[0], south: qbbox[1], east: qbbox[2], north: qbbox[3],
+      q, lim: 200
+    });
 
     if (vErr) throw vErr;
 
@@ -89,8 +88,8 @@ serve(async (req) => {
       return {
         pid: v.id,
         name: v.name,
-        category: Array.isArray(v.categories) ? v.categories[0] : v.categories,
-        open_now: null, // TODO: Add open_now logic if available
+        category: v.category,
+        open_now: v.open_now ?? null,
         busy_band: band,
       };
     });
