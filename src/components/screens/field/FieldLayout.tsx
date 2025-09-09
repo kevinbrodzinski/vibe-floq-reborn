@@ -237,9 +237,13 @@ export const FieldLayout = () => {
           <FieldSystemLayer data={data} />
 
           {/* Lens System - z-600 */}
-          <LensSwitcher />
-          <LensStatusHUD />
           <LensHotkeys />
+          <div className="fixed top-4 right-4 z-[600] pointer-events-auto">
+            <LensSwitcher />
+          </div>
+          <div className="fixed top-4 left-4 z-[560] pointer-events-none">
+            <LensStatusHUD />
+          </div>
 
           {/* Debug Layer (development only) - z-200+ */}
           {/* Debug visuals disabled for production */}
