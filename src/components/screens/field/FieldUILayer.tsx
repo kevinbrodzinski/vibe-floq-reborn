@@ -45,6 +45,11 @@ export function FieldUILayer() {
   const [flowVenues, setFlowVenues] = React.useState<TileVenue[]>([])
   const [convergence, setConvergence] = React.useState<ConvergencePoint[]>([])
   
+  // Density knob: map zoom → base res, chip adjusts by ±1
+  const zoom = map?.getZoom?.() ?? 14
+  const baseRes = zoom >= 15 ? 10 : zoom >= 13 ? 9 : 8
+  const densityOffset = (d?: 'loose'|'normal'|'tight') => d === 'tight' ? +1 : d === 'loose' ? -1 : 0
+  const clusterRes = Math.max(7, Math.min(11, baseRes + densityOffset(filters.clusterDensity)))
   // Memoized venue mapping for performance
   const venueLite = useMemo(() => {
     return data.nearbyVenues?.map(mapTileToLite) ?? []
@@ -70,9 +75,6 @@ export function FieldUILayer() {
     let cancel = false
     let t: number | undefined
     
-    const densityOffset = (d?: 'loose'|'normal'|'tight') =>
-      d === 'tight' ? +1 : d === 'loose' ? -1 : 0
-    
     const loadFlowData = async () => {
       try {
         const bounds = map.getBounds?.()
@@ -86,13 +88,9 @@ export function FieldUILayer() {
           bounds.getNorth()
         ]
         
-        // Base res from zoom (edge has same mapping), then apply density offset
-        const baseRes = zoom >= 15 ? 10 : zoom >= 13 ? 9 : 8
-        const res = Math.max(7, Math.min(11, baseRes + densityOffset(filters.clusterDensity)))
-        
         const [{ venues }, { points }] = await Promise.all([
           fetchFlowVenues({ bbox, filters }),
-          fetchConvergence({ bbox, zoom, res })   // ← pass override
+          fetchConvergence({ bbox, zoom, res: clusterRes })   // ← pass override
         ])
         
         if (!cancel) { 
@@ -122,7 +120,7 @@ export function FieldUILayer() {
       map.off?.('moveend', debounced)
       window.clearTimeout(t)
     }
-  }, [map, filters, lens])
+  }, [map, filters, lens, clusterRes])
 
   const handleToggleFavorite = useCallback(async (venueId: string, next: boolean) => {
     setFavoriteIds(prev => { const n = new Set(prev); next ? n.add(venueId) : n.delete(venueId); return n })
@@ -178,7 +176,7 @@ export function FieldUILayer() {
     <>
       {/* Flow explore chips - only show in explore lens */}
       {lens === 'explore' && (
-        <FlowExploreChips value={filters} onChange={setFilters} />
+        <FlowExploreChips value={filters} onChange={setFilters} clusterRes={clusterRes} />
       )}
 
       {/* Explore lens */}
