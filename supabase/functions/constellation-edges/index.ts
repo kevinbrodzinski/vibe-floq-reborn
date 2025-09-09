@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       }
     } catch {}
 
-    // Derive strengths
+    // Derive strengths with guards for empty stats
     const edges: Edge[] = [];
     let minLast = now, maxLast = 0, minCount = Infinity, maxCount = 0;
     pairs.forEach((p) => {
@@ -126,9 +126,14 @@ Deno.serve(async (req) => {
       minCount = Math.min(minCount, p.count);
       maxCount = Math.max(maxCount, p.count);
     });
+    
+    // Guard against empty ranges
+    const spanLast = Math.max(1, (maxLast - minLast));
+    const spanCount = Math.max(1, (maxCount - minCount));
+    
     pairs.forEach((p) => {
-      const recency01 = normalize(p.last, minLast, maxLast || now);
-      const freq01    = normalize(p.count, minCount, Math.max(minCount+1, maxCount));
+      const recency01 = (p.last - minLast) / spanLast;
+      const freq01    = (p.count - minCount) / spanCount;
       edges.push({ a: p.a, b: p.b, strength: score(recency01, freq01), lastSync: new Date(p.last).toISOString() });
     });
 

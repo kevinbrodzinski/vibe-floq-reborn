@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase.rpc('get_social_forecast', {
         t: j.t, range: j.range ?? null, center: ctr, bbox: j.bbox ?? null, zoom
       });
-      if (!error && Array.isArray(data)) modelCells = data;
+      if (!error && Array.isArray(data) && data.length && data[0]?.center) modelCells = data;
     } catch { /* silently fall back */ }
 
     let cells = modelCells ?? ((): any[] => {

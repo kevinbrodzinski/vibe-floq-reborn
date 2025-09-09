@@ -21,18 +21,35 @@ function centroid(friends: Friend[]): [number, number] {
   for (const f of friends) { const w = Math.max(0.1, f.weight ?? 1); sx += f.lng * w; sy += f.lat * w; sw += w; }
   return sw ? [sx / sw, sy / sw] : [0, 0];
 }
-function avgRadius(friends: Friend[], c: [number, number]) {
-  if (!friends.length) return 0.0012; // ~120m fallback
-  let s = 0, n = 0;
-  for (const f of friends) { const dx = (f.lng - c[0]); const dy = (f.lat - c[1]); s += Math.hypot(dx, dy); n++; }
-  const r = (s / Math.max(1, n)) || 0.0012;
-  return Math.min(Math.max(r * 1.2, 0.001), 0.0045); // clamp ~100m..450m
+
+function avgRadiusMeters(friends: Friend[], c: [number,number]) {
+  if (!friends.length) return 120; // meters
+  const R = 6371000; // Earth radius
+  const [lng0, lat0] = c.map(x => x * Math.PI/180);
+  let s=0, n=0;
+  for (const f of friends) {
+    const lng = f.lng * Math.PI/180, lat = f.lat * Math.PI/180;
+    const d = 2*R*Math.asin(Math.sqrt(
+      Math.sin((lat-lat0)/2)**2 +
+      Math.cos(lat0)*Math.cos(lat)*Math.sin((lng-lng0)/2)**2
+    ));
+    s += d; n++;
+  }
+  return s/Math.max(1,n);
 }
-function ring(c: [number, number], r: number, n = 36): [number, number][] {
+
+function metersToDegrees(m: number, atLatDeg: number) {
+  const latRad = atLatDeg * Math.PI/180;
+  const degLat = m / 111320;
+  const degLng = m / (111320 * Math.cos(latRad));
+  return { degLat, degLng };
+}
+function ring(c: [number, number], radiusMeters: number, atLatDeg: number, n = 36): [number, number][] {
+  const { degLat, degLng } = metersToDegrees(radiusMeters, atLatDeg);
   const out: [number, number][] = [];
   for (let i = 0; i < n; i++) {
     const t = (i / n) * Math.PI * 2;
-    out.push([c[0] + Math.cos(t) * r, c[1] + Math.sin(t) * r]);
+    out.push([c[0] + Math.cos(t) * degLng, c[1] + Math.sin(t) * degLat]);
   }
   out.push(out[0]);
   return out;
@@ -49,13 +66,13 @@ Deno.serve(async (req) => {
 
     if (!friends.length) return okJson({ zones: [], ttlSec: 60 }, 60);
 
-    const c  = centroid(friends);
-    const r  = avgRadius(friends, c) * (zoom >= 15 ? 0.9 : 1.1);
-    const poly = ring(c, r, 40);
+    const c = centroid(friends);
+    const radiusMeters = avgRadiusMeters(friends, c) * (zoom >= 15 ? 0.9 : 1.1);
+    const poly = ring(c, radiusMeters, c[1], 40);
     const prob = Math.max(0.25, Math.min(0.9, 0.3 + 0.1 * Math.log2(1 + friends.length)));
-    const vibe = 'mixed'; // you can enrich later from your current vibe
+    const vibe = 'mixed';
 
-    return okJson({ zones: [{ polygon: poly, prob, vibe }], ttlSec: 120 }, 120);
+    return okJson({ zones: [{ polygon: poly, prob, vibe, centroid: c }], ttlSec: 120 }, 120);
   } catch (e) {
     return bad(e?.message ?? 'error', 500);
   }
