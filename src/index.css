@@ -55,6 +55,11 @@ html, body, #root {
 :root { 
   --safe-bottom: env(safe-area-inset-bottom); 
 }
+
+/* Ripple animation */
+@keyframes ripple {
+  to {
+    transform: scale(4);
     opacity: 0;
   }
 }
