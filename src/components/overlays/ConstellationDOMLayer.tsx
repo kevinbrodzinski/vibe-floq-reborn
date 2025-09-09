@@ -246,6 +246,7 @@ export function ConstellationDOMLayer({
   // Helpers for labels/avatars
   const getName = (id: string) => getLabel?.(id) ?? ellipsize(id)
   const getImg = (id: string) => getAvatar?.(id) ?? null
+  const getVibeForId = (id: string) => nodes.find(n => n.id === id)?.vibe ?? 'calm'
 
   // Toggle selection helper for avatar strip
   const toggleSelected = (id: string) => {
@@ -346,6 +347,7 @@ export function ConstellationDOMLayer({
             ids={orderedSelected}
             getAvatar={getImg}
             getLabel={getName}
+            getVibe={getVibeForId}
             max={8}
             onToggle={toggleSelected}
             edgesForRanking={edgesForRanking}
@@ -464,6 +466,7 @@ function GroupAvatarStrip({
   ids,
   getAvatar,
   getLabel,
+  getVibe,              // 👈 NEW
   max = 8,
   ring = 'rgba(255,255,255,0.35)',
   bg  = 'rgba(0,0,0,0.35)',
@@ -473,6 +476,7 @@ function GroupAvatarStrip({
   ids: string[];
   getAvatar?: (id: string) => string | null;
   getLabel?: (id: string) => string;
+  getVibe?: (id: string) => string;   // 👈 NEW
   max?: number;
   ring?: string;
   bg?: string;
@@ -495,6 +499,8 @@ function GroupAvatarStrip({
           const initial = label?.slice(0,1).toUpperCase() ?? '•';
           const sc = scores.get(id) ?? 0;
           const health = healthFromScore(sc);
+          const vibeToken = getVibe ? getVibe(id) : 'calm';
+          const vt = getVibeToken(vibeToken as any);
 
           const onKey = (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle?.(id); }
@@ -521,17 +527,40 @@ function GroupAvatarStrip({
                 </div>
               )}
 
-              {/* Mini badge (bottom-right) */}
-              <span
-                className="absolute"
-                aria-hidden
-                style={{
-                  right: -2, bottom: -2,
-                  width: 8, height: 8, borderRadius: 9999,
-                  background: health.color,
-                  outline: '1px solid rgba(255,255,255,0.9)',
-                }}
-              />
+              {/* Two-tone donut badge */}
+              <div aria-hidden>
+                {/* outer halo (soft) */}
+                <span
+                  className="absolute"
+                  style={{
+                    right: -4, bottom: -4,
+                    width: 16, height: 16, borderRadius: 9999,
+                    boxShadow: `0 0 10px ${vt.glow}`,
+                  }}
+                />
+                {/* outer donut ring */}
+                <span
+                  className="absolute"
+                  style={{
+                    right: -2, bottom: -2,
+                    width: 12, height: 12, borderRadius: 9999,
+                    background: vt.ring,
+                    outline: '1px solid rgba(255,255,255,0.9)',
+                    outlineOffset: -1,
+                  }}
+                />
+                {/* inner core (health) */}
+                <span
+                  className="absolute"
+                  style={{
+                    right: 0, bottom: 0,
+                    width: 8, height: 8, borderRadius: 9999,
+                    background: health.color,
+                    outline: '1px solid rgba(0,0,0,0.35)',
+                    outlineOffset: -1,
+                  }}
+                />
+              </div>
             </button>
           );
         })}
