@@ -62,22 +62,39 @@ export class GlassShells {
     for (const r of this.rings) {
       const g = r.g; g.clear()
       g.lineStyle(r.width, r.color, r.alpha)
-      // Multi-stroke "blur" (cheap)
-      for (let k=-1; k<=1; k++) {
-        const off = k * 0.0001
+
+      // centroid for inward offset
+      const [cx, cy] = this.centroid(r.ringLngLat)
+
+      // Multi-stroke blur
+      for (let k = -1; k <= 1; k++) {
+        const off = k * 0.00008
         let first = true
-        for (let i=0;i<r.ringLngLat.length;i++) {
+        for (let i = 0; i < r.ringLngLat.length; i++) {
           const p = r.ringLngLat[i]
-          // small inset towards centroid by averaging with neighbors
-          const qx = p[0] - r.inset
-          const qy = p[1] - r.inset
-          const pt = project(qx+off, qy+off)
+          // move a small fraction toward centroid (deg-friendly)
+          const insetFrac = 0.06 // 6% toward center
+          const qi = [
+            p[0] + (cx - p[0]) * insetFrac + off,
+            p[1] + (cy - p[1]) * insetFrac + off
+          ] as [number, number]
+          const pt = project(qi[0], qi[1])
           if (first) { g.moveTo(pt.x, pt.y); first = false } else g.lineTo(pt.x, pt.y)
         }
         // close
-        const p0 = r.ringLngLat[0]; const pt0 = project(p0[0]-r.inset+off, p0[1]-r.inset+off)
+        const p0 = r.ringLngLat[0]
+        const q0 = [
+          p0[0] + (cx - p0[0]) * 0.06 + off,
+          p0[1] + (cy - p0[1]) * 0.06 + off
+        ] as [number, number]
+        const pt0 = project(q0[0], q0[1])
         g.lineTo(pt0.x, pt0.y)
       }
     }
+  }
+
+  // --- helpers ---
+  private centroid(poly:[number,number][]) {
+    let x=0,y=0; for (const p of poly) { x+=p[0]; y+=p[1] } return [x/poly.length, y/poly.length] as [number,number]
   }
 }

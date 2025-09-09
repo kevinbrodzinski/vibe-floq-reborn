@@ -143,7 +143,10 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.constellation]
-verify_jwt = false
+verify_jwt = true
+
+[functions.perfect-storm-gate]
+verify_jwt = true
 
 [functions.social-forecast]
 verify_jwt = true

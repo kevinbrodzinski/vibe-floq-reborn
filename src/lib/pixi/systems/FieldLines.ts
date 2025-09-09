@@ -83,7 +83,10 @@ export class FieldLines {
     for (let s=0;s<steps;s++) {
       pts.push([p[0], p[1]])
       const v = this.curl(p)
-      p = [p[0] + v[0] + (Math.random()-0.5)*stepSize*0.2, p[1] + v[1] + (Math.random()-0.5)*stepSize*0.2]
+      p = [
+        p[0] + v[0] + (Math.random()-0.5)*stepSize*0.2,
+        p[1] + v[1] + (Math.random()-0.5)*stepSize*0.2
+      ]
     }
     return pts
   }
