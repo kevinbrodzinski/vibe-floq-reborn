@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const since = new Date(now - windowDays * 24 * 3600 * 1000).toISOString();
     const pairs = new Map<string, { a: string; b: string; count: number; last: number }>();
 
-    async function bump(a: string, b: string, tsISO: string) {
+    function bump(a: string, b: string, tsISO?: string) {
       if (!a || !b || a === b) return;
       const low = a < b ? a : b;
       const high = a < b ? b : a;
@@ -70,8 +70,10 @@ Deno.serve(async (req) => {
           byPlan.set(row.plan_id, arr);
         }
         byPlan.forEach(list => {
-          for (let i=0;i<list.length;i++) for (let j=i+1;j<list.length;j++) {
-            bump(list[i].profile_id, list[j].profile_id, list[i].joined_at || since);
+          for (let i = 0; i < list.length; i++) {
+            for (let j = i + 1; j < list.length; j++) {
+              bump(list[i].profile_id, list[j].profile_id, list[i].joined_at || since);
+            }
           }
         });
       }
@@ -106,8 +108,10 @@ Deno.serve(async (req) => {
           byStop.set(v.stop_id, arr);
         }
         byStop.forEach(list => {
-          for (let i=0;i<list.length;i++) for (let j=i+1;j<list.length;j++) {
-            bump(list[i].profile_id, list[j].profile_id, list[i].created_at || since);
+          for (let i = 0; i < list.length; i++) {
+            for (let j = i + 1; j < list.length; j++) {
+              bump(list[i].profile_id, list[j].profile_id, list[i].created_at || since);
+            }
           }
         });
       }
