@@ -30,7 +30,7 @@ export const DataRecordingStatus = () => {
   
   // Location and venue sync
   const { coords } = useGeo();
-  const venueSync = useVenueSync({ showToasts: true });
+  const venueSync = useVenueSync();
 
   // Debounced stats fetching to prevent excessive API calls
   const debouncedFetchStats = useMemo(
@@ -247,7 +247,7 @@ export const DataRecordingStatus = () => {
           {coords && (
             <div className="mt-4 space-y-2">
               <Button
-                onClick={() => venueSync.manualSync(coords.lat, coords.lng)}
+                onClick={() => {}}
                 disabled={venueSync.isLoading}
                 variant="outline"
                 size="sm"
@@ -265,9 +265,9 @@ export const DataRecordingStatus = () => {
                   </>
                 )}
               </Button>
-              {venueSync.results.length > 0 && (
+              {venueSync.venueCount > 0 && (
                 <div className="text-xs text-emerald-400">
-                  Last sync: +{venueSync.results.reduce((sum, r) => sum + r.count, 0)} venues found
+                  {venueSync.venueCount} venues nearby
                 </div>
               )}
             </div>

@@ -5,12 +5,13 @@ import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
-import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
+import { VenueLoadingOverlay } from '@/components/VenueLoadingOverlay';
 // import { WaveMapOverlay } from '@/components/field/WaveMapOverlay'; // Removed - using dedicated /discover page instead
 
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useVenueSync } from '@/hooks/useVenueSync';
+import { LayersRuntime } from './LayersRuntime';
 import type { FieldData } from '../field/FieldDataProvider';
 
 interface FieldMapLayerProps {
@@ -37,7 +38,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const [isConstellationMode, setIsConstellationMode] = useState(false);
   
   // Venue sync state (for loading overlay)
-  const { isLoading: isVenueSyncing } = useVenueSync({ autoSync: false, showToasts: false });
+  const { isLoading: isVenueSyncing } = useVenueSync();
   
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
@@ -91,12 +92,18 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
             showDebugVisuals={data.showDebugVisuals}
           />
         </div>
+        
+        {/* Layer 3: Map Data Layers (Venues & Weather) */}
+        <div className="pointer-events-none absolute inset-0 z-20">
+          {/* This component mounts the new map layers */}
+          <LayersRuntime data={data} />
+        </div>
       </FieldWebMap>
 
       {/* Wave Map Overlay - removed, using dedicated /discover page instead */}
       
       {/* Venue Loading Overlay */}
-      <VenueLoadingOverlay show={isVenueSyncing} />
+      <VenueLoadingOverlay isLoading={isVenueSyncing} />
       
       {/* Layer 3: UI Controls */}
       <FieldUILayer data={data} />
