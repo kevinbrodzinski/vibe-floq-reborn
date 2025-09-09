@@ -28,6 +28,8 @@ export function FlowMapOverlay({ points, map }: FlowMapOverlayProps) {
   React.useEffect(() => {
     if (!map) return
 
+    let rafId: number | null = null
+
     const addLayers = () => {
       try {
         // Add or update source
@@ -100,7 +102,7 @@ export function FlowMapOverlay({ points, map }: FlowMapOverlayProps) {
               map.setPaintProperty(LYR_CONV, 'circle-radius', pulseRadius)
             }
             
-            requestAnimationFrame(animate)
+            rafId = requestAnimationFrame(animate)
           }
           animate()
         }
@@ -117,6 +119,7 @@ export function FlowMapOverlay({ points, map }: FlowMapOverlayProps) {
 
     // Cleanup function
     return () => {
+      if (rafId) cancelAnimationFrame(rafId)  // ✅ cancel RAF
       try {
         if (map.getLayer(LYR_CONV)) {
           map.removeLayer(LYR_CONV)
