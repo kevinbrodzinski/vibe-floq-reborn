@@ -1,5 +1,6 @@
 import React from 'react'
 import { listShortlists, deleteShortlist, renameShortlist } from '@/lib/api/venueShortlists'
+import { mintShortlistToken } from '@/lib/api/shortlistShare'
 import { vibeTokens, normalizeVibeToken } from '@/lib/vibe/tokens'
 
 type ShortlistRow = { id: string; name: string; venueIds: string[]; created_at?: string }
@@ -84,6 +85,22 @@ export function ShortlistsDrawer({
                       onClick={() => onApply(r.venueIds, { id: r.id, name: r.name })}
                     >
                       Apply
+                    </button>
+                    <button
+                      className="px-2 py-1 rounded-md text-[12px] bg-white/10 text-white/85 hover:bg-white/15 disabled:opacity-60"
+                      disabled={busyId === r.id}
+                      onClick={async () => {
+                        try {
+                          const { token } = await mintShortlistToken(r.id, 7)
+                          const url = `${window.location.origin}/s/${token}`
+                          await navigator.clipboard.writeText(url)
+                          // Could show success toast here
+                        } catch (e) {
+                          console.error('Failed to share shortlist:', e)
+                        }
+                      }}
+                    >
+                      Share
                     </button>
                     <button
                       className="px-2 py-1 rounded-md text-[12px] bg-white/10 text-white/85 hover:bg-white/15 disabled:opacity-60"

@@ -10839,6 +10839,38 @@ export type Database = {
           },
         ]
       }
+      shortlist_public_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          profile_id: string
+          shortlist_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          profile_id?: string
+          shortlist_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          profile_id?: string
+          shortlist_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shortlist_public_tokens_shortlist_id_fkey"
+            columns: ["shortlist_id"]
+            isOneToOne: false
+            referencedRelation: "venue_shortlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snap_suggestion_logs: {
         Row: {
           confidence: number | null

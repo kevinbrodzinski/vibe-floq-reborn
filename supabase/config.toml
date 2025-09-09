@@ -179,3 +179,9 @@ verify_jwt = true
 
 [functions.nearby_people]
 verify_jwt = false
+
+[functions.shortlist-share]
+verify_jwt = true
+
+[functions.shortlist-public-get]
+verify_jwt = false

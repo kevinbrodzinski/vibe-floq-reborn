@@ -39,6 +39,7 @@ import SharedAfterglow from "./pages/SharedAfterglow";
 import SharedPlan from "./pages/SharedPlan";
 import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
+import { PublicShortlistPage } from "./pages/PublicShortlistPage";
 
 
 const App = () => {
@@ -125,6 +126,7 @@ const App = () => {
                       <PlanInviteProvider />
                       <Routes>
                         <Route path="/a/:slug" element={<SharedAfterglow />} />
+                        <Route path="/s/:token" element={<PublicShortlistPage />} />
                         <Route path="/share/:slug" element={<SharedPlan />} />
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
