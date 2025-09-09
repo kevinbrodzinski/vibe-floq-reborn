@@ -21441,6 +21441,13 @@ export type Database = {
           total_corrections: number
         }[]
       }
+      get_venue_flow_counts: {
+        Args: { since_timestamp: string }
+        Returns: {
+          count: number
+          venue_id: string
+        }[]
+      }
       get_venue_timezone: {
         Args: { p_venue_id: string }
         Returns: string
