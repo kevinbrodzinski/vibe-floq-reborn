@@ -117,3 +117,17 @@ export async function endFlow(flowId: string, opts?: { sun_exposed_min?: number 
   if (error) throw error
   return data!
 }
+
+// Ping friends functionality
+export type PingPoint = { lng:number; lat:number; etaMin:number; prob:number };
+export type PingResp = { recipients: string[]; ping: {
+  token: string; ttlSec: number; point: PingPoint; message?: string; createdAt: string;
+}};
+
+export async function pingFriends(point: PingPoint, message?: string): Promise<PingResp> {
+  const { data, error } = await supabase.functions.invoke<PingResp>('ping-friends', {
+    body: { point, message }
+  });
+  if (error) throw error;
+  return data!;
+}

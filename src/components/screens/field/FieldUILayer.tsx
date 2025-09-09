@@ -24,6 +24,14 @@ import { useSunOpportunity } from '@/hooks/useSunOpportunity'
 import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary'
 import { FlowDebugBadge } from '@/components/flow/FlowDebugBadge'
 
+// Flow recording imports
+import { useFlowSampler } from '@/hooks/flow/useFlowSampler'
+import { useFlowRecorder } from '@/hooks/useFlowRecorder'
+import { FlowRecorderFAB } from '@/components/flow/FlowRecorderFAB'
+import { FlowHUD } from '@/components/flow/FlowHUD'
+import ConvergenceCard from '@/components/flow/ConvergenceCard'
+import { pingFriends } from '@/lib/api/flow'
+
 export function FieldUILayer() {
   const data = useFieldData()
   const { lens } = useFieldLens()
@@ -39,6 +47,16 @@ export function FieldUILayer() {
   // Focus management refs
   const changeBtnRef = React.useRef<HTMLButtonElement>(null)
   const firstChooserBtnRef = React.useRef<HTMLButtonElement>(null)
+
+  // Flow recording state
+  const { state: samplerState, begin, pause: pauseSampler, resume: resumeSampler, stop: stopSampler } = useFlowSampler({
+    minDistanceM: 35, 
+    maxIntervalMs: 30_000,
+  })
+  const { sui01, elapsedMin } = useFlowRecorder()
+  const [convCard, setConvCard] = React.useState<{
+    lng: number; lat: number; groupMin: number; prob: number; etaMin: number;
+  } | null>(null)
 
   // Flow state for explore lens - now managed by hooks  
   const { filters, setFilters, loaded: filtersLoaded } = useFlowFilters()
@@ -56,6 +74,11 @@ export function FieldUILayer() {
   const displayVenues = useMemo(() => {
     return venues.length > 0 ? venues : data.nearbyVenues ?? []
   }, [venues, data.nearbyVenues])
+
+  // Close convergence card when lens changes away from explore
+  React.useEffect(() => {
+    if (lens !== 'explore' && convCard) setConvCard(null)
+  }, [lens, convCard])
 
   React.useEffect(() => {
     let mounted = true
@@ -142,17 +165,53 @@ export function FieldUILayer() {
             changeBtnRef={changeBtnRef}
           />
 
-          {/* Flow convergence overlay */}
+          {/* Flow convergence overlay with tap handler */}
           <FlowMapOverlay 
-            points={convergence} 
-            onPointTap={(point) => {
-              console.log('Convergence point tapped:', point)
-              toast({ 
-                title: 'Convergence Point', 
-                description: `${Math.round(point.prob * 100)}% prob, ETA: ${point.etaMin}min` 
-              })
-            }}
+            points={convergence}
+            onPointTap={(p) => setConvCard(p)}   // opens card
           />
+
+          {/* Flow recording FAB */}
+          <FlowRecorderFAB
+            state={samplerState}
+            onStart={() => begin('owner')}
+            onPause={pauseSampler}
+            onResume={resumeSampler}
+            onStop={stopSampler}
+          />
+
+          {/* Flow HUD */}
+          {samplerState === 'recording' && (
+            <FlowHUD elapsedMin={elapsedMin} sui01={sui01} />
+          )}
+
+          {/* Convergence card */}
+          {convCard && (
+            <ConvergenceCard
+              point={convCard}
+              onClose={() => setConvCard(null)}
+              onInvite={async (p) => {
+                try {
+                  const { recipients } = await pingFriends(p, 'Join me here?')
+                  toast({
+                    title: 'Ping sent',
+                    description: recipients.length
+                      ? `Notified ${recipients.length} friends.`
+                      : 'No friends found to ping (yet).',
+                  })
+                } catch (e:any) {
+                  toast({ title: 'Ping failed', description: e.message ?? 'Please try again', variant: 'destructive' })
+                } finally {
+                  setConvCard(null)
+                }
+              }}
+              onRoute={(p) => {
+                setConvCard(null)
+                map?.flyTo?.({ center: [p.lng, p.lat], zoom: 15 })
+                toast({ title: 'Routing', description: 'Centering on convergence…' })
+              }}
+            />
+          )}
 
           {/* Error display */}
           {error && (
