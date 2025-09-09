@@ -1,8 +1,21 @@
+'use client'
 import React from 'react'
 import mapboxgl from 'mapbox-gl'
 import { getMapboxToken } from '@/lib/geo/getMapboxToken'
 
 type Pin = { id: string; loc?: { lng: number; lat: number } }
+type TokenResp = { token: string }
+
+async function getMapboxTokenSafe(): Promise<TokenResp> {
+  try {
+    return await getMapboxToken()
+  } catch {
+    // Fallback to env var
+    const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+    if (!token) throw new Error('No Mapbox token available')
+    return { token }
+  }
+}
 
 export function VenuePinsMiniMap({ 
   pins, 
@@ -16,18 +29,22 @@ export function VenuePinsMiniMap({
   // Only render if we have venues with locations
   const hasLoc = pins.some(p => p.loc)
   if (!hasLoc) return null
+
   const divRef = React.useRef<HTMLDivElement | null>(null)
   const mapRef = React.useRef<mapboxgl.Map | null>(null)
   const [tokenReady, setTokenReady] = React.useState(false)
 
   // Initialize Mapbox token
   React.useEffect(() => {
-    getMapboxToken().then(({ token }) => {
+    let mounted = true
+    getMapboxTokenSafe().then(({ token }) => {
+      if (!mounted) return
       mapboxgl.accessToken = token
       setTokenReady(true)
     }).catch(err => {
-      console.error('Failed to get Mapbox token:', err)
+      console.error('Mapbox token error:', err)
     })
+    return () => { mounted = false }
   }, [])
 
   React.useEffect(() => {
@@ -56,16 +73,19 @@ export function VenuePinsMiniMap({
       pts.forEach(p => new mapboxgl.Marker({ scale: 0.85 }).setLngLat(p).addTo(map))
     })
 
-    return () => map.remove()
+    return () => { 
+      map.remove()
+      mapRef.current = null
+    }
   }, [pins, style, tokenReady])
 
   if (!tokenReady) {
     return (
       <div 
-        style={{ height, width: '100%', borderRadius: 10 }}
-        className="bg-muted flex items-center justify-center"
+        style={{ height, width: '100%', borderRadius: 10, overflow: 'hidden' }}
+        className="flex items-center justify-center text-white/70 text-xs bg-black/20 border border-white/10"
       >
-        <span className="text-xs text-muted-foreground">Loading map...</span>
+        Loading map…
       </div>
     )
   }

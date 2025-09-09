@@ -5,7 +5,6 @@ import { BreathingSystem } from '@/lib/map/pixi/systems/BreathingSystem'
 import { LightningSystem } from '@/lib/map/pixi/systems/LightningSystem'
 import { TimeCrystal } from '@/lib/pixi/systems/TimeCrystal'
 import { brand } from '@/lib/tokens/brand'
-import { PIXI_ENABLED } from '@/lib/map/pixi/flags'
 
 export type PixiLayerHandle = { emit: (type: string, payload: any) => void }
 
@@ -20,6 +19,7 @@ export const AtmosphereLayer = forwardRef<PixiLayerHandle, { weatherCells?: any[
   }), [])
 
   useEffect(() => {
+    const PIXI_ENABLED = typeof window !== 'undefined' // Simple guard
     if (!map || layerRef.current || !PIXI_ENABLED) return
 
     const layer = createPixiCustomLayer({

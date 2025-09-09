@@ -52,20 +52,18 @@ export function TemporalController({ map, onInsight, pixiLayerRef }: {
 
   return (
     <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[580] flex items-center gap-3 bg-black/35 backdrop-blur px-3 py-2 rounded-xl">
-    {(['now','p30','p120','historic'] as Horizon[]).map(x => (
-      <button
-        key={x}
-        onClick={() => setH(x)}
-        className={`px-3 py-2 rounded-md text-sm ${h===x?'bg-white/25 text-white':'bg-white/10 text-white/80'}`}
-      >
-        {horizonText(x)}
-      </button>
-    ))}
+      {(['now','p30','p120','historic'] as Horizon[]).map(x => (
+        <button
+          key={x}
+          onClick={() => setH(x)}
+          className={`px-3 py-2 rounded-md text-sm ${h===x?'bg-white/25 text-white':'bg-white/10 text-white/80'}`}
+        >
+          {horizonText(x)}
+        </button>
+      ))}
       
       {/* Confidence HUD */}
-      <div className="ml-2">
-        <TemporalConfidenceHUD confidence={q.data?.confidence} horizonLabel={horizonText(h)} />
-      </div>
+      <TemporalConfidenceHUD confidence={q.data?.confidence} horizonLabel={horizonText(h)} />
       {h==='historic' && (
         <select
           value={preset}

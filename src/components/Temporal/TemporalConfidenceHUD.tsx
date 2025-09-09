@@ -14,7 +14,7 @@ export function TemporalConfidenceHUD({
   const color = c >= 0.75 ? '#34d399' : c >= 0.45 ? '#f59e0b' : '#ef4444' // green/amber/red
 
   return (
-    <div
+    <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs"
       style={{ 
         background: 'rgba(255,255,255,0.08)', 
@@ -30,6 +30,6 @@ export function TemporalConfidenceHUD({
       <span className="text-white/90">
         {label}{horizonLabel ? ` · ${horizonLabel}` : ''}
       </span>
-    </div>
+    </span>
   )
 }
