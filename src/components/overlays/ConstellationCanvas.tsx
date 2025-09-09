@@ -47,6 +47,24 @@ export function ConstellationCanvas({ active, party, edges = [], seed, className
     return () => { ro.disconnect(); window.removeEventListener('resize', resize); };
   }, []);
 
+  // Helpers
+  function lineGradient(ctx: CanvasRenderingContext2D, ax: number, ay: number, bx: number, by: number, aColor: string, bColor: string) {
+    const g = ctx.createLinearGradient(ax, ay, bx, by);
+    g.addColorStop(0, aColor);
+    g.addColorStop(1, bColor);
+    return g;
+  }
+  function corona(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, alpha=0.9) {
+    ctx.save();
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
   // Simple render loop
   React.useEffect(() => {
     const cvs = ref.current;
@@ -63,65 +81,74 @@ export function ConstellationCanvas({ active, party, edges = [], seed, className
       ctx.clearRect(0, 0, w, h);
 
       if (data?.nodes?.length) {
-        // edges first
-        ctx.lineCap = 'round';
+        // Twinkle basis
+        const now = performance.now();
+        const breath = 0.5 + 0.5 * Math.sin((now % 4000) / 4000 * Math.PI * 2);
+
+        // 1) Edges (gradient stroke with width/opacity by strength)
         for (const e of data.edges ?? []) {
           const a = data.nodes.find(n => n.id === e.a);
           const b = data.nodes.find(n => n.id === e.b);
           if (!a || !b) continue;
+
           const s = Math.max(0.1, Math.min(1, e.strength));
           const ax = a.pos[0] * w, ay = a.pos[1] * h;
           const bx = b.pos[0] * w, by = b.pos[1] * h;
-          ctx.globalAlpha = 0.15 * s;
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2 * s;
-          ctx.beginPath();
-          ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+
+          const ta = getVibeToken((a.vibe as any) || 'calm');
+          const tb = getVibeToken((b.vibe as any) || 'calm');
+          const grad = lineGradient(ctx, ax, ay, bx, by, ta.ring, tb.ring);
+
+          // core stroke
+          ctx.globalAlpha = 0.25 + 0.65 * s;
+          ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.lineWidth = 1 + 2 * s;
+          ctx.strokeStyle = grad;
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+
+          // glow pass
+          ctx.globalAlpha = (0.12 + 0.18 * s) * 0.8;
+          ctx.lineWidth = 2 + 4 * s;
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+
+          // dotted hint for very weak/cooling edges
+          if (s < 0.25) {
+            ctx.globalAlpha = 0.15;
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+            ctx.setLineDash([]);
+          }
         }
 
-        // nodes
-        const now = performance.now();
-        const breath = 0.5 + 0.5 * Math.sin((now % 4000) / 4000 * Math.PI * 2);
-        for (const n of data.nodes) {
-          const t = getVibeToken(n.vibe as any);
+        // 2) Nodes (twinkling stars + coronas)
+        for (let i=0;i<data.nodes.length;i++) {
+          const n = data.nodes[i];
+          const t = getVibeToken((n.vibe as any) || 'calm');
           const x = n.pos[0] * w, y = n.pos[1] * h;
-          const r = 4 + (n.mass ?? 1) * 3 + breath * 1.5;
-
-          // glow
-          ctx.globalAlpha = 0.18;
-          ctx.fillStyle = t.glow;
-          ctx.beginPath(); ctx.arc(x, y, r + 8, 0, Math.PI * 2); ctx.fill();
-
-          // core
-          ctx.globalAlpha = 0.95;
+          const base = 4 + (n.mass ?? 1) * 3;
+          const tw = 0.75 + 0.25 * Math.sin((now*0.006) + i*0.9);
+          corona(ctx, x, y, base + 8, t.glow, 0.18);
+          ctx.globalAlpha = 0.95 * tw;
           ctx.fillStyle = t.base;
-          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, base, 0, Math.PI*2); ctx.fill();
 
           // ring
-          ctx.globalAlpha = 0.9;
-          ctx.strokeStyle = t.ring;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(x, y, r + 1.5, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.9 * tw;
+          ctx.strokeStyle = t.ring; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(x, y, base + 1.5, 0, Math.PI*2); ctx.stroke();
         }
 
-        // highlight selected node
+        // 3) Highlighted node ring (on click)
         if (highlightId) {
           const n = data.nodes.find(nn => nn.id === highlightId);
           if (n) {
             const x = n.pos[0] * w, y = n.pos[1] * h;
             const r = 16 + (n.mass ?? 1) * 5;
-
-            // outer glow ring
-            ctx.globalAlpha = 0.45;
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
-
-            // dashed orbit
-            ctx.globalAlpha = 0.35;
-            ctx.setLineDash([6, 6]);
-            ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.arc(x, y, r + 6, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha = 0.45; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+            ctx.globalAlpha = 0.35; ctx.setLineDash([6,6]); ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(x, y, r+6, 0, Math.PI*2); ctx.stroke();
             ctx.setLineDash([]);
           }
         }

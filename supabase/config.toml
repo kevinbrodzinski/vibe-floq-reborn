@@ -150,3 +150,6 @@ verify_jwt = true
 
 [functions.convergence-zones]
 verify_jwt = false
+
+[functions.perfect-storm-gate]
+verify_jwt = true
