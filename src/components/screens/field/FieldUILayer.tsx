@@ -18,8 +18,7 @@ import { mapTileToLite } from '@/lib/venues/mapTileToLite'
 // Flow system imports
 import { FlowExploreChips } from '@/components/flow/FlowExploreChips'
 import { FlowMapOverlay } from '@/components/flow/FlowMapOverlay'
-import { fetchFlowVenues, fetchConvergence } from '@/lib/api/flow'
-import type { FlowFilters, ConvergencePoint, TileVenue } from '@/lib/flow/types'
+import { useFlowExplore } from '@/hooks/useFlowExplore'
 
 export function FieldUILayer() {
   const data = useFieldData()
@@ -37,19 +36,19 @@ export function FieldUILayer() {
   const changeBtnRef = React.useRef<HTMLButtonElement>(null)
   const firstChooserBtnRef = React.useRef<HTMLButtonElement>(null)
 
-  // Flow state for explore lens
-  const [filters, setFilters] = React.useState<FlowFilters>({ 
-    friendFlows: true, 
-    weatherPref: [] 
+  // Flow state for explore lens - now managed by hook
+  const { 
+    filters, 
+    setFilters, 
+    venues: flowVenues, 
+    convergence, 
+    clusterRes, 
+    loading 
+  } = useFlowExplore({ 
+    lens, 
+    map, 
+    debounceMs: 250 
   })
-  const [flowVenues, setFlowVenues] = React.useState<TileVenue[]>([])
-  const [convergence, setConvergence] = React.useState<ConvergencePoint[]>([])
-  
-  // Density knob: map zoom → base res, chip adjusts by ±1
-  const zoom = map?.getZoom?.() ?? 14
-  const baseRes = zoom >= 15 ? 10 : zoom >= 13 ? 9 : 8
-  const densityOffset = (d?: 'loose'|'normal'|'tight') => d === 'tight' ? +1 : d === 'loose' ? -1 : 0
-  const clusterRes = Math.max(7, Math.min(11, baseRes + densityOffset(filters.clusterDensity)))
   // Memoized venue mapping for performance
   const venueLite = useMemo(() => {
     return data.nearbyVenues?.map(mapTileToLite) ?? []
@@ -67,60 +66,6 @@ export function FieldUILayer() {
       .catch(()=>{})
     return () => { mounted = false }
   }, [])
-
-  // Fetch flow data when map moves or filters change (explore lens only)
-  React.useEffect(() => {
-    if (!map || lens !== 'explore') return
-    
-    let cancel = false
-    let t: number | undefined
-    
-    const loadFlowData = async () => {
-      try {
-        const bounds = map.getBounds?.()
-        const zoom = map.getZoom?.() ?? 14
-        if (!bounds) return
-        
-        const bbox: [number,number,number,number] = [
-          bounds.getWest(), 
-          bounds.getSouth(), 
-          bounds.getEast(), 
-          bounds.getNorth()
-        ]
-        
-        const [{ venues }, { points }] = await Promise.all([
-          fetchFlowVenues({ bbox, filters }),
-          fetchConvergence({ bbox, zoom, res: clusterRes })   // ← pass override
-        ])
-        
-        if (!cancel) { 
-          setFlowVenues(venues)
-          setConvergence(points)
-        }
-      } catch (error) {
-        console.error('Failed to load flow data:', error)
-        // Gracefully degrade to static venues
-        if (!cancel) {
-          setFlowVenues([])
-          setConvergence([])
-        }
-      }
-    }
-
-    const debounced = () => { 
-      window.clearTimeout(t)
-      t = window.setTimeout(loadFlowData, 250)
-    }
-
-    debounced()
-    map.on?.('moveend', debounced)
-    
-    return () => { 
-      cancel = true
-      map.off?.('moveend', debounced)
-      window.clearTimeout(t)
-    }
-  }, [map, filters, lens, clusterRes])
 
   const handleToggleFavorite = useCallback(async (venueId: string, next: boolean) => {
     setFavoriteIds(prev => { const n = new Set(prev); next ? n.add(venueId) : n.delete(venueId); return n })
