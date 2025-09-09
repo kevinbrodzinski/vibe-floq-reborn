@@ -22962,6 +22962,12 @@ export type Database = {
               radius_m?: number
             }
           | {
+              bbox_geojson?: Json
+              center_lat?: number
+              center_lng?: number
+              radius_m?: number
+            }
+          | {
               east: number
               lim?: number
               north: number
