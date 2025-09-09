@@ -63,7 +63,8 @@ export class ConstellationLinksPixi {
     }
 
     // Links (gradient via layered strokes)
-    const STEPS = 5
+    const STEPS = (this.maxEdges >= 60) ? 6 : 5;  // 'high' tier draws 6 gradient passes, others 5
+    const maxStroke = 4.5;
     for (const e of this.edges) {
       const a = nodes.find(n => n.id === e.a); const b = nodes.find(n => n.id === e.b)
       if (!a || !b) continue
@@ -78,7 +79,7 @@ export class ConstellationLinksPixi {
         const t = i / (STEPS - 1)
         cols.push(interpHex(tA.ring, tB.ring, t))
         alphas.push((0.25 + 0.65 * s) * (1 - i * 0.15))
-        widths.push((1 + 2 * s) * (1 - i * 0.2))
+        widths.push(Math.min(maxStroke, (1 + 2 * s) * (1 - i * 0.2)))
       }
 
       const g = new PIXI.Graphics()

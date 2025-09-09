@@ -189,19 +189,20 @@ export function ConstellationDOMLayer({
       })
     }
 
-    const onUp = (ev: PointerEvent) => {
-      if (!dragging) return
-      setDragging(false)
-      setLasso(prev => ({ ...prev, ready: true }))
-      const picked = pointInPolygonSelect(nodes, lasso.path, box.w, box.h)
-      setSelectedIds(prev => {
-        const set = new Set(prev)
-        if (lassoMode === 'subtract') picked.forEach(id => set.delete(id))
-        else picked.forEach(id => set.add(id))
-        return Array.from(set)
-      })
-      try { el.releasePointerCapture(ev.pointerId) } catch {}
-    }
+      const onUp = (ev: PointerEvent) => {
+        if (!dragging) return
+        setDragging(false)
+        setLasso(prev => ({ ...prev, ready: true }))
+        const picked = pointInPolygonSelect(nodes, lasso.path, box.w, box.h)
+        console.debug('[floq] lasso', { mode: lassoMode, picked: picked.length });
+        setSelectedIds(prev => {
+          const set = new Set(prev)
+          if (lassoMode === 'subtract') picked.forEach(id => set.delete(id))
+          else picked.forEach(id => set.add(id))
+          return Array.from(set)
+        })
+        try { el.releasePointerCapture(ev.pointerId) } catch {}
+      }
 
     el.addEventListener('pointerdown', onDown)
     el.addEventListener('pointermove', onMove, { passive: true })
@@ -222,6 +223,17 @@ export function ConstellationDOMLayer({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // Reset pin offsets when nodes change
+  React.useEffect(() => {
+    // drop offsets for ids no longer present
+    setPinOffsets(prev => {
+      const next: typeof prev = {};
+      const idSet = new Set(nodes.map(n => n.id));
+      Object.keys(prev).forEach(id => { if (idSet.has(id)) next[id] = prev[id] });
+      return next;
+    });
+  }, [nodes]);
 
   // Drag-to-reposition pinned card
   const startPinDrag = (id: string, startX: number, startY: number) => {
@@ -272,7 +284,7 @@ export function ConstellationDOMLayer({
     <div
       ref={layerRef}
       className={className}
-      style={{ position: 'absolute', inset: 0, pointerEvents: active ? 'auto' : 'none', zIndex: 600 }}
+      style={{ position: 'absolute', inset: 0, pointerEvents: active ? 'auto' : 'none', zIndex: 600, userSelect: 'none' }}
       onClick={onClick}
     >
       {/* Hover halo */}
@@ -341,6 +353,9 @@ export function ConstellationDOMLayer({
                bottom: 24, zIndex: 610,
                background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.25)'
              }}>
+          <div aria-live="polite" className="sr-only">
+            {orderedSelected.length} selected
+          </div>
           <div className="text-white/90 text-sm mr-1">{orderedSelected.length} selected</div>
 
           <GroupAvatarStrip
@@ -354,7 +369,7 @@ export function ConstellationDOMLayer({
           />
 
           {onGroupInvite && (
-            <button onClick={() => onGroupInvite(selectedIds)}
+            <button onClick={() => { console.debug('[floq] group_invite', { count: selectedIds.length }); onGroupInvite(selectedIds) }}
                     className="px-3 py-2 rounded-md bg-white/20 text-white text-sm">Invite</button>
           )}
           {onGroupDM && (
