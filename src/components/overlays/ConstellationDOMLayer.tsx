@@ -65,6 +65,10 @@ export function ConstellationDOMLayer({
   const [dragging, setDragging] = React.useState(false)
   const [lasso, setLasso] = React.useState<{ path: Array<[number, number]>; ready: boolean }>({ path: [], ready: false })
   const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+  
+  // NEW state near other useState hooks:
+  const [lassoMode, setLassoMode] = React.useState<'add'|'subtract'>('add')  // Alt = subtract
+  const [pinOffsets, setPinOffsets] = React.useState<Record<string,{dx:number;dy:number}>>({})
 
   // Resize & recompute
   React.useEffect(() => {
@@ -137,6 +141,7 @@ export function ConstellationDOMLayer({
 
     const onDown = (ev: PointerEvent) => {
       if (!active) return
+      setLassoMode(ev.altKey ? 'subtract' : 'add')  // hold Alt to subtract
       setDragging(true)
       setLasso({ path: [], ready: false })
       const rect = el.getBoundingClientRect()
@@ -162,8 +167,14 @@ export function ConstellationDOMLayer({
       if (!dragging) return
       setDragging(false)
       setLasso(prev => ({ ...prev, ready: true }))
-      // Compute selection
-      setSelectedIds(pointInPolygonSelect(nodes, lasso.path, box.w, box.h))
+      const picked = pointInPolygonSelect(nodes, lasso.path, box.w, box.h)
+      setSelectedIds(prev => {
+        if (lassoMode === 'subtract') {
+          const set = new Set(prev); for (const id of picked) set.delete(id); return Array.from(set)
+        } else {
+          const set = new Set(prev); for (const id of picked) set.add(id);    return Array.from(set)
+        }
+      })
       try { el.releasePointerCapture(ev.pointerId) } catch {}
     }
 
@@ -178,7 +189,7 @@ export function ConstellationDOMLayer({
       el.removeEventListener('pointercancel', onUp)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [active, dragging, nodes, lasso.path, box.w, box.h])
+  }, [active, dragging, nodes, lasso.path, box.w, box.h, lassoMode])
 
   // Clear selection with ESC
   React.useEffect(() => {
@@ -188,6 +199,30 @@ export function ConstellationDOMLayer({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // Helpers to start/continue/end dragging a pinned card
+  const startPinDrag = (id:string, startX:number, startY:number) => {
+    const rect = layerRef.current!.getBoundingClientRect()
+    const sx = startX - rect.left, sy = startY - rect.top
+    const cur = pinOffsets[id] ?? { dx:0, dy:0 }
+    const base = getNodePx(id, nodes, box) // { x, y }
+    const origin = { ox: cur.dx, oy: cur.dy, baseX: base.x, baseY: base.y, sx, sy }
+    const onMove = (e: PointerEvent) => {
+      const x = e.clientX - rect.left, y = e.clientY - rect.top
+      setPinOffsets(prev => ({ ...prev, [id]: { dx: origin.ox + (x - origin.sx), dy: origin.oy + (y - origin.sy) } }))
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove, { passive:true })
+    window.addEventListener('pointerup', onUp)
+  }
+
+  function getNodePx(id:string, nodes:Node[], box:{w:number;h:number}) {
+    const n = nodes.find(n=>n.id===id); if (!n) return { x:0, y:0 }
+    return { x: n.pos[0]*box.w + 16, y: n.pos[1]*box.h - 28 }
+  }
 
   // Helpers for labels/avatars
   const getName = (id: string) => getLabel?.(id) ?? ellipsize(id)
@@ -241,17 +276,24 @@ export function ConstellationDOMLayer({
       {active && pinned.map(p => {
         const n = nodes.find(n=>n.id===p.id); if (!n) return null
         const t = getVibeToken((n.vibe as any) || 'calm')
-        const x = n.pos[0] * box.w + 16
-        const y = n.pos[1] * box.h - 28
+        const base = getNodePx(p.id, nodes, box)
+        const off  = pinOffsets[p.id] ?? { dx:0, dy:0 }
+        const x = base.x + off.dx
+        const y = base.y + off.dy
         return (
           <TooltipCard
-            key={`pin-${p.id}`} x={x} y={y}
-            label={getName(p.id)} avatar={getImg(p.id)} vibeToken={t}
+            key={`pin-${p.id}`}
+            x={x} y={y}
+            label={getName(p.id)}
+            avatar={getImg(p.id)}
+            vibeToken={t}
             onInvite={onInvite ? () => onInvite(p.id) : undefined}
             onDM={onDM ? () => onDM(p.id) : undefined}
             onAdd={onAddToPlan ? () => onAddToPlan(p.id) : undefined}
             onClose={() => setPinned(prev => prev.filter(pp=>pp.id!==p.id))}
             pinned
+            // NEW: allow drag by pressing on the card
+            onPointerDown={(e) => { e.stopPropagation(); startPinDrag(p.id, e.clientX, e.clientY) }}
           />
         )
       })}
@@ -325,10 +367,12 @@ function pointInPolygon(p:[number,number], poly:Array<[number,number]>) {
 
 function TooltipCard({
   x, y, label, avatar, vibeToken,
-  onInvite, onDM, onAdd, onClose, pinned
+  onInvite, onDM, onAdd, onClose, pinned,
+  onPointerDown
 }: {
   x:number; y:number; label:string; avatar:string|null; vibeToken:ReturnType<typeof getVibeToken>;
   onInvite?:()=>void; onDM?:()=>void; onAdd?:()=>void; onClose?:()=>void; pinned?: boolean
+  onPointerDown?: (e: React.PointerEvent) => void
 }) {
   return (
     <div
@@ -336,8 +380,9 @@ function TooltipCard({
       style={{
         position:'absolute', left:x, top:y, transform:'translateY(-100%)',
         background: vibeToken.bg, border: `1px solid ${vibeToken.ring}`, boxShadow: `0 0 24px ${vibeToken.glow}`,
-        pointerEvents:'auto'
+        pointerEvents:'auto', cursor: pinned ? 'grab' : 'default'
       }}
+      onPointerDown={pinned ? onPointerDown : undefined}
     >
       <div className="w-6 h-6 rounded-full overflow-hidden shrink-0" style={{ background: vibeToken.base }} aria-hidden="true">
         {avatar

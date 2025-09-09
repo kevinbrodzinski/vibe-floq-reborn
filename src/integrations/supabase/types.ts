@@ -20882,6 +20882,16 @@ export type Database = {
         Args: { "": number }
         Returns: string
       }
+      get_social_forecast: {
+        Args: {
+          bbox: number[]
+          center: number[]
+          range: string
+          t: string
+          zoom: number
+        }
+        Returns: Json
+      }
       get_social_suggestions: {
         Args: {
           p_activity?: string
