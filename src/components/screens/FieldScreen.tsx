@@ -6,6 +6,7 @@ import { FieldUIProvider } from "@/components/field/contexts/FieldUIContext";
 import { FieldLocationProvider } from "@/components/field/contexts/FieldLocationContext";
 import { FieldSocialProvider } from "@/components/field/contexts/FieldSocialContext";
 import { SocialWeatherProvider } from "@/components/field/contexts/SocialWeatherContext";
+import { FieldLensProvider } from "@/components/field/FieldLensProvider";
 import { useSyncedVisibility } from "@/hooks/useSyncedVisibility";
 import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
 import { useAutoDiscoveryNotifications } from "@/hooks/useAutoDiscoveryNotifications";
@@ -28,19 +29,21 @@ export const FieldScreen = () => {
   }));
 
   return (
-    <SocialWeatherProvider>
-      <FieldDataProvider>
-        <FieldUIProvider>
-          <FieldLocationProvider friendIds={friendIds}>
-            <FieldSocialProvider profiles={profiles}>
-              <FieldGestureProvider>
-                <FieldLayout />
-                <DevControls />
-              </FieldGestureProvider>
-            </FieldSocialProvider>
-          </FieldLocationProvider>
-        </FieldUIProvider>
-      </FieldDataProvider>
-    </SocialWeatherProvider>
+    <FieldLensProvider>
+      <SocialWeatherProvider>
+        <FieldDataProvider>
+          <FieldUIProvider>
+            <FieldLocationProvider friendIds={friendIds}>
+              <FieldSocialProvider profiles={profiles}>
+                <FieldGestureProvider>
+                  <FieldLayout />
+                  <DevControls />
+                </FieldGestureProvider>
+              </FieldSocialProvider>
+            </FieldLocationProvider>
+          </FieldUIProvider>
+        </FieldDataProvider>
+      </SocialWeatherProvider>
+    </FieldLensProvider>
   );
 };

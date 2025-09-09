@@ -27,6 +27,9 @@ import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
+import { LensSwitcher } from "@/components/field/LensSwitcher";
+import { LensStatusHUD } from "@/components/field/LensStatusHUD";
+import { LensHotkeys } from "@/components/field/LensHotkeys";
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -233,7 +236,10 @@ export const FieldLayout = () => {
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
 
-
+          {/* Lens System - z-600 */}
+          <LensSwitcher />
+          <LensStatusHUD />
+          <LensHotkeys />
 
           {/* Debug Layer (development only) - z-200+ */}
           {/* Debug visuals disabled for production */}

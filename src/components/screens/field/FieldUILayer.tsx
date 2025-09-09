@@ -14,6 +14,7 @@ import { LocationDisplay } from "@/components/LocationDisplay";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
+import { useFieldLens } from "@/components/field/FieldLensProvider";
 import { useLocationDisplay } from "@/hooks/useLocationDisplay";
 import { Z, zIndex } from "@/constants/z";
 import type { FieldData } from "./FieldDataProvider";
@@ -27,6 +28,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   const { location, lastHeartbeat, isLocationReady } = useFieldLocation();
   const { people } = useFieldSocial();
   const { phrase: socialWeatherPhrase } = useSocialWeather();
+  const { lens } = useFieldLens();
   const {
     isFull, currentVibe, debug, timeState,
     constellationMode,
