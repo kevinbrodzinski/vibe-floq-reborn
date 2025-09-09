@@ -23330,10 +23330,7 @@ export type Database = {
         Returns: {
           busy_band: number
           category: string
-          friend_count: number
           id: string
-          lat: number
-          lng: number
           name: string
         }[]
       }
