@@ -1,58 +1,37 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { safeVibe } from '@/lib/vibes';
-import type { Vibe } from '@/lib/vibes';
-import { fetchTileVenues, fetchSocialWeather } from '@/lib/api/mapClient';
 import { useViewportInput } from '@/lib/map/useViewportInput';
+import { fetchTileVenues, fetchSocialWeather } from '@/lib/api/mapClient';
 import type { TileVenue, PressureCell } from '@/lib/api/mapContracts';
 
-export interface FieldData {
-  currentVibe: Vibe;
-  vibeStrength: number;
-  nearbyFloqs: any[];
+export type FieldData = {
+  nearbyVenues: TileVenue[] | undefined;
+  weatherCells: PressureCell[] | undefined;
   loading: boolean;
-  // Additional properties for compatibility
+  refetch: () => void;
+  // Legacy compatibility props
+  floqEvents?: any[];
   fieldTiles?: any[];
+  showDebugVisuals?: boolean;
   tileIds?: string[];
   viewport?: any;
-  floqEvents?: any[];
-  showDebugVisuals?: boolean;
   walkableFloqs?: any[];
   realtime?: any;
   currentEvent?: any;
-  nearbyVenues?: TileVenue[];
-  weatherCells?: PressureCell[];
-}
+};
 
-interface FieldDataContextType {
-  fieldData: FieldData;
-  updateVibe: (vibe: Vibe) => void;
-  refreshData: () => void;
-}
-
-const FieldDataContext = createContext<FieldDataContextType | undefined>(undefined);
+const FieldDataCtx = createContext<FieldData | null>(null);
 
 export function useFieldData() {
-  const context = useContext(FieldDataContext);
-  if (!context) {
-    throw new Error('useFieldData must be used within a FieldDataProvider');
-  }
-  return context.fieldData;
+  const v = useContext(FieldDataCtx);
+  if (!v) throw new Error('useFieldData must be used within FieldDataProvider');
+  return v;
 }
 
-interface FieldDataProviderProps {
-  children: ReactNode;
-}
-
-export function FieldDataProvider({ children }: FieldDataProviderProps) {
-  const [currentVibe, setCurrentVibe] = useState<Vibe>('chill');
-  const [vibeStrength, setVibeStrength] = useState(0.5);
-
-  // Get viewport data from map
+export function FieldDataProvider({ children }: { children: React.ReactNode }) {
   const { viewport, viewportKey } = useViewportInput({ defaultRadius: 900 });
 
-  // Fetch venues and weather data
   const qVenues = useQuery({
     queryKey: ['tile-venues', viewportKey],
     queryFn: () => fetchTileVenues(viewport),
@@ -67,41 +46,21 @@ export function FieldDataProvider({ children }: FieldDataProviderProps) {
     refetchOnWindowFocus: false,
   });
 
-  const fieldData = useMemo<FieldData>(() => ({
-    currentVibe,
-    vibeStrength,
-    nearbyFloqs: [],
+  const value = useMemo<FieldData>(() => ({
+    nearbyVenues: qVenues.data?.venues,
+    weatherCells: qWeather.data?.cells,
     loading: qVenues.isLoading || qWeather.isLoading,
-    // Additional properties for compatibility
+    refetch: () => { qVenues.refetch(); qWeather.refetch(); },
+    // Legacy compatibility props
+    floqEvents: [],
     fieldTiles: [],
+    showDebugVisuals: false,
     tileIds: [],
     viewport: null,
-    floqEvents: [],
-    showDebugVisuals: false,
     walkableFloqs: [],
     realtime: null,
     currentEvent: null,
-    nearbyVenues: qVenues.data?.venues ?? [],
-    weatherCells: qWeather.data?.cells ?? [],
-  }), [currentVibe, vibeStrength, qVenues.isLoading, qWeather.isLoading, qVenues.data, qWeather.data]);
+  }), [qVenues.data, qWeather.data, qVenues.isLoading, qWeather.isLoading]);
 
-  const updateVibe = (vibe: Vibe) => {
-    const validVibe = safeVibe(vibe);
-    setCurrentVibe(validVibe);
-  };
-
-  const refreshData = () => {
-    qVenues.refetch();
-    qWeather.refetch();
-  };
-
-  return (
-    <FieldDataContext.Provider value={{
-      fieldData,
-      updateVibe,
-      refreshData,
-    }}>
-      {children}
-    </FieldDataContext.Provider>
-  );
+  return <FieldDataCtx.Provider value={value}>{children}</FieldDataCtx.Provider>;
 }

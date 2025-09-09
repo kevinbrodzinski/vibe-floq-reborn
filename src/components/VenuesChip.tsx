@@ -6,8 +6,8 @@ interface VenuesChipProps {
 }
 
 export function VenuesChip({ onOpen }: VenuesChipProps) {
-  const fieldData = useFieldData();
-  const venueCount = fieldData.nearbyVenues?.length ?? 0;
+  const { nearbyVenues } = useFieldData();
+  const venueCount = nearbyVenues?.length ?? 0;
   
   const { handlers } = useAdvancedGestures({
     onSwipeUp: onOpen,

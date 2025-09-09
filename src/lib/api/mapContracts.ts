@@ -33,7 +33,7 @@ export type VenueDetail = {
   photos?: string[];
   rating?: number;
   price?: 1|2|3|4;
-  hours?: any;
+  hours?: unknown;
   busy_band?: 0|1|2|3|4;
   attributes?: Record<string, unknown>;
   src: Array<"google"|"fsq"|"besttime"|"floq">;
