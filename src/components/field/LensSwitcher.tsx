@@ -32,6 +32,7 @@ export function LensSwitcher() {
         return (
           <button
             key={k}
+            id={`tab-${k}`}
             role="tab"
             aria-selected={active}
             aria-controls={`lens-panel-${k}`}

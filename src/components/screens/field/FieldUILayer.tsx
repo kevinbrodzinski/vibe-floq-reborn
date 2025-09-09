@@ -98,7 +98,7 @@ export function FieldUILayer() {
     <>
       {/* Explore lens */}
       {lens === 'explore' && (data.nearbyVenues?.length ?? 0) > 0 && (
-        <>
+        <div id="lens-panel-explore" role="tabpanel" aria-labelledby="tab-explore">
           <ExploreDrawer
             venues={data.nearbyVenues!}
             onJoin={(pid) => { /* TODO: join flow */ }}
@@ -144,12 +144,12 @@ export function FieldUILayer() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Constellation lens */}
       {lens === 'constellation' && (
-        <>
+        <div id="lens-panel-constellation" role="tabpanel" aria-labelledby="tab-constellation">
           <ConstellationCanvas
             active
             party={[]}
@@ -158,12 +158,12 @@ export function FieldUILayer() {
             active
             party={[]}
           />
-        </>
+        </div>
       )}
 
       {/* Temporal lens */}
       {lens === 'temporal' && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[580] pointer-events-auto">
+        <div id="lens-panel-temporal" role="tabpanel" aria-labelledby="tab-temporal" className="fixed top-20 left-1/2 -translate-x-1/2 z-[580] pointer-events-auto">
           <TemporalController map={map} pixiLayerRef={pixiRef} />
         </div>
       )}
