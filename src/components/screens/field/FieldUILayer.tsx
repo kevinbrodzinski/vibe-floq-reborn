@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useMemo, useCallback } from 'react'
 import { useFieldData } from '@/components/screens/field/FieldDataProvider'
 import { useFieldLens } from '@/components/field/FieldLensProvider'
 import { ExploreDrawer } from '@/components/field/ExploreDrawer'
@@ -12,7 +12,8 @@ import { getCurrentMap } from '@/lib/geo/mapSingleton'
 import { VenueChooserPanel } from '@/components/venue/VenueChooserPanel'
 import { listVenueFavorites, toggleVenueFavorite } from '@/lib/api/venueFavorites'
 import { createShortlist } from '@/lib/api/venueShortlists'
-import { useToast } from '@/hooks/use-toast'  // ← or your custom toast hook
+import { useToast } from '@/hooks/use-toast'
+import { mapTileToLite } from '@/lib/venues/mapTileToLite'
 
 export function FieldUILayer() {
   const data = useFieldData()
@@ -21,10 +22,18 @@ export function FieldUILayer() {
   const map = getCurrentMap()
 
   // Chooser + favorites state
-  const { toast } = useToast() // if using shadcn
+  const { toast } = useToast()
   const [chooserOpen, setChooserOpen] = React.useState(false)
   const [favoriteIds, setFavoriteIds] = React.useState<Set<string>>(new Set<string>())
   const [chooserAnchorPid, setChooserAnchorPid] = React.useState<string | null>(null)
+  
+  // Focus management refs
+  const firstFocusRef = useRef<HTMLButtonElement>(null)
+  
+  // Memoized venue mapping for performance
+  const venueLite = useMemo(() => {
+    return data.nearbyVenues?.map(mapTileToLite) ?? []
+  }, [data.nearbyVenues])
 
   React.useEffect(() => {
     let mounted = true
@@ -34,7 +43,7 @@ export function FieldUILayer() {
     return () => { mounted = false }
   }, [])
 
-  const handleToggleFavorite = React.useCallback(async (venueId: string, next: boolean) => {
+  const handleToggleFavorite = useCallback(async (venueId: string, next: boolean) => {
     setFavoriteIds(prev => { const n = new Set(prev); next ? n.add(venueId) : n.delete(venueId); return n })
     try { await toggleVenueFavorite(venueId, next) }
     catch {
@@ -43,10 +52,33 @@ export function FieldUILayer() {
     }
   }, [toast])
 
-  const handleSaveShortlist = React.useCallback(async (name: string, venueIds: string[]) => {
+  const handleSaveShortlist = useCallback(async (name: string, venueIds: string[]) => {
     try { await createShortlist(name, venueIds); toast({ title: 'Success', description: 'Shortlist saved' }) }
     catch { toast({ title: 'Error', description: 'Failed to save shortlist', variant: 'destructive' }) }
   }, [toast])
+
+  const handleChangeVenue = useCallback((pid: string) => {
+    setChooserAnchorPid(pid)
+    setChooserOpen(true)
+  }, [])
+
+  const closeChooser = useCallback(() => {
+    setChooserOpen(false)
+  }, [])
+
+  // Focus management - focus first button when chooser opens
+  React.useEffect(() => {
+    if (chooserOpen) {
+      const timer = setTimeout(() => {
+        // Find first focusable element in the chooser panel
+        const chooserEl = document.querySelector('[data-testid="venue-chooser-panel"]') || 
+                          document.querySelector('.pointer-events-auto button')
+        const focusable = chooserEl?.querySelector('button, [tabindex]:not([tabindex="-1"])')
+        ;(focusable as HTMLElement)?.focus()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [chooserOpen])
 
   return (
     <>
@@ -58,7 +90,7 @@ export function FieldUILayer() {
             onJoin={(pid) => { /* TODO: join flow */ }}
             onSave={(pid) => { handleToggleFavorite(pid, true) }}
             onPlan={(pid) => { /* TODO: planning flow */ }}
-            onChangeVenue={(pid) => { setChooserAnchorPid(pid); setChooserOpen(true) }}
+            onChangeVenue={handleChangeVenue}
           />
 
           {/* Venue chooser overlay (inline) */}
@@ -75,16 +107,7 @@ export function FieldUILayer() {
                     rationale: ['Personalized picks'],
                     payload: chooserAnchorPid ? { venueId: chooserAnchorPid } : {}
                   }}
-                  venues={data.nearbyVenues!.map(v => ({
-                    id: v.pid,
-                    name: v.name,
-                    loc: undefined, // pass {lng,lat} if available
-                    vibeTags: v.category ? [v.category] : [],
-                    openNow: !!v.open_now,
-                    priceLevel: undefined,
-                    popularityLive: v.busy_band != null ? v.busy_band/4 : undefined,
-                    photoUrl: undefined
-                  }))}
+                  venues={venueLite}
                   focus={undefined} // optional
                   excludeVenueId={(chooserAnchorPid ?? undefined) || null}
                   onSelect={(venue) => {
@@ -95,7 +118,7 @@ export function FieldUILayer() {
                     toast({ title: 'Preview', description: `Preview ${venue.name}` })
                     // OPTIONAL: center map on venue.loc
                   }}
-                  onClose={() => setChooserOpen(false)}
+                  onClose={closeChooser}
                   currentVibe="social"
                   bias="neutral"
                   favoriteIds={favoriteIds}
