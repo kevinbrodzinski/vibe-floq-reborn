@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import type { TileVenue } from '@/lib/api/mapContracts';
 import { brand } from '@/lib/tokens/brand';
+import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerId } from '@/lib/map/stylePersistence';
 
 const SRC_ID = 'floq:venues';
 const LYR_ID = 'floq:venues:circles';
 
-// Convert venues → GeoJSON
 function toGeoJSON(venues: TileVenue[]) {
   return {
     type: 'FeatureCollection',
@@ -13,7 +13,7 @@ function toGeoJSON(venues: TileVenue[]) {
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
       properties: {
-        pid: v.pid, 
+        pid: v.pid,
         name: v.name,
         open_now: v.open_now ?? null,
         busy: v.busy_band ?? null,
@@ -24,41 +24,53 @@ function toGeoJSON(venues: TileVenue[]) {
 }
 
 export function useTileVenuesLayer(map: any, venues?: TileVenue[]) {
-  const data = useMemo(() => (venues?.length ? toGeoJSON(venues) : { type: 'FeatureCollection', features: [] }), [venues]);
+  const data = useMemo(
+    () => (venues?.length ? toGeoJSON(venues) : ({ type: 'FeatureCollection', features: [] } as const)),
+    [venues]
+  );
 
   useEffect(() => {
     if (!map) return;
 
-    // Create or update source
-    if (!map.getSource(SRC_ID)) {
-      map.addSource(SRC_ID, { type: 'geojson', data });
-    } else {
-      const s: any = map.getSource(SRC_ID);
-      s?.setData?.(data);
-    }
+    const readd = () => {
+      // 1) (Re)create source and set latest data
+      ensureGeoJSONSource(map, SRC_ID, data as any);
 
-    // Create layer if missing
-    if (!map.getLayer(LYR_ID)) {
-      map.addLayer({
-        id: LYR_ID,
-        type: 'circle',
-        source: SRC_ID,
-        paint: {
-          'circle-radius': [
-            'interpolate', ['linear'], ['zoom'],
-            10, ['case', ['has', 'busy'], ['+', 3, ['*', 2, ['get', 'busy']]], 3],
-            16, ['case', ['has', 'busy'], ['+', 6, ['*', 3, ['get', 'busy']]], 6],
-          ],
-          'circle-color': brand.primary,
-          'circle-opacity': 0.9,
-          'circle-stroke-color': brand.primaryDark,
-          'circle-stroke-width': 1,
-        }
-      });
-    }
-
-    return () => {
-      // Don't remove source/layer on unmount if map persists
+      // 2) (Re)create layer
+      const beforeId = findFirstSymbolLayerId(map); // optional anchor
+      ensureLayer(
+        map,
+        {
+          id: LYR_ID,
+          type: 'circle',
+          source: SRC_ID,
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10,
+              ['case', ['has', 'busy'], ['+', 3, ['*', 2, ['get', 'busy']]], 3],
+              16,
+              ['case', ['has', 'busy'], ['+', 6, ['*', 3, ['get', 'busy']]], 6],
+            ],
+            'circle-color': brand.primary,
+            'circle-opacity': 0.9,
+            'circle-stroke-color': brand.primaryDark,
+            'circle-stroke-width': 1,
+          },
+        },
+        beforeId
+      );
     };
+
+    // Persist layer across style changes
+    const cleanup = persistOnStyle(map, readd);
+
+    // Also update data on every venues change (without waiting for style events)
+    const src: any = map.getSource(SRC_ID);
+    if (src?.setData) src.setData(data as any);
+
+    return cleanup;
   }, [map, data]);
 }

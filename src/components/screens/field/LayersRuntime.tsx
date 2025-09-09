@@ -24,19 +24,25 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   useEffect(() => {
     if (!map || pixiLayerRef.current) return;
 
-    const layer = createPixiCustomLayer({ 
-      id: 'pixi-atmosphere', 
-      colorHex: brand.accent,
-      deviceTier: 'mid'
-    });
-    
-    // Attach atmospheric systems
-    layer.attach(new BreathingSystem({ colorHex: brand.primary }));
-    layer.attach(new LightningSystem({ 
-      colorHex: brand.accent, 
-      maxBoltsPerFrame: 1 
-    }));
+    const layerFactory = () => {
+      const layer = createPixiCustomLayer({ 
+        id: 'pixi-atmosphere', 
+        colorHex: brand.accent,
+        deviceTier: 'mid'
+      });
+      
+      // Attach atmospheric systems
+      layer.attach(new BreathingSystem({ colorHex: brand.primary }));
+      layer.attach(new LightningSystem({ 
+        colorHex: brand.accent, 
+        maxBoltsPerFrame: 1 
+      }));
+      
+      return layer;
+    };
 
+    // add now
+    const layer = layerFactory();
     try {
       map.addLayer(layer);
       pixiLayerRef.current = layer;
@@ -44,7 +50,28 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       console.warn('Failed to add Pixi atmospheric layer:', error);
     }
 
+    // re-add after style changes
+    const onStyle = () => {
+      try {
+        const exists = map.getLayer('pixi-atmosphere');
+        if (!exists) {
+          const repl = layerFactory();
+          map.addLayer(repl);
+          pixiLayerRef.current = repl;
+          // push latest cells back in (if we have them)
+          if (data.weatherCells?.length) {
+            const zoom = map.getZoom?.() ?? 14;
+            repl.updateCells(data.weatherCells, zoom);
+          }
+        }
+      } catch (e) {
+        console.warn('Pixi reattach failed:', e);
+      }
+    };
+    map.on('style.load', onStyle);
+
     return () => {
+      map.off('style.load', onStyle);
       if (pixiLayerRef.current) {
         try {
           map.removeLayer(pixiLayerRef.current.id);

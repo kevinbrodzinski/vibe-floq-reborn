@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { PressureCell } from '@/lib/api/mapContracts';
 import { brand } from '@/lib/tokens/brand';
+import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerId } from '@/lib/map/stylePersistence';
 
 const SRC_ID = 'floq:social-weather';
 const LYR_ID = 'floq:social-weather:circles';
@@ -22,42 +23,42 @@ function toGeoJSON(cells: PressureCell[]) {
 }
 
 export function useSocialWeatherLayer(map: any, cells?: PressureCell[]) {
-  const data = useMemo(() => (cells?.length ? toGeoJSON(cells) : { type: 'FeatureCollection', features: [] }), [cells]);
+  const data = useMemo(
+    () => (cells?.length ? toGeoJSON(cells) : ({ type: 'FeatureCollection', features: [] } as const)),
+    [cells]
+  );
 
   useEffect(() => {
     if (!map) return;
 
-    if (!map.getSource(SRC_ID)) {
-      map.addSource(SRC_ID, { type: 'geojson', data });
-    } else {
-      const s: any = map.getSource(SRC_ID);
-      s?.setData?.(data);
-    }
+    const readd = () => {
+      ensureGeoJSONSource(map, SRC_ID, data as any);
 
-    if (!map.getLayer(LYR_ID)) {
-      map.addLayer({
-        id: LYR_ID,
-        type: 'circle',
-        source: SRC_ID,
-        paint: {
-          // Pressure drives alpha + size (privacy-safe)
-          'circle-radius': [
-            'interpolate', ['linear'], ['get', 'pressure'],
-            0.0, 2,
-            0.5, 6,
-            1.0, 10
-          ],
-          'circle-color': brand.accent,
-          'circle-opacity': [
-            'interpolate', ['linear'], ['get', 'pressure'],
-            0.0, 0.10,
-            1.0, 0.40
-          ],
-          'circle-stroke-color': brand.accent,
-          'circle-stroke-opacity': 0.25,
-          'circle-stroke-width': 1,
-        }
-      });
-    }
+      const beforeId = findFirstSymbolLayerId(map);
+      ensureLayer(
+        map,
+        {
+          id: LYR_ID,
+          type: 'circle',
+          source: SRC_ID,
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['get', 'pressure'], 0.0, 2, 0.5, 6, 1.0, 10],
+            'circle-color': brand.accent,
+            'circle-opacity': ['interpolate', ['linear'], ['get', 'pressure'], 0.0, 0.1, 1.0, 0.4],
+            'circle-stroke-color': brand.accent,
+            'circle-stroke-opacity': 0.25,
+            'circle-stroke-width': 1,
+          },
+        },
+        beforeId
+      );
+    };
+
+    const cleanup = persistOnStyle(map, readd);
+
+    const src: any = map.getSource(SRC_ID);
+    if (src?.setData) src.setData(data as any);
+
+    return cleanup;
   }, [map, data]);
 }

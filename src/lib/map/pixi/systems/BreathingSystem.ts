@@ -1,3 +1,4 @@
+// src/lib/map/pixi/systems/BreathingSystem.ts
 import * as PIXI from 'pixi.js'
 import type { AtmoSystem } from '../PixiCustomLayer'
 import type { PressureCell } from '@/lib/api/mapContracts'
@@ -18,13 +19,14 @@ function hexToPixi(hex: string) {
 }
 
 export class BreathingSystem implements AtmoSystem {
-  private container!: PIXI.ParticleContainer
+  private container!: PIXI.Container | PIXI.ParticleContainer
   private pool: Rec[] = []
   private live: Rec[] = []
   private color: number
   private maxParticles: number
   private minA: number
   private maxA: number
+  private useParticle = true  // allow switch if alpha unsupported
 
   constructor(opts: BreathingOptions = {}) {
     this.color = hexToPixi(opts.colorHex ?? brand.primary)
@@ -34,8 +36,15 @@ export class BreathingSystem implements AtmoSystem {
   }
 
   onAdd(stage: PIXI.Container) {
-    this.container = new PIXI.ParticleContainer()
+    // Prefer ParticleContainer for perf, but fallback to Container if needed
+    try {
+      this.container = new PIXI.ParticleContainer()
+    } catch {
+      this.container = new PIXI.Container()
+      this.useParticle = false
+    }
     stage.addChild(this.container)
+
     // pre-warm pool
     for (let i = 0; i < Math.min(48, this.maxParticles); i++) {
       const spr = PIXI.Sprite.from(PIXI.Texture.WHITE)
@@ -93,7 +102,8 @@ export class BreathingSystem implements AtmoSystem {
       // breathing alpha: ease in/out around baseline, scaled by pressure
       const breath = 0.5 + 0.5 * Math.sin((t + (i % 7) * 0.13) * Math.PI * 2)
       const a = this.minA + (this.maxA - this.minA) * (0.3 + 0.7 * r.p) * breath
-      r.spr.alpha = Math.min(this.maxA, Math.max(this.minA, a))
+      if (this.useParticle) r.spr.alpha = Math.min(this.maxA, Math.max(this.minA, a))
+      else r.spr.alpha = Math.min(this.maxA, Math.max(this.minA, a))
     }
   }
 
