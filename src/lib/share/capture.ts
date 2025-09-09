@@ -1,6 +1,6 @@
 export async function captureOverlaysToPNG(opts: {
   width?: number; height?: number; caption?: string; branding?: string;
-  canvases?: HTMLCanvasElement[]; background?: string;
+  canvases?: HTMLCanvasElement[]; background?: string; mapCanvas?: HTMLCanvasElement;
 }): Promise<Blob> {
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
   const parent = document.body
@@ -24,11 +24,12 @@ export async function captureOverlaysToPNG(opts: {
     ctx.fillStyle = g; ctx.fillRect(0,0,w,h)
   }
 
-  // draw overlay canvases
-  const cvs = opts.canvases ?? Array.from(document.querySelectorAll('canvas'))
+  // draw overlay canvases (map first if provided)
+  const list = opts.canvases ?? Array.from(document.querySelectorAll('canvas'))
     .filter(c => (c as any).dataset?.share !== 'off') as HTMLCanvasElement[]
+  const canvases = opts.mapCanvas ? [opts.mapCanvas, ...list] : list
 
-  for (const c of cvs) {
+  for (const c of canvases) {
     // scale to viewport (assumes they match screen size; otherwise fit)
     ctx.drawImage(c, 0, 0, w, h)
   }

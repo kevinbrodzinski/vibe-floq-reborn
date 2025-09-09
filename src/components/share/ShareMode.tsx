@@ -1,5 +1,6 @@
 import React from 'react'
 import { captureOverlaysToPNG } from '@/lib/share/capture'
+import { getCurrentMap } from '@/lib/geo/mapSingleton'
 
 export function ShareMode({
   defaultCaption = 'Magic brewing in the city',
@@ -12,7 +13,12 @@ export function ShareMode({
   const doCapture = async () => {
     try {
       setBusy(true)
-      const blob = await captureOverlaysToPNG({ caption, branding })
+      const map = getCurrentMap()
+      const blob = await captureOverlaysToPNG({
+        caption,
+        branding,
+        mapCanvas: map?.getCanvas?.()
+      })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url; a.download = 'floq-share.png'; a.click()
