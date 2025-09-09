@@ -19,6 +19,8 @@ import { mapTileToLite } from '@/lib/venues/mapTileToLite'
 import { FlowExploreChips } from '@/components/flow/FlowExploreChips'
 import { FlowMapOverlay } from '@/components/flow/FlowMapOverlay'
 import { useFlowExplore } from '@/hooks/useFlowExplore'
+import { useFlowFilters } from '@/hooks/useFlowFilters'
+import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary'
 
 export function FieldUILayer() {
   const data = useFieldData()
@@ -37,16 +39,17 @@ export function FieldUILayer() {
   const firstChooserBtnRef = React.useRef<HTMLButtonElement>(null)
 
   // Flow state for explore lens - now managed by hook
+  const { filters, setFilters } = useFlowFilters()
   const { 
-    filters, 
-    setFilters, 
     venues: flowVenues, 
     convergence, 
     clusterRes, 
-    loading 
+    loading,
+    error 
   } = useFlowExplore({ 
     lens, 
     map, 
+    initialFilters: filters,
     debounceMs: 250 
   })
   // Memoized venue mapping for performance
@@ -121,7 +124,14 @@ export function FieldUILayer() {
     <>
       {/* Flow explore chips - only show in explore lens */}
       {lens === 'explore' && (
-        <FlowExploreChips value={filters} onChange={setFilters} clusterRes={clusterRes} />
+        <FlowErrorBoundary>
+          <FlowExploreChips 
+            value={filters} 
+            onChange={setFilters} 
+            clusterRes={clusterRes}
+            loading={loading}
+          />
+        </FlowErrorBoundary>
       )}
 
       {/* Explore lens */}
@@ -137,7 +147,25 @@ export function FieldUILayer() {
           />
 
           {/* Flow convergence overlay */}
-          <FlowMapOverlay points={convergence} map={map} />
+          <FlowMapOverlay 
+            points={convergence} 
+            map={map}
+            onPointTap={(point) => {
+              console.log('Convergence point tapped:', point)
+              toast({ 
+                title: 'Convergence Point', 
+                description: `${Math.round(point.prob * 100)}% prob, ETA: ${point.etaMin}min` 
+              })
+            }}
+          />
+
+          {/* Error display */}
+          {error && (
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground 
+                          px-4 py-2 rounded-md text-sm backdrop-blur-sm z-[620]">
+              {error}
+            </div>
+          )}
 
           {/* Venue chooser overlay (inline) */}
           {chooserOpen && (

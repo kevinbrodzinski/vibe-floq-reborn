@@ -7,9 +7,11 @@ const LYR_CONV = 'floq:flow:convergence:pulse'
 interface FlowMapOverlayProps {
   points: ConvergencePoint[]
   map?: mapboxgl.Map | null
+  /** Mobile touch optimization */
+  onPointTap?: (point: ConvergencePoint) => void
 }
 
-export function FlowMapOverlay({ points, map }: FlowMapOverlayProps) {
+export function FlowMapOverlay({ points, map, onPointTap }: FlowMapOverlayProps) {
   const fc = React.useMemo(() => ({
     type: 'FeatureCollection',
     features: points.map(p => ({
@@ -84,19 +86,22 @@ export function FlowMapOverlay({ points, map }: FlowMapOverlayProps) {
             }
           })
 
-          // Add pulsing animation
+          // Add pulsing animation optimized for mobile
           let animationPhase = 0
           const animate = () => {
             animationPhase += 0.05
             
             if (map.getLayer(LYR_CONV)) {
+              // Larger touch targets on mobile
+              const isMobile = window.innerWidth < 768
+              const baseRadius = isMobile ? 12 : 8
               const pulseRadius = [
                 'interpolate',
                 ['linear'],
                 ['get', 'prob'],
-                0.2, 8 + Math.sin(animationPhase) * 2,
-                0.6, 12 + Math.sin(animationPhase) * 3,
-                0.9, 16 + Math.sin(animationPhase) * 4
+                0.2, baseRadius + Math.sin(animationPhase) * 2,
+                0.6, (baseRadius + 4) + Math.sin(animationPhase) * 3,
+                0.9, (baseRadius + 8) + Math.sin(animationPhase) * 4
               ]
               
               map.setPaintProperty(LYR_CONV, 'circle-radius', pulseRadius)
@@ -105,6 +110,63 @@ export function FlowMapOverlay({ points, map }: FlowMapOverlayProps) {
             rafId = requestAnimationFrame(animate)
           }
           animate()
+
+          // Add touch interaction for mobile
+          if (onPointTap) {
+            const handleClick = (e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+              const features = map.queryRenderedFeatures(e.point, { layers: [LYR_CONV] })
+              if (features.length > 0) {
+                const feature = features[0]
+                const { coordinates } = feature.geometry as any
+                const point: ConvergencePoint = {
+                  lng: coordinates[0],
+                  lat: coordinates[1],
+                  prob: feature.properties?.prob || 0,
+                  etaMin: feature.properties?.eta || 0,
+                  groupMin: feature.properties?.group || 0
+                }
+                onPointTap(point)
+              }
+            }
+
+            const handleTouch = (e: any) => {
+              const features = map.queryRenderedFeatures(e.point, { layers: [LYR_CONV] })
+              if (features.length > 0) {
+                const feature = features[0]
+                const { coordinates } = feature.geometry as any
+                const point: ConvergencePoint = {
+                  lng: coordinates[0],
+                  lat: coordinates[1],
+                  prob: feature.properties?.prob || 0,
+                  etaMin: feature.properties?.eta || 0,
+                  groupMin: feature.properties?.group || 0
+                }
+                onPointTap(point)
+              }
+            }
+
+            map.on('click', LYR_CONV, handleClick)
+            map.on('touchend', LYR_CONV, handleTouch)
+            
+            // Cleanup click handlers
+            const originalCleanup = () => {
+              if (rafId) cancelAnimationFrame(rafId)
+              try {
+                map.off('click', LYR_CONV, handleClick)
+                map.off('touchend', LYR_CONV, handleTouch)
+                if (map.getLayer(LYR_CONV)) {
+                  map.removeLayer(LYR_CONV)
+                }
+                if (map.getSource(SRC_CONV)) {
+                  map.removeSource(SRC_CONV)
+                }
+              } catch (error) {
+                // Ignore cleanup errors
+              }
+            }
+            
+            return originalCleanup
+          }
         }
       } catch (error) {
         console.warn('[FlowMapOverlay] Failed to add layers:', error)

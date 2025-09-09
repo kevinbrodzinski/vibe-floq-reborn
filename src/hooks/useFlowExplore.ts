@@ -35,14 +35,20 @@ export function useFlowExplore({
   const [filters, setFilters] = React.useState<FlowFilters>(initialFilters)
   const [venues, setVenues] = React.useState<TileVenue[]>([])
   const [convergence, setConvergence] = React.useState<ConvergencePoint[]>([])
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)  
   const [error, setError] = React.useState<string|null>(null)
 
-  // Zoom → base H3 res (edge uses the same mapping)
-  const z = map?.getZoom?.() ?? 14
-  const baseRes = z >= 15 ? 10 : z >= 13 ? 9 : 8
-  const densityOffset = (d?: 'loose'|'normal'|'tight') => d === 'tight' ? +1 : d === 'loose' ? -1 : 0
-  const clusterRes = Math.max(7, Math.min(11, baseRes + densityOffset(filters.clusterDensity)))
+  // Request deduplication for performance
+  const requestIdRef = React.useRef(0)
+
+  // Memoized zoom and resolution calculations for performance
+  const { zoom, clusterRes } = React.useMemo(() => {
+    const z = map?.getZoom?.() ?? 14
+    const baseRes = z >= 15 ? 10 : z >= 13 ? 9 : 8
+    const densityOffset = (d?: 'loose'|'normal'|'tight') => d === 'tight' ? +1 : d === 'loose' ? -1 : 0
+    const res = Math.max(7, Math.min(11, baseRes + densityOffset(filters.clusterDensity)))
+    return { zoom: z, clusterRes: res }
+  }, [map, filters.clusterDensity])
 
   // internal: compute bbox from map
   const computeBbox = React.useCallback((): [number,number,number,number] | null => {
@@ -56,23 +62,37 @@ export function useFlowExplore({
     const bbox = computeBbox()
     if (!bbox) return
 
-    setLoading(true); setError(null)
+    // Request deduplication - cancel previous requests
+    const requestId = ++requestIdRef.current
+    
+    setLoading(true)
+    setError(null)
+    
     try {
-      const zoomNow = map.getZoom?.() ?? 14
       const [{ venues }, { points }] = await Promise.all([
         fetchFlowVenues({ bbox, filters }),
-        fetchConvergence({ bbox, zoom: zoomNow, res: clusterRes }),
+        fetchConvergence({ bbox, zoom, res: clusterRes }),
       ])
-      setVenues(venues)
-      setConvergence(points)
+      
+      // Only update if this is still the latest request
+      if (requestId === requestIdRef.current) {
+        setVenues(venues)
+        setConvergence(points)
+      }
     } catch (e: any) {
-      console.error('[useFlowExplore] load error:', e)
-      setVenues([]); setConvergence([])
-      setError(e?.message ?? 'Failed to load flow data')
+      // Only show error if this is still the latest request
+      if (requestId === requestIdRef.current) {
+        console.error('[useFlowExplore] load error:', e)
+        setVenues([])
+        setConvergence([])
+        setError(e?.message ?? 'Failed to load flow data')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
-  }, [map, lens, filters, clusterRes, computeBbox])
+  }, [map, lens, filters, clusterRes, computeBbox, zoom])
 
   // Debounced moveend + react to filters/zoom changes
   React.useEffect(() => {
