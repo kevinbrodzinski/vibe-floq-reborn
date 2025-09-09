@@ -5373,6 +5373,121 @@ export type Database = {
           },
         ]
       }
+      flow_media: {
+        Row: {
+          captured_at: string
+          flow_id: string
+          idx: number
+          media_type: string
+          url: string
+        }
+        Insert: {
+          captured_at?: string
+          flow_id: string
+          idx: number
+          media_type?: string
+          url: string
+        }
+        Update: {
+          captured_at?: string
+          flow_id?: string
+          idx?: number
+          media_type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_media_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flow_ripples: {
+        Row: {
+          access_count: number
+          created_at: string
+          created_by: string
+          expires_at: string
+          flow_id: string
+          hop_limit: number
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          access_count?: number
+          created_at?: string
+          created_by: string
+          expires_at: string
+          flow_id: string
+          hop_limit: number
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          access_count?: number
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          flow_id?: string
+          hop_limit?: number
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_ripples_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_ripples_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "flow_ripples_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_ripples_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_ripples_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "flow_ripples_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_ripples_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flow_samples: {
         Row: {
           cell_x: number
@@ -5414,6 +5529,176 @@ export type Database = {
           weight?: number
         }
         Relationships: []
+      }
+      flow_segments: {
+        Row: {
+          arrived_at: string
+          center: unknown
+          departed_at: string | null
+          exposure_fraction: number | null
+          flow_id: string
+          h3_idx: string | null
+          idx: number
+          venue_id: string | null
+          vibe_vector: Json
+          weather_class: string | null
+        }
+        Insert: {
+          arrived_at: string
+          center: unknown
+          departed_at?: string | null
+          exposure_fraction?: number | null
+          flow_id: string
+          h3_idx?: string | null
+          idx: number
+          venue_id?: string | null
+          vibe_vector?: Json
+          weather_class?: string | null
+        }
+        Update: {
+          arrived_at?: string
+          center?: unknown
+          departed_at?: string | null
+          exposure_fraction?: number | null
+          flow_id?: string
+          h3_idx?: string | null
+          idx?: number
+          venue_id?: string | null
+          vibe_vector?: Json
+          weather_class?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_segments_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_segments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "flow_segments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "flow_segments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "flow_segments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "flow_segments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flows: {
+        Row: {
+          created_at: string
+          distance_m: number | null
+          ended_at: string | null
+          id: string
+          profile_id: string
+          start_location: unknown | null
+          started_at: string
+          sun_exposed_min: number | null
+          updated_at: string
+          vibe_trace: Json
+          visibility: string
+          weather_trace: Json
+        }
+        Insert: {
+          created_at?: string
+          distance_m?: number | null
+          ended_at?: string | null
+          id?: string
+          profile_id: string
+          start_location?: unknown | null
+          started_at?: string
+          sun_exposed_min?: number | null
+          updated_at?: string
+          vibe_trace?: Json
+          visibility?: string
+          weather_trace?: Json
+        }
+        Update: {
+          created_at?: string
+          distance_m?: number | null
+          ended_at?: string | null
+          id?: string
+          profile_id?: string
+          start_location?: unknown | null
+          started_at?: string
+          sun_exposed_min?: number | null
+          updated_at?: string
+          vibe_trace?: Json
+          visibility?: string
+          weather_trace?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "flows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "flows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       frequency_caps: {
         Row: {
