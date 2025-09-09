@@ -11,9 +11,10 @@ type Props = {
   edges?: ConstellationEdge[];
   seed?: string;
   className?: string;
+  highlightId?: string;
 };
 
-export function ConstellationCanvas({ active, party, edges = [], seed, className }: Props) {
+export function ConstellationCanvas({ active, party, edges = [], seed, className, highlightId }: Props) {
   const ref = React.useRef<HTMLCanvasElement | null>(null);
 
   const q = useQuery({
@@ -101,6 +102,28 @@ export function ConstellationCanvas({ active, party, edges = [], seed, className
           ctx.strokeStyle = t.ring;
           ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.arc(x, y, r + 1.5, 0, Math.PI * 2); ctx.stroke();
+        }
+
+        // highlight selected node
+        if (highlightId) {
+          const n = data.nodes.find(nn => nn.id === highlightId);
+          if (n) {
+            const x = n.pos[0] * w, y = n.pos[1] * h;
+            const r = 16 + (n.mass ?? 1) * 5;
+
+            // outer glow ring
+            ctx.globalAlpha = 0.45;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+
+            // dashed orbit
+            ctx.globalAlpha = 0.35;
+            ctx.setLineDash([6, 6]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(x, y, r + 6, 0, Math.PI * 2); ctx.stroke();
+            ctx.setLineDash([]);
+          }
         }
         ctx.globalAlpha = 1;
       }

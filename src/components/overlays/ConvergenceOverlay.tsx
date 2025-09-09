@@ -57,7 +57,7 @@ export function ConvergenceOverlay({ map }: { map: any }) {
         source: SRC_ID,
         paint: {
           'fill-color': t.glow,
-          'fill-opacity': ['interpolate', ['linear'], ['get','prob'], 0.2, 0.12, 0.9, 0.35],
+          'fill-opacity': ['interpolate', ['linear'], ['get','prob'], 0.2, 0.14, 0.9, 0.38],
         }
       }, before);
 
@@ -67,9 +67,11 @@ export function ConvergenceOverlay({ map }: { map: any }) {
         source: SRC_ID,
         paint: {
           'line-color': t.ring,
-          'line-width': 1.5,
-          'line-opacity': 0.6
-        }
+          'line-width': 2.0,
+          'line-opacity': 0.65,
+          'line-blur': 0.8
+        },
+        layout: { 'line-cap': 'round', 'line-join': 'round' }
       }, before);
 
       // Debug telemetry
