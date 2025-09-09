@@ -1,59 +1,97 @@
-import { useState, useEffect, useCallback } from 'react'
+import * as React from 'react'
 import type { FlowFilters } from '@/lib/flow/types'
+import storage from '@/lib/storage/appStorage'
 
-const FILTERS_STORAGE_KEY = 'floq:flow-filters:v1'
+const STORAGE_KEY = 'floq:flow:filters:v1'
 
-const DEFAULT_FILTERS: FlowFilters = {
+const DEFAULT: FlowFilters = {
   friendFlows: true,
   weatherPref: [],
-  clusterDensity: 'normal'
+  clusterDensity: 'normal',
+  queue: 'any',
 }
 
-/**
- * Hook for Flow Explore filters with localStorage persistence
- */
-export function useFlowFilters(initialFilters?: FlowFilters) {
-  const [filters, setFiltersState] = useState<FlowFilters>(() => {
-    if (typeof window === 'undefined') return initialFilters || DEFAULT_FILTERS
-    
-    try {
-      const stored = localStorage.getItem(FILTERS_STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        return { ...DEFAULT_FILTERS, ...parsed }
-      }
-    } catch (error) {
-      console.warn('[useFlowFilters] Failed to load filters from localStorage:', error)
-    }
-    
-    return initialFilters || DEFAULT_FILTERS
-  })
+function isDensity(x: any): x is 'loose'|'normal'|'tight' {
+  return x === 'loose' || x === 'normal' || x === 'tight'
+}
+function isQueue(x: any): x is 'any'|'short'|'none' {
+  return x === 'any' || x === 'short' || x === 'none'
+}
+function clamp01(n: any) {
+  const v = Number(n)
+  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : undefined
+}
+function sanitizeFilters(raw: any): FlowFilters {
+  const f: FlowFilters = { ...DEFAULT }
 
-  // Persist to localStorage whenever filters change
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    
-    try {
-      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters))
-    } catch (error) {
-      console.warn('[useFlowFilters] Failed to save filters to localStorage:', error)
-    }
-  }, [filters])
+  if (typeof raw?.friendFlows === 'boolean') f.friendFlows = raw.friendFlows
+  if (Array.isArray(raw?.weatherPref)) f.weatherPref = raw.weatherPref.map(String)
+  if (isDensity(raw?.clusterDensity)) f.clusterDensity = raw.clusterDensity
+  if (isQueue(raw?.queue)) f.queue = raw.queue
 
-  const setFilters = useCallback((newFilters: FlowFilters | ((prev: FlowFilters) => FlowFilters)) => {
+  if (Array.isArray(raw?.vibeRange) && raw.vibeRange.length === 2) {
+    const a = clamp01(raw.vibeRange[0])
+    const b = clamp01(raw.vibeRange[1])
+    if (a !== undefined && b !== undefined && a <= b) f.vibeRange = [a, b]
+  }
+
+  if (raw?.timeWindow?.start && raw?.timeWindow?.end) {
+    try {
+      const s = new Date(raw.timeWindow.start).toISOString()
+      const e = new Date(raw.timeWindow.end).toISOString()
+      f.timeWindow = { start: s, end: e }
+    } catch {}
+  }
+
+  return f
+}
+
+async function readStorage(): Promise<FlowFilters> {
+  try {
+    const raw = await storage.getItem(STORAGE_KEY)
+    if (!raw) return DEFAULT
+    return sanitizeFilters(JSON.parse(raw))
+  } catch { return DEFAULT }
+}
+
+export function useFlowFilters(initial?: Partial<FlowFilters>) {
+  const [filters, setFiltersState] = React.useState<FlowFilters>(DEFAULT)
+  const [loaded, setLoaded] = React.useState(false)
+
+  // initial load (async)
+  React.useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const stored = await readStorage()
+      if (!mounted) return
+      setFiltersState({ ...DEFAULT, ...stored, ...initial })
+      setLoaded(true)
+    })()
+    return () => { mounted = false }
+  }, [initial])
+
+  // persist (debounced) after load
+  React.useEffect(() => {
+    if (!loaded) return
+    const t = window.setTimeout(() => {
+      storage.setItem(STORAGE_KEY, JSON.stringify(filters)).catch(() => {})
+    }, 60)
+    return () => window.clearTimeout(t)
+  }, [filters, loaded])
+
+  const setFilters = React.useCallback((patch: Partial<FlowFilters>) => {
+    setFiltersState(prev => ({ ...prev, ...patch }))
+  }, [])
+
+  const resetFilters = React.useCallback(() => setFiltersState(DEFAULT), [])
+
+  const cycleDensity = React.useCallback(() => {
     setFiltersState(prev => {
-      const next = typeof newFilters === 'function' ? newFilters(prev) : newFilters
-      return { ...DEFAULT_FILTERS, ...next }
+      const d = prev.clusterDensity ?? 'normal'
+      const next = d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
+      return { ...prev, clusterDensity: next }
     })
   }, [])
 
-  const resetFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-  }, [setFilters])
-
-  return {
-    filters,
-    setFilters,
-    resetFilters
-  }
+  return { filters, setFilters, resetFilters, cycleDensity, loaded }
 }
