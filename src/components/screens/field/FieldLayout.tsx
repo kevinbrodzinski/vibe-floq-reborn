@@ -238,8 +238,19 @@ export const FieldLayout = () => {
 
           {/* Lens System - z-600 */}
           <LensHotkeys />
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[600] pointer-events-auto">
-            <LensSwitcher />
+          {/* Centered, immune to clipping */}
+          <div
+            className="fixed z-[600] pointer-events-none"
+            style={{
+              top: `calc(16px + env(safe-area-inset-top, 0px))`,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'min(680px, calc(100vw - 32px))',
+            }}
+          >
+            <div className="pointer-events-auto w-full flex justify-center">
+              <LensSwitcher />
+            </div>
           </div>
           <div className="fixed top-4 left-4 z-[560] pointer-events-none">
             <LensStatusHUD />
