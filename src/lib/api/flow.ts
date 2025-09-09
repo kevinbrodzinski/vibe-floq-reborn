@@ -58,9 +58,9 @@ export async function appendFlowSegment(args: {
   return data!
 }
 
-export async function endFlow(flowId: string): Promise<{ summary: any }> {
+export async function endFlow(flowId: string, opts?: { sun_exposed_min?: number }): Promise<{ summary: any }> {
   const { data, error } = await supabase.functions.invoke<{ summary: any }>('flow-end', { 
-    body: { flowId } 
+    body: { flowId, sun_exposed_min: opts?.sun_exposed_min } 
   })
   if (error) throw error
   return data!

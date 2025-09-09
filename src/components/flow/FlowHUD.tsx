@@ -1,21 +1,17 @@
 import React from 'react'
+import { cn } from '@/lib/utils'
 
-export function FlowHUD({
-  state, segments, sunScore
-}: {
-  state: 'idle'|'recording'|'paused'|'ended',
-  segments: any[],
-  sunScore?: number | null
+export function FlowHUD({ elapsedMin, sui01, className }: {
+  elapsedMin: number
+  sui01: number
+  className?: string
 }) {
-  if (state === 'idle' || state === 'ended') return null
-  const elapsed = segments.length
+  const suiPct = Math.round(sui01 * 100)
+  const min = Math.max(0, Math.floor(elapsedMin))
   return (
-    <div className="fixed bottom-[calc(64px+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2
-                    z-[590] rounded-xl bg-black/70 text-white px-3 py-2 text-xs font-medium
-                    shadow-lg backdrop-blur flex items-center gap-3">
-      <span>{state === 'recording' ? '● REC' : 'II PAUSED'}</span>
-      <span>segments: {elapsed}</span>
-      {typeof sunScore === 'number' && <span>sun: {Math.round(sunScore*100)}%</span>}
+    <div className={cn("fixed top-16 right-4 z-[560] rounded-xl px-3 py-2 bg-black/40 text-white text-xs backdrop-blur", className)}>
+      <div>⏱ {min} min</div>
+      <div>☀️ SUI {suiPct}%</div>
     </div>
   )
 }
