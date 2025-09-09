@@ -18,6 +18,7 @@ import { useFieldLens } from "@/components/field/FieldLensProvider";
 import { useLocationDisplay } from "@/hooks/useLocationDisplay";
 import { Z, zIndex } from "@/constants/z";
 import type { FieldData } from "./FieldDataProvider";
+import { ExploreDrawer } from "@/components/field/ExploreDrawer";
 
 interface FieldUILayerProps {
   data: FieldData;
@@ -117,6 +118,54 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
             timeState={timeState}
           />
         </div>
+      )}
+
+      {/* ——— Lens-aware UI ——————————————————————— */}
+      {!isFull && (
+        <>
+          {/* Explore Mode */}
+          {lens === 'explore' && data.nearbyVenues && (
+            <ExploreDrawer
+              venues={data.nearbyVenues}
+              onJoin={(pid) => {
+                console.log('Join venue:', pid);
+                // TODO: Implement join flow
+              }}
+              onSave={(pid) => {
+                console.log('Save venue:', pid);
+                // TODO: Implement save to favorites
+              }}
+              onPlan={(pid) => {
+                console.log('Plan at venue:', pid);
+                // TODO: Implement planning flow
+              }}
+              onChangeVenue={(pid) => {
+                console.log('Change venue:', pid);
+                setVenuesSheetOpen(true);
+              }}
+            />
+          )}
+
+          {/* Constellation Mode */}
+          {lens === 'constellation' && (
+            <div className="fixed inset-0 z-[550] pointer-events-none">
+              {/* TODO: Add ConstellationCanvas and ConstellationController */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-2 rounded-lg bg-black/60 backdrop-blur text-white/80 text-sm pointer-events-auto">
+                Constellation mode active
+              </div>
+            </div>
+          )}
+
+          {/* Temporal Mode */}
+          {lens === 'temporal' && (
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[580] pointer-events-auto">
+              {/* TODO: Add TemporalController */}
+              <div className="px-4 py-2 rounded-lg bg-black/60 backdrop-blur text-white/80 text-sm">
+                Temporal mode active
+              </div>
+            </div>
+          )}
+        </>
       )}
 
     </>
