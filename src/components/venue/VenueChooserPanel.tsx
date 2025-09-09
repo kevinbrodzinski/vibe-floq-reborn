@@ -88,6 +88,8 @@ export function VenueChooserPanel({
   const t = getVibeToken(currentVibe)
   const [page, setPage] = React.useState(0) // 0: main, 1: alt "more like this"
   const [tab, setTab] = React.useState<'top'|'favorites'>('top')
+  const trapRef = React.useRef<HTMLDivElement>(null)
+  const titleId = 'venue-chooser-title'
 
   const { top, reason } = React.useMemo(() => {
     const bucket = timeOfDayBucket(new Date())
@@ -111,10 +113,30 @@ export function VenueChooserPanel({
     return { top: pick, reason: r }
   }, [venues, option, focus, excludeVenueId, maxDistanceM, bias, page, tab, favoriteIds])
 
+  // Focus trap
+  React.useEffect(() => {
+    const root = trapRef.current
+    if (!root) return
+    const sel = 'a,button,select,textarea,input,[tabindex]:not([tabindex="-1"])'
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>(sel)).filter(el => !el.hasAttribute('disabled'))
+    if (!nodes.length) return
+    const first = nodes[0], last = nodes[nodes.length-1]
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
   if (!top.length) return null
 
   return (
     <div
+      ref={trapRef}
       className={['rounded-xl shadow-lg backdrop-blur', className].filter(Boolean).join(' ')}
       style={{
         position: 'absolute',
@@ -126,13 +148,14 @@ export function VenueChooserPanel({
         ...style,
       }}
       role="dialog"
-      aria-label="Venue chooser"
+      aria-modal="true"
+      aria-labelledby={titleId}
       data-testid="venue-chooser-panel"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="text-white/90 text-sm font-semibold">Suggested venues</div>
+          <div id={titleId} className="text-white/90 text-sm font-semibold">Pick a venue</div>
           <div className="flex items-center gap-2">
             <button
               className={`text-xs px-2 py-1 rounded-md ${tab==='top' ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90'}`}

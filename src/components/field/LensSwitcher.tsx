@@ -9,26 +9,48 @@ const LABELS: Record<Lens, string> = {
   temporal: 'Temporal',
 };
 
+const LENSES: readonly Lens[] = ['explore', 'constellation', 'temporal'];
+
 export function LensSwitcher() {
   const { lens, setLens } = useFieldLens();
+  
+  const nextLens = (currentIndex: number) => 
+    LENSES[(currentIndex + 1) % LENSES.length];
+    
+  const prevLens = (currentIndex: number) => 
+    LENSES[(currentIndex - 1 + LENSES.length) % LENSES.length];
+
   return (
     <div
-      aria-label="Lens switcher"
+      role="tablist"
+      aria-label="Lens mode"
       className="flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl"
       style={{ pointerEvents: 'auto' }}
     >
-      {(Object.keys(LABELS) as Lens[]).map((k) => (
-        <button
-          key={k}
-          onClick={() => setLens(k)}
-          aria-pressed={lens === k}
-          className={`px-3 py-2 rounded-lg text-sm ${
-            lens === k ? 'bg-white/25 text-white' : 'bg-white/10 text-white/80'
-          } focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
-        >
-          {LABELS[k]}
-        </button>
-      ))}
+      {LENSES.map((k, i) => {
+        const active = lens === k;
+        return (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={active}
+            aria-controls={`lens-panel-${k}`}
+            tabIndex={active ? 0 : -1}
+            onClick={() => setLens(k)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') setLens(nextLens(i));
+              if (e.key === 'ArrowLeft') setLens(prevLens(i));
+              if (e.key === 'Home') setLens('explore');
+              if (e.key === 'End') setLens('temporal');
+            }}
+            className={`px-3 py-2 rounded-lg text-sm ${
+              active ? 'bg-white/25 text-white' : 'bg-white/10 text-white/80'
+            } focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
+          >
+            {LABELS[k]}
+          </button>
+        );
+      })}
     </div>
   );
 }
