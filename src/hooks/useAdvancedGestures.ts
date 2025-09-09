@@ -23,6 +23,7 @@ export function useAdvancedGestures(options: UseAdvancedGesturesOptions) {
   const handlers = useMemo(() => ({
     onClick: options.onTap,
     onPointerUp: options.onSwipeUp,
+    onTouchEnd: options.onSwipeUp, // WebView compatibility
   }), [options.onTap, options.onSwipeUp]);
 
   const controls = useMemo(() => ({

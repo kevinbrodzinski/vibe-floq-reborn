@@ -33,6 +33,9 @@ export function useSocialWeatherLayer(map: any, cells?: PressureCell[]) {
     if (!map) return;
 
     const readd = () => {
+      // skip until style is fully ready
+      if (typeof map.isStyleLoaded === 'function' && !map.isStyleLoaded()) return;
+
       ensureGeoJSONSource(map, SRC_ID, data);
 
       const beforeId = findFirstSymbolLayerId(map);

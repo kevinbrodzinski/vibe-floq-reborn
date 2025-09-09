@@ -34,6 +34,9 @@ export function useTileVenuesLayer(map: any, venues?: TileVenue[]) {
     if (!map) return;
 
     const readd = () => {
+      // skip until style is fully ready
+      if (typeof map.isStyleLoaded === 'function' && !map.isStyleLoaded()) return;
+
       // 1) (Re)create source and set latest data
       ensureGeoJSONSource(map, SRC_ID, data);
 
