@@ -56,12 +56,16 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
         const exists = map.getLayer('pixi-atmosphere');
         if (!exists) {
           const repl = layerFactory();
-          map.addLayer(repl);
-          pixiLayerRef.current = repl;
-          // push latest cells back in (if we have them)
-          if (data.weatherCells?.length) {
-            const zoom = map.getZoom?.() ?? 14;
-            repl.updateCells(data.weatherCells, zoom);
+          try {
+            map.addLayer(repl);
+            pixiLayerRef.current = repl;
+            // push latest cells back in (if we have them)
+            if (data.weatherCells?.length) {
+              const zoom = map.getZoom?.() ?? 14;
+              repl.updateCells(data.weatherCells, zoom);
+            }
+          } catch (e) {
+            console.warn('Pixi reattach failed:', e);
           }
         }
       } catch (e) {

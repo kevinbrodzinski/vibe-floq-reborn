@@ -5,16 +5,29 @@ import type { FeatureCollection } from 'geojson';
 
 export type ReaddFn = () => void;
 
+let rafId: number | null = null;
+function throttleReadd(fn: () => void) {
+  return () => {
+    if (rafId != null) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      fn();
+    });
+  };
+}
+
 /** Re-run `readd()` whenever the style is (re)loaded. Returns a cleanup fn. */
 export function persistOnStyle(map: mapboxgl.Map, readd: ReaddFn) {
-  const onStyleLoad = () => readd();
+  const safeReadd = throttleReadd(readd);
+
+  const onStyleLoad = () => safeReadd();
   const onStyleData = (e: any) => {
     // Only care when the style object itself changed (not 'source', 'tile', etc.)
-    if (e?.dataType === 'style') readd();
+    if (e?.dataType === 'style') safeReadd();
   };
 
   // Call once now (in case the caller mounted after style load)
-  try { readd(); } catch {}
+  try { safeReadd(); } catch {}
 
   map.on('style.load', onStyleLoad);
   map.on('styledata', onStyleData);
