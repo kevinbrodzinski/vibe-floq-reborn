@@ -54,7 +54,7 @@ export function SmartConflictResolver({
   className = ""
 }: SmartConflictResolverProps) {
   const [selectedSuggestions, setSelectedSuggestions] = useState<Record<string, string>>({})
-  const [resolvingConflicts, setResolvingConflicts] = useState<Set<string>>(new Set())
+  const [resolvingConflicts, setResolvingConflicts] = useState<Set<string>>(new Set<string>())
   
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: updateStop } = useUpdatePlanStop()

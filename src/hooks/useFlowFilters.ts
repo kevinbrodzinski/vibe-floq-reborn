@@ -21,36 +21,31 @@ function clamp01(n: any) {
   const v = Number(n)
   return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : undefined
 }
-function sanitizeFilters(raw: any): FlowFilters {
+function sanitize(raw: any): FlowFilters {
   const f: FlowFilters = { ...DEFAULT }
-
   if (typeof raw?.friendFlows === 'boolean') f.friendFlows = raw.friendFlows
   if (Array.isArray(raw?.weatherPref)) f.weatherPref = raw.weatherPref.map(String)
   if (isDensity(raw?.clusterDensity)) f.clusterDensity = raw.clusterDensity
   if (isQueue(raw?.queue)) f.queue = raw.queue
-
   if (Array.isArray(raw?.vibeRange) && raw.vibeRange.length === 2) {
-    const a = clamp01(raw.vibeRange[0])
-    const b = clamp01(raw.vibeRange[1])
+    const a = clamp01(raw.vibeRange[0]); const b = clamp01(raw.vibeRange[1])
     if (a !== undefined && b !== undefined && a <= b) f.vibeRange = [a, b]
   }
-
   if (raw?.timeWindow?.start && raw?.timeWindow?.end) {
     try {
-      const s = new Date(raw.timeWindow.start).toISOString()
-      const e = new Date(raw.timeWindow.end).toISOString()
-      f.timeWindow = { start: s, end: e }
+      f.timeWindow = {
+        start: new Date(raw.timeWindow.start).toISOString(),
+        end:   new Date(raw.timeWindow.end).toISOString()
+      }
     } catch {}
   }
-
   return f
 }
 
-async function readStorage(): Promise<FlowFilters> {
+async function readStored(): Promise<FlowFilters> {
   try {
-    const raw = await storage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT
-    return sanitizeFilters(JSON.parse(raw))
+    const s = await storage.getItem(STORAGE_KEY)
+    return s ? sanitize(JSON.parse(s)) : DEFAULT
   } catch { return DEFAULT }
 }
 
@@ -58,19 +53,17 @@ export function useFlowFilters(initial?: Partial<FlowFilters>) {
   const [filters, setFiltersState] = React.useState<FlowFilters>(DEFAULT)
   const [loaded, setLoaded] = React.useState(false)
 
-  // initial load (async)
   React.useEffect(() => {
     let mounted = true
     ;(async () => {
-      const stored = await readStorage()
+      const s = await readStored()
       if (!mounted) return
-      setFiltersState({ ...DEFAULT, ...stored, ...initial })
+      setFiltersState({ ...DEFAULT, ...s, ...initial })
       setLoaded(true)
     })()
     return () => { mounted = false }
   }, [initial])
 
-  // persist (debounced) after load
   React.useEffect(() => {
     if (!loaded) return
     const t = window.setTimeout(() => {

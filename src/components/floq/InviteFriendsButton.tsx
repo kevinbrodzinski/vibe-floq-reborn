@@ -63,7 +63,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
 
   const { user }      = useAuth()
   const [isOpen, setIsOpen]               = useState(false)
-  const [selected, setSelected]           = useState<Set<string>>(new Set())
+  const [selected, setSelected]           = useState<Set<string>>(new Set<string>())
   const [query, setQuery]                 = useState('')
   const { socialHaptics }                 = useHapticFeedback()
   const { mutateAsync: inviteToFloq, isPending } = useInviteToFloq()

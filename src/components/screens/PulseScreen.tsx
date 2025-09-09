@@ -117,7 +117,7 @@ export const PulseScreen: React.FC = () => {
   useLiveActivityRealtime();
 
   /* 2-A  chips state */
-  const [filters, setFilters] = useState<Set<PulseFilter>>(new Set());
+  const [filters, setFilters] = useState<Set<PulseFilter>>(new Set<PulseFilter>());
 
   /* 2-B  helper */
   const toggle = (f: PulseFilter) =>

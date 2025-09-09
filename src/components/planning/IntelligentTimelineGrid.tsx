@@ -39,7 +39,7 @@ export function IntelligentTimelineGrid({
   onSlotSelected,
   className = ""
 }: IntelligentTimelineGridProps) {
-  const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set())
+  const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set<string>())
   const [selectedVenues, setSelectedVenues] = useState<Record<string, string>>({})
   
   const { data: existingStops = [] } = usePlanStops(planId)

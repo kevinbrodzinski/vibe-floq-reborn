@@ -141,7 +141,6 @@ export function FieldUILayer() {
           {/* Flow convergence overlay */}
           <FlowMapOverlay 
             points={convergence} 
-            map={map}
             onPointTap={(point) => {
               console.log('Convergence point tapped:', point)
               toast({ 

@@ -21,7 +21,7 @@ export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({
 }) => {
   const { data: suggestions = [], isLoading, isError } = usePlanSuggestions(targetId, { limit: 3 });
   const [hoveredCard, setHoveredCard] = React.useState<string | null>(null);
-  const [planningIds, setPlanningIds] = React.useState<Set<string>>(new Set());
+  const [planningIds, setPlanningIds] = React.useState<Set<string>>(new Set<string>());
   const { socialHaptics } = useHapticFeedback();
 
   if (isLoading) {
