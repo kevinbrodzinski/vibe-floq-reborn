@@ -52,6 +52,7 @@ type Props = {
   bias?: Bias
   favoriteIds?: Set<string>           // 👈 NEW
   onToggleFavorite?: (venueId: string, next: boolean) => void  // 👈 NEW
+  onSaveShortlist?: (name: string, venueIds: string[]) => void // 👈 NEW
 }
 
 // Simple vibe token getter for the panel styling
@@ -80,19 +81,23 @@ export function VenueChooserPanel({
   walkMpm = 75, maxDistanceM = 1200,
   currentVibe = 'calm',
   bias = 'neutral',
-  favoriteIds, onToggleFavorite
+  favoriteIds, onToggleFavorite, onSaveShortlist
 }: Props) {
   const t = getVibeToken(currentVibe)
   const [page, setPage] = React.useState(0) // 0: main, 1: alt "more like this"
+  const [tab, setTab] = React.useState<'top'|'favorites'>('top')
 
   const { top, reason } = React.useMemo(() => {
     const bucket = timeOfDayBucket(new Date())
-    const scored = venues
-      .filter(v => !excludeVenueId || v.id !== excludeVenueId)
+    const favSet = favoriteIds ?? new Set<string>()
+    const baseList = venues.filter(v => !excludeVenueId || v.id !== excludeVenueId)
+    const filtered = tab==='favorites' ? baseList.filter(v => favSet.has(v.id)) : baseList
+    
+    const scored = filtered
       .map(v => ({
         v,
         dM: distanceMeters(v.loc, focus),
-        s: biasedVenueScore(option, v, bucket, bias, favoriteIds?.has(v.id) ?? false),
+        s: biasedVenueScore(option, v, bucket, bias, favSet.has(v.id)),
       }))
       .filter(x => x.dM <= maxDistanceM)
       .sort((a, b) => (b.s - a.s) || (a.dM - b.dM))
@@ -102,7 +107,7 @@ export function VenueChooserPanel({
       ? `Top matches for "${bucketLabel(bucket)}" + "${intentLabel(option.kind)}"`
       : `More like this (${biasLabel(bias)})`
     return { top: pick, reason: r }
-  }, [venues, option, focus, excludeVenueId, maxDistanceM, bias, page])
+  }, [venues, option, focus, excludeVenueId, maxDistanceM, bias, page, tab, favoriteIds])
 
   if (!top.length) return null
 
@@ -123,7 +128,21 @@ export function VenueChooserPanel({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-        <div className="text-white/90 text-sm font-semibold">Suggested venues</div>
+        <div className="flex items-center gap-3">
+          <div className="text-white/90 text-sm font-semibold">Suggested venues</div>
+          <div className="flex items-center gap-2">
+            <button
+              className={`text-xs px-2 py-1 rounded-md ${tab==='top' ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90'}`}
+              onClick={()=>setTab('top')}
+              aria-pressed={tab==='top'}
+            >Top</button>
+            <button
+              className={`text-xs px-2 py-1 rounded-md ${tab==='favorites' ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90'}`}
+              onClick={()=>setTab('favorites')}
+              aria-pressed={tab==='favorites'}
+            >Favorites</button>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <div className="text-white/60 text-xs">{reason}</div>
           {onClose && (
@@ -218,14 +237,28 @@ export function VenueChooserPanel({
 
       {/* Footer */}
       <div className="flex items-center justify-between px-4 py-3 border-t border-white/10">
+        <div className="flex items-center gap-2">
+          <button
+            className="text-white/80 text-xs underline disabled:opacity-40"
+            onClick={() => setPage(p => (p === 0 ? 1 : 0))}
+            aria-label="More like this"
+          >
+            {page === 0 ? 'More like this' : 'Back to top picks'}
+          </button>
+          <span className="text-white/60 text-[11px]">Bias: {biasLabel(bias)}</span>
+        </div>
         <button
-          className="text-white/80 text-xs underline disabled:opacity-40"
-          onClick={() => setPage(p => (p === 0 ? 1 : 0))}
-          aria-label="More like this"
+          className="text-white/90 text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/15"
+          aria-label="Save shortlist"
+          onClick={() => {
+            const name = window.prompt('Name this shortlist:', 'Tonight picks')
+            if (!name) return
+            const venueIds = top.map(x => x.v.id)
+            onSaveShortlist?.(name, venueIds)
+          }}
         >
-          {page === 0 ? 'More like this' : 'Back to top picks'}
+          Save shortlist
         </button>
-        <div className="text-white/60 text-[11px]">Bias: {biasLabel(bias)}</div>
       </div>
     </div>
   )

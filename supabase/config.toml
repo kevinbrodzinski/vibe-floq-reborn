@@ -164,3 +164,15 @@ verify_jwt = true
 
 [functions.venue-favorites]
 verify_jwt = true
+
+[functions.shortlist-create]
+verify_jwt = true
+
+[functions.shortlist-list]
+verify_jwt = true
+
+[functions.shortlist-delete]
+verify_jwt = true
+
+[functions.shortlist-rename]
+verify_jwt = true

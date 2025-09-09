@@ -13963,6 +13963,53 @@ export type Database = {
           },
         ]
       }
+      venue_shortlist_items: {
+        Row: {
+          added_at: string
+          shortlist_id: string
+          venue_id: string
+        }
+        Insert: {
+          added_at?: string
+          shortlist_id: string
+          venue_id: string
+        }
+        Update: {
+          added_at?: string
+          shortlist_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_shortlist_items_shortlist_id_fkey"
+            columns: ["shortlist_id"]
+            isOneToOne: false
+            referencedRelation: "venue_shortlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_shortlists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          profile_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          profile_id?: string
+        }
+        Relationships: []
+      }
       venue_signatures: {
         Row: {
           confidence_score: number
