@@ -238,7 +238,7 @@ export const FieldLayout = () => {
 
           {/* Lens System - z-600 */}
           <LensHotkeys />
-          <div className="fixed top-4 right-4 z-[600] pointer-events-auto">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[600] pointer-events-auto">
             <LensSwitcher />
           </div>
           <div className="fixed top-4 left-4 z-[560] pointer-events-none">

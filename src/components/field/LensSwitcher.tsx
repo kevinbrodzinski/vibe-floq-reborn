@@ -14,7 +14,7 @@ export function LensSwitcher() {
   return (
     <div
       aria-label="Lens switcher"
-      className="fixed top-6 right-6 z-[600] flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl"
+      className="flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl"
       style={{ pointerEvents: 'auto' }}
     >
       {(Object.keys(LABELS) as Lens[]).map((k) => (
