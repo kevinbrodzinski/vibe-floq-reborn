@@ -93,8 +93,13 @@ export async function fetchConvergence(args: {
 }
 
 // Flow CRUD operations for future sprints
-export async function startFlow(): Promise<{ flowId: string }> {
-  const { data, error } = await supabase.functions.invoke<{ flowId: string }>('flow-start', {})
+export async function startFlow(params?: { 
+  visibility?: 'owner'|'friends'|'public'
+  start_center?: { lng: number; lat: number }
+}): Promise<{ flowId: string }> {
+  const { data, error } = await supabase.functions.invoke<{ flowId: string }>('flow-start', { 
+    body: params || {} 
+  })
   if (error) throw error
   return data!
 }

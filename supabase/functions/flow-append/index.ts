@@ -30,14 +30,19 @@ Deno.serve(async (req) => {
   try { body = await req.json() } catch { return bad('invalid JSON', 422) }
   if (!body?.flowId || typeof body.segment?.idx !== 'number') return bad('missing flowId or idx', 422)
 
+  // Require center coordinates
+  if (!body.segment?.center
+      || !Number.isFinite(body.segment.center.lng)
+      || !Number.isFinite(body.segment.center.lat)) {
+    return bad('segment.center required', 422)
+  }
+
   const url = Deno.env.get('SUPABASE_URL')!
   const anon = Deno.env.get('SUPABASE_ANON_KEY')!
   const supa = createClient(url, anon, { global: { headers: { Authorization: req.headers.get('Authorization') || '' } } })
 
   const arrived = body.segment.arrived_at ?? new Date().toISOString()
-  const geom = (body.segment.center && Number.isFinite(body.segment.center.lng) && Number.isFinite(body.segment.center.lat))
-    ? `SRID=4326;POINT(${body.segment.center.lng} ${body.segment.center.lat})`
-    : null
+  const geom = `SRID=4326;POINT(${body.segment.center.lng} ${body.segment.center.lat})`
 
   const { error } = await supa.from('flow_segments').insert({
     flow_id: body.flowId,
@@ -45,7 +50,7 @@ Deno.serve(async (req) => {
     arrived_at: arrived,
     departed_at: body.segment.departed_at ?? null,
     venue_id: body.segment.venue_id ?? null,
-    center: geom ? (geom as any) : null,
+    center: geom as any, // always set (validated above)
     exposure_fraction: Math.max(0, Math.min(1, Number(body.segment.exposure_fraction ?? 0))),
     vibe_vector: body.segment.vibe_vector ?? {},
     weather_class: body.segment.weather_class ?? null,

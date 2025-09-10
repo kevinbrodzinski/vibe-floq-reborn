@@ -88,8 +88,13 @@ export function useFlowSampler(opts: Opts = {}) {
 
   const begin = React.useCallback(async (visibility: 'owner'|'friends'|'public'='owner') => {
     if (state === 'recording') return
-    await start() // flow-start already accepts visibility in our updated edge (pass it there if you expose)
-    // Try to seed with map center as start_location (already captured in edge if you add it to call)
+    
+    // Get map center to use as start location
+    const c = map?.getCenter?.()
+    await start({ 
+      visibility,
+      start_center: c ? { lng: c.lng, lat: c.lat } : undefined 
+    })
     lastLocRef.current = null
 
     if ('geolocation' in navigator) {
@@ -99,7 +104,7 @@ export function useFlowSampler(opts: Opts = {}) {
     } else {
       scheduleFallback()
     }
-  }, [onPosition, onError, scheduleFallback, start, state])
+  }, [onPosition, onError, scheduleFallback, start, state, map])
 
   const halt = React.useCallback(async () => {
     clearTimers()

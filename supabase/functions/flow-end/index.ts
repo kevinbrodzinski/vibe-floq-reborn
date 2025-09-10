@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   const anon = Deno.env.get('SUPABASE_ANON_KEY')!
   const supa = createClient(url, anon, { global: { headers: { Authorization: req.headers.get('Authorization') || '' } } })
 
-  const patch: Record<string, any> = { ended_at: new Date().toISOString() }
+  const patch: Record<string, any> = { ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }
   if (Number.isFinite(body.sun_exposed_min)) patch.sun_exposed_min = Math.max(0, Math.floor(Number(body.sun_exposed_min)))
 
   const { error } = await supa.from('flows').update(patch).eq('id', body.flowId)

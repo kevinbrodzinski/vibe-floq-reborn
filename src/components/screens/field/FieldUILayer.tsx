@@ -215,9 +215,15 @@ export function FieldUILayer() {
 
           {/* Error display */}
           {error && (
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-destructive/90 text-destructive-foreground 
-                          px-4 py-2 rounded-md text-sm backdrop-blur-sm z-[620]">
-              {error}
+            <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(7rem+env(safe-area-inset-bottom))] z-[650] 
+                          bg-black/60 text-white px-3 py-2 rounded-lg text-xs backdrop-blur-sm">
+              {error} 
+              <button 
+                className="underline ml-2 hover:text-white/80" 
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
             </div>
           )}
 

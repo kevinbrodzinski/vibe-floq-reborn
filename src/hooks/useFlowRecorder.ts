@@ -29,9 +29,12 @@ export function useFlowRecorder() {
   const startedAtRef = React.useRef<number | null>(null)
   const lastSampleAtRef = React.useRef<number | null>(null)
 
-  const start = React.useCallback(async () => {
+  const start = React.useCallback(async (params?: {
+    visibility?: 'owner'|'friends'|'public'
+    start_center?: { lng: number; lat: number }
+  }) => {
     if (state !== 'idle' && state !== 'ended') return
-    const { flowId } = await startFlow()
+    const { flowId } = await startFlow(params)
     setFlowId(flowId)
     setState('recording')
     idxRef.current = 0
