@@ -208,7 +208,13 @@ export function FieldUILayer() {
             onStart={() => begin('owner')}
             onPause={pauseSampler}
             onResume={resumeSampler}
-            onStop={stopSampler}
+            onStop={(flowId?: string) => {
+              stopSampler();
+              if (flowId) {
+                // Navigate to reflection page after flow stops
+                window.location.href = `/flow/${flowId}/reflection`;
+              }
+            }}
           />
 
           {/* Flow HUD */}

@@ -71,12 +71,14 @@ export default function ConvergenceCard({
 
           <div className="mt-3 flex gap-2">
             <button
+              type="button"
               onClick={() => onInvite?.(point)}
               className="px-3 py-1.5 rounded-md text-xs font-semibold bg-white text-black hover:bg-white/90"
             >
               Ping friends
             </button>
             <button
+              type="button"
               onClick={() => onRoute?.(point)}
               className="px-3 py-1.5 rounded-md text-xs font-medium bg-white/10 text-white hover:bg-white/15 border border-white/15"
             >
@@ -86,6 +88,7 @@ export default function ConvergenceCard({
 
           <div className="mt-2 flex gap-2">
             <button
+              type="button"
               className="px-3 py-1.5 rounded-md text-xs bg-white/10 text-white hover:bg-white/15 border border-white/15"
               onClick={(e) => {
                 e.stopPropagation();
@@ -99,6 +102,7 @@ export default function ConvergenceCard({
               Transit
             </button>
             <button
+              type="button"
               className="px-3 py-1.5 rounded-md text-xs bg-white text-black hover:bg-white/90"
               onClick={(e) => {
                 e.stopPropagation();
