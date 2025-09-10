@@ -4,6 +4,32 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Simple rate limiter to prevent spam
+class RateLimiter {
+  private tokens = new Map<string, { count: number; resetTime: number }>();
+  
+  take(key: string, maxTokens = 5, windowMs = 60000): { allowed: boolean } {
+    const now = Date.now();
+    const bucket = this.tokens.get(key) || { count: 0, resetTime: now + windowMs };
+    
+    if (now >= bucket.resetTime) {
+      bucket.count = 0;
+      bucket.resetTime = now + windowMs;
+    }
+    
+    if (bucket.count >= maxTokens) {
+      this.tokens.set(key, bucket);
+      return { allowed: false };
+    }
+    
+    bucket.count++;
+    this.tokens.set(key, bucket);
+    return { allowed: true };
+  }
+}
+
+const rateLimiter = new RateLimiter();
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -49,6 +75,10 @@ Deno.serve(async (req) => {
   const { data: auth } = await supa.auth.getUser();
   const pid = auth?.user?.id;
   if (!pid) return bad('not authenticated', 401);
+
+  // Rate limit check
+  const rateCheck = rateLimiter.take(`ping:${pid}`, 5); // 5 pings per minute
+  if (!rateCheck.allowed) return bad('Rate limited - wait before sending another ping', 429);
 
   // Friends (accepted): derive other side of edge
   // Table: friendships(profile_low, profile_high, friend_state)

@@ -1,4 +1,5 @@
 import React, { useRef, useMemo, useCallback } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import { useFieldData } from '@/components/screens/field/FieldDataProvider'
 import { useFieldLens } from '@/components/field/FieldLensProvider'
 import { ExploreDrawer } from '@/components/field/ExploreDrawer'
@@ -35,6 +36,7 @@ import { pingFriends } from '@/lib/api/flow'
 export function FieldUILayer() {
   const data = useFieldData()
   const { lens } = useFieldLens()
+  const { user } = useAuth()
   const pixiRef = useRef<PixiLayerHandle>(null)
   const map = getCurrentMap()
 
@@ -93,9 +95,17 @@ export function FieldUILayer() {
     const handler = (e: CustomEvent<{lng:number;lat:number;groupMin:number;prob:number;etaMin:number}>) => {
       const p = e.detail;
       try {
-        map?.flyTo?.({ center: [p.lng, p.lat], zoom: 15 });
+        // Defensive retry if map not ready
+        const tryFlyTo = () => {
+          if (map?.flyTo) {
+            map.flyTo({ center: [p.lng, p.lat], zoom: 15 });
+            setConvCard(p);
+          } else {
+            setTimeout(tryFlyTo, 100); // Retry in 100ms
+          }
+        };
+        tryFlyTo();
       } catch {}
-      setConvCard(p); // reuse your existing convCard state to show the card
     };
     window.addEventListener('floq:open-convergence', handler as EventListener);
     return () => window.removeEventListener('floq:open-convergence', handler as EventListener);
@@ -214,6 +224,12 @@ export function FieldUILayer() {
               onInvite={async (p) => {
                 try {
                   const { recipients, ping } = await pingFriends(p, 'Join me here?')
+                  
+                  // Log telemetry
+                  import('@/lib/telemetry').then(({ telemetry }) => {
+                    telemetry.pingFriendsRequest(user?.id || 'unknown', recipients.length);
+                  });
+                  
                   if (recipients.length) {
                     await import('@/lib/api/flow').then(({ sendPingPush }) => 
                       sendPingPush(recipients, p, ping.message)

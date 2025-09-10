@@ -5,6 +5,7 @@ import { useEventNotifications } from '@/providers/EventNotificationsProvider';
 import { getNotificationIcon, getNotificationTitle, getNotificationSubtitle } from '@/components/notifications/formatters';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { telemetry } from '@/lib/telemetry';
 
 export const NotificationsList = () => {
   const { toast } = useToast();
@@ -51,11 +52,11 @@ export const NotificationsList = () => {
       const p = n.payload.point as { lng:number; lat:number; prob?:number; etaMin?:number; groupMin?:number };
 
       // Route to Field/Map (adjust path if your map route differs)
-      nav('/');
+      nav('/', { replace: true }); // Use replace for better back-button UX
 
       // Allow the route to mount, then open the convergence card prefilled.
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('floq:open-convergence', {
+        const success = window.dispatchEvent(new CustomEvent('floq:open-convergence', {
           detail: {
             lng: p.lng,
             lat: p.lat,
@@ -64,6 +65,13 @@ export const NotificationsList = () => {
             groupMin: Math.max(3, Number(n.payload?.groupMin ?? 3)),
           },
         }));
+        
+        // Log telemetry
+        telemetry.convergenceOpenFromNotification(
+          Number.isFinite(p.etaMin) ? p.etaMin! : 10,
+          Number.isFinite(p.prob) ? p.prob! : 0.25,
+          success
+        );
       }, 0);
     } catch (e) {
       // non-fatal; keep silent or log
@@ -80,7 +88,7 @@ export const NotificationsList = () => {
       if (n.kind === 'ping' && n.payload?.point) {
         const p = n.payload.point as { lng:number; lat:number; prob:number; etaMin:number };
         // hop to Field/Map (adjust path if your field route differs)
-        nav('/');
+        nav('/', { replace: true }); // Better back-button behavior
 
         // defer to allow route render, then open the convergence card
         setTimeout(() => {
@@ -154,7 +162,7 @@ export const NotificationsList = () => {
                 </div>
               </div>
               {getNotificationSubtitle(n) && (
-                <div className="truncate text-xs text-white/70">{getNotificationSubtitle(n)}</div>
+                <div id={`subtitle-${n.id}`} className="truncate text-xs text-white/70">{getNotificationSubtitle(n)}</div>
               )}
             </div>
             
@@ -171,6 +179,7 @@ export const NotificationsList = () => {
                 className="ml-2 px-2 py-1 rounded-md text-[11px] bg-white/10 hover:bg-white/15 border border-white/15 text-white"
                 title="Open on map"
                 aria-label="View on map"
+                aria-describedby={`subtitle-${n.id}`}
               >
                 View on map
               </button>
