@@ -1,71 +1,62 @@
-// src/components/flow/VibeArcChart.tsx
-// Lightweight Visx energy-over-time chart with soft gradient fill and peak markers.
-// Props are minimal; pass your normalized energy samples (0..1).
-
 import React from 'react';
-import { Group } from '@visx/group';
 import { scaleLinear, scaleTime } from '@visx/scale';
-import { LinePath, AreaClosed, Bar } from '@visx/shape';
+import { AreaClosed, LinePath, Bar, Circle } from '@visx/shape';
 import { curveMonotoneX } from '@visx/curve';
 import { LinearGradient } from '@visx/gradient';
 import { withTooltip, Tooltip, defaultStyles } from '@visx/tooltip';
 
-type Sample = { t: number; energy: number };
+export type Sample = { t: number | Date; energy: number };
 
-export type VibeArcChartProps = {
-  data: Sample[];               // [{t: UNIXms, energy: 0..1}]
+type Props = {
+  data: Sample[];
   width: number;
   height: number;
-  padding?: number;
   color?: string;
-  peaks?: number;               // mark top N peaks
+  peaks?: number; // how many peak dots to label
 };
 
-function VibeArcInner({
-  data,
-  width,
-  height,
-  padding = 16,
-  color = '#8b5cf6', // violet-500
-  peaks = 3,
-  showTooltip,
-  hideTooltip,
-  tooltipData,
-  tooltipLeft,
-  tooltipTop,
-}: any) {
-  if (width < 10 || height < 10) return null;
+function toMs(t: number | Date) { return t instanceof Date ? t.getTime() : t; }
 
-  const xMin = padding, xMax = width - padding;
-  const yMin = padding, yMax = height - padding;
+function nearestIndex(data: Sample[], tMs: number) {
+  if (data.length <= 1) return 0;
+  let lo = 0, hi = data.length - 1;
+  while (hi - lo > 1) {
+    const mid = (hi + lo) >> 1;
+    (toMs(data[mid].t) < tMs) ? (lo = mid) : (hi = mid);
+  }
+  return (tMs - toMs(data[lo].t)) <= (toMs(data[hi].t) - tMs) ? lo : hi;
+}
 
-  const domainX = data.length ? [new Date(data[0].t), new Date(data[data.length - 1].t)] : [new Date(), new Date()];
+const Inner = ({
+  data, width, height, color = '#fff', peaks = 3,
+  showTooltip, hideTooltip, tooltipData, tooltipLeft, tooltipTop
+}) => {
+  if (width <= 10 || height <= 10 || data.length < 2) return null;
+
+  const xMin = 0, xMax = width, yMin = 0, yMax = height;
+  const domainX: [Date, Date] = [
+    new Date(toMs(data[0].t)),
+    new Date(toMs(data[data.length - 1].t))
+  ];
   const domainY: [number, number] = [0, 1];
 
-  const xScale = scaleTime<number>({
-    domain: domainX as [Date, Date],
-    range: [xMin, xMax],
-  });
-  const yScale = scaleLinear<number>({
-    domain: domainY,
-    range: [yMax, yMin],
-    nice: true,
-  });
+  const xScale = scaleTime({ domain: domainX, range: [xMin, xMax] });
+  const yScale = scaleLinear({ domain: domainY, range: [yMax, yMin], nice: true });
 
-  // peak detection (simple)
-  const sorted = [...data].sort((a,b)=> b.energy - a.energy);
-  const marks = sorted.slice(0, Math.min(peaks, data.length));
+  // biggest N peaks (simple) – no heavy peak finding (you already have analyzeVibeJourney)
+  const marks = [...data]
+    .sort((a, b) => b.energy - a.energy)
+    .slice(0, Math.min(peaks, data.length));
 
-  const onMouseMove = (e: React.MouseEvent<SVGRectElement>) => {
-    const { left } = (e.currentTarget.parentNode as any).getBoundingClientRect();
-    const x = e.clientX - left;
+  const onMove = (clientX: number, node: HTMLElement) => {
+    const { left } = node.getBoundingClientRect();
+    const x = clientX - left;
     const xDate = xScale.invert(x);
-    // find nearest
     const idx = nearestIndex(data, xDate.getTime());
     const d = data[idx];
     showTooltip({
       tooltipData: d,
-      tooltipLeft: xScale(new Date(d.t)),
+      tooltipLeft: xScale(new Date(toMs(d.t))),
       tooltipTop: yScale(d.energy),
     });
   };
@@ -73,81 +64,58 @@ function VibeArcInner({
   return (
     <div style={{ position: 'relative' }}>
       <svg width={width} height={height}>
-        <LinearGradient id="vibeArcGradient" from={color} to="#000000" toOpacity={0} fromOpacity={0.5} />
-
-        <Group>
-          {/* Fill */}
-          <AreaClosed<Sample>
-            data={data}
-            x={d => xScale(new Date(d.t)) ?? 0}
-            y={d => yScale(d.energy) ?? 0}
-            yScale={yScale}
-            stroke="none"
-            fill="url(#vibeArcGradient)"
-            curve={curveMonotoneX}
+        <LinearGradient id="vibeArcGradient" from={color} to="transparent" toOpacity={0} />
+        {/* fill */}
+        <AreaClosed<Sample>
+          data={data}
+          x={d => xScale(new Date(toMs(d.t)))}
+          y={d => yScale(d.energy)}
+          yScale={yScale}
+          stroke="none"
+          fill="url(#vibeArcGradient)"
+          curve={curveMonotoneX}
+        />
+        {/* line */}
+        <LinePath<Sample>
+          data={data}
+          x={d => xScale(new Date(toMs(d.t)))}
+          y={d => yScale(d.energy)}
+          stroke={color}
+          strokeWidth={2}
+          curve={curveMonotoneX}
+        />
+        {/* peak dots */}
+        {marks.map((p, i) => (
+          <Circle
+            key={i}
+            cx={xScale(new Date(toMs(p.t)))}
+            cy={yScale(p.energy)}
+            r={3.5}
+            fill={color}
+            fillOpacity={0.9}
           />
-          {/* Line */}
-          <LinePath<Sample>
-            data={data}
-            x={d => xScale(new Date(d.t)) ?? 0}
-            y={d => yScale(d.energy) ?? 0}
-            stroke={color}
-            strokeWidth={2}
-            curve={curveMonotoneX}
-          />
-          {/* Peaks */}
-          {marks.map((p: Sample, i: number) => (
-            <circle
-              key={i}
-              cx={xScale(new Date(p.t))}
-              cy={yScale(p.energy)}
-              r={4}
-              fill="#fff"
-              stroke={color}
-              strokeWidth={2}
-            />
-          ))}
-          {/* Tooltip target */}
-          <Bar
-            x={xMin}
-            y={yMin}
-            width={xMax - xMin}
-            height={yMax - yMin}
-            fill="transparent"
-            onMouseMove={onMouseMove}
-            onMouseLeave={hideTooltip}
-            onTouchStart={(e: any) => onMouseMove(e as any)}
-            onTouchMove={(e: any) => onMouseMove(e as any)}
-          />
-        </Group>
+        ))}
+        {/* hit rect for tooltip */}
+        <Bar
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="transparent"
+          onMouseMove={(e) => onMove(e.clientX, e.currentTarget as unknown as HTMLElement)}
+          onTouchMove={(e) => onMove((e.changedTouches?.[0]?.clientX ?? 0), e.currentTarget as unknown as HTMLElement)}
+          onMouseLeave={hideTooltip}
+        />
       </svg>
 
       {tooltipData && (
-        <Tooltip
-          top={tooltipTop}
-          left={tooltipLeft}
-          style={{ ...defaultStyles, background: '#111827', color: 'white', border: '1px solid #374151' }}
-        >
-          <div className="text-xs">
-            <div><strong>{Math.round(tooltipData.energy * 100)}%</strong> energy</div>
-            <div>{new Date(tooltipData.t).toLocaleTimeString()}</div>
-          </div>
+        <Tooltip left={tooltipLeft} top={tooltipTop} style={{ ...defaultStyles, background: '#111', color: '#fff' }}>
+          <div><strong>{Math.round((tooltipData as Sample).energy * 100)}%</strong> energy</div>
+          <div>{new Date(toMs((tooltipData as Sample).t)).toLocaleTimeString()}</div>
         </Tooltip>
       )}
     </div>
   );
-}
+};
 
-function nearestIndex(data: Sample[], tMs: number) {
-  if (data.length <= 1) return 0;
-  // binary-ish scan
-  let lo = 0, hi = data.length - 1;
-  while (hi - lo > 1) {
-    const mid = (hi + lo) >> 1;
-    if (data[mid].t < tMs) lo = mid; else hi = mid;
-  }
-  // closest of lo/hi
-  return (tMs - data[lo].t) <= (data[hi].t - tMs) ? lo : hi;
-}
-
-export const VibeArcChart = withTooltip<VibeArcChartProps, Sample>(VibeArcInner as any);
+export const VibeArcChart = withTooltip<Sample>(Inner as any);
