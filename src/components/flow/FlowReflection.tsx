@@ -1,9 +1,11 @@
 import React from 'react';
-import { useFlowReflection } from '@/lib/flow/useFlowReflection';
+import { useFlow } from '@/hooks/useFlow';
+import { useFlowSegments } from '@/hooks/useFlowSegments';
 import { VibeArcChart } from './VibeArcChart';
 import { computeFlowMetrics } from '@/lib/flow/computeFlowMetrics';
-import { generatePostcardClient } from '@/lib/flow/postcard';
-import { supabase } from '@/integrations/supabase/client';
+import { analyzeVibeJourney } from '@/lib/vibe/analyzeVibeJourney';
+import { markersFromVibe } from '@/lib/flow/markersFromVibe';
+import { generatePostcardClient } from '@/lib/share/generatePostcardClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,51 +13,68 @@ import { Loader2, Download, Share2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function FlowReflectionPage({ flowId }: { flowId: string }) {
-  const { summary, insights, postcardUrl, loading, error, generate, refresh } = useFlowReflection(flowId);
-  const [generating, setGenerating] = React.useState(false);
+  const { data: flow, isLoading: loadingFlow, error: flowError } = useFlow(flowId);
+  const { data: segments = [], isLoading: loadingSegments, error: segmentsError } = useFlowSegments(flowId);
   const [sharing, setSharing] = React.useState(false);
 
-  const handleGenerate = async () => {
-    setGenerating(true);
-    try {
-      await generate();
-      toast.success('Insights and postcard generated successfully!');
-    } catch (error) {
-      console.error('Failed to generate:', error);
-      toast.error('Failed to generate insights');
-    } finally {
-      setGenerating(false);
-    }
-  };
+  const loading = loadingFlow || loadingSegments;
+  const error = flowError || segmentsError;
+
+  // Compute metrics and vibe analysis
+  const metrics = React.useMemo(() => {
+    if (!flow || !segments.length) return null;
+    return computeFlowMetrics(
+      {
+        started_at: flow.started_at,
+        ended_at: flow.ended_at,
+        sun_exposed_min: flow.sun_exposed_min
+      },
+      segments.map(seg => ({
+        idx: seg.idx,
+        arrived_at: seg.arrived_at,
+        departed_at: seg.departed_at,
+        center: seg.center ? {
+          lng: (seg.center as any).coordinates[0],
+          lat: (seg.center as any).coordinates[1]
+        } : null,
+        venue_id: seg.venue_id,
+        vibe_vector: seg.vibe_vector as { energy?: number; valence?: number } | null
+      })),
+      { maxTopVenues: 5 }
+    );
+  }, [flow, segments]);
+
+  const vibeAnalysis = React.useMemo(() => {
+    if (!metrics?.energySamples.length) return null;
+    return analyzeVibeJourney(metrics.energySamples, {
+      smoothWindow: 3,
+      minPeakProminence: 0.08,
+      minTransitionDelta: 0.12
+    });
+  }, [metrics]);
+
+  const chartMarkers = React.useMemo(() => {
+    if (!vibeAnalysis || !metrics?.energySamples) return [];
+    return markersFromVibe(vibeAnalysis as any, metrics.energySamples);
+  }, [vibeAnalysis, metrics]);
 
   const handleDownloadPostcard = async () => {
-    if (!summary) return;
+    if (!flow || !metrics) return;
     
     try {
-      // Get flow segments for path data
-      const { data: segments } = await supabase
-        .from('flow_segments')
-        .select('center')
-        .eq('flow_id', flowId)
-        .order('idx');
-
-      const path = segments?.map(seg => {
-        const coords = (seg.center as any)?.coordinates;
-        return coords ? {
-          lng: coords[0],
-          lat: coords[1]
-        } : null;
-      }).filter(Boolean) || [];
-
       const blob = await generatePostcardClient({
-        path,
+        title: 'My Flow Reflection',
+        subtitle: new Date(flow.started_at).toLocaleDateString(),
+        date: new Date(flow.started_at),
+        path: metrics.path,
         stats: {
-          distanceM: summary.distanceM || 0,
-          elapsedMin: summary.elapsedMin || 0,
-          suiPct: summary.suiPct,
-          venues: summary.topVenues?.length || 0
+          distanceM: metrics.distanceM,
+          elapsedMin: metrics.elapsedMin,
+          suiPct: metrics.suiPct ?? undefined,
+          venues: metrics.venues.count
         },
-        title: 'My Flow Reflection'
+        energySamples: metrics.energySamples,
+        branding: 'subtle'
       });
 
       const url = URL.createObjectURL(blob);
@@ -73,11 +92,11 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
   };
 
   const handleShare = async () => {
-    if (!summary || !insights) return;
+    if (!flow || !metrics) return;
     
     setSharing(true);
     try {
-      const shareText = `${insights.headline}\n\nJust completed a ${Math.round(summary.elapsedMin || 0)}min flow covering ${((summary.distanceM || 0) / 1000).toFixed(1)}km!`;
+      const shareText = `Just completed a ${Math.round(metrics.elapsedMin)}min flow covering ${(metrics.distanceM / 1000).toFixed(1)}km! ${vibeAnalysis ? `Energy pattern: ${vibeAnalysis.patterns?.type || 'unknown'}` : ''}`;
       
       if (navigator.share) {
         await navigator.share({
@@ -108,21 +127,25 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
     );
   }
 
-  if (error || !summary) {
+  if (error || !flow) {
     return (
       <div className="p-6 text-center">
-        <div className="text-red-300 mb-4">Failed to load reflection: {error || 'no data'}</div>
-        <Button onClick={refresh} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
-        </Button>
+        <div className="text-red-300 mb-4">Failed to load flow: {error?.message || 'no data'}</div>
       </div>
     );
   }
 
-  const elapsedMin = Math.round(summary.elapsedMin ?? 0);
-  const distanceKm = (summary.distanceM ?? 0) / 1000;
-  const suiPct = summary.suiPct ?? null;
+  if (!metrics) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-white/60">No flow data available</div>
+      </div>
+    );
+  }
+
+  const elapsedMin = Math.round(metrics.elapsedMin);
+  const distanceKm = metrics.distanceM / 1000;
+  const suiPct = metrics.suiPct;
 
   return (
     <div className="p-4 text-white/90 space-y-6 max-w-4xl mx-auto">
@@ -131,7 +154,7 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">Your Flow Reflection</CardTitle>
           <p className="text-white/70">
-            {new Date(summary.startedAt).toLocaleString()} → {new Date(summary.endedAt).toLocaleString()}
+            {new Date(flow.started_at).toLocaleString()} → {flow.ended_at ? new Date(flow.ended_at).toLocaleString() : 'Ongoing'}
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -139,120 +162,122 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
             <MetricCard label="Duration" value={`${elapsedMin} min`} />
             <MetricCard label="Distance" value={`${distanceKm.toFixed(2)} km`} />
             <MetricCard label="Sun Score" value={suiPct != null ? `${suiPct}%` : '—'} />
-            <MetricCard label="Energy" value={summary.energyMedian != null ? `${(summary.energyMedian * 100 | 0)}%` : '—'} />
+            <MetricCard label="Venues" value={`${metrics.venues.count}`} />
           </div>
           
           <div className="flex flex-wrap gap-2">
             <Button
-              onClick={handleGenerate}
-              disabled={generating}
+              onClick={handleDownloadPostcard}
               className="bg-white/10 hover:bg-white/15 border border-white/15"
             >
-              {generating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Generate insights & postcard
+              <Download className="h-4 w-4 mr-2" />
+              Download postcard
             </Button>
             
-            {insights && (
-              <>
-                <Button
-                  onClick={handleDownloadPostcard}
-                  variant="outline"
-                  size="sm"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download postcard
-                </Button>
-                
-                <Button
-                  onClick={handleShare}
-                  disabled={sharing}
-                  variant="outline"
-                  size="sm"
-                >
-                  {sharing ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Share2 className="h-4 w-4 mr-2" />
-                  )}
-                  Share
-                </Button>
-              </>
-            )}
+            <Button
+              onClick={handleShare}
+              disabled={sharing}
+              variant="outline"
+              size="sm"
+            >
+              {sharing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4 mr-2" />
+              )}
+              Share
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Insights */}
-      <Card className="bg-white/[0.04] border-white/[0.06]">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">AI Insights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!insights ? (
-            <div className="text-white/60">Click "Generate insights" to create your summary.</div>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-white/90 text-lg font-medium">{insights.headline}</div>
-              
-              {insights.highlights?.length ? (
-                <div>
-                  <div className="text-white/70 text-sm mb-2">Highlights</div>
-                  <div className="flex flex-wrap gap-2">
-                    {insights.highlights.map((highlight: string, i: number) => (
-                      <Badge key={i} variant="secondary" className="text-xs">
-                        {highlight}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              
-              {insights.patterns?.length ? (
-                <div>
-                  <div className="text-white/70 text-sm mb-2">Patterns</div>
-                  <ul className="list-disc list-inside text-white/80 text-sm space-y-1">
-                    {insights.patterns.map((pattern: string, i: number) => (
-                      <li key={i}>{pattern}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              
-              {insights.suggestions?.length ? (
-                <div>
-                  <div className="text-white/70 text-sm mb-2">Suggestions</div>
-                  <ul className="list-disc list-inside text-white/80 text-sm space-y-1">
-                    {insights.suggestions.map((suggestion: string, i: number) => (
-                      <li key={i}>{suggestion}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+      {/* Energy Journey */}
+      {metrics.energySamples.length > 1 && (
+        <Card className="bg-white/[0.04] border-white/[0.06]">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Energy Journey</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              {(VibeArcChart as any)({
+                data: metrics.energySamples,
+                width: Math.min(960, typeof window !== 'undefined' ? window.innerWidth - 64 : 800),
+                height: 160,
+                color: "#fff",
+                peaks: 3,
+                markers: chartMarkers
+              })}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {vibeAnalysis && (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="secondary">
+                  Pattern: {vibeAnalysis.patterns?.type || 'unknown'}
+                </Badge>
+                <Badge variant="secondary">
+                  Consistency: {Math.round((vibeAnalysis.patterns?.consistency || 0) * 100)}%
+                </Badge>
+                <Badge variant="secondary">
+                  Peaks: {vibeAnalysis.arc?.peaks?.length || 0}
+                </Badge>
+                <Badge variant="secondary">
+                  Transitions: {vibeAnalysis.arc?.transitions?.length || 0}
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Top venues */}
+      {/* Top Venues */}
       <Card className="bg-white/[0.04] border-white/[0.06]">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">Top Venues</CardTitle>
         </CardHeader>
         <CardContent>
-          {!summary.topVenues?.length ? (
+          {!metrics.venues.top.length ? (
             <div className="text-white/60">No venues detected this flow.</div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
-              {summary.topVenues.map((venue: any) => (
-                <div key={venue.id} className="rounded-lg px-4 py-3 bg-white/[0.03] border border-white/[0.05]">
-                  <div className="font-medium">{venue.name}</div>
-                  <div className="text-white/60 text-sm">{venue.hits} segments</div>
+              {metrics.venues.top.map((venue) => (
+                <div key={venue.venue_id} className="rounded-lg px-4 py-3 bg-white/[0.03] border border-white/[0.05]">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">#{venue.rank} • Venue {venue.venue_id?.slice(0, 8)}</div>
+                    <div className="text-white/70">{Math.round(venue.totalMin)}m</div>
+                  </div>
+                  <div className="text-white/60 text-sm">{venue.visits} visit{venue.visits === 1 ? '' : 's'}</div>
                 </div>
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Flow Statistics */}
+      <Card className="bg-white/[0.04] border-white/[0.06]">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Flow Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Avg Pace</div>
+              <div className="font-semibold">
+                {metrics.pace.avgMPerMin ? `${Math.round(metrics.pace.avgMPerMin)} m/min` : '—'}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Segments</div>
+              <div className="font-semibold">{metrics.segments.length}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Discovered</div>
+              <div className="font-semibold">{metrics.venues.discovered}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Path Points</div>
+              <div className="font-semibold">{metrics.path.length}</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
