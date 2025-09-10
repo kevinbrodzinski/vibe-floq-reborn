@@ -22755,6 +22755,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      notifications_mark_read: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
+      notifications_mark_read_upto: {
+        Args: { _upto: string }
+        Returns: number
+      }
       path: {
         Args: { "": unknown }
         Returns: unknown

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import { useNotifications } from '@/lib/notifications/useNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -85,6 +86,8 @@ const getNotificationColor = (kind: string) => {
 
 const getNotificationTitle = (notification: any) => {
   switch (notification.kind) {
+    case 'ping':
+      return 'Ping from a friend';
     case 'dm':
       return 'New Message';
     case 'friend_request':
@@ -130,6 +133,16 @@ const getNotificationTitle = (notification: any) => {
 
 const getNotificationSubtitle = (notification: any) => {
   switch (notification.kind) {
+    case 'ping': {
+      const payload = notification.payload;
+      if (payload?.point) {
+        return `ETA ~${payload.point.etaMin}m • Prob ${Math.round((payload.point.prob ?? 0) * 100)}%`;
+      }
+      if (payload?.message) {
+        return payload.message;
+      }
+      return 'New ping received';
+    }
     case 'dm':
       return notification.payload?.preview || 'You have a new message';
     case 'friend_request':
@@ -175,23 +188,56 @@ const getNotificationSubtitle = (notification: any) => {
 
 export const NotificationsList = () => {
   const { toast } = useToast();
-  const { unseen: notifications, markAsSeen, markAllSeen } = useEventNotifications();
+  const { unseen: eventNotifications, markAsSeen, markAllSeen } = useEventNotifications();
+  const { items: pingNotifications, loading, error, hasMore, refresh, loadMore, markRead, markAllReadUpTo } = useNotifications({ pageSize: 20 });
   const { handleNotificationTap } = useNotificationActions();
 
-  const handleMarkAllAsRead = () => {
-    markAllSeen();
-    toast({
-      title: "All notifications marked as read"
-    });
+  // Load ping notifications on mount
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // Combine both notification systems
+  const allNotifications = React.useMemo(() => {
+    const pings = pingNotifications.map(ping => ({
+      ...ping,
+      seen_at: ping.read_at,
+      created_at: ping.created_at
+    }));
+    return [...pings, ...eventNotifications].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [pingNotifications, eventNotifications]);
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllReadUpTo();
+      markAllSeen();
+      toast({
+        title: "All notifications marked as read"
+      });
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+      toast({
+        title: "Failed to mark all as read",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleNotificationClick = (notification: any) => {
-    if (!notification.seen_at) {
+  const handleNotificationClick = async (notification: any) => {
+    if (notification.kind === 'ping' && !notification.read_at) {
+      try {
+        await markRead([notification.id]);
+      } catch (error) {
+        console.error('Failed to mark ping as read:', error);
+      }
+    } else if (!notification.seen_at) {
       handleNotificationTap(notification);
     }
   };
 
-  if (notifications.length === 0) {
+  if (allNotifications.length === 0 && !loading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         <Bell className="w-12 h-12 mx-auto mb-4 opacity-20" />
@@ -201,7 +247,7 @@ export const NotificationsList = () => {
     );
   }
 
-  const unreadNotifications = notifications.filter(n => !n.seen_at);
+  const unreadNotifications = allNotifications.filter(n => !n.seen_at && !(n as any).read_at);
 
   return (
     <div className="space-y-4">
@@ -228,7 +274,17 @@ export const NotificationsList = () => {
 
       <ScrollArea className="max-h-96">
         <div className="space-y-2 px-4">
-          {notifications.map((notification) => {
+          {loading && allNotifications.length === 0 && (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              Loading notifications...
+            </div>
+          )}
+          {error && (
+            <div className="text-sm text-destructive text-center py-4">
+              {error}
+            </div>
+          )}
+          {allNotifications.map((notification) => {
             // Use enhanced component for momentary floq notifications
             const isMomentaryFloqNotification = [
               'momentary_floq_created',
@@ -259,44 +315,57 @@ export const NotificationsList = () => {
                     ? 'bg-muted/20 border-border/50' 
                     : 'bg-card border-border hover:bg-muted/30'
                 )}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={cn("flex-shrink-0 p-2 rounded-full", getNotificationColor(notification.kind))}>
-                    {getNotificationIcon(notification.kind)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className={cn("text-sm font-medium", 
-                          notification.seen_at ? 'text-muted-foreground' : 'text-foreground'
-                        )}>
-                          {getNotificationTitle(notification)}
-                        </p>
-                        {getNotificationSubtitle(notification) && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {getNotificationSubtitle(notification)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                        </span>
-                        {!notification.seen_at && (
-                          <div className="w-2 h-2 bg-primary rounded-full" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                 onClick={() => handleNotificationClick(notification)}
+               >
+                 <div className="flex items-start gap-3">
+                   <div className={cn("flex-shrink-0 p-2 rounded-full", getNotificationColor(notification.kind))}>
+                     {getNotificationIcon(notification.kind)}
+                   </div>
+                   
+                   <div className="flex-1 min-w-0">
+                     <div className="flex items-start justify-between gap-2">
+                       <div className="flex-1">
+                         <p className={cn("text-sm font-medium", 
+                           (notification.seen_at || (notification as any).read_at) ? 'text-muted-foreground' : 'text-foreground'
+                         )}>
+                           {getNotificationTitle(notification)}
+                         </p>
+                         {getNotificationSubtitle(notification) && (
+                           <p className="text-xs text-muted-foreground mt-1">
+                             {getNotificationSubtitle(notification)}
+                           </p>
+                         )}
+                       </div>
+                       
+                       <div className="flex flex-col items-end gap-1">
+                         <span className="text-xs text-muted-foreground">
+                           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                         </span>
+                         {!notification.seen_at && !(notification as any).read_at && (
+                           <div className="w-2 h-2 bg-primary rounded-full" />
+                         )}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
             );
-          })}
-        </div>
-      </ScrollArea>
-    </div>
-  );
-};
+           })}
+          
+          {hasMore && (
+            <div className="mt-4 px-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => loadMore().catch(console.error)}
+                disabled={loading}
+              >
+                {loading ? 'Loading...' : 'Load more'}
+              </Button>
+            </div>
+          )}
+         </div>
+       </ScrollArea>
+     </div>
+   );
+ };
