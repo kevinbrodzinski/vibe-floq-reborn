@@ -10,9 +10,9 @@ export type FlowSegmentRow = {
   idx: number;
   arrived_at: string;               // ISO
   departed_at?: string | null;      // ISO
-  center: LatLng | null;
+  center?: LatLng | null;
   venue_id?: string | null;
-  vibe_vector?: { energy?: number; valence?: number };
+  vibe_vector?: { energy?: number; valence?: number } | null;
 };
 
 export type PaceBuckets = {
@@ -24,6 +24,7 @@ export type PaceBuckets = {
 export type PaceCount = { stroll: number; steady: number; brisk: number; rush: number };
 
 export type VenueDwell = { venue_id: string; totalMin: number; visits: number; };
+export type TopVenue = VenueDwell & { rank: number };
 
 export type SegmentSummary = {
   idx: number;
@@ -42,7 +43,7 @@ export type FlowMetrics = {
   segments: SegmentSummary[];
   venues: {
     byId: Record<string, VenueDwell>;
-    top: Array<VenueDwell & { rank: number }>;
+    top: TopVenue[];
     count: number;
     discovered: number;
   };
@@ -54,8 +55,11 @@ const DEFAULT_PACE: PaceBuckets = {
   strollMin: 60,   // <60 m/min
   steadyMin: 100,  // 60..100
   briskMin: 160,   // 100..160
-  rushMin: 160,    // >=160
+  rushMin: 200,    // >=200 (ensure rush > brisk)
 };
+
+const toMs = (v: string | number | Date) =>
+  typeof v === 'number' ? v : (v instanceof Date ? v.getTime() : new Date(v).getTime());
 
 export function computeFlowMetrics(
   flow: FlowRow,
@@ -68,7 +72,7 @@ export function computeFlowMetrics(
   // sort defensively
   const segs = [...segments].sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
 
-  const toMs = (iso: string) => new Date(iso).getTime();
+  
   const haversineM = (a: LatLng, b: LatLng) => {
     const R = 6371000, toRad = (x: number) => x * Math.PI / 180;
     const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);

@@ -1,21 +1,23 @@
-import React from 'react';
+import * as React from 'react';
 import { scaleLinear, scaleTime } from '@visx/scale';
 import { AreaClosed, LinePath, Bar, Circle } from '@visx/shape';
 import { curveMonotoneX } from '@visx/curve';
-import { LinearGradient } from '@visx/gradient';
-import { withTooltip, Tooltip, defaultStyles } from '@visx/tooltip';
+import { withTooltip, TooltipWithBounds } from '@visx/tooltip';
 
-export type Sample = { t: number | Date; energy: number };
+type Sample = { t: number | Date | string; energy: number };
 
 type Props = {
   data: Sample[];
   width: number;
   height: number;
   color?: string;
-  peaks?: number; // how many peak dots to label
+  peaks?: number;
+  markers?: { t: number | Date | string; energy: number; kind: 'peak'|'valley'|'transition'; label?: string }[];
 };
 
-function toMs(t: number | Date) { return t instanceof Date ? t.getTime() : t; }
+// util
+const toMs = (v: number | Date | string) =>
+  typeof v === 'number' ? v : v instanceof Date ? v.getTime() : new Date(v).getTime();
 
 function nearestIndex(data: Sample[], tMs: number) {
   if (data.length <= 1) return 0;
@@ -27,26 +29,20 @@ function nearestIndex(data: Sample[], tMs: number) {
   return (tMs - toMs(data[lo].t)) <= (toMs(data[hi].t) - tMs) ? lo : hi;
 }
 
-const Inner = ({
+const Inner: React.FC<any> = ({
   data, width, height, color = '#fff', peaks = 3,
+  markers = [],
   showTooltip, hideTooltip, tooltipData, tooltipLeft, tooltipTop
 }) => {
   if (width <= 10 || height <= 10 || data.length < 2) return null;
 
-  const xMin = 0, xMax = width, yMin = 0, yMax = height;
-  const domainX: [Date, Date] = [
-    new Date(toMs(data[0].t)),
-    new Date(toMs(data[data.length - 1].t))
-  ];
-  const domainY: [number, number] = [0, 1];
+  const xScale = scaleTime({
+    domain: [new Date(toMs(data[0].t)), new Date(toMs(data[data.length-1].t))],
+    range: [0, width],
+  });
+  const yScale = scaleLinear({ domain: [0, 1], range: [height, 0], nice: true });
 
-  const xScale = scaleTime({ domain: domainX, range: [xMin, xMax] });
-  const yScale = scaleLinear({ domain: domainY, range: [yMax, yMin], nice: true });
-
-  // biggest N peaks (simple) – no heavy peak finding (you already have analyzeVibeJourney)
-  const marks = [...data]
-    .sort((a, b) => b.energy - a.energy)
-    .slice(0, Math.min(peaks, data.length));
+  const bigPeaks = [...data].sort((a,b)=>b.energy-a.energy).slice(0, Math.min(peaks, data.length));
 
   const onMove = (clientX: number, node: HTMLElement) => {
     const { left } = node.getBoundingClientRect();
@@ -62,20 +58,17 @@ const Inner = ({
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position:'relative' }}>
       <svg width={width} height={height}>
-        <LinearGradient id="vibeArcGradient" from={color} to="transparent" toOpacity={0} />
-        {/* fill */}
         <AreaClosed<Sample>
           data={data}
           x={d => xScale(new Date(toMs(d.t)))}
           y={d => yScale(d.energy)}
           yScale={yScale}
           stroke="none"
-          fill="url(#vibeArcGradient)"
+          fill="rgba(255,255,255,0.12)"
           curve={curveMonotoneX}
         />
-        {/* line */}
         <LinePath<Sample>
           data={data}
           x={d => xScale(new Date(toMs(d.t)))}
@@ -84,24 +77,20 @@ const Inner = ({
           strokeWidth={2}
           curve={curveMonotoneX}
         />
-        {/* peak dots */}
-        {marks.map((p, i) => (
+        {bigPeaks.map((p, i) => (
+          <Circle key={i} cx={xScale(new Date(toMs(p.t)))} cy={yScale(p.energy)} r={3.5} fill="#fff" />
+        ))}
+        {markers.map((m, i) => (
           <Circle
-            key={i}
-            cx={xScale(new Date(toMs(p.t)))}
-            cy={yScale(p.energy)}
-            r={3.5}
-            fill={color}
-            fillOpacity={0.9}
+            key={`m-${i}`}
+            cx={xScale(new Date(toMs(m.t)))}
+            cy={yScale(m.energy)}
+            r={m.kind === 'transition' ? 3 : 4}
+            fill={m.kind === 'peak' ? '#fff' : m.kind === 'valley' ? '#7dd3fc' : '#f97316'}
           />
         ))}
-        {/* hit rect for tooltip */}
         <Bar
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          fill="transparent"
+          x={0} y={0} width={width} height={height} fill="transparent"
           onMouseMove={(e) => onMove(e.clientX, e.currentTarget as unknown as HTMLElement)}
           onTouchMove={(e) => onMove((e.changedTouches?.[0]?.clientX ?? 0), e.currentTarget as unknown as HTMLElement)}
           onMouseLeave={hideTooltip}
@@ -109,13 +98,12 @@ const Inner = ({
       </svg>
 
       {tooltipData && (
-        <Tooltip left={tooltipLeft} top={tooltipTop} style={{ ...defaultStyles, background: '#111', color: '#fff' }}>
-          <div><strong>{Math.round((tooltipData as Sample).energy * 100)}%</strong> energy</div>
-          <div>{new Date(toMs((tooltipData as Sample).t)).toLocaleTimeString()}</div>
-        </Tooltip>
+        <TooltipWithBounds top={tooltipTop} left={tooltipLeft} style={{ color: '#111', background:'white' }}>
+          {Math.round((tooltipData as Sample).energy * 100)}% • {new Date(toMs((tooltipData as Sample).t)).toLocaleTimeString()}
+        </TooltipWithBounds>
       )}
     </div>
   );
 };
 
-export const VibeArcChart = withTooltip<Sample>(Inner as any);
+export const VibeArcChart = withTooltip(Inner as any);
