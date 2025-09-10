@@ -87,14 +87,20 @@ export function useUnreadCount(opts: Options = {}) {
             filter: `to_profile=eq.${toProfile}`
           },
           (payload) => {
-            // When a notification transitions to read, decrement.
-            // Many UPDATEs won't affect read_at; to avoid drift we do a light guard:
+            // Enhanced transition detection - only decrement on real unread→read transition
             const n = payload.new as { read_at: string | null }
-            if (n?.read_at != null) {
+            const o = (payload as any).old as { read_at: string | null } | undefined
+
+            // Unread -> Read: decrement
+            if (o?.read_at == null && n?.read_at != null) {
               setCount(c => Math.max(0, c - 1))
-            } else {
-              // If we're unsure (e.g., schema tweaks), do a safe refresh.
-              // (This runs rarely and keeps us perfectly accurate.)
+            }
+            // Read -> Unread (unlikely, but robust): increment
+            else if (o?.read_at != null && n?.read_at == null) {
+              setCount(c => c + 1)
+            }
+            // If we're unsure about transition, do a safe refresh
+            else if (!o) {
               refresh()
             }
           }
@@ -109,6 +115,15 @@ export function useUnreadCount(opts: Options = {}) {
         supabase.removeChannel(channel)
       }
     }
+  }, [refresh])
+
+  // Refresh on tab focus (cheap, keeps perfect accuracy)
+  React.useEffect(() => {
+    const onVis = () => { 
+      if (document.visibilityState === 'visible') refresh() 
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
   }, [refresh])
 
   return { count, loading, error, refresh }

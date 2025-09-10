@@ -25088,6 +25088,10 @@ export type Database = {
         Args: { u: string }
         Returns: boolean
       }
+      utils_compute_sui: {
+        Args: { p_flow: string }
+        Returns: number
+      }
       validate_and_sanitize_text: {
         Args: { input_text: string; max_length?: number }
         Returns: string
