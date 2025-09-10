@@ -61,7 +61,7 @@ const Inner: React.FC<Props & any> = ({
     <div style={{ position:'relative' }}>
       <svg width={width} height={height}>
         <AreaClosed
-          data={data}
+          data={data as any}
           x={(d: Sample) => xScale(new Date(toMs(d.t)))}
           y={(d: Sample) => yScale(d.energy)}
           yScale={yScale}
@@ -70,7 +70,7 @@ const Inner: React.FC<Props & any> = ({
           curve={curveMonotoneX}
         />
         <LinePath
-          data={data}
+          data={data as any}
           x={(d: Sample) => xScale(new Date(toMs(d.t)))}
           y={(d: Sample) => yScale(d.energy)}
           stroke={color}
