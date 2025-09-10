@@ -1,5 +1,8 @@
 import React from 'react';
 import { useFlowReflection } from '@/lib/flow/useFlowReflection';
+import { VibeArcChart } from './VibeArcChart';
+import { computeFlowMetrics } from '@/lib/flow/computeFlowMetrics';
+import { generatePostcardClient } from '@/lib/flow/postcard';
 import { generatePostcardClient } from '@/lib/flow/postcard';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';

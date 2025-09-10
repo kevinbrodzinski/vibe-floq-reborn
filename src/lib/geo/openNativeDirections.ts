@@ -1,13 +1,15 @@
-// Transit-first directions + rideshare handoff (Uber/Lyft)
-// Works on iOS/Android (apps) and desktop (web fallback)
-
+// Enhanced directions with surgical polish for Flow Reflection system
 export type NavMode = 'walking' | 'driving' | 'transit' | 'bicycling';
-type LatLng = { lat: number; lng: number };
+export type LatLng = { lat: number; lng: number };
 
-const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-const isIOS = /iPad|iPhone|iPod/.test(ua);
-const isAndroid = /Android/.test(ua);
+// Robust platform detection
+const isIOS =
+  typeof navigator !== 'undefined' &&
+  /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+  // iPad on iOS 13+ may masquerade as Mac
+  !('MSStream' in (window as any));
 
+const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
 const enc = encodeURIComponent;
 
 export function openTransitDirections(args: {
@@ -140,24 +142,35 @@ export function openTransitFirstOrRideshare(args: {
 
 // ---------- internals ----------
 
+export function openDrivingDirections(args: { dest: LatLng; label?: string }) {
+  const { dest, label } = args;
+  const name = label ? `(${enc(label)})` : '';
+  if (isIOS) {
+    window.location.href = `maps://?daddr=${dest.lat},${dest.lng}${name}&dirflg=d`;
+    return;
+  }
+  const g = new URL('https://www.google.com/maps/dir/');
+  g.searchParams.set('api', '1');
+  g.searchParams.set('destination', `${dest.lat},${dest.lng}${name}`);
+  g.searchParams.set('travelmode', 'driving');
+  window.open(g.toString(), '_blank', 'noopener,noreferrer');
+}
+
 /** Try app scheme first; if it fails (after a tick), open web. */
 function attemptAppThenWeb(appUrl: string, webUrl: string) {
   const started = Date.now();
-  let opened = false;
 
-  try {
-    // Some browsers block synchronous scheme navigations; this is best-effort.
-    window.location.href = appUrl;
-    opened = true;
-  } catch {
-    // ignore
-  }
+  try { window.location.href = appUrl; } catch {/* ignore */}
 
-  // After ~800ms, if we're still here, fall back to web.
+  // Give the OS a tick to hand off to app; then fallback if we're still visible
   setTimeout(() => {
-    // On some platforms the app will have taken over; no need to double open.
-    if (!document.hidden && Date.now() - started < 2000) {
-      window.open(webUrl, '_blank', 'noopener,noreferrer');
-    }
-  }, 800);
+    const elapsed = Date.now() - started;
+    const stillHere = !document.hidden && elapsed < 3000;
+    if (stillHere) window.open(webUrl, '_blank', 'noopener,noreferrer');
+  }, 900);
 }
+
+// Legacy compatibility
+export const openNativeMaps = (position: LatLng) => {
+  openDrivingDirections({ dest: position });
+};

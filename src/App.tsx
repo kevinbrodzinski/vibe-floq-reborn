@@ -41,6 +41,7 @@ import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 import { PublicShortlistPage } from "./pages/PublicShortlistPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import FlowReflectionPage from "./pages/FlowReflectionPage";
 
 
 const App = () => {
@@ -133,6 +134,7 @@ const App = () => {
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
                         <Route path="/notifications" element={<NotificationsPage />} />
+                        <Route path="/flow/:flowId/reflection" element={<FlowReflectionPage />} />
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
