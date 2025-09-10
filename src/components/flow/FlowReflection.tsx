@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Download, Share2, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 export default function FlowReflectionPage({ flowId }: { flowId: string }) {
   const { data: flow, isLoading: loadingFlow, error: flowError } = useFlow(flowId);
@@ -84,10 +84,17 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
       a.click();
       URL.revokeObjectURL(url);
       
-      toast.success('Postcard downloaded!');
+      toast({
+        title: 'Postcard downloaded!',
+        description: 'Your flow postcard has been saved'
+      });
     } catch (error) {
       console.error('Failed to download postcard:', error);
-      toast.error('Failed to download postcard');
+      toast({
+        title: 'Failed to download postcard',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -106,11 +113,18 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
         });
       } else {
         await navigator.clipboard.writeText(shareText);
-        toast.success('Reflection copied to clipboard!');
+        toast({
+          title: 'Reflection copied to clipboard!',
+          description: 'Share your flow with others'
+        });
       }
     } catch (error) {
       console.error('Failed to share:', error);
-      toast.error('Failed to share reflection');
+      toast({
+        title: 'Failed to share reflection',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive'
+      });
     } finally {
       setSharing(false);
     }

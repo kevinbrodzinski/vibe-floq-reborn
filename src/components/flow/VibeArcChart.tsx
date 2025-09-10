@@ -60,19 +60,19 @@ const Inner: React.FC<any> = ({
   return (
     <div style={{ position:'relative' }}>
       <svg width={width} height={height}>
-        <AreaClosed<Sample>
+        <AreaClosed
           data={data}
-          x={d => xScale(new Date(toMs(d.t)))}
-          y={d => yScale(d.energy)}
+          x={(d: Sample) => xScale(new Date(toMs(d.t)))}
+          y={(d: Sample) => yScale(d.energy)}
           yScale={yScale}
           stroke="none"
           fill="rgba(255,255,255,0.12)"
           curve={curveMonotoneX}
         />
-        <LinePath<Sample>
+        <LinePath
           data={data}
-          x={d => xScale(new Date(toMs(d.t)))}
-          y={d => yScale(d.energy)}
+          x={(d: Sample) => xScale(new Date(toMs(d.t)))}
+          y={(d: Sample) => yScale(d.energy)}
           stroke={color}
           strokeWidth={2}
           curve={curveMonotoneX}

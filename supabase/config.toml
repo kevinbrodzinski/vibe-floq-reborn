@@ -185,3 +185,9 @@ verify_jwt = true
 
 [functions.shortlist-public-get]
 verify_jwt = false
+
+[functions.flow-generate-insights]
+verify_jwt = false
+
+[functions.flow-generate-postcard]
+verify_jwt = false

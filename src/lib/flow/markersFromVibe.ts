@@ -106,15 +106,15 @@ export function analyzeVibeJourney(
 
   // Determine pattern
   const energies = smoothed.map(s => s.energy);
-  const trend = energies[energies.length - 1] - energies[0];
-  const variance = energies.reduce((sum, e) => sum + Math.pow(e - energies.reduce((a, b) => a + b) / energies.length, 2), 0) / energies.length;
+  const mean = energies.reduce((a, b) => a + b, 0) / energies.length;
+  const variance = energies.reduce((acc, e) => acc + Math.pow(e - mean, 2), 0) / energies.length;
   
   let type: 'building' | 'steady' | 'volatile' | 'declining';
   if (variance > 0.05) {
     type = 'volatile';
-  } else if (trend > 0.1) {
+  } else if (energies[energies.length - 1] - energies[0] > 0.1) {
     type = 'building';
-  } else if (trend < -0.1) {
+  } else if (energies[energies.length - 1] - energies[0] < -0.1) {
     type = 'declining';
   } else {
     type = 'steady';
