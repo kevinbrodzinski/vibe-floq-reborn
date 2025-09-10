@@ -43,20 +43,22 @@ Deno.serve(async (req) => {
   const hasCenter = Array.isArray(body.center) && body.center.length === 2
   if (!hasBbox && !hasCenter) return bad('bbox or center required', 422)
 
-  // derive/normalize bbox
+  // derive/normalize bbox with clamping
   let bbox: [number, number, number, number]
   if (hasBbox) {
     const [W,S,E,N] = body.bbox!
-    const west  = Math.min(W, E)
-    const east  = Math.max(W, E)
-    const south = Math.min(S, N)
-    const north = Math.max(S, N)
+    const west  = Math.max(-180, Math.min(180, Math.min(W, E)))
+    const east  = Math.max(-180, Math.min(180, Math.max(W, E)))
+    const south = Math.max(-90, Math.min(90, Math.min(S, N)))
+    const north = Math.max(-90, Math.min(90, Math.max(S, N)))
     bbox = [west, south, east, north]
   } else {
     const [lng, lat] = body.center!
+    const clampedLng = Math.max(-180, Math.min(180, lng))
+    const clampedLat = Math.max(-90, Math.min(90, lat))
     const radius = 900 // meters
     const deg    = radius / 111_000
-    bbox = [lng - deg, lat - deg, lng + deg, lat + deg]
+    bbox = [clampedLng - deg, clampedLat - deg, clampedLng + deg, clampedLat + deg]
   }
 
   // zoom->base res + optional override

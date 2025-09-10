@@ -9,7 +9,7 @@ export function FlowHUD({
   return (
     <div
       className={cn(
-        'fixed left-4 top-16 z-[620] rounded-xl px-3 py-2 text-xs font-medium backdrop-blur bg-black/35 text-white',
+        'pointer-events-none fixed left-4 top-16 z-[620] rounded-xl px-3 py-2 text-xs font-medium backdrop-blur bg-black/35 text-white',
         className
       )}
       aria-live="polite"
