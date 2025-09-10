@@ -60,6 +60,7 @@ import {
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { useUserVibe } from '@/hooks/useUserVibe';
 import { usePing } from '@/hooks/usePing';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { openNativeMaps } from '@/utils/nativeNavigation';
 import { useState, useEffect } from 'react';
@@ -74,16 +75,9 @@ export const UserProfileByUsername = () => {
   const sendPing = usePing();
   const { toast } = useToast();
   const [dmOpen, setDmOpen] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = useCurrentUserId();
   const [isAddingFriend, setIsAddingFriend] = useState(false);
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);
-  
-  // Get current user ID for actions
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id || null);
-    });
-  }, []);
 
   const { data: profiles, isLoading, error } = useQuery({
     queryKey: ['user-by-username', username],

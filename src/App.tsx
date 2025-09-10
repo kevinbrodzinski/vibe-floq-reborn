@@ -120,7 +120,7 @@ const App = () => {
                 <VibeRealtime />
                 <BannerProvider>
                   <TooltipProvider>
-                    {/* Toaster removed to prevent infinite loops */}
+                    <Toaster />
                     <NetworkStatusBanner />
                     <BrowserRouter>
                       <PlanInviteProvider />

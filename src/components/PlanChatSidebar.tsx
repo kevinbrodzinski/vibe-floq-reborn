@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrentUserId } from "@/hooks/useCurrentUser";
 import { formatTime } from "@/lib/timeUtils";
 import { zIndex } from "@/constants/z";
 import { useMessages } from "@/hooks/messaging/useMessages";
@@ -28,21 +29,12 @@ export const PlanChatSidebar = ({
   className = ""
 }: PlanChatSidebarProps) => {
   const [newMessage, setNewMessage] = useState("");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = useCurrentUserId();
   const { toast } = useToast();
   
   // Unified messaging hooks
   const messages = useMessages(planId, 'plan');
   const { mutate: sendMessage, isPending: isSending } = useSendMessage('plan');
-
-  // Get current user
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
-    getUser();
-  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

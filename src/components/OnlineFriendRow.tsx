@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, MapPin, MessageCircle, UserPlus, UserMinus, CheckCircle, Wifi, WifiOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -67,19 +68,12 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   });
 
   // Get current user ID for unread counts
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = useCurrentUserId();
   const { data: unreadCounts = [] } = useUnreadDMCounts(currentUserId);
 
   // Get unread count for this friend
   // Note: The unread counts API changed format - need to adapt based on new structure
   const unreadCount = 0; // Temporary fix until we understand the new 'kind' structure
-
-  // Get current user ID on mount
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id || null);
-    });
-  }, []);
 
   // Long-press to open DM, click to view profile
   const longPressGestures = useLongPress({
