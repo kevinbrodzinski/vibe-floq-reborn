@@ -1,10 +1,9 @@
 import React from 'react';
 import { useFlow } from '@/hooks/useFlow';
 import { useFlowSegments } from '@/hooks/useFlowSegments';
-import { VibeArcChart } from './VibeArcChart';
+import { FlowEnergyPanel } from './FlowEnergyPanel';
 import { computeFlowMetrics } from '@/lib/flow/computeFlowMetrics';
 import { analyzeVibeJourney } from '@/lib/vibe/analyzeVibeJourney';
-import { markersFromVibe } from '@/lib/flow/markersFromVibe';
 import { generatePostcardClient } from '@/lib/share/generatePostcardClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,11 +51,6 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
       minTransitionDelta: 0.12
     });
   }, [metrics]);
-
-  const chartMarkers = React.useMemo(() => {
-    if (!vibeAnalysis || !metrics?.energySamples) return [];
-    return markersFromVibe(vibeAnalysis as any, metrics.energySamples);
-  }, [vibeAnalysis, metrics]);
 
   const handleDownloadPostcard = async () => {
     if (!flow || !metrics) return;
@@ -212,18 +206,14 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
             <CardTitle className="text-xl font-semibold">Energy Journey</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <VibeArcChart
-                data={metrics.energySamples}
-                width={Math.min(960, typeof window !== 'undefined' ? window.innerWidth - 64 : 800)}
-                height={160}
-                color="#fff"
-                peaks={3}
-                markers={chartMarkers}
-              />
-            </div>
+            <FlowEnergyPanel
+              samples={metrics.energySamples}
+              className="mt-2"
+              height={160}
+              minLabelGapPx={typeof window !== 'undefined' && window.innerWidth < 420 ? 36 : 28}
+            />
             {vibeAnalysis && (
-              <div className="flex flex-wrap gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-xs mt-4">
                 <Badge variant="secondary">
                   Pattern: {vibeAnalysis.patterns?.type || 'unknown'}
                 </Badge>
