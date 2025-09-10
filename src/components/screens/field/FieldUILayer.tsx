@@ -88,6 +88,19 @@ export function FieldUILayer() {
     if (lens !== 'explore' && convCard) setConvCard(null)
   }, [lens, convCard])
 
+  // Listen for global convergence card open events (from notifications)
+  React.useEffect(() => {
+    const handler = (e: CustomEvent<{lng:number;lat:number;groupMin:number;prob:number;etaMin:number}>) => {
+      const p = e.detail;
+      try {
+        map?.flyTo?.({ center: [p.lng, p.lat], zoom: 15 });
+      } catch {}
+      setConvCard(p); // reuse your existing convCard state to show the card
+    };
+    window.addEventListener('floq:open-convergence', handler as EventListener);
+    return () => window.removeEventListener('floq:open-convergence', handler as EventListener);
+  }, [map])
+
   React.useEffect(() => {
     let mounted = true
     listVenueFavorites()
@@ -200,7 +213,12 @@ export function FieldUILayer() {
               onClose={() => setConvCard(null)}
               onInvite={async (p) => {
                 try {
-                  const { recipients } = await pingFriends(p, 'Join me here?')
+                  const { recipients, ping } = await pingFriends(p, 'Join me here?')
+                  if (recipients.length) {
+                    await import('@/lib/api/flow').then(({ sendPingPush }) => 
+                      sendPingPush(recipients, p, ping.message)
+                    );
+                  }
                   toast({
                     title: 'Ping sent',
                     description: recipients.length

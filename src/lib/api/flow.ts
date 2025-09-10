@@ -136,3 +136,11 @@ export async function pingFriends(point: PingPoint, message?: string): Promise<P
   if (error) throw error;
   return data!;
 }
+
+export async function sendPingPush(recipient_ids: string[], point: PingPoint, message?: string) {
+  const { data, error } = await supabase.functions.invoke<{ sent: {expo:number;fcm:number;apns:number} }>('send-ping-push', {
+    body: { recipient_ids, point, body: message ?? 'Join me here?' }
+  });
+  if (error) throw error;
+  return data!;
+}

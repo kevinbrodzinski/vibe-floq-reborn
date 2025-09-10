@@ -1,371 +1,197 @@
 import React from 'react';
-import { Bell, MessageCircle, UserPlus, UserCheck, UserX, Calendar, MapPin, Heart, Reply, Waves, Users, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/lib/notifications/useNotifications';
-import { useToast } from '@/hooks/use-toast';
+import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import { getNotificationIcon, getNotificationTitle, getNotificationSubtitle } from '@/components/notifications/formatters';
 import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { useNotificationActions } from '@/hooks/useNotificationActions';
-import { MomentaryFloqNotificationItem } from './MomentaryFloqNotificationItem';
-import { MomentaryFloqNotificationModal } from './MomentaryFloqNotificationModal';
-
-const getNotificationIcon = (kind: string) => {
-  switch (kind) {
-    case 'dm':
-      return <MessageCircle className="w-4 h-4" />;
-    case 'friend_request':
-      return <UserPlus className="w-4 h-4" />;
-    case 'friend_request_accepted':
-      return <UserCheck className="w-4 h-4" />;
-    case 'friend_request_declined':
-      return <UserX className="w-4 h-4" />;
-    case 'plan_invite':
-    case 'plan_invite_accepted':
-    case 'plan_invite_declined':
-      return <Calendar className="w-4 h-4" />;
-    case 'floq_invite':
-    case 'floq_invite_accepted':
-    case 'floq_invite_declined':
-      return <MapPin className="w-4 h-4" />;
-    case 'floq_reaction':
-      return <Heart className="w-4 h-4" />;
-    case 'floq_reply':
-      return <Reply className="w-4 h-4" />;
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return <Waves className="w-4 h-4" />;
-    case 'momentary_floq_friend_joined':
-      return <Users className="w-4 h-4" />;
-    case 'momentary_floq_nearby':
-    case 'wave_activity_friend':
-      return <Zap className="w-4 h-4" />;
-    default:
-      return <Bell className="w-4 h-4" />;
-  }
-};
-
-const getNotificationColor = (kind: string) => {
-  switch (kind) {
-    case 'dm':
-      return 'text-blue-500 bg-blue-50 dark:bg-blue-950/20';
-    case 'friend_request':
-      return 'text-green-500 bg-green-50 dark:bg-green-950/20';
-    case 'friend_request_accepted':
-      return 'text-green-500 bg-green-50 dark:bg-green-950/20';
-    case 'friend_request_declined':
-      return 'text-red-500 bg-red-50 dark:bg-red-950/20';
-    case 'plan_invite':
-    case 'plan_invite_accepted':
-    case 'plan_invite_declined':
-      return 'text-purple-500 bg-purple-50 dark:bg-purple-950/20';
-    case 'floq_invite':
-    case 'floq_invite_accepted':
-    case 'floq_invite_declined':
-      return 'text-orange-500 bg-orange-50 dark:bg-orange-950/20';
-    case 'floq_reaction':
-      return 'text-pink-500 bg-pink-50 dark:bg-pink-950/20';
-    case 'floq_reply':
-      return 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/20';
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return 'text-purple-500 bg-purple-50 dark:bg-purple-950/20';
-    case 'momentary_floq_friend_joined':
-      return 'text-green-500 bg-green-50 dark:bg-green-950/20';
-    case 'momentary_floq_nearby':
-    case 'wave_activity_friend':
-      return 'text-yellow-500 bg-yellow-50 dark:bg-yellow-950/20';
-    default:
-      return 'text-gray-500 bg-gray-50 dark:bg-gray-950/20';
-  }
-};
-
-const getNotificationTitle = (notification: any) => {
-  switch (notification.kind) {
-    case 'ping':
-      return 'Ping from a friend';
-    case 'dm':
-      return 'New Message';
-    case 'friend_request':
-      return 'New Friend Request';
-    case 'friend_request_accepted':
-      return 'Friend Request Accepted';
-    case 'friend_request_declined':
-      return 'Friend Request Declined';
-    case 'plan_invite':
-      return 'Plan Invitation';
-    case 'plan_invite_accepted':
-      return 'Plan Invitation Accepted';
-    case 'plan_invite_declined':
-      return 'Plan Invitation Declined';
-    case 'floq_invite':
-      return 'Floq Invitation';
-    case 'floq_invite_accepted':
-      return 'Floq Invitation Accepted';
-    case 'floq_invite_declined':
-      return 'Floq Invitation Declined';
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return 'Momentary Floq Started';
-    case 'momentary_floq_friend_joined':
-      return 'Friend Joined Floq';
-    case 'momentary_floq_nearby':
-      return 'Floq Nearby';
-    case 'wave_activity_friend':
-      return 'Friend Activity';
-    case 'plan_comment_new':
-      return 'New Plan Comment';
-    case 'plan_checkin':
-      return 'Plan Check-in';
-    case 'floq_reaction':
-      return 'New Reaction';
-    case 'floq_reply':
-      return 'New Reply';
-    default:
-      return 'New Notification';
-  }
-};
-
-const getNotificationSubtitle = (notification: any) => {
-  switch (notification.kind) {
-    case 'ping': {
-      const payload = notification.payload;
-      if (payload?.point) {
-        return `ETA ~${payload.point.etaMin}m • Prob ${Math.round((payload.point.prob ?? 0) * 100)}%`;
-      }
-      if (payload?.message) {
-        return payload.message;
-      }
-      return 'New ping received';
-    }
-    case 'dm':
-      return notification.payload?.preview || 'You have a new message';
-    case 'friend_request':
-      return 'Someone wants to be your friend';
-    case 'friend_request_accepted':
-      return 'Your friend request was accepted';
-    case 'friend_request_declined':
-      return 'Your friend request was declined';
-    case 'plan_invite':
-      return 'You\'ve been invited to a plan';
-    case 'plan_invite_accepted':
-      return 'Your plan invitation was accepted';
-    case 'plan_invite_declined':
-      return 'Your plan invitation was declined';
-    case 'floq_invite':
-      return 'You\'ve been invited to a floq';
-    case 'floq_invite_accepted':
-      return 'Your floq invitation was accepted';
-    case 'floq_invite_declined':
-      return 'Your floq invitation was declined';
-    // Momentary Floq notifications
-    case 'momentary_floq_created':
-    case 'friend_started_floq_nearby':
-      return 'A friend started a momentary floq nearby';
-    case 'momentary_floq_friend_joined':
-      return 'A friend joined your momentary floq';
-    case 'momentary_floq_nearby':
-      return 'There\'s a momentary floq happening near you';
-    case 'wave_activity_friend':
-      return 'Friends are gathering in a wave nearby';
-    case 'plan_comment_new':
-      return 'Someone commented on a plan';
-    case 'plan_checkin':
-      return 'Someone checked into a plan';
-    case 'floq_reaction':
-      return 'Someone reacted to a message';
-    case 'floq_reply':
-      return 'Someone replied to a message';
-    default:
-      return '';
-  }
-};
+import { useToast } from '@/hooks/use-toast';
 
 export const NotificationsList = () => {
   const { toast } = useToast();
-  const { unseen: eventNotifications, markAsSeen, markAllSeen } = useEventNotifications();
-  const { items: pingNotifications, loading, error, hasMore, refresh, loadMore, markRead, markAllReadUpTo } = useNotifications({ pageSize: 20 });
-  const { handleNotificationTap } = useNotificationActions();
+  const nav = useNavigate();
+  const [onlyUnread, setOnlyUnread] = React.useState(true);
 
-  // Load ping notifications on mount
-  React.useEffect(() => {
-    refresh();
-  }, [refresh]);
+  // Ping notifications (DB)
+  const {
+    items: pingItems,
+    loading, error, hasMore, refresh, loadMore, markRead, markAllReadUpTo
+  } = useNotifications({ pageSize: 20, onlyUnread });
 
-  // Combine both notification systems
-  const allNotifications = React.useMemo(() => {
-    const pings = pingNotifications.map(ping => ({
-      ...ping,
-      seen_at: ping.read_at,
-      created_at: ping.created_at
-    }));
-    return [...pings, ...eventNotifications].sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  // Event notifications (client channel store)
+  const { unseen: eventNotifications, markAllSeen } = useEventNotifications(); 
+
+  React.useEffect(() => { refresh(); }, [refresh]);
+
+  // Merge: pings + events; filter event side when onlyUnread
+  const events = React.useMemo(() => {
+    return eventNotifications ?? [];
+  }, [eventNotifications]);
+
+  const all = React.useMemo(() => {
+    const pings = pingItems.map(p => ({ ...p, seen_at: p.read_at, _isPing: true }));
+    return [...pings, ...events].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [pingNotifications, eventNotifications]);
+  }, [pingItems, events]);
 
-  const handleMarkAllAsRead = async () => {
+  const markAll = async () => {
     try {
-      await markAllReadUpTo();
-      markAllSeen();
-      toast({
-        title: "All notifications marked as read"
-      });
-    } catch (error) {
-      console.error('Failed to mark all as read:', error);
-      toast({
-        title: "Failed to mark all as read",
-        variant: "destructive"
-      });
+      await markAllReadUpTo();  // DB pings
+      markAllSeen();            // Event store
+      toast({ title: 'All notifications marked read' });
+      refresh();
+    } catch {
+      toast({ title: 'Failed to mark all', variant: 'destructive' });
     }
   };
 
-  const handleNotificationClick = async (notification: any) => {
-    if (notification.kind === 'ping' && !notification.read_at) {
-      try {
-        await markRead([notification.id]);
-      } catch (error) {
-        console.error('Failed to mark ping as read:', error);
+  const viewPingOnMap = React.useCallback((n: any) => {
+    try {
+      if (n?.kind !== 'ping' || !n?.payload?.point) return;
+      const p = n.payload.point as { lng:number; lat:number; prob?:number; etaMin?:number; groupMin?:number };
+
+      // Route to Field/Map (adjust path if your map route differs)
+      nav('/');
+
+      // Allow the route to mount, then open the convergence card prefilled.
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('floq:open-convergence', {
+          detail: {
+            lng: p.lng,
+            lat: p.lat,
+            prob: Number.isFinite(p.prob) ? p.prob! : 0.25,
+            etaMin: Number.isFinite(p.etaMin) ? p.etaMin! : 10,
+            groupMin: Math.max(3, Number(n.payload?.groupMin ?? 3)),
+          },
+        }));
+      }, 0);
+    } catch (e) {
+      // non-fatal; keep silent or log
+      console.warn('[NotificationsList] viewPingOnMap failed:', e);
+    }
+  }, [nav]);
+
+  const onClickRow = async (n: any) => {
+    try {
+      // Mark ping read if needed
+      if (n._isPing && !n.read_at) await markRead([n.id]);
+
+      // Route on ping w/ point payload
+      if (n.kind === 'ping' && n.payload?.point) {
+        const p = n.payload.point as { lng:number; lat:number; prob:number; etaMin:number };
+        // hop to Field/Map (adjust path if your field route differs)
+        nav('/');
+
+        // defer to allow route render, then open the convergence card
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('floq:open-convergence', {
+            detail: { lng: p.lng, lat: p.lat, prob: p.prob ?? 0.25, etaMin: p.etaMin ?? 10, groupMin: Math.max(3, Number(n.payload?.groupMin ?? 3)) }
+          }));
+        }, 0);
+        return;
       }
-    } else if (!notification.seen_at) {
-      handleNotificationTap(notification);
-    }
+
+      // Otherwise, pass to your existing handler (DM, plan, etc)
+      // handleNotificationTap(n);
+    } catch {}
   };
-
-  if (allNotifications.length === 0 && !loading) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        <Bell className="w-12 h-12 mx-auto mb-4 opacity-20" />
-        <p>No notifications yet</p>
-        <p className="text-sm">You'll see new notifications here</p>
-      </div>
-    );
-  }
-
-  const unreadNotifications = allNotifications.filter(n => !n.seen_at && !(n as any).read_at);
 
   return (
-    <div className="space-y-4">
-      {unreadNotifications.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2 border-b">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {unreadNotifications.length} unread
-            </span>
-            <Badge variant="destructive" className="text-xs">
-              {unreadNotifications.length}
-            </Badge>
-          </div>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={handleMarkAllAsRead}
-            className="text-xs"
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">Notifications</h2>
+        <div className="inline-flex gap-1">
+          {/* Unread / All toggle */}
+          <button
+            type="button"
+            onClick={() => setOnlyUnread(true)}
+            className={`px-3 py-1.5 rounded-md text-xs ${onlyUnread ? 'bg-white/20 text-white' : 'bg-white/10 text-white/75 hover:bg-white/15'}`}
           >
-            Mark all read
-          </Button>
+            Unread
+          </button>
+          <button
+            type="button"
+            onClick={() => setOnlyUnread(false)}
+            className={`px-3 py-1.5 rounded-md text-xs ${!onlyUnread ? 'bg-white/20 text-white' : 'bg-white/10 text-white/75 hover:bg-white/15'}`}
+          >
+            All
+          </button>
+
+          {all.length > 0 && (
+            <button
+              type="button"
+              onClick={markAll}
+              className="ml-2 px-3 py-1.5 rounded-md text-xs bg-white/10 text-white hover:bg-white/15"
+            >
+              Mark all read
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* States */}
+      {loading && all.length === 0 && <div className="text-white/70 text-sm">Loading notifications…</div>}
+      {error && <div className="text-red-400 text-sm">{error}</div>}
+      {all.length === 0 && !loading && (
+        <div className="text-white/60 text-sm">No notifications yet</div>
       )}
 
-      <ScrollArea className="max-h-96">
-        <div className="space-y-2 px-4">
-          {loading && allNotifications.length === 0 && (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              Loading notifications...
+      {/* List */}
+      <div className="space-y-2">
+        {all.map((n: any) => (
+          <button
+            key={`${n._isPing ? 'ping' : 'evt'}:${n.id}`}
+            onClick={() => onClickRow(n)}
+            className="w-full flex items-start gap-3 p-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.06] text-left"
+          >
+            <div className="mt-0.5">{getNotificationIcon(n.kind)}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="truncate text-white">{getNotificationTitle(n)}</div>
+                <div className="shrink-0 text-[11px] text-white/60">
+                  {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                </div>
+              </div>
+              {getNotificationSubtitle(n) && (
+                <div className="truncate text-xs text-white/70">{getNotificationSubtitle(n)}</div>
+              )}
             </div>
-          )}
-          {error && (
-            <div className="text-sm text-destructive text-center py-4">
-              {error}
-            </div>
-          )}
-          {allNotifications.map((notification) => {
-            // Use enhanced component for momentary floq notifications
-            const isMomentaryFloqNotification = [
-              'momentary_floq_created',
-              'momentary_floq_friend_joined', 
-              'momentary_floq_nearby',
-              'wave_activity_friend',
-              'friend_started_floq_nearby'
-            ].includes(notification.kind);
+            
+            {/* Unread dot (unchanged) */}
+            {!n.seen_at && !n.read_at && (
+              <span className="w-2 h-2 rounded-full bg-blue-400 mt-1" aria-label="unread" />
+            )}
 
-            if (isMomentaryFloqNotification) {
-              return (
-                <MomentaryFloqNotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onTap={() => handleNotificationClick(notification)}
-                  onMarkSeen={() => markAsSeen([notification.id])}
-                />
-              );
-            }
-
-            // Default notification rendering for other types
-            return (
-              <div
-                key={notification.id}
-                className={cn(
-                  "max-w-full p-3 rounded-lg border transition-colors cursor-pointer",
-                  notification.seen_at 
-                    ? 'bg-muted/20 border-border/50' 
-                    : 'bg-card border-border hover:bg-muted/30'
-                )}
-                 onClick={() => handleNotificationClick(notification)}
-               >
-                 <div className="flex items-start gap-3">
-                   <div className={cn("flex-shrink-0 p-2 rounded-full", getNotificationColor(notification.kind))}>
-                     {getNotificationIcon(notification.kind)}
-                   </div>
-                   
-                   <div className="flex-1 min-w-0">
-                     <div className="flex items-start justify-between gap-2">
-                       <div className="flex-1">
-                         <p className={cn("text-sm font-medium", 
-                           (notification.seen_at || (notification as any).read_at) ? 'text-muted-foreground' : 'text-foreground'
-                         )}>
-                           {getNotificationTitle(notification)}
-                         </p>
-                         {getNotificationSubtitle(notification) && (
-                           <p className="text-xs text-muted-foreground mt-1">
-                             {getNotificationSubtitle(notification)}
-                           </p>
-                         )}
-                       </div>
-                       
-                       <div className="flex flex-col items-end gap-1">
-                         <span className="text-xs text-muted-foreground">
-                           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                         </span>
-                         {!notification.seen_at && !(notification as any).read_at && (
-                           <div className="w-2 h-2 bg-primary rounded-full" />
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-            );
-           })}
-          
-          {hasMore && (
-            <div className="mt-4 px-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => loadMore().catch(console.error)}
-                disabled={loading}
+            {/* NEW: 'View on map' pill for ping w/ point – does NOT mark as read */}
+            {n.kind === 'ping' && n.payload?.point && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); viewPingOnMap(n); }}
+                className="ml-2 px-2 py-1 rounded-md text-[11px] bg-white/10 hover:bg-white/15 border border-white/15 text-white"
+                title="Open on map"
+                aria-label="View on map"
               >
-                {loading ? 'Loading...' : 'Load more'}
-              </Button>
-            </div>
-          )}
-         </div>
-       </ScrollArea>
-     </div>
-   );
- };
+                View on map
+              </button>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Pager */}
+      {hasMore && (
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => loadMore().catch(() => {})}
+            className="text-sm px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-white"
+            disabled={loading}
+          >
+            {loading ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
