@@ -213,14 +213,14 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              {(VibeArcChart as any)({
-                data: metrics.energySamples,
-                width: Math.min(960, typeof window !== 'undefined' ? window.innerWidth - 64 : 800),
-                height: 160,
-                color: "#fff",
-                peaks: 3,
-                markers: chartMarkers
-              })}
+              <VibeArcChart
+                data={metrics.energySamples}
+                width={Math.min(960, typeof window !== 'undefined' ? window.innerWidth - 64 : 800)}
+                height={160}
+                color="#fff"
+                peaks={3}
+                markers={chartMarkers}
+              />
             </div>
             {vibeAnalysis && (
               <div className="flex flex-wrap gap-2 text-xs">

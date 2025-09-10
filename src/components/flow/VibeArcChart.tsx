@@ -29,7 +29,7 @@ function nearestIndex(data: Sample[], tMs: number) {
   return (tMs - toMs(data[lo].t)) <= (toMs(data[hi].t) - tMs) ? lo : hi;
 }
 
-const Inner: React.FC<any> = ({
+const Inner: React.FC<Props & any> = ({
   data, width, height, color = '#fff', peaks = 3,
   markers = [],
   showTooltip, hideTooltip, tooltipData, tooltipLeft, tooltipTop
@@ -106,4 +106,4 @@ const Inner: React.FC<any> = ({
   );
 };
 
-export const VibeArcChart = withTooltip(Inner as any);
+export const VibeArcChart = withTooltip<Props>(Inner);
