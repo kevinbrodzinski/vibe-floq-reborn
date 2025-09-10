@@ -81,6 +81,15 @@ Deno.serve(async (req) => {
     createdAt: new Date().toISOString(),
   };
 
+  // Persist notifications to database
+  const { data: ins, error: insErr } = await supa.rpc('ping_friends_insert', {
+    _recipients: recipients,
+    _point: payload.point,
+    _message: msg || null,
+    _ttl_sec: ttlSec
+  });
+  if (insErr) return bad(insErr.message, 500);
+
   // Return recipients + ping payload for the client to deliver through your preferred channel
   return ok({ recipients, ping: payload }, ttlSec);
 });

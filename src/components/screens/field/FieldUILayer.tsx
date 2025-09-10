@@ -52,6 +52,14 @@ export function FieldUILayer() {
   const { state: samplerState, begin, pause: pauseSampler, resume: resumeSampler, stop: stopSampler } = useFlowSampler({
     minDistanceM: 35, 
     maxIntervalMs: 30_000,
+    getCandidateVenues: () => (displayVenues ?? []).map(v => ({
+      id: v.pid,
+      loc: { 
+        lng: (v as any).lng ?? 0, 
+        lat: (v as any).lat ?? 0 
+      },
+      radius_m: (v as any).radius_m ?? 100,
+    })).filter(v => v.loc.lng !== 0 && v.loc.lat !== 0),
   })
   const { sui01, elapsedMin } = useFlowRecorder()
   const [convCard, setConvCard] = React.useState<{

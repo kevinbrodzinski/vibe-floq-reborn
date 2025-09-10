@@ -2,6 +2,7 @@ import * as React from 'react'
 import { useFlowRecorder } from '@/hooks/useFlowRecorder'     // your v1 recorder with SUI
 import { appendFlowSegment } from '@/lib/api/flow'                 // already wired
 import { getCurrentMap } from '@/lib/geo/mapSingleton'
+import { findNearestVenue, isInsideVenue } from '@/lib/flow/nearest'
 
 type Opts = {
   /** meters; append a new segment after this much movement OR after maxIntervalMs */
@@ -10,6 +11,8 @@ type Opts = {
   maxIntervalMs?: number
   /** meters; snap to map center if geolocation is unavailable */
   fallbackRadiusM?: number
+  /** NEW: supply live venues with lat/lng for snapping */
+  getCandidateVenues?: () => Array<{ id:string; loc:{lng:number;lat:number}; radius_m?: number|null }>
 }
 
 export function useFlowSampler(opts: Opts = {}) {
@@ -72,14 +75,25 @@ export function useFlowSampler(opts: Opts = {}) {
     }
 
     if (moved) {
+      // SNAP: if we have candidate venues, attach venue_id when inside radius
+      let venue_id: string | undefined
+      if (opts.getCandidateVenues) {
+        const pool = opts.getCandidateVenues()
+        const { venue } = findNearestVenue(pool, { lng, lat })
+        if (venue && isInsideVenue(venue, { lng, lat }, opts.fallbackRadiusM ?? 120)) {
+          venue_id = venue.id
+        }
+      }
+
       await append({
         center: { lng, lat },
+        venue_id,
         exposure_fraction: 0, // recorder SUI uses solar; segment fraction is optional hint
       })
       lastLocRef.current = now
       scheduleFallback()
     }
-  }, [append, flowId, maxGap, minDist, scheduleFallback, state])
+  }, [append, flowId, maxGap, minDist, scheduleFallback, state, opts.getCandidateVenues, opts.fallbackRadiusM])
 
   const onError = React.useCallback((_e: GeolocationPositionError) => {
     // if permission denied, switch to fallback loop
