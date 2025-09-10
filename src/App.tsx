@@ -40,6 +40,7 @@ import SharedPlan from "./pages/SharedPlan";
 import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 import { PublicShortlistPage } from "./pages/PublicShortlistPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 
 const App = () => {
@@ -131,6 +132,7 @@ const App = () => {
                         <Route path="/invite/:slug" element={<PlanInvite />} />
                         <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                         <Route path="/settings/profile" element={<Settings />} />
+                        <Route path="/notifications" element={<NotificationsPage />} />
 
                         <Route path="/*" element={<Index />} />
                       </Routes>

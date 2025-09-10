@@ -1,167 +1,92 @@
-import React, { useState } from 'react';
-import { Bell, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { FriendRequestManager } from '@/components/friends/FriendRequestManager';
-import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import React from 'react'
+import { useNotifications } from '@/lib/notifications/useNotifications'
+import { useEventNotifications } from '@/providers/EventNotificationsProvider'
+import { getNotificationIcon, getNotificationTitle, getNotificationSubtitle } from '@/components/notifications/formatters'
+import { formatDistanceToNow } from 'date-fns'
+import { useToast } from '@/hooks/use-toast'
 
-export function NotificationsPage() {
-  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
-  const [notificationSettings, setNotificationSettings] = useState({
-    pushEnabled: true,
-    friendRequests: true,
-    messages: true,
-    planUpdates: true,
-    venueActivity: false,
-    emailDigest: true,
-  });
-  const { unseen } = useEventNotifications();
+export default function NotificationsPage() {
+  const { toast } = useToast()
+  // ping table (edge-backed) + event stream (existing)
+  const {
+    items: pingItems, loading, error, hasMore, refresh, loadMore, markRead, markAllReadUpTo
+  } = useNotifications({ pageSize: 20 })
+  const { unseen: events, markAllSeen } = useEventNotifications()
 
-  const unreadCount = unseen.length;
+  React.useEffect(() => { refresh() }, [refresh])
 
-  const handleSettingChange = (key: string, value: boolean) => {
-    setNotificationSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+  const all = React.useMemo(() => {
+    const pings = pingItems.map(p => ({ ...p, seen_at: p.read_at, _isPing: true }))
+    return [...pings, ...events].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+  }, [pingItems, events])
+
+  const markAll = async () => {
+    try {
+      await markAllReadUpTo()
+      markAllSeen()
+      toast({ title: 'All notifications marked read' })
+    } catch (e) {
+      toast({ title: 'Failed to mark all', variant: 'destructive' })
+    }
+  }
+
+  const onClickRow = async (n: any) => {
+    try {
+      if (n._isPing && !n.read_at) await markRead([n.id])
+      // route by kind if you want:
+      // if (n.kind === 'ping' && n.payload?.point) navigate(`/map?c=${...}`)
+    } catch {}
+  }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Bell className="w-6 h-6" />
-          <div>
-            <h1 className="text-2xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowNotificationCenter(true)}
-        >
-          View All
-        </Button>
+    <main className="pt-14 pb-6 px-4 max-w-xl mx-auto">
+      <div className="flex items-center justify-between mb-3">
+        <h1 className="text-lg font-semibold">Notifications</h1>
+        {all.length > 0 && (
+          <button onClick={markAll} className="text-xs text-white/80 underline hover:text-white">Mark all read</button>
+        )}
       </div>
 
-      {/* Friend Requests Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            Friend Requests
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FriendRequestManager />
-        </CardContent>
-      </Card>
+      {loading && all.length === 0 && <div className="text-white/70">Loading notifications…</div>}
+      {error && <div className="text-red-400">{error}</div>}
+      {all.length === 0 && !loading && (
+        <div className="text-white/60">No notifications yet</div>
+      )}
 
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Notification Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="push-notifications">Push Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive notifications on your device
-                </p>
+      <ul className="mt-2 space-y-2">
+        {all.map((n: any) => (
+          <li key={n.id}>
+            <button
+              onClick={() => onClickRow(n)}
+              className="w-full flex items-start gap-3 p-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.06] text-left"
+            >
+              <div className="mt-0.5">{getNotificationIcon(n.kind)}</div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium">{getNotificationTitle(n)}</div>
+                  <div className="text-[11px] text-white/50">
+                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                  </div>
+                </div>
+                {getNotificationSubtitle(n) && (
+                  <div className="text-[12px] text-white/70 mt-0.5">{getNotificationSubtitle(n)}</div>
+                )}
               </div>
-              <Switch
-                id="push-notifications"
-                checked={notificationSettings.pushEnabled}
-                onCheckedChange={(checked) => handleSettingChange('pushEnabled', checked)}
-              />
-            </div>
+              {!n.seen_at && !n.read_at && <span className="w-2 h-2 rounded-full bg-red-500 mt-1" />}
+            </button>
+          </li>
+        ))}
+      </ul>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="friend-requests">Friend Requests</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when someone wants to be your friend
-                </p>
-              </div>
-              <Switch
-                id="friend-requests"
-                checked={notificationSettings.friendRequests}
-                onCheckedChange={(checked) => handleSettingChange('friendRequests', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="messages">Messages</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about new direct messages
-                </p>
-              </div>
-              <Switch
-                id="messages"
-                checked={notificationSettings.messages}
-                onCheckedChange={(checked) => handleSettingChange('messages', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="plan-updates">Plan Updates</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when plans you're part of are updated
-                </p>
-              </div>
-              <Switch
-                id="plan-updates"
-                checked={notificationSettings.planUpdates}
-                onCheckedChange={(checked) => handleSettingChange('planUpdates', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="venue-activity">Venue Activity</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about activity at venues you've visited
-                </p>
-              </div>
-              <Switch
-                id="venue-activity"
-                checked={notificationSettings.venueActivity}
-                onCheckedChange={(checked) => handleSettingChange('venueActivity', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="email-digest">Email Digest</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive a weekly summary of your activity
-                </p>
-              </div>
-              <Switch
-                id="email-digest"
-                checked={notificationSettings.emailDigest}
-                onCheckedChange={(checked) => handleSettingChange('emailDigest', checked)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification Center Modal */}
-      <NotificationCenter />
-    </div>
-  );
+      {hasMore && (
+        <div className="mt-4">
+          <button onClick={() => loadMore().catch(()=>{})} className="text-sm px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15">
+            {loading ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
+    </main>
+  )
 }

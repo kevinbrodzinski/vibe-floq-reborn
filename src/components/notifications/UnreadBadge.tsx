@@ -3,15 +3,20 @@ import { useUnreadCount } from '@/lib/notifications/useUnreadCount'
 import { cn } from '@/lib/utils'
 
 export function UnreadBadge({ 
+  count,
   className,
+  children,
   'aria-label': ariaLabel
 }: { 
+  count?: number
   className?: string
+  children?: React.ReactNode
   'aria-label'?: string 
 }) {
-  const { count, loading } = useUnreadCount()
+  const { count: hookCount, loading } = useUnreadCount()
+  const finalCount = count ?? hookCount
 
-  if (loading) {
+  if (loading && !count) {
     return (
       <span 
         className={cn(
@@ -25,9 +30,9 @@ export function UnreadBadge({
     )
   }
 
-  if (!count || count <= 0) return null
+  if (!finalCount || finalCount <= 0) return null
 
-  const display = count > 99 ? '99+' : String(count)
+  const display = children ?? (finalCount > 99 ? '99+' : String(finalCount))
 
   return (
     <span
