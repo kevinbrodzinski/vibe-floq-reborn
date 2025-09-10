@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { openTransitDirections, openRideshare } from '@/lib/geo/openNativeDirections';
 
 export type ConvergencePoint = {
   lng: number;
@@ -80,6 +81,37 @@ export default function ConvergenceCard({
               className="px-3 py-1.5 rounded-md text-xs font-medium bg-white/10 text-white hover:bg-white/15 border border-white/15"
             >
               Route
+            </button>
+          </div>
+
+          <div className="mt-2 flex gap-2">
+            <button
+              className="px-3 py-1.5 rounded-md text-xs bg-white/10 text-white hover:bg-white/15 border border-white/15"
+              onClick={(e) => {
+                e.stopPropagation();
+                openTransitDirections({
+                  dest: { lat: point.lat, lng: point.lng },
+                  label: 'Convergence',
+                  transitMode: 'rail|bus',
+                });
+              }}
+            >
+              Transit
+            </button>
+            <button
+              className="px-3 py-1.5 rounded-md text-xs bg-white text-black hover:bg-white/90"
+              onClick={(e) => {
+                e.stopPropagation();
+                openRideshare({
+                  dest: { lat: point.lat, lng: point.lng },
+                  destLabel: 'Convergence',
+                  pickup: 'my_location',
+                  provider: 'both',
+                  rideTypeId: 'uberx',
+                });
+              }}
+            >
+              Rideshare
             </button>
           </div>
         </div>
