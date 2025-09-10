@@ -5419,6 +5419,35 @@ export type Database = {
           },
         ]
       }
+      flow_reflections: {
+        Row: {
+          engagement: Json | null
+          flow_id: string | null
+          shared_to: string | null
+          viewed_at: string
+        }
+        Insert: {
+          engagement?: Json | null
+          flow_id?: string | null
+          shared_to?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          engagement?: Json | null
+          flow_id?: string | null
+          shared_to?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_reflections_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flow_ripples: {
         Row: {
           access_count: number
@@ -5646,7 +5675,11 @@ export type Database = {
           distance_m: number | null
           ended_at: string | null
           id: string
+          insights: Json | null
+          postcard_url: string | null
           profile_id: string
+          reflection_generated_at: string | null
+          share_count: number | null
           start_location: unknown | null
           started_at: string
           sun_exposed_min: number | null
@@ -5660,7 +5693,11 @@ export type Database = {
           distance_m?: number | null
           ended_at?: string | null
           id?: string
+          insights?: Json | null
+          postcard_url?: string | null
           profile_id: string
+          reflection_generated_at?: string | null
+          share_count?: number | null
           start_location?: unknown | null
           started_at?: string
           sun_exposed_min?: number | null
@@ -5674,7 +5711,11 @@ export type Database = {
           distance_m?: number | null
           ended_at?: string | null
           id?: string
+          insights?: Json | null
+          postcard_url?: string | null
           profile_id?: string
+          reflection_generated_at?: string | null
+          share_count?: number | null
           start_location?: unknown | null
           started_at?: string
           sun_exposed_min?: number | null
@@ -20828,6 +20869,10 @@ export type Database = {
           vx_avg: number
           vy_avg: number
         }[]
+      }
+      flow_summary: {
+        Args: { _flow_id: string }
+        Returns: Json
       }
       fn_ai_suggest_venues: {
         Args: {
