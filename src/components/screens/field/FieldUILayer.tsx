@@ -63,7 +63,7 @@ export function FieldUILayer() {
   const sunEnabled = filters.weatherPref?.[0] === 'sun'
   const { score: sunScore } = useSunOpportunity(lens === 'explore' && sunEnabled)
   const [lastMs, setLastMs] = React.useState<number|undefined>()
-  const { venues, convergence, clusterRes, loading, error } =
+  const { venues, convergence, clusterRes, loading, error, refresh } =
     useFlowExplore({ lens, map, filters, onLatencyMs: setLastMs })
   // Memoized venue mapping for performance
   const venueLite = useMemo(() => {
@@ -220,7 +220,7 @@ export function FieldUILayer() {
               {error} 
               <button 
                 className="underline ml-2 hover:text-white/80" 
-                onClick={() => window.location.reload()}
+                onClick={refresh}
               >
                 Retry
               </button>

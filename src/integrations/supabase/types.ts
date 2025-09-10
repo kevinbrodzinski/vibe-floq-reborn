@@ -22951,6 +22951,25 @@ export type Database = {
           prob: number
         }[]
       }
+      recent_convergence_secure: {
+        Args: {
+          east: number
+          limit_n?: number
+          min_points?: number
+          north: number
+          res?: number
+          since_minutes?: number
+          south: number
+          west: number
+        }
+        Returns: {
+          eta_min: number
+          group_min: number
+          lat: number
+          lng: number
+          prob: number
+        }[]
+      }
       recent_friend_venue_counts: {
         Args: { profile: string; since: string }
         Returns: {
