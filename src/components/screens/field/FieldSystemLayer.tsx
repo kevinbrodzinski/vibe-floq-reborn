@@ -27,12 +27,9 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   const friendFlows = useFriendFlows(map);
   React.useEffect(() => {
     if (!map) return;
-    if (!friendFlows?.length) {
-      // ensure removal if previously mounted
-      const cleanup = addFriendFlowsLayer(map, []);
-      return cleanup;
-    }
-    const cleanup = addFriendFlowsLayer(map, friendFlows);
+    const cleanup = addFriendFlowsLayer(map, friendFlows ?? []);
+    // If no rows, we still mounted; prefer removing entirely:
+    if (!friendFlows?.length) { cleanup(); return; }
     return cleanup;
   }, [map, friendFlows]);
 

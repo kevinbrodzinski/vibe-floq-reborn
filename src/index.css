@@ -113,6 +113,25 @@ html, body, #root {
   animation: ripple-pulse 2s ease-in-out infinite;
 }
 
+/* Pulse soft animation for subtle pulsing effects */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse { animation: none !important; }
+  .animate-ripple-pulse { animation: none !important; }
+  .pulse-soft { animation: none !important; }
+  .animate-glow-flow { animation: none !important; }
+  .animate-flow { animation: none !important; }
+}
+
 @keyframes ripple-wave {
   0% {
     background: linear-gradient(to right, #a78bfa, #c4b5fd, #e5e7eb);

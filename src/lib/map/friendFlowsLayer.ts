@@ -47,26 +47,20 @@ function rowsToFC(rows: FriendFlowRow[]): GeoJSON.FeatureCollection {
 
 export function addFriendFlowsLayer(map: any, rows: FriendFlowRow[]) {
   const fc = rows?.length ? rowsToFC(rows) : { type: 'FeatureCollection', features: [] };
-  let lastJson: string | undefined;
 
   const upsert = () => {
-    // Performance: skip if data unchanged
+    // Performance: skip if data unchanged - attach to source for persistence
+    const src = map.getSource(SRC) as mapboxgl.GeoJSONSource & { _prevJSON?: string };
     const fcJson = JSON.stringify(fc);
-    if (fcJson === lastJson) return;
-    lastJson = fcJson;
 
-    // source with dedupe
-    if (map.getSource(SRC)) {
-      const source = map.getSource(SRC) as any;
-      const prevJSON = source._prevJSON ?? '';
-      const nextJSON = JSON.stringify(fc);
-      if (prevJSON !== nextJSON) {
-        (source as mapboxgl.GeoJSONSource).setData(fc as any);
-        source._prevJSON = nextJSON;
-      }
+    if (src?._prevJSON === fcJson) return;
+
+    if (src) {
+      src.setData(fc as any);
+      src._prevJSON = fcJson;
     } else {
       map.addSource(SRC, { type: 'geojson', data: fc as any });
-      (map.getSource(SRC) as any)._prevJSON = JSON.stringify(fc);
+      (map.getSource(SRC) as any)._prevJSON = fcJson;
     }
 
     // line layer
