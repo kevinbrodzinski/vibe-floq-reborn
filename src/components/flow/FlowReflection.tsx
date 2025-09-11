@@ -62,7 +62,7 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
     return segments
       .filter(seg => !!seg.center)
       .map(seg => ({
-        t: seg.arrived_at,
+        t: seg.arrived_at ?? seg.departed_at, // Safer fallback chain
         center: {
           lng: (seg.center as any).coordinates[0],
           lat: (seg.center as any).coordinates[1]

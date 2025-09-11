@@ -21,6 +21,7 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   // Heatline state
   const [heatlineOn, setHeatlineOn] = React.useState(false);
   const edgesRef = React.useRef<any[]>([]);
+  const cleanupRef = React.useRef<null | (() => void)>(null);
 
   // Listen for heatline events from Reflection
   React.useEffect(() => {
@@ -36,13 +37,29 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
     };
   }, []);
 
-  // Mount/update heatline layer
+  // Mount/update heatline layer with cleanup ref
   React.useEffect(() => {
-    if (!map || !heatlineOn || !edgesRef.current.length) return;
+    if (!map) return;
     
-    const cleanup = addRippleHeatlineLayer(map as any, edgesRef.current);
-    return cleanup;
-  }, [map, heatlineOn]);
+    // Turn OFF → remove immediately
+    if (!heatlineOn) {
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+      return;
+    }
+    
+    // ON but no edges yet
+    if (!edgesRef.current.length) return;
+
+    // Mount/update
+    cleanupRef.current?.();
+    cleanupRef.current = addRippleHeatlineLayer(map as any, edgesRef.current);
+
+    return () => {
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+    };
+  }, [map, heatlineOn, edgesRef.current.length]);
 
   return (
     <>
