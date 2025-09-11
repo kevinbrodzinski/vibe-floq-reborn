@@ -1,59 +1,61 @@
 import * as React from 'react';
-import { cn } from '@/lib/utils'
-import { CHIP_COLOR_PALETTE } from '@/constants/moments'
+import { cn } from '@/lib/utils';
+import { CHIP_COLOR_PALETTE } from '@/constants/moments';
 
-interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {
-  color?: string
-  icon?: React.ReactNode
+type ChipColors = keyof typeof CHIP_COLOR_PALETTE;
+type BaseProps = {
+  color?: ChipColors;
+  icon?: React.ReactNode;
   pressed?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
-}
+  asChild?: boolean;         // if you need Slot polymorphism later
+  className?: string;
+  children?: React.ReactNode;
+};
 
-export const Chip = ({ 
-  color = 'slate', 
-  icon, 
-  className, 
-  children, 
-  pressed, 
-  disabled, 
-  onClick, 
-  ...rest 
-}: ChipProps) => (
-  <span
-    {...rest}
-    onClick={onClick}
-    className={cn(
-      'inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer',
-      pressed 
-        ? 'bg-white/20 text-white' 
-        : 'bg-white/10 text-white/80 hover:bg-white/15',
-      disabled && 'opacity-60 cursor-not-allowed',
-      color !== 'slate' && (CHIP_COLOR_PALETTE[color] || CHIP_COLOR_PALETTE.slate),
-      className
-    )}
-    role={onClick ? "button" : undefined}
-    aria-pressed={onClick ? !!pressed : undefined}
-    tabIndex={onClick ? 0 : undefined}
-  >
-    {icon}
-    {children}
-  </span>
-)
+type StaticProps = BaseProps & React.HTMLAttributes<HTMLSpanElement> & { onClick?: undefined; disabled?: undefined; };
+type ButtonProps = BaseProps & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-// Legacy Chip component for backward compatibility
-export function ChipLegacy({ color = 'slate', icon, className, children, ...rest }: Omit<ChipProps, 'pressed' | 'disabled' | 'onClick'>) {
+export function Chip(props: StaticProps | ButtonProps) {
+  const { color='slate', icon, pressed, className, children, ...rest } = props as any;
+  const palette = CHIP_COLOR_PALETTE[color] ?? CHIP_COLOR_PALETTE.slate;
+  const base = cn(
+    'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs',
+    'transition-colors duration-150',
+    pressed ? 'ring-2 ring-current' : '',
+    palette,
+    className
+  );
+
+  const Content = (
+    <>
+      {icon && <span aria-hidden className="shrink-0">{icon}</span>}
+      <span>{children}</span>
+    </>
+  );
+
+  if ('onClick' in props) {
+    const btn = props as ButtonProps;
+    return (
+      <button
+        type="button"
+        aria-pressed={pressed || undefined}
+        className={cn(base, 'hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2')}
+        {...btn}
+      >
+        {Content}
+      </button>
+    );
+  }
+
+  const span = props as StaticProps;
   return (
-    <span
-      {...rest}
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors hover:opacity-80',
-        CHIP_COLOR_PALETTE[color] || CHIP_COLOR_PALETTE.slate,
-        className
-      )}
-    >
-      {icon}
-      {children}
+    <span className={base} {...span}>
+      {Content}
     </span>
   );
+}
+
+/** Back-compat wrapper if you need to preserve old API temporarily */
+export function ChipLegacy(props: Omit<ButtonProps,'pressed'>) {
+  return <Chip {...props} />;
 }

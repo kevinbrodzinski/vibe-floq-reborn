@@ -24,7 +24,7 @@ import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
 import { useMemo, Fragment } from "react";
 import { jitterPoint, groupByPosition, sortFriendsFirst } from '@/utils/jitter';
-import ClusterBadge from '@/components/ClusterBadge';
+import { ClusterBadge } from '@/components/ClusterBadge';
 
 interface Person {
   id: string;

@@ -2,15 +2,18 @@ import { MapPin, Users, Music, CalendarCheck, Sparkles, Eye } from "lucide-react
 
 // Color palette for chips to avoid Tailwind purge issues
 export const CHIP_COLOR_PALETTE: Record<string, string> = {
-  slate: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
-  red: 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200',
-  blue: 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200',
-  green: 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200',
-  yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200',
-  purple: 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200',
-  pink: 'bg-pink-100 text-pink-800 dark:bg-pink-800 dark:text-pink-200',
-  teal: 'bg-teal-100 text-teal-800 dark:bg-teal-800 dark:text-teal-200',
-  emerald: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200',
+  slate: 'bg-slate-900/30 text-slate-50 border border-slate-50/10',
+  red: 'bg-red-500/15 text-red-50 border border-red-400/25',
+  blue: 'bg-blue-500/15 text-blue-50 border border-blue-400/25',
+  green: 'bg-green-500/15 text-green-50 border border-green-400/25',
+  yellow: 'bg-yellow-500/15 text-yellow-50 border border-yellow-400/25',
+  purple: 'bg-purple-500/15 text-purple-50 border border-purple-400/25',
+  pink: 'bg-pink-500/15 text-pink-50 border border-pink-400/25',
+  teal: 'bg-teal-500/15 text-teal-50 border border-teal-400/25',
+  emerald: 'bg-emerald-500/15 text-emerald-50 border border-emerald-400/25',
+  indigo: 'bg-indigo-500/15 text-indigo-50 border border-indigo-400/25',
+  cyan: 'bg-cyan-500/15 text-cyan-50 border border-cyan-400/25',
+  orange: 'bg-orange-500/15 text-orange-50 border border-orange-400/25',
 }
 
 // Icon mapping for moment types

@@ -1,23 +1,29 @@
-import { planStatusConfig, type PlanStatus } from "@/lib/planStatusConfig";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+type PlanStatus = string;
 
 interface PlanStatusTagProps {
   status: PlanStatus;
   className?: string;
 }
 
-export const PlanStatusTag = ({ status, className = "" }: PlanStatusTagProps) => {
-  const config = planStatusConfig[status] || {
-    label: 'Unknown',
-    className: 'bg-muted/50 text-muted-foreground border-muted'
-  };
-
-  return (
-    <span className={`
-      inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-      transition-all duration-300 bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] border-[color:var(--border)] ${className}
-    `}>
-      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse" />
-      {config.label}
-    </span>
-  );
+const MAP: Record<string, { label: string; variant: 'secondary'|'default'|'destructive'|'outline' }> = {
+  draft:    { label: 'Draft',    variant: 'outline'     },
+  active:   { label: 'Active',   variant: 'default'     },
+  pending:  { label: 'Pending',  variant: 'secondary'   },
+  canceled: { label: 'Canceled', variant: 'destructive' }
 };
+
+export function PlanStatusTag({ status, className = '' }: PlanStatusTagProps) {
+  const m = MAP[status] ?? { label: 'Unknown', variant: 'secondary' };
+  return (
+    <Badge 
+      variant={m.variant} 
+      className={cn('px-2.5 py-1', className)}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse" />
+      {m.label}
+    </Badge>
+  );
+}

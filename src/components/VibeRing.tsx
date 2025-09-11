@@ -10,27 +10,20 @@ interface VibeRingProps {
   pulse?: boolean;
 }
 
-export const VibeRing: React.FC<VibeRingProps> = ({
-  vibe,
-  className,
-  children,
-  pulse = false
-}) => {
-  // Use design system colors for vibe rings
-  const vibeColorHsl = getVibeColor(vibe);
-  
+export function VibeRing({ vibe, pulse=false, className, children }: VibeRingProps) {
+  const hsl = getVibeColor(vibe); // ex: "hsl(300 90% 60%)"
+
   return (
-    <div 
+    <div
       className={cn(
-        "rounded-full border-2 transition-all",
-        pulse && "animate-pulse",
+        'relative inline-flex items-center justify-center rounded-full',
+        'border-2',
+        pulse && 'motion-safe:animate-pulse-soft',
         className
       )}
-      style={{
-        borderColor: vibeColorHsl
-      }}
+      style={{ borderColor: `color-mix(in oklab, ${hsl} 85%, transparent)` }}
     >
       {children}
     </div>
   );
-};
+}

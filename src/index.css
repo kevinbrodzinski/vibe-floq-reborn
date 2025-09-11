@@ -30,6 +30,15 @@ html, body, #root {
   scroll-margin-top: 6rem;
 }
 
+/* Soft pulse animation for reduced motion compliance */
+@keyframes pulse-soft { 
+  0% { box-shadow: 0 0 0 0 var(--ring-color, rgba(236,72,153,.35)); } 
+  100% { box-shadow: 0 0 0 16px rgba(0,0,0,0); } 
+}
+.motion-safe\:animate-pulse-soft { 
+  animation: pulse-soft 2s cubic-bezier(.4,0,.2,1) infinite; 
+}
+
 /* CSS helper for the connecting line */
 .afterglow-moment-anchor {
   /* ensures enough left padding so content does not overlap spline */

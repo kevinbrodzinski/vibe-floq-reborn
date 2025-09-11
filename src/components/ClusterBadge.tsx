@@ -1,31 +1,30 @@
 
-import { FC } from 'react';
 import { zIndex } from '@/constants/z';
+import { cn } from '@/lib/utils';
 
-interface Props {
-  count: number;
-  x: number;
-  y: number;
-  onClick?: () => void;
+
+export function ClusterBadge({
+  count, x, y, onClick
+}: { count: number; x: number; y: number; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${count} places`}
+      className={cn(
+        'absolute grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center',
+        'rounded-full bg-primary text-primary-foreground shadow-lg',
+        'border border-primary/40 outline-none focus-visible:ring-2 focus-visible:ring-primary/60'
+      )}
+      style={{ 
+        left: `${x}%`, 
+        top: `${y}%`,
+        ...zIndex('mapOverlay').style
+      }}
+    >
+      <span className="text-[12px] font-semibold">+{count}</span>
+    </button>
+  );
 }
 
-const ClusterBadge: FC<Props> = ({ count, x, y, onClick }) => (
-  <div
-    className="absolute flex items-center justify-center text-[10px] font-medium
-               h-5 min-w-5 rounded-full bg-[color:var(--bg-alt)] backdrop-blur cursor-pointer 
-               hover:bg-[color:var(--chip-bg)] transition-colors pointer-events-auto
-               text-[color:var(--ink)] border border-[color:var(--border)]"
-    style={{ 
-      left: `${x}%`,
-      top: `${y}%`,
-      transform: 'translate(-50%, -50%) translate(6px, -6px)',
-      ...zIndex('mapOverlay').style
-    }}
-    onClick={onClick}
-    aria-label={`+${count} more people`}
-  >
-    +{count}
-  </div>
-);
 
-export default ClusterBadge;
