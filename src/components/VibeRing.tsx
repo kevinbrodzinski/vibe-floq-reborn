@@ -16,7 +16,7 @@ export const VibeRing: React.FC<VibeRingProps> = ({
   children,
   pulse = false
 }) => {
-  // Convert HSL color to border class
+  // Use design system colors for vibe rings
   const vibeColorHsl = getVibeColor(vibe);
   
   return (
@@ -27,7 +27,7 @@ export const VibeRing: React.FC<VibeRingProps> = ({
         className
       )}
       style={{
-        borderColor: `hsl(var(--${vibe}))`
+        borderColor: vibeColorHsl
       }}
     >
       {children}

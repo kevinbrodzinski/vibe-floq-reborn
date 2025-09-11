@@ -14,7 +14,7 @@ export const PlanStatusTag = ({ status, className = "" }: PlanStatusTagProps) =>
   return (
     <span className={`
       inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-      transition-all duration-300 ${config.className} ${className}
+      transition-all duration-300 bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] border-[color:var(--border)] ${className}
     `}>
       <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse" />
       {config.label}

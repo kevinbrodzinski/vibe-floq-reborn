@@ -15,6 +15,11 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Design Kit variants
+        kit: "border-transparent bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)]",
+        success: "border-transparent bg-[color:var(--success)] text-white",
+        warning: "border-transparent bg-[color:var(--warn)] text-white", 
+        danger: "border-transparent bg-[color:var(--danger)] text-white",
       },
     },
     defaultVariants: {

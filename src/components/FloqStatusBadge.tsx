@@ -22,8 +22,8 @@ export const FloqStatusBadge: React.FC<FloqStatusBadgeProps> = ({
   
   return (
     <Badge 
-      variant={isHost ? 'default' : 'outline'} 
-      className={`${className} ${!isHost ? 'text-primary-foreground/80' : ''}`}
+      variant={isHost ? 'default' : 'kit'} 
+      className={className}
       title={isHost ? "You're the host" : "You've joined this floq"}
     >
       {isHost ? 'Host' : 'Joined'}

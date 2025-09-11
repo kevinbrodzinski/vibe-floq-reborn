@@ -11,9 +11,10 @@ interface Props {
 
 const ClusterBadge: FC<Props> = ({ count, x, y, onClick }) => (
   <div
-    className="absolute flex items-center justify-center text-[10px] font-medium text-white
-               h-5 min-w-5 rounded-full bg-neutral-900/75 backdrop-blur cursor-pointer 
-               hover:bg-neutral-800/75 transition-colors pointer-events-auto"
+    className="absolute flex items-center justify-center text-[10px] font-medium
+               h-5 min-w-5 rounded-full bg-[color:var(--bg-alt)] backdrop-blur cursor-pointer 
+               hover:bg-[color:var(--chip-bg)] transition-colors pointer-events-auto
+               text-[color:var(--ink)] border border-[color:var(--border)]"
     style={{ 
       left: `${x}%`,
       top: `${y}%`,
