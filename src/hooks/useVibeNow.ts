@@ -51,7 +51,7 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
       envRef.current = env;
 
       // Listen for state updates with environmental blending
-      orchestrator.addListener((state) => {
+      const unsubscribe = orchestrator.addListener((state) => {
         const base = state.currentVibe as VibePoint;
         const envSnap = (state.recentSnapshots?.[state.recentSnapshots.length - 1]?.sources?.environmental) ?? null;
         const envQuality = env.getQuality();
@@ -61,6 +61,9 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
         setEngineState(state);
         setCurrentVibe(blended);
       });
+      
+      // Store unsubscribe function for cleanup
+      (orchestrator as any)._unsubscribe = unsubscribe;
 
       orchestratorRef.current = orchestrator;
       setIsInitialized(true);
@@ -80,6 +83,16 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
     }
     
     if (orchestratorRef.current) {
+      // Call unsubscribe if available
+      const unsubscribe = (orchestratorRef.current as any)._unsubscribe;
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.warn('Vibe engine unsubscribe failed:', error);
+        }
+      }
+      
       orchestratorRef.current.dispose();
       orchestratorRef.current = null;
       setIsInitialized(false);
@@ -92,13 +105,10 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
 
   // Initialize/cleanup based on autoMode
   useEffect(() => {
-    if (autoMode) {
+    if (autoMode && !orchestratorRef.current) {
       initializeEngine();
-    } else {
-      cleanupEngine();
     }
-
-    return cleanupEngine;
+    return cleanupEngine; // guard remount/unmount
   }, [autoMode, initializeEngine, cleanupEngine]);
 
   // Manual vibe point generation for testing

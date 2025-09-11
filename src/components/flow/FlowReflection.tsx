@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Download, Share2, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useEnvPermissions } from '@/lib/vibe/permissions/useEnvPermissions';
+import { ImproveAccuracyChip } from '@/components/vibe/ImproveAccuracyChip';
 
 export default function FlowReflectionPage({ flowId }: { flowId: string }) {
   const { data: flow, isLoading: loadingFlow, error: flowError } = useFlow(flowId);
@@ -77,6 +79,14 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
     venues: [], // Add real venues if available
     maxStories: 4,
   });
+
+  // Environmental Permissions
+  const { envEnabled, requestEnvPermissions } = useEnvPermissions();
+
+  // Derive low confidence from vibe analysis
+  const consistency = vibeAnalysis?.patterns?.consistency ?? (metrics?.energySamples.length > 3 ? 0.6 : 0.4);
+  const lowConfidence = consistency < 0.55;
+  const showImproveChip = !envEnabled && lowConfidence;
 
   // Smart Nudge
   const nudge = React.useMemo(() => {
@@ -233,6 +243,19 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
           </div>
           
           <div className="flex flex-wrap gap-2">
+            <ImproveAccuracyChip
+              show={showImproveChip}
+              request={requestEnvPermissions}
+              onRequested={({ motionOk, micOk }) => {
+                const ok = motionOk || micOk;
+                toast({
+                  title: ok ? 'Accuracy improved' : 'No changes',
+                  description: ok ? 'Environmental signals enabled for future flows.' : 'You can enable later from settings.'
+                });
+              }}
+              className="mr-1"
+            />
+            
             <Button
               onClick={handleDownloadPostcard}
               className="bg-white/10 hover:bg-white/15 border border-white/15"

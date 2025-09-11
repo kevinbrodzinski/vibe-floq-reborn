@@ -1,6 +1,14 @@
 // Signal orchestrator - coordinates all vibe signal collectors
 import type { SignalSnapshot, SignalCollector, VibePoint, VibeEngineState } from '@/types/vibe';
 
+// Timeout helper for hanging collectors
+async function withTimeout<T>(p: Promise<T>, ms = 1500): Promise<T | null> {
+  return await Promise.race([
+    p,
+    new Promise<null>(resolve => setTimeout(() => resolve(null), ms))
+  ]);
+}
+
 export class SignalOrchestrator {
   private snapshots: SignalSnapshot[] = [];
   private collectors = new Map<string, SignalCollector>();
@@ -16,6 +24,7 @@ export class SignalOrchestrator {
 
   // Stop collection and cleanup resources
   stop() {
+    if (!this.isActive) return; // idempotent
     this.isActive = false;
     if (this.collectionTimer) {
       clearTimeout(this.collectionTimer);
@@ -41,9 +50,10 @@ export class SignalOrchestrator {
     this.collectors.delete(name);
   }
 
-  // Add state change listener
+  // Add state change listener - returns unsubscribe function
   addListener(callback: (state: VibeEngineState) => void) {
     this.listeners.push(callback);
+    return () => this.removeListener(callback);
   }
 
   removeListener(callback: (state: VibeEngineState) => void) {
@@ -102,42 +112,45 @@ export class SignalOrchestrator {
 
   // Internal collection loop
   private async startCollection() {
+    if (this.isActive) return; // idempotent
     this.isActive = true;
     
-    const collect = async () => {
-      if (!this.isActive) return; // Exit if stopped
-      
-      try {
-        const snapshot = await this.collectSnapshot();
-        if (snapshot) {
-          this.snapshots.push(snapshot);
-          
-          // Trim old snapshots
-          if (this.snapshots.length > this.maxSnapshots) {
-            this.snapshots = this.snapshots.slice(-this.maxSnapshots);
-          }
-
-          // Notify listeners
-          const state = this.getState();
-          this.listeners.forEach(listener => {
-            try {
-              listener(state);
-            } catch (error) {
-              console.warn('Vibe engine listener error:', error);
-            }
-          });
-        }
-      } catch (error) {
-        console.warn('Vibe signal collection error:', error);
-      }
-
-      // Schedule next collection if still active
+    const tick = async () => {
+      if (!this.isActive) return;
+      await this.stepOnceSafe();
       if (this.isActive) {
-        this.collectionTimer = setTimeout(collect, 5000); // 5 second intervals
+        this.collectionTimer = setTimeout(tick, 5000);
       }
     };
 
-    collect();
+    tick();
+  }
+
+  // Single collection step with error safety
+  private async stepOnceSafe() {
+    try {
+      const snapshot = await this.collectSnapshot();
+      if (snapshot) {
+        this.snapshots.push(snapshot);
+        
+        // Trim old snapshots
+        if (this.snapshots.length > this.maxSnapshots) {
+          this.snapshots = this.snapshots.slice(-this.maxSnapshots);
+        }
+
+        // Notify listeners
+        const state = this.getState();
+        this.listeners.forEach(listener => {
+          try {
+            listener(state);
+          } catch (error) {
+            console.warn('Vibe engine listener error:', error);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Vibe signal collection error:', error);
+    }
   }
 
   // Collect signals from all registered collectors
@@ -147,14 +160,14 @@ export class SignalOrchestrator {
     let totalQuality = 0;
     let qualityCount = 0;
 
-    // Collect from all available collectors
+    // Collect from all available collectors with timeout protection
     for (const [name, collector] of this.collectors) {
       try {
         const isAvailable = collector.isAvailable();
         availability[name] = isAvailable;
 
         if (isAvailable) {
-          const signal = await collector.collect();
+          const signal = await withTimeout(collector.collect(), 1500);
           if (signal) {
             sources[name] = signal;
             const quality = collector.getQuality();
@@ -181,54 +194,54 @@ export class SignalOrchestrator {
     };
   }
 
-  // Calculate energy from recent snapshots
+  // Calculate energy from recent snapshots with explicit weight management
   private calculateEnergy(snapshots: SignalSnapshot[]): number {
     let totalEnergy = 0;
     let totalWeight = 0;
 
     for (const snapshot of snapshots) {
       const weight = snapshot.quality;
-      let snapshotEnergy = 0.3; // baseline
+      let snapshotEnergy = 0; // Start from 0 baseline
 
       // Location contributes to energy
       if (snapshot.sources.location) {
         const loc = snapshot.sources.location;
+        // Urban density gets minimal weight until we have real data
+        snapshotEnergy += Math.max(0, Math.min(1, loc.urbanDensity)) * 0.05;
         // Venues boost energy (main location signal)
         if (loc.venue) {
-          snapshotEnergy += loc.venue.confidence * 0.25;
+          snapshotEnergy += Math.max(0, Math.min(1, loc.venue.confidence)) * 0.15;
         }
-        // Urban density gets minimal weight until we have real data
-        snapshotEnergy += loc.urbanDensity * 0.05;
       }
 
       // Movement contributes to energy
       if (snapshot.sources.movement) {
         const mov = snapshot.sources.movement;
-        // Active movement boosts energy
-        const activityBoost = mov.activity === 'walking' ? 0.2 : 
-                             mov.activity === 'transit' ? 0.1 : 0;
-        snapshotEnergy += activityBoost;
+        snapshotEnergy += mov.activity === 'walking' ? 0.15
+                       : mov.activity === 'transit' ? 0.08
+                       : 0;
       }
 
       // Temporal context contributes
       if (snapshot.sources.temporal) {
         const temp = snapshot.sources.temporal;
-        // Evening hours and weekends boost energy
-        const hourBoost = temp.hourOfDay >= 18 && temp.hourOfDay <= 23 ? 0.2 : 0;
-        const weekendBoost = temp.isWeekend ? 0.1 : 0;
-        snapshotEnergy += hourBoost + weekendBoost;
+        snapshotEnergy += (temp.hourOfDay >= 18 && temp.hourOfDay <= 23 ? 0.12 : 0)
+                       + (temp.isWeekend ? 0.05 : 0);
       }
 
       // Behavioral patterns contribute
       if (snapshot.sources.behavioral?.patternMatch) {
-        const pattern = snapshot.sources.behavioral.patternMatch;
-        const patternBoost = pattern.type === 'social-night' ? 0.3 :
-                           pattern.type === 'adventure' ? 0.25 :
-                           pattern.type === 'exploration' ? 0.2 : 0.1;
-        snapshotEnergy += patternBoost * pattern.confidence;
+        const pm = snapshot.sources.behavioral.patternMatch;
+        const base = pm.type === 'social-night' ? 0.18
+                  : pm.type === 'adventure' ? 0.15
+                  : pm.type === 'exploration' ? 0.12
+                  : 0.08;
+        snapshotEnergy += base * Math.max(0, Math.min(1, pm.confidence));
       }
 
-      totalEnergy += Math.min(1, snapshotEnergy) * weight;
+      // Clamp snapshot energy and add to total
+      snapshotEnergy = Math.max(0, Math.min(1, snapshotEnergy));
+      totalEnergy += snapshotEnergy * weight;
       totalWeight += weight;
     }
 
