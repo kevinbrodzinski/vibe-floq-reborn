@@ -24,19 +24,19 @@ const VARIANT: Record<Variants, string> = {
 };
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ label, size='md', variant='ghost', pressed, disabled, className, children, ...rest }, ref) => (
+  ({ label, size='md', variant='ghost', pressed, disabled, className, children, type = 'button', ...rest }, ref) => (
     <button
       ref={ref}
-      type="button"
+      type={type}
       aria-label={label}
+      aria-pressed={typeof pressed === 'boolean' ? pressed : undefined}
       title={label}
-      aria-pressed={pressed ?? undefined}
       disabled={disabled}
       className={cn(
-        'inline-grid place-items-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-foreground/60',
+        'inline-grid place-items-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary/70',
         SIZE[size],
         VARIANT[variant],
-        disabled && 'opacity-50 cursor-not-allowed',
+        disabled && 'opacity-50 pointer-events-none',
         className
       )}
       {...rest}
