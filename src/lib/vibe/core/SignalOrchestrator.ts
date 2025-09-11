@@ -6,10 +6,29 @@ export class SignalOrchestrator {
   private collectors = new Map<string, SignalCollector>();
   private maxSnapshots = 120; // 10 minutes at 5s intervals
   private listeners: Array<(state: VibeEngineState) => void> = [];
+  private collectionTimer: ReturnType<typeof setTimeout> | null = null;
+  private isActive = false;
 
   constructor() {
     // Start collection loop
     this.startCollection();
+  }
+
+  // Stop collection and cleanup resources
+  stop() {
+    this.isActive = false;
+    if (this.collectionTimer) {
+      clearTimeout(this.collectionTimer);
+      this.collectionTimer = null;
+    }
+  }
+
+  // Complete cleanup - stop collection and clear all data
+  dispose() {
+    this.stop();
+    this.listeners.length = 0;
+    this.snapshots.length = 0;
+    this.collectors.clear();
   }
 
   // Register a signal collector
@@ -83,7 +102,11 @@ export class SignalOrchestrator {
 
   // Internal collection loop
   private async startCollection() {
+    this.isActive = true;
+    
     const collect = async () => {
+      if (!this.isActive) return; // Exit if stopped
+      
       try {
         const snapshot = await this.collectSnapshot();
         if (snapshot) {
@@ -108,8 +131,10 @@ export class SignalOrchestrator {
         console.warn('Vibe signal collection error:', error);
       }
 
-      // Schedule next collection
-      setTimeout(collect, 5000); // 5 second intervals
+      // Schedule next collection if still active
+      if (this.isActive) {
+        this.collectionTimer = setTimeout(collect, 5000); // 5 second intervals
+      }
     };
 
     collect();
@@ -168,11 +193,12 @@ export class SignalOrchestrator {
       // Location contributes to energy
       if (snapshot.sources.location) {
         const loc = snapshot.sources.location;
-        // Urban areas and interesting venues boost energy
-        snapshotEnergy += loc.urbanDensity * 0.3;
+        // Venues boost energy (main location signal)
         if (loc.venue) {
-          snapshotEnergy += loc.venue.confidence * 0.2;
+          snapshotEnergy += loc.venue.confidence * 0.25;
         }
+        // Urban density gets minimal weight until we have real data
+        snapshotEnergy += loc.urbanDensity * 0.05;
       }
 
       // Movement contributes to energy

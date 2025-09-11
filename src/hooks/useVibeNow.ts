@@ -49,8 +49,7 @@ export function useVibeNow() {
   // Cleanup engine
   const cleanupEngine = useCallback(() => {
     if (orchestratorRef.current) {
-      // Note: SignalOrchestrator doesn't have cleanup methods yet
-      // In production, we'd add proper cleanup
+      orchestratorRef.current.dispose();
       orchestratorRef.current = null;
       setIsInitialized(false);
       setCurrentVibe(null);
