@@ -14,10 +14,12 @@ export function VibeRing({ vibe, pulse=false, className, children }: VibeRingPro
   const hsl = getVibeColor(vibe); // "hsl(300 90% 60%)"
   return (
     <div
-      style={{ ['--vibe-hsl' as any]: hsl }}
+      style={{ ['--ring-color' as any]: hsl }}
       className={cn(
-        'relative rounded-xl ring-2 ring-[hsl(var(--vibe-hsl))] ring-offset-2 ring-offset-background',
-        pulse ? 'motion-safe:animate-pulse' : '',
+        'rounded-xl border p-2',
+        'border-[color:var(--ring-color)]',
+        pulse && 'animate-pulse',
+        '[@media(prefers-reduced-motion:reduce)]:animate-none',
         className
       )}
       data-vibe={vibe}

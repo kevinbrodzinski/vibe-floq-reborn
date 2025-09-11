@@ -1,4 +1,5 @@
 export function withStyleLoaded(map: any, fn: () => void) {
   if (!map) return;
-  map.isStyleLoaded?.() ? fn() : map.once('style.load', fn);
+  const run = () => { try { fn(); } catch {/* noop */} };
+  map.isStyleLoaded?.() ? run() : map.once('style.load', run);
 }

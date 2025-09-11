@@ -38,7 +38,7 @@ export function Chip(props: StaticProps | ButtonProps) {
       <button
         type="button"
         aria-pressed={pressed ?? undefined}
-        className={cn(base, 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60')}
+        className={base}
         {...btn}
       >
         {Content}

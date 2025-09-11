@@ -55,11 +55,18 @@ export function addFriendFlowsLayer(map: any, rows: FriendFlowRow[]) {
     if (fcJson === lastJson) return;
     lastJson = fcJson;
 
-    // source
+    // source with dedupe
     if (map.getSource(SRC)) {
-      (map.getSource(SRC) as mapboxgl.GeoJSONSource).setData(fc as any);
+      const source = map.getSource(SRC) as any;
+      const prevJSON = source._prevJSON ?? '';
+      const nextJSON = JSON.stringify(fc);
+      if (prevJSON !== nextJSON) {
+        (source as mapboxgl.GeoJSONSource).setData(fc as any);
+        source._prevJSON = nextJSON;
+      }
     } else {
       map.addSource(SRC, { type: 'geojson', data: fc as any });
+      (map.getSource(SRC) as any)._prevJSON = JSON.stringify(fc);
     }
 
     // line layer
