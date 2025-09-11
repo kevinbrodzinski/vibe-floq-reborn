@@ -21,7 +21,7 @@ export function ScrollableChipContainer({
       preventOverlap && "bottom-[calc(3.5rem+env(safe-area-inset-bottom))]",
       className
     )}>
-      <div className="mx-4 overflow-x-auto scrollbar-none">
+      <div className="mx-4 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2">
           {children}
         </div>

@@ -26,7 +26,11 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   // Friend Flows overlay
   const friendFlows = useFriendFlows(map);
   React.useEffect(() => {
-    if (map) addFriendFlowsLayer(map, friendFlows);
+    if (!map || !friendFlows?.length) return;
+
+    // mount layer safely; cleanup on deps change/unmount
+    const cleanup = addFriendFlowsLayer(map, friendFlows);
+    return cleanup;
   }, [map, friendFlows]);
 
   // Flow HUD (mock data for now - will connect to real flow recorder later)
