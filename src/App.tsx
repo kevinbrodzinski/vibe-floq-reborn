@@ -42,6 +42,7 @@ import { PlanInvite } from "./pages/PlanInvite";
 import { PublicShortlistPage } from "./pages/PublicShortlistPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import FlowReflectionPage from "./pages/FlowReflectionPage";
+import VibeEngineTestPage from "./pages/VibeEngineTestPage";
 
 
 const App = () => {
@@ -135,6 +136,7 @@ const App = () => {
                         <Route path="/settings/profile" element={<Settings />} />
                         <Route path="/notifications" element={<NotificationsPage />} />
                         <Route path="/flow/:flowId/reflection" element={<FlowReflectionPage />} />
+                        <Route path="/vibe-engine-test" element={<VibeEngineTestPage />} />
 
                         <Route path="/*" element={<Index />} />
                       </Routes>

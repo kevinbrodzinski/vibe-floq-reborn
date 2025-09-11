@@ -6,6 +6,7 @@ export function FlowHUD({
 }: { elapsedMin: number; sui01: number; className?: string }) {
   const sui = Math.round(sui01 * 100)
   const mins = Math.max(0, Math.floor(elapsedMin))
+  
   return (
     <div
       className={cn(
