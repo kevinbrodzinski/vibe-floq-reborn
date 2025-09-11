@@ -6,16 +6,18 @@ import { analyzeVibeJourney, markersFromVibe } from '@/lib/flow/markersFromVibe'
 type LatLng = { lat: number; lng: number };
 type Sample = { t: number | Date | string; energy: number };
 
-function useContainerWidth<T extends HTMLElement = HTMLDivElement>() {
-  const ref = React.useRef<T | null>(null);
+function useContainerWidth() {
+  const ref = React.useRef<HTMLDivElement | null>(null);
   const [w, setW] = React.useState(0);
+  
   React.useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => setW(ref.current!.clientWidth));
-    ro.observe(ref.current!);
-    setW(ref.current!.clientWidth);
+    ro.observe(ref.current);
+    setW(ref.current.clientWidth);
     return () => ro.disconnect();
   }, []);
+  
   return { ref, width: w };
 }
 
@@ -43,77 +45,88 @@ export function FlowEnergyPanel({
   const [hoverIdx, setHoverIdx] = React.useState<number | null>(null);
 
   if (!samples?.length) {
-    return <div className={className}><div className="text-white/70 text-sm">No energy samples.</div></div>;
+    return <div className={className}><div className="text-muted-foreground text-sm">No energy samples.</div></div>;
   }
 
-  const analysis = analyzeVibeJourney(samples);
-  const markers = markersFromVibe(analysis, []);
+  // ❶ Build a sorted time→center timeline once
+  const timeline = React.useMemo(() => {
+    if (!segments?.length) return [] as Array<{ t: number; center: LatLng }>;
+    return segments
+      .map(s => ({ t: toMs(s.t), center: s.center }))
+      .filter(s => Number.isFinite(s.t) && s.center)
+      .sort((a, b) => a.t - b.t);
+  }, [segments]);
 
-  const highlightT = React.useMemo(() => {
-    const p = hoverIdx != null ? analysis.arc.peaks?.[hoverIdx] : null;
-    return p ? toMs(p.t) : null;
-  }, [hoverIdx, analysis]);
-
-  // helper: nearest segment center for a given time
+  // ❷ Helper to find nearest center for arbitrary t
   const timeToCoord = React.useCallback((tMs: number): LatLng | null => {
-    if (!segments?.length) return null;
-    const m = segments.map(s => ({ t: toMs(s.t), center: s.center })).sort((a,b)=>a.t-b.t);
+    const m = timeline;
     if (!m.length) return null;
     if (tMs <= m[0].t) return m[0].center;
-    if (tMs >= m[m.length-1].t) return m[m.length-1].center;
-    let lo=0, hi=m.length-1;
+    if (tMs >= m[m.length - 1].t) return m[m.length - 1].center;
+    let lo = 0, hi = m.length - 1;
     while (hi - lo > 1) {
       const mid = (hi + lo) >> 1;
       (m[mid].t < tMs) ? (lo = mid) : (hi = mid);
     }
     return (tMs - m[lo].t) <= (m[hi].t - tMs) ? m[lo].center : m[hi].center;
-  }, [segments]);
+  }, [timeline]);
 
-  // Debounce repeat clicks on the same peak (~300ms)
+  // ❸ Analyze + markers
+  const analysis = React.useMemo(() => analyzeVibeJourney(samples), [samples]);
+  const markers = React.useMemo(() => markersFromVibe(analysis, []), [analysis]);
+
+  // ❹ Hover highlight
+  const highlightT = React.useMemo(() => {
+    const p = hoverIdx != null ? analysis.arc.peaks?.[hoverIdx] : null;
+    return p ? toMs(p.t) : null;
+  }, [hoverIdx, analysis]);
+
+  // ❺ Debounce repeated peak jumps
   const lastClick = React.useRef<{ i: number | null; t: number }>({ i: null, t: 0 });
-
-  // Legend → click to jump
   const handleJump = React.useCallback((peakIdx: number) => {
     const now = Date.now();
     if (lastClick.current.i === peakIdx && (now - lastClick.current.t) < 300) return;
     lastClick.current = { i: peakIdx, t: now };
 
-    const peak = analysis.arc.peaks?.[peakIdx];
-    if (!peak) return;
-    const tMs = toMs(peak.t);
-    const coord = timeToCoord(tMs);
-    if (!coord) return;
+    const p = analysis.arc.peaks?.[peakIdx];
+    if (!p) return;
+    const tMs = toMs(p.t);
+    const c = timeToCoord(tMs);
+    if (!c) return;
 
-    // cheap heuristics for prob / eta based on energy
-    const e = Math.max(0, Math.min(1, peak.energy ?? 0.5));
-    const prob   = Math.max(0.25, Math.min(0.95, 0.25 + 0.7 * e));     // 25%..95%
-    const etaMin = Math.max(3, 15 - Math.round(e * 10));                // 3..15 min
+    const e = Math.max(0, Math.min(1, p.energy ?? 0.5));
+    const prob = Math.max(0.25, Math.min(0.95, 0.25 + 0.7 * e));
+    const etaMin = Math.max(3, 15 - Math.round(e * 10));
     const groupMin = 3;
 
     window.dispatchEvent(new CustomEvent('floq:open-convergence', {
-      detail: { lng: coord.lng, lat: coord.lat, prob, etaMin, groupMin }
+      detail: { lng: c.lng, lat: c.lat, prob, etaMin, groupMin, tMs, source: 'reflection-peak' }
     }));
   }, [analysis, timeToCoord]);
 
+  // ❶ Wider label gaps on narrow screens
+  const effectiveGap = width && width < 480 ? Math.max(48, minLabelGapPx) : minLabelGapPx;
+
   return (
-    <div ref={ref} className={`flex flex-col gap-3 ${className}`}>
+    <div ref={ref} className={className}>
       {width > 0 && (
         <VibeArcChart
-          data={samples}
+          data={samples as any}
           width={width}
           height={height}
           color={color}
           markers={markers}
-          minLabelGapPx={minLabelGapPx}
+          minLabelGapPx={effectiveGap}
           showMarkerLabels
-          highlightT={highlightT}
+          highlightT={highlightT ?? null}
         />
       )}
-      {!!(analysis.arc.peaks?.length) && (
+      {!!analysis.arc.peaks?.length && (
         <PeakLegend
-          peaks={analysis.arc.peaks.slice(0, maxLegend)}
+          peaks={analysis.arc.peaks.map(p => ({ t: p.t, energy: p.energy })).slice(0, maxLegend)}
           onHover={setHoverIdx}
           onJump={handleJump}
+          className="mt-2 flex flex-wrap gap-2"
         />
       )}
     </div>

@@ -5,6 +5,11 @@ import { FlowEnergyPanel } from './FlowEnergyPanel';
 import { computeFlowMetrics } from '@/lib/flow/computeFlowMetrics';
 import { analyzeVibeJourney } from '@/lib/vibe/analyzeVibeJourney';
 import { generatePostcardClient } from '@/lib/share/generatePostcardClient';
+import { useConvergenceStories } from '@/lib/flow/reflection/useConvergenceStories';
+import { ConvergenceStories } from '@/components/flow/ConvergenceStories';
+import { computeSmartNudge } from '@/lib/flow/reflection/smartNudges';
+import { SmartNudgeChip } from '@/components/flow/SmartNudgeChip';
+import { computeRippleInfluence } from '@/lib/flow/reflection/rippleHeatline';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +56,60 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
       minTransitionDelta: 0.12
     });
   }, [metrics]);
+
+  // Prepare segments for energy panel (time + center)
+  const segmentsForEnergy = React.useMemo(() => {
+    return segments
+      .filter(seg => !!seg.center)
+      .map(seg => ({
+        t: seg.arrived_at,
+        center: {
+          lng: (seg.center as any).coordinates[0],
+          lat: (seg.center as any).coordinates[1]
+        }
+      }));
+  }, [segments]);
+
+  // Convergence Stories
+  const { stories, onViewMap } = useConvergenceStories({
+    peaks: vibeAnalysis?.arc?.peaks ?? [],
+    segments: segmentsForEnergy,
+    venues: [], // Add real venues if available
+    maxStories: 4,
+  });
+
+  // Smart Nudge
+  const nudge = React.useMemo(() => {
+    const firstCenter = segmentsForEnergy[0]?.center;
+    return computeSmartNudge({
+      lat: firstCenter?.lat,
+      lng: firstCenter?.lng,
+      metrics: {
+        elapsedMin: metrics?.elapsedMin ?? 0,
+        suiPct: metrics?.suiPct ?? null,
+        distanceM: metrics?.distanceM ?? 0
+      },
+      vibe: { type: vibeAnalysis?.patterns?.type }
+    });
+  }, [metrics, vibeAnalysis, segmentsForEnergy]);
+
+  // Heatline Toggle
+  const [heatOn, setHeatOn] = React.useState(false);
+  React.useEffect(() => {
+    if (!heatOn || !metrics) {
+      window.dispatchEvent(new CustomEvent('floq:heatline:toggle', { detail: { on: false } }));
+      return;
+    }
+    
+    const edges = computeRippleInfluence({
+      path: metrics.path,
+      energy: metrics.energySamples,
+      venues: []
+    });
+    
+    window.dispatchEvent(new CustomEvent('floq:heatline:set', { detail: { edges } }));
+    window.dispatchEvent(new CustomEvent('floq:heatline:toggle', { detail: { on: true } }));
+  }, [heatOn, metrics]);
 
   const handleDownloadPostcard = async () => {
     if (!flow || !metrics) return;
@@ -195,6 +254,15 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
               )}
               Share
             </Button>
+
+            <Button
+              onClick={() => setHeatOn(v => !v)}
+              variant="outline"
+              size="sm"
+              className={heatOn ? 'bg-primary/20 border-primary/40' : ''}
+            >
+              {heatOn ? 'Heatline: On' : 'Heatline: Off'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -208,6 +276,7 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
           <CardContent>
             <FlowEnergyPanel
               samples={metrics.energySamples}
+              segments={segmentsForEnergy}
               className="mt-2"
               height={160}
               minLabelGapPx={typeof window !== 'undefined' && window.innerWidth < 420 ? 36 : 28}
@@ -231,6 +300,24 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Convergence Stories */}
+      {!!stories.length && (
+        <ConvergenceStories stories={stories} onViewMap={onViewMap} />
+      )}
+
+      {/* Smart Nudge */}
+      <SmartNudgeChip 
+        nudge={nudge} 
+        onAct={(n) => {
+          if (n.cta.kind === 'reminder') {
+            toast({
+              title: 'Reminder set!',
+              description: 'Your flow nudge has been saved'
+            });
+          }
+        }} 
+      />
 
       {/* Top Venues */}
       <Card className="bg-white/[0.04] border-white/[0.06]">

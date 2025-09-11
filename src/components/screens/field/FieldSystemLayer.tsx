@@ -1,7 +1,10 @@
 
+import React from 'react';
 import { Z, zIndex } from "@/constants/z";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useAutoCheckIn } from "@/hooks/useAutoCheckIn";
+import { getCurrentMap } from '@/lib/geo/mapSingleton';
+import { useRippleHeatline } from '@/lib/flow/reflection/rippleHeatline';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -10,9 +13,38 @@ interface FieldSystemLayerProps {
 
 export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   const { liveRef } = useFieldUI();
+  const map = getCurrentMap();
   
   // Activate enhanced auto check-in system
   const autoCheckIn = useAutoCheckIn();
+
+  // Heatline state
+  const [heatlineOn, setHeatlineOn] = React.useState(false);
+  const edgesRef = React.useRef<any[]>([]);
+
+  // Listen for heatline events from Reflection
+  React.useEffect(() => {
+    const onToggle = (e: CustomEvent<{on:boolean}>) => setHeatlineOn(!!e.detail?.on);
+    const onSet = (e: CustomEvent<{edges:any[]}>) => { edgesRef.current = e.detail?.edges ?? []; };
+    
+    window.addEventListener('floq:heatline:toggle', onToggle as EventListener, { passive: true });
+    window.addEventListener('floq:heatline:set', onSet as EventListener, { passive: true });
+    
+    return () => {
+      window.removeEventListener('floq:heatline:toggle', onToggle as EventListener);
+      window.removeEventListener('floq:heatline:set', onSet as EventListener);
+    };
+  }, []);
+
+  // Mount/update heatline layer
+  React.useEffect(() => {
+    if (!map || !heatlineOn || !edgesRef.current.length) return;
+    
+    const { add } = useRippleHeatline(map as any, edgesRef.current);
+    
+    if (map.isStyleLoaded?.()) add();
+    else map.once('style.load', add);
+  }, [map, heatlineOn]);
 
   return (
     <>
@@ -40,6 +72,16 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
           </div>
         </div>
       )}
+
+      {/* ——— Heatline Toggle (Production) —————————————— */}
+      <button
+        onClick={() => setHeatlineOn(v => !v)}
+        className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[560] px-3 py-1.5 rounded-full bg-card/80 border border-border text-foreground text-xs hover:bg-card"
+        aria-pressed={heatlineOn}
+        {...zIndex('ui')}
+      >
+        {heatlineOn ? 'Heatline: On' : 'Heatline: Off'}
+      </button>
 
       {/* ——— ARIA Live-region for screen readers —— */}
       <div 
