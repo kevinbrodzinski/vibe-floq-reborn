@@ -3,6 +3,8 @@
 //   const blob = await generatePostcardClient({ path, stats, energySamples, title: 'Sunset Flow', subtitle:'Venice', date:new Date() });
 //   download or navigator.share with the Blob.
 
+import { tokens } from '@/design/tokens';
+
 export type LatLng = { lat: number; lng: number };
 
 export type PostcardStats = {
@@ -44,14 +46,14 @@ export type PostcardOptions = {
 };
 
 const DEFAULT_PALETTE = {
-  bgA: '#0B1026',
-  bgB: '#242B4B',
-  glow: 'rgba(255, 215, 0, 0.75)', // gold glow
-  path: '#FFFFFF',
-  ink: '#FFFFFF',
-  chipBg: 'rgba(255,255,255,0.12)',
-  chipInk: '#FFFFFF',
-  brand: 'rgba(255,255,255,0.35)',
+  bgA: tokens.color.bg,
+  bgB: tokens.color.bgAlt,
+  glow: 'rgba(155, 135, 245, 0.75)', // accent color glow
+  path: tokens.color.ink,
+  ink: tokens.color.ink,
+  chipBg: tokens.color.chipBg,
+  chipInk: tokens.color.chipInk,
+  brand: 'rgba(155, 135, 245, 0.6)', // accent color for branding
 };
 
 export async function generatePostcardClient(opts: PostcardOptions): Promise<Blob> {

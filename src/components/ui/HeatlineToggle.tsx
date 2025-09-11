@@ -1,4 +1,5 @@
 import { Chip } from '@/components/ui/Chip';
+import { haptics } from '@/utils/haptics';
 
 interface HeatlineToggleProps {
   on: boolean;
@@ -9,6 +10,11 @@ export function HeatlineToggle({ on, onToggle }: HeatlineToggleProps) {
   const handleClick = () => {
     const newState = !on;
     onToggle(newState);
+    
+    // Haptic feedback
+    haptics.toggle();
+    
+    // Broadcast event for other components
     window.dispatchEvent(new CustomEvent('floq:heatline:toggle', { 
       detail: { on: newState } 
     }));

@@ -20,7 +20,7 @@ import { Suspense } from 'react';
 import { Link } from "react-router-dom";
 import { ParticleField } from '@/components/visual/ParticleField';
 import { useAmbientBackground } from '@/hooks/useAmbientBackground';
-import { triggerHaptic } from '@/utils/haptics';
+import { haptics } from '@/utils/haptics';
 import { sampleMomentsWithMetadata } from '@/utils/sampleAfterglowData';
 import { Database } from '@/integrations/supabase/types';
 import { zIndex } from '@/constants/z';

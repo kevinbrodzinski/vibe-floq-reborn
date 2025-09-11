@@ -1,14 +1,14 @@
 import { Sparkles } from 'lucide-react'
 import { useNovaSnap } from '@/hooks/useNovaSnap'
 import { cn } from '@/lib/utils'
-import { triggerHaptic } from '@/utils/haptics'
+import { haptics } from '@/utils/haptics'
 
 export const SmartFilterPill = () => {
   const { preferSmartSuggestions, toggleSmartSuggestions } = useNovaSnap()
 
   const handleToggle = () => {
     console.log('SmartFilterPill: Toggle clicked, current state:', preferSmartSuggestions)
-    triggerHaptic(30) // Haptic feedback
+    haptics.toggle() // Haptic feedback
     toggleSmartSuggestions()
   }
 

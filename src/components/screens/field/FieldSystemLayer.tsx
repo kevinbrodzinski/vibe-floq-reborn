@@ -9,6 +9,7 @@ import { useFriendFlows } from '@/components/field/hooks/useFriendFlows';
 import { addFriendFlowsLayer } from '@/lib/map/friendFlowsLayer';
 import { useFlowHUD } from '@/components/flow/hooks/useFlowHUD';
 import { FlowMomentumHUD } from '@/components/flow/FlowMomentumHUD';
+import { HeatlineToggle } from '@/components/ui/HeatlineToggle';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -127,14 +128,10 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
       )}
 
       {/* ——— Heatline Toggle (Production) —————————————— */}
-      <button
-        onClick={() => setHeatlineOn(v => !v)}
-        className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[560] px-3 py-1.5 rounded-full bg-card/80 border border-border text-foreground text-xs hover:bg-card"
-        aria-pressed={heatlineOn}
-        {...zIndex('ui')}
-      >
-        {heatlineOn ? 'Heatline: On' : 'Heatline: Off'}
-      </button>
+      <HeatlineToggle 
+        on={heatlineOn} 
+        onToggle={setHeatlineOn}
+      />
 
       {/* ——— ARIA Live-region for screen readers —— */}
       <div 

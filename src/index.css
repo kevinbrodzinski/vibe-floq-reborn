@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import './styles/tokens.css';
+@import './styles/scrollbar.css';
 
 :root {
   --neon: hsl(199 100% 60%); /* sky-400 looks good on both dark & light */
