@@ -23147,6 +23147,26 @@ export type Database = {
           prob: number
         }[]
       }
+      recent_friend_flows_secure: {
+        Args: {
+          east: number
+          max_per_friend?: number
+          north: number
+          since_minutes?: number
+          south: number
+          west: number
+        }
+        Returns: {
+          avatar_url: string
+          flow_id: string
+          friend_id: string
+          friend_name: string
+          head_lat: number
+          head_lng: number
+          line_geojson: Json
+          t_head: string
+        }[]
+      }
       recent_friend_venue_counts: {
         Args: { profile: string; since: string }
         Returns: {

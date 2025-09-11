@@ -5,6 +5,10 @@ import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useAutoCheckIn } from "@/hooks/useAutoCheckIn";
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { addRippleHeatlineLayer } from '@/lib/flow/reflection/rippleHeatline';
+import { useFriendFlows } from '@/components/field/hooks/useFriendFlows';
+import { addFriendFlowsLayer } from '@/lib/map/friendFlowsLayer';
+import { useFlowHUD } from '@/components/flow/hooks/useFlowHUD';
+import { FlowMomentumHUD } from '@/components/flow/FlowMomentumHUD';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -17,6 +21,38 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   
   // Activate enhanced auto check-in system
   const autoCheckIn = useAutoCheckIn();
+
+  // Friend Flows overlay
+  const friendFlows = useFriendFlows(map);
+  React.useEffect(() => {
+    if (map) addFriendFlowsLayer(map, friendFlows);
+  }, [map, friendFlows]);
+
+  // Flow HUD (mock data for now - will connect to real flow recorder later)
+  const mockEnergy = React.useMemo(() => [
+    { t: Date.now() - 300000, energy: 0.4 },
+    { t: Date.now() - 240000, energy: 0.5 },
+    { t: Date.now() - 180000, energy: 0.7 },
+    { t: Date.now() - 120000, energy: 0.8 },
+    { t: Date.now() - 60000, energy: 0.6 },
+    { t: Date.now(), energy: 0.7 }
+  ], []);
+
+  const mockPath = React.useMemo(() => [
+    { lng: -118.4695, lat: 33.9855, t: Date.now() - 300000 },
+    { lng: -118.4696, lat: 33.9856, t: Date.now() - 240000 },
+    { lng: -118.4697, lat: 33.9857, t: Date.now() - 180000 },
+  ], []);
+
+  const hud = useFlowHUD({
+    energy: mockEnergy,
+    myPath: mockPath,
+    friendFlows: friendFlows.map(f => ({ 
+      head_lng: f.head_lng, 
+      head_lat: f.head_lat, 
+      t_head: f.t_head 
+    }))
+  });
 
   // Heatline state
   const [heatlineOn, setHeatlineOn] = React.useState(false);
@@ -63,6 +99,8 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
 
   return (
     <>
+      {/* ——— Flow HUD (Momentum & Cohesion) —————————————— */}
+      <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
 
       {/* ——— Auto Check-in Status (Development Only) —————————————— */}
       {process.env.NODE_ENV === 'development' && (

@@ -12,9 +12,17 @@ export function FlowHUD({
         'pointer-events-none fixed left-4 top-16 z-[620] rounded-xl px-3 py-2 text-xs font-medium backdrop-blur bg-black/35 text-white',
         className
       )}
-      aria-live="polite"
     >
-      ⏱ {mins}m • ☀️ SUI {sui}%
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1">
+          <span>☀</span>
+          <span>{sui}%</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span>⏱</span>
+          <span>{mins}m</span>
+        </div>
+      </div>
     </div>
   )
 }
