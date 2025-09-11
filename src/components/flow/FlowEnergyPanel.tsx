@@ -69,8 +69,15 @@ export function FlowEnergyPanel({
     return (tMs - m[lo].t) <= (m[hi].t - tMs) ? m[lo].center : m[hi].center;
   }, [segments]);
 
+  // Debounce repeat clicks on the same peak (~300ms)
+  const lastClick = React.useRef<{ i: number | null; t: number }>({ i: null, t: 0 });
+
   // Legend → click to jump
   const handleJump = React.useCallback((peakIdx: number) => {
+    const now = Date.now();
+    if (lastClick.current.i === peakIdx && (now - lastClick.current.t) < 300) return;
+    lastClick.current = { i: peakIdx, t: now };
+
     const peak = analysis.arc.peaks?.[peakIdx];
     if (!peak) return;
     const tMs = toMs(peak.t);
