@@ -7,7 +7,6 @@ type BaseProps = {
   color?: ChipColors;
   icon?: React.ReactNode;
   pressed?: boolean;
-  asChild?: boolean;         // if you need Slot polymorphism later
   className?: string;
   children?: React.ReactNode;
 };
@@ -19,8 +18,7 @@ export function Chip(props: StaticProps | ButtonProps) {
   const { color='slate', icon, pressed, className, children, ...rest } = props as any;
   const palette = CHIP_COLOR_PALETTE[color] ?? CHIP_COLOR_PALETTE.slate;
   const base = cn(
-    'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs',
-    'transition-colors duration-150',
+    'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs transition-colors duration-150',
     pressed ? 'ring-2 ring-current' : '',
     palette,
     className
@@ -28,18 +26,19 @@ export function Chip(props: StaticProps | ButtonProps) {
 
   const Content = (
     <>
-      {icon && <span aria-hidden className="shrink-0">{icon}</span>}
-      <span>{children}</span>
+      {icon}
+      {children}
     </>
   );
 
-  if ('onClick' in props) {
+  // Interactive -> <button>
+  if ('onClick' in props && typeof (props as any).onClick === 'function') {
     const btn = props as ButtonProps;
     return (
       <button
         type="button"
-        aria-pressed={pressed || undefined}
-        className={cn(base, 'hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2')}
+        aria-pressed={pressed ?? undefined}
+        className={cn(base, 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60')}
         {...btn}
       >
         {Content}
@@ -47,15 +46,15 @@ export function Chip(props: StaticProps | ButtonProps) {
     );
   }
 
-  const span = props as StaticProps;
+  // Static -> <span>
   return (
-    <span className={base} {...span}>
+    <span className={base} {...(rest as StaticProps)}>
       {Content}
     </span>
   );
 }
 
-/** Back-compat wrapper if you need to preserve old API temporarily */
-export function ChipLegacy(props: Omit<ButtonProps,'pressed'>) {
+// Back-compat if needed
+export function ChipLegacy(props: Omit<StaticProps,'asChild'>) {
   return <Chip {...props} />;
 }

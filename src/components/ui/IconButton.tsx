@@ -5,10 +5,10 @@ type Sizes = 'sm'|'md'|'lg';
 type Variants = 'ghost'|'soft'|'solid';
 
 export type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  label: string;               // accessible name (required)
+  label: string;
   size?: Sizes;
   variant?: Variants;
-  pressed?: boolean;           // for toggle buttons
+  pressed?: boolean; // supply only for toggle
 };
 
 const SIZE: Record<Sizes,string> = {
@@ -24,25 +24,22 @@ const VARIANT: Record<Variants,string> = {
 };
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ label, size='md', variant='ghost', pressed=false, className, children, ...rest }, ref) => {
+  ({ label, size='md', variant='ghost', pressed, disabled, className, children, ...rest }, ref) => {
     return (
       <button
         ref={ref}
         type="button"
         aria-label={label}
-        aria-pressed={pressed || undefined}
+        aria-pressed={pressed ?? undefined}
+        disabled={disabled}
         className={cn(
-          'inline-grid place-items-center rounded-full outline-none',
+          'inline-flex items-center justify-center rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
           'transition-colors duration-150 select-none',
-          'focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2',
-          SIZE[size],
-          VARIANT[variant],
-          className
+          SIZE[size], VARIANT[variant], className
         )}
         {...rest}
       >
-        {/* icon slot */}
-        <span aria-hidden="true">{children}</span>
+        {children}
       </button>
     );
   }
