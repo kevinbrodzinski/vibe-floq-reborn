@@ -7,6 +7,7 @@ export interface SignalSnapshot {
     temporal?: TemporalSignal;
     device?: DeviceSignal;
     behavioral?: BehavioralSignal;
+    environmental?: any; // EnvironmentalSignal from collectors
   };
   quality: number; // 0-1 overall quality score
   availability: Record<string, boolean>; // which signals are available
