@@ -48,6 +48,12 @@ export default {
 				lg: "var(--radius)",
 				md: "calc(var(--radius) - 2px)",
 				sm: "calc(var(--radius) - 4px)",
+				// Design Kit tokens
+				'kit-sm': 'var(--r-sm)', 
+				'kit-md': 'var(--r-md)', 
+				'kit-lg': 'var(--r-lg)', 
+				'kit-xl': 'var(--r-xl)', 
+				'kit-pill': 'var(--r-pill)'
 			},
 
 			colors: {
@@ -56,6 +62,14 @@ export default {
 				ring: "hsl(var(--ring))",
 				background: "hsl(var(--background))",
 				foreground: "hsl(var(--foreground))",
+				
+				// Design Kit tokens
+				bg: 'var(--bg)', 
+				bgAlt: 'var(--bg-alt)',
+				ink:'var(--ink)', 
+				subInk:'var(--sub-ink)',
+				chipBg: 'var(--chip-bg)',
+				chipInk: 'var(--chip-ink)',
 				primary: {
 					DEFAULT: "hsl(var(--primary))",
 					foreground: "hsl(var(--primary-foreground))",
@@ -134,6 +148,9 @@ export default {
 			boxShadow: {
 				glass:
 					"0 0 0 0.5px rgb(255 255 255 / 0.1) inset, 0 0 24px rgb(255 255 255 / 0.06)",
+				// Design Kit tokens
+				soft: 'var(--shadow-soft)', 
+				glow: 'var(--shadow-glow)',
 			},
 
 			keyframes: {
