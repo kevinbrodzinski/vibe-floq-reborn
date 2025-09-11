@@ -46,9 +46,15 @@ function rowsToFC(rows: FriendFlowRow[]): GeoJSON.FeatureCollection {
 }
 
 export function addFriendFlowsLayer(map: any, rows: FriendFlowRow[]) {
-  const fc = rowsToFC(rows);
+  const fc = rows?.length ? rowsToFC(rows) : { type: 'FeatureCollection', features: [] };
+  let lastJson: string | undefined;
 
   const upsert = () => {
+    // Performance: skip if data unchanged
+    const fcJson = JSON.stringify(fc);
+    if (fcJson === lastJson) return;
+    lastJson = fcJson;
+
     // source
     if (map.getSource(SRC)) {
       (map.getSource(SRC) as mapboxgl.GeoJSONSource).setData(fc as any);
@@ -89,13 +95,17 @@ export function addFriendFlowsLayer(map: any, rows: FriendFlowRow[]) {
     }
   };
 
-  // If style not ready, wait once; also re-add after future style changes
-  const addNowOrLater = () => (map.isStyleLoaded?.() ? upsert() : map.once('style.load', upsert));
-  addNowOrLater();
+  const onStyle = () => upsert();
+
+  // Initial add/update
+  map.isStyleLoaded?.() ? upsert() : map.once('style.load', upsert);
+  // Re-attach on *future* style reloads
+  map.on('style.load', onStyle);
 
   // Return cleanup — remove layers/sources & any future listeners
   return () => {
     try {
+      map.off('style.load', onStyle);
       if (map.getLayer(LYR_HEAD)) map.removeLayer(LYR_HEAD);
       if (map.getLayer(LYR_LINE)) map.removeLayer(LYR_LINE);
       if (map.getSource(SRC)) map.removeSource(SRC);

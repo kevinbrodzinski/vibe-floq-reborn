@@ -26,9 +26,12 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   // Friend Flows overlay
   const friendFlows = useFriendFlows(map);
   React.useEffect(() => {
-    if (!map || !friendFlows?.length) return;
-
-    // mount layer safely; cleanup on deps change/unmount
+    if (!map) return;
+    if (!friendFlows?.length) {
+      // ensure removal if previously mounted
+      const cleanup = addFriendFlowsLayer(map, []);
+      return cleanup;
+    }
     const cleanup = addFriendFlowsLayer(map, friendFlows);
     return cleanup;
   }, [map, friendFlows]);
