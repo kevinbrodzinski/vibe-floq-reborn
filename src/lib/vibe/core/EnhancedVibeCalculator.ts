@@ -12,8 +12,11 @@ const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 export function applyEnvironmental(v: VibePoint, env: EnvironmentalSignal | null, quality01: number): VibePoint {
   if (!env || quality01 < 0.3) return v;
 
-  const audio = env.audioRms01 ?? 0;
+  const rawAudio = env.audioRms01 ?? 0;
   const motion = env.motionVar01 ?? 0;
+
+  // Guard against mic spikes when quality is low
+  const audio = (quality01 < 0.4 && rawAudio > 0.7) ? 0.7 : rawAudio;
 
   // Scale quality to prevent spikes on first frame
   const qualityScaled = quality01 < 0.5 ? quality01 * 0.5 : quality01;

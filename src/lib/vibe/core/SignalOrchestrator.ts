@@ -35,6 +35,18 @@ export class SignalOrchestrator {
   // Complete cleanup - stop collection and clear all data
   dispose() {
     this.stop();
+    
+    // Stop environmental collectors specifically (battery hygiene)
+    for (const [name, collector] of this.collectors) {
+      if (typeof (collector as any).stop === 'function') {
+        try {
+          (collector as any).stop();
+        } catch (error) {
+          console.warn(`Failed to stop collector ${name}:`, error);
+        }
+      }
+    }
+    
     this.listeners.length = 0;
     this.snapshots.length = 0;
     this.collectors.clear();
@@ -51,9 +63,12 @@ export class SignalOrchestrator {
   }
 
   // Add state change listener - returns unsubscribe function
-  addListener(callback: (state: VibeEngineState) => void) {
+  addListener(callback: (state: VibeEngineState) => void): () => void {
     this.listeners.push(callback);
-    return () => this.removeListener(callback);
+    return () => {
+      const idx = this.listeners.indexOf(callback);
+      if (idx !== -1) this.listeners.splice(idx, 1);
+    };
   }
 
   removeListener(callback: (state: VibeEngineState) => void) {
@@ -206,7 +221,8 @@ export class SignalOrchestrator {
       // Location contributes to energy
       if (snapshot.sources.location) {
         const loc = snapshot.sources.location;
-        // Urban density gets minimal weight until we have real data
+        // TODO(tiles): replace temp urban density heuristic with POI/tiles signal.
+        // Keep weight <= 0.05 until real data is wired.
         snapshotEnergy += Math.max(0, Math.min(1, loc.urbanDensity)) * 0.05;
         // Venues boost energy (main location signal)
         if (loc.venue) {

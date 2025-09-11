@@ -11,11 +11,25 @@ type Props = {
 export function ImproveAccuracyChip({ show, request, onRequested, className }: Props) {
   const [busy, setBusy] = React.useState(false);
   
-  if (!show) return null;
+  // Rate limit prompts (24h)
+  const isRateLimited = React.useMemo(() => {
+    if (typeof localStorage === 'undefined') return false;
+    const k = 'floq:env:lastPromptAt';
+    const last = Number(localStorage.getItem(k) || 0);
+    return Date.now() - last < 24 * 3600 * 1000;
+  }, []);
+  
+  if (!show || isRateLimited) return null;
 
   const onClick = async () => {
     if (busy) return;
     setBusy(true);
+    
+    // Store prompt timestamp for rate limiting
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('floq:env:lastPromptAt', String(Date.now()));
+    }
+    
     try {
       const res = await request();
       onRequested?.(res);

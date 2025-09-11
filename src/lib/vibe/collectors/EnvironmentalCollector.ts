@@ -10,6 +10,9 @@ import type { SignalCollector, EnvironmentalSignal } from '@/types/vibe';
 const toClamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+// Debug logging (toggle in console: window.DEBUG_ENV = true)
+const DEBUG_ENV = typeof window !== 'undefined' && (window as any).DEBUG_ENV;
+
 export class EnvironmentalCollector implements SignalCollector<EnvironmentalSignal> {
   public readonly name = 'environmental';
 
@@ -127,6 +130,11 @@ export class EnvironmentalCollector implements SignalCollector<EnvironmentalSign
     }
   }
 
+  // Stop environmental collection (battery hygiene)
+  stop() {
+    this.stopSamplingLoop();
+  }
+
   // Lazily start audio chain
   private async ensureAudioChain(): Promise<boolean> {
     if (this.permissionAudio !== 'granted' || !this.audioSupported) return false;
@@ -165,12 +173,16 @@ export class EnvironmentalCollector implements SignalCollector<EnvironmentalSign
     this.audioBuf = null;
   }
 
-  // Motion listener attach/detach
+  // Motion listener attach/detach with iOS fallback detection
+  private motionWarmupTimer: ReturnType<typeof setTimeout> | null = null;
+
   private attachMotion() {
     if (!this.motionEnabled || !this.motionSupported) return;
     if ((this as any)._motionHandler) return; // already attached
     
+    let first = true;
     const handler = (e: DeviceMotionEvent) => {
+      first = false; // mark that we received an event
       const ax = e.acceleration?.x ?? 0;
       const ay = e.acceleration?.y ?? 0;
       const az = e.acceleration?.z ?? 0;
@@ -178,8 +190,15 @@ export class EnvironmentalCollector implements SignalCollector<EnvironmentalSign
       if (this.motionSamples.length > 64) this.motionSamples.shift();
     };
     window.addEventListener('devicemotion', handler, { passive: true });
-    // Save off for cleanup
     (this as any)._motionHandler = handler;
+
+    // iOS fallback: if no events arrive in 5s, consider motion unavailable
+    this.motionWarmupTimer = setTimeout(() => {
+      if (first) { // nothing arrived
+        this.detachMotion();
+        this.motionEnabled = false;
+      }
+    }, 5000);
   }
 
   private detachMotion() {
@@ -256,6 +275,10 @@ export class EnvironmentalCollector implements SignalCollector<EnvironmentalSign
     const coverage = Math.min(1, totalSamples * this.sampleEveryMs / this.windowMs);
     this.lastQuality = Math.max(0.3, coverage); // floor to 0.3 once active
 
+    if (DEBUG_ENV) {
+      console.log('[env] quality', this.lastQuality, 'frames', this.audioWindow.length, this.motionWindow.length);
+    }
+
     return {
       audioRms01,
       motionVar01,
@@ -271,6 +294,12 @@ export class EnvironmentalCollector implements SignalCollector<EnvironmentalSign
   dispose() {
     // Stop sampling loop
     this.stopSamplingLoop();
+    
+    // Clear warmup timer
+    if (this.motionWarmupTimer) {
+      clearTimeout(this.motionWarmupTimer);
+      this.motionWarmupTimer = null;
+    }
     
     // Remove visibility listener
     if (typeof document !== 'undefined') {
