@@ -1,7 +1,7 @@
 // Movement signal collector
 import type { SignalCollector, MovementSignal } from '@/types/vibe';
 
-export class MovementCollector implements SignalCollector {
+export class MovementCollector implements SignalCollector<MovementSignal> {
   readonly name = 'movement';
   
   private lastPosition: { lat: number; lng: number; timestamp: number } | null = null;

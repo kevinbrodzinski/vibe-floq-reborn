@@ -9,7 +9,7 @@ interface VenueVisit {
   coordinates?: { lat: number; lng: number };
 }
 
-export class BehavioralSequenceDetector implements SignalCollector {
+export class BehavioralSequenceDetector implements SignalCollector<BehavioralSignal> {
   readonly name = 'behavioral';
   
   private venueHistory: VenueVisit[] = [];

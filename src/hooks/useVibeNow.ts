@@ -50,20 +50,20 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
       }
       envRef.current = env;
 
-      // Listen for state updates with environmental blending
-      const unsubscribe = orchestrator.addListener((state) => {
-        const base = state.currentVibe as VibePoint;
-        const envSnap = (state.recentSnapshots?.[state.recentSnapshots.length - 1]?.sources?.environmental) ?? null;
-        const envQuality = env.getQuality();
+  // Listen for state updates with environmental blending
+  const unsubscribe = orchestrator.addListener((state) => {
+    const base = state.currentVibe as VibePoint;
+    const envSnap = (state.recentSnapshots?.[state.recentSnapshots.length - 1]?.sources?.environmental) ?? null;
+    const envQuality = envRef.current ? envRef.current.getQuality() : 0;
 
-        const blended = applyEnvironmental(base, envSnap, envQuality);
-        
-        setEngineState(state);
-        setCurrentVibe(blended);
-      });
-      
-      // Store unsubscribe function for cleanup
-      (orchestrator as any)._unsubscribe = unsubscribe;
+    const blended = applyEnvironmental(base, envSnap, envQuality);
+    
+    setEngineState(state);
+    setCurrentVibe(blended);
+  });
+  
+  // Store unsubscribe function for cleanup
+  (orchestrator as any)._unsubscribe = unsubscribe;
 
       orchestratorRef.current = orchestrator;
       setIsInitialized(true);

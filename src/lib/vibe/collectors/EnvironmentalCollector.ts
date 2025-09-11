@@ -5,19 +5,12 @@
 // - Permission-gated; degrades gracefully when denied/unsupported
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { SignalCollector } from '@/types/vibe';
-
-export type EnvironmentalSignal = {
-  audioRms01?: number;
-  motionVar01?: number;
-  frames: { audio: number; motion: number };
-  availability: { audio: boolean; motion: boolean };
-};
+import type { SignalCollector, EnvironmentalSignal } from '@/types/vibe';
 
 const toClamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
-export class EnvironmentalCollector implements SignalCollector {
+export class EnvironmentalCollector implements SignalCollector<EnvironmentalSignal> {
   public readonly name = 'environmental';
 
   // Audio
@@ -46,8 +39,22 @@ export class EnvironmentalCollector implements SignalCollector {
   // Quality tracking
   private lastQuality = 0;
 
+  // Internal sampling timer
+  private samplingTimer: ReturnType<typeof setInterval> | null = null;
+
+  // Visibility handler for battery optimization
+  private visHandler = () => {
+    if (typeof document !== 'undefined' && document.hidden) {
+      this.stopSamplingLoop();
+    } else if (this.permissionAudio === 'granted' || this.motionEnabled) {
+      this.startSamplingLoop();
+    }
+  };
+
   constructor() {
-    // no-op; call initPermissions() from UI before registering if you want explicit prompt
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.visHandler, { passive: true });
+    }
   }
 
   isAvailable(): boolean {
@@ -93,6 +100,33 @@ export class EnvironmentalCollector implements SignalCollector {
     return state;
   }
 
+  // Internal sampling loop (250ms cadence)
+  private startSamplingLoop() {
+    if (this.samplingTimer) return; // already running
+
+    this.samplingTimer = setInterval(() => {
+      const t = nowMs();
+      
+      // Sample audio RMS
+      const audio = this.sampleAudioRms01();
+      if (audio != null) this.audioWindow.push({ t, level: audio });
+
+      // Sample motion variance
+      const motion = this.sampleMotionVar01();
+      if (motion != null) this.motionWindow.push({ t, var: motion });
+
+      // Prune old samples
+      this.pruneWindows();
+    }, this.sampleEveryMs);
+  }
+
+  private stopSamplingLoop() {
+    if (this.samplingTimer) {
+      clearInterval(this.samplingTimer);
+      this.samplingTimer = null;
+    }
+  }
+
   // Lazily start audio chain
   private async ensureAudioChain(): Promise<boolean> {
     if (this.permissionAudio !== 'granted' || !this.audioSupported) return false;
@@ -100,6 +134,10 @@ export class EnvironmentalCollector implements SignalCollector {
 
     try {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Resume context for iOS Safari
+      await this.ctx.resume?.().catch(() => {});
+      
       this.audioStream = await navigator.mediaDevices.getUserMedia({ 
         audio: { echoCancellation: true, noiseSuppression: true }, 
         video: false 
@@ -130,6 +168,8 @@ export class EnvironmentalCollector implements SignalCollector {
   // Motion listener attach/detach
   private attachMotion() {
     if (!this.motionEnabled || !this.motionSupported) return;
+    if ((this as any)._motionHandler) return; // already attached
+    
     const handler = (e: DeviceMotionEvent) => {
       const ax = e.acceleration?.x ?? 0;
       const ay = e.acceleration?.y ?? 0;
@@ -195,18 +235,10 @@ export class EnvironmentalCollector implements SignalCollector {
     if (this.permissionAudio === 'granted') await this.ensureAudioChain();
     if (this.motionEnabled && !(this as any)._motionHandler) this.attachMotion();
 
-    // Sample every call (~5s cadence from orchestrator)
-    const t = nowMs();
+    // Ensure we're sampling at 250ms in the background
+    this.startSamplingLoop();
 
-    const audio = this.sampleAudioRms01();
-    if (audio != null) this.audioWindow.push({ t, level: audio });
-
-    const motion = this.sampleMotionVar01();
-    if (motion != null) this.motionWindow.push({ t, var: motion });
-
-    this.pruneWindows();
-
-    // Aggregate micro-window
+    // Aggregate micro-window (already collected via sampling loop)
     const audioRms01 =
       this.audioWindow.length > 0
         ? this.audioWindow.reduce((a, b) => a + b.level, 0) / this.audioWindow.length
@@ -219,11 +251,9 @@ export class EnvironmentalCollector implements SignalCollector {
     // If neither present, return null (avoid affecting engine)
     if (audioRms01 == null && motionVar01 == null) return null;
 
-    // Quality = % of window covered with samples
-    const targetFrames = Math.max(1, Math.round(this.windowMs / this.sampleEveryMs));
-    const haveFrames = (this.audioWindow.length + this.motionWindow.length) / 2;
-    const coverage = toClamp01(haveFrames / targetFrames);
-    // Keep for getQuality()
+    // Quality = coverage measured in time, not expected frames
+    const totalSamples = this.audioWindow.length + this.motionWindow.length;
+    const coverage = Math.min(1, totalSamples * this.sampleEveryMs / this.windowMs);
     this.lastQuality = Math.max(0.3, coverage); // floor to 0.3 once active
 
     return {
@@ -239,8 +269,19 @@ export class EnvironmentalCollector implements SignalCollector {
   }
 
   dispose() {
+    // Stop sampling loop
+    this.stopSamplingLoop();
+    
+    // Remove visibility listener
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.visHandler as any);
+    }
+    
+    // Cleanup audio/motion
     this.teardownAudio();
     this.detachMotion();
+    
+    // Clear buffers
     this.audioWindow = [];
     this.motionWindow = [];
     this.motionSamples = [];

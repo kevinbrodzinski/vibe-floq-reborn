@@ -2,7 +2,7 @@
 import type { SignalCollector, LocationSignal } from '@/types/vibe';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
-export class LocationCollector implements SignalCollector {
+export class LocationCollector implements SignalCollector<LocationSignal> {
   readonly name = 'location';
   
   private locationHook: ReturnType<typeof useUnifiedLocation> | null = null;
@@ -100,11 +100,12 @@ export class LocationCollector implements SignalCollector {
         Math.pow(lat - center.lat, 2) + Math.pow(lng - center.lng, 2)
       );
       if (distance < center.radius) {
-        return Math.max(0.3, 1 - distance / center.radius);
+        // Reduced weighting until we have real urban density data
+        return Math.max(0.1, (1 - distance / center.radius) * 0.3);
       }
     }
 
-    return 0.1; // Rural/suburban default
+    return 0.1; // Rural/suburban default - keep low until real data
   }
 
   private async lookupVenue(coords: GeolocationCoordinates): Promise<LocationSignal['venue'] | null> {

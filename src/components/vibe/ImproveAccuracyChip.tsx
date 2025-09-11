@@ -39,8 +39,12 @@ export function ImproveAccuracyChip({ show, request, onRequested, className }: P
         className
       )}
       aria-label="Improve accuracy by enabling motion and microphone"
+      aria-describedby="improve-accuracy-description"
     >
       {busy ? 'Enabling…' : 'Improve accuracy'}
+      <span id="improve-accuracy-description" className="sr-only">
+        We only measure loudness and motion variance. No audio is recorded.
+      </span>
     </button>
   );
 }

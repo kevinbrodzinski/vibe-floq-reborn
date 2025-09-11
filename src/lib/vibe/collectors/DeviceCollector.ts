@@ -1,7 +1,7 @@
 // Device signal collector - monitors device state for context
 import type { SignalCollector, DeviceSignal } from '@/types/vibe';
 
-export class DeviceCollector implements SignalCollector {
+export class DeviceCollector implements SignalCollector<DeviceSignal> {
   readonly name = 'device';
 
   isAvailable(): boolean {

@@ -7,7 +7,7 @@ export interface SignalSnapshot {
     temporal?: TemporalSignal;
     device?: DeviceSignal;
     behavioral?: BehavioralSignal;
-    environmental?: any; // EnvironmentalSignal from collectors
+    environmental?: EnvironmentalSignal;
   };
   quality: number; // 0-1 overall quality score
   availability: Record<string, boolean>; // which signals are available
@@ -63,6 +63,13 @@ export interface BehavioralSignal {
   transitionType?: 'planned' | 'spontaneous' | 'routine';
 }
 
+export interface EnvironmentalSignal {
+  audioRms01?: number;         // 0..1 instantaneous/mean in window
+  motionVar01?: number;        // 0..1 instantaneous/mean in window
+  frames: { audio: number; motion: number };
+  availability: { audio: boolean; motion: boolean };
+}
+
 // Enhanced VibePoint with confidence and sources
 export interface VibePoint {
   t: number | Date;
@@ -79,11 +86,12 @@ export interface VibePoint {
 }
 
 // Signal collector interface
-export interface SignalCollector {
+export interface SignalCollector<T = unknown> {
   readonly name: string;
   isAvailable(): boolean;
-  collect(): Promise<any | null>;
+  collect(): Promise<T | null>;
   getQuality(): number; // 0-1
+  dispose?(): void;
 }
 
 // Orchestrator state

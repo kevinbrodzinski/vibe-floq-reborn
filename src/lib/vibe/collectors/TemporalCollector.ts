@@ -1,7 +1,7 @@
 // Temporal signal collector - tracks time-based context
 import type { SignalCollector, TemporalSignal } from '@/types/vibe';
 
-export class TemporalCollector implements SignalCollector {
+export class TemporalCollector implements SignalCollector<TemporalSignal> {
   readonly name = 'temporal';
   
   private contextStartTime = Date.now();
