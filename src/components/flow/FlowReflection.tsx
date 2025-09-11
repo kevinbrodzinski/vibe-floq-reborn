@@ -279,7 +279,7 @@ export default function FlowReflectionPage({ flowId }: { flowId: string }) {
               segments={segmentsForEnergy}
               className="mt-2"
               height={160}
-              minLabelGapPx={typeof window !== 'undefined' && window.innerWidth < 420 ? 36 : 28}
+              minLabelGapPx={typeof window !== 'undefined' && window.innerWidth < 520 ? 48 : 32}
             />
             {vibeAnalysis && (
               <div className="flex flex-wrap gap-2 text-xs mt-4">

@@ -4,7 +4,7 @@ import { Z, zIndex } from "@/constants/z";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useAutoCheckIn } from "@/hooks/useAutoCheckIn";
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
-import { useRippleHeatline } from '@/lib/flow/reflection/rippleHeatline';
+import { addRippleHeatlineLayer } from '@/lib/flow/reflection/rippleHeatline';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -40,10 +40,8 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   React.useEffect(() => {
     if (!map || !heatlineOn || !edgesRef.current.length) return;
     
-    const { add } = useRippleHeatline(map as any, edgesRef.current);
-    
-    if (map.isStyleLoaded?.()) add();
-    else map.once('style.load', add);
+    const cleanup = addRippleHeatlineLayer(map as any, edgesRef.current);
+    return cleanup;
   }, [map, heatlineOn]);
 
   return (

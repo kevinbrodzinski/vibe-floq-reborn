@@ -43,32 +43,35 @@ export function computeRippleInfluence({
   return edges;
 }
 
-// Mapbox layer management
-export function useRippleHeatline(map: any, edges: RippleEdge[]) {
+// Mapbox layer management utility
+export function addRippleHeatlineLayer(
+  map: any,
+  edges: RippleEdge[]
+): () => void {
   const sourceId = 'ripple-heatline-source';
   const layerId = 'ripple-heatline-layer';
   
+  if (!map || !edges?.length) return () => {};
+  
+  // Convert edges to GeoJSON
+  const features = edges.map((edge) => ({
+    type: 'Feature' as const,
+    geometry: {
+      type: 'LineString' as const,
+      coordinates: [[edge.from.lng, edge.from.lat], [edge.to.lng, edge.to.lat]]
+    },
+    properties: {
+      weight: edge.weight,
+      color: edge.color
+    }
+  }));
+  
+  const geojson = {
+    type: 'FeatureCollection' as const,
+    features
+  };
+  
   const add = () => {
-    if (!map) return;
-    
-    // Convert edges to GeoJSON
-    const features = edges.map((edge, i) => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'LineString' as const,
-        coordinates: [[edge.from.lng, edge.from.lat], [edge.to.lng, edge.to.lat]]
-      },
-      properties: {
-        weight: edge.weight,
-        color: edge.color
-      }
-    }));
-    
-    const geojson = {
-      type: 'FeatureCollection' as const,
-      features
-    };
-    
     // Add or update source
     if (map.getSource(sourceId)) {
       map.getSource(sourceId).setData(geojson);
@@ -91,20 +94,29 @@ export function useRippleHeatline(map: any, edges: RippleEdge[]) {
         },
         paint: {
           'line-color': ['get', 'color'],
-          'line-width': 4,
-          'line-opacity': 0.8
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['get', 'weight'],
+            0, 2,
+            1, 6
+          ],
+          'line-opacity': 0.9,
+          'line-blur': 0.5
         }
       });
     }
   };
   
-  const remove = () => {
-    if (!map) return;
+  // Initial add/update
+  if (map.isStyleLoaded?.()) add();
+  else map.once('style.load', add);
+  
+  // Return cleanup function
+  return () => {
     try {
       if (map.getLayer(layerId)) map.removeLayer(layerId);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     } catch {}
   };
-  
-  return { add, remove };
 }
