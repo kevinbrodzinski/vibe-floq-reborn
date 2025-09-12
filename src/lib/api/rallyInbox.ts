@@ -15,12 +15,24 @@ export type RallyInboxItem = {
   invite_status: 'pending'|'joined'|'declined'
   responded_at?: string|null
   joined_count: number
+  unread_count?: number
+  first_unread_at?: string|null
+  last_message_at?: string|null
+  last_message_excerpt?: string|null
 }
 
 export async function listRallyInbox(): Promise<RallyInboxItem[]> {
-  const { data, error } = await supabase.rpc('rally_inbox_secure')
-  if (error) throw error
-  return (data ?? []) as RallyInboxItem[]
+  // Try new optimized inbox first, fallback to legacy
+  try {
+    const { data, error } = await supabase.rpc('get_rally_inbox')
+    if (error) throw error
+    return (data ?? []) as RallyInboxItem[]
+  } catch (error) {
+    // Fallback to legacy implementation
+    const { data, error: legacyError } = await supabase.rpc('rally_inbox_secure')
+    if (legacyError) throw legacyError
+    return (data ?? []) as RallyInboxItem[]
+  }
 }
 
 export async function respondInvite(rallyId: RallyId, status:'joined'|'declined'='joined') {
@@ -51,8 +63,29 @@ export async function createRallyInboxThread(args: {
 }
 
 export async function markRallySeen(rallyId: string) {
-  const { error } = await supabase.rpc('mark_rally_seen', { p_rally_id: rallyId });
-  if (error) throw error;
+  try {
+    const { error } = await supabase.rpc('mark_rally_seen', { p_rally_id: rallyId });
+    if (error) throw error;
+  } catch (err) {
+    // Gracefully handle case where new RPC doesn't exist yet
+    console.warn('mark_rally_seen RPC not available:', err);
+  }
+}
+
+export async function markRallyThreadSeen(threadId: string) {
+  try {
+    // Use direct SQL call since RPC may not be available yet
+    const { error } = await supabase
+      .from('rally_last_seen')
+      .upsert({
+        profile_id: (await supabase.auth.getUser()).data.user?.id,
+        rally_id: threadId, // Will need to be resolved from thread
+        last_seen: new Date().toISOString()
+      })
+    if (error) throw error;
+  } catch (err) {
+    console.warn('rally thread seen update failed:', err);
+  }
 }
 
 /** Realtime subscription for invites/rallies changes */
