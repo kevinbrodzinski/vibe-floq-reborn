@@ -10560,6 +10560,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rally_finalize_queue: {
+        Row: {
+          queued_at: string | null
+          rally_id: string
+          try_count: number
+        }
+        Insert: {
+          queued_at?: string | null
+          rally_id: string
+          try_count?: number
+        }
+        Update: {
+          queued_at?: string | null
+          rally_id?: string
+          try_count?: number
+        }
+        Relationships: []
+      }
       rally_invites: {
         Row: {
           rally_id: string
@@ -10655,6 +10673,7 @@ export type Database = {
           created_at: string
           id: string
           kind: string
+          profile_id: string | null
           sender_id: string | null
           thread_id: string
         }
@@ -10663,6 +10682,7 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          profile_id?: string | null
           sender_id?: string | null
           thread_id: string
         }
@@ -10671,6 +10691,7 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          profile_id?: string | null
           sender_id?: string | null
           thread_id?: string
         }
@@ -20950,6 +20971,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      close_expired_rallies: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cluster_precision: {
         Args: { p?: number }
         Returns: number
@@ -21104,6 +21129,10 @@ export type Database = {
         Returns: Json
       }
       enqueue_afterglow_cron: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      enqueue_finalized_rallies: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
