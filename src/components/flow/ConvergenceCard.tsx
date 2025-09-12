@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { openTransitDirections, openRideshare } from '@/lib/geo/openNativeDirections';
+import { openTransitDirections, openRideshare } from '@/lib/directions/native';
 
 export type ConvergencePoint = {
   lng: number;

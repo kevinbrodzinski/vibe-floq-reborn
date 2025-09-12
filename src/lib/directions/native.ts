@@ -1,2 +1,2 @@
 // Canonical wrapper for directions helpers
-export { openTransitFirstOrRideshare } from '@/lib/geo/openNativeDirections'
+export { openTransitFirstOrRideshare, openTransitDirections, openRideshare } from '@/lib/geo/openNativeDirections'

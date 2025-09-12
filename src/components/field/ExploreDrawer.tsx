@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { getVibeToken } from '@/lib/tokens/vibeTokens'
 import { useFlowMetrics } from '@/contexts/FlowMetricsContext'
-import { useFlowRecorder } from '@/hooks/useFlowRecorder'
 
 export type TileVenue = {
   pid: string
@@ -18,12 +17,15 @@ type ExploreDrawerProps = {
   onPlan: (pid: string) => void
   onChangeVenue: (pid: string) => void
   changeBtnRef?: React.RefObject<HTMLButtonElement>
-  // Flow controls from parent (useFlowSampler)
+  // Flow controls from parent (recommended: pass from useFlowSampler / useFlowRecorder wrapper)
   recState?: 'idle'|'recording'|'paused'|'ended'
   onStartFlow?: () => void
   onPauseFlow?: () => void
   onResumeFlow?: () => void
   onStopFlow?: () => void
+  // Drawer state control (optional for parent to control FAB visibility)
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function ExploreDrawer({
@@ -33,19 +35,27 @@ export function ExploreDrawer({
   onPlan,
   onChangeVenue,
   changeBtnRef,
-  recState,
+  recState = 'idle',
   onStartFlow,
   onPauseFlow,
   onResumeFlow,
   onStopFlow,
+  isOpen,
+  onOpenChange,
 }: ExploreDrawerProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [internalExpanded, setInternalExpanded] = useState(false)
   const t = getVibeToken('social' as any)
   const primary = venues?.[0]
 
-  // Flow context hooks (metrics only)
+  // Use controlled state if provided, otherwise use internal state
+  const isExpanded = isOpen !== undefined ? isOpen : internalExpanded
+  const setIsExpanded = onOpenChange || setInternalExpanded
+
+  // Flow metrics from context (single source of truth)
   const metrics = useFlowMetrics()
-  const recorder = useFlowRecorder() // needed for direct button actions
+  const isRec = recState === 'recording'
+  const isPause = recState === 'paused'
+  const canStart = recState === 'idle' || recState === 'ended'
 
   if (!primary) return null
 
@@ -61,10 +71,6 @@ export function ExploreDrawer({
     n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.min(100, Math.round(n)))}%`
   const minText = (n?: number | null) =>
     n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.floor(n))}m`
-
-  const isRec = recState === 'recording' 
-  const isPause = recState === 'paused'
-  const canStart = recState === 'idle' || recState === 'ended'
 
   return (
     <>
@@ -119,19 +125,13 @@ export function ExploreDrawer({
 
               {/* Flow Metrics */}
               <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs">
-                  <span className="font-medium text-white/90">Flow</span>
-                  <span className="text-white/80">{pct(metrics.flowPct)}</span>
-                </div>
-                <div className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs">
-                  <span className="font-medium text-white/90">Sync</span>
-                  <span className="text-white/80">{pct(metrics.syncPct)}</span>
-                </div>
-                {metrics.elapsedMin != null && (
-                  <span className="text-xs text-white/70">⏱ {minText(metrics.elapsedMin)}</span>
+                <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">Flow {pct(metrics.flowPct)}</span>
+                <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">Sync {pct(metrics.syncPct)}</span>
+                {Number.isFinite(metrics.elapsedMin) && (
+                  <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">⏱ {minText(metrics.elapsedMin)}</span>
                 )}
                 {metrics.sui01 != null && (
-                  <span className="text-xs text-white/70">☀ {pct((metrics.sui01 ?? 0) * 100)}</span>
+                  <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">☀ {pct((metrics.sui01 ?? 0) * 100)}</span>
                 )}
               </div>
 
@@ -139,36 +139,40 @@ export function ExploreDrawer({
                 {/* Flow Controls */}
                 {canStart ? (
                   <button
-                    onClick={onStartFlow || (() => recorder.start())}
-                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150"
+                    onClick={onStartFlow}
+                    disabled={!onStartFlow}
+                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150 disabled:opacity-50"
                   >
                     ▶ Start Flow
                   </button>
                 ) : (
                   <div className="flex items-center gap-2">
                     {isRec && (
-                      <button 
-                        onClick={onPauseFlow || (() => recorder.pause())} 
-                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
-                      >⏸ Pause</button>
+                      <button
+                        onClick={onPauseFlow}
+                        disabled={!onPauseFlow}
+                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-50"
+                      >
+                        ⏸ Pause
+                      </button>
                     )}
                     {isPause && (
-                      <button 
-                        onClick={onResumeFlow || (() => recorder.resume())} 
-                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
-                      >▶ Resume</button>
-                    )}
-                    {!isRec && !isPause && (
-                      <button 
-                        disabled 
-                        className="px-3 py-2 rounded-md text-xs bg-white/5 text-white/40 cursor-not-allowed"
-                      >■ Stop</button>
+                      <button
+                        onClick={onResumeFlow}
+                        disabled={!onResumeFlow}
+                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-50"
+                      >
+                        ▶ Resume
+                      </button>
                     )}
                     {(isRec || isPause) && (
-                      <button 
-                        onClick={onStopFlow || (() => recorder.stop())} 
-                        className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150"
-                      >■ Stop</button>
+                      <button
+                        onClick={onStopFlow}
+                        disabled={!onStopFlow}
+                        className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150 disabled:opacity-50"
+                      >
+                        ■ Stop
+                      </button>
                     )}
                   </div>
                 )}
