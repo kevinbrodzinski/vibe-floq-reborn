@@ -39,6 +39,7 @@ import { ExploreDrawerProvider } from "@/contexts/ExploreDrawerContext";
 import { RallyInboxUIProvider } from '@/contexts/RallyInboxUIContext';
 import { RallyNavBridge } from '@/components/rally/RallyNavBridge';
 import { RallyInboxHost } from '@/components/rally/RallyInboxHost';
+import { MapNavBridge } from '@/components/nav/MapNavBridge';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -209,6 +210,7 @@ export const FieldLayout = () => {
               <RallyInboxUIProvider>
                 <RallyNavBridge />
                 <RallyInboxHost />
+                <MapNavBridge />
               <div className="relative h-svh w-full">
                 {/* Motion Permission Banner - Global Level */}
                 <MotionPermissionBanner
