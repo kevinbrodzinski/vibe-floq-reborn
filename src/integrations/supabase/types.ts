@@ -23472,6 +23472,14 @@ export type Database = {
           venue_id: string
         }[]
       }
+      rally_mark_all_seen: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      rally_mark_seen: {
+        Args: { _rally_id: string }
+        Returns: undefined
+      }
       rally_mark_thread_seen: {
         Args: { _thread: string }
         Returns: undefined

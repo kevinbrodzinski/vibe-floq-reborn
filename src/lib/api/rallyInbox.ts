@@ -62,14 +62,14 @@ export async function createRallyInboxThread(args: {
   }
 }
 
-export async function markRallySeen(rallyId: string) {
-  try {
-    const { error } = await supabase.rpc('mark_rally_seen', { p_rally_id: rallyId });
-    if (error) throw error;
-  } catch (err) {
-    // Gracefully handle case where new RPC doesn't exist yet
-    console.warn('mark_rally_seen RPC not available:', err);
-  }
+export async function markRallyRead(rallyId: string): Promise<void> {
+  const { error } = await supabase.rpc('rally_mark_seen', { _rally_id: rallyId });
+  if (error) throw error;
+}
+
+export async function markAllRalliesRead(): Promise<void> {
+  const { error } = await supabase.rpc('rally_mark_all_seen');
+  if (error) throw error;
 }
 
 export async function setRallyLastSeen(rallyId: string, ts?: string) {
@@ -84,7 +84,7 @@ export async function setRallyLastSeen(rallyId: string, ts?: string) {
     .upsert({ 
       profile_id: me, 
       rally_id: rallyId, 
-      last_seen: when 
+      last_seen_at: when 
     }, { 
       onConflict: 'profile_id,rally_id' 
     });

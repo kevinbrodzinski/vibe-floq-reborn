@@ -1,0 +1,28 @@
+:root {
+  --field-top-inset: 0px;
+  --field-bottom-inset: 0px;
+}
+
+.field-controls {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  top: calc(var(--field-top-inset) + 12px);
+  z-index: 640;
+}
+
+.field-cards {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(var(--field-bottom-inset) + 12px);
+  z-index: 610;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

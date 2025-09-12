@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { listRallyInbox, respondInvite, subscribeRallyInbox, type RallyInboxItem } from '@/lib/api/rallyInbox'
+import { listRallyInbox, respondInvite, subscribeRallyInbox, markRallyRead, markAllRalliesRead, type RallyInboxItem } from '@/lib/api/rallyInbox'
 
 export function useRallyInbox() {
   const [items, setItems] = React.useState<RallyInboxItem[]>([])
@@ -35,10 +35,55 @@ export function useRallyInbox() {
     try { await respondInvite(id, 'declined') } catch { refresh() }
   }, [refresh])
 
+  const markRead = React.useCallback(async (rallyId: string) => {
+    // Optimistic update
+    setItems(prev => prev.map(x => 
+      x.rally_id === rallyId 
+        ? {...x, unread_count: 0, first_unread_at: null} 
+        : x
+    ))
+    try {
+      await markRallyRead(rallyId)
+    } catch (e) {
+      // Rollback optimistic update
+      refresh()
+      throw e
+    }
+  }, [refresh])
+
+  const markAllRead = React.useCallback(async () => {
+    // Optimistic update
+    const previousItems = items
+    setItems(prev => prev.map(x => ({...x, unread_count: 0, first_unread_at: null})))
+    try {
+      await markAllRalliesRead()
+    } catch (e) {
+      // Rollback optimistic update
+      setItems(previousItems)
+      throw e
+    }
+  }, [items])
+
   const unreadCount = React.useMemo(
+    () => items.reduce((sum, item) => sum + (item.unread_count || 0), 0),
+    [items]
+  )
+
+  const pendingInvites = React.useMemo(
     () => items.filter(i => i.invite_status === 'pending').length,
     [items]
   )
 
-  return { items, loading, error, refresh, join, decline, unreadCount }
+  return { 
+    items, 
+    loading, 
+    error, 
+    refresh, 
+    join, 
+    decline, 
+    markRead, 
+    markAllRead, 
+    unreadCount, 
+    pendingInvites 
+  }
 }
