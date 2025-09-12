@@ -52,6 +52,8 @@ export function RallyMomentCard({
             type="button"
             className="mt-2 inline-flex text-[11px] px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/90"
             onClick={() => onOpenMap?.(m.center!)}
+            aria-label="View rally location on map"
+            title="View on map"
           >
             View on map
           </button>

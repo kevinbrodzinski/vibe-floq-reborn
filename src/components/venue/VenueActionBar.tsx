@@ -25,6 +25,11 @@ export const VenueActionBar = React.memo(function VenueActionBar({
   const handleRoute = React.useCallback(() => {
     const hasCoords = venue && Number.isFinite(venue.lat) && Number.isFinite(venue.lng)
     if (hasCoords) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ui:map:flyTo', {
+          detail: { lng: venue!.lng!, lat: venue!.lat!, zoom: 15 }
+        }));
+      }
       openTransitFirstOrRideshare({ dest: { lat: venue!.lat!, lng: venue!.lng! }, label: venue!.name })
     }
     onRoute?.()

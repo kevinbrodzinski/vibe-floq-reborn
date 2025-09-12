@@ -183,13 +183,21 @@ export function ExploreDrawer({
                   type="button"
                   onClick={() => {
                     const { lat, lng } = (primary as any);
-                    // canonical path
-                    import('@/lib/directions/native').then(({ openTransitFirstOrRideshare }) => {
-                      openTransitFirstOrRideshare({ dest: { lat, lng }, label: primary.name });
-                    });
+                    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('ui:map:flyTo', {
+                          detail: { lng, lat, zoom: 15 }
+                        }));
+                      }
+                      // canonical path
+                      import('@/lib/directions/native').then(({ openTransitFirstOrRideshare }) => {
+                        openTransitFirstOrRideshare({ dest: { lat, lng }, label: primary.name });
+                      });
+                    }
                   }}
                   className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
                   aria-label="Floq Up"
+                  title="Floq Up"
                 >
                   Floq Up
                 </button>

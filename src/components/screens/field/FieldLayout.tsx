@@ -36,6 +36,9 @@ import { LensStatusHUD } from "@/components/field/LensStatusHUD";
 import { LensHotkeys } from "@/components/field/LensHotkeys";
 // NEW
 import { ExploreDrawerProvider } from "@/contexts/ExploreDrawerContext";
+import { RallyInboxUIProvider } from '@/contexts/RallyInboxUIContext';
+import { RallyNavBridge } from '@/components/rally/RallyNavBridge';
+import { RallyInboxHost } from '@/components/rally/RallyInboxHost';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -203,6 +206,9 @@ export const FieldLayout = () => {
           <FlowMetricsProvider map={getCurrentMap()}>
             {/* NEW: global provider for Explore Drawer visibility */}
             <ExploreDrawerProvider>
+              <RallyInboxUIProvider>
+                <RallyNavBridge />
+                <RallyInboxHost />
               <div className="relative h-svh w-full">
                 {/* Motion Permission Banner - Global Level */}
                 <MotionPermissionBanner
@@ -276,6 +282,7 @@ export const FieldLayout = () => {
                   />
                 )}
               </div>
+              </RallyInboxUIProvider>
             </ExploreDrawerProvider>
           </FlowMetricsProvider>
         </TimewarpDrawerProvider>
