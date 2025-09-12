@@ -1222,3 +1222,8 @@ All colors MUST be HSL.
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Hide flow FAB when explore drawer is open */
+body.floq-explore-open [data-flow-fab] {
+  display: none !important;
+}

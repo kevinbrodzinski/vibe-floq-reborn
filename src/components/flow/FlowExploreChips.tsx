@@ -1,13 +1,12 @@
 import React from 'react'
 import type { FlowFilters } from '@/lib/flow/types'
-import { useExploreDrawer } from '@/contexts/ExploreDrawerContext' // NEW
 
 interface Props {
   value: FlowFilters
   onChange: (filters: FlowFilters) => void
   clusterRes?: number
   loading?: boolean
-  /** NEW: 0..1 sun opportunity */
+  /** 0..1 sun opportunity */
   sunScore?: number
 }
 
@@ -16,22 +15,17 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
   const nextDensity = (d?: 'loose'|'normal'|'tight'): 'loose'|'normal'|'tight' =>
     d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
 
-  const { isOpen } = useExploreDrawer() // NEW
-
   return (
-    <div className={`fixed left-0 right-0 top-[calc(64px+env(safe-area-inset-top))] z-[590]
-                     ${isOpen ? 'opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto' : ''}`}>
+    <div className="fixed left-0 right-0 top-[calc(64px+env(safe-area-inset-top))] z-[590]">
       <div className="mx-4 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2">
-          {/* Add aria-pressed on toggles for a11y */}
           <button
             onClick={() => set({ friendFlows: !value.friendFlows })}
             aria-pressed={!!value.friendFlows}
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
-            } ${
-              value.friendFlows 
+            } ${value.friendFlows 
                 ? 'bg-white/25 text-[color:var(--ink)] shadow-soft backdrop-blur-sm' 
                 : 'bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] hover:bg-white/15'
             } disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -45,8 +39,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
-            } ${
-              value.queue === 'short'
+            } ${value.queue === 'short'
                 ? 'bg-white/25 text-[color:var(--ink)] shadow-soft backdrop-blur-sm' 
                 : 'bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] hover:bg-white/15'
             } disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -60,8 +53,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
-            } ${
-              value.weatherPref?.[0] === 'sun'
+            } ${value.weatherPref?.[0] === 'sun'
                 ? 'bg-white/25 text-[color:var(--ink)] shadow-soft backdrop-blur-sm' 
                 : 'bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] hover:bg-white/15'
             } disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -75,8 +67,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
-            } ${
-              value.vibeRange?.[0] === 0.6
+            } ${value.vibeRange?.[0] === 0.6
                 ? 'bg-white/25 text-[color:var(--ink)] shadow-soft backdrop-blur-sm' 
                 : 'bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] hover:bg-white/15'
             } disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -90,8 +81,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
-            } ${
-              value.clusterDensity
+            } ${value.clusterDensity
                 ? 'bg-white/25 text-[color:var(--ink)] shadow-soft backdrop-blur-sm' 
                 : 'bg-[color:var(--chip-bg)] text-[color:var(--chip-ink)] hover:bg-white/15'
             } disabled:opacity-60 disabled:cursor-not-allowed`}

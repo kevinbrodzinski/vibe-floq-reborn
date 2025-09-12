@@ -17,13 +17,15 @@ type ExploreDrawerProps = {
   onPlan: (pid: string) => void
   onChangeVenue: (pid: string) => void
   changeBtnRef?: React.RefObject<HTMLButtonElement>
-  // Flow controls from parent (recommended: pass from useFlowSampler / useFlowRecorder wrapper)
+
+  // Flow controls (parent wires these)
   recState?: 'idle'|'recording'|'paused'|'ended'
   onStartFlow?: () => void
   onPauseFlow?: () => void
   onResumeFlow?: () => void
   onStopFlow?: () => void
-  // Drawer state control (optional for parent to control FAB visibility)
+
+  // Optional parent control of drawer visibility
   isOpen?: boolean
   onOpenChange?: (open: boolean) => void
 }
@@ -35,27 +37,25 @@ export function ExploreDrawer({
   onPlan,
   onChangeVenue,
   changeBtnRef,
+
   recState = 'idle',
   onStartFlow,
   onPauseFlow,
   onResumeFlow,
   onStopFlow,
+
   isOpen,
   onOpenChange,
 }: ExploreDrawerProps) {
-  const [internalExpanded, setInternalExpanded] = useState(false)
+  const [localOpen, setLocalOpen] = useState(false)
+  const open = typeof isOpen === 'boolean' ? isOpen : localOpen
+  const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setLocalOpen(v))
+
   const t = getVibeToken('social' as any)
   const primary = venues?.[0]
 
-  // Use controlled state if provided, otherwise use internal state
-  const isExpanded = isOpen !== undefined ? isOpen : internalExpanded
-  const setIsExpanded = onOpenChange || setInternalExpanded
-
   // Flow metrics from context (single source of truth)
   const metrics = useFlowMetrics()
-  const isRec = recState === 'recording'
-  const isPause = recState === 'paused'
-  const canStart = recState === 'idle' || recState === 'ended'
 
   if (!primary) return null
 
@@ -66,18 +66,22 @@ export function ExploreDrawer({
     b <= 2 ? 'Moderate' :
     b <= 3 ? 'Busy' : 'Very busy'
 
-  // Format utilities (from VenueActionBar pattern)
+  // Format utilities (VenueActionBar pattern)
   const pct = (n?: number | null) =>
     n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.min(100, Math.round(n)))}%`
   const minText = (n?: number | null) =>
     n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.floor(n))}m`
 
+  const isRec = recState === 'recording'
+  const isPause = recState === 'paused'
+  const canStart = recState === 'idle' || recState === 'ended'
+
   return (
     <>
       {/* Tap-to-open pill */}
-      {!isExpanded && (
+      {!open && (
         <button
-          onClick={() => setIsExpanded(true)}
+          onClick={() => setOpen(true)}
           className="fixed left-4 right-4 bottom-[calc(7rem+env(safe-area-inset-bottom))] z-[420] px-4 py-3 rounded-2xl text-left backdrop-blur transition-all duration-200 hover:scale-[1.02]"
           style={{ background: t.bg, border: `1px solid ${t.ring}`, boxShadow: `0 0 24px ${t.glow}` }}
           aria-label={`Open details for ${primary.name}`}
@@ -95,7 +99,7 @@ export function ExploreDrawer({
       )}
 
       {/* Bottom sheet */}
-      {isExpanded && (
+      {open && (
         <div
           className="fixed left-0 right-0 bottom-0 z-[600] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur"
           style={{ background:'rgba(12,16,26,0.9)', borderTop:'1px solid rgba(255,255,255,0.15)' }}
@@ -105,7 +109,7 @@ export function ExploreDrawer({
             {/* Handle bar */}
             <div className="w-full flex items-center justify-center mb-3">
               <button
-                onClick={() => setIsExpanded(false)}
+                onClick={() => setOpen(false)}
                 className="w-12 h-1 bg-white/30 rounded-full"
                 aria-label="Collapse"
               />
@@ -124,24 +128,26 @@ export function ExploreDrawer({
               </div>
 
               {/* Flow Metrics */}
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">Flow {pct(metrics.flowPct)}</span>
-                <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">Sync {pct(metrics.syncPct)}</span>
+              <div className="mt-3 flex items-center gap-2 text-[11px] text-white/85">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/10">Flow {pct(metrics.flowPct)}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/10">Sync {pct(metrics.syncPct)}</span>
                 {Number.isFinite(metrics.elapsedMin) && (
-                  <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">⏱ {minText(metrics.elapsedMin)}</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/10">⏱ {minText(metrics.elapsedMin)}</span>
                 )}
                 {metrics.sui01 != null && (
-                  <span className="px-2 py-1 rounded-md text-[11px] bg-white/10 text-white/85">☀ {pct((metrics.sui01 ?? 0) * 100)}</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/10">☀ {pct((metrics.sui01 ?? 0) * 100)}</span>
                 )}
               </div>
 
+              {/* Actions */}
               <div className="mt-3 flex items-center gap-2 flex-wrap">
                 {/* Flow Controls */}
                 {canStart ? (
                   <button
                     onClick={onStartFlow}
                     disabled={!onStartFlow}
-                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150 disabled:opacity-50"
+                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150 disabled:opacity-60"
+                    aria-label="Start Flow"
                   >
                     ▶ Start Flow
                   </button>
@@ -151,60 +157,30 @@ export function ExploreDrawer({
                       <button
                         onClick={onPauseFlow}
                         disabled={!onPauseFlow}
-                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-50"
-                      >
-                        ⏸ Pause
-                      </button>
+                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-60"
+                        aria-label="Pause Flow"
+                      >⏸ Pause</button>
                     )}
                     {isPause && (
                       <button
                         onClick={onResumeFlow}
                         disabled={!onResumeFlow}
-                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-50"
-                      >
-                        ▶ Resume
-                      </button>
+                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-60"
+                        aria-label="Resume Flow"
+                      >▶ Resume</button>
                     )}
                     {(isRec || isPause) && (
                       <button
                         onClick={onStopFlow}
                         disabled={!onStopFlow}
-                        className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150 disabled:opacity-50"
-                      >
-                        ■ Stop
-                      </button>
+                        className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150 disabled:opacity-60"
+                        aria-label="Stop Flow"
+                      >■ Stop</button>
                     )}
                   </div>
                 )}
 
-              {/* Optional: Floq Up (directions) if venue includes coordinates */}
-              {typeof (primary as any).lat === 'number' && typeof (primary as any).lng === 'number' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const { lat, lng } = (primary as any);
-                    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-                      if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('ui:map:flyTo', {
-                          detail: { lng, lat, zoom: 15 }
-                        }));
-                        window.dispatchEvent(new CustomEvent('ui:nav:dest', { detail: { lng, lat } }));
-                      }
-                      // canonical path
-                      import('@/lib/directions/native').then(({ openTransitFirstOrRideshare }) => {
-                        openTransitFirstOrRideshare({ dest: { lat, lng }, label: primary.name });
-                      });
-                    }
-                  }}
-                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
-                  aria-label="Floq Up"
-                  title="Floq Up"
-                >
-                  Floq Up
-                </button>
-              )}
-
-              {/* Venue Actions */}
+                {/* Venue Actions */}
                 <button
                   onClick={() => onJoin(primary.pid)}
                   className="px-3 py-2 rounded-md text-xs font-semibold transition-all duration-150 hover:scale-[1.03]"

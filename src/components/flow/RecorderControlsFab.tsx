@@ -15,7 +15,7 @@ export function RecorderControlsFab({ className }: Props) {
   const canStart = state === 'idle' || state === 'ended'
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-2", className)} data-flow-fab>
       {canStart ? (
         <button
           type="button"

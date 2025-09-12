@@ -3,9 +3,10 @@ import { fetchFriendFlows, FriendFlowLine } from '@/lib/api/friendFlows';
 
 export function useFriendFlows(map: any | null, debounceMs = 300) {
   const [items, setItems] = React.useState<FriendFlowLine[]>([]);
-
+  
   React.useEffect(() => {
     if (!map) return;
+    
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     
     const loadFriendFlows = async () => {
@@ -27,6 +28,7 @@ export function useFriendFlows(map: any | null, debounceMs = 300) {
         
         setItems(flows);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.warn('[useFriendFlows] Failed to load friend flows:', error);
         setItems([]);
       }

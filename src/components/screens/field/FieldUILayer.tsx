@@ -2,7 +2,7 @@ import React, { useRef, useMemo, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useFieldData } from '@/components/screens/field/FieldDataProvider'
 import { useFieldLens } from '@/components/field/FieldLensProvider';
-import { ExploreDrawer } from '@/components/field/ExploreDrawer'
+import { ExploreDrawerWithFlow } from '@/components/field/ExploreDrawerWithFlow'
 import { ConstellationCanvas } from '@/components/overlays/ConstellationCanvas'
 import { ConstellationController } from '@/components/overlays/ConstellationController'
 import { TemporalController } from '@/components/Temporal/TemporalController'
@@ -205,21 +205,13 @@ export function FieldUILayer() {
       {/* Explore lens */}
       {lens === 'explore' && displayVenues.length > 0 && (
         <div id="lens-panel-explore" role="tabpanel" aria-labelledby="tab-explore">
-          <ExploreDrawer
+          <ExploreDrawerWithFlow
             venues={displayVenues}
             onJoin={(pid) => { /* TODO: join flow */ }}
             onSave={(pid) => { handleToggleFavorite(pid, true) }}
             onPlan={(pid) => { /* TODO: planning flow */ }}
             onChangeVenue={handleChangeVenue}
             changeBtnRef={changeBtnRef}
-            recState={samplerState}
-            onStartFlow={() => begin('owner')}
-            onPauseFlow={pauseSampler}
-            onResumeFlow={resumeSampler}
-            onStopFlow={() => {
-              stopSampler();
-              // keep reflection redirect via FAB for now
-            }}
           />
 
           {/* Flow convergence overlay with tap handler */}

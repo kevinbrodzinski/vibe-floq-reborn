@@ -5,7 +5,7 @@ import { useFieldData } from './FieldDataProvider'
 import { getCurrentMap } from '@/lib/geo/mapSingleton'
 import { useVibeNow } from '@/hooks/useVibeNow'
 import { useToast } from '@/hooks/use-toast'
-import { ExploreDrawer } from '@/components/field/ExploreDrawer'
+import { ExploreDrawerWithFlow } from '@/components/field/ExploreDrawerWithFlow'
 import { useFlowRecorder } from '@/hooks/useFlowRecorder'
 import { RecorderControlsFab } from '@/components/flow/RecorderControlsFab' // NEW
 import { useExploreDrawer } from '@/contexts/ExploreDrawerContext'
@@ -31,19 +31,12 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   return (
     <>
       {venues.length > 0 && (
-        <ExploreDrawer
+        <ExploreDrawerWithFlow
           venues={venues}
           onJoin={handleJoin}
           onSave={handleSave}
           onPlan={handlePlan}
           onChangeVenue={handleChangeVenue}
-          // flow recorder wiring
-          recState={recorder.state}
-          onStartFlow={recorder.start}
-          onPauseFlow={recorder.pause}
-          onResumeFlow={recorder.resume}
-          onStopFlow={recorder.stop}
-          // drawer visibility via context
           isOpen={isExploreOpen}
           onOpenChange={setExploreOpen}
         />
