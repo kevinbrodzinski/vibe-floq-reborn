@@ -1,105 +1,134 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type mapboxgl from 'mapbox-gl';
 
-type Updater = (map: mapboxgl.Map) => void;
-type Unmounter = (map: mapboxgl.Map) => void;
-
-type Overlay = {
+export type OverlaySpec = {
+  /** unique, stable id for the overlay */
   id: string;
-  order: number;
-  update: Updater;        // should be idempotent: create source/layers if missing; setData otherwise
-  unmount?: Unmounter;    // optional: remove layers/sources (best effort)
-  lastHash?: string;
-  pending?: boolean;
+  /** optional target to place this layer before (keeps order stable) */
+  beforeId?: string;
+  /** add sources/layers once (style-safe; LayerManager calls this after style.load) */
+  mount: (map: mapboxgl.Map) => void;
+  /** update data only (never create sources/layers here) */
+  update: (map: mapboxgl.Map, data: any) => void;
+  /** remove layers/sources added by mount */
+  unmount: (map: mapboxgl.Map) => void;
 };
 
-const RAF = (fn: () => void) => (typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(fn) : setTimeout(fn, 16));
+type Mounted = {
+  spec: OverlaySpec;
+  mounted: boolean;
+  prevHash?: string;
+  setDataCount: number;
+};
 
-export class LayerManager {
-  private map: mapboxgl.Map;
-  private overlays = new Map<string, Overlay>();
-  private onStyle = () => this.remountAll();
-  private disposed = false;
+const hashJSON = (v: any) => {
+  try { return JSON.stringify(v); } catch { return String(Math.random()); }
+};
 
-  constructor(map: mapboxgl.Map) {
+class LayerManager {
+  private map: mapboxgl.Map | null = null;
+  private overlays = new Map<string, Mounted>();
+  private order: string[] = [];
+  private pending = new Map<string, any>();
+  private raf = 0;
+  private lowPower = false;
+
+  bindMap(map: mapboxgl.Map) {
+    if (this.map === map) return;
+    this.unbind();
     this.map = map;
-    // Re-apply overlays when the style changes
-    this.map.on('style.load', this.onStyle);
+    const onStyle = () => this.remountAll();
+    map.on('style.load', onStyle);
+    (map as any)._lm_onStyle = onStyle;
+    if (map.isStyleLoaded?.()) this.remountAll();
   }
 
-  /** Register/Update an overlay. The updateFn must be safe to call repeatedly. */
-  upsert(id: string, hash: string, updateFn: Updater, opts?: { order?: number; unmount?: Unmounter }) {
-    if (this.disposed) return;
-
-    const order = opts?.order ?? 0;
-    const next = this.overlays.get(id) ?? { id, order, update: updateFn, unmount: opts?.unmount };
-    next.order = order;
-    next.update = updateFn;
-    next.unmount = opts?.unmount ?? next.unmount;
-
-    // Skip work if unchanged
-    if (next.lastHash === hash) {
-      this.overlays.set(id, next);
-      return;
-    }
-    next.lastHash = hash;
-    this.overlays.set(id, next);
-
-    // Schedule one update in a frame
-    if (!next.pending) {
-      next.pending = true;
-      RAF(() => {
-        next.pending = false;
-        this.apply(id);
-      });
-    }
-  }
-
-  /** Remove overlay */
-  remove(id: string) {
-    const o = this.overlays.get(id);
-    if (!o) return;
+  unbind() {
+    if (!this.map) return;
     try {
-      if (o.unmount) o.unmount(this.map);
-    } catch { /* ignore */ }
+      const onStyle = (this.map as any)._lm_onStyle;
+      if (onStyle) this.map.off('style.load', onStyle);
+    } catch {}
+    this.unmountAll();
+    this.map = null;
+  }
+
+  setOrder(ids: string[]) { this.order = ids.slice(); }
+
+  setLowPower(on: boolean) { this.lowPower = on; }
+
+  register(spec: OverlaySpec) {
+    if (this.overlays.has(spec.id)) return;
+    this.overlays.set(spec.id, { spec, mounted: false, setDataCount: 0 });
+    // Keep order deterministic
+    if (!this.order.includes(spec.id)) this.order.push(spec.id);
+    this.tryMount(spec.id);
+  }
+
+  remove(id: string) {
+    const ent = this.overlays.get(id);
+    if (!ent || !this.map) { this.overlays.delete(id); return; }
+    this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
     this.overlays.delete(id);
+    this.pending.delete(id);
   }
 
-  /** Clean up everything */
-  dispose() {
-    if (this.disposed) return;
-    this.disposed = true;
-    try { this.map.off('style.load', this.onStyle); } catch {}
-    for (const id of Array.from(this.overlays.keys())) this.remove(id);
-    this.overlays.clear();
+  apply(id: string, data: any) {
+    if (!this.overlays.has(id)) return;
+    this.pending.set(id, data);
+    if (!this.raf) this.raf = requestAnimationFrame(() => this.flush());
   }
 
-  /** Re-apply all overlays on new style */
+  getStats() {
+    const out: Record<string, number> = {};
+    this.overlays.forEach((o, id) => out[id] = o.setDataCount);
+    return out;
+  }
+
+  // ——— internals ———
   private remountAll() {
-    if (this.disposed) return;
-    const list = Array.from(this.overlays.values()).sort((a, b) => a.order - b.order);
-    for (const o of list) {
-      this.safeApply(o);
+    if (!this.map) return;
+    // mount in declared order
+    this.order.forEach(id => this.tryMount(id));
+    // flush any pending data
+    if (this.pending.size) this.flush();
+  }
+
+  private tryMount(id: string) {
+    if (!this.map) return;
+    const ent = this.overlays.get(id); if (!ent || ent.mounted) return;
+    if (!this.map.isStyleLoaded?.()) return;
+    this.safe(() => ent.spec.mount(this.map!));
+    ent.mounted = true;
+  }
+
+  private flush() {
+    this.raf = 0;
+    if (!this.map || !this.map.isStyleLoaded?.()) return;
+    const batch = this.lowPower ? [...this.pending.entries()].slice(0, 1) : [...this.pending.entries()];
+    this.pending.clear();
+    for (const [id, data] of batch) {
+      const ent = this.overlays.get(id); if (!ent) continue;
+      if (!ent.mounted) this.tryMount(id);
+      if (!ent.mounted) continue;
+      const h = hashJSON(data);
+      if (h === ent.prevHash) continue;
+      ent.prevHash = h;
+      this.safe(() => { ent.spec.update(this.map!, data); ent.setDataCount++; });
     }
   }
 
-  /** Apply one overlay (waits for style) */
-  private apply(id: string) {
-    const o = this.overlays.get(id);
-    if (!o || this.disposed) return;
-
-    if (this.map.isStyleLoaded?.()) {
-      this.safeApply(o);
-    } else {
-      // Wait once for this style load, then apply
-      const once = () => {
-        try { this.safeApply(o); } finally { this.map.off('style.load', once); }
-      };
-      this.map.on('style.load', once);
-    }
+  private unmountAll() {
+    if (!this.map) return;
+    [...this.overlays.values()].forEach(ent => {
+      this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
+      ent.mounted = false;
+    });
   }
 
-  private safeApply(o: Overlay) {
-    try { o.update(this.map); } catch (e) { console.warn(`[LayerManager] overlay "${o.id}" update failed`, e); }
+  private safe(fn: () => void) {
+    try { fn(); } catch (e) { console.warn('[LayerManager]', e); }
   }
 }
+
+export const layerManager = new LayerManager();
