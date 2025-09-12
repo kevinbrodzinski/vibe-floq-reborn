@@ -9,6 +9,10 @@
 :root {
   --neon: hsl(199 100% 60%); /* sky-400 looks good on both dark & light */
   
+  /* ===== Safe Area System ===== */
+  --safe-top: max(env(safe-area-inset-top, 0px), 8px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  
   /* ===== Z-Index System ===== */
   --z-map: 0;
   --z-canvas: 20;
@@ -60,9 +64,9 @@ html, body, #root {
 /* UI overlays */
 .hud, .drawer, .lens-switcher { z-index: 600; pointer-events: auto; }
 
-/* Safe area padding */
-:root { 
-  --safe-bottom: env(safe-area-inset-bottom); 
+/* Bottom spacing utility for venue sheets */
+.field-bottom-pad {
+  padding-bottom: calc(84px + var(--safe-bottom)); /* 84px ~= bottom nav + Start Flow */
 }
 
 /* Ripple animation */

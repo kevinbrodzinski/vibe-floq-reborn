@@ -14,8 +14,14 @@ export function TopChrome({ children }: { children: React.ReactNode }) {
   }, [setTop]);
 
   return (
-    <div ref={ref} className="fixed top-0 left-0 right-0 z-[560]">
-      {children}
+    <div
+      ref={ref}
+      className="fixed left-0 right-0 z-[600] px-3 pointer-events-none"
+      style={{ top: 'var(--safe-top)' }}
+    >
+      <div className="pointer-events-auto">
+        {children}
+      </div>
     </div>
   );
 }

@@ -174,14 +174,14 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
         </SheetHeader>
 
         {venue && (
-          <div className="mt-8 space-y-4">
-            {/* Venue Action Bar with Flow Integration from Context */}
+          <div className="mt-3 space-y-3">
+            {/* Unified Action Bar (Flow/Sync live inside the card) */}
             <VenueActionBar
-              venue={venue}
               onRoute={handleDirections}
-              className="mb-6"
+              venue={{ lat: venue.lat ?? null, lng: venue.lng ?? null, name: venue.name }}
+              className="grid grid-cols-[auto_auto_1fr] items-center gap-2"
             />
-            
+
             <div className="grid grid-cols-2 gap-3">
               <Button
                 size="lg"
