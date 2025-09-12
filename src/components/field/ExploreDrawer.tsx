@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { getVibeToken } from '@/lib/tokens/vibeTokens'
 import { useFlowMetrics } from '@/contexts/FlowMetricsContext'
+import { useFlowRecorder } from '@/hooks/useFlowRecorder'
 
 export type TileVenue = {
   pid: string
@@ -44,7 +45,7 @@ export function ExploreDrawer({
 
   // Flow context hooks (metrics only)
   const metrics = useFlowMetrics()
-
+  const recorder = useFlowRecorder() // needed for direct button actions
 
   if (!primary) return null
 
@@ -61,7 +62,7 @@ export function ExploreDrawer({
   const minText = (n?: number | null) =>
     n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.floor(n))}m`
 
-  const isRec = recState === 'recording'
+  const isRec = recState === 'recording' 
   const isPause = recState === 'paused'
   const canStart = recState === 'idle' || recState === 'ended'
 
@@ -138,34 +139,37 @@ export function ExploreDrawer({
                 {/* Flow Controls */}
                 {canStart ? (
                   <button
-                    onClick={onStartFlow}
+                    onClick={onStartFlow || (() => recorder.start())}
                     className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150"
                   >
                     ▶ Start Flow
                   </button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    {isRec ? (
-                      <button
-                        onClick={onPauseFlow}
+                    {isRec && (
+                      <button 
+                        onClick={onPauseFlow || (() => recorder.pause())} 
                         className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
-                      >
-                        ⏸ Pause
-                      </button>
-                    ) : isPause ? (
-                      <button
-                        onClick={onResumeFlow}
+                      >⏸ Pause</button>
+                    )}
+                    {isPause && (
+                      <button 
+                        onClick={onResumeFlow || (() => recorder.resume())} 
                         className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
-                      >
-                        ▶ Resume
-                      </button>
-                    ) : null}
-                    <button
-                      onClick={onStopFlow}
-                      className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150"
-                    >
-                      ■ Stop
-                    </button>
+                      >▶ Resume</button>
+                    )}
+                    {!isRec && !isPause && (
+                      <button 
+                        disabled 
+                        className="px-3 py-2 rounded-md text-xs bg-white/5 text-white/40 cursor-not-allowed"
+                      >■ Stop</button>
+                    )}
+                    {(isRec || isPause) && (
+                      <button 
+                        onClick={onStopFlow || (() => recorder.stop())} 
+                        className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150"
+                      >■ Stop</button>
+                    )}
                   </div>
                 )}
 

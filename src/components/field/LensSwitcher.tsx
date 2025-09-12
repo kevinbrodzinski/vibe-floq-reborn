@@ -39,10 +39,10 @@ export function LensSwitcher() {
             tabIndex={active ? 0 : -1}
             onClick={() => setLens(k)}
             onKeyDown={(e) => {
-              if (e.key === 'ArrowRight') setLens(nextLens(i));
-              if (e.key === 'ArrowLeft') setLens(prevLens(i));
-              if (e.key === 'Home') setLens('explore');
-              if (e.key === 'End') setLens('temporal');
+              if (e.key === 'ArrowRight') { e.preventDefault(); setLens(nextLens(i)); }
+              if (e.key === 'ArrowLeft')  { e.preventDefault(); setLens(prevLens(i)); }
+              if (e.key === 'Home')       { e.preventDefault(); setLens('explore'); }
+              if (e.key === 'End')        { e.preventDefault(); setLens('temporal'); }
             }}
             className={`px-3 py-2 rounded-lg text-sm ${
               active ? 'bg-white/25 text-white' : 'bg-white/10 text-white/80'

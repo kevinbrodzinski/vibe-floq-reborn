@@ -70,7 +70,7 @@ export const FieldLayout = () => {
   useDebugLocationToast();
 
   // Debug logging for enhanced location tracking state
-  console.log('[FieldLayout] Enhanced location tracking state:', {
+  if (import.meta.env.DEV) console.log('[FieldLayout] Enhanced location tracking state:', {
     isLocationReady,
     hasLocation: !!location,
     locationValue: location,
@@ -95,12 +95,12 @@ export const FieldLayout = () => {
   // Handle ripple effect for canvas clicks
   const handleRipple = (x: number, y: number) => {
     // TODO: Implement ripple visual effect
-    console.log('Ripple at:', x, y);
+    if (import.meta.env.DEV) console.log('Ripple at:', x, y);
   };
 
   // Debug location handler
   const handleDebugLocation = () => {
-    console.log('[FieldLayout] Setting debug location and reloading...');
+    if (import.meta.env.DEV) console.log('[FieldLayout] Setting debug location and reloading...');
     localStorage.setItem('floq-debug-forceLoc', '37.7749,-122.4194'); // SF coords
     sessionStorage.removeItem('floq-coords');
     window.location.reload();
@@ -118,7 +118,7 @@ export const FieldLayout = () => {
   const shouldShowMap = geoReady || allowMapWithFallback;
   
   // Enhanced debugging with both geo and location context state
-  console.log('[FieldLayout] Location gate state:', {
+  if (import.meta.env.DEV) console.log('[FieldLayout] Location gate state:', {
     geoReady,
     geoLoading,
     geoError,
@@ -140,7 +140,7 @@ export const FieldLayout = () => {
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
               onRequestLocation={() => {
-                console.log('[FieldLayout] Permission denied - trying again');
+                if (import.meta.env.DEV) console.log('[FieldLayout] Permission denied - trying again');
                 geo.requestLocation?.();
                 location?.startTracking?.();
               }}
@@ -163,7 +163,7 @@ export const FieldLayout = () => {
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
               onRequestLocation={() => {
-                console.log('[FieldLayout] User requested location');
+                if (import.meta.env.DEV) console.log('[FieldLayout] User requested location');
                 // Trigger both geo and location context to ensure proper permission flow
                 Promise.all([
                   geo.requestLocation ? Promise.resolve(geo.requestLocation()) : Promise.resolve(),
@@ -171,15 +171,15 @@ export const FieldLayout = () => {
                     ? Promise.resolve(location.startTracking()) 
                     : Promise.resolve()
                 ]).catch(err => {
-                  console.warn('[FieldLayout] Location request failed:', err);
+                  if (import.meta.env.DEV) console.warn('[FieldLayout] Location request failed:', err);
                   // Fallback to direct geolocation API
                   navigator.geolocation?.getCurrentPosition(
                     (pos) => {
-                      console.log('[FieldLayout] Fallback geolocation success');
+                      if (import.meta.env.DEV) console.log('[FieldLayout] Fallback geolocation success');
                       // Force a refresh to pick up the new location
                       window.location.reload();
                     },
-                    (e) => console.warn('[FieldLayout] Fallback geolocation error', e),
+                    (e) => { if (import.meta.env.DEV) console.warn('[FieldLayout] Fallback geolocation error', e) },
                     { enableHighAccuracy: true, timeout: 10000 }
                   );
                 });

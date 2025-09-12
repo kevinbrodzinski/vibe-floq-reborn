@@ -3,11 +3,10 @@ import { fetchFriendFlows, FriendFlowLine } from '@/lib/api/friendFlows';
 
 export function useFriendFlows(map: any | null, debounceMs = 300) {
   const [items, setItems] = React.useState<FriendFlowLine[]>([]);
-  
+
   React.useEffect(() => {
     if (!map) return;
-    
-    let timeoutId: any;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     
     const loadFriendFlows = async () => {
       try {
@@ -34,7 +33,7 @@ export function useFriendFlows(map: any | null, debounceMs = 300) {
     };
     
     const debouncedLoad = () => {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(loadFriendFlows, debounceMs);
     };
     
@@ -45,8 +44,8 @@ export function useFriendFlows(map: any | null, debounceMs = 300) {
     map.on?.('moveend', debouncedLoad);
     
     return () => {
-      map.off?.('moveend', debouncedLoad);
-      clearTimeout(timeoutId);
+      try { map.off?.('moveend', debouncedLoad); } catch {}
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [map, debounceMs]);
   

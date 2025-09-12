@@ -21,6 +21,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
         <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2">
           <button
             onClick={() => set({ friendFlows: !value.friendFlows })}
+            aria-pressed={!!value.friendFlows}
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
@@ -35,6 +36,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
 
           <button
             onClick={() => set({ queue: value.queue === 'short' ? 'any' : 'short' })}
+            aria-pressed={value.queue === 'short'}
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
@@ -49,6 +51,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
 
           <button
             onClick={() => set({ weatherPref: value.weatherPref?.[0] === 'sun' ? [] : ['sun'] })}
+            aria-pressed={value.weatherPref?.[0] === 'sun'}
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
@@ -63,6 +66,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
 
           <button
             onClick={() => set({ vibeRange: value.vibeRange?.[0] === 0.6 ? undefined : [0.6, 1.0] })}
+            aria-pressed={value.vibeRange?.[0] === 0.6}
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''
