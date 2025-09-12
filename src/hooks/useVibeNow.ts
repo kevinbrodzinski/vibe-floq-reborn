@@ -8,7 +8,9 @@ import { TemporalCollector } from '@/lib/vibe/collectors/TemporalCollector';
 import { DeviceCollector } from '@/lib/vibe/collectors/DeviceCollector';
 import { BehavioralSequenceDetector } from '@/lib/vibe/collectors/BehavioralSequenceDetector';
 import { EnvironmentalCollector } from '@/lib/vibe/collectors/EnvironmentalCollector';
-import { applyEnvironmental } from '@/lib/vibe/core/EnhancedVibeCalculator';
+import { SocialCollector } from '@/lib/vibe/collectors/SocialCollector';
+import { applyEnvironmental, applySocial } from '@/lib/vibe/core/EnhancedVibeCalculator';
+import { socialCache } from '@/lib/social/socialCache';
 import { useVibeDetection } from '@/store/useVibeDetection';
 
 interface UseVibeNowOptions {
@@ -24,6 +26,7 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
   
   const orchestratorRef = useRef<SignalOrchestrator | null>(null);
   const envRef = useRef<EnvironmentalCollector | null>(null);
+  const socialRef = useRef<SocialCollector | null>(null);
   const { autoMode } = useVibeDetection();
 
   // Initialize the vibe engine
@@ -50,13 +53,29 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
       }
       envRef.current = env;
 
-      // Listen for state updates with environmental blending
+      // Week-3: Social (provider backed by social cache)
+      const provider = {
+        getFriendHeads: socialCache.getFriendHeads,
+        getMyRecentPath: socialCache.getMyPath,
+        getConvergenceProb: socialCache.getConvergenceProb,
+      };
+      const social = new SocialCollector(provider);
+      orchestrator.registerCollector(social);
+      socialRef.current = social;
+
+      // Listen for state updates with environmental + social blending
       const unsubscribe = orchestrator.addListener((state) => {
         const base = state.currentVibe as VibePoint;
+
+        // Blend Environmental first
         const envSnap = (state.recentSnapshots?.[state.recentSnapshots.length - 1]?.sources?.environmental) ?? null;
         const envQuality = envRef.current ? envRef.current.getQuality() : 0;
+        let blended = applyEnvironmental(base, envSnap, envQuality);
 
-        const blended = applyEnvironmental(base, envSnap, envQuality);
+        // Then Social
+        const socSnap = (state.recentSnapshots?.[state.recentSnapshots.length - 1]?.sources?.social) ?? null;
+        const socQuality = socialRef.current ? socialRef.current.getQuality() : 0;
+        blended = applySocial(blended, socSnap, socQuality);
         
         setEngineState(state);
         setCurrentVibe(blended);
@@ -68,7 +87,7 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
       orchestratorRef.current = orchestrator;
       setIsInitialized(true);
 
-      console.log('🧠 Vibe engine initialized with primary + environmental signals');
+      console.log('🧠 Vibe engine initialized with primary + environmental + social signals');
     } catch (error) {
       console.error('Failed to initialize vibe engine:', error);
     }

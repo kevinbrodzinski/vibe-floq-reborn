@@ -10,6 +10,7 @@ import { addFriendFlowsLayer } from '@/lib/map/friendFlowsLayer';
 import { useFlowHUD } from '@/components/flow/hooks/useFlowHUD';
 import { FlowMomentumHUD } from '@/components/flow/FlowMomentumHUD';
 import { HeatlineToggle } from '@/components/ui/HeatlineToggle';
+import { socialCache } from '@/lib/social/socialCache';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -32,6 +33,18 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
     if (!friendFlows?.length) { cleanup(); return; }
     return cleanup;
   }, [map, friendFlows]);
+
+  // Update social cache with friend flows for vibe engine
+  React.useEffect(() => {
+    if (friendFlows?.length) {
+      const friendHeads = friendFlows.map(f => ({
+        lng: f.head_lng,
+        lat: f.head_lat,
+        t_head: f.t_head
+      }));
+      socialCache.setFriendHeads(friendHeads);
+    }
+  }, [friendFlows]);
 
   // Flow HUD (mock data for now - will connect to real flow recorder later)
   const mockEnergy = React.useMemo(() => [
@@ -58,6 +71,13 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
       t_head: f.t_head 
     }))
   });
+
+  // Update social cache with mock path (will be replaced with real flow tracking)
+  React.useEffect(() => {
+    socialCache.setMyPath(mockPath);
+    // Mock convergence probability - would come from convergence detector
+    socialCache.setConvergenceProb(hud.cohesion.cohesion > 0.3 ? 0.6 : 0.2);
+  }, [mockPath, hud.cohesion]);
 
   // Heatline state
   const [heatlineOn, setHeatlineOn] = React.useState(false);

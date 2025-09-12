@@ -1,5 +1,4 @@
-import type { VibePoint } from '@/types/vibe';
-import type { EnvironmentalSignal } from '@/types/vibe';
+import type { VibePoint, EnvironmentalSignal, SocialSignal } from '@/types/vibe';
 
 // Clamp helpers
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -53,5 +52,48 @@ export function applyEnvironmental(v: VibePoint, env: EnvironmentalSignal | null
     confidence: nextConfidence,
     breakdown: nextBreakdown,
     sources: Array.from(new Set([...(v.sources ?? []), 'environmental'])),
+  };
+}
+
+/**
+ * Blend social signals into vibe point.
+ * Conservative social influence (≤15% energy boost) based on friend cohesion and convergence.
+ */
+export function applySocial(v: VibePoint, s: SocialSignal | null, quality01: number): VibePoint {
+  if (!s || quality01 < 0.3) return v;
+
+  // Cohesion and convergence raise energy slightly (≤ ~0.15 total)
+  const coh = s.cohesion01 ?? 0;
+  const conv = s.convergenceProb01 ?? 0;
+  const socialDelta = clamp01(0.10 * coh + 0.08 * conv) * (quality01 * 0.8);
+  const nextEnergy = clamp01(v.energy + socialDelta);
+
+  // Confidence: small bump from signal diversity + head count
+  const diversity = Math.min(0.08, s.sampleCount * 0.01);
+  const nextConfidence = clamp01(v.confidence + (quality01 * 0.06) + diversity);
+
+  // Update breakdown (cap keeps social under ~0.25 share)
+  const nextBreakdown = {
+    primary: v.breakdown?.primary ?? 0.65,
+    behavioral: v.breakdown?.behavioral ?? 0.2,
+    environmental: v.breakdown?.environmental ?? 0.1,
+    social: clamp01((v.breakdown?.social ?? 0.05) + socialDelta),
+  };
+
+  // Normalize breakdown to ensure sum = 1
+  const sum = nextBreakdown.primary + nextBreakdown.behavioral + nextBreakdown.environmental + nextBreakdown.social;
+  if (sum > 0) {
+    nextBreakdown.primary /= sum;
+    nextBreakdown.behavioral /= sum;
+    nextBreakdown.environmental /= sum;
+    nextBreakdown.social /= sum;
+  }
+
+  return {
+    ...v,
+    energy: nextEnergy,
+    confidence: nextConfidence,
+    breakdown: nextBreakdown,
+    sources: Array.from(new Set([...(v.sources ?? []), 'social'])),
   };
 }

@@ -8,6 +8,7 @@ export interface SignalSnapshot {
     device?: DeviceSignal;
     behavioral?: BehavioralSignal;
     environmental?: EnvironmentalSignal;
+    social?: SocialSignal;
   };
   quality: number; // 0-1 overall quality score
   availability: Record<string, boolean>; // which signals are available
@@ -68,6 +69,15 @@ export interface EnvironmentalSignal {
   motionVar01?: number;        // 0..1 instantaneous/mean in window
   frames: { audio: number; motion: number };
   availability: { audio: boolean; motion: boolean };
+}
+
+// Social signal payload (privacy-first: friends only)
+export interface SocialSignal {
+  nearbyFriends: number;       // head count in radius/time
+  cohesion01: number;          // 0..1 from computeCohesion
+  convergenceProb01?: number;  // optional, from detect-convergence
+  sampleCount: number;         // sampling coverage
+  windowSec: number;
 }
 
 // Enhanced VibePoint with confidence and sources
