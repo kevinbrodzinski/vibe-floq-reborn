@@ -11,6 +11,7 @@ import { useSyncedVisibility } from "@/hooks/useSyncedVisibility";
 import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
 import { useAutoDiscoveryNotifications } from "@/hooks/useAutoDiscoveryNotifications";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
+import { FlowMetricsProvider } from "@/contexts/FlowMetricsContext";
 
 export const FieldScreen = () => {
   useSyncedVisibility(); // Sync visibility across app and devices
@@ -36,8 +37,10 @@ export const FieldScreen = () => {
             <FieldLocationProvider friendIds={friendIds}>
               <FieldSocialProvider profiles={profiles}>
                 <FieldGestureProvider>
-                  <FieldLayout />
-                  <DevControls />
+                  <FlowMetricsProvider>
+                    <FieldLayout />
+                    <DevControls />
+                  </FlowMetricsProvider>
                 </FieldGestureProvider>
               </FieldSocialProvider>
             </FieldLocationProvider>

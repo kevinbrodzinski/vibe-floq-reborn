@@ -212,6 +212,14 @@ export function FieldUILayer() {
             onPlan={(pid) => { /* TODO: planning flow */ }}
             onChangeVenue={handleChangeVenue}
             changeBtnRef={changeBtnRef}
+            recState={samplerState}
+            onStartFlow={() => begin('owner')}
+            onPauseFlow={pauseSampler}
+            onResumeFlow={resumeSampler}
+            onStopFlow={() => {
+              stopSampler();
+              // keep reflection redirect via FAB for now
+            }}
           />
 
           {/* Flow convergence overlay with tap handler */}
