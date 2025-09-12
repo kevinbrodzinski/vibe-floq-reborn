@@ -192,7 +192,7 @@ verify_jwt = true
 [functions.shortlist-rename]
 verify_jwt = true
 
-[functions.nearby_people]
+[functions."nearby_people"]
 verify_jwt = false
 
 [functions.shortlist-share]
