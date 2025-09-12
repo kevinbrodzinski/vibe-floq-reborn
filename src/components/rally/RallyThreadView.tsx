@@ -115,7 +115,7 @@ export function RallyThreadView({
         role="list"
         aria-label="Rally thread messages"
       >
-        {messages.map((m) => {
+        {messages.map((m, i) => {
           const ts = new Date(m.created_at);
           const isSystem = m.kind === 'system';
           return (
@@ -124,6 +124,7 @@ export function RallyThreadView({
               role="listitem"
               tabIndex={-1}
               data-created-at={m.created_at}
+              data-idx={i}
               data-message-ts={m.created_at}
               className={cn(
                 'mb-2 rounded-lg border px-3 py-2',

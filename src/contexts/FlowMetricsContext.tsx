@@ -1,4 +1,5 @@
 import * as React from 'react'
+import type mapboxgl from 'mapbox-gl'
 import { useFlowRecorder } from '@/hooks/useFlowRecorder'
 import { useFriendFlows } from '@/components/field/hooks/useFriendFlows'
 import { useFlowHUD } from '@/components/flow/hooks/useFlowHUD'
@@ -8,7 +9,7 @@ type FlowMetrics = {
   flowPct: number         // 0..100
   syncPct: number         // 0..100
   elapsedMin: number      // minutes
-  sui01: number | null    // 0..1 or null
+  sui01: number           // 0..1 (safe default for consumers)
   // raw access if needed
   raw: {
     momentum: ReturnType<typeof useFlowHUD>['momentum'] | null
@@ -52,6 +53,7 @@ export function FlowMetricsProvider({ map = getCurrentMap(), children }: Provide
   }, [recorder?.segments])
 
   // 2) friend flows → cohesion inputs
+  // Guard: during SSR or before map is ready, skip the hook
   const friendFlows = map ? useFriendFlows(map) : []
 
   const hud = useFlowHUD({
@@ -69,31 +71,34 @@ export function FlowMetricsProvider({ map = getCurrentMap(), children }: Provide
     })),
   })
 
-  // Derive HUD values once for consistent computation
+  // 3) derive the four values we surface everywhere
   const flowPct = React.useMemo(() => Math.round((hud.momentum?.mag ?? 0) * 100), [hud.momentum?.mag])
   const syncPct = React.useMemo(() => Math.round((hud.cohesion?.cohesion ?? 0) * 100), [hud.cohesion?.cohesion])
   const elapsedMin = React.useMemo(() => recorder?.elapsedMin ?? 0, [recorder?.elapsedMin])
   const sui01 = React.useMemo(() => recorder?.sui01 ?? null, [recorder?.sui01])
 
-  // 3) derive the four values we surface everywhere
   const value: FlowMetrics = React.useMemo(() => {
     return {
       flowPct,
       syncPct,
       elapsedMin,
-      sui01,
+      sui01: sui01 ?? 0, // safe 0 default for consumers that expect number
       raw: { momentum: hud.momentum ?? null, cohesion: hud.cohesion ?? null },
     }
   }, [flowPct, syncPct, elapsedMin, sui01, hud.momentum, hud.cohesion])
 
-  return <FlowMetricsCtx.Provider value={value}>{children}</FlowMetricsCtx.Provider>
+  return (
+    <FlowMetricsCtx.Provider value={value}>
+      {children}
+    </FlowMetricsCtx.Provider>
+  )
 }
 
 export function useFlowMetrics() {
   const ctx = React.useContext(FlowMetricsCtx)
   if (!ctx) {
     // Safe default (prevents crashes if someone calls hook outside provider)
-    return { flowPct: 0, syncPct: 0, elapsedMin: 0, sui01: null, raw: { momentum: null, cohesion: null } } as FlowMetrics
+    return { flowPct: 0, syncPct: 0, elapsedMin: 0, sui01: 0, raw: { momentum: null, cohesion: null } } as FlowMetrics
   }
   return ctx
 }
