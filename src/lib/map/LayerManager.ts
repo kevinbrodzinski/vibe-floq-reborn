@@ -57,32 +57,53 @@ export class LayerManager {
 
   unbind() {
     if (!this.map) return;
+    this.cancelPending();
     try {
       const onStyle = (this.map as any)._lm_onStyle;
       if (onStyle) this.map.off('style.load', onStyle);
     } catch {}
     this.unmountAll();
     this.map = null;
+    // Clear listeners to prevent memory leaks
+    this.applyListeners.clear();
+  }
+
+  private cancelPending() {
+    if (this.raf) {
+      cancelAnimationFrame(this.raf);
+      this.raf = 0;
+    }
+    this.pending.clear();
   }
 
   setOrder(ids: string[]) { this.order = ids.slice(); }
 
-  setLowPower(on: boolean) { this.lowPower = on; }
+  /** Enable/disable low-power mode (batches updates when backgrounded) */
+  setLowPower(enabled: boolean) {
+    this.lowPower = enabled;
+  }
 
   register(spec: OverlaySpec) {
+    // Idempotent register - avoid duplicate order entries
     if (this.overlays.has(spec.id)) return;
+    
     this.overlays.set(spec.id, { spec, mounted: false, setDataCount: 0 });
     // Keep order deterministic
     if (!this.order.includes(spec.id)) this.order.push(spec.id);
-    this.tryMount(spec.id);
+    if (this.map && typeof window !== 'undefined') this.tryMount(spec.id);
   }
 
-  remove(id: string) {
+  unregister(id: string) {
     const ent = this.overlays.get(id);
     if (!ent || !this.map) { this.overlays.delete(id); return; }
     this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
     this.overlays.delete(id);
     this.pending.delete(id);
+  }
+
+  // Alias for backward compatibility
+  remove(id: string) {
+    this.unregister(id);
   }
 
   apply(id: string, data: any) {
@@ -113,9 +134,10 @@ export class LayerManager {
   }
 
   private tryMount(id: string) {
-    if (!this.map) return;
-    const ent = this.overlays.get(id); if (!ent || ent.mounted) return;
-    if (!this.map.isStyleLoaded?.()) return;
+    const ent = this.overlays.get(id); 
+    if (!ent || !this.map || typeof window === 'undefined') return;
+    if (ent.mounted || !this.map.isStyleLoaded?.()) return;
+    
     this.safe(() => ent.spec.mount(this.map!));
     ent.mounted = true;
   }

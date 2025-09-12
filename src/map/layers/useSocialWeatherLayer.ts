@@ -1,71 +1,20 @@
-import { useEffect, useMemo } from 'react';
-import type { FeatureCollection } from 'geojson';
+import * as React from 'react';
+import { layerManager } from '@/lib/map/LayerManager';
+import { createSocialWeatherSpec, socialWeatherToFC } from '@/lib/map/overlays/socialWeatherSpec';
 import type { PressureCell } from '@/lib/api/mapContracts';
-import { brand } from '@/lib/tokens/brand';
-import { ensureGeoJSONSource, ensureLayer, persistOnStyle, findFirstSymbolLayerId } from '@/lib/map/stylePersistence';
-
-const SRC_ID = 'floq:social-weather';
-const LYR_ID = 'floq:social-weather:circles';
-
-function toGeoJSON(cells: PressureCell[]): FeatureCollection {
-  return {
-    type: 'FeatureCollection',
-    features: cells.map(c => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: c.center },
-      properties: {
-        key: c.key,
-        pressure: c.pressure,
-        temperature: c.temperature,
-        humidity: c.humidity,
-      },
-    })),
-  };
-}
 
 export function useSocialWeatherLayer(map: any, cells?: PressureCell[]) {
-  const data = useMemo(() => {
-    if (!cells?.length) return { type: 'FeatureCollection', features: [] } as FeatureCollection;
-    return toGeoJSON(cells);
-  }, [cells]);
-
-  useEffect(() => {
+  // Register the social weather spec once when map is available
+  React.useEffect(() => {
     if (!map) return;
+    layerManager.register(createSocialWeatherSpec());
+    return () => layerManager.unregister('social-weather');
+  }, [map]);
 
-    const readd = () => {
-      // skip until style is fully ready
-      if (typeof map.isStyleLoaded === 'function' && !map.isStyleLoaded()) return;
-
-      ensureGeoJSONSource(map, SRC_ID, data);
-
-      const beforeId = findFirstSymbolLayerId(map);
-      ensureLayer(
-        map,
-        {
-          id: LYR_ID,
-          type: 'circle',
-          source: SRC_ID,
-          paint: {
-            'circle-radius': ['interpolate', ['linear'], ['get', 'pressure'], 0.0, 2, 0.5, 6, 1.0, 10],
-            'circle-color': brand.accent,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'pressure'], 0.0, 0.1, 1.0, 0.4],
-            'circle-stroke-color': brand.accent,
-            'circle-stroke-opacity': 0.25,
-            'circle-stroke-width': 1,
-          },
-        },
-        beforeId
-      );
-
-      // Debug telemetry
-      console.debug('[floq] readded weather layer', { src: SRC_ID, lyr: LYR_ID, t: Date.now() });
-    };
-
-    const cleanup = persistOnStyle(map, readd);
-
-    const src: any = map.getSource(SRC_ID);
-    if (src?.setData) src.setData(data);
-
-    return cleanup;
-  }, [map, data]);
+  // Apply weather data whenever it changes
+  React.useEffect(() => {
+    if (!cells) return;
+    const fc = socialWeatherToFC(cells);
+    layerManager.apply('social-weather', fc);
+  }, [cells]);
 }
