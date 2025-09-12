@@ -15,7 +15,7 @@ export function RallyMomentCard({
   onOpenMap?: (c: { lng: number; lat: number }) => void;
 }) {
   const p = m.participants || [];
-  const gotCenter = !!m.rally_id && !!m.center;
+  const gotCenter = !!m?.rally_id && !!m?.center && Number.isFinite(m.center?.lng) && Number.isFinite(m.center?.lat);
 
   return (
     <div className="rounded-xl bg-card/60 border border-border p-3 flex items-start gap-3">
@@ -43,6 +43,7 @@ export function RallyMomentCard({
           <button
             type="button"
             className="mt-2 inline-flex text-[11px] px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/90"
+            aria-label="View rally location on map"
             onClick={() => onOpenMap?.(m.center!)}
           >
             View on map

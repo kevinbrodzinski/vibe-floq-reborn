@@ -40,8 +40,9 @@ type Props = {
 export function RallyButton({
   lastPingAtMs, recipientIds, ttlMin = 60, note, className, onCreated
 }: Props) {
-  const { toast } = useToast()
-  const map = getCurrentMap()
+  const { toast } = useToast();
+  const map = getCurrentMap();
+  const [busy, setBusy] = React.useState(false);
 
   // TODO: wire actual counts
   const nearby = 3
@@ -62,6 +63,8 @@ export function RallyButton({
   const inferredRecipients: string[] = recipientIds ?? []
 
   const onClick = async () => {
+    if (busy) return;
+    setBusy(true);
     try {
       const c = map?.getCenter?.()
       if (!c) throw new Error('Map not ready')
@@ -75,19 +78,22 @@ export function RallyButton({
       toast({ title: 'Rally created', description: invited ? `Invited ${invited} friends` : 'Rally is live' })
     } catch (e:any) {
       toast({ title: 'Could not create rally', description: e?.message ?? 'Try again', variant: 'destructive' })
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <Chip 
-      color="indigo" 
-      onClick={onClick} 
-      className={className} 
+    <Chip
+      color="indigo"
+      onClick={onClick}
+      className={className}
       icon={<span aria-hidden>⚡</span>}
       aria-label={`${label} - Start rally with ${nearby} nearby friends`}
       type="button"
+      disabled={busy}
     >
-      {label}
+      {busy ? 'Starting…' : label}
     </Chip>
   )
 }

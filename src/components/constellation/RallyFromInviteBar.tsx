@@ -25,12 +25,14 @@ export function RallyFromInviteBar({
   const participants = React.useMemo(() => heads.map(h => h.friend_id), [heads]);
   const centroid = React.useMemo(() => headsCentroid(heads), [heads]);
 
+  const disabled = busy || !participants.length || !centroid;
+
   const start = async () => {
-    if (busy) return;
+    if (disabled) return;
     setBusy(true);
     try {
       const { rallyId } = await createRally({
-        center: centroid ?? { lng: 0, lat: 0 },
+        center: centroid!,
         recipients: participants,
         ttlMin: 60,
         note: (cohesion01 ?? 0) >= 0.55 ? 'High sync rally' : 'Friends rally'
@@ -81,7 +83,7 @@ export function RallyFromInviteBar({
           <button
             type="button"
             onClick={start}
-            disabled={busy}
+            disabled={disabled}
             className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             aria-label="Start Rally"
           >
