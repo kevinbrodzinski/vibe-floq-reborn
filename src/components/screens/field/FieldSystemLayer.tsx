@@ -51,8 +51,22 @@ const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
   // Get venue details for action bar when venue is selected
   const { data: activeVenue } = useVenueDetails(selectedVenueId);
   
-  // Get flow metrics from context
-  const { flowPct, syncPct, elapsedMin, sui01 } = useFlowMetrics();
+  // Get flow recorder and compute real metrics from segments
+  const recorder = useFlowRecorder();
+  
+  const pathPoints = React.useMemo(
+    () => (recorder?.segments ?? [])
+      .filter(s => !!s.center)
+      .map(s => ({ lng: s.center!.lng, lat: s.center!.lat, t: new Date(s.arrived_at ?? Date.now()).getTime() })),
+    [recorder?.segments]
+  );
+  
+  const energySamples = React.useMemo(
+    () => (recorder?.segments ?? [])
+      .map(s => (s?.vibe_vector?.energy != null ? ({ t: new Date(s.arrived_at ?? Date.now()).getTime(), energy: s.vibe_vector.energy }) : null))
+      .filter(Boolean) as Array<{ t: number; energy: number }>,
+    [recorder?.segments]
+  );
 
   // Invite nearby cooldown state  
   const COOLDOWN_KEY = 'floq:lastInviteNearbyAt';
@@ -102,14 +116,16 @@ const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
   ], []);
 
   const hud = useFlowHUD({
-    energy: mockEnergy,
-    myPath: mockPath,
-    friendFlows: friendFlows.map(f => ({ 
-      head_lng: f.head_lng, 
-      head_lat: f.head_lat, 
-      t_head: f.t_head 
-    }))
+    energy: energySamples.length > 0 ? energySamples : mockEnergy,
+    myPath: pathPoints.length > 0 ? pathPoints : mockPath,
+    friendFlows: (friendFlows ?? []).map(f => ({ head_lng: f.head_lng, head_lat: f.head_lat, t_head: f.t_head }))
   });
+
+  // Compute flow metrics from HUD and recorder
+  const flowPct = Math.round((hud.momentum?.mag ?? 0) * 100);
+  const syncPct = Math.round((hud.cohesion?.cohesion ?? 0) * 100);
+  const elapsedMin = recorder?.elapsedMin ?? 0;
+  const sui01 = recorder?.sui01 ?? null;
 
   // Update social cache with mock path (will be replaced with real flow tracking)
   React.useEffect(() => {
@@ -240,12 +256,14 @@ const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
               </div>
               
               <VenueActionBar
-                venue={activeVenue}
+                flowPct={flowPct}
+                syncPct={syncPct}
+                elapsedMin={elapsedMin}
+                sui01={sui01}
                 heatlineOn={heatlineOn}
-                onRoute={() => {
-                  // Route handled internally by VenueActionBar
-                }}
                 onToggleHeatline={setHeatlineOn}
+                onRoute={() => {/* handled internally */}}
+                venue={{ lat: activeVenue.lat ?? null, lng: activeVenue.lng ?? null, name: activeVenue.name }}
               />
             </div>
           </div>
