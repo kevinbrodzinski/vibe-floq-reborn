@@ -37,17 +37,6 @@ export async function listThreadMessages(threadId: string): Promise<RallyMessage
   return data ?? [];
 }
 
-export async function setRallyLastSeen(rallyId: string, ts?: string) {
-  const when = ts ?? new Date().toISOString();
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth?.user?.id;
-  if (!me) return;
-
-  const { error } = await supabase
-    .from('rally_last_seen')
-    .upsert({ profile_id: me, rally_id: rallyId, last_seen_at: when }, { onConflict: 'profile_id,rally_id' });
-  if (error) throw error;
-}
 
 export function computeFirstUnread(messages: RallyMessage[], lastSeen: string | null) {
   if (!messages.length) return { index: null, t: null };

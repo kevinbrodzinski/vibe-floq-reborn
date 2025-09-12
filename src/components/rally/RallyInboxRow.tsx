@@ -22,8 +22,8 @@ export function RallyInboxRow({
     try {
       onOptimisticUnreadZero?.(item.rally_id);
       await onMarkRead(item.rally_id);
-    } catch (e) {
-      console.warn('mark read failed', e);
+    } catch {
+      /* no-op */
     } finally {
       setBusy(false);
     }
@@ -60,7 +60,7 @@ export function RallyInboxRow({
         </div>
       </div>
       
-      {item.unread_count > 0 && onMarkRead && (
+      {item.unread_count && onMarkRead ? (
         <Button
           variant="ghost"
           size="sm"
@@ -71,7 +71,7 @@ export function RallyInboxRow({
         >
           {busy ? 'Marking...' : 'Mark read'}
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -12,13 +12,7 @@ export function RallyInboxHeader({ onOpen }: { onOpen: () => void }) {
   const handleMarkAllRead = async () => {
     if (markingAllRead || unreadCount === 0) return;
     setMarkingAllRead(true);
-    try {
-      await markAllRead();
-    } catch (e) {
-      console.warn('Failed to mark all rallies as read:', e);
-    } finally {
-      setMarkingAllRead(false);
-    }
+    try { await markAllRead(); } catch (e) { /* no-op */ } finally { setMarkingAllRead(false); }
   };
 
   return (

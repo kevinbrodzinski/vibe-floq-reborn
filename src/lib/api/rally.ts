@@ -43,10 +43,9 @@ export async function endRally(rallyId: RallyId) {
   if (error) throw error;
 
   const { error: finalizeError } = await supabase.functions.invoke('rally-finalize', {
-    body: { rallyId, endedAt: new Date().toISOString() },
+    body: { rallyId, endedAt: new Date().toISOString() }
   });
-  if (finalizeError && import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
+  if (finalizeError) {
     console.warn('Failed to finalize rally to afterglow:', finalizeError);
   }
   return { success: true, afterglowCreated: !finalizeError };

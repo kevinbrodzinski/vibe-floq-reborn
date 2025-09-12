@@ -15,6 +15,12 @@ declare global {
       centroid?: { lng: number; lat: number } | null;
       source?: string;
     }>;
+    'floq:rally:inbox:new': CustomEvent<{
+      threadId: string;
+      rallyId: string;
+      participants: string[];
+      title: string;
+    }>;
   }
 }
 

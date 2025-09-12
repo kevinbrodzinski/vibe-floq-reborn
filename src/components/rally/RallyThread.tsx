@@ -10,25 +10,21 @@ interface RallyThreadProps {
 export function RallyThread({ rallyId, firstUnreadAt, children }: RallyThreadProps) {
   React.useEffect(() => {
     if (!rallyId) return;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
 
-    let timeout: number | undefined;
     const markRead = () => {
       if (timeout) clearTimeout(timeout);
-      timeout = window.setTimeout(async () => {
+      timeout = setTimeout(async () => {
         try {
           const { data: user } = await supabase.auth.getUser();
           const me = user.user?.id;
           if (!me) return;
-
           const when = new Date().toISOString();
           await supabase
             .from('rally_last_seen')
             .upsert({ profile_id: me, rally_id: rallyId, last_seen_at: when }, { onConflict: 'profile_id,rally_id' });
-        } catch (e) {
-          if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
-            console.warn('Mark read failed:', e);
-          }
+        } catch {
+          /* no-op */
         }
       }, 150);
     };
@@ -39,15 +35,10 @@ export function RallyThread({ rallyId, firstUnreadAt, children }: RallyThreadPro
 
   React.useEffect(() => {
     if (!firstUnreadAt) return;
-
-    const scrollToFirstUnread = () => {
+    const timer = setTimeout(() => {
       const el = document.querySelector<HTMLElement>(`[data-created-at="${firstUnreadAt}"]`);
-      if (el) {
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      }
-    };
-
-    const timer = window.setTimeout(scrollToFirstUnread, 100);
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 100);
     return () => clearTimeout(timer);
   }, [firstUnreadAt]);
 

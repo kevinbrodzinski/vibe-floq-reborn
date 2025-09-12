@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { listRallyInbox, respondInvite, subscribeRallyInbox, type RallyInboxItem } from '@/lib/api/rallyInbox'
+import { listRallyInbox, respondInvite, subscribeRallyInbox } from '@/lib/api/rallyInbox'
 import { markRallyRead, markAllRalliesRead } from '@/lib/api/rallyRead'
+import type { RallyInboxItem } from '@/lib/api/rallyInbox'
 
 export function useRallyInbox() {
   const [items, setItems] = React.useState<RallyInboxItem[]>([])
@@ -49,12 +50,7 @@ export function useRallyInbox() {
   const markAllRead = React.useCallback(async () => {
     const previousItems = items
     setItems(prev => prev.map(x => ({...x, unread_count: 0, first_unread_at: null})))
-    try {
-      await markAllRalliesRead()
-    } catch (e) {
-      setItems(previousItems)
-      throw e
-    }
+    try { await markAllRalliesRead() } catch { setItems(previousItems); }
   }, [items])
 
   const unreadCount = React.useMemo(

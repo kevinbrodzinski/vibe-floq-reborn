@@ -42,20 +42,17 @@ export async function respondInvite(rallyId: RallyId, status: 'joined' | 'declin
 }
 
 export async function createRallyInboxThread(args: {
-  rallyId: string;
-  title: string;
-  participants: string[];
-  centroid?: { lng: number; lat: number } | null;
+  rallyId: string
+  title: string
+  participants: string[]
+  centroid?: { lng: number; lat: number } | null
 }): Promise<{ threadId: string }> {
   try {
-    const { data, error } = await supabase.functions.invoke<{ threadId: string }>(
-      'rally-inbox-create',
-      { body: args },
-    );
-    if (error) throw error;
-    if (data?.threadId) return data;
+    const { data, error } = await supabase.functions.invoke<{ threadId: string }>('rally-inbox-create', { body: args })
+    if (error) throw error
+    if (data?.threadId) return data
   } catch {
-    return { threadId: `rthread_${Math.random().toString(36).slice(2)}` };
+    return { threadId: `rthread_${Math.random().toString(36).slice(2)}` }
   }
 }
 
