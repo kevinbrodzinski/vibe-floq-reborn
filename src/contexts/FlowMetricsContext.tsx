@@ -8,7 +8,7 @@ type FlowMetrics = {
   flowPct: number         // 0..100
   syncPct: number         // 0..100
   elapsedMin: number      // minutes
-  sui01: number           // 0..1
+  sui01: number | null    // 0..1 or null
   // raw access if needed
   raw: {
     momentum: ReturnType<typeof useFlowHUD>['momentum'] | null
@@ -69,13 +69,14 @@ export function FlowMetricsProvider({ map = getCurrentMap(), children }: Provide
     })),
   })
 
+  // Derive HUD values once for consistent computation
+  const flowPct = React.useMemo(() => Math.round((hud.momentum?.mag ?? 0) * 100), [hud.momentum?.mag])
+  const syncPct = React.useMemo(() => Math.round((hud.cohesion?.cohesion ?? 0) * 100), [hud.cohesion?.cohesion])
+  const elapsedMin = React.useMemo(() => recorder?.elapsedMin ?? 0, [recorder?.elapsedMin])
+  const sui01 = React.useMemo(() => recorder?.sui01 ?? null, [recorder?.sui01])
+
   // 3) derive the four values we surface everywhere
   const value: FlowMetrics = React.useMemo(() => {
-    const flowPct = Math.round(Math.min(1, Math.max(0, hud.momentum?.mag ?? 0)) * 100)
-    const syncPct = Math.round(Math.min(1, Math.max(0, hud.cohesion?.cohesion ?? 0)) * 100)
-    const elapsedMin = Math.max(0, Math.floor(recorder?.elapsedMin ?? 0))
-    const sui01 = Math.min(1, Math.max(0, recorder?.sui01 ?? 0.75))
-
     return {
       flowPct,
       syncPct,
@@ -83,7 +84,7 @@ export function FlowMetricsProvider({ map = getCurrentMap(), children }: Provide
       sui01,
       raw: { momentum: hud.momentum ?? null, cohesion: hud.cohesion ?? null },
     }
-  }, [hud.momentum, hud.cohesion, recorder?.elapsedMin, recorder?.sui01])
+  }, [flowPct, syncPct, elapsedMin, sui01, hud.momentum, hud.cohesion])
 
   return <FlowMetricsCtx.Provider value={value}>{children}</FlowMetricsCtx.Provider>
 }
@@ -92,7 +93,7 @@ export function useFlowMetrics() {
   const ctx = React.useContext(FlowMetricsCtx)
   if (!ctx) {
     // Safe default (prevents crashes if someone calls hook outside provider)
-    return { flowPct: 0, syncPct: 0, elapsedMin: 0, sui01: 0, raw: { momentum: null, cohesion: null } } as FlowMetrics
+    return { flowPct: 0, syncPct: 0, elapsedMin: 0, sui01: null, raw: { momentum: null, cohesion: null } } as FlowMetrics
   }
   return ctx
 }

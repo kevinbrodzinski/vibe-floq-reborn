@@ -218,12 +218,12 @@ const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
           {/* Flow HUD (Momentum & Cohesion) */}
           <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
 
-          {/* Social Signal Nudge (legacy - kept for compatibility) */}
-          {currentVibe.sources.includes('social') && hud.cohesion.nearby > 0 && !shouldInvite && (
-            <Badge variant="secondary" className="bg-indigo-500/90 text-white border-indigo-300/20 backdrop-blur">
-              👥 {hud.cohesion.nearby} nearby
-            </Badge>
-          )}
+        {/* Social Signal Nudge (legacy - kept for compatibility) */}
+        {currentVibe?.sources?.includes?.('social') && hud.cohesion.nearby > 0 && !shouldInvite && (
+          <Badge variant="secondary" className="bg-indigo-500/90 text-white border-indigo-300/20 backdrop-blur">
+            👥 {hud.cohesion.nearby} nearby
+          </Badge>
+        )}
         </div>
       )}
 
@@ -241,6 +241,7 @@ const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
               
               <VenueActionBar
                 venue={activeVenue}
+                heatlineOn={heatlineOn}
                 onRoute={() => {
                   // Route handled internally by VenueActionBar
                 }}
