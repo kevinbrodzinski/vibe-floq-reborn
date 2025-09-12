@@ -21,12 +21,23 @@ import { VenueActionBar } from '@/components/venue/VenueActionBar';
 import { BottomChrome } from '@/components/field/layout/BottomChrome';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useFlowRecorder } from '@/hooks/useFlowRecorder';
+import { FlowMetricsProvider, useFlowMetrics } from '@/contexts/FlowMetricsContext';
 
 interface FieldSystemLayerProps {
   data: FieldData;
 }
 
 export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
+  const map = getCurrentMap();
+  
+  return (
+    <FlowMetricsProvider map={map}>
+      <FieldSystemLayerContent data={data} />
+    </FlowMetricsProvider>
+  );
+};
+
+const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
   const { liveRef, selectedVenueId } = useFieldUI();
   const map = getCurrentMap();
   
@@ -40,8 +51,8 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   // Get venue details for action bar when venue is selected
   const { data: activeVenue } = useVenueDetails(selectedVenueId);
   
-  // Mock flow recorder for HUD values (replace with real flow recorder)
-  const recorder = useFlowRecorder();
+  // Get flow metrics from context
+  const { flowPct, syncPct, elapsedMin, sui01 } = useFlowMetrics();
 
   // Invite nearby cooldown state  
   const COOLDOWN_KEY = 'floq:lastInviteNearbyAt';
@@ -189,12 +200,6 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
     };
   }, [map, heatlineOn, edgesRef.current.length]);
 
-  // Derive HUD values once for use in both floating HUD and venue action bar
-  const flowPct = Math.round(Math.min(1, Math.max(0, hud.momentum?.mag ?? 0)) * 100);
-  const syncPct = Math.round(Math.min(1, Math.max(0, hud.cohesion?.cohesion ?? 0)) * 100);
-  const elapsedMin = Math.max(0, Math.floor(recorder?.elapsedMin ?? 0));
-  const sui01 = Math.min(1, Math.max(0, recorder?.sui01 ?? 0));
-
   return (
     <>
       {/* ——— HUD Container (bottom-left) - only show when no venue selected —————————————— */}
@@ -235,10 +240,6 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
               </div>
               
               <VenueActionBar
-                flowPct={flowPct}
-                syncPct={syncPct}
-                elapsedMin={elapsedMin}
-                sui01={sui01}
                 venue={activeVenue}
                 onRoute={() => {
                   // Route handled internally by VenueActionBar

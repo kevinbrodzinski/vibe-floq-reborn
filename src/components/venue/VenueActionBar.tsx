@@ -2,28 +2,26 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Chip } from '@/components/ui/Chip'
 import { openTransitFirstOrRideshare } from '@/lib/geo/openNativeDirections'
+import { useFlowMetrics } from '@/contexts/FlowMetricsContext'
 
 type Props = {
-  flowPct: number            // 0..100
-  syncPct: number            // 0..100
-  elapsedMin?: number        // optional ⏱
-  sui01?: number             // optional 0..1 ☀
+  flowPct?: number            // 0..100 (optional, falls back to context)
+  syncPct?: number            // 0..100 (optional, falls back to context)
+  elapsedMin?: number         // optional ⏱ (falls back to context)
+  sui01?: number              // optional 0..1 ☀ (falls back to context)
   onRoute: () => void
   onToggleHeatline?: (next: boolean | ((v: boolean) => boolean)) => void
   className?: string
   venue?: { lat: number | null; lng: number | null; name: string } | null
 }
 
-export function VenueActionBar({
-  flowPct, 
-  syncPct, 
-  elapsedMin, 
-  sui01, 
-  onRoute, 
-  onToggleHeatline, 
-  className,
-  venue
-}: Props) {
+export function VenueActionBar(props: Props) {
+  const metrics = useFlowMetrics()
+  const flowPct = props.flowPct ?? metrics.flowPct
+  const syncPct = props.syncPct ?? metrics.syncPct
+  const elapsedMin = props.elapsedMin ?? metrics.elapsedMin
+  const sui01 = props.sui01 ?? metrics.sui01
+  const { onRoute, onToggleHeatline, className, venue } = props
   const sui = typeof sui01 === 'number' ? Math.round(sui01 * 100) : null
   const mins = typeof elapsedMin === 'number' ? Math.max(0, Math.floor(elapsedMin)) : null
 

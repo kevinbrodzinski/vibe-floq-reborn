@@ -3,6 +3,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
 import { MotionPermissionBanner } from "@/components/ui/MotionPermissionBanner";
 
+import { LayersRuntime } from "./LayersRuntime";
 import { FieldMapLayer } from "./FieldMapLayer";
 import { FieldUILayer } from "./FieldUILayer";
 import { FieldModalLayer } from "./FieldModalLayer";
@@ -217,6 +218,11 @@ export const FieldLayout = () => {
 
           {/* Modal/Sheet Layer - z-40 to z-60 */}
           <FieldModalLayer data={data} />
+
+          {/* Updated Layers Runtime with all overlays */}
+          <LayersRuntime 
+            data={data}
+          />
 
           {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
           <BottomHud>
