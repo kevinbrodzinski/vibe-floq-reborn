@@ -1,5 +1,6 @@
 import React from 'react'
 import type { FlowFilters } from '@/lib/flow/types'
+import { useExploreDrawer } from '@/contexts/ExploreDrawerContext' // NEW
 
 interface Props {
   value: FlowFilters
@@ -15,10 +16,14 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
   const nextDensity = (d?: 'loose'|'normal'|'tight'): 'loose'|'normal'|'tight' =>
     d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
 
+  const { isOpen } = useExploreDrawer() // NEW
+
   return (
-    <div className="fixed left-0 right-0 top-[calc(64px+env(safe-area-inset-top))] z-[590]">
+    <div className={`fixed left-0 right-0 top-[calc(64px+env(safe-area-inset-top))] z-[590]
+                     ${isOpen ? 'opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto' : ''}`}>
       <div className="mx-4 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2">
+          {/* Add aria-pressed on toggles for a11y */}
           <button
             onClick={() => set({ friendFlows: !value.friendFlows })}
             aria-pressed={!!value.friendFlows}
@@ -81,6 +86,7 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
 
           <button
             onClick={() => set({ clusterDensity: nextDensity(value.clusterDensity) })}
+            aria-pressed={!!value.clusterDensity}
             disabled={loading}
             className={`px-3 py-1.5 rounded-kit-pill text-xs font-medium transition-all duration-200 shrink-0 touch-manipulation ${
               loading ? 'animate-pulse' : ''

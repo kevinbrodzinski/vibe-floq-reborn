@@ -34,6 +34,8 @@ import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast"
 import { LensSwitcher } from "@/components/field/LensSwitcher";
 import { LensStatusHUD } from "@/components/field/LensStatusHUD";
 import { LensHotkeys } from "@/components/field/LensHotkeys";
+// NEW
+import { ExploreDrawerProvider } from "@/contexts/ExploreDrawerContext";
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -196,86 +198,86 @@ export const FieldLayout = () => {
 
   return (
     <ErrorBoundary>
-        <FriendDrawerProvider>
+      <FriendDrawerProvider>
         <TimewarpDrawerProvider>
           <FlowMetricsProvider map={getCurrentMap()}>
-            <div className="relative h-svh w-full">
-            {/* Motion Permission Banner - Global Level */}
-            <MotionPermissionBanner
-              requestMotionPermission={requestMotionPermission}
-              isMotionAvailable={isMotionAvailable}
-            />
+            {/* NEW: global provider for Explore Drawer visibility */}
+            <ExploreDrawerProvider>
+              <div className="relative h-svh w-full">
+                {/* Motion Permission Banner - Global Level */}
+                <MotionPermissionBanner
+                  requestMotionPermission={requestMotionPermission}
+                  isMotionAvailable={isMotionAvailable}
+                />
 
-            {/* Base Map Layer - z-0 */}
-            <div {...gestureHandlers}>
-              <FieldMapLayer
-                data={data}
-                people={people}
-                floqs={data.floqEvents}
-                onRipple={handleRipple}
-                canvasRef={canvasRef}
-              />
-            </div>
+                {/* Base Map Layer - z-0 */}
+                <div {...gestureHandlers}>
+                  <FieldMapLayer
+                    data={data}
+                    people={people}
+                    floqs={data.floqEvents}
+                    onRipple={handleRipple}
+                    canvasRef={canvasRef}
+                  />
+                </div>
 
-            {/* UI Content Layer - z-10 to z-30 */}
-            <FieldUILayer />
+                {/* UI Content Layer - z-10 to z-30 */}
+                <FieldUILayer />
 
-            {/* Modal/Sheet Layer - z-40 to z-60 */}
-            <FieldModalLayer data={data} />
+                {/* Modal/Sheet Layer - z-40 to z-60 */}
+                <FieldModalLayer data={data} />
 
-            {/* Updated Layers Runtime with all overlays */}
-            <LayersRuntime 
-              data={data}
-            />
+                {/* Updated Layers Runtime with all overlays */}
+                <LayersRuntime 
+                  data={data}
+                />
 
-            {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
-            <BottomHud>
-              <FriendDrawer />
-              <TimewarpDrawer />
-            </BottomHud>
+                {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
+                <BottomHud>
+                  <FriendDrawer />
+                  <TimewarpDrawer />
+                </BottomHud>
 
-            {/* Layer Selection FAB - consolidated controls - z-65 */}
-            <LayerSelectionFab />
+                {/* Layer Selection FAB - consolidated controls - z-65 */}
+                <LayerSelectionFab />
 
-            {/* Proximity Notifications - z-50 */}
-            <ProximityNotifications />
+                {/* Proximity Notifications - z-50 */}
+                <ProximityNotifications />
 
-            {/* Auto-Discovery Manager - disabled for now to prevent errors */}
-            {/* <AutoDiscoveryManager /> */}
+                {/* System Layer (FAB, accessibility) - z-70+ */}
+                <FieldSystemLayer data={data} />
 
-            {/* System Layer (FAB, accessibility) - z-70+ */}
-            <FieldSystemLayer data={data} />
+                {/* Lens System - z-600 */}
+                <LensHotkeys />
+                {/* Centered, immune to clipping */}
+                <div
+                  className="fixed z-[600] pointer-events-none"
+                  style={{
+                    top: `calc(16px + env(safe-area-inset-top, 0px))`,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 'min(680px, calc(100vw - 32px))',
+                  }}
+                >
+                  <div className="pointer-events-auto w-full flex justify-center">
+                    <LensSwitcher />
+                  </div>
+                </div>
+                <div className="fixed top-4 left-4 z-[560] pointer-events-none">
+                  <LensStatusHUD />
+                </div>
 
-            {/* Lens System - z-600 */}
-            <LensHotkeys />
-            {/* Centered, immune to clipping */}
-            <div
-              className="fixed z-[600] pointer-events-none"
-              style={{
-                top: `calc(16px + env(safe-area-inset-top, 0px))`,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 'min(680px, calc(100vw - 32px))',
-              }}
-            >
-              <div className="pointer-events-auto w-full flex justify-center">
-                <LensSwitcher />
+                {/* Debug Layer (development only) - z-200+ */}
+                {/* Debug visuals disabled for production */}
+                {false && (
+                  <TileDebugVisual
+                    fieldTiles={data.fieldTiles}
+                    visible={data.showDebugVisuals}
+                  />
+                )}
               </div>
-            </div>
-            <div className="fixed top-4 left-4 z-[560] pointer-events-none">
-              <LensStatusHUD />
-            </div>
-
-            {/* Debug Layer (development only) - z-200+ */}
-            {/* Debug visuals disabled for production */}
-            {false && (
-              <TileDebugVisual
-                fieldTiles={data.fieldTiles}
-                visible={data.showDebugVisuals}
-              />
-            )}
-          </div>
-        </FlowMetricsProvider>
+            </ExploreDrawerProvider>
+          </FlowMetricsProvider>
         </TimewarpDrawerProvider>
       </FriendDrawerProvider>
     </ErrorBoundary>

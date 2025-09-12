@@ -177,7 +177,24 @@ export function ExploreDrawer({
                   </div>
                 )}
 
-                {/* Venue Actions */}
+              {/* Optional: Get directions if venue includes coordinates */}
+              {typeof (primary as any).lat === 'number' && typeof (primary as any).lng === 'number' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { lat, lng } = (primary as any);
+                    // canonical path
+                    import('@/lib/directions/native').then(({ openTransitFirstOrRideshare }) => {
+                      openTransitFirstOrRideshare({ dest: { lat, lng }, label: primary.name });
+                    });
+                  }}
+                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
+                >
+                  Get directions
+                </button>
+              )}
+
+              {/* Venue Actions */}
                 <button
                   onClick={() => onJoin(primary.pid)}
                   className="px-3 py-2 rounded-md text-xs font-semibold transition-all duration-150 hover:scale-[1.03]"
