@@ -63,13 +63,53 @@ export async function createRallyInboxThread(args: {
 }
 
 export async function markRallyRead(rallyId: string): Promise<void> {
-  const { error } = await supabase.rpc('rally_mark_seen', { _rally_id: rallyId });
-  if (error) throw error;
+  // Prefer RPC...
+  try {
+    const { error } = await supabase.rpc('rally_mark_seen', { _rally_id: rallyId });
+    if (error) throw error;
+    return;
+  } catch {
+    // ...fallback to direct upsert
+    const { data: auth } = await supabase.auth.getUser();
+    const me = auth?.user?.id;
+    if (!me) return;
+
+    const { error } = await supabase
+      .from('rally_last_seen')
+      .upsert({ profile_id: me, rally_id: rallyId, last_seen_at: new Date().toISOString() },
+              { onConflict: 'profile_id,rally_id' });
+    if (error) throw error;
+  }
 }
 
 export async function markAllRalliesRead(): Promise<void> {
-  const { error } = await supabase.rpc('rally_mark_all_seen');
-  if (error) throw error;
+  try {
+    const { error } = await supabase.rpc('rally_mark_all_seen');
+    if (error) throw error;
+    return;
+  } catch {
+    // Fallback: derive rallies and upsert in bulk
+    const { data: auth } = await supabase.auth.getUser();
+    const me = auth?.user?.id;
+    if (!me) return;
+
+    try {
+      const { data: inbox } = await supabase.rpc('get_rally_inbox');
+      const rows = (inbox ?? []).map((x: any) => ({
+        profile_id: me,
+        rally_id: x.rally_id,
+        last_seen_at: new Date().toISOString(),
+      }));
+      if (!rows.length) return;
+
+      const { error } = await supabase.from('rally_last_seen')
+        .upsert(rows, { onConflict: 'profile_id,rally_id' });
+      if (error) throw error;
+    } catch {
+      // Final fallback - just fail silently
+      console.warn('Mark all read failed');
+    }
+  }
 }
 
 export async function setRallyLastSeen(rallyId: string, ts?: string) {

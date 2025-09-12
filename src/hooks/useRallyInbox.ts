@@ -36,18 +36,14 @@ export function useRallyInbox() {
   }, [refresh])
 
   const markRead = React.useCallback(async (rallyId: string) => {
-    // Optimistic update
-    setItems(prev => prev.map(x => 
-      x.rally_id === rallyId 
-        ? {...x, unread_count: 0, first_unread_at: null} 
-        : x
-    ))
-    try {
-      await markRallyRead(rallyId)
-    } catch (e) {
-      // Rollback optimistic update
-      refresh()
-      throw e
+    // optimistic
+    setItems(prev => prev.map(x => x.rally_id === rallyId 
+      ? { ...x, unread_count: 0, first_unread_at: null } 
+      : x));
+    try { 
+      await markRallyRead(rallyId); 
+    } catch { 
+      refresh(); 
     }
   }, [refresh])
 

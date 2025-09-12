@@ -3,7 +3,7 @@ import { useRallyInbox } from '@/hooks/useRallyInbox';
 import { RallyUnreadBadge } from '@/components/rally/RallyUnreadBadge';
 import { IconButton } from '@/components/ui/IconButton';
 import { Button } from '@/components/ui/button';
-import { Mail } from 'lucide-react';
+import { Mail, CheckCheck } from 'lucide-react';
 
 export function RallyInboxHeader({ onOpen }: { onOpen: () => void }) {
   const { unreadCount, loading, markAllRead } = useRallyInbox();
@@ -40,6 +40,7 @@ export function RallyInboxHeader({ onOpen }: { onOpen: () => void }) {
           disabled={markingAllRead}
           className="text-xs"
         >
+          <CheckCheck className="mr-1 h-4 w-4" />
           {markingAllRead ? 'Marking...' : 'Mark all read'}
         </Button>
       )}

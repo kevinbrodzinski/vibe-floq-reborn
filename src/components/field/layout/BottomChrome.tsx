@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useOverlayInsets } from './OverlayInsets';
+import { useOverlayInsets } from './OverlayInsetsProvider';
 
 export function BottomChrome({ children }: { children: React.ReactNode }) {
   const { setBottom } = useOverlayInsets();
@@ -14,13 +14,8 @@ export function BottomChrome({ children }: { children: React.ReactNode }) {
   }, [setBottom]);
 
   return (
-    <div
-      ref={ref}
-      className="fixed left-0 right-0 z-[620]"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom) + 56px)' /* tabbar height */ }}
-    >
-      <div className="px-3">{children}</div>
-      <div className="pointer-events-none h-6 bg-gradient-to-t from-black/40 to-transparent" />
+    <div ref={ref} className="fixed bottom-0 left-0 right-0 z-[560] pointer-events-none">
+      <div className="pointer-events-auto">{children}</div>
     </div>
   );
 }

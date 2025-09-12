@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useOverlayInsets } from './OverlayInsets';
+import { useOverlayInsets } from './OverlayInsetsProvider';
 
 export function TopChrome({ children }: { children: React.ReactNode }) {
   const { setTop } = useOverlayInsets();
@@ -14,15 +14,8 @@ export function TopChrome({ children }: { children: React.ReactNode }) {
   }, [setTop]);
 
   return (
-    <div
-      ref={ref}
-      className="fixed left-0 right-0 z-[700]"
-      style={{ top: 'env(safe-area-inset-top)', pointerEvents: 'none' }}
-    >
-      <div className="px-3" style={{ pointerEvents: 'auto' }}>
-        {children}
-      </div>
-      <div className="pointer-events-none h-6 bg-gradient-to-b from-black/40 to-transparent" />
+    <div ref={ref} className="fixed top-0 left-0 right-0 z-[560]">
+      {children}
     </div>
   );
 }
