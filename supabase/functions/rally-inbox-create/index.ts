@@ -37,7 +37,6 @@ Deno.serve(async (req) => {
   try { body = await req.json() } catch { return bad('invalid JSON', 422) }
   if (!body?.rallyId || !Array.isArray(body.participants)) return bad('rallyId + participants required', 422)
 
-  // Create thread
   const { data: thread, error: tErr } = await supa
     .from('rally_threads')
     .insert({
@@ -51,7 +50,6 @@ Deno.serve(async (req) => {
 
   if (tErr) return bad(tErr.message, 500)
 
-  // First system message
   const { error: mErr } = await supa
     .from('rally_messages')
     .insert({
