@@ -1,155 +1,219 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeadersFor, handlePreflight } from "../_shared/cors.ts";
-import { friendshipCache } from "../_shared/friendshipCache.ts";
+// supabase/functions/get_field_tiles_enhanced/index.ts
+// Privacy-aware field tiles fetch with k-anon, optional history, and friendship-scoped ids.
 
-// ---- constants
-const K_MIN = 5;
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// ── Configs ─────────────────────────────────────────────────────────────────────
+const MAX_TILE_IDS = 250
+const MAX_HISTORY = 10
+const K_MIN = 5 // k-anonymity floor
+
+// ── CORS helpers ────────────────────────────────────────────────────────────────
+const CORS_BASE = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function corsHeadersFor(req: Request) {
+  // if you need per-origin, adjust here
+  return CORS_BASE
+}
+function handlePreflight(req: Request) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeadersFor(req) })
+  }
+  return null
+}
+
+// ── Friendship cache (lightweight) ─────────────────────────────────────────────
+async function getFriendSets(supa: any, viewerId: string) {
+  // Adjust to your friendships schema; this assumes:
+  // friendships(profile_low, profile_high, friend_state='accepted', is_close bool)
+  const { data, error } = await supa
+    .from('friendships')
+    .select('profile_low, profile_high, is_close')
+    .or(`profile_low.eq.${viewerId},profile_high.eq.${viewerId}`)
+    .eq('friend_state', 'accepted')
+
+  if (error) {
+    console.warn('[getFriendSets] error:', error)
+    return { close: new Set<string>(), friends: new Set<string>() }
+  }
+  const friends = new Set<string>()
+  const close = new Set<string>()
+  for (const r of (data ?? [])) {
+    const other = r.profile_low === viewerId ? r.profile_high : r.profile_low
+    friends.add(other)
+    if (r.is_close) close.add(other)
+  }
+  return { close, friends }
+}
+
+// ── Handler ────────────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  // CORS preflight
-  const pf = handlePreflight(req);
-  if (pf) return pf;
-  const headers = { ...corsHeadersFor(req), "Content-Type": "application/json", "Cache-Control": "no-store" };
+  const pf = handlePreflight(req)
+  if (pf) return pf
+  const headers = { ...corsHeadersFor(req), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 
   try {
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } }
-    );
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } }
+    )
 
-    // viewer identity
-    const { data: viewerRes } = await supabase.auth.getUser();
-    const viewerId = viewerRes?.user?.id ?? null;
+    // who
+    const { data: viewerRes } = await supabase.auth.getUser()
+    const viewerId: string | null = viewerRes?.user?.id ?? null
 
-    const body = await req.json().catch(() => ({}));
-    const tile_ids: string[] = Array.isArray(body.tile_ids) ? body.tile_ids.slice(0, 250) : [];
-    const include_history: boolean = !!body.include_history;
-    const time_window_seconds: number = Number.isFinite(body.time_window_seconds) ? body.time_window_seconds : 300;
+    // body
+    const body = await req.json().catch(() => ({}))
+    const tile_ids: string[] = Array.isArray(body.tile_ids) ? body.tile_ids.slice(0, MAX_TILE_IDS) : []
+    const include_history: boolean = !!body.include_history
+    const time_window_seconds: number = Number.isFinite(body.time_window_seconds) ? body.time_window_seconds : 300
 
-    if (!tile_ids.length) {
-      return new Response(JSON.stringify({ tiles: [] }), { headers, status: 200 });
+    if (tile_ids.length === 0) {
+      return new Response(JSON.stringify({ tiles: [] }), { headers, status: 200 })
     }
 
-    // relationship sets (cached)
-    const relSets = viewerId ? await friendshipCache.getSets(supabase, viewerId) : { close: new Set<string>(), friends: new Set<string>() };
+    const sinceIso = new Date(Date.now() - time_window_seconds * 1000).toISOString()
 
-    const sinceIso = new Date(Date.now() - time_window_seconds * 1000).toISOString();
+    // friendship (scoping active_floq_ids if they are profile IDs)
+    const relSets = viewerId ? await getFriendSets(supabase, viewerId) : { close: new Set<string>(), friends: new Set<string>() }
 
-    // base fetch (only needed fields; adjust if you store centroid_lat/lng)
+    // fetch latest snapshots (and, if you actually keep history rows in this same table, the newer ones)
     const { data, error } = await supabase
-      .from("field_tiles")
-      .select("tile_id,crowd_count,avg_vibe,active_floq_ids,updated_at,centroid") // centroid: geojson Point or object
-      .in("tile_id", tile_ids)
-      .gte("updated_at", sinceIso);
+      .from('field_tiles')
+      .select('tile_id,crowd_count,avg_vibe,active_floq_ids,updated_at,centroid')
+      .in('tile_id', tile_ids)
+      .gte('updated_at', sinceIso)
+    if (error) throw error
 
-    if (error) throw error;
+    // Group by tile id
+    const byId = new Map<string, any[]>()
+    for (const r of data ?? []) {
+      const arr = byId.get(r.tile_id)
+      if (arr) arr.push(r)
+      else byId.set(r.tile_id, [r])
+    }
+    // newest first per tile
+    for (const arr of byId.values()) {
+      arr.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    }
 
-    // Group rows by tile_id, newest first
-    const byId = new Map<string, any[]>();
-    (data ?? []).forEach(r => (byId.get(r.tile_id) ?? byId.set(r.tile_id, []).get(r.tile_id))?.push(r));
-    byId.forEach(a => a.sort((x, y) => new Date(y.updated_at).getTime() - new Date(x.updated_at).getTime()));
+    // Build response in the same order as requested tile_ids
+    const tiles = tile_ids.map((id) => {
+      const arr = byId.get(id) ?? []
+      const curr = arr[0]
+      if (!curr) return null
 
-    const tiles = tile_ids.map(id => {
-      const arr = byId.get(id) ?? [];
-      const curr = arr[0];
-      if (!curr) return null;
+      const underK = (curr.crowd_count ?? 0) < K_MIN
 
-      const underK = (curr.crowd_count ?? 0) < K_MIN;
-
-      // history (small, k-anon)
-      const history = include_history && !underK
-        ? arr.slice(0, 10).map((r: any) => ({
-            timestamp: r.updated_at,
-            crowd_count: r.crowd_count ?? 0,
-            centroid: parseCentroid(r),
-            vibe: r.avg_vibe as { h: number; s: number; l: number }
-          }))
-        : undefined;
-
-      // velocity hint from last two samples (only if k≥5 and history≥2)
-      let velocity;
-      if (!underK && history && history.length >= 2) {
-        velocity = velocityFromSamples(history[0], history[1]);
+      // history (only if there really are multiple rows for that tile)
+      let history: Array<{ timestamp: string; crowd_count: number; centroid: { lat: number; lng: number }; vibe?: any }> | undefined
+      if (include_history && !underK && arr.length > 1) {
+        history = arr.slice(0, MAX_HISTORY).map((r) => ({
+          timestamp: r.updated_at,
+          crowd_count: r.crowd_count ?? 0,
+          centroid: parseCentroid(r),
+          vibe: r.avg_vibe ?? null,
+        }))
       }
 
-      // audience-scoped floq ids
-      const allIds: string[] = curr.active_floq_ids ?? [];
-      let active_floq_ids: string[] = [];
-      if (!underK && viewerId && allIds.length) {
-        // close ⊂ friends
-        active_floq_ids = allIds.filter(id => relSets.close.has(id) || relSets.friends.has(id));
+      // velocity from two newest points in history
+      let velocity: ReturnType<typeof velocityFromSamples> | undefined
+      if (history && history.length >= 2) {
+        velocity = velocityFromSamples(history[0], history[1])
       }
 
-      // afterglow
-      const afterglow_intensity = ((): number => {
-        const age = Math.max(0, Date.now() - new Date(curr.updated_at).getTime()) / 1000;
-        const freshness = Math.max(0, 1 - age / 60);
-        const crowdNorm = Math.min(1, (curr.crowd_count ?? 0) / 50);
-        return freshness * crowdNorm;
-      })();
+      // active_floq_ids scoped to friends/close
+      let active_floq_ids: string[] = []
+      const allIds: string[] = curr.active_floq_ids ?? []
+      // Only attempt to filter if those ids are known profile ids; otherwise, skip
+      if (!underK && viewerId && Array.isArray(allIds) && allIds.length) {
+        active_floq_ids = allIds.filter((pid) => relSets.close.has(pid) || relSets.friends.has(pid))
+      }
+
+      // afterglow intensity (freshness x crowd norm)
+      const ageSec = Math.max(0, (Date.now() - new Date(curr.updated_at).getTime()) / 1000)
+      const freshness = Math.max(0, 1 - ageSec / 60)
+      const crowdNorm = Math.min(1, (curr.crowd_count ?? 0) / 50)
+      const afterglow_intensity = freshness * crowdNorm
+
+      const centroid = parseCentroid(curr)
+      const speed = velocity?.magnitude ?? 0
+      const movement_mode = movementFromSpeed(speed)
 
       return {
         tile_id: curr.tile_id,
         crowd_count: curr.crowd_count ?? 0,
-        avg_vibe: curr.avg_vibe as { h: number; s: number; l: number },
+        avg_vibe: curr.avg_vibe ?? null, // {h,s,l} | null
         active_floq_ids,
         updated_at: curr.updated_at,
-        centroid: parseCentroid(curr),
+        centroid,
         velocity,
-        movement_mode: velocity ? movementFromSpeed(velocity.magnitude) : 'stationary',
-        history,
-        momentum: undefined,                // client/worker computes
-        cohesion_score: undefined,         // client/worker computes
-        convergence_vector: null,          // worker computes in pixel space
+        movement_mode,
+        history,                   // or undefined when not available
+        momentum: undefined,       // computed client/worker-side
+        cohesion_score: undefined, // computed client/worker-side
+        convergence_vector: null,  // computed in pixel space by renderer/worker
         afterglow_intensity,
-        trail_segments: []                 // renderer handles trails
-      };
-    }).filter(Boolean);
+        trail_segments: [],        // your renderer can fill these from history if desired
+      }
+    }).filter(Boolean)
 
-    return new Response(JSON.stringify({ tiles }), { headers, status: 200 });
-
+    return new Response(JSON.stringify({ tiles }), { headers, status: 200 })
   } catch (e) {
-    console.error('[get_field_tiles_enhanced]', e);
-    return new Response(JSON.stringify({ tiles: [], error: 'internal' }), { headers, status: 500 });
+    console.error('[get_field_tiles_enhanced]', e)
+    return new Response(JSON.stringify({ tiles: [], error: 'internal' }), { headers, status: 500 })
   }
-});
+})
 
-/** util: centroid parser */
+// ── Utils ──────────────────────────────────────────────────────────────────────
 function parseCentroid(row: any): { lat: number; lng: number } {
-  const c = row.centroid;
-  if (!c) return { lat: 0, lng: 0 };
+  const c = row?.centroid
+  // GeoJSON string
   if (typeof c === 'string') {
     try {
-      const g = JSON.parse(c);
-      if (g?.type === 'Point' && Array.isArray(g.coordinates)) return { lng: g.coordinates[0], lat: g.coordinates[1] };
+      const g = JSON.parse(c)
+      if (g?.type === 'Point' && Array.isArray(g.coordinates) && isFinite(g.coordinates[0]) && isFinite(g.coordinates[1])) {
+        return { lng: g.coordinates[0], lat: g.coordinates[1] }
+      }
     } catch {}
   }
-  if (c.type === 'Point' && Array.isArray(c.coordinates)) return { lng: c.coordinates[0], lat: c.coordinates[1] };
-  if (typeof c.x === 'number' && typeof c.y === 'number') return { lat: c.y, lng: c.x };
-  return { lat: 0, lng: 0 };
+  // GeoJSON object
+  if (c?.type === 'Point' && Array.isArray(c.coordinates) && isFinite(c.coordinates[0]) && isFinite(c.coordinates[1])) {
+    return { lng: c.coordinates[0], lat: c.coordinates[1] }
+  }
+  // x/y object
+  if (isFinite(c?.x) && isFinite(c?.y)) return { lat: c.y, lng: c.x }
+  return { lat: 0, lng: 0 }
 }
 
-/** util: velocity from two samples */
 function velocityFromSamples(curr: any, prev: any) {
-  const dt = (new Date(curr.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
-  if (dt <= 0 || !isFinite(curr.centroid.lat) || !isFinite(curr.centroid.lng) ||
-               !isFinite(prev.centroid.lat) || !isFinite(prev.centroid.lng)) return undefined;
-  
-  const dx = (curr.centroid.lng - prev.centroid.lng) * 111320 * Math.cos(curr.centroid.lat * Math.PI / 180);
-  const dy = (curr.centroid.lat - prev.centroid.lat) * 111320;
-  const vx = dx / dt;
-  const vy = dy / dt;
-  const magnitude = Math.sqrt(vx * vx + vy * vy);
-  const heading = Math.atan2(vx, vy);
-  return { vx, vy, magnitude, heading, confidence: 0.8 };
+  const t1 = new Date(curr.timestamp).getTime()
+  const t0 = new Date(prev.timestamp).getTime()
+  const dt = (t1 - t0) / 1000
+  if (dt <= 0) return undefined
+
+  const c1 = curr.centroid, c0 = prev.centroid
+  if (![c1?.lat, c1?.lng, c0?.lat, c0?.lng].every(isFinite)) return undefined
+
+  const dx = (c1.lng - c0.lng) * 111320 * Math.cos((c1.lat * Math.PI) / 180)
+  const dy = (c1.lat - c0.lat) * 111320
+  const vx = dx / dt
+  const vy = dy / dt
+  const magnitude = Math.sqrt(vx * vx + vy * vy)
+  const heading = Math.atan2(vx, vy) // radians
+  return { vx, vy, magnitude, heading, confidence: 0.8 }
 }
 
-/** util: movement mode from speed */
 function movementFromSpeed(speed: number): string {
-  if (speed < 0.5) return 'stationary';
-  if (speed <= 2) return 'walking';
-  if (speed <= 8) return 'cycling';
-  if (speed <= 30) return 'driving';
-  return 'transit';
+  if (!isFinite(speed) || speed < 0) return 'stationary'
+  if (speed < 0.5) return 'stationary'
+  if (speed <= 2) return 'walking'
+  if (speed <= 8) return 'cycling'
+  if (speed <= 30) return 'driving'
+  return 'transit'
 }
