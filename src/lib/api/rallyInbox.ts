@@ -50,6 +50,11 @@ export async function createRallyInboxThread(args: {
   }
 }
 
+export async function markRallySeen(rallyId: string) {
+  const { error } = await supabase.rpc('mark_rally_seen', { p_rally_id: rallyId });
+  if (error) throw error;
+}
+
 /** Realtime subscription for invites/rallies changes */
 export function subscribeRallyInbox(onChange: () => void) {
   const ch = supabase.channel('rally-inbox')

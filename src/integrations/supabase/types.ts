@@ -10542,6 +10542,13 @@ export type Database = {
             foreignKeyName: "rally_invites_rally_id_fkey"
             columns: ["rally_id"]
             isOneToOne: false
+            referencedRelation: "mv_rally_inbox"
+            referencedColumns: ["rally_id"]
+          },
+          {
+            foreignKeyName: "rally_invites_rally_id_fkey"
+            columns: ["rally_id"]
+            isOneToOne: false
             referencedRelation: "rallies"
             referencedColumns: ["id"]
           },
@@ -10585,6 +10592,39 @@ export type Database = {
             columns: ["to_profile"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rally_last_seen: {
+        Row: {
+          last_seen: string
+          profile_id: string
+          rally_id: string
+        }
+        Insert: {
+          last_seen?: string
+          profile_id: string
+          rally_id: string
+        }
+        Update: {
+          last_seen?: string
+          profile_id?: string
+          rally_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rally_last_seen_rally_id_fkey"
+            columns: ["rally_id"]
+            isOneToOne: false
+            referencedRelation: "mv_rally_inbox"
+            referencedColumns: ["rally_id"]
+          },
+          {
+            foreignKeyName: "rally_last_seen_rally_id_fkey"
+            columns: ["rally_id"]
+            isOneToOne: false
+            referencedRelation: "rallies"
             referencedColumns: ["id"]
           },
         ]
@@ -16909,6 +16949,116 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_rally_inbox: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          expires_at: string | null
+          joined_count: number | null
+          last_message_at: string | null
+          last_message_excerpt: string | null
+          note: string | null
+          pending_count: number | null
+          profile_id: string | null
+          rally_id: string | null
+          status: string | null
+          unread_count: number | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mv_ripples_recent: {
         Row: {
           centroid: unknown | null
@@ -17647,13 +17797,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -17663,8 +17806,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -17677,8 +17820,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -17691,7 +17834,7 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -17705,8 +17848,8 @@ export type Database = {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
@@ -17718,13 +17861,20 @@ export type Database = {
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_crossed_paths_profile_id"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -20382,6 +20532,14 @@ export type Database = {
         Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }
         Returns: number
       }
+      _rally_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          profile_id: string
+          rally_id: string
+          role: string
+        }[]
+      }
       _st_3dintersects: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
@@ -22498,6 +22656,10 @@ export type Database = {
         Args: { "": number }
         Returns: string
       }
+      get_rally_inbox: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown[]
+      }
       get_social_forecast: {
         Args: {
           bbox: number[]
@@ -23007,6 +23169,10 @@ export type Database = {
         Args: { mark_all_for_user?: boolean; notification_ids?: string[] }
         Returns: number
       }
+      mark_rally_seen: {
+        Args: { p_rally_id: string }
+        Returns: undefined
+      }
       mark_read: {
         Args: {
           p_surface: Database["public"]["Enums"]["chat_surface_enum"]
@@ -23494,6 +23660,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_proximity_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_rally_inbox: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
