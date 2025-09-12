@@ -13,6 +13,9 @@ import { HeatlineToggle } from '@/components/ui/HeatlineToggle';
 import { socialCache } from '@/lib/social/socialCache';
 import { useVibeNow } from '@/hooks/useVibeNow';
 import { Badge } from '@/components/ui/badge';
+import { InviteNearbyChip } from '@/components/vibe/InviteNearbyChip';
+import { useToast } from '@/hooks/use-toast';
+import { haptics } from '@/utils/haptics';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -28,6 +31,16 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
 
   // Get current vibe for social signal detection
   const { currentVibe } = useVibeNow();
+  const { toast } = useToast();
+
+  // Invite nearby cooldown state  
+  const COOLDOWN_KEY = 'floq:lastInviteNearbyAt';
+  const COOLDOWN_MS = 120_000; // 2 minutes
+  const [lastInviteAt, setLastInviteAt] = React.useState<number | null>(() => {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(COOLDOWN_KEY) : null;
+    const n = raw ? Number(raw) : 0;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  });
 
   // Friend Flows overlay
   const friendFlows = useFriendFlows(map);
@@ -84,6 +97,45 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
     socialCache.setConvergenceProb(hud.cohesion.cohesion > 0.3 ? 0.6 : 0.2);
   }, [mockPath, hud.cohesion]);
 
+  // Friend flows and cohesion for invite logic
+  const nearby = friendFlows?.length ?? 0;
+  const coh = hud.cohesion?.cohesion ?? 0;
+  const shouldInvite = (nearby >= 2) || (coh >= 0.30);
+
+  const handleInviteNearby = () => {
+    // Safety: prevent double tap during 1s rendering
+    const now = Date.now();
+    if (lastInviteAt && now - lastInviteAt < 1000) return;
+
+    // Haptics + dispatch
+    try { haptics?.buttonPress?.(); } catch {}
+    const detail = {
+      nearbyCount: nearby,
+      cohesion01: coh,
+      heads: friendFlows?.map(f => ({
+        friend_id: f.friend_id,
+        friend_name: (f as any).friend_name ?? 'Friend',
+        lng: f.head_lng, 
+        lat: f.head_lat, 
+        t_head: f.t_head
+      })) ?? [],
+      source: 'field-hud'
+    };
+    window.dispatchEvent(new CustomEvent('floq:invite-nearby', { detail }));
+
+    // Toast
+    try {
+      toast?.({
+        title: nearby >= 2 ? `Pinged ${nearby} friends` : 'Invite sent',
+        description: 'Opening Constellation…'
+      });
+    } catch {}
+
+    // Start cooldown
+    setLastInviteAt(now);
+    try { localStorage?.setItem(COOLDOWN_KEY, String(now)); } catch {}
+  };
+
   // Heatline state
   const [heatlineOn, setHeatlineOn] = React.useState(false);
   const edgesRef = React.useRef<any[]>([]);
@@ -129,17 +181,28 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
 
   return (
     <>
-      {/* ——— Flow HUD (Momentum & Cohesion) —————————————— */}
-      <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
+      {/* ——— HUD Container (bottom-left) —————————————— */}
+      <div className="pointer-events-auto fixed left-4 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-[560] flex flex-col gap-2">
+        {/* Invite Nearby Chip */}
+        <InviteNearbyChip
+          show={shouldInvite}
+          nearbyCount={nearby}
+          cohesion01={coh}
+          onInvite={handleInviteNearby}
+          cooldownMs={COOLDOWN_MS}
+          lastInviteAt={lastInviteAt}
+        />
+        
+        {/* Flow HUD (Momentum & Cohesion) */}
+        <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
 
-      {/* ——— Social Signal Nudge —————————————— */}
-      {currentVibe.sources.includes('social') && hud.cohesion.nearby > 0 && (
-        <div className="fixed left-4 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] z-[560]">
+        {/* Social Signal Nudge (legacy - kept for compatibility) */}
+        {currentVibe.sources.includes('social') && hud.cohesion.nearby > 0 && !shouldInvite && (
           <Badge variant="secondary" className="bg-indigo-500/90 text-white border-indigo-300/20 backdrop-blur">
             👥 {hud.cohesion.nearby} nearby
           </Badge>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ——— Auto Check-in Status (Development Only) —————————————— */}
       {process.env.NODE_ENV === 'development' && (

@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useFieldData } from '@/components/screens/field/FieldDataProvider'
-import { useFieldLens } from '@/components/field/FieldLensProvider'
+import { useFieldLens } from '@/components/field/FieldLensProvider';
 import { ExploreDrawer } from '@/components/field/ExploreDrawer'
 import { ConstellationCanvas } from '@/components/overlays/ConstellationCanvas'
 import { ConstellationController } from '@/components/overlays/ConstellationController'
@@ -35,7 +35,7 @@ import { pingFriends } from '@/lib/api/flow'
 
 export function FieldUILayer() {
   const data = useFieldData()
-  const { lens } = useFieldLens()
+  const { lens, setLens } = useFieldLens()
   const { user } = useAuth()
   const pixiRef = useRef<PixiLayerHandle>(null)
   const map = getCurrentMap()
@@ -45,6 +45,22 @@ export function FieldUILayer() {
   const [chooserOpen, setChooserOpen] = React.useState(false)
   const [favoriteIds, setFavoriteIds] = React.useState<Set<string>>(new Set<string>())
   const [chooserAnchorPid, setChooserAnchorPid] = React.useState<string | null>(null)
+
+  // Handle invite nearby event -> Constellation
+  React.useEffect(() => {
+    const onInvite = (e: Event) => {
+      // Promote to constellation lens (non-destructive)
+      try { 
+        setLens?.('constellation'); 
+        console.log('Opening Constellation for nearby invite:', (e as CustomEvent).detail);
+      } catch (error) {
+        console.warn('Failed to open Constellation:', error);
+      }
+    };
+
+    window.addEventListener('floq:invite-nearby', onInvite as EventListener);
+    return () => window.removeEventListener('floq:invite-nearby', onInvite as EventListener);
+  }, [setLens]);
   
   // Focus management refs
   const changeBtnRef = React.useRef<HTMLButtonElement>(null)
