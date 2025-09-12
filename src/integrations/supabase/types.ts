@@ -22657,8 +22657,26 @@ export type Database = {
         Returns: string
       }
       get_rally_inbox: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: Record<PropertyKey, never> | { _uid?: string }
+        Returns: {
+          center_lat: number
+          center_lng: number
+          created_at: string
+          creator_avatar: string
+          creator_id: string
+          creator_name: string
+          expires_at: string
+          first_unread_at: string
+          invite_status: string
+          joined_count: number
+          last_message_at: string
+          last_message_excerpt: string
+          note: string
+          rally_id: string
+          responded_at: string
+          unread_count: number
+          venue_id: string
+        }[]
       }
       get_social_forecast: {
         Args: {
@@ -23071,6 +23089,10 @@ export type Database = {
       }
       is_point_in_geofence: {
         Args: { geofence_id: string; lat: number; lng: number }
+        Returns: boolean
+      }
+      is_rally_member: {
+        Args: { _rally_text: string; _uid?: string }
         Returns: boolean
       }
       is_thread_member: {
@@ -23521,6 +23543,10 @@ export type Database = {
           responded_at: string
           venue_id: string
         }[]
+      }
+      rally_mark_thread_seen: {
+        Args: { _thread: string }
+        Returns: undefined
       }
       rank_nearby_people: {
         Args: { p_lat: number; p_limit?: number; p_lng: number }
