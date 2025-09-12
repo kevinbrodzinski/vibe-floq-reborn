@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { openTransitFirstOrRideshare } from '@/lib/geo/openNativeDirections'
+import { openTransitFirstOrRideshare } from '@/lib/directions/native'
 
 type Props = {
   flowPct?: number | null

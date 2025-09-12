@@ -52,9 +52,8 @@ export function FlowMetricsProvider({ map = getCurrentMap(), children }: Provide
       .filter(Boolean) as Array<{ t: number; energy: number }>
   }, [recorder?.segments])
 
-  // 2) friend flows → cohesion inputs
-  // Guard: during SSR or before map is ready, skip the hook
-  const friendFlows = map ? useFriendFlows(map) : []
+  // 2) friend flows → cohesion inputs (no conditional hook calls)
+  const friendFlows = useFriendFlows(map ?? null)
 
   const hud = useFlowHUD({
     energy: energySamples.length > 0 ? energySamples : [
