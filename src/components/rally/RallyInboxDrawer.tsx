@@ -69,6 +69,22 @@ export function RallyInboxDrawer({
                       <div className="text-xs text-muted-foreground">
                         {relTime(itm.created_at)} • {status} • {itm.joined_count} joined
                       </div>
+                      
+                      {/* Rally context chips */}
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {/* People count */}
+                        {Array.isArray((itm as any).participants) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-foreground/5">
+                            👥 {(itm as any).participants.length}
+                          </span>
+                        )}
+                        {/* Distance / venue if available */}
+                        {(itm as any).metadata?.venue_name && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-foreground/5">
+                            📍 {(itm as any).metadata.venue_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="ml-auto flex items-center gap-1">
                       <IconButton label="View on map" variant="soft" size="sm" onClick={() => onViewMap(itm)}>🗺️</IconButton>

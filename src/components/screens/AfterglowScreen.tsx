@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar, Brain, Mail, RotateCcw, Heart, BookOpen, Sparkles, Users, ChevronRight, AlertCircle, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { format } from 'date-fns';
@@ -7,8 +8,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
 import { CrossedPathsCard } from "@/components/CrossedPathsCard";
 import { useRealtimeAfterglowData } from "@/hooks/useRealtimeAfterglowData";
+import { useRallyAfterglowTimeline } from "@/hooks/useRallyAfterglowTimeline";
 import { AfterglowCard } from "@/components/AfterglowCard";
 import { AfterglowMomentCard } from "@/components/AfterglowMomentCard";
+import { RallyMomentCard } from "@/components/afterglow/RallyMomentCard";
 import { AfterglowGenerationProgress } from "@/components/AfterglowGenerationProgress";
 import { getVibeDisplayName } from "@/utils/afterglowHelpers";
 import { useTogglePinned } from "@/hooks/useOptimisticMutations";
@@ -48,6 +51,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   // Use URL date parameter, then prop, then default to today
   const currentDate = selectedDateFromUrl || date || new Date().toISOString().split('T')[0];
   const { crossedPaths, isLoading: crossedPathsLoading, error: crossedPathsError, refetch: refetchCrossedPaths, count: crossedPathsCount } = useCrossedPathsToday();
+  const { items: rallyMoments, loading: rallyLoading } = useRallyAfterglowTimeline(currentDate);
 
   // Remove development error handler for TestFlight
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
@@ -57,6 +61,15 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   
   const { afterglow, isLoading: afterglowLoading, generate } = useRealtimeAfterglowData(currentDate);
   const refresh = generate;
+
+  const centerMap = React.useCallback((c: { lng: number; lat: number }) => {
+    try {
+      // Try to access map from global context or similar
+      (window as any)?.map?.flyTo?.({ center: [c.lng, c.lat], zoom: 15 });
+    } catch {
+      console.warn('Map not available');
+    }
+  }, []);
   
   const formattedDate = useMemo(
     () => format(new Date(currentDate), "EEEE, MMM do yyyy"),
@@ -693,6 +706,23 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
 
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
+
+      {/* Rally moments timeline */}
+      {!rallyLoading && rallyMoments.length > 0 && (
+        <div className="px-6 mb-8">
+          <div className="bg-card/90 backdrop-blur-xl rounded-2xl p-6 border border-border/30 shadow-xl">
+            <div className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <span className="text-xl">⚡</span>
+              Rally Moments
+            </div>
+            <div className="space-y-3">
+              {rallyMoments.map((m: any) => (
+                <RallyMomentCard key={m.id} m={m} onOpenMap={centerMap} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Calendar and Insights Modals */}
       {calendarOpen && (

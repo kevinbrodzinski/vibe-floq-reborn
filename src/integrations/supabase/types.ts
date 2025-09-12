@@ -10518,6 +10518,48 @@ export type Database = {
           },
         ]
       }
+      rally_afterglow_moments: {
+        Row: {
+          center: unknown | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          interaction_strength: number | null
+          metadata: Json
+          participants: Json
+          profile_id: string
+          rally_id: string
+          started_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          center?: unknown | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          interaction_strength?: number | null
+          metadata?: Json
+          participants?: Json
+          profile_id: string
+          rally_id: string
+          started_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          center?: unknown | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          interaction_strength?: number | null
+          metadata?: Json
+          participants?: Json
+          profile_id?: string
+          rally_id?: string
+          started_at?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       rally_invites: {
         Row: {
           rally_id: string
@@ -22524,6 +22566,20 @@ export type Database = {
         Args: { "": number }
         Returns: string
       }
+      get_rally_afterglow_timeline: {
+        Args: { _day?: string }
+        Returns: {
+          center: unknown
+          ended_at: string
+          id: string
+          interaction_strength: number
+          metadata: Json
+          participants: Json
+          rally_id: string
+          started_at: string
+          venue_id: string
+        }[]
+      }
       get_rally_inbox: {
         Args: { _uid?: string }
         Returns: {
@@ -25425,6 +25481,20 @@ export type Database = {
           p_vibe?: string
         }
         Returns: Json
+      }
+      upsert_rally_afterglow_moment: {
+        Args: {
+          _center: unknown
+          _ended_at: string
+          _interaction: number
+          _metadata: Json
+          _participants: Json
+          _profile_id: string
+          _rally_id: string
+          _started_at: string
+          _venue_id: string
+        }
+        Returns: string
       }
       upsert_user_tastes: {
         Args: { p_json: Json; p_profile_id: string }
