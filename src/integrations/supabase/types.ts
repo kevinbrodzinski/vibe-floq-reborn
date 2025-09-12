@@ -20693,6 +20693,10 @@ export type Database = {
         Args: { desired: string }
         Returns: boolean
       }
+      auto_end_expired_rallies: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       award_achievement_optimized: {
         Args: { _code: string; _increment: number; _user: string }
         Returns: Json

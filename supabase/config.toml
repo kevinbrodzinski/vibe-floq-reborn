@@ -6,6 +6,12 @@ verify_jwt = true
 [functions.join-rally]
 verify_jwt = true
 
+[functions.rally-finalize]
+verify_jwt = true
+
+[functions.rally-expirer]
+verify_jwt = false
+
 [functions.get_field_tiles_enhanced]
 verify_jwt = false
 
