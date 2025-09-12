@@ -19,6 +19,9 @@ import { useGeo } from "@/hooks/useGeo";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { VenueSocialPortal } from "@/components/VenueSocialPortal";
+import { VenueActionBar } from "@/components/venue/VenueActionBar";
+import { useFlowHUD } from "@/components/flow/hooks/useFlowHUD";
+import { useFlowRecorder } from '@/hooks/useFlowRecorder';
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -36,6 +39,27 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
+  
+  // Mock flow data for VenueActionBar (replace with real data)
+  const mockEnergy = [
+    { t: Date.now() - 300000, energy: 0.7 },
+    { t: Date.now(), energy: 0.8 }
+  ];
+  const mockPath = [
+    { lng: -118.4695, lat: 33.9855, t: Date.now() - 300000 }
+  ];
+  const hud = useFlowHUD({
+    energy: mockEnergy,
+    myPath: mockPath,
+    friendFlows: []
+  });
+  const recorder = useFlowRecorder();
+  
+  // Derive HUD values for action bar
+  const flowPct = Math.round(Math.min(1, Math.max(0, hud.momentum?.mag ?? 0)) * 100);
+  const syncPct = Math.round(Math.min(1, Math.max(0, hud.cohesion?.cohesion ?? 0)) * 100);
+  const elapsedMin = Math.max(0, Math.floor(recorder?.elapsedMin ?? 0));
+  const sui01 = Math.min(1, Math.max(0, recorder?.sui01 ?? 0.75));
 
   // Handle browser back button
   useEffect(() => {
@@ -174,6 +198,17 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
 
         {venue && (
           <div className="mt-8 space-y-4">
+            {/* Venue Action Bar with Flow Integration */}
+            <VenueActionBar
+              flowPct={flowPct}
+              syncPct={syncPct}
+              elapsedMin={elapsedMin}
+              sui01={sui01}
+              venue={venue}
+              onRoute={handleDirections}
+              className="mb-6"
+            />
+            
             <div className="grid grid-cols-2 gap-3">
               <Button
                 size="lg"
@@ -204,16 +239,6 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
               >
                 <Plus className="h-4 w-4" />
                 Create Floq Here
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="flex items-center gap-2 col-span-2"
-                onClick={handleDirections}
-              >
-                <Navigation className="h-4 w-4" />
-                Get Directions
               </Button>
             </div>
 

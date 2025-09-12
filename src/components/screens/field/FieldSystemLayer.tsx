@@ -17,13 +17,17 @@ import { InviteNearbyChip } from '@/components/vibe/InviteNearbyChip';
 import { useToast } from '@/hooks/use-toast';
 import { haptics } from '@/utils/haptics';
 import type { FieldData } from "./FieldDataProvider";
+import { VenueActionBar } from '@/components/venue/VenueActionBar';
+import { BottomChrome } from '@/components/field/layout/BottomChrome';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { useFlowRecorder } from '@/hooks/useFlowRecorder';
 
 interface FieldSystemLayerProps {
   data: FieldData;
 }
 
 export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
-  const { liveRef } = useFieldUI();
+  const { liveRef, selectedVenueId } = useFieldUI();
   const map = getCurrentMap();
   
   // Activate enhanced auto check-in system
@@ -32,6 +36,12 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   // Get current vibe for social signal detection
   const { currentVibe } = useVibeNow();
   const { toast } = useToast();
+
+  // Get venue details for action bar when venue is selected
+  const { data: activeVenue } = useVenueDetails(selectedVenueId);
+  
+  // Mock flow recorder for HUD values (replace with real flow recorder)
+  const recorder = useFlowRecorder();
 
   // Invite nearby cooldown state  
   const COOLDOWN_KEY = 'floq:lastInviteNearbyAt';
@@ -179,30 +189,66 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
     };
   }, [map, heatlineOn, edgesRef.current.length]);
 
+  // Derive HUD values once for use in both floating HUD and venue action bar
+  const flowPct = Math.round(Math.min(1, Math.max(0, hud.momentum?.mag ?? 0)) * 100);
+  const syncPct = Math.round(Math.min(1, Math.max(0, hud.cohesion?.cohesion ?? 0)) * 100);
+  const elapsedMin = Math.max(0, Math.floor(recorder?.elapsedMin ?? 0));
+  const sui01 = Math.min(1, Math.max(0, recorder?.sui01 ?? 0));
+
   return (
     <>
-      {/* ——— HUD Container (bottom-left) —————————————— */}
-      <div className="pointer-events-auto fixed left-4 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-[560] flex flex-col gap-2">
-        {/* Invite Nearby Chip */}
-        <InviteNearbyChip
-          show={shouldInvite}
-          nearbyCount={nearby}
-          cohesion01={coh}
-          onInvite={handleInviteNearby}
-          cooldownMs={COOLDOWN_MS}
-          lastInviteAt={lastInviteAt}
-        />
-        
-        {/* Flow HUD (Momentum & Cohesion) */}
-        <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
+      {/* ——— HUD Container (bottom-left) - only show when no venue selected —————————————— */}
+      {!selectedVenueId && (
+        <div className="pointer-events-auto fixed left-4 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-[560] flex flex-col gap-2">
+          {/* Invite Nearby Chip */}
+          <InviteNearbyChip
+            show={shouldInvite}
+            nearbyCount={nearby}
+            cohesion01={coh}
+            onInvite={handleInviteNearby}
+            cooldownMs={COOLDOWN_MS}
+            lastInviteAt={lastInviteAt}
+          />
+          
+          {/* Flow HUD (Momentum & Cohesion) */}
+          <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
 
-        {/* Social Signal Nudge (legacy - kept for compatibility) */}
-        {currentVibe.sources.includes('social') && hud.cohesion.nearby > 0 && !shouldInvite && (
-          <Badge variant="secondary" className="bg-indigo-500/90 text-white border-indigo-300/20 backdrop-blur">
-            👥 {hud.cohesion.nearby} nearby
-          </Badge>
-        )}
-      </div>
+          {/* Social Signal Nudge (legacy - kept for compatibility) */}
+          {currentVibe.sources.includes('social') && hud.cohesion.nearby > 0 && !shouldInvite && (
+            <Badge variant="secondary" className="bg-indigo-500/90 text-white border-indigo-300/20 backdrop-blur">
+              👥 {hud.cohesion.nearby} nearby
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* ——— Venue Action Bar (when venue selected) —————————————— */}
+      {selectedVenueId && activeVenue && (
+        <BottomChrome>
+          <div className="bg-card/95 backdrop-blur border border-border rounded-t-xl p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">{activeVenue.name}</h3>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <span>🧑‍🤝‍🧑 {activeVenue.live_count} here</span>
+                </div>
+              </div>
+              
+              <VenueActionBar
+                flowPct={flowPct}
+                syncPct={syncPct}
+                elapsedMin={elapsedMin}
+                sui01={sui01}
+                venue={activeVenue}
+                onRoute={() => {
+                  // Route handled internally by VenueActionBar
+                }}
+                onToggleHeatline={setHeatlineOn}
+              />
+            </div>
+          </div>
+        </BottomChrome>
+      )}
 
       {/* ——— Auto Check-in Status (Development Only) —————————————— */}
       {process.env.NODE_ENV === 'development' && (
