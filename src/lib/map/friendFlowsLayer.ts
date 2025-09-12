@@ -1,4 +1,5 @@
 import type mapboxgl from 'mapbox-gl';
+import { hashJSON } from '@/lib/map/hash';
 
 type FriendFlowRow = {
   friend_id: string;
@@ -45,29 +46,20 @@ function rowsToFC(rows: FriendFlowRow[]): GeoJSON.FeatureCollection {
   return { type: 'FeatureCollection', features };
 }
 
-/** Mount/refresh Friend Flows. Returns cleanup(). */
-export function addFriendFlowsLayer(map: mapboxgl.Map | null, rows: FriendFlowRow[]) {
-  if (!map) return () => {};
-
+/** Create idempotent update function for LayerManager */
+export function friendFlowsUpdateFn(rows: FriendFlowRow[]) {
   const fc = rows?.length ? rowsToFC(rows) : { type: 'FeatureCollection', features: [] as any[] };
+  const hash = hashJSON(fc);
 
-  const upsert = () => {
-    if (!map || !map.isStyleLoaded?.()) return;
-
-    // dedupe via snapshot on the source instance
-    const json = JSON.stringify(fc);
-    const src = map.getSource(SRC_ID) as (mapboxgl.GeoJSONSource & { _prevJSON?: string }) | undefined;
-
-    if (src) {
-      if (src._prevJSON !== json) {
-        src.setData(fc as any);
-        (src as any)._prevJSON = json;
-      }
-    } else {
+  const update = (map: mapboxgl.Map) => {
+    // Create or update source
+    if (!map.getSource(SRC_ID)) {
       map.addSource(SRC_ID, { type: 'geojson', data: fc as any });
-      (map.getSource(SRC_ID) as any)._prevJSON = json;
+    } else {
+      (map.getSource(SRC_ID) as mapboxgl.GeoJSONSource).setData(fc as any);
     }
 
+    // Create line layer if missing
     if (!map.getLayer(LYR_LINE)) {
       map.addLayer({
         id: LYR_LINE,
@@ -83,6 +75,7 @@ export function addFriendFlowsLayer(map: mapboxgl.Map | null, rows: FriendFlowRo
       });
     }
 
+    // Create head layer if missing
     if (!map.getLayer(LYR_HEAD)) {
       map.addLayer({
         id: LYR_HEAD,
@@ -99,17 +92,34 @@ export function addFriendFlowsLayer(map: mapboxgl.Map | null, rows: FriendFlowRo
     }
   };
 
-  const onStyle = () => upsert();
+  const unmount = (map: mapboxgl.Map) => {
+    try { if (map.getLayer(LYR_HEAD)) map.removeLayer(LYR_HEAD); } catch {}
+    try { if (map.getLayer(LYR_LINE)) map.removeLayer(LYR_LINE); } catch {}
+    try { if (map.getSource(SRC_ID)) map.removeSource(SRC_ID); } catch {}
+  };
 
-  if (map.isStyleLoaded?.()) upsert();
+  return { hash, update, unmount };
+}
+
+/** Legacy function - use friendFlowsUpdateFn with LayerManager instead */
+export function addFriendFlowsLayer(map: mapboxgl.Map | null, rows: FriendFlowRow[]) {
+  if (!map) return () => {};
+
+  const { update, unmount } = friendFlowsUpdateFn(rows);
+  
+  const apply = () => {
+    if (map.isStyleLoaded?.()) {
+      try { update(map); } catch (e) { console.warn('Friend flows update failed:', e); }
+    }
+  };
+
+  const onStyle = () => apply();
+  if (map.isStyleLoaded?.()) apply();
   else map.once('style.load', onStyle);
-
   map.on('style.load', onStyle);
 
   return () => {
     try { map.off('style.load', onStyle); } catch {}
-    try { if (map.getLayer(LYR_HEAD)) map.removeLayer(LYR_HEAD); } catch {}
-    try { if (map.getLayer(LYR_LINE)) map.removeLayer(LYR_LINE); } catch {}
-    try { if (map.getSource(SRC_ID)) map.removeSource(SRC_ID); } catch {}
+    try { unmount(map); } catch {}
   };
 }
