@@ -14,6 +14,17 @@ export type OverlaySpec = {
   unmount: (map: mapboxgl.Map) => void;
 };
 
+export type ApplyEvent = {
+  id: string;
+  bytes: number;
+  features: number;
+  dt: number;              // ms spent in this apply() call
+  skipped: boolean;        // true if deduped/no-op
+  ts: number;              // performance.now() timestamp
+};
+
+type ApplyListener = (ev: ApplyEvent) => void;
+
 type Mounted = {
   spec: OverlaySpec;
   mounted: boolean;
@@ -25,13 +36,14 @@ const hashJSON = (v: any) => {
   try { return JSON.stringify(v); } catch { return String(Math.random()); }
 };
 
-class LayerManager {
+export class LayerManager {
   private map: mapboxgl.Map | null = null;
   private overlays = new Map<string, Mounted>();
   private order: string[] = [];
   private pending = new Map<string, any>();
   private raf = 0;
   private lowPower = false;
+  private applyListeners = new Set<ApplyListener>();
 
   bindMap(map: mapboxgl.Map) {
     if (this.map === map) return;
@@ -85,6 +97,12 @@ class LayerManager {
     return out;
   }
 
+  /** Subscribe to apply() events; returns an unsubscribe fn */
+  onApply(listener: ApplyListener): () => void {
+    this.applyListeners.add(listener);
+    return () => this.applyListeners.delete(listener);
+  }
+
   // ——— internals ———
   private remountAll() {
     if (!this.map) return;
@@ -111,10 +129,25 @@ class LayerManager {
       const ent = this.overlays.get(id); if (!ent) continue;
       if (!ent.mounted) this.tryMount(id);
       if (!ent.mounted) continue;
-      const h = hashJSON(data);
-      if (h === ent.prevHash) continue;
-      ent.prevHash = h;
-      this.safe(() => { ent.spec.update(this.map!, data); ent.setDataCount++; });
+      
+      const t0 = performance.now();
+      const json = hashJSON(data);
+      const skipped = json === ent.prevHash;
+      
+      if (!skipped) {
+        ent.prevHash = json;
+        this.safe(() => { ent.spec.update(this.map!, data); ent.setDataCount++; });
+      }
+      
+      const dt = performance.now() - t0;
+      this.emitApply({
+        id,
+        bytes: json.length,
+        features: Array.isArray(data?.features) ? data.features.length : 0,
+        dt: Math.round(dt),
+        skipped,
+        ts: t0
+      });
     }
   }
 
@@ -123,6 +156,13 @@ class LayerManager {
     [...this.overlays.values()].forEach(ent => {
       this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
       ent.mounted = false;
+    });
+  }
+
+  private emitApply(ev: ApplyEvent) {
+    if (this.applyListeners.size === 0) return;
+    this.applyListeners.forEach(fn => {
+      try { fn(ev); } catch {}
     });
   }
 
