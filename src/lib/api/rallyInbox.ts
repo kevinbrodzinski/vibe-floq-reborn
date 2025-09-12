@@ -72,6 +72,26 @@ export async function markRallySeen(rallyId: string) {
   }
 }
 
+export async function setRallyLastSeen(rallyId: string, ts?: string) {
+  const when = ts ?? new Date().toISOString();
+
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth?.user?.id;
+  if (!me) return;
+
+  const { error } = await supabase
+    .from('rally_last_seen')
+    .upsert({ 
+      profile_id: me, 
+      rally_id: rallyId, 
+      last_seen: when 
+    }, { 
+      onConflict: 'profile_id,rally_id' 
+    });
+
+  if (error) throw error;
+}
+
 export async function markRallyThreadSeen(threadId: string) {
   try {
     // First get the rally_id from the thread
@@ -83,19 +103,7 @@ export async function markRallyThreadSeen(threadId: string) {
 
     if (!thread?.rally_id) return
 
-    const { data: user } = await supabase.auth.getUser()
-    if (!user.user?.id) return
-
-    // Update last seen for this rally
-    const { error } = await supabase
-      .from('rally_last_seen')
-      .upsert({
-        profile_id: user.user.id,
-        rally_id: thread.rally_id,
-        last_seen: new Date().toISOString()
-      })
-    
-    if (error) throw error
+    await setRallyLastSeen(thread.rally_id);
   } catch (err) {
     console.warn('rally thread seen update failed:', err);
   }
@@ -106,6 +114,8 @@ export function subscribeRallyInbox(onChange: () => void) {
   const ch = supabase.channel('rally-inbox')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'rally_invites' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'rallies' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rally_messages' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rally_last_seen' }, onChange)
     .subscribe()
   return () => { try { supabase.removeChannel(ch) } catch {} }
 }
