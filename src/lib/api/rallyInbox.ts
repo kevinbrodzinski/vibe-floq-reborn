@@ -74,12 +74,30 @@ export async function markRallySeen(rallyId: string) {
 
 export async function markRallyThreadSeen(threadId: string) {
   try {
-    // Try the new RPC function first
-    const { data, error } = await supabase.rpc('rally_mark_thread_seen' as any, { _thread: threadId });
-    if (error) throw error;
+    // First get the rally_id from the thread
+    const { data: thread } = await supabase
+      .from('rally_threads')
+      .select('rally_id')
+      .eq('id', threadId)
+      .maybeSingle()
+
+    if (!thread?.rally_id) return
+
+    const { data: user } = await supabase.auth.getUser()
+    if (!user.user?.id) return
+
+    // Update last seen for this rally
+    const { error } = await supabase
+      .from('rally_last_seen')
+      .upsert({
+        profile_id: user.user.id,
+        rally_id: thread.rally_id,
+        last_seen: new Date().toISOString()
+      })
+    
+    if (error) throw error
   } catch (err) {
-    // Graceful fallback - function may not exist yet
-    console.warn('rally_mark_thread_seen RPC not available:', err);
+    console.warn('rally thread seen update failed:', err);
   }
 }
 
