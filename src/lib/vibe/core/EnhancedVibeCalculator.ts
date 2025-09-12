@@ -38,6 +38,15 @@ export function applyEnvironmental(v: VibePoint, env: EnvironmentalSignal | null
     social: v.breakdown?.social ?? 0.05,
   };
 
+  // Normalize breakdown to ensure sum = 1
+  const sum = nextBreakdown.primary + nextBreakdown.behavioral + nextBreakdown.environmental + nextBreakdown.social;
+  if (sum > 0) {
+    nextBreakdown.primary /= sum;
+    nextBreakdown.behavioral /= sum;  
+    nextBreakdown.environmental /= sum;
+    nextBreakdown.social /= sum;
+  }
+
   return {
     ...v,
     energy: nextEnergy,

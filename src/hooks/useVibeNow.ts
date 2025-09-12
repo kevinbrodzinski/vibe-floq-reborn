@@ -72,7 +72,7 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
     } catch (error) {
       console.error('Failed to initialize vibe engine:', error);
     }
-  }, [autoMode, requestEnvPermissions]);
+  }, [autoMode]);
 
   // Cleanup engine
   const cleanupEngine = useCallback(() => {
@@ -165,11 +165,9 @@ export function useVibeNow(options: UseVibeNowOptions = {}) {
       return ok;
     },
     enableEnvironmental: async () => {
-      let ok = false;
       if (!envRef.current) envRef.current = new EnvironmentalCollector();
       const res = await envRef.current.initPermissions(true, true);
-      ok = !!(res.audio || res.motion);
-      return ok;
+      return { micOk: !!res.audio, motionOk: !!res.motion };
     },
     
     // Utils for debugging

@@ -207,6 +207,12 @@ export class EnvironmentalCollector implements SignalCollector<EnvironmentalSign
       try { window.removeEventListener('devicemotion', handler); } catch {}
       (this as any)._motionHandler = null;
     }
+    
+    // Clear warmup timer if it's still running
+    if (this.motionWarmupTimer) {
+      clearTimeout(this.motionWarmupTimer);
+      this.motionWarmupTimer = null;
+    }
   }
 
   private sampleAudioRms01(): number | null {
