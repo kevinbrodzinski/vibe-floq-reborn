@@ -10393,6 +10393,202 @@ export type Database = {
           },
         ]
       }
+      rallies: {
+        Row: {
+          center: unknown
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          note: string | null
+          status: string
+          venue_id: string | null
+        }
+        Insert: {
+          center: unknown
+          created_at?: string
+          creator_id: string
+          expires_at: string
+          id?: string
+          note?: string | null
+          status?: string
+          venue_id?: string | null
+        }
+        Update: {
+          center?: unknown
+          created_at?: string
+          creator_id?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          status?: string
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "rallies_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_signal_vibe"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_open_state"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_rec_scores"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venues_ll"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_is_outdoor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "rallies_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rally_invites: {
+        Row: {
+          rally_id: string
+          responded_at: string | null
+          status: string
+          to_profile: string
+        }
+        Insert: {
+          rally_id: string
+          responded_at?: string | null
+          status?: string
+          to_profile: string
+        }
+        Update: {
+          rally_id?: string
+          responded_at?: string | null
+          status?: string
+          to_profile?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rally_invites_rally_id_fkey"
+            columns: ["rally_id"]
+            isOneToOne: false
+            referencedRelation: "rallies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rally_invites_to_profile_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rally_invites_to_profile_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "rally_invites_to_profile_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rally_invites_to_profile_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rally_invites_to_profile_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "rally_invites_to_profile_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_config: {
         Row: {
           action_type: string
@@ -23079,6 +23275,24 @@ export type Database = {
       push_sender_ping: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      rally_inbox_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          center_lat: number
+          center_lng: number
+          created_at: string
+          creator_avatar: string
+          creator_id: string
+          creator_name: string
+          expires_at: string
+          invite_status: string
+          joined_count: number
+          note: string
+          rally_id: string
+          responded_at: string
+          venue_id: string
+        }[]
       }
       rank_nearby_people: {
         Args: { p_lat: number; p_limit?: number; p_lng: number }

@@ -1,5 +1,11 @@
 project_id = "reztyrrafsmlvvlqvsqt"
 
+[functions.create-rally]
+verify_jwt = true
+
+[functions.join-rally]
+verify_jwt = true
+
 [functions.get_field_tiles_enhanced]
 verify_jwt = false
 

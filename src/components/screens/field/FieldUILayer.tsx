@@ -48,11 +48,13 @@ export function FieldUILayer() {
 
   // Handle invite nearby event -> Constellation
   React.useEffect(() => {
-    const onInvite = (e: Event) => {
-      // Promote to constellation lens (non-destructive)
-      try { 
-        setLens?.('constellation'); 
-        console.log('Opening Constellation for nearby invite:', (e as CustomEvent).detail);
+    const onInvite = (e: WindowEventMap['floq:invite-nearby']) => {
+      try {
+        // Buffer payload so constellation can pick it up after lens change
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('floq:lastInvitePayload', JSON.stringify(e.detail));
+        }
+        setLens?.('constellation');
       } catch (error) {
         console.warn('Failed to open Constellation:', error);
       }
