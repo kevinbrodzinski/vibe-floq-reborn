@@ -1,18 +1,17 @@
-import * as React from 'react'
+import * as React from 'react';
 
 export function RallyInboxBridge() {
   React.useEffect(() => {
-    const onNew = (e: WindowEventMap['floq:rally:inbox:new']) => {
-      // For now, just log the new thread - can be extended to show notifications or navigate
-      console.log('New rally thread created:', e.detail)
-      
-      // Could dispatch a badge update event or trigger a toast
-      // window.dispatchEvent(new CustomEvent('floq:badge:inbox', { detail: { delta: +1 } }))
-    }
+    const onNew = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log('New rally thread created:', detail);
+      }
+    };
+    window.addEventListener('floq:rally:inbox:new', onNew as EventListener);
+    return () => window.removeEventListener('floq:rally:inbox:new', onNew as EventListener);
+  }, []);
 
-    window.addEventListener('floq:rally:inbox:new', onNew as EventListener)
-    return () => window.removeEventListener('floq:rally:inbox:new', onNew as EventListener)
-  }, [])
-
-  return null
+  return null;
 }
