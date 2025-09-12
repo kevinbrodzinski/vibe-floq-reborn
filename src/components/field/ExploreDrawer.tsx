@@ -177,7 +177,7 @@ export function ExploreDrawer({
                   </div>
                 )}
 
-              {/* Optional: Get directions if venue includes coordinates */}
+              {/* Optional: Floq Up (directions) if venue includes coordinates */}
               {typeof (primary as any).lat === 'number' && typeof (primary as any).lng === 'number' && (
                 <button
                   type="button"
@@ -189,8 +189,9 @@ export function ExploreDrawer({
                     });
                   }}
                   className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
+                  aria-label="Floq Up"
                 >
-                  Get directions
+                  Floq Up
                 </button>
               )}
 

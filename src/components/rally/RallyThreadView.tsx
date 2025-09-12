@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { setRallyLastSeen } from '@/lib/api/rallyInbox';
+import { setRallyLastSeen } from '@/lib/api/rallyThreads';
 import { formatDistanceToNow } from 'date-fns';
 
 type Message = {

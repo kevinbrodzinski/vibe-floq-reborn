@@ -32,14 +32,15 @@ export const VenueActionBar = React.memo(function VenueActionBar({
 
   return (
     <div className={cn('flex items-center gap-2 w-full', className)}>
-      {/* Route CTA */}
+      {/* Route CTA (Floq Up) */}
       <button
         type="button"
         onClick={handleRoute}
         className="rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold hover:bg-primary/90"
-        aria-label={venue?.name ? `Route to ${venue.name}` : 'Route'}
+        aria-label="Floq Up"
+        title="Floq Up"
       >
-        ➜ Route
+        ➜ Floq Up
       </button>
 
       {/* Flow */}
