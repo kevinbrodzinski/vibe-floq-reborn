@@ -28,16 +28,6 @@ interface FieldSystemLayerProps {
 }
 
 export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
-  const map = getCurrentMap();
-  
-  return (
-    <FlowMetricsProvider map={map}>
-      <FieldSystemLayerContent data={data} />
-    </FlowMetricsProvider>
-  );
-};
-
-const FieldSystemLayerContent = ({ data }: FieldSystemLayerProps) => {
   const { liveRef, selectedVenueId } = useFieldUI();
   const map = getCurrentMap();
   

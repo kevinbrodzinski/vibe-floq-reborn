@@ -52,7 +52,7 @@ export function FlowMetricsProvider({ map = getCurrentMap(), children }: Provide
   }, [recorder?.segments])
 
   // 2) friend flows → cohesion inputs
-  const friendFlows = useFriendFlows(map)
+  const friendFlows = map ? useFriendFlows(map) : []
 
   const hud = useFlowHUD({
     energy: energySamples.length > 0 ? energySamples : [

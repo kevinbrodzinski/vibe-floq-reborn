@@ -123,6 +123,7 @@ export function RallyThreadView({
               key={m.id}
               role="listitem"
               tabIndex={-1}
+              data-created-at={m.created_at}
               data-message-ts={m.created_at}
               className={cn(
                 'mb-2 rounded-lg border px-3 py-2',
