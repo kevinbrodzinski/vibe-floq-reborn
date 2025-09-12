@@ -11,6 +11,8 @@ import { useFlowHUD } from '@/components/flow/hooks/useFlowHUD';
 import { FlowMomentumHUD } from '@/components/flow/FlowMomentumHUD';
 import { HeatlineToggle } from '@/components/ui/HeatlineToggle';
 import { socialCache } from '@/lib/social/socialCache';
+import { useVibeNow } from '@/hooks/useVibeNow';
+import { Badge } from '@/components/ui/badge';
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldSystemLayerProps {
@@ -23,6 +25,9 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   
   // Activate enhanced auto check-in system
   const autoCheckIn = useAutoCheckIn();
+
+  // Get current vibe for social signal detection
+  const { currentVibe } = useVibeNow();
 
   // Friend Flows overlay
   const friendFlows = useFriendFlows(map);
@@ -126,6 +131,15 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
     <>
       {/* ——— Flow HUD (Momentum & Cohesion) —————————————— */}
       <FlowMomentumHUD momentum={hud.momentum} cohesion={hud.cohesion} />
+
+      {/* ——— Social Signal Nudge —————————————— */}
+      {currentVibe.sources.includes('social') && hud.cohesion.nearby > 0 && (
+        <div className="fixed left-4 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] z-[560]">
+          <Badge variant="secondary" className="bg-indigo-500/90 text-white border-indigo-300/20 backdrop-blur">
+            👥 {hud.cohesion.nearby} nearby
+          </Badge>
+        </div>
+      )}
 
       {/* ——— Auto Check-in Status (Development Only) —————————————— */}
       {process.env.NODE_ENV === 'development' && (
