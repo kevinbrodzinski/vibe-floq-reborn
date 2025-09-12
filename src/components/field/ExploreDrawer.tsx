@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { getVibeToken } from '@/lib/tokens/vibeTokens'
+import { useFlowMetrics } from '@/contexts/FlowMetricsContext'
+import { useFlowRecorder } from '@/hooks/useFlowRecorder'
 
 export type TileVenue = {
   pid: string
@@ -30,6 +32,10 @@ export function ExploreDrawer({
   const t = getVibeToken('social' as any)
   const primary = venues?.[0]
 
+  // Flow context hooks
+  const metrics = useFlowMetrics()
+  const recorder = useFlowRecorder()
+
   if (!primary) return null
 
   // Busy band -> label
@@ -38,6 +44,16 @@ export function ExploreDrawer({
     b <= 1 ? 'Quiet' :
     b <= 2 ? 'Moderate' :
     b <= 3 ? 'Busy' : 'Very busy'
+
+  // Format utilities (from VenueActionBar pattern)
+  const pct = (n?: number | null) =>
+    n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.min(100, Math.round(n)))}%`
+  const minText = (n?: number | null) =>
+    n == null || !Number.isFinite(n) ? '–' : `${Math.max(0, Math.floor(n))}m`
+
+  const isRec = recorder.state === 'recording'
+  const isPause = recorder.state === 'paused'
+  const canStart = recorder.state === 'idle' || recorder.state === 'ended'
 
   return (
     <>
@@ -90,7 +106,60 @@ export function ExploreDrawer({
                 <div className="text-green-300/90 text-xs">{primary.open_now ? 'LIVE' : ''}</div>
               </div>
 
-              <div className="mt-3 flex items-center gap-2">
+              {/* Flow Metrics */}
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs">
+                  <span className="font-medium text-white/90">Flow</span>
+                  <span className="text-white/80">{pct(metrics.flowPct)}</span>
+                </div>
+                <div className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs">
+                  <span className="font-medium text-white/90">Sync</span>
+                  <span className="text-white/80">{pct(metrics.syncPct)}</span>
+                </div>
+                {metrics.elapsedMin != null && (
+                  <span className="text-xs text-white/70">⏱ {minText(metrics.elapsedMin)}</span>
+                )}
+                {metrics.sui01 != null && (
+                  <span className="text-xs text-white/70">☀ {pct((metrics.sui01 ?? 0) * 100)}</span>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                {/* Flow Controls */}
+                {canStart ? (
+                  <button
+                    onClick={() => recorder.start()}
+                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150"
+                  >
+                    ▶ Start Flow
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {isRec ? (
+                      <button
+                        onClick={recorder.pause}
+                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
+                      >
+                        ⏸ Pause
+                      </button>
+                    ) : isPause ? (
+                      <button
+                        onClick={recorder.resume}
+                        className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
+                      >
+                        ▶ Resume
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={recorder.stop}
+                      className="px-3 py-2 rounded-md text-xs bg-red-500/80 text-white hover:bg-red-500 transition-all duration-150"
+                    >
+                      ■ Stop
+                    </button>
+                  </div>
+                )}
+
+                {/* Venue Actions */}
                 <button
                   onClick={() => onJoin(primary.pid)}
                   className="px-3 py-2 rounded-md text-xs font-semibold transition-all duration-150 hover:scale-[1.03]"
