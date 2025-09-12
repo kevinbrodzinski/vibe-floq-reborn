@@ -22,16 +22,13 @@ export function useRallyUnread() {
     }
   }, []);
 
-  // Initial load
   React.useEffect(() => { 
     refresh(); 
   }, [refresh]);
 
-  // Realtime updates with mild debounce
   React.useEffect(() => {
     const unsub = subscribeRallyInbox(() => {
       const now = Date.now();
-      // Don't refetch more than once per 2s
       if (now - lastRefreshRef.current < 2000) return;
       refresh();
     });

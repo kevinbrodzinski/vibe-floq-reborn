@@ -1,7 +1,6 @@
 import * as React from 'react'
-import { listRallyInbox, respondInvite, subscribeRallyInbox } from '@/lib/api/rallyInbox'
+import { listRallyInbox, respondInvite, subscribeRallyInbox, type RallyInboxItem } from '@/lib/api/rallyInbox'
 import { markRallyRead, markAllRalliesRead } from '@/lib/api/rallyRead'
-import type { RallyInboxItem } from '@/lib/api/rallyInbox'
 
 export function useRallyInbox() {
   const [items, setItems] = React.useState<RallyInboxItem[]>([])
@@ -27,7 +26,6 @@ export function useRallyInbox() {
   }, [refresh])
 
   const join = React.useCallback(async (id: string) => {
-    // optimistic
     setItems(prev => prev.map(x => x.rally_id === id ? {...x, invite_status:'joined', responded_at:new Date().toISOString()} : x))
     try { await respondInvite(id, 'joined') } catch { refresh() }
   }, [refresh])
@@ -38,7 +36,6 @@ export function useRallyInbox() {
   }, [refresh])
 
   const markRead = React.useCallback(async (rallyId: string) => {
-    // optimistic
     setItems(prev => prev.map(x => x.rally_id === rallyId 
       ? { ...x, unread_count: 0, first_unread_at: null } 
       : x));
@@ -50,13 +47,11 @@ export function useRallyInbox() {
   }, [refresh])
 
   const markAllRead = React.useCallback(async () => {
-    // Optimistic update
     const previousItems = items
     setItems(prev => prev.map(x => ({...x, unread_count: 0, first_unread_at: null})))
     try {
       await markAllRalliesRead()
     } catch (e) {
-      // Rollback optimistic update
       setItems(previousItems)
       throw e
     }

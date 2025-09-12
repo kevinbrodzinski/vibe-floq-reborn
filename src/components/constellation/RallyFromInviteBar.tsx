@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createRally, headsCentroid } from '@/lib/api/rally';
-import { createRallyInboxThread } from '@/lib/api/rallyInbox'; 
+import { createRallyInboxThread } from '@/lib/api/rallyInbox';
 import { useToast } from '@/hooks/use-toast';
 
 type Heads = Array<{ friend_id: string; friend_name?: string; lng:number; lat:number; t_head:string }>;
@@ -38,7 +38,7 @@ export function RallyFromInviteBar({
 
       // Create inbox thread
       const title = defaultTitle({ nearbyCount: heads.length });
-      const { threadId } = await createRallyInboxThread({
+      await createRallyInboxThread({
         rallyId,
         title,
         participants,
@@ -47,14 +47,13 @@ export function RallyFromInviteBar({
 
       toast({ title: 'Rally started', description: 'Your invitees have been pinged.' });
 
-      // Broadcast rally start event
+      // Broadcast rally start + inbox creation (for local UX hooks)
       window.dispatchEvent(new CustomEvent('floq:rally:start', {
         detail: { rallyId, participants, centroid, source: 'constellation' }
       }));
 
-      // Announce inbox thread creation
       window.dispatchEvent(new CustomEvent('floq:rally:inbox:new', {
-        detail: { threadId, rallyId, participants, title }
+        detail: { threadId: 'unknown', rallyId, participants, title } // your server returns the actual id
       }));
 
       onDismiss?.();

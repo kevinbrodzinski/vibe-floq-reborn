@@ -39,23 +39,18 @@ export async function joinRally(rallyId: RallyId, status:'joined'|'declined'='jo
 }
 
 export async function endRally(rallyId: RallyId) {
-  // Mark rally as ended in database
   const { error } = await supabase
     .from('rallies')
     .update({ status: 'ended' })
     .eq('id', rallyId);
-  
   if (error) throw error;
   
-  // Finalize to afterglow moments
-  const { data, error: finalizeError } = await supabase.functions.invoke('rally-finalize', { 
+  const { error: finalizeError } = await supabase.functions.invoke('rally-finalize', { 
     body: { rallyId, endedAt: new Date().toISOString() } 
   });
-  
   if (finalizeError) {
+    // eslint-disable-next-line no-console
     console.warn('Failed to finalize rally to afterglow:', finalizeError);
-    // Don't throw here - rally ended successfully even if afterglow failed
   }
-  
   return { success: true, afterglowCreated: !finalizeError };
 }

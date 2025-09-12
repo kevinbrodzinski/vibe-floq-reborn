@@ -49,7 +49,7 @@ export function RallyInboxDrawer({
 
           <ul className="space-y-2">
             {items.map(itm => {
-              const expired = itm.expires_at && new Date(itm.expires_at).getTime() <= Date.now()
+              const expired = !!itm.expires_at && new Date(itm.expires_at).getTime() <= Date.now()
               const status = expired ? 'Expired'
                            : itm.invite_status === 'joined' ? 'Joined'
                            : itm.invite_status === 'declined' ? 'Declined'
@@ -73,13 +73,13 @@ export function RallyInboxDrawer({
                       {/* Rally context chips */}
                       <div className="mt-1 flex flex-wrap gap-1">
                         {/* People count */}
-                        {Array.isArray((itm as any).participants) && (
+                        {!!(itm as any)?.participants?.length && (
                           <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-foreground/5">
                             👥 {(itm as any).participants.length}
                           </span>
                         )}
                         {/* Distance / venue if available */}
-                        {(itm as any).metadata?.venue_name && (
+                        {(itm as any)?.metadata?.venue_name && (
                           <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-foreground/5">
                             📍 {(itm as any).metadata.venue_name}
                           </span>

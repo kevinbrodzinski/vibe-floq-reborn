@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { setRallyLastSeen } from '@/lib/api/rallyInbox';
+import { setRallyLastSeen } from '@/lib/api/rallyThreads';
 import { formatDistanceToNow } from 'date-fns';
 
 type Message = {
@@ -30,7 +30,6 @@ export function RallyThreadView({
   const listRef = React.useRef<HTMLDivElement | null>(null);
   const [jumped, setJumped] = React.useState(false);
 
-  // Find the first message index that is >= firstUnreadAt
   const firstUnreadIndex = React.useMemo(() => {
     if (!firstUnreadAt) return -1;
     const ts = new Date(firstUnreadAt).getTime();
@@ -51,20 +50,17 @@ export function RallyThreadView({
     }
   }, [canJump, messages, firstUnreadIndex]);
 
-  // Auto-jump on mount if we haven't already
   React.useEffect(() => {
     if (canJump && !jumped) {
-      const id = setTimeout(jumpToFirstUnread, 120);
+      const id = window.setTimeout(jumpToFirstUnread, 120);
       return () => clearTimeout(id);
     }
   }, [canJump, jumped, jumpToFirstUnread]);
 
-  // Mark last_seen when thread mounts/changes
   React.useEffect(() => {
     setRallyLastSeen(rallyId).catch(() => {});
   }, [rallyId, threadId]);
 
-  // Auto-advance last_seen when reaching bottom
   React.useEffect(() => {
     if (!listRef.current) return;
     const el = listRef.current;
@@ -90,7 +86,6 @@ export function RallyThreadView({
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      {/* Header actions */}
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="text-sm text-muted-foreground">
           {messages.length} messages
@@ -108,7 +103,6 @@ export function RallyThreadView({
         )}
       </div>
 
-      {/* Message list */}
       <div
         ref={listRef}
         className="relative flex-1 overflow-y-auto px-3 py-2"

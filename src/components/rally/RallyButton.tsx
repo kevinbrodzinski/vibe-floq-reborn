@@ -43,7 +43,7 @@ export function RallyButton({
   const { toast } = useToast()
   const map = getCurrentMap()
 
-  // Mock data for now
+  // TODO: wire actual counts
   const nearby = 3
   const cohesion01 = 0.6
   
@@ -59,8 +59,6 @@ export function RallyButton({
   if (!ok) return null
 
   const label = groupPingLabel(nearby, cohesion01)
-
-  // Use provided recipients or mock for now
   const inferredRecipients: string[] = recipientIds ?? []
 
   const onClick = async () => {

@@ -20,7 +20,7 @@ export async function getLastSeen(rallyId: string): Promise<string | null> {
     .from('rally_last_seen')
     .select('last_seen_at')
     .eq('rally_id', rallyId)
-    .eq('profile_id', me) // ✅ scope to me
+    .eq('profile_id', me)
     .maybeSingle();
 
   if (error && error.code !== 'PGRST116') throw error;
@@ -60,12 +60,11 @@ export async function setRallyLastSeen(rallyId: string, ts?: string) {
 
 export function computeFirstUnread(messages: RallyMessage[], lastSeen: string | null) {
   if (!messages.length) return { index: null, t: null };
-
   if (!lastSeen) return { index: 0, t: messages[0].created_at };
 
   const lastMs = new Date(lastSeen).getTime();
   const idx = messages.findIndex(m => new Date(m.created_at).getTime() > lastMs);
 
-  if (idx === -1) return { index: null, t: null }; // nothing unread
+  if (idx === -1) return { index: null, t: null };
   return { index: idx, t: messages[idx].created_at };
 }
