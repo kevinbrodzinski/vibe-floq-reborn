@@ -1,6 +1,15 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { RallyId } from '@/types/rally'
 
+export function headsCentroid(
+  heads: Array<{ lng: number; lat: number }>
+): { lng: number; lat: number } | null {
+  if (!heads?.length) return null;
+  const lng = heads.reduce((s, h) => s + h.lng, 0) / heads.length;
+  const lat = heads.reduce((s, h) => s + h.lat, 0) / heads.length;
+  return { lng, lat };
+}
+
 export async function createRally(args:{
   center:{lng:number;lat:number}
   venueId?:string|null

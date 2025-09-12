@@ -10589,6 +10589,68 @@ export type Database = {
           },
         ]
       }
+      rally_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          sender_id: string | null
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          sender_id?: string | null
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          sender_id?: string | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rally_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "rally_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rally_threads: {
+        Row: {
+          centroid: Json | null
+          created_at: string
+          id: string
+          participants: string[]
+          rally_id: string
+          title: string
+        }
+        Insert: {
+          centroid?: Json | null
+          created_at?: string
+          id?: string
+          participants: string[]
+          rally_id: string
+          title: string
+        }
+        Update: {
+          centroid?: Json | null
+          created_at?: string
+          id?: string
+          participants?: string[]
+          rally_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       rate_limit_config: {
         Row: {
           action_type: string

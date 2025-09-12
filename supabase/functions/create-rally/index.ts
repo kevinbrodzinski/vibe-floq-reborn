@@ -36,7 +36,17 @@ Deno.serve(async (req) => {
 
   let body: Body
   try { body = await req.json() } catch { return bad('invalid JSON', 422) }
-  if (!body?.center?.lng || !body?.center?.lat) return bad('center required', 422)
+  
+  // Fix coordinate validation to handle 0 values properly
+  if (
+    !body?.center ||
+    typeof body.center.lng !== 'number' ||
+    typeof body.center.lat !== 'number' ||
+    !Number.isFinite(body.center.lng) ||
+    !Number.isFinite(body.center.lat)
+  ) {
+    return bad('valid center {lng,lat} required', 422)
+  }
 
   // Cooldowns (sender-only)
   const { data: recent } = await supa
@@ -61,8 +71,12 @@ Deno.serve(async (req) => {
 
   const recipients = Array.isArray(body.recipients) ? body.recipients.filter(Boolean) : []
   if (recipients.length) {
+    // Use upsert to handle potential duplicates gracefully
     await supa.from('rally_invites')
-      .insert(recipients.map(to_profile => ({ rally_id: rally.id, to_profile })))
+      .upsert(recipients.map(to_profile => ({ rally_id: rally.id, to_profile })), { 
+        onConflict: 'rally_id,to_profile',
+        ignoreDuplicates: true 
+      })
       .catch(() => {})
   }
 

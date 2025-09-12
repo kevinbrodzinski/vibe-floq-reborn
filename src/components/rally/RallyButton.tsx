@@ -81,7 +81,14 @@ export function RallyButton({
   }
 
   return (
-    <Chip color="indigo" onClick={onClick} className={className} icon={<span aria-hidden>⚡</span>}>
+    <Chip 
+      color="indigo" 
+      onClick={onClick} 
+      className={className} 
+      icon={<span aria-hidden>⚡</span>}
+      aria-label={`${label} - Start rally with ${nearby} nearby friends`}
+      type="button"
+    >
       {label}
     </Chip>
   )

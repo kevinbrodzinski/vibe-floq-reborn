@@ -165,6 +165,9 @@ verify_jwt = true
 [functions.rally-create]
 verify_jwt = true
 
+[functions.rally-inbox-create]
+verify_jwt = true
+
 [functions.venue-favorite]
 verify_jwt = true
 

@@ -1,14 +1,13 @@
 import * as React from 'react';
-import { createRally } from '@/lib/api/rally';
+import { createRally, headsCentroid } from '@/lib/api/rally';
+import { createRallyInboxThread } from '@/lib/api/rallyInbox'; 
 import { useToast } from '@/hooks/use-toast';
 
 type Heads = Array<{ friend_id: string; friend_name?: string; lng:number; lat:number; t_head:string }>;
 
-function headsCentroid(heads: Heads): { lng:number; lat:number } | null {
-  if (!heads?.length) return null;
-  const lng = heads.reduce((s,h)=>s+h.lng,0)/heads.length;
-  const lat = heads.reduce((s,h)=>s+h.lat,0)/heads.length;
-  return { lng, lat };
+function defaultTitle(args: { nearbyCount?: number }): string {
+  const n = args.nearbyCount ?? 0;
+  return n >= 2 ? `Rally near you (${n})` : 'Rally near you';
 }
 
 export function RallyFromInviteBar({
@@ -36,11 +35,28 @@ export function RallyFromInviteBar({
         ttlMin: 60,
         note: (cohesion01 ?? 0) >= 0.55 ? 'High sync rally' : 'Friends rally'
       });
+
+      // Create inbox thread
+      const title = defaultTitle({ nearbyCount: heads.length });
+      const { threadId } = await createRallyInboxThread({
+        rallyId,
+        title,
+        participants,
+        centroid
+      });
+
       toast({ title: 'Rally started', description: 'Your invitees have been pinged.' });
-      // broadcast (optional)
+
+      // Broadcast rally start event
       window.dispatchEvent(new CustomEvent('floq:rally:start', {
         detail: { rallyId, participants, centroid, source: 'constellation' }
       }));
+
+      // Announce inbox thread creation
+      window.dispatchEvent(new CustomEvent('floq:rally:inbox:new', {
+        detail: { threadId, rallyId, participants, title }
+      }));
+
       onDismiss?.();
     } catch (e:any) {
       toast({ title: 'Failed to start rally', description: e?.message ?? 'Please try again', variant: 'destructive' });

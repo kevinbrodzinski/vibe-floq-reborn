@@ -32,6 +32,24 @@ export async function respondInvite(rallyId: RallyId, status:'joined'|'declined'
   return data
 }
 
+export async function createRallyInboxThread(args: {
+  rallyId: string
+  title: string
+  participants: string[]
+  centroid?: { lng: number; lat: number } | null
+}): Promise<{ threadId: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke<{ threadId: string }>('rally-inbox-create', {
+      body: args
+    })
+    if (error) throw error
+    if (data?.threadId) return data
+  } catch (e) {
+    // Fallback optimistic thread id
+    return { threadId: `rthread_${Math.random().toString(36).slice(2)}` }
+  }
+}
+
 /** Realtime subscription for invites/rallies changes */
 export function subscribeRallyInbox(onChange: () => void) {
   const ch = supabase.channel('rally-inbox')

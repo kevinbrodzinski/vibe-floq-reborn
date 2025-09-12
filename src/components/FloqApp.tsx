@@ -14,6 +14,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
 import { useAmbientBackground } from "@/hooks/useAmbientBackground";
 import { cn } from "@/lib/utils";
+import { RallyInboxBridge } from "@/components/notifications/RallyInboxBridge";
 
 import { Button } from "./ui/button";
 
@@ -81,6 +82,8 @@ export const FloqApp = () => {
               onOpenChange={setCommandPaletteOpen}
             />
             
+            {/* Rally Inbox Bridge - handles global rally inbox events */}
+            <RallyInboxBridge />
 
           </div>
         </FloqUIProvider>
