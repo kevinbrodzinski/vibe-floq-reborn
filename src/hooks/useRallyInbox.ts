@@ -1,5 +1,7 @@
 import * as React from 'react'
-import { listRallyInbox, respondInvite, subscribeRallyInbox, markRallyRead, markAllRalliesRead, type RallyInboxItem } from '@/lib/api/rallyInbox'
+import { listRallyInbox, respondInvite, subscribeRallyInbox } from '@/lib/api/rallyInbox'
+import { markRallyRead, markAllRalliesRead } from '@/lib/api/rallyRead'
+import type { RallyInboxItem } from '@/lib/api/rallyInbox'
 
 export function useRallyInbox() {
   const [items, setItems] = React.useState<RallyInboxItem[]>([])

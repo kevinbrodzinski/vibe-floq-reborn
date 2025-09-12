@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { markRallyRead } from '@/lib/api/rallyInbox';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RallyThreadProps {
   rallyId: string;
@@ -11,8 +11,28 @@ export function RallyThread({ rallyId, firstUnreadAt, children }: RallyThreadPro
   React.useEffect(() => {
     if (!rallyId) return;
     
-    // Mark rally as read when thread opens
-    markRallyRead(rallyId).catch(console.warn);
+    // Mark rally as read when thread opens with debounce
+    let timeout: any;
+    const markRead = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        try {
+          const { data: user } = await supabase.auth.getUser();
+          const me = user.user?.id;
+          if (!me) return;
+          
+          const when = new Date().toISOString();
+          await supabase
+            .from('rally_last_seen')
+            .upsert({ profile_id: me, rally_id: rallyId, last_seen_at: when }, { onConflict: 'profile_id,rally_id' });
+        } catch (e) {
+          console.warn('Mark read failed:', e);
+        }
+      }, 150);
+    };
+
+    markRead();
+    return () => clearTimeout(timeout);
   }, [rallyId]);
 
   // Auto-scroll to first unread message
@@ -26,10 +46,9 @@ export function RallyThread({ rallyId, firstUnreadAt, children }: RallyThreadPro
       }
     };
 
-    // Small delay to allow messages to render
     const timer = setTimeout(scrollToFirstUnread, 100);
     return () => clearTimeout(timer);
   }, [firstUnreadAt]);
 
-  return <div className="rally-thread">{children}</div>;
+  return <>{children}</>;
 }

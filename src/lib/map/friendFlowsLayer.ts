@@ -1,4 +1,4 @@
-import type { FriendFlowLine } from '@/lib/api/friendFlows';
+import type mapboxgl from 'mapbox-gl';
 
 type FriendFlowRow = {
   friend_id: string;
@@ -10,7 +10,7 @@ type FriendFlowRow = {
   t_head: string;
 };
 
-const SRC = 'friend-flows-src';
+const SRC_ID = 'friend-flows-src';
 const LYR_LINE = 'friend-flows-line';
 const LYR_HEAD = 'friend-flows-head';
 
@@ -45,51 +45,54 @@ function rowsToFC(rows: FriendFlowRow[]): GeoJSON.FeatureCollection {
   return { type: 'FeatureCollection', features };
 }
 
-export function addFriendFlowsLayer(map: any, rows: FriendFlowRow[]) {
-  const fc = rows?.length ? rowsToFC(rows) : { type: 'FeatureCollection', features: [] };
+/** Mount/refresh Friend Flows. Returns cleanup(). */
+export function addFriendFlowsLayer(map: mapboxgl.Map | null, rows: FriendFlowRow[]) {
+  if (!map) return () => {};
+
+  const fc = rows?.length ? rowsToFC(rows) : { type: 'FeatureCollection', features: [] as any[] };
 
   const upsert = () => {
-    // Performance: skip if data unchanged - attach to source for persistence
-    const src = map.getSource(SRC) as mapboxgl.GeoJSONSource & { _prevJSON?: string };
-    const fcJson = JSON.stringify(fc);
+    if (!map || !map.isStyleLoaded?.()) return;
 
-    if (src?._prevJSON === fcJson) return;
+    // dedupe via snapshot on the source instance
+    const json = JSON.stringify(fc);
+    const src = map.getSource(SRC_ID) as (mapboxgl.GeoJSONSource & { _prevJSON?: string }) | undefined;
 
     if (src) {
-      src.setData(fc as any);
-      src._prevJSON = fcJson;
+      if (src._prevJSON !== json) {
+        src.setData(fc as any);
+        (src as any)._prevJSON = json;
+      }
     } else {
-      map.addSource(SRC, { type: 'geojson', data: fc as any });
-      (map.getSource(SRC) as any)._prevJSON = fcJson;
+      map.addSource(SRC_ID, { type: 'geojson', data: fc as any });
+      (map.getSource(SRC_ID) as any)._prevJSON = json;
     }
 
-    // line layer
     if (!map.getLayer(LYR_LINE)) {
       map.addLayer({
         id: LYR_LINE,
         type: 'line',
-        source: SRC,
+        source: SRC_ID,
         filter: ['==', ['get', 'type'], 'line'],
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': 'rgba(147, 197, 253, 0.85)', // sky-300-ish
+          'line-color': 'rgba(147, 197, 253, 0.85)',
           'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 4],
           'line-blur': 0.5,
         },
       });
     }
 
-    // head layer
     if (!map.getLayer(LYR_HEAD)) {
       map.addLayer({
         id: LYR_HEAD,
         type: 'circle',
-        source: SRC,
+        source: SRC_ID,
         filter: ['==', ['get', 'type'], 'head'],
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 16, 7],
           'circle-color': 'white',
-          'circle-stroke-color': 'rgba(99,102,241,1)', // indigo stroke
+          'circle-stroke-color': 'rgba(99,102,241,1)',
           'circle-stroke-width': 2,
         },
       });
@@ -98,28 +101,15 @@ export function addFriendFlowsLayer(map: any, rows: FriendFlowRow[]) {
 
   const onStyle = () => upsert();
 
-  // Initial add/update
-  map.isStyleLoaded?.() ? upsert() : map.once('style.load', upsert);
-  // Re-attach on *future* style reloads
+  if (map.isStyleLoaded?.()) upsert();
+  else map.once('style.load', onStyle);
+
   map.on('style.load', onStyle);
 
-  // Return cleanup — remove layers/sources & any future listeners
   return () => {
-    try {
-      map.off('style.load', onStyle);
-      if (map.getLayer(LYR_HEAD)) map.removeLayer(LYR_HEAD);
-      if (map.getLayer(LYR_LINE)) map.removeLayer(LYR_LINE);
-      if (map.getSource(SRC)) map.removeSource(SRC);
-    } catch {}
+    try { map.off('style.load', onStyle); } catch {}
+    try { if (map.getLayer(LYR_HEAD)) map.removeLayer(LYR_HEAD); } catch {}
+    try { if (map.getLayer(LYR_LINE)) map.removeLayer(LYR_LINE); } catch {}
+    try { if (map.getSource(SRC_ID)) map.removeSource(SRC_ID); } catch {}
   };
-}
-
-export function removeFriendFlowsLayer(map: any) {
-  try {
-    if (map.getLayer(LYR_HEAD)) map.removeLayer(LYR_HEAD);
-    if (map.getLayer(LYR_LINE)) map.removeLayer(LYR_LINE);
-    if (map.getSource(SRC)) map.removeSource(SRC);
-  } catch (e) {
-    // Ignore cleanup errors
-  }
 }
