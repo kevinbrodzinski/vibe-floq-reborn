@@ -188,6 +188,7 @@ export function ExploreDrawer({
                         window.dispatchEvent(new CustomEvent('ui:map:flyTo', {
                           detail: { lng, lat, zoom: 15 }
                         }));
+                        window.dispatchEvent(new CustomEvent('ui:nav:dest', { detail: { lng, lat } }));
                       }
                       // canonical path
                       import('@/lib/directions/native').then(({ openTransitFirstOrRideshare }) => {

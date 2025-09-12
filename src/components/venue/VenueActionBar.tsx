@@ -29,6 +29,7 @@ export const VenueActionBar = React.memo(function VenueActionBar({
         window.dispatchEvent(new CustomEvent('ui:map:flyTo', {
           detail: { lng: venue!.lng!, lat: venue!.lat!, zoom: 15 }
         }));
+        window.dispatchEvent(new CustomEvent('ui:nav:dest', { detail: { lng: venue!.lng!, lat: venue!.lat! } }));
       }
       openTransitFirstOrRideshare({ dest: { lat: venue!.lat!, lng: venue!.lng! }, label: venue!.name })
     }

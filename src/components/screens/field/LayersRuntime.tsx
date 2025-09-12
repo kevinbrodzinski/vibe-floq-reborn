@@ -1,6 +1,7 @@
 import React from 'react';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { useLayerManager } from '@/hooks/useLayerManager';
+import { useNavDestination } from '@/hooks/useNavDestination';
 import { useTileVenuesLayer } from '@/map/layers/useTileVenuesLayer';
 import { useSocialWeatherLayer } from '@/map/layers/useSocialWeatherLayer';
 import type { FieldData } from './FieldDataProvider';
@@ -14,6 +15,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
 
   // Centralized LayerManager binding
   useLayerManager(map);
+  useNavDestination(map); // NEW glow overlay listener
 
   // Mount venues and weather as map layers
   useTileVenuesLayer(map, data.nearbyVenues);
