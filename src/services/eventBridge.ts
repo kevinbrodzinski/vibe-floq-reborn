@@ -180,13 +180,24 @@ export interface EventPayloads {
   [Events.FLOQ_BREADCRUMB_RETRACE]: { fromPoint?: string };
   
   [Events.FLOQ_CONVERGENCE_DETECTED]: {
-    agentIds?: string[];
     friendId: string;
     friendName: string;
     probability: number;
     timeToMeet: number;
-    predictedLocation: { lat: number; lng: number; venueName?: string };
+    // Future-state hooks:
+    //  - venueId/venueName let a resolver map to a vibe
+    //  - vibeKey is your canonical vibe label (e.g. 'social', 'chill', 'high-energy')
+    //  - vibeHex is a direct hex override (takes precedence)
+    predictedLocation: {
+      lat: number;
+      lng: number;
+      venueId?: string;
+      venueName?: string;
+      vibeKey?: string;
+      vibeHex?: string;
+    };
     confidence: number;
+    agentIds?: string[];
   };
   
   [Events.RALLY_CREATE_REQUEST]: {

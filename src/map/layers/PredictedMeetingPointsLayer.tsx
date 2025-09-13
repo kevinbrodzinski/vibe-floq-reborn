@@ -3,6 +3,7 @@ import { layerManager } from '@/lib/map/LayerManager';
 import { createPredictedMeetSpec, applyPredictedMeetFeatureCollection } from '@/lib/map/overlays/predictedMeetSpec';
 import { onEvent, Events } from '@/services/eventBridge';
 import { shouldSuppress, buildSuppressionKey, prune } from '@/lib/predictedMeet/suppressStore';
+import { resolveVibeHex } from '@/lib/vibe/vibeColor';
 
 // ring animation tuning
 const PERIOD_MS = 1600;          // full pulse period
@@ -17,6 +18,7 @@ type Item = {
   createdAt: number;
   etaSec: number;     // seconds
   expiresAt: number;  // absolute ms
+  vibeHex: string;    // vibe color
 };
 
 export function PredictedMeetingPointsLayer() {
@@ -41,7 +43,7 @@ export function PredictedMeetingPointsLayer() {
 
   const itemsRef = React.useRef<Item[]>([]);
 
-  const pushItem = React.useCallback((lng: number, lat: number, etaSec: number, prob: number) => {
+  const pushItem = React.useCallback((lng: number, lat: number, etaSec: number, prob: number, color: string = '#EC4899') => {
     const now = Date.now();
     itemsRef.current.push({
       id: `pm-${now}-${Math.random().toString(36).slice(2)}`,
@@ -51,6 +53,7 @@ export function PredictedMeetingPointsLayer() {
       etaSec,
       // keep a bit after ETA so user sees it
       expiresAt: now + Math.min(180_000, Math.max(15_000, (etaSec + 15) * 1000)),
+      vibeHex: color,
     });
   }, []);
 
@@ -67,7 +70,7 @@ export function PredictedMeetingPointsLayer() {
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [it.lng, it.lat] as [number, number] },
-        properties: { kind: 'dot', prob: it.prob },
+        properties: { kind: 'dot', prob: it.prob, vibeHex: it.vibeHex },
       });
 
       // Ring: compute progress (wrap)
@@ -86,6 +89,7 @@ export function PredictedMeetingPointsLayer() {
           kind: 'ring',
           r,  // ring radius in px
           o,  // ring opacity
+          vibeHex: it.vibeHex,
         },
       });
     }
@@ -121,7 +125,7 @@ export function PredictedMeetingPointsLayer() {
     if (!enabled) return;
     const off = onEvent(Events.FLOQ_CONVERGENCE_DETECTED, (payload) => {
       if (!payload?.predictedLocation) return;
-      const { lng, lat } = payload.predictedLocation;
+      const { lng, lat, venueName, venueId, vibeKey, vibeHex } = payload.predictedLocation as any;
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
 
       const key = buildSuppressionKey({
@@ -134,7 +138,9 @@ export function PredictedMeetingPointsLayer() {
 
       const etaSec = Number.isFinite(payload.timeToMeet) ? Math.max(5, Math.min(180, Math.floor(payload.timeToMeet))) : 60;
       const prob = Math.max(0, Math.min(1, payload.probability ?? 0.7));
-      pushItem(lng, lat, etaSec, prob);
+      // final vibe color: payload.vibeHex > payload.vibeKey > resolver({ venueId, venueName }) > fallback
+      const color = resolveVibeHex({ venueId, venueName, vibeKey, vibeHex });
+      pushItem(lng, lat, etaSec, prob, color);
       render();
     });
     const id = setInterval(render, FPS_MS);
