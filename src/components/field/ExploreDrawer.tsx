@@ -49,8 +49,16 @@ export function ExploreDrawer({
   onOpenChange,
 }: ExploreDrawerProps) {
   const [localOpen, setLocalOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
   const open = typeof isOpen === 'boolean' ? isOpen : localOpen
   const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setLocalOpen(v))
+
+  // Debounce guard for button actions to prevent double-fires
+  const safeClick = (fn: () => void) => () => {
+    if (busy) return;
+    setBusy(true);
+    try { fn(); } finally { window.setTimeout(() => setBusy(false), 350); }
+  }
 
   const t = getVibeToken('social' as any)
   const primary = venues?.[0]
@@ -146,9 +154,12 @@ export function ExploreDrawer({
                 {canStart ? (
                   <button
                     type="button"
-                    onClick={() => onStartFlow?.() ?? emitEvent(Events.FLOQ_FLOW_START_REQUEST, { venueId: primary.pid })}
-                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150"
+                    onClick={safeClick(() => onStartFlow?.() ?? emitEvent(Events.FLOQ_FLOW_START_REQUEST, { venueId: primary.pid }))}
+                    disabled={busy}
+                    aria-busy={busy}
+                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150 disabled:opacity-60"
                     aria-label="Start Flow"
+                    data-testid="start-flow"
                   >
                     ▶ Start Flow
                   </button>
@@ -184,23 +195,32 @@ export function ExploreDrawer({
                 {/* Venue Actions */}
                 <button
                   type="button"
-                  onClick={() => onJoin?.(primary.pid) ?? emitEvent(Events.UI_VENUE_JOIN, { venueId: primary.pid })}
-                  className="px-3 py-2 rounded-md text-xs font-semibold transition-all duration-150 hover:scale-[1.03]"
+                  onClick={safeClick(() => onJoin?.(primary.pid) ?? emitEvent(Events.UI_VENUE_JOIN, { venueId: primary.pid }))}
+                  disabled={busy}
+                  aria-busy={busy}
+                  className="px-3 py-2 rounded-md text-xs font-semibold transition-all duration-150 hover:scale-[1.03] disabled:opacity-60"
                   style={{ background: t.base, color: t.fg }}
+                  data-testid="venue-join"
                 >
                   Join
                 </button>
                 <button
                   type="button"
-                  onClick={() => onSave?.(primary.pid) ?? emitEvent(Events.UI_VENUE_SAVE, { venueId: primary.pid })}
-                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
+                  onClick={safeClick(() => onSave?.(primary.pid) ?? emitEvent(Events.UI_VENUE_SAVE, { venueId: primary.pid }))}
+                  disabled={busy}
+                  aria-busy={busy}
+                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-60"
+                  data-testid="venue-save"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  onClick={() => onPlan?.(primary.pid) ?? emitEvent(Events.UI_VENUE_PLAN, { venueId: primary.pid })}
-                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
+                  onClick={safeClick(() => onPlan?.(primary.pid) ?? emitEvent(Events.UI_VENUE_PLAN, { venueId: primary.pid }))}
+                  disabled={busy}
+                  aria-busy={busy}
+                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-60"
+                  data-testid="venue-plan"
                 >
                   Plan
                 </button>
