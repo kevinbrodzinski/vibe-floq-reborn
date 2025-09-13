@@ -45,7 +45,7 @@ export function FieldCanvasIntegration({
     predictions,
     getHighConfidencePredictions,
     getImminentPredictions 
-  } = useConvergencePredictions(enhancedTiles as EnhancedFieldTile[]);
+  } = useConvergencePredictions();
 
   // Initialize trail system
   useEffect(() => {
@@ -150,7 +150,7 @@ export function useEnhancedFieldIntegration(
     predictions,
     getHighConfidencePredictions,
     getImminentPredictions 
-  } = useConvergencePredictions(tiles as EnhancedFieldTile[]);
+  } = useConvergencePredictions();
 
   return {
     // Enhanced tiles data
