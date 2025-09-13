@@ -36,7 +36,7 @@ export function RallyThreadView({
     return messages.findIndex((m) => new Date(m.created_at).getTime() >= ts);
   }, [messages, firstUnreadAt]);
 
-  const canJump = firstUnreadIndex >= 0;
+  const canJump = firstUnreadIndex >= 0 && messages.length > firstUnreadIndex;
 
   const jumpToFirstUnread = React.useCallback(() => {
     if (!canJump || !listRef.current) return;
@@ -69,7 +69,8 @@ export function RallyThreadView({
           <button
             type="button"
             onClick={jumpToFirstUnread}
-            className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            aria-label="Jump to first unread message"
           >
             Jump to first unread
           </button>

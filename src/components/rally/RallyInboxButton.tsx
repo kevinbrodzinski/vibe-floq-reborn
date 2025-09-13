@@ -8,7 +8,12 @@ export function RallyInboxButton({ onOpen }: { onOpen: () => void }) {
 
   return (
     <div className="relative">
-      <IconButton label="Open rally inbox" onClick={onOpen} variant="soft">
+      <IconButton
+        label="Open rally inbox"
+        onClick={onOpen}
+        variant="soft"
+        aria-busy={loading || undefined}
+      >
         📨
       </IconButton>
       <div className="pointer-events-none absolute -right-1 -top-1">

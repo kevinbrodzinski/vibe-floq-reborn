@@ -39,7 +39,7 @@ export async function listThreadMessages(threadId: string): Promise<RallyMessage
 
 
 export function computeFirstUnread(messages: RallyMessage[], lastSeen: string | null) {
-  if (!messages.length) return { index: null, t: null };
+  if (!Array.isArray(messages) || messages.length === 0) return { index: null, t: null };
   if (!lastSeen) return { index: 0, t: messages[0].created_at };
 
   const lastMs = new Date(lastSeen).getTime();

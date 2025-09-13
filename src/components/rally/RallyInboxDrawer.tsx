@@ -29,10 +29,14 @@ export function RallyInboxDrawer({
 }: RallyInboxDrawerProps) {
   if (!open) return null
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  };
+
   return (
-    <div role="dialog" aria-modal="true" aria-label="Rally inbox"
+    <div role="dialog" aria-modal="true" aria-label="Rally inbox" onKeyDown={onKeyDown}
          className={cn('fixed inset-0 z-[700] flex items-end sm:items-center justify-center', className)}>
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-lg max-h-[80vh] overflow-hidden rounded-2xl bg-background border border-border shadow-2xl">
         <header className="flex items-center gap-2 p-3 border-b border-border bg-card/60 backdrop-blur">
           <div className="text-base font-semibold">Rally Inbox</div>

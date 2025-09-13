@@ -56,7 +56,11 @@ export function RallyInboxRow({
         <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
           <span>{item.joined_count} joined</span>
           <span>•</span>
-          <span>Expires {new Date(item.expires_at).toLocaleDateString()}</span>
+          <span>
+            {item.expires_at
+              ? `Expires ${new Date(item.expires_at).toLocaleDateString()}`
+              : 'No expiry'}
+          </span>
         </div>
       </div>
       

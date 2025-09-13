@@ -79,8 +79,8 @@ export function MapNavBridge() {
     window.addEventListener('ui:nav:dest', onDest as EventListener);
 
     return () => {
-      window.removeEventListener('ui:map:flyTo', onFlyTo as EventListener);
-      window.removeEventListener('ui:nav:dest', onDest as EventListener);
+      try { window.removeEventListener('ui:map:flyTo', onFlyTo as EventListener); } catch {}
+      try { window.removeEventListener('ui:nav:dest', onDest as EventListener); } catch {}
       try { (MapNavBridge as any)._lastMarker?.remove?.(); } catch {}
       (MapNavBridge as any)._lastMarker = null;
     };
