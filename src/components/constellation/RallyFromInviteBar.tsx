@@ -25,7 +25,8 @@ export function RallyFromInviteBar({
   const participants = React.useMemo(() => heads.map(h => h.friend_id), [heads]);
   const centroid = React.useMemo(() => headsCentroid(heads), [heads]);
 
-  const disabled = busy || participants.length === 0 || !centroid;
+  // Solo Rally: allow zero recipients; only require a valid centroid
+  const disabled = busy || !centroid;
 
   const start = async () => {
     if (disabled) return;

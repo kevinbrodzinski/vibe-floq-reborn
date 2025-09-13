@@ -35,10 +35,12 @@ type Props = {
   note?: string
   className?: string
   onCreated?: (rallyId: string) => void
+  /** render even with 0 nearby friends (explicit CTA) */
+  allowSolo?: boolean
 }
 
 export function RallyButton({
-  lastPingAtMs, recipientIds, ttlMin = 60, note, className, onCreated
+  lastPingAtMs, recipientIds, ttlMin = 60, note, className, onCreated, allowSolo = false
 }: Props) {
   const { toast } = useToast();
   const map = getCurrentMap();
@@ -48,14 +50,16 @@ export function RallyButton({
   const nearby = 3
   const cohesion01 = 0.6
   
-  const ok = shouldOfferGroupPing({
-    nearbyFriends: nearby,
-    cohesion01,
-    convergenceProb: undefined,
-    lastPingAtMs: lastPingAtMs ?? null,
-    localHour: new Date().getHours(),
-    userActive: true
-  })
+  const ok = allowSolo
+    ? true
+    : shouldOfferGroupPing({
+        nearbyFriends: nearby,
+        cohesion01,
+        convergenceProb: undefined,
+        lastPingAtMs: lastPingAtMs ?? null,
+        localHour: new Date().getHours(),
+        userActive: true,
+      })
 
   if (!ok) return null
 
