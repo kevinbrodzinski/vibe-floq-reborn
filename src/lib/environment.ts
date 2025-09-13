@@ -1,5 +1,5 @@
 import { getPercentageBucket } from '@/lib/hash';
-import { safeStorage, safeStorageHelpers } from '@/lib/safeStorage';
+import { getLS, setLS, removeLS, getJSONLS, setJSONLS } from '@/lib/safeStorage';
 
 /**
  * Environment Detection and Presence Control System
@@ -50,11 +50,11 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   const urlParams = new URLSearchParams(window.location.search);
   
   // Check safe storage overrides
-  const localStorageMode = safeStorage.getItem('floq_presence_mode');
-  const localStorageConfig = safeStorage.getItem('floq_env_config');
+  const localStorageMode = getLS('floq_presence_mode');
+  const localStorageConfig = getLS('floq_env_config');
   
   // Parse safe storage config if available
-  const localConfig: Partial<EnvironmentConfig> = safeStorageHelpers.getJSON('floq_env_config', {});
+  const localConfig: Partial<EnvironmentConfig> = getJSONLS('floq_env_config', {});
   
   // Determine presence mode with priority: URL > localStorage > env var > default
   let presenceMode: 'offline' | 'mock' | 'live' = 'live'; // default to live
@@ -73,13 +73,13 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   
   // Rollout percentage logic
   const rolloutPercentage = parseFloat(urlParams.get('rollout') || 
-    safeStorage.getItem('floq_rollout') || 
+    getLS('floq_rollout') || 
     import.meta.env.NEXT_PUBLIC_ROLLOUT_PERCENTAGE || 
     '0');
   
   // User-based rollout (for testing specific users)
   const rolloutUserId = urlParams.get('rollout_user') || 
-    safeStorage.getItem('floq_rollout_user') || 
+    getLS('floq_rollout_user') || 
     undefined;
   
   // Debug flags
@@ -160,7 +160,7 @@ export function isUserInRollout(profileId?: string, config?: EnvironmentConfig):
  * Set presence mode in safe storage (for testing)
  */
 export function setPresenceMode(mode: 'offline' | 'mock' | 'live') {
-  safeStorage.setItem('floq_presence_mode', mode);
+  setLS('floq_presence_mode', mode);
   // Reload to apply changes
   if (typeof window !== 'undefined') {
     window.location.reload();
@@ -173,17 +173,17 @@ export function setPresenceMode(mode: 'offline' | 'mock' | 'live') {
 export function setEnvironmentConfig(config: Partial<EnvironmentConfig>) {
   const current = getEnvironmentConfig();
   const merged = { ...current, ...config };
-  safeStorageHelpers.setJSON('floq_env_config', merged);
+  setJSONLS('floq_env_config', merged);
 }
 
 /**
  * Clear all environment overrides
  */
 export function clearEnvironmentOverrides() {
-  safeStorage.removeItem('floq_presence_mode');
-  safeStorage.removeItem('floq_env_config');
-  safeStorage.removeItem('floq_rollout');
-  safeStorage.removeItem('floq_rollout_user');
+  removeLS('floq_presence_mode');
+  removeLS('floq_env_config');
+  removeLS('floq_rollout');
+  removeLS('floq_rollout_user');
   
   // Remove URL params and reload
   const url = new URL(window.location.href);

@@ -4,7 +4,7 @@ type Job =
   | { t:'plan'; id:string }
   | { t:'checkin'; id:string, lat?:number, lng?:number };
 
-const LS = 'floq:venue:q';
+const LS = 'floq:offline:venue:v1';
 
 function load(): Job[] { 
   try { 

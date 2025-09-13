@@ -111,7 +111,7 @@ export function ExploreDrawer({
       {open && (
         <div
           className="fixed left-0 right-0 bottom-0 z-[760] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur pointer-events-auto"
-          style={{ background:'rgba(12,16,26,0.9)', borderTop:'1px solid rgba(255,255,255,0.15)' }}
+          style={{ background:'rgba(12,16,26,0.9)', borderTop:'1px solid rgba(255,255,255,0.15)', pointerEvents: 'auto', zIndex: 760 }}
           role="dialog" aria-label="Explore nearby"
         >
           <div className="mx-auto max-w-[520px]">
@@ -125,7 +125,10 @@ export function ExploreDrawer({
             </div>
 
             {/* Primary venue card */}
-            <div className="rounded-xl p-4 mb-3" style={{ background:t.bg, border:`1px solid ${t.ring}` }}>
+            <div 
+              className="rounded-xl p-4 mb-3" 
+              style={{ background:t.bg, border:`1px solid ${t.ring}`, pointerEvents: 'auto', zIndex: 720 }}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="text-white/90 text-sm font-semibold truncate">{primary.name}</div>

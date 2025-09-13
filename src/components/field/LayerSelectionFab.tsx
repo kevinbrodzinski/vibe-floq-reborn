@@ -3,6 +3,7 @@ import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin, Bug, 
 import { cn } from '@/lib/utils';
 import { emitEvent, Events } from '@/services/eventBridge';
 import { enableVibePreview, cycleVibePreview, isVibePreviewEnabled, getVibePreviewColor } from '@/lib/vibe/vibeColor';
+import { getLS, setLS } from '@/lib/safeStorage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,18 +25,20 @@ export const LayerSelectionFab = () => {
   
   const LS_KEY = 'floq:layers:predicted-meet:enabled';
   const [predMeetOn, setPredMeetOn] = useState<boolean>(() => {
-    try { const raw = localStorage.getItem(LS_KEY); return raw == null ? true : raw === 'true'; }
-    catch { return true; }
+    const raw = getLS(LS_KEY);
+    return raw == null ? true : raw === 'true';
   });
   // NEW: flow-route persisted state
   const LS_KEY_FLOW = 'floq:layers:flow-route:enabled';
   const [flowOn, setFlowOn] = useState<boolean>(() => {
-    try { const raw = localStorage.getItem(LS_KEY_FLOW); return raw == null ? true : raw === 'true'; } catch { return true; }
+    const raw = getLS(LS_KEY_FLOW);
+    return raw == null ? true : raw === 'true';
   });
   // NEW: breadcrumb-trail persisted state
   const LS_KEY_BREADCRUMB = 'floq:layers:breadcrumb-trail:enabled';
   const [breadcrumbOn, setBreadcrumbOn] = useState<boolean>(() => {
-    try { const raw = localStorage.getItem(LS_KEY_BREADCRUMB); return raw == null ? true : raw === 'true'; } catch { return true; }
+    const raw = getLS(LS_KEY_BREADCRUMB);
+    return raw == null ? true : raw === 'true';
   });
   const [vibePrevOn, setVibePrevOn] = useState(() => isVibePreviewEnabled());
   
@@ -77,7 +80,7 @@ export const LayerSelectionFab = () => {
         <DropdownMenuItem
           onSelect={() => {
             const next = !flowOn; setFlowOn(next);
-            try { localStorage.setItem(LS_KEY_FLOW, String(next)); } catch {}
+            setLS(LS_KEY_FLOW, String(next));
             emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'flow-route', enabled: next });
           }}
           className="flex items-center gap-3 h-10"
@@ -91,7 +94,7 @@ export const LayerSelectionFab = () => {
         <DropdownMenuItem
           onSelect={() => {
             const next = !breadcrumbOn; setBreadcrumbOn(next);
-            try { localStorage.setItem(LS_KEY_BREADCRUMB, String(next)); } catch {}
+            setLS(LS_KEY_BREADCRUMB, String(next));
             emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'breadcrumb-trail', enabled: next });
           }}
           className="flex items-center gap-3 h-10"

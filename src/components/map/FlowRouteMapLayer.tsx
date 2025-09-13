@@ -8,21 +8,39 @@ import mapboxgl from 'mapbox-gl';
 import { getUserVibeHex, resolveVibeColor } from '@/lib/vibe/vibeColor';
 import { gradientStops } from '@/lib/vibe/vibeGradient';
 import { usePerfBudget } from '@/hooks/usePerfBudget';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { getLS, setLS } from '@/lib/safeStorage';
 
 export function FlowRouteMapLayer() {
   // Performance watchdog for auto-tuning shimmer
   const { ok: perfOk } = usePerfBudget(1500);
+  // Respect user motion preferences
+  const prefersReducedMotion = usePrefersReducedMotion();
     
   // persisted local toggle
   const LS_KEY = 'floq:layers:flow-route:enabled';
   const [enabled, setEnabled] = useState<boolean>(() => {
-    try { const raw = localStorage.getItem(LS_KEY); return raw == null ? true : raw === 'true'; } catch { return true; }
+    const raw = getLS(LS_KEY);
+    return raw == null ? true : raw === 'true';
   });
 
-  // register spec once
+  // register spec once + cursor reset on style changes
   useEffect(() => {
     layerManager.register(createFlowRouteSpec());
-    return () => layerManager.unregister('flow-route');
+    
+    // cursor reset guard for map style changes
+    const map = getCurrentMap();
+    const reset = () => { try { const canvas = map?.getCanvas(); if (canvas) canvas.style.cursor = ''; } catch {} };
+    if (map) {
+      map.on('styledata', reset);
+    }
+    
+    return () => {
+      layerManager.unregister('flow-route');
+      if (map) {
+        map.off('styledata', reset);
+      }
+    };
   }, []);
 
   const [visible, setVisible] = useState(false);
@@ -35,7 +53,7 @@ export function FlowRouteMapLayer() {
       if (!p || p.id !== 'flow-route') return;
       setEnabled(prev => {
         const next = p.enabled == null ? !prev : !!p.enabled;
-        try { localStorage.setItem(LS_KEY, String(next)); } catch {}
+        setLS(LS_KEY, String(next));
         if (!next) {
           setVisible(false); setIsRetracing(false);
           setFC({ type:'FeatureCollection', features: [] });
@@ -47,7 +65,7 @@ export function FlowRouteMapLayer() {
     const offSet = onEvent(Events.FLOQ_LAYER_SET, (p) => {
       if (!p || p.id !== 'flow-route') return;
       setEnabled(!!p.enabled);
-      try { localStorage.setItem(LS_KEY, String(!!p.enabled)); } catch {}
+      setLS(LS_KEY, String(!!p.enabled));
       if (!p.enabled) {
         setVisible(false); setIsRetracing(false);
         setFC({ type:'FeatureCollection', features: [] });
@@ -92,10 +110,10 @@ export function FlowRouteMapLayer() {
     } catch { pointsRef.current = []; }
   }, [fc]);
 
-  // shimmer loop only when retracing + visible + enabled + perf OK
+  // shimmer loop only when retracing + visible + enabled + perf OK + user allows motion
   useEffect(() => {
     const map = getCurrentMap();
-    if (!visible || !enabled || !perfOk) {
+    if (!visible || !enabled || !perfOk || prefersReducedMotion) {
       try { map?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
       // cleanup hover marker
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
@@ -186,7 +204,7 @@ export function FlowRouteMapLayer() {
       map.off('click','flow:route:venues', onClickDots);
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
     };
-  }, [visible, enabled, isRetracing, perfOk]);
+  }, [visible, enabled, isRetracing, perfOk, prefersReducedMotion]);
 
   return null;
 }
