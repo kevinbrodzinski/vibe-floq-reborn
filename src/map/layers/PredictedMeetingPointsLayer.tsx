@@ -151,8 +151,10 @@ export function PredictedMeetingPointsLayer() {
       pushItem(lng, lat, etaSec, prob, { venueId, venueName, vibeHex, vibeKey });
       render();
     });
-    const id = setInterval(render, FPS_MS);
-    render();
+    const id = setInterval(() => {
+      if (itemsRef.current.length > 0) render();
+    }, FPS_MS);
+    render(); // one eager draw
     return () => { off(); clearInterval(id); };
   }, [enabled, pushItem, render]);
 

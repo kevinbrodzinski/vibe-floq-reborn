@@ -111,6 +111,9 @@ class EventBridge {
 // Singleton instance
 export const eventBridge = new EventBridge();
 
+/** Optional HMR cleanup hook; currently a no-op. */
+export function cleanupEventBridge() { /* no-op, kept for symmetry */ }
+
 // Event namespace constants for type safety
 export const Events = {
   // UI Navigation
