@@ -41,6 +41,8 @@ import { RallyNavBridge } from '@/components/rally/RallyNavBridge';
 import { RallyInboxHost } from '@/components/rally/RallyInboxHost';
 import { MapNavBridge } from '@/components/nav/MapNavBridge';
 import { InboxNavBridge } from '@/components/nav/InboxNavBridge';
+import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
+import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -75,6 +77,9 @@ export const FieldLayout = () => {
 
   // Debug location toast for dev mode
   useDebugLocationToast();
+
+  // Initialize convergence monitoring system
+  useConvergenceMonitor();
 
   // Debug logging for enhanced location tracking state
   if (import.meta.env.DEV) console.log('[FieldLayout] Enhanced location tracking state:', {
@@ -214,6 +219,9 @@ export const FieldLayout = () => {
                 <InboxNavBridge />
                 <RallyNavBridge />
                 <RallyInboxHost />
+                
+                {/* Convergence notifications */}
+                <ConvergenceNotificationSystem />
               <div className="relative h-svh w-full">
                 {/* Motion Permission Banner - Global Level */}
                 <MotionPermissionBanner

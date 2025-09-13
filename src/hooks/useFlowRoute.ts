@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MMKV } from 'react-native-mmkv';
 import { eventBridge, Events } from '@/services/eventBridge';
-import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
+import { useGeo } from '@/hooks/useGeo';
+import { useSelectedVenue } from '@/store/useSelectedVenue';
 import { useSocialCache } from '@/hooks/useSocialCache';
 
 // Initialize MMKV storage
@@ -45,15 +46,12 @@ const CLEANUP_INTERVAL = 60000; // 1 minute
 const PATH_SIMPLIFICATION_TOLERANCE = 0.00001; // ~1 meter
 
 export function useFlowRoute() {
-  const userLocation = useUnifiedLocation({
-    enableTracking: true,
-    enablePresence: false,
-    hookId: 'flow-route'
-  });
+  const userLocation = useGeo();
   const { myPath } = useSocialCache();
+  const { selectedVenueId } = useSelectedVenue();
   
-  // Mock selected venue for now
-  const selectedVenue = null;
+  // Get selected venue details (placeholder for now)
+  const selectedVenue = selectedVenueId ? { id: selectedVenueId, name: `Venue ${selectedVenueId}`, type: 'unknown' } : null;
   
   const [flowRoute, setFlowRoute] = useState<RoutePoint[]>([]);
   const [patterns, setPatterns] = useState<FlowPattern[]>([]);
@@ -126,11 +124,11 @@ export function useFlowRoute() {
       // Left venue
       const duration = Date.now() - venueEntryTime.current;
       
-      if (duration >= MIN_VENUE_DURATION && userLocation?.location) {
+      if (duration >= MIN_VENUE_DURATION && userLocation?.coords) {
         const routePoint: RoutePoint = {
           id: `rp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           timestamp: Date.now(),
-          position: [userLocation.location.longitude, userLocation.location.latitude],
+          position: [userLocation.coords.lng, userLocation.coords.lat],
           venueId: lastVenueRef.current,
           venueName: selectedVenue?.name,
           venueType: selectedVenue?.type,
@@ -143,14 +141,14 @@ export function useFlowRoute() {
       lastVenueRef.current = null;
       venueEntryTime.current = 0;
     }
-  }, [selectedVenue, userLocation?.current, flowRoute]);
+  }, [selectedVenue, userLocation?.coords, flowRoute]);
 
   // Track movement between venues
   useEffect(() => {
-    if (userLocation?.location && !selectedVenue) {
+    if (userLocation?.coords && !selectedVenue) {
       const point: [number, number] = [
-        userLocation.location.longitude,
-        userLocation.location.latitude
+        userLocation.coords.lng,
+        userLocation.coords.lat
       ];
       
       // Add to path buffer with deduplication
@@ -164,7 +162,7 @@ export function useFlowRoute() {
         }
       }
     }
-  }, [userLocation?.location, selectedVenue]);
+  }, [userLocation?.coords, selectedVenue]);
 
   // Cleanup old route points
   useEffect(() => {

@@ -74,10 +74,12 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
       // Add to breadcrumb trail when joining venue
       if (venue) {
         addRoutePoint({
-          id: venue.id,
-          name: venue.name,
-          lat: venue.lat,
-          lng: venue.lng
+          id: `rp-${Date.now()}-${venue.id}`,
+          timestamp: Date.now(),
+          position: [venue.lng, venue.lat],
+          venueId: venue.id,
+          venueName: venue.name,
+          duration: 0
         });
       }
     } catch (error) {

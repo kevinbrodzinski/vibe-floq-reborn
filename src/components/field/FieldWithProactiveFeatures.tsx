@@ -1,7 +1,7 @@
 import React from 'react';
 import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
 // import { BreadcrumbTrailOverlay } from '@/components/map/BreadcrumbTrailOverlay';
-import { useConvergenceNotifications } from '@/hooks/useConvergenceNotifications';
+import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 
 interface FieldWithProactiveFeaturesProps {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ interface FieldWithProactiveFeaturesProps {
  */
 export function FieldWithProactiveFeatures({ children }: FieldWithProactiveFeaturesProps) {
   // Initialize convergence prediction system
-  useConvergenceNotifications();
+  useConvergenceMonitor();
 
   return (
     <>
