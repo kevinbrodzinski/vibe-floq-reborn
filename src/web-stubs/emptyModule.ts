@@ -120,14 +120,55 @@ export const reactNativeLibraries = {
 // Stub for react-native-mmkv
 export const reactNativeMmkv = {
   MMKV: class {
-    constructor() {}
-    set() {}
-    get() { return null; }
-    delete() {}
-    clearAll() {}
+    constructor(_: any = {}) {}
+    set(key: string, value: string | number | boolean) {
+      try { localStorage.setItem(key, String(value)); } catch {}
+    }
+    getString(key: string) {
+      try { return localStorage.getItem(key); } catch { return null; }
+    }
+    getNumber(key: string) {
+      const v = localStorage.getItem(key);
+      const n = v != null ? Number(v) : null;
+      return Number.isFinite(n) ? (n as number) : null;
+    }
+    getBoolean(key: string) {
+      const v = localStorage.getItem(key);
+      return v === 'true' ? true : v === 'false' ? false : null;
+    }
+    delete(key: string) { try { localStorage.removeItem(key); } catch {} }
+    clearAll() { try { localStorage.clear(); } catch {} }
   },
-  createMMKV: () => new reactNativeMmkv.MMKV(),
+  createMMKV: () => new (class {
+    set(key: string, value: string | number | boolean) { try { localStorage.setItem(key, String(value)); } catch {} }
+    getString(key: string) { try { return localStorage.getItem(key); } catch { return null; } }
+    delete(key: string) { try { localStorage.removeItem(key); } catch {} }
+    clearAll() { try { localStorage.clear(); } catch {} }
+  })(),
 };
+
+// Named exports to satisfy `import { MMKV } from 'react-native-mmkv'` in web
+export class MMKV {
+  constructor(_: any = {}) {}
+  set(key: string, value: string | number | boolean) {
+    try { localStorage.setItem(key, String(value)); } catch {}
+  }
+  getString(key: string) {
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+  getNumber(key: string) {
+    const v = localStorage.getItem(key);
+    const n = v != null ? Number(v) : null;
+    return Number.isFinite(n) ? (n as number) : null;
+  }
+  getBoolean(key: string) {
+    const v = localStorage.getItem(key);
+    return v === 'true' ? true : v === 'false' ? false : null;
+  }
+  delete(key: string) { try { localStorage.removeItem(key); } catch {} }
+  clearAll() { try { localStorage.clear(); } catch {} }
+}
+export const createMMKV = () => new MMKV();
 
 // Stub for @react-native-async-storage/async-storage
 export const asyncStorage = {
