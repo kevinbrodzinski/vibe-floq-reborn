@@ -43,7 +43,7 @@ export function computeFirstUnread(messages: RallyMessage[], lastSeen: string | 
   if (!lastSeen) return { index: 0, t: messages[0].created_at };
 
   const lastMs = new Date(lastSeen).getTime();
-  const idx = messages.findIndex((m) => new Date(m.created_at).getTime() > lastMs);
+  const idx = messages.findIndex((m) => new Date(m.created_at).getTime() >= lastMs);
 
   if (idx === -1) return { index: null, t: null };
   return { index: idx, t: messages[idx].created_at };
