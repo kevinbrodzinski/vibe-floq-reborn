@@ -42,7 +42,7 @@ export function RallyInboxDrawer({
 
         <div className="p-3 overflow-y-auto">
           {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
-          {error && <div className="text-sm text-destructive">Error: {String(error)}</div>}
+          {!!error && <div className="text-sm text-destructive">Error: {String(error)}</div>}
           {!loading && !error && items.length === 0 && (
             <div className="text-sm text-muted-foreground">No rally invites right now.</div>
           )}

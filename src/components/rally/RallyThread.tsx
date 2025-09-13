@@ -30,7 +30,7 @@ export function RallyThread({ rallyId, firstUnreadAt, children }: RallyThreadPro
     };
 
     markRead();
-    return () => timeout && clearTimeout(timeout);
+    return () => timeout && clearTimeout(timeout as any);
   }, [rallyId]);
 
   React.useEffect(() => {

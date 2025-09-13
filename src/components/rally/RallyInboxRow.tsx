@@ -36,9 +36,9 @@ export function RallyInboxRow({
           <h4 className="font-medium text-sm truncate">
             Rally from {item.creator_name || 'Unknown'}
           </h4>
-          {item.unread_count > 0 && (
+          {item.unread_count && item.unread_count > 0 ? (
             <RallyUnreadBadge count={item.unread_count} />
-          )}
+          ) : null}
         </div>
         
         {item.note && (
@@ -60,7 +60,7 @@ export function RallyInboxRow({
         </div>
       </div>
       
-      {item.unread_count && onMarkRead ? (
+      {item.unread_count && item.unread_count > 0 && onMarkRead ? (
         <Button
           variant="ghost"
           size="sm"

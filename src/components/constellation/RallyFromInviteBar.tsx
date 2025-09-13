@@ -25,7 +25,7 @@ export function RallyFromInviteBar({
   const participants = React.useMemo(() => heads.map(h => h.friend_id), [heads]);
   const centroid = React.useMemo(() => headsCentroid(heads), [heads]);
 
-  const disabled = busy || !participants.length || !centroid;
+  const disabled = busy || participants.length === 0 || !centroid;
 
   const start = async () => {
     if (disabled) return;
@@ -87,7 +87,7 @@ export function RallyFromInviteBar({
             className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             aria-label="Start Rally"
           >
-            {busy ? 'Starting…' : 'Start Rally'}
+            {busy ? 'Starting…' : (centroid ? 'Start Rally' : 'No target')}
           </button>
         </div>
       </div>
