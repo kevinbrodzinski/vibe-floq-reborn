@@ -97,17 +97,15 @@ export function RallyFromInviteBar({
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-            onClick={busy ? undefined : onDismiss}
-            disabled={busy}
-            className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-foreground/5 disabled:opacity-60"
-            aria-disabled={busy || undefined}
+            onClick={onDismiss}
+            className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-foreground/5"
           >
             Not now
           </button>
           <button
             type="button"
             onClick={start}
-            disabled={disabled}
+            disabled={busy || (!centroid && !mapCenter)}
             className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             aria-label={heads.length ? 'Start Rally with nearby friends' : 'Start a solo Rally'}
           >

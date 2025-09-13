@@ -32,9 +32,10 @@ describe('RallyButton', () => {
     render(
       <RallyButton
         lastPingAtMs={Date.now()} // <= 10m hits cooldown
+        allowSolo={false}
         recipientIds={[]}
         note="Solo"
-      />,
+      />
     )
     // No chip rendered
     expect(screen.queryByRole('button')).toBeNull()
@@ -47,7 +48,7 @@ describe('RallyButton', () => {
         allowSolo
         recipientIds={[]}
         note="Solo"
-      />,
+      />
     )
     // Chip appears with accessible label
     const btn = screen.getByRole('button', { name: /rally/i })

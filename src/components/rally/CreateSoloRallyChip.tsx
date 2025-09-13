@@ -29,7 +29,7 @@ export function CreateSoloRallyChip({ lng, lat, label = 'Create Solo Rally' }: P
 
       // Map pan + pulse (event-driven)
       window.dispatchEvent(new CustomEvent('ui:map:flyTo', { detail: { ...center, zoom: 15 } }));
-      window.dispatchEvent(new CustomEvent('ui:nav:dest', { detail: center }));
+      window.dispatchEvent(new CustomEvent('ui:nav:dest', { detail: { ...center, duration: 1200 } }));
       window.dispatchEvent(new CustomEvent('floq:rally:inbox:new', {
         detail: { threadId, rallyId, participants: [], title: 'Rally near you' }
       }));

@@ -37,7 +37,13 @@ describe('RallyFromInviteBar', () => {
       { friend_id: 'b', lng: -118.48, lat: 33.999, t_head: new Date().toISOString() },
     ]
 
-    render(<RallyFromInviteBar heads={heads} cohesion01={0.6} />)
+    render(
+      <RallyFromInviteBar
+        heads={heads}
+        cohesion01={0.6}
+        onDismiss={() => {}}
+      />
+    )
 
     const startBtn = await screen.findByRole('button', { name: /start rally/i })
     fireEvent.click(startBtn)
@@ -56,7 +62,7 @@ describe('RallyFromInviteBar', () => {
   })
 
   it('starts a true solo rally with map-center fallback (no heads)', async () => {
-    render(<RallyFromInviteBar heads={[]} cohesion01={0.2} />)
+    render(<RallyFromInviteBar heads={[]} cohesion01={0.2} onDismiss={() => {}} />)
 
     const startBtn = await screen.findByRole('button', { name: /start rally/i })
     fireEvent.click(startBtn)
@@ -75,7 +81,7 @@ describe('RallyFromInviteBar', () => {
       () => new Promise((resolve) => setTimeout(() => resolve({ rallyId: 'rally_slow' }), 150)),
     )
 
-    render(<RallyFromInviteBar heads={[]} cohesion01={0.2} />)
+    render(<RallyFromInviteBar heads={[]} cohesion01={0.2} onDismiss={() => {}} />)
 
     const startBtn = await screen.findByRole('button', { name: /start rally/i })
     fireEvent.click(startBtn)

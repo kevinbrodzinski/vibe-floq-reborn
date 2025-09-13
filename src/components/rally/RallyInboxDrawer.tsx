@@ -60,10 +60,10 @@ export function RallyInboxDrawer({
                            : 'Pending'
               return (
                 <li key={itm.rally_id} className="rounded-lg border border-border bg-card/60 backdrop-blur p-3">
-                  <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-foreground/10 overflow-hidden flex items-center justify-center text-xs">
                        {itm.creator_avatar ? (
-                         <img src={itm.creator_avatar} alt="Rally creator avatar" className="w-full h-full object-cover" />
+                         <img src={itm.creator_avatar} alt={`${itm.creator_name ?? 'Friend'} avatar`} className="w-full h-full object-cover" />
                        ) : (
                          <span aria-hidden>⚡</span>
                        )}
