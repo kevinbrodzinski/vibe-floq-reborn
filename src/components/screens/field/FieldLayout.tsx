@@ -22,16 +22,16 @@ import { useGeo } from "@/hooks/useGeo";
 import { FlowMetricsProvider } from "@/contexts/FlowMetricsContext";
 import { useLayerManager } from "@/hooks/useLayerManager";
 import { getCurrentMap } from "@/lib/geo/mapSingleton";
+import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
+import { ProximityNotifications } from "@/components/location/ProximityNotifications";
+// Flow-first spatial UI
 import { FlowRouteMapLayer } from "@/components/map/FlowRouteMapLayer";
 import { FlowRetraceHUD } from "@/components/flow/FlowRetraceHUD";
 import { ContinuePatternChip } from "@/components/flow/ContinuePatternChip";
-
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
 import { TimewarpDrawerProvider } from "@/contexts/TimewarpDrawerContext";
 import { TimewarpDrawer } from "@/components/field/TimewarpDrawer";
-import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
-import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
 import { LensSwitcher } from "@/components/field/LensSwitcher";

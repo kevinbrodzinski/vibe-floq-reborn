@@ -134,7 +134,8 @@ export const Events = {
   FLOQ_FLOW_SHOW: 'floq:flow:show',
   FLOQ_FLOW_HIDE: 'floq:flow:hide',
   FLOQ_FLOW_RETRACE: 'floq:flow:retrace',
-  FLOQ_FLOW_RETRACE_GOTO: 'floq:flow:retrace:goto', // NEW: direct step jump
+  // NEW: jump to a specific step during retrace (0-based index)
+  FLOQ_FLOW_RETRACE_GOTO: 'floq:flow:retrace:goto',
   
   // Breadcrumb System (legacy - use Flow events instead)
   FLOQ_BREADCRUMB_SHOW: 'floq:breadcrumb:show',

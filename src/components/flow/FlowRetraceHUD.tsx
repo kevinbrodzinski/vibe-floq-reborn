@@ -16,6 +16,7 @@ export function FlowRetraceHUD() {
       `}</style>
       <div
         className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-[620] pointer-events-none"
+        role="status"
         aria-live="polite"
       >
         <div className="px-3 py-1.5 rounded-full bg-black/80 border border-white/10 backdrop-blur-xl text-white text-xs font-medium flex items-center gap-2 pointer-events-auto">
