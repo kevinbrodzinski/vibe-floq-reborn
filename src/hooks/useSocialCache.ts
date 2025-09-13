@@ -3,7 +3,7 @@ import { socialCache, type FriendHead, type PathPoint } from '@/lib/social/socia
 import { eventBridge, Events, type EventPayloads } from '@/services/eventBridge';
 
 interface VelocityData {
-  velocity: [number, number]; // [lng/s, lat/s]
+  velocity: [number, number]; // [vx_mps, vy_mps] - meters/sec east, north
   speed: number; // m/s
   heading: number; // degrees
   confidence: number; // 0-1
@@ -71,7 +71,9 @@ export function useSocialCache() {
     const dx = dlng * metersPerDegreeLng;
     const dy = dlat * metersPerDegreeLat;
     
-    const speed = Math.sqrt(dx * dx + dy * dy) / dt;
+    const vx_mps = dx / dt;
+    const vy_mps = dy / dt;
+    const speed = Math.sqrt(vx_mps * vx_mps + vy_mps * vy_mps);
     const heading = Math.atan2(dx, dy) * 180 / Math.PI;
     
     // Confidence based on consistency of recent measurements
@@ -81,8 +83,8 @@ export function useSocialCache() {
       const midPoint = recent[Math.floor(recent.length / 2)];
       const midDt = (midPoint.timestamp - recent[0].timestamp) / 1000;
       const expectedPos = [
-        lng1 + (dlng / dt) * midDt,
-        lat1 + (dlat / dt) * midDt
+        lng1 + (vx_mps * midDt) / metersPerDegreeLng,
+        lat1 + (vy_mps * midDt) / metersPerDegreeLat
       ];
       const actualPos = midPoint.position;
       const error = Math.sqrt(
@@ -94,7 +96,7 @@ export function useSocialCache() {
     }
     
     return {
-      velocity: [dlng / dt, dlat / dt],
+      velocity: [vx_mps, vy_mps],     // store as meters/sec (east, north)
       speed,
       heading: heading < 0 ? heading + 360 : heading,
       confidence,
@@ -148,9 +150,13 @@ export function useSocialCache() {
     // Reduce confidence for stale data
     const adjustedConfidence = confidence * Math.exp(-age / 30); // Decay over 30s
     
+    const metersPerDegLat = 110540;
+    const metersPerDegLng = 111320 * Math.cos(friend.lat * Math.PI / 180);
+    const dLngDeg = (velocity[0] * timeHorizon) / metersPerDegLng;
+    const dLatDeg = (velocity[1] * timeHorizon) / metersPerDegLat;
     const futurePosition: [number, number] = [
-      friend.lng + velocity[0] * timeHorizon,
-      friend.lat + velocity[1] * timeHorizon
+      friend.lng + dLngDeg,
+      friend.lat + dLatDeg
     ];
     
     return {
@@ -193,9 +199,9 @@ export function useSocialCache() {
     const dy = f2.lat - f1.lat;
     const distance = Math.sqrt(dx * dx + dy * dy) * 111320; // rough distance in meters
     
-    // Relative velocity
+    // Relative velocity (already in m/s)
     const relVel = [v2.velocity[0] - v1.velocity[0], v2.velocity[1] - v1.velocity[1]];
-    const relSpeed = Math.sqrt(relVel[0] * relVel[0] + relVel[1] * relVel[1]) * 111320;
+    const relSpeed = Math.sqrt(relVel[0] * relVel[0] + relVel[1] * relVel[1]);
     
     if (relSpeed < 0.1) return { probability: 0 }; // No relative movement
     
@@ -210,9 +216,13 @@ export function useSocialCache() {
     
     // Rough meeting point calculation
     const meetingTime = timeToClose / 2; // Assume they meet halfway in time
+    const metersPerDegLat = 110540;
+    const metersPerDegLng = 111320 * Math.cos(f1.lat * Math.PI / 180);
+    const dLngDeg = (v1.velocity[0] * meetingTime) / metersPerDegLng;
+    const dLatDeg = (v1.velocity[1] * meetingTime) / metersPerDegLat;
     const meetingPoint: [number, number] = [
-      f1.lng + v1.velocity[0] * meetingTime,
-      f1.lat + v1.velocity[1] * meetingTime
+      f1.lng + dLngDeg,
+      f1.lat + dLatDeg
     ];
     
     return {

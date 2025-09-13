@@ -1,10 +1,15 @@
-import { EventEmitter } from 'events';
+// Browser-compatible EventEmitter replacement
+class EventBridge {
+  private listeners: Map<string, Array<(data?: any) => void>>;
+  private maxListeners: number;
 
-// Centralized event bus for type-safe cross-component communication
-class EventBridge extends EventEmitter {
   constructor() {
-    super();
-    this.setMaxListeners(100); // Support many concurrent listeners
+    this.listeners = new Map();
+    this.maxListeners = 100;
+  }
+
+  setMaxListeners(n: number): void {
+    this.maxListeners = n;
   }
 
   // Type-safe emit with namespaced events
@@ -12,32 +17,75 @@ class EventBridge extends EventEmitter {
     if (import.meta.env.DEV) {
       console.debug(`[EventBridge] ${event}`, data);
     }
-    return super.emit(event, data);
+    
+    const eventListeners = this.listeners.get(event);
+    if (!eventListeners || eventListeners.length === 0) return false;
+    
+    eventListeners.forEach(listener => {
+      try {
+        listener(data);
+      } catch (error) {
+        console.error(`[EventBridge] Error in listener for ${event}:`, error);
+      }
+    });
+    
+    return true;
   }
 
   // Type-safe listener with automatic cleanup tracking
   on<T = any>(event: string, listener: (data?: T) => void): this {
-    return super.on(event, listener);
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    
+    const eventListeners = this.listeners.get(event)!;
+    if (eventListeners.length >= this.maxListeners) {
+      console.warn(`[EventBridge] Max listeners (${this.maxListeners}) exceeded for event: ${event}`);
+    }
+    
+    eventListeners.push(listener);
+    return this;
   }
 
   // One-time listener
   once<T = any>(event: string, listener: (data?: T) => void): this {
-    return super.once(event, listener);
+    const wrappedListener = (data?: T) => {
+      listener(data);
+      this.off(event, wrappedListener);
+    };
+    return this.on(event, wrappedListener);
   }
 
   // Remove specific listener
   off<T = any>(event: string, listener: (data?: T) => void): this {
-    return super.off(event, listener);
+    const eventListeners = this.listeners.get(event);
+    if (!eventListeners) return this;
+    
+    const index = eventListeners.indexOf(listener);
+    if (index > -1) {
+      eventListeners.splice(index, 1);
+      if (eventListeners.length === 0) {
+        this.listeners.delete(event);
+      }
+    }
+    
+    return this;
   }
 
   // Remove all listeners for an event
   removeAllListeners(event?: string): this {
-    return super.removeAllListeners(event);
+    if (event) {
+      this.listeners.delete(event);
+    } else {
+      this.listeners.clear();
+    }
+    return this;
   }
 
   // Get listener count for debugging
   getListenerCount(event: string): number {
-    return this.listenerCount(event);
+    const eventListeners = this.listeners.get(event);
+    return eventListeners ? eventListeners.length : 0;
   }
 
   // Emit to window for legacy compatibility
@@ -87,6 +135,8 @@ export const Events = {
   // Convergence System
   FLOQ_CONVERGENCE_DETECTED: 'floq:convergence:detected',
   FLOQ_CONVERGENCE_RALLY_CREATE: 'floq:convergence:rallyCreate',
+  RALLY_CREATE_REQUEST: 'floq:rally:createRequest',
+  CONVERGENCE_DETECTED: 'floq:convergence:detected',
   
   // Social & Presence
   FLOQ_PRESENCE_UPDATE: 'floq:presence:update',
@@ -127,6 +177,25 @@ export interface EventPayloads {
   [Events.FLOQ_BREADCRUMB_RETRACE]: { fromPoint?: string };
   
   [Events.FLOQ_CONVERGENCE_DETECTED]: {
+    agentIds?: string[];
+    friendId: string;
+    friendName: string;
+    probability: number;
+    timeToMeet: number;
+    predictedLocation: { lat: number; lng: number; venueName?: string };
+    confidence: number;
+  };
+  
+  [Events.RALLY_CREATE_REQUEST]: {
+    location: { lat: number; lng: number; venueName?: string };
+    invitees: string[];
+    message?: string;
+    autoExpire?: number;
+    type?: 'convergence' | 'manual';
+  };
+  
+  [Events.CONVERGENCE_DETECTED]: {
+    agentIds?: string[];
     friendId: string;
     friendName: string;
     probability: number;

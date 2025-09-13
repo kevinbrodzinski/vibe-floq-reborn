@@ -12,7 +12,7 @@ type WindsQuality = {
   strideMax: number;       // max spacing (defaults to 18)
 };
 
-const ADD_BLEND = (PIXI as any)?.BLEND_MODES?.ADD ?? ('add' as any);
+const ADD_BLEND = 'add' as any;
 
 // small hash for stable per-path phase offset
 function hash32(s: string) {

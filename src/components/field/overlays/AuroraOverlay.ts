@@ -3,7 +3,7 @@ import { auroraTokens } from '@/lib/field/visualTokens';
 import type { AuroraEventLite } from '@/lib/field/types';
 import { P4 } from '@/lib/field/constants';
 
-const ADD_BLEND = (PIXI as any)?.BLEND_MODES?.ADD ?? ('add' as any);
+const ADD_BLEND = 'add' as any;
 
 type AuroraQuality = {
   tier: 'low' | 'mid' | 'high';

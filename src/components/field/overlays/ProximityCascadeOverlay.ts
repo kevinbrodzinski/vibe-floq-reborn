@@ -5,7 +5,7 @@
 
 import * as PIXI from 'pixi.js';
 
-const ADD_BLEND = (PIXI as any).BLEND_MODES?.ADD ?? ('add' as any);
+const ADD_BLEND = 'add' as any;
 
 export type CascadeEvent = {
   id: string;        // stable id for cooldown (e.g., gridKey or meeting id)

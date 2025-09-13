@@ -4,6 +4,7 @@ import { useLayerManager } from '@/hooks/useLayerManager';
 import { useNavDestination } from '@/hooks/useNavDestination';
 import { useTileVenuesLayer } from '@/map/layers/useTileVenuesLayer';
 import { useSocialWeatherLayer } from '@/map/layers/useSocialWeatherLayer';
+import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPointsLayer';
 import type { FieldData } from './FieldDataProvider';
 
 interface LayersRuntimeProps {
@@ -21,5 +22,6 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   useTileVenuesLayer(map, data.nearbyVenues);
   useSocialWeatherLayer(map, data.weatherCells);
 
-  return null; // Just handles standard venue/weather layers
+  // Predicted meeting points (tiny circles) driven by convergence events
+  return <PredictedMeetingPointsLayer />;
 }

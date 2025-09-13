@@ -27,7 +27,7 @@ export class AtmoTintOverlay {
     this.rect.rect(0, height / 2, width, height / 2)
              .fill({ color: parseInt(cfg.bottom.slice(1), 16), alpha: cfg.alpha });
     
-    (this.rect as any).blendMode = (PIXI as any).BLEND_MODES?.MULTIPLY ?? ('multiply' as any);
+    (this.rect as any).blendMode = 'multiply' as any;
   }
 
   private bucketFor(now: Date): Bucket {

@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { OverlayBase } from '@/features/field/overlays/OverlayBase';
 
-const ADD = (PIXI as any).BLEND_MODES?.ADD ?? ('add' as any);
+const ADD = 'add' as any;
 
 type Arc = { g: PIXI.Graphics; born: number; ttl: number; x: number; y: number; r: number };
 
