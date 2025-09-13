@@ -10,8 +10,9 @@ interface VelocityData {
   lastUpdate: number;
 }
 
-interface EnhancedFriendHead extends FriendHead {
+export interface EnhancedFriendHead extends FriendHead {
   id: string;
+  profile_id?: string;
   name?: string;
   velocity?: VelocityData;
   lastSeen: number;
