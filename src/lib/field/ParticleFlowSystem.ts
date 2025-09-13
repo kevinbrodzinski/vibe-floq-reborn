@@ -3,21 +3,21 @@ import type { VibeToken } from '@/types/field';
 import { vibeToTint } from '@/lib/vibe/tokens';
 import { PARTICLE, FIELD_LOD } from '@/lib/field/constants';
 
-interface TrailSegment {
+interface FlowSegment {
   sprite: PIXI.Sprite;
   timestamp: number;
 }
 
 /**
- * Production-ready trail system with ParticleContainer and LOD gates
+ * Production-ready flow system with ParticleContainer and LOD gates
  * Patent-compliant decay (2-60s) with performance budgets
  */
-export class TrailSystem {
+export class ParticleFlowSystem {
   private container: PIXI.ParticleContainer;
   private pool: PIXI.Sprite[] = [];
-  private trails = new Map<string, TrailSegment[]>();
-  private maxSegmentsPerTrail = 18;
-  private maxTrails = 600;
+  private flows = new Map<string, FlowSegment[]>();
+  private maxSegmentsPerFlow = 18;
+  private maxFlows = 600;
 
   constructor(parent: PIXI.Container, capacity = 4000) {
     // Use ParticleContainer for massive performance improvement
@@ -35,7 +35,7 @@ export class TrailSystem {
   }
 
   /**
-   * Add trail point with LOD and privacy gates
+   * Add flow point with LOD and privacy gates
    */
   addPoint(
     clusterId: string, 
@@ -46,18 +46,18 @@ export class TrailSystem {
     zoom: number,
     speed: number
   ) {
-    // LOD gates: only show trails at high zoom with sufficient crowd
+    // LOD gates: only show flows at high zoom with sufficient crowd
     if (zoom < FIELD_LOD.TRAILS_MIN_ZOOM || count < FIELD_LOD.K_MIN || speed < FIELD_LOD.MIN_SPEED) {
-      return; // Skip trail for privacy/performance
+      return; // Skip flow for privacy/performance
     }
 
-    let segments = this.trails.get(clusterId);
+    let segments = this.flows.get(clusterId);
     if (!segments) {
-      if (this.trails.size >= this.maxTrails) {
+      if (this.flows.size >= this.maxFlows) {
         this.evictOldest();
       }
       segments = [];
-      this.trails.set(clusterId, segments);
+      this.flows.set(clusterId, segments);
     }
 
     // Acquire sprite from pool
@@ -71,8 +71,8 @@ export class TrailSystem {
 
     segments.push({ sprite, timestamp: performance.now() });
 
-    // Limit trail length
-    while (segments.length > this.maxSegmentsPerTrail) {
+    // Limit flow length
+    while (segments.length > this.maxSegmentsPerFlow) {
       this.recycle(clusterId, segments.shift()!);
     }
   }
@@ -87,7 +87,7 @@ export class TrailSystem {
     const decayTime = FIELD_LOD.AFTERGLOW_MIN_MS + 
       (FIELD_LOD.AFTERGLOW_MAX_MS - FIELD_LOD.AFTERGLOW_MIN_MS) * afterglowIntensity;
 
-    for (const [clusterId, segments] of this.trails.entries()) {
+    for (const [clusterId, segments] of this.flows.entries()) {
       for (let i = segments.length - 1; i >= 0; i--) {
         const segment = segments[i];
         const age = now - segment.timestamp;
@@ -105,30 +105,30 @@ export class TrailSystem {
       }
       
       if (segments.length === 0) {
-        this.trails.delete(clusterId);
+        this.flows.delete(clusterId);
       }
     }
   }
 
   clearAll() {
-    for (const [clusterId, segments] of this.trails) {
+    for (const [clusterId, segments] of this.flows) {
       segments.forEach(segment => this.recycle(clusterId, segment));
     }
-    this.trails.clear();
+    this.flows.clear();
   }
 
-  private recycle(clusterId: string, segment: TrailSegment) {
+  private recycle(clusterId: string, segment: FlowSegment) {
     this.container.removeChild(segment.sprite);
     this.pool.push(segment.sprite);
   }
 
   private evictOldest() {
-    const firstKey = this.trails.keys().next().value;
+    const firstKey = this.flows.keys().next().value;
     if (!firstKey) return;
     
-    const segments = this.trails.get(firstKey)!;
+    const segments = this.flows.get(firstKey)!;
     segments.forEach(segment => this.recycle(firstKey, segment));
-    this.trails.delete(firstKey);
+    this.flows.delete(firstKey);
   }
 
   /**
@@ -136,8 +136,8 @@ export class TrailSystem {
    */
   getStats() {
     return {
-      activeTrails: this.trails.size,
-      totalSegments: Array.from(this.trails.values()).reduce((sum, segs) => sum + segs.length, 0),
+      activeFlows: this.flows.size,
+      totalSegments: Array.from(this.flows.values()).reduce((sum, segs) => sum + segs.length, 0),
       poolSize: this.pool.length,
       containerChildren: this.container.children.length
     };

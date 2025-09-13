@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react'
 import { Application, Container, Graphics } from 'pixi.js';
 import { useEnhancedFieldTiles } from '@/hooks/useEnhancedFieldTiles';
 import { clusterWorker } from '@/lib/clusterWorker';
-import { TrailSystem } from '@/lib/field/TrailSystem';
+import { FlowSystem } from '@/lib/field/FlowSystem';
 import { ClusterPool } from '@/lib/field/ClusterPool';
 import { projectToScreen, getMapInstance } from '@/lib/geo/project';
 import { crowdCountToRadius } from '@/lib/geo';
@@ -46,7 +46,7 @@ export const FieldCanvasProduction: React.FC<FieldCanvasProductionProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<Application | null>(null);
-  const trailSystemRef = useRef<TrailSystem | null>(null);
+  const trailSystemRef = useRef<FlowSystem | null>(null);
   const clusterPoolRef = useRef<ClusterPool | null>(null);
   const clustersRef = useRef<SocialCluster[]>([]);
   const prevClustersRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -92,7 +92,7 @@ export const FieldCanvasProduction: React.FC<FieldCanvasProductionProps> = ({
         app.stage.addChild(clusterContainer);
         
         // Initialize systems
-        trailSystemRef.current = new TrailSystem(trailContainer);
+        trailSystemRef.current = new FlowSystem(trailContainer);
         clusterPoolRef.current = new ClusterPool(clusterContainer);
 
       } catch (error) {
@@ -269,7 +269,7 @@ export const FieldCanvasProduction: React.FC<FieldCanvasProductionProps> = ({
       
       console.log('[FieldCanvas] Performance metrics:', {
         zoom: currentZoomRef.current,
-        trails: stats?.activeTrails ?? 0,
+        flows: stats?.activeFlows ?? 0,
         segments: stats?.totalSegments ?? 0,
         poolSize: poolStats?.poolSize ?? 0,
         deltaMS: app.ticker.deltaMS,

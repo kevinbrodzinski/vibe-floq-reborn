@@ -22,7 +22,7 @@ import { VenueSocialPortal } from "@/components/VenueSocialPortal";
 import { VenueActionBar } from "@/components/venue/VenueActionBar";
 import { CreateSoloRallyChip } from "@/components/rally/CreateSoloRallyChip";
 import { RetracePathChip } from "@/components/breadcrumb/RetracePathChip";
-import { useBreadcrumbTrail } from "@/hooks/useBreadcrumbTrail";
+import { useFlowRoute } from "@/hooks/useFlowRoute";
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -40,7 +40,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
-  const { addVenueVisit } = useBreadcrumbTrail();
+  const { addRoutePoint } = useFlowRoute();
 
   // Handle browser back button
   useEffect(() => {
@@ -73,7 +73,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
       
       // Add to breadcrumb trail when joining venue
       if (venue) {
-        addVenueVisit({
+        addRoutePoint({
           id: venue.id,
           name: venue.name,
           lat: venue.lat,

@@ -27,7 +27,7 @@ import { ClusterTooltip } from '@/components/field/ClusterTooltip';
 import { ConstellationRenderer } from './ConstellationRenderer';
 import { useClusters } from '@/hooks/useClusters';
 import { useClustersLive } from '@/hooks/useClustersLive';
-import { ParticleTrailSystem } from '@/lib/field/ParticleTrailSystem';
+import { ParticleFlowSystem } from '@/lib/field/ParticleFlowSystem';
 import { ConvergenceOverlay } from './overlays/ConvergenceOverlay';
 import { FlowFieldOverlay } from './overlays/FlowFieldOverlay';
 import { ConvergenceLanes } from './overlays/ConvergenceLanes';
@@ -161,7 +161,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
   const constellationContainerRef = useRef<Container | null>(null);
-  const trailContainerRef = useRef<Container | null>(null); // Phase 1: Particle trails
+  const flowContainerRef = useRef<Container | null>(null); // Phase 1: Particle flows
   const overlayContainerRef = useRef<Container | null>(null); // Phase 2: Convergence overlay
   const userDotRef = useRef<Graphics | null>(null);  // User location dot
   const tilePoolRef = useRef<TileSpritePool | null>(null);
@@ -172,8 +172,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Reusable graphics objects for performance
   const debugGraphicsRef = useRef<Graphics | null>(null);
   const glowFilterRef = useRef<any>(null);
-  // Phase 1: Particle trail system
-  const trailSystemRef = useRef<ParticleTrailSystem | null>(null);
+  // Phase 1: Particle flow system
+  const flowSystemRef = useRef<ParticleFlowSystem | null>(null);
   // Phase 2: Convergence overlay and breathing system
   const convergenceOverlayRef = useRef<ConvergenceOverlay | null>(null);
   const breathingSystemRef = useRef<BreathingSystem | null>(null);
@@ -395,11 +395,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         heatContainerRef.current = heatContainer;
         peopleContainerRef.current = peopleContainer;
         constellationContainerRef.current = constellationContainer;
-        trailContainerRef.current = trailContainer;
+        flowContainerRef.current = trailContainer;
         overlayContainerRef.current = overlayContainer;
         
-        // Phase 1: Initialize particle trail system
-        trailSystemRef.current = new ParticleTrailSystem(trailContainer);
+        // Phase 1: Initialize particle flow system
+        flowSystemRef.current = new ParticleFlowSystem(trailContainer);
         
         // Phase 2: Initialize breathing system with renderer (RN-safe)
         breathingSystemRef.current = new BreathingSystem(heatContainer, app.renderer);
@@ -880,8 +880,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 sprite.tint = vibeColor;
                 sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
                 
-                // Phase 1: Add particle trail if cluster has momentum
-                if (trailSystemRef.current && c.momentum && c.momentum > 0.5) {
+                // Phase 1: Add particle flow if cluster has momentum
+                if (flowSystemRef.current && c.momentum && c.momentum > 0.5) {
                   // trailSystemRef.current.addPosition(key, c.x, c.y, c.vibe); // TODO: Fix trail integration
                 }
                 
@@ -1321,9 +1321,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // ---- USER LOCATION DOT ----
       // Now handled separately in useEffect hooks for better reactivity
 
-      // Phase 1: Update particle trail system
-      if (trailSystemRef.current) {
-        trailSystemRef.current.update(16); // Assume 60fps (16ms)
+      // Phase 1: Update particle flow system
+      if (flowSystemRef.current) {
+        flowSystemRef.current.update(16); // Assume 60fps (16ms)
       }
 
       // Frame budget check - skip non-essential overlays if frame is already heavy
@@ -1551,13 +1551,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         try {
           heatContainerRef.current?.removeChildren();
           peopleContainerRef.current?.removeChildren();
-          trailContainerRef.current?.removeChildren(); // Phase 1: Clean trails
+          flowContainerRef.current?.removeChildren(); // Phase 1: Clean flows
           if (tilePoolRef.current && typeof tilePoolRef.current.clearAll === "function") {
             tilePoolRef.current.clearAll();
           }
-          // Phase 1: Clean particle trail system
-          if (trailSystemRef.current) {
-            trailSystemRef.current.clearAll();
+          // Phase 1: Clean particle flow system
+          if (flowSystemRef.current) {
+            flowSystemRef.current.clearAll();
           }
           // Phase 2: Clean breathing system
           if (breathingSystemRef.current) {

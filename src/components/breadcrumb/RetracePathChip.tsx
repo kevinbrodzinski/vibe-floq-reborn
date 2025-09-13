@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RotateCcw, Clock, MapPin, ChevronRight } from 'lucide-react';
-import { useBreadcrumbTrail } from '@/hooks/useBreadcrumbTrail';
+import { useFlowRoute } from '@/hooks/useFlowRoute';
 import { Chip } from '@/components/ui/Chip';
 import {
   Sheet,
@@ -23,7 +23,7 @@ interface RetracePathChipProps {
  */
 export function RetracePathChip({ className }: RetracePathChipProps) {
   const [showPath, setShowPath] = useState(false);
-  const { getRetraceVenues, getPathStats, canRetrace, currentPath } = useBreadcrumbTrail();
+  const { getRetraceVenues, getPathStats, canRetrace, currentPath } = useFlowRoute();
 
   if (!canRetrace || !currentPath) return null;
 
@@ -72,7 +72,7 @@ export function RetracePathChip({ className }: RetracePathChipProps) {
         type="button"
         aria-label={`Retrace your path through ${retraceVenues.length} recent venues`}
       >
-        Retrace Path ({retraceVenues.length})
+        Follow Route ({retraceVenues.length})
       </Chip>
 
       <Sheet open={showPath} onOpenChange={setShowPath}>
@@ -84,7 +84,7 @@ export function RetracePathChip({ className }: RetracePathChipProps) {
           <SheetHeader className="space-y-2">
             <SheetTitle className="flex items-center gap-2">
               <RotateCcw className="h-5 w-5" />
-              Your Recent Path
+              Your Flow Route
             </SheetTitle>
             <SheetDescription>
               {stats && (
@@ -144,7 +144,7 @@ export function RetracePathChip({ className }: RetracePathChipProps) {
 
           <div className="mt-6 pt-4 border-t">
             <p className="text-xs text-muted-foreground text-center">
-              Path is automatically tracked for 15 minutes after each venue visit
+              Route is automatically tracked for 15 minutes after each venue visit
             </p>
           </div>
         </SheetContent>
