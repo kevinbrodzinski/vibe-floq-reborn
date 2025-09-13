@@ -63,7 +63,10 @@ export function RallyButton({
 
   if (!ok) return null
 
-  const label = groupPingLabel(nearby, cohesion01)
+  const label =
+    allowSolo && nearby < 2
+      ? 'Start a Rally'
+      : groupPingLabel(nearby, cohesion01)
   const inferredRecipients: string[] = recipientIds ?? []
 
   const onClick = async () => {
@@ -93,7 +96,11 @@ export function RallyButton({
       onClick={onClick}
       className={className}
       icon={<span aria-hidden>⚡</span>}
-      aria-label={`${label} - Start rally with ${nearby} nearby friends`}
+      aria-label={
+        allowSolo && nearby < 2
+          ? 'Start a Rally'
+          : `${label} - Start rally with ${nearby} nearby friends`
+      }
       type="button"
       disabled={busy}
     >

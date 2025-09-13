@@ -2,6 +2,7 @@ import * as React from 'react';
 import { createRally, headsCentroid } from '@/lib/api/rally';
 import { createRallyInboxThread } from '@/lib/api/rallyInbox';
 import { useToast } from '@/hooks/use-toast';
+import { getCurrentMap } from '@/lib/geo/mapSingleton';
 
 type Heads = Array<{ friend_id: string; friend_name?: string; lng:number; lat:number; t_head:string }>;
 
@@ -23,40 +24,52 @@ export function RallyFromInviteBar({
   const [busy, setBusy] = React.useState(false);
 
   const participants = React.useMemo(() => heads.map(h => h.friend_id), [heads]);
+  // Primary centroid from heads
   const centroid = React.useMemo(() => headsCentroid(heads), [heads]);
+  // Fallback centroid (solo): map center if no heads centroid is available
+  const mapCenter = React.useMemo(() => {
+    try {
+      const c = getCurrentMap()?.getCenter?.();
+      return c ? { lng: c.lng, lat: c.lat } : null;
+    } catch {
+      return null;
+    }
+  }, []);
 
-  // Solo Rally: allow zero recipients; only require a valid centroid
-  const disabled = busy || !centroid;
+  // SOLO SUPPORT: allow zero recipients; require either heads centroid OR map center
+  const disabled = busy || (!centroid && !mapCenter);
 
   const start = async () => {
     if (disabled) return;
     setBusy(true);
     try {
+      const center = centroid ?? mapCenter ?? { lng: 0, lat: 0 };
       const { rallyId } = await createRally({
-        center: centroid!,
-        recipients: participants,
+        center,
+        recipients: participants, // may be []
         ttlMin: 60,
-        note: (cohesion01 ?? 0) >= 0.55 ? 'High sync rally' : 'Friends rally'
+        note: (cohesion01 ?? 0) >= 0.55 ? 'High sync rally' : (participants.length ? 'Friends rally' : 'Solo rally')
       });
 
       // Create inbox thread
       const title = defaultTitle({ nearbyCount: heads.length });
-      await createRallyInboxThread({
+      const { threadId } = await createRallyInboxThread({
         rallyId,
         title,
         participants,
-        centroid
+        centroid: center
       });
 
       toast({ title: 'Rally started', description: 'Your invitees have been pinged.' });
 
-      // Broadcast rally start + inbox creation (for local UX hooks)
+      // Broadcast rally start event
       window.dispatchEvent(new CustomEvent('floq:rally:start', {
-        detail: { rallyId, participants, centroid, source: 'constellation' }
+        detail: { rallyId, participants, centroid: center, source: 'constellation' }
       }));
 
+      // Announce inbox thread creation
       window.dispatchEvent(new CustomEvent('floq:rally:inbox:new', {
-        detail: { threadId: 'unknown', rallyId, participants, title } // your server returns the actual id
+        detail: { threadId, rallyId, participants, title }
       }));
 
       onDismiss?.();
@@ -67,17 +80,26 @@ export function RallyFromInviteBar({
     }
   };
 
+  // Banner copy:
+  // - If we have heads: keep the original "friends" copy
+  // - If no heads: solo-friendly prompt
+  const bannerText =
+    heads.length > 0
+      ? ((cohesion01 ?? 0) >= 0.55
+          ? 'High sync detected — start a Rally?'
+          : 'Friends are close — start a Rally?')
+      : 'Start a Rally?';
+
   return (
     <div className="fixed left-4 right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[610]">
       <div className="flex items-center gap-3 rounded-xl bg-card/90 border border-border backdrop-blur px-3 py-2">
-        <div className="text-sm font-medium">
-          {(cohesion01 ?? 0) >= 0.55 ? 'High sync detected — start a Rally?' : 'Friends are close — start a Rally?'}
-        </div>
+        <div className="text-sm font-medium">{bannerText}</div>
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             onClick={onDismiss}
-            className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-foreground/5"
+            className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-foreground/5 disabled:opacity-60"
+            disabled={busy}
           >
             Not now
           </button>
@@ -88,7 +110,7 @@ export function RallyFromInviteBar({
             className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             aria-label="Start Rally"
           >
-            {busy ? 'Starting…' : (centroid ? 'Start Rally' : 'No target')}
+            {busy ? 'Starting…' : 'Start Rally'}
           </button>
         </div>
       </div>
