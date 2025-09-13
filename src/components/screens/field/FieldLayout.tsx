@@ -46,6 +46,7 @@ import { MapNavBridge } from '@/components/nav/MapNavBridge';
 import { InboxNavBridge } from '@/components/nav/InboxNavBridge';
 import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
 import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
+import { FlowAndVenueBridge } from '@/components/system/FlowAndVenueBridge';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -218,6 +219,7 @@ export const FieldLayout = () => {
             <ExploreDrawerProvider>
               <RallyInboxUIProvider>
                 {/* Global bridges */}
+                <FlowAndVenueBridge />
                 <MapNavBridge />
                 <InboxNavBridge />
                 <RallyNavBridge />

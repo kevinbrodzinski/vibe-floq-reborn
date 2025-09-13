@@ -121,6 +121,9 @@ export const Events = {
   UI_MAP_PULSE: 'ui:map:pulse',
   UI_NAV_DEST: 'ui:nav:dest',
   UI_VENUE_SELECT: 'ui:venue:select',
+  UI_VENUE_JOIN: 'ui:venue:join',
+  UI_VENUE_SAVE: 'ui:venue:save',
+  UI_VENUE_PLAN: 'ui:venue:plan',
   
   // Layer toggles
   FLOQ_LAYER_TOGGLE: 'floq:layer:toggle',
@@ -139,6 +142,7 @@ export const Events = {
   FLOQ_FLOW_HIDE: 'floq:flow:hide',
   FLOQ_FLOW_RETRACE: 'floq:flow:retrace',
   FLOQ_FLOW_RETRACE_GOTO: 'floq:flow:retrace:goto',
+  FLOQ_FLOW_START_REQUEST: 'floq:flow:startRequest',
   
   // Breadcrumb System (legacy - use Flow events instead)
   FLOQ_BREADCRUMB_SHOW: 'floq:breadcrumb:show',
@@ -166,6 +170,9 @@ export interface EventPayloads {
   [Events.UI_MAP_PULSE]: { lng: number; lat: number; color?: string; duration?: number };
   [Events.UI_NAV_DEST]: { lng: number; lat: number; duration?: number };
   [Events.UI_VENUE_SELECT]: { venueId: string };
+  [Events.UI_VENUE_JOIN]: { venueId: string };
+  [Events.UI_VENUE_SAVE]: { venueId: string };
+  [Events.UI_VENUE_PLAN]: { venueId: string };
 
   // Layer toggles
   [Events.FLOQ_LAYER_TOGGLE]: { id: 'flow-route'|'predicted-meet'|'breadcrumb-trail'; enabled?: boolean };
@@ -194,6 +201,7 @@ export interface EventPayloads {
   [Events.FLOQ_FLOW_HIDE]: {};
   [Events.FLOQ_FLOW_RETRACE]: { fromPoint?: string };
   [Events.FLOQ_FLOW_RETRACE_GOTO]: { index: number };
+  [Events.FLOQ_FLOW_START_REQUEST]: { venueId: string };
   
   // Breadcrumb System events (legacy)
   [Events.FLOQ_BREADCRUMB_SHOW]: { 

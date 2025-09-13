@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { getVibeToken } from '@/lib/tokens/vibeTokens'
 import { useFlowMetrics } from '@/contexts/FlowMetricsContext'
+import { emitEvent, Events } from '@/services/eventBridge'
 
 export type TileVenue = {
   pid: string
@@ -101,7 +102,7 @@ export function ExploreDrawer({
       {/* Bottom sheet */}
       {open && (
         <div
-          className="fixed left-0 right-0 bottom-0 z-[600] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur"
+          className="fixed left-0 right-0 bottom-0 z-[720] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur pointer-events-auto"
           style={{ background:'rgba(12,16,26,0.9)', borderTop:'1px solid rgba(255,255,255,0.15)' }}
           role="dialog" aria-label="Explore nearby"
         >
@@ -144,9 +145,9 @@ export function ExploreDrawer({
                 {/* Flow Controls */}
                 {canStart ? (
                   <button
-                    onClick={onStartFlow}
-                    disabled={!onStartFlow}
-                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150 disabled:opacity-60"
+                    type="button"
+                    onClick={() => onStartFlow?.() ?? emitEvent(Events.FLOQ_FLOW_START_REQUEST, { venueId: primary.pid })}
+                    className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150"
                     aria-label="Start Flow"
                   >
                     ▶ Start Flow
@@ -182,20 +183,23 @@ export function ExploreDrawer({
 
                 {/* Venue Actions */}
                 <button
-                  onClick={() => onJoin(primary.pid)}
+                  type="button"
+                  onClick={() => onJoin?.(primary.pid) ?? emitEvent(Events.UI_VENUE_JOIN, { venueId: primary.pid })}
                   className="px-3 py-2 rounded-md text-xs font-semibold transition-all duration-150 hover:scale-[1.03]"
                   style={{ background: t.base, color: t.fg }}
                 >
                   Join
                 </button>
                 <button
-                  onClick={() => onSave(primary.pid)}
+                  type="button"
+                  onClick={() => onSave?.(primary.pid) ?? emitEvent(Events.UI_VENUE_SAVE, { venueId: primary.pid })}
                   className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
                 >
                   Save
                 </button>
                 <button
-                  onClick={() => onPlan(primary.pid)}
+                  type="button"
+                  onClick={() => onPlan?.(primary.pid) ?? emitEvent(Events.UI_VENUE_PLAN, { venueId: primary.pid })}
                   className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150"
                 >
                   Plan
