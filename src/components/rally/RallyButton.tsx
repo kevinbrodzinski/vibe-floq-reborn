@@ -35,7 +35,7 @@ type Props = {
   note?: string
   className?: string
   onCreated?: (rallyId: string) => void
-  /** render even with 0 nearby friends (explicit CTA) */
+  /** render even without a "natural" moment (explicit CTA) */
   allowSolo?: boolean
 }
 
@@ -101,10 +101,11 @@ export function RallyButton({
           ? 'Start a Rally'
           : `${label} - Start rally with ${nearby} nearby friends`
       }
+      aria-busy={busy || undefined}
       type="button"
       disabled={busy}
     >
-      {busy ? 'Starting…' : label}
+      {busy ? 'Starting…' : (allowSolo && nearby < 2 ? 'Start Rally' : label)}
     </Chip>
   )
 }
