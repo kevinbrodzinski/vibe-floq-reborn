@@ -1,144 +1,90 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import * as React from 'react';
+import { useMemo, useEffect, useState } from 'react';
+import { onEvent, emitEvent, Events } from '@/services/eventBridge';
 import { layerManager } from '@/lib/map/LayerManager';
 import { createFlowRouteSpec } from '@/lib/map/overlays/flowRouteSpec';
-import { useFlowRoute } from '@/hooks/useFlowRoute';
-import { onEvent, Events } from '@/services/eventBridge';
-import { resolveVibeColor } from '@/lib/vibe/vibeColor';
+import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import type mapboxgl from 'mapbox-gl';
 
-interface FlowRouteMapLayerProps {
-  map: mapboxgl.Map | null;
-}
-
-type RoutePoint = {
-  id: string;
-  position: [number, number];
-  venueId?: string;
-  venueName?: string;
-  duration?: number;
-  timestamp: number;
-  pathToNext?: [number, number][];
-  vibeKey?: string;
-  vibeHex?: string;
-};
-
-export function FlowRouteMapLayer({ map }: FlowRouteMapLayerProps) {
-  const { flowRoute, isRetracing, currentRetraceIndex } = useFlowRoute();
-  const [visible, setVisible] = useState(true);
-
-  // Register layer spec when map is available
+export function FlowRouteMapLayer() {
+  // register spec once
   useEffect(() => {
-    if (!map) return;
     layerManager.register(createFlowRouteSpec());
     return () => layerManager.unregister('flow-route');
-  }, [map]);
-
-  // Listen for Flow events (new) and breadcrumb events (legacy compatibility)
-  useEffect(() => {
-    const offFlowShow = onEvent(Events.FLOQ_FLOW_SHOW, () => setVisible(true));
-    const offFlowHide = onEvent(Events.FLOQ_FLOW_HIDE, () => setVisible(false));
-    const offBreadcrumbShow = onEvent(Events.FLOQ_BREADCRUMB_SHOW, () => setVisible(true));
-    const offBreadcrumbHide = onEvent(Events.FLOQ_BREADCRUMB_HIDE, () => setVisible(false));
-    
-    return () => {
-      offFlowShow(); 
-      offFlowHide(); 
-      offBreadcrumbShow(); 
-      offBreadcrumbHide();
-    };
   }, []);
 
-  // Build GeoJSON FeatureCollection from flow route
-  const featureCollection = useMemo(() => {
-    if (!visible || !flowRoute?.length) {
-      return { type: 'FeatureCollection', features: [] } as GeoJSON.FeatureCollection;
-    }
+  const [visible, setVisible] = useState(false);
+  const [isRetracing, setRetrace] = useState(false);
+  const [fc, setFC] = useState<GeoJSON.FeatureCollection>({ type:'FeatureCollection', features: [] });
 
-    const features: GeoJSON.Feature[] = [];
-    const venues = flowRoute.filter(p => p.venueId);
-
-    // Path segments between venues (optional dashed lines)
-    venues.forEach((p: RoutePoint) => {
-      if (p.pathToNext && p.pathToNext.length > 1) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: p.pathToNext },
-          properties: { type: 'path' },
-        } as any);
-      }
-    });
-
-    // Main flow line
-    if (venues.length > 1) {
-      const coords = venues.map(v => v.position);
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'LineString', coordinates: coords },
-        properties: { type: 'flow', active: !!isRetracing },
-      } as any);
-    }
-
-    // Venue points + labels (reverse numbering for retrace)
-    venues.forEach((p: RoutePoint, i: number) => {
-      // Compute vibe color if available
-      const color = (p.vibeKey || p.vibeHex)
-        ? resolveVibeColor({ 
-            vibeKey: p.vibeKey, 
-            vibeHex: p.vibeHex, 
-            venueId: p.venueId, 
-            venueName: p.venueName 
-          })
-        : undefined;
-
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: p.position },
-        properties: {
-          type: 'venue',
-          venueId: p.venueId,
-          venueName: p.venueName || 'Unknown',
-          duration: p.duration ?? 0,
-          timestamp: p.timestamp,
-          active: isRetracing && i === currentRetraceIndex,
-          index: venues.length - i,
-          ...(color ? { color } : {})
-        },
-      } as any);
-    });
-
-    return { type: 'FeatureCollection', features } as GeoJSON.FeatureCollection;
-  }, [flowRoute, isRetracing, currentRetraceIndex, visible]);
-
-  // Apply feature collection to map
+  // listen to flow show/hide
   useEffect(() => {
-    layerManager.apply('flow-route', featureCollection);
-  }, [featureCollection]);
+    const offShow = onEvent(Events.FLOQ_FLOW_SHOW, (p) => {
+      setVisible(true);
+      setRetrace((p?.mode ?? 'display') === 'retrace');
+      setFC(toFeatureCollection(p ?? { path: [], mode: 'display' }));
+    });
+    const offHide = onEvent(Events.FLOQ_FLOW_HIDE, () => {
+      setVisible(false);
+      setRetrace(false);
+      setFC({ type:'FeatureCollection', features: [] });
+    });
+    return () => { offShow(); offHide(); };
+  }, []);
 
-  // Optional: animate pulse effect during retrace
+  // apply FC
   useEffect(() => {
-    if (!isRetracing) {
-      try { 
-        const mapInstance = (window as any).map || map;
-        mapInstance?.setPaintProperty('flow:route:anim', 'line-opacity', 0); 
-      } catch {}
+    layerManager.apply('flow-route', fc);
+  }, [fc]);
+
+  // shimmer loop (only if retracing and visible)
+  useEffect(() => {
+    if (!visible || !isRetracing) {
+      try { getCurrentMap()?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
       return;
     }
-
     let raf = 0;
     const start = performance.now();
     const step = () => {
       const t = (performance.now() - start) % 3000;
-      const phase = t / 3000;
+      const phase = t / 3000; // 0..1
       const opacity = Math.max(0, Math.sin(phase * Math.PI) * 0.4);
-      try {
-        const mapInstance = (window as any).map || map;
-        mapInstance?.setPaintProperty('flow:route:anim', 'line-opacity', opacity);
-      } catch {}
+      try { getCurrentMap()?.setPaintProperty('flow:route:anim', 'line-opacity', opacity); } catch {}
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [isRetracing, map]);
+  }, [visible, isRetracing]);
 
-  return null; // This component only manages map layers
+  return null;
+}
+
+// Helper: same shape you've been using (path entries: {id, position:[lng,lat], venueName?, color?})
+function toFeatureCollection(data: { path?: any[]; mode?: 'retrace'|'display' }): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+  const pts = (data.path ?? []).filter((p: any) => Array.isArray(p.position));
+
+  if (pts.length > 1) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: pts.map((p:any)=>p.position) },
+      properties: { type: 'flow' }
+    } as any);
+  }
+
+  pts.forEach((p: any, i: number) => {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: p.position },
+      properties: {
+        type: 'venue',
+        venueId: p.id,
+        venueName: p.venueName ?? 'Unknown',
+        index: pts.length - i,
+        ...(p.color ? { color: p.color } : {})
+      }
+    } as any);
+  });
+
+  return { type: 'FeatureCollection', features };
 }
