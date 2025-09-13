@@ -29,42 +29,55 @@ export function useConvergenceDetection(venues: Venue[] = []) {
   const suppressedConvergences = useRef<Map<string, number>>(new Map());
   const detectionInterval = useRef<NodeJS.Timeout>();
 
-  // Convert social cache data to agents
+  // Enhanced agent conversion with movement validation
   const getAgents = useCallback((): Agent[] => {
     const agents: Agent[] = [];
 
-    // Add friends as agents if they have velocity data
+    // Add friends as agents with enhanced validation
     friendHeads.forEach((friend: EnhancedFriendHead) => {
-      if (friend.velocity && friend.velocity.confidence > 0.3) {
-        agents.push({
-          id: friend.profile_id || `friend-${Math.random().toString(36).substr(2, 9)}`,
-          position: [friend.lng, friend.lat],
-          velocity: friend.velocity.velocity, // velocity field contains [lng/s, lat/s]
-          confidence: friend.velocity.confidence,
-          lastSeen: new Date(friend.t_head).getTime()
-        });
+      if (friend.velocity && friend.velocity.confidence > 0.3 && friend.isMoving) {
+        const age = Date.now() - new Date(friend.t_head).getTime();
+        
+        // Enhanced movement validation
+        if (age < 60000 && // Data less than 1 minute old
+            friend.velocity.speed >= 0.3 && // Minimum speed threshold
+            friend.velocity.speed <= 15 && // Maximum reasonable speed
+            friend.velocity.confidence > 0.4) { // Higher confidence threshold
+          
+          agents.push({
+            id: friend.profile_id || `friend-${Math.random().toString(36).substr(2, 9)}`,
+            position: [friend.lng, friend.lat],
+            velocity: friend.velocity.velocity,
+            confidence: friend.velocity.confidence,
+            lastSeen: new Date(friend.t_head).getTime()
+          });
+        }
       }
     });
 
-    // Add self if we have a recent path (calculate velocity from path)
-    if (myPath.length >= 2) {
-      const recent = myPath.slice(-2);
-      const latest = recent[1];
+    // Add self with enhanced movement validation
+    if (myPath.length >= 3) { // Need more points for better accuracy
+      const recent = myPath.slice(-3);
+      const latest = recent[2];
       const previous = recent[0];
       
-      // Calculate velocity from path
+      // Calculate velocity from path with improved accuracy
       const dt = ((latest.t || Date.now()) - (previous.t || Date.now())) / 1000;
-      if (dt > 0) {
+      if (dt > 10) { // Need at least 10 seconds for reliable velocity
         const vx = (latest.lng - previous.lng) / dt;
         const vy = (latest.lat - previous.lat) / dt;
+        const speed = Math.sqrt(vx * vx + vy * vy) * 111320; // Convert to m/s
         
-        agents.push({
-          id: 'self',
-          position: [latest.lng, latest.lat],
-          velocity: [vx, vy],
-          confidence: 0.8, // High confidence for our own position
-          lastSeen: latest.t || Date.now()
-        });
+        // Only add self if actually moving
+        if (speed >= 0.3 && speed <= 15) {
+          agents.push({
+            id: 'self',
+            position: [latest.lng, latest.lat],
+            velocity: [vx, vy],
+            confidence: Math.min(0.9, 0.6 + (speed / 10)), // Dynamic confidence based on speed
+            lastSeen: latest.t || Date.now()
+          });
+        }
       }
     }
 

@@ -25,15 +25,24 @@ export interface ConvergenceResult {
 }
 
 export class MultiAgentConvergenceCalculator {
-  private static readonly VENUE_MAGNETISM_FACTOR = 1.3;
-  private static readonly MAX_CONVERGENCE_DISTANCE = 100; // meters
-  private static readonly MIN_CONFIDENCE = 0.6;
+  private static readonly VENUE_MAGNETISM_FACTOR = 1.4;
+  private static readonly MAX_CONVERGENCE_DISTANCE = 80; // meters
+  private static readonly MIN_CONFIDENCE = 0.65;
+  private static readonly MIN_SPEED_THRESHOLD = 0.3; // m/s minimum speed to consider
+  private static readonly MAX_SPEED_THRESHOLD = 15; // m/s maximum reasonable walking/biking speed
+  private static readonly STATIONARY_TIME_THRESHOLD = 45000; // 45s before considering stationary
   
   private static readonly TIME_OF_DAY_PATTERNS = {
-    morning: { coffee: 1.5, cafe: 1.4, transit: 1.3, breakfast: 1.6 },
-    lunch: { restaurant: 1.8, food: 1.7, park: 1.2, cafe: 1.3 },
-    evening: { bar: 1.4, restaurant: 1.5, entertainment: 1.6, park: 1.2 },
-    night: { bar: 1.8, club: 1.7, entertainment: 1.5, late_night: 1.6 }
+    morning: { coffee: 1.8, cafe: 1.6, transit: 1.4, breakfast: 1.7, gym: 1.3 },
+    lunch: { restaurant: 2.1, food: 1.9, park: 1.4, cafe: 1.5, coworking: 1.3 },
+    evening: { bar: 1.6, restaurant: 1.7, entertainment: 1.8, park: 1.3, shopping: 1.2 },
+    night: { bar: 2.2, club: 2.0, entertainment: 1.7, late_night: 1.8, casino: 1.5 }
+  };
+
+  private static readonly VENUE_POPULARITY_WEIGHTS = {
+    high: 1.5,    // 80-100% popularity
+    medium: 1.2,  // 50-79% popularity  
+    low: 1.0      // Below 50% popularity
   };
 
   static detectConvergences(
@@ -44,12 +53,17 @@ export class MultiAgentConvergenceCalculator {
     const convergences: ConvergenceResult[] = [];
     const timeOfDay = this.getTimeOfDay();
 
-    // Check all pairs of agents
-    for (let i = 0; i < agents.length; i++) {
-      for (let j = i + 1; j < agents.length; j++) {
+    // Filter valid agents with movement validation
+    const validAgents = agents.filter(agent => this.isValidMovingAgent(agent));
+    
+    if (validAgents.length < 2) return [];
+
+    // Check all pairs of valid agents
+    for (let i = 0; i < validAgents.length; i++) {
+      for (let j = i + 1; j < validAgents.length; j++) {
         const pairConvergence = this.calculatePairConvergence(
-          agents[i], 
-          agents[j], 
+          validAgents[i], 
+          validAgents[j], 
           venues, 
           timeOfDay,
           maxPredictionTime
@@ -60,11 +74,11 @@ export class MultiAgentConvergenceCalculator {
         }
 
         // Check for 3+ agent convergences around pair intersection
-        if (pairConvergence && agents.length > 2) {
+        if (pairConvergence && validAgents.length > 2) {
           const tripleConvergences = this.findTripleConvergences(
-            agents[i], 
-            agents[j], 
-            agents.filter((_, idx) => idx !== i && idx !== j),
+            validAgents[i], 
+            validAgents[j], 
+            validAgents.filter((_, idx) => idx !== i && idx !== j),
             pairConvergence,
             venues,
             timeOfDay
@@ -98,19 +112,23 @@ export class MultiAgentConvergenceCalculator {
     let probability = intersection.probability;
     let convergencePoint = intersection.point;
     
-    // Apply venue magnetism
+    // Apply enhanced venue magnetism with dynamic weighting
     const nearbyVenue = this.findNearestVenue(convergencePoint, venues);
-    if (nearbyVenue && nearbyVenue.distance < 50) {
+    if (nearbyVenue && nearbyVenue.distance < 75) {
       const venueTypeMultiplier = this.TIME_OF_DAY_PATTERNS[timeOfDay]?.[nearbyVenue.type] || 1;
+      const popularityWeight = this.getPopularityWeight(nearbyVenue.popularity);
+      const distanceDecay = Math.exp(-nearbyVenue.distance / 30); // 30m decay
+      
       const magnetism = this.VENUE_MAGNETISM_FACTOR * 
-        (nearbyVenue.popularity / 100) * 
-        venueTypeMultiplier;
+        popularityWeight * 
+        venueTypeMultiplier * 
+        distanceDecay;
       
       probability *= magnetism;
       
-      // Adjust convergence point toward venue (weighted average)
-      const venueWeight = Math.min(0.4, magnetism - 1);
-      if (venueWeight > 0) {
+      // Stronger venue attraction for popular venues
+      const venueWeight = Math.min(0.6, Math.max(0.1, (magnetism - 1) * 0.5));
+      if (venueWeight > 0.1) {
         convergencePoint = this.weightedAverage(
           convergencePoint,
           nearbyVenue.position,
@@ -320,11 +338,29 @@ export class MultiAgentConvergenceCalculator {
     return filtered.slice(0, 3);
   }
 
+  // Advanced movement validation
+  private static isValidMovingAgent(agent: Agent): boolean {
+    const speed = Math.sqrt(agent.velocity[0] * agent.velocity[0] + agent.velocity[1] * agent.velocity[1]) * 111320; // Convert to m/s
+    const age = Date.now() - agent.lastSeen;
+    
+    // Filter out stationary, too fast, or stale agents
+    return speed >= this.MIN_SPEED_THRESHOLD && 
+           speed <= this.MAX_SPEED_THRESHOLD &&
+           age < this.STATIONARY_TIME_THRESHOLD &&
+           agent.confidence > 0.4;
+  }
+
+  private static getPopularityWeight(popularity: number): number {
+    if (popularity >= 80) return this.VENUE_POPULARITY_WEIGHTS.high;
+    if (popularity >= 50) return this.VENUE_POPULARITY_WEIGHTS.medium;
+    return this.VENUE_POPULARITY_WEIGHTS.low;
+  }
+
   private static getTimeOfDay(): string {
     const hour = new Date().getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 14) return 'lunch';
-    if (hour < 20) return 'evening';
+    if (hour < 11) return 'morning';
+    if (hour < 15) return 'lunch';
+    if (hour < 19) return 'evening';
     return 'night';
   }
 }
