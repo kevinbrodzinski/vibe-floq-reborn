@@ -5,6 +5,8 @@ import { layerManager } from '@/lib/map/LayerManager';
 import { createFlowRouteSpec } from '@/lib/map/overlays/flowRouteSpec';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import mapboxgl from 'mapbox-gl';
+import { getUserVibeHex } from '@/lib/vibe/vibeColor';
+import { mixHexOklab } from '@/lib/vibe/vibeGradient';
 
 export function FlowRouteMapLayer() {
   // persisted local toggle
@@ -189,11 +191,21 @@ function toFC(path: Array<{ position:[number,number], venueName?:string, color?:
   const features: GeoJSON.Feature[] = [];
   const pts = path.filter(p => Array.isArray(p.position));
 
+  // DI: get user vibe and (optionally) the destination vibe
+  const userColor = getUserVibeHex?.() ?? '#8B5CF6'
+  const venueColor = (pts.length>0 && pts[pts.length-1]?.color) || '#EC4899'
+
   if (pts.length > 1) {
     features.push({
       type:'Feature',
       geometry:{ type:'LineString', coordinates: pts.map(p=>p.position) },
-      properties:{ type:'flow' }
+      properties:{
+        type:'flow',
+        userColor: userColor,
+        venueColor: venueColor,
+        // simple mid = 50% blend (replace with real vibe distance scalar later)
+        midColor: mixHexOklab(userColor, venueColor, 0.5),
+      }
     } as any);
   }
 

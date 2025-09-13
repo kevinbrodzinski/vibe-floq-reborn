@@ -3,7 +3,8 @@ import { layerManager } from '@/lib/map/LayerManager';
 import { createPredictedMeetSpec, applyPredictedMeetFeatureCollection } from '@/lib/map/overlays/predictedMeetSpec';
 import { onEvent, Events } from '@/services/eventBridge';
 import { shouldSuppress, buildSuppressionKey, prune } from '@/lib/predictedMeet/suppressStore';
-import { resolveVibeColor } from '@/lib/vibe/vibeColor';
+import { resolveVibeColor, getUserVibeHex } from '@/lib/vibe/vibeColor';
+import { mixHexOklab } from '@/lib/vibe/vibeGradient';
 
 // ring animation tuning
 const PERIOD_MS = 1600;          // full pulse period
@@ -73,21 +74,20 @@ export function PredictedMeetingPointsLayer() {
     // Pulse progress [0..1]
     const features: any[] = [];
     for (const it of itemsRef.current) {
-      const color = resolveVibeColor({
-        vibeHex: it.vibeHex,
-        vibeKey: it.vibeKey,
-        venueId: it.venueId,
-        venueName: it.venueName,
-      });
+      // Prepare colors: user vibe to venue vibe blended by elapsed progress
+      const userHex  = getUserVibeHex?.() ?? '#8B5CF6'
+      const venueHex = resolveVibeColor({ venueId: it.venueId, venueName: it.venueName, vibeHex: it.vibeHex, vibeKey: it.vibeKey })
+      const life = Math.max(0, Math.min(1, (now - it.createdAt) / Math.max(2000, it.etaSec*1000)))
+      const ringHex = mixHexOklab(userHex, venueHex, life)  // inner→outer over time
       
-      // Anchor dot
+      // Anchor dot (user color)
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [it.lng, it.lat] as [number, number] },
-        properties: { kind: 'dot', prob: it.prob, color },
+        properties: { kind: 'dot', prob: it.prob, color: userHex },
       });
 
-      // Ring: compute progress (wrap)
+      // Ring: compute progress (wrap) with dynamic color transition
       const t = (now - it.createdAt) % PERIOD_MS;
       // ease-out radius
       const p = t / PERIOD_MS;              // 0..1
@@ -99,7 +99,7 @@ export function PredictedMeetingPointsLayer() {
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [it.lng, it.lat] as [number, number] },
-        properties: { kind: 'ring', r, o, color },
+        properties: { kind: 'ring', r, o, color: ringHex },
       });
     }
 

@@ -3,6 +3,11 @@
 //  - resolveVibeColor({ vibeHex, vibeKey, venueId, venueName })
 //  - setVibeColorResolver(ctx => ({ vibeKey: 'social' })) // optional DI mapping
 //  - enableVibePreview(true) / cycleVibePreview()         // design QA
+//  - setUserVibeHex/getUserVibeHex for gradient computation
+
+let userVibeHex = '#8B5CF6' // violet as safe default
+export function setUserVibeHex(hex:string) { userVibeHex = hex }
+export function getUserVibeHex(): string { return userVibeHex }
 
 export type VibeKey =
   | 'social' | 'chill' | 'mellow' | 'outdoors' | 'energetic'

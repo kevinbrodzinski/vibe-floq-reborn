@@ -46,7 +46,16 @@ export function createFlowRouteSpec() {
           filter: ['==', ['get','type'], 'flow'],
           layout: { 'line-join':'round', 'line-cap':'round' },
           paint: {
-            'line-color':'#A855F7',
+            // Fallback color (older runtimes)
+            'line-color': '#A855F7',
+            // Perceptual gradient along the line using line-progress.
+            // We expect properties.userColor / .midColor / .venueColor on the feature.
+            'line-gradient': [
+              'interpolate', ['linear'], ['line-progress'],
+              0.0, ['coalesce', ['get','userColor'], '#8B5CF6'],
+              0.5, ['coalesce', ['get','midColor'],  ['get','userColor'], '#8B5CF6'],
+              1.0, ['coalesce', ['get','venueColor'], '#EC4899']
+            ],
             'line-opacity':0.6,
             'line-width':['interpolate',['linear'],['zoom'],12,3,16,5,20,8],
           }

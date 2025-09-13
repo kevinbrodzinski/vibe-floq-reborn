@@ -240,9 +240,15 @@ export interface EventPayloads {
     velocity?: [number, number] 
   };
   
-  // Generic layer toggle payloads
-  [Events.FLOQ_LAYER_TOGGLE]: { id: string; enabled?: boolean };
-  [Events.FLOQ_LAYER_SET]: { id: string; enabled: boolean };
+  // Generic layer toggle payloads (updated for specific layer types)
+  [Events.FLOQ_LAYER_TOGGLE]: { 
+    id: 'predicted-meet' | 'flow-route' | 'breadcrumb-trail'; 
+    enabled?: boolean 
+  };
+  [Events.FLOQ_LAYER_SET]: { 
+    id: 'predicted-meet' | 'flow-route' | 'breadcrumb-trail'; 
+    enabled: boolean 
+  };
 }
 
 // Typed helpers
