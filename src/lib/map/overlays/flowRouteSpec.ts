@@ -46,18 +46,21 @@ export function createFlowRouteSpec() {
           filter: ['==', ['get','type'], 'flow'],
           layout: { 'line-join':'round', 'line-cap':'round' },
           paint: {
-            // Fallback color (older runtimes)
             'line-color': '#A855F7',
-            // Perceptual gradient along the line using line-progress.
-            // We expect properties.userColor / .midColor / .venueColor on the feature.
             'line-gradient': [
-              'interpolate', ['linear'], ['line-progress'],
-              0.0, ['coalesce', ['get','userColor'], '#8B5CF6'],
-              0.5, ['coalesce', ['get','midColor'],  ['get','userColor'], '#8B5CF6'],
-              1.0, ['coalesce', ['get','venueColor'], '#EC4899']
+              'case',
+              ['all', ['has','g0'], ['has','g1'], ['has','g2'], ['has','g3']],
+              [
+                'interpolate', ['linear'], ['line-progress'],
+                0.00, ['to-color', ['get','g0']],
+                0.35, ['to-color', ['get','g1']],
+                0.65, ['to-color', ['get','g2']],
+                1.00, ['to-color', ['get','g3']],
+              ],
+              '#A855F7'
             ],
-            'line-opacity':0.6,
-            'line-width':['interpolate',['linear'],['zoom'],12,3,16,5,20,8],
+            'line-opacity': 0.6,
+            'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 16, 5, 20, 8],
           }
         });
       }

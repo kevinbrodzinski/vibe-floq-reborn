@@ -193,7 +193,7 @@ function toFeatureCollection(data: { path?: any[]; mode?: 'retrace'|'display' })
   const pts = (data.path ?? []).filter((p: any) => Array.isArray(p.position));
 
   if (pts.length > 1) {
-    const userC = getUserVibeHex?.() ?? resolveVibeColor({ vibeKey:'social' });
+    const userC = getUserVibeHex() ?? resolveVibeColor({ vibeKey:'social' });
     const venueC = pts[0]?.color || resolveVibeColor({ vibeKey:'mellow' });
     const [s0,s1,s2,s3] = gradientStops(userC, venueC).map(s=>s[1]);
     features.push({

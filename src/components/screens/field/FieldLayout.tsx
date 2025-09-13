@@ -26,8 +26,6 @@ import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 // Flow-first spatial UI
 import { FlowRouteMapLayer } from "@/components/map/FlowRouteMapLayer";
-import { FlowRetraceHUD } from "@/components/flow/FlowRetraceHUD";
-import { ContinuePatternChip } from "@/components/flow/ContinuePatternChip";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
 import { TimewarpDrawerProvider } from "@/contexts/TimewarpDrawerContext";
@@ -47,6 +45,8 @@ import { InboxNavBridge } from '@/components/nav/InboxNavBridge';
 import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
 import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 import { FlowAndVenueBridge } from '@/components/system/FlowAndVenueBridge';
+// Dev QA harness
+import '@/dev/emit';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
@@ -256,16 +256,8 @@ export const FieldLayout = () => {
                   data={data}
                 />
 
-                {/* Flow route layers & lightweight UI */}
+                 {/* Flow route layers & lightweight UI */}
                 <FlowRouteMapLayer />
-
-                {/* Micro retrace HUD (centered, synced to shimmer) */}
-                <div className="fixed top-[calc(60px+env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[670] pointer-events-none">
-                  <FlowRetraceHUD />
-                </div>
-
-                {/* Continue pattern chip (appears when suggestions exist) */}
-                <ContinuePatternChip />
 
                 {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
                 <BottomHud>
@@ -281,14 +273,6 @@ export const FieldLayout = () => {
 
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
-
-          {/* Micro retrace HUD (centered, synced to shimmer) */}
-          <div className="fixed top-[calc(60px+env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[670] pointer-events-none">
-            <FlowRetraceHUD />
-          </div>
-
-          {/* Continue pattern chip (appears when suggestions exist) */}
-          <ContinuePatternChip />
 
           {/* Lens System - z-600 */}
                 <LensHotkeys />
