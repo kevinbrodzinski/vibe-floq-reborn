@@ -21,6 +21,8 @@ import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { VenueSocialPortal } from "@/components/VenueSocialPortal";
 import { VenueActionBar } from "@/components/venue/VenueActionBar";
 import { CreateSoloRallyChip } from "@/components/rally/CreateSoloRallyChip";
+import { RetracePathChip } from "@/components/breadcrumb/RetracePathChip";
+import { useBreadcrumbTrail } from "@/hooks/useBreadcrumbTrail";
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -38,6 +40,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
+  const { addVenueVisit } = useBreadcrumbTrail();
 
   // Handle browser back button
   useEffect(() => {
@@ -67,6 +70,16 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const handleJoin = async () => {
     try {
       await join({ vibeOverride: venue?.vibe });
+      
+      // Add to breadcrumb trail when joining venue
+      if (venue) {
+        addVenueVisit({
+          id: venue.id,
+          name: venue.name,
+          lat: venue.lat,
+          lng: venue.lng
+        });
+      }
     } catch (error) {
       console.error("Failed to join venue:", error);
     }
@@ -184,11 +197,12 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
             />
             
             {/* Solo Rally CTA (uses venue center) */}
-            <div className="mt-2">
+            <div className="flex gap-2 mt-2">
               <CreateSoloRallyChip
                 lat={venue.lat ?? null}
                 lng={venue.lng ?? null}
               />
+              <RetracePathChip />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
