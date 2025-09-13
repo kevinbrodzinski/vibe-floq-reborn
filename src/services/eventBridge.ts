@@ -177,6 +177,7 @@ export interface EventPayloads {
     path: Array<{ id: string; position: [number, number]; venueName?: string }>; 
     mode: 'retrace' | 'display' 
   };
+  [Events.FLOQ_BREADCRUMB_HIDE]: {};
   [Events.FLOQ_BREADCRUMB_RETRACE]: { fromPoint?: string };
   
   [Events.FLOQ_CONVERGENCE_DETECTED]: {

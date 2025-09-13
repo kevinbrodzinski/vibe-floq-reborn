@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MMKV } from 'react-native-mmkv';
-import { eventBridge, Events } from '@/services/eventBridge';
+import { emitEvent, Events } from '@/services/eventBridge';
 import { useGeo } from '@/hooks/useGeo';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
 import { useSocialCache } from '@/hooks/useSocialCache';
@@ -282,7 +282,7 @@ export function useFlowRoute() {
     // Navigate to first retrace point
     const point = flowRoute[startIdx];
     if (point?.position) {
-      eventBridge.emit(Events.UI_MAP_FLY_TO, {
+      emitEvent(Events.UI_MAP_FLY_TO, {
         lng: point.position[0],
         lat: point.position[1],
         zoom: 17,
@@ -290,7 +290,7 @@ export function useFlowRoute() {
       });
 
       // Show flow route on map
-      eventBridge.emit(Events.FLOQ_BREADCRUMB_SHOW, {
+      emitEvent(Events.FLOQ_BREADCRUMB_SHOW, {
         path: flowRoute.slice(0, startIdx + 1).reverse().map(p => ({
           id: p.id,
           position: p.position,
@@ -305,7 +305,7 @@ export function useFlowRoute() {
   const stopRetrace = useCallback(() => {
     setIsRetracing(false);
     setCurrentRetraceIndex(-1);
-    eventBridge.emit(Events.FLOQ_BREADCRUMB_HIDE);
+    emitEvent(Events.FLOQ_BREADCRUMB_HIDE, {});
   }, []);
 
   // Navigate to next/previous point in retrace
@@ -324,14 +324,14 @@ export function useFlowRoute() {
       const point = flowRoute[newIndex];
       
       if (point?.position) {
-        eventBridge.emit(Events.UI_MAP_FLY_TO, {
+        emitEvent(Events.UI_MAP_FLY_TO, {
           lng: point.position[0],
           lat: point.position[1],
           zoom: 18,
           duration: 800
         });
 
-        eventBridge.emit(Events.UI_MAP_PULSE, {
+        emitEvent(Events.UI_MAP_PULSE, {
           lng: point.position[0],
           lat: point.position[1],
           color: '#EC4899'
@@ -387,14 +387,14 @@ export function useFlowRoute() {
   const navigateToRoutePoint = useCallback((routePointId: string) => {
     const point = flowRoute.find(p => p.id === routePointId);
     if (point?.position) {
-      eventBridge.emit(Events.UI_MAP_FLY_TO, {
+      emitEvent(Events.UI_MAP_FLY_TO, {
         lng: point.position[0],
         lat: point.position[1],
         zoom: 18,
         duration: 800
       });
 
-      eventBridge.emit(Events.UI_MAP_PULSE, {
+      emitEvent(Events.UI_MAP_PULSE, {
         lng: point.position[0],
         lat: point.position[1],
         color: '#EC4899'

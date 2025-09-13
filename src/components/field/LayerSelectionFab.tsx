@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin, Bug, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { eventBridge, Events } from '@/services/eventBridge';
+import { emitEvent, Events } from '@/services/eventBridge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +77,7 @@ export const LayerSelectionFab = () => {
               const next = !predMeetOn;
               setPredMeetOn(next);
               try { localStorage.setItem(LS_KEY, String(next)); } catch {}
-              eventBridge.emit(Events.FLOQ_LAYER_TOGGLE, { id: 'predicted-meet', enabled: next });
+              emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'predicted-meet', enabled: next });
             }}
           >
             <span
