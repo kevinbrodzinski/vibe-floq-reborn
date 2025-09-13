@@ -121,6 +121,8 @@ export const Events = {
   UI_MAP_PULSE: 'ui:map:pulse',
   UI_NAV_DEST: 'ui:nav:dest',
   UI_VENUE_SELECT: 'ui:venue:select',
+
+  // Flow & Venue UI fallbacks
   UI_VENUE_JOIN: 'ui:venue:join',
   UI_VENUE_SAVE: 'ui:venue:save',
   UI_VENUE_PLAN: 'ui:venue:plan',
@@ -170,6 +172,8 @@ export interface EventPayloads {
   [Events.UI_MAP_PULSE]: { lng: number; lat: number; color?: string; duration?: number };
   [Events.UI_NAV_DEST]: { lng: number; lat: number; duration?: number };
   [Events.UI_VENUE_SELECT]: { venueId: string };
+
+  // Flow & Venue UI fallbacks
   [Events.UI_VENUE_JOIN]: { venueId: string };
   [Events.UI_VENUE_SAVE]: { venueId: string };
   [Events.UI_VENUE_PLAN]: { venueId: string };
