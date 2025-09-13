@@ -20,9 +20,9 @@ export function ContinuePatternChip() {
     <button
       type="button"
       onClick={() => emitEvent(Events.UI_VENUE_SELECT, { venueId: s.venueId })}
-      className="fixed left-4 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[620] px-3 py-2 rounded-full border text-xs font-medium shadow-lg"
+      className="fixed left-4 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[620] px-3 py-2 rounded-full border text-xs font-medium shadow-lg hover:opacity-95 active:scale-95 transition"
       style={{ background: '#0B0F1A', borderColor: 'rgba(255,255,255,0.12)', color: '#fff' }}
-      aria-label="Continue pattern"
+      aria-label={`Continue pattern, ${(s.confidence*100|0)} percent confidence`}
     >
       <span className="inline-flex items-center gap-2">
         <span className="inline-block w-3 h-3 rounded-full" style={{ background: color }} />

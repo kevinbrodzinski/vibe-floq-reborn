@@ -5,6 +5,7 @@ import { useGeo } from '@/hooks/useGeo';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
 import { useSocialCache } from '@/hooks/useSocialCache';
 import { setVenueVibeForRoute } from '@/lib/flow/setVenueVibe';
+import { resolveVibeColor } from '@/lib/vibe/vibeColor';
 
 // Initialize MMKV storage
 const storage = new MMKV({ id: 'flow-route-storage' });
@@ -407,7 +408,10 @@ export function useFlowRoute() {
       emitEvent(Events.UI_MAP_PULSE, {
         lng: point.position[0],
         lat: point.position[1],
-        color: '#EC4899'
+        color: (point as any).color ?? resolveVibeColor({
+          venueId: point.venueId, venueName: point.venueName,
+          vibeKey: (point as any).vibeKey, vibeHex: (point as any).vibeHex
+        })
       });
     }
   }, [flowRoute]);
@@ -416,7 +420,8 @@ export function useFlowRoute() {
   useEffect(() => {
     return onEvent(Events.FLOQ_FLOW_RETRACE_GOTO, ({ index }) => {
       if (!flowRoute.length) return;
-      const clamped = Math.max(0, Math.min(flowRoute.length - 1, index));
+      const i = Number.isFinite(index) ? index : 0;
+      const clamped = Math.max(0, Math.min(flowRoute.length - 1, i));
       setIsRetracing(true);
       setCurrentRetraceIndex(clamped);
       const p = flowRoute[clamped];
@@ -429,10 +434,12 @@ export function useFlowRoute() {
             duration: 700
           });
           // map pulse: use resolved vibe color
-          emitEvent(Events.UI_MAP_PULSE, { 
-            lng: p.position[0], 
-            lat: p.position[1], 
-            color: (p as any).color || '#EC4899' 
+          emitEvent(Events.UI_MAP_PULSE, {
+            lng: p.position[0], lat: p.position[1],
+            color: (p as any).color ?? resolveVibeColor({
+              venueId: p.venueId, venueName: p.venueName,
+              vibeKey: (p as any).vibeKey, vibeHex: (p as any).vibeHex
+            })
           });
         } catch {}
       }
