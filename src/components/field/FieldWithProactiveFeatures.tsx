@@ -19,8 +19,7 @@ export function FieldWithProactiveFeatures({ children }: FieldWithProactiveFeatu
     <>
       {children}
       
-      {/* Map overlays - TODO: integrate with map instance */}
-      {/* <BreadcrumbTrailOverlay map={map} /> */}
+      {/* Map overlays will be integrated via LayerManager */}
       
       {/* Notification system */}
       <ConvergenceNotificationSystem />

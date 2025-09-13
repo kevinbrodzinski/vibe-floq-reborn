@@ -196,11 +196,11 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
               className="grid grid-cols-[auto_auto_1fr] items-center gap-2"
             />
             
-            {/* Solo Rally CTA (uses venue center) */}
+            {/* Solo Rally CTA + Retrace Path (uses venue center) */}
             <div className="flex gap-2 mt-2">
               <CreateSoloRallyChip
-                lat={venue.lat ?? null}
                 lng={venue.lng ?? null}
+                lat={venue.lat ?? null}
               />
               <RetracePathChip />
             </div>
