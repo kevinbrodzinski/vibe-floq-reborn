@@ -20,6 +20,7 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { VenueSocialPortal } from "@/components/VenueSocialPortal";
 import { VenueActionBar } from "@/components/venue/VenueActionBar";
+import { CreateSoloRallyChip } from "@/components/rally/CreateSoloRallyChip";
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -181,6 +182,14 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
               venue={{ lat: venue.lat ?? null, lng: venue.lng ?? null, name: venue.name }}
               className="grid grid-cols-[auto_auto_1fr] items-center gap-2"
             />
+            
+            {/* Solo Rally CTA (uses venue center) */}
+            <div className="mt-2">
+              <CreateSoloRallyChip
+                lat={venue.lat ?? null}
+                lng={venue.lng ?? null}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <Button
