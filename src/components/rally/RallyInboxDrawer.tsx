@@ -29,12 +29,12 @@ export function RallyInboxDrawer({
 }: RallyInboxDrawerProps) {
   if (!open) return null
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
-  };
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') onClose()
+  }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Rally inbox" onKeyDown={onKeyDown}
+    <div role="dialog" aria-modal="true" aria-label="Rally inbox" onKeyDown={onKeyDown} tabIndex={-1}
          className={cn('fixed inset-0 z-[700] flex items-end sm:items-center justify-center', className)}>
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-lg max-h-[80vh] overflow-hidden rounded-2xl bg-background border border-border shadow-2xl">
@@ -63,7 +63,7 @@ export function RallyInboxDrawer({
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-foreground/10 overflow-hidden flex items-center justify-center text-xs">
                        {itm.creator_avatar ? (
-                         <img src={itm.creator_avatar} alt={itm.creator_name ?? 'Rally creator'} className="w-full h-full object-cover" />
+                         <img src={itm.creator_avatar} alt="Rally creator avatar" className="w-full h-full object-cover" />
                        ) : (
                          <span aria-hidden>⚡</span>
                        )}
