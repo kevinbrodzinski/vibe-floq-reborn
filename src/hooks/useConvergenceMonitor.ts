@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { emitEvent, Events } from '@/services/eventBridge';
 import { useSocialCache } from '@/hooks/useSocialCache';
+import { useNearbyVenues } from '@/hooks/useNearbyVenues';
+import { useGeo } from '@/hooks/useGeo';
+import { resolveVibeColor } from '@/lib/vibe/vibeColor';
 import { bestPairConvergence, groupConvergences, Agent } from '@/lib/convergence/multiAgent';
 
 type Suppression = { id: string; until: number };
@@ -8,6 +11,8 @@ type Suppression = { id: string; until: number };
 export function useConvergenceMonitor(pollMs = 4000) {
   const suppressed = useRef<Suppression[]>([]);
   const { friendHeads: enhancedFriends, myPath } = useSocialCache();
+  const { coords } = useGeo();
+  const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.1); // 100m radius for vibe lookup
 
   // Utilities for m/s <-> deg projection
   const METERS_PER_DEG_LAT = 110540;
@@ -27,6 +32,23 @@ export function useConvergenceMonitor(pollMs = 4000) {
     const conf = Math.max(0.5, Math.min(0.9, 0.5 + (speed / 10)));
     return { vx, vy, speed, conf };
   };
+
+  // Find nearest venue for vibe color resolution
+  const nearestVenue = useMemo(() => {
+    return (lng: number, lat: number) => {
+      let best: any = null;
+      let bestD = Infinity;
+      const venues = Array.isArray(nearbyVenues) ? nearbyVenues : [];
+      for (const v of venues) {
+        if (typeof v.lng !== 'number' || typeof v.lat !== 'number') continue;
+        // Simple distance (good enough for nearby venues)
+        const dx = v.lng - lng, dy = v.lat - lat;
+        const d = Math.sqrt(dx * dx + dy * dy) * 111000; // rough meters
+        if (d < bestD) { bestD = d; best = v; }
+      }
+      return bestD <= 100 ? best : null; // within 100m
+    };
+  }, [nearbyVenues]);
 
   useEffect(() => {
     const now = Date.now();
@@ -81,6 +103,15 @@ export function useConvergenceMonitor(pollMs = 4000) {
     if (hit) return;
     suppressed.current.push({ id: top.id, until: Date.now() + 30000 });
 
+    // Attach nearest venue + vibe metadata for the ring color
+    const v = nearestVenue(top.meetingPoint.lng, top.meetingPoint.lat);
+    const vibeHex = resolveVibeColor({
+      venueId: v?.id,
+      venueName: v?.name,
+      vibeKey: v?.vibeKey,
+      vibeHex: v?.vibeHex,
+    });
+    
     // notify UI via EventBridge
     emitEvent(Events.FLOQ_CONVERGENCE_DETECTED, {
       friendId: top.type === 'pair' ? top.participants.find((x:string)=>x!=='me') || 'friend'
@@ -88,7 +119,13 @@ export function useConvergenceMonitor(pollMs = 4000) {
       friendName: top.type === 'pair' ? 'Friend' : 'Friends',
       probability: top.probability,
       timeToMeet: top.timeToMeet,
-      predictedLocation: { ...top.meetingPoint },
+      predictedLocation: {
+        ...top.meetingPoint,
+        venueId: v?.id,
+        venueName: v?.name,
+        vibeKey: v?.vibeKey,
+        vibeHex, // rings pick this up immediately
+      },
       confidence: top.confidence,
     });
 
@@ -136,17 +173,32 @@ export function useConvergenceMonitor(pollMs = 4000) {
       if (hit) return;
       suppressed.current.push({ id: top.id, until: Date.now() + 30000 });
 
+      // Attach vibe data for subsequent events too
+      const v = nearestVenue(top.meetingPoint.lng, top.meetingPoint.lat);
+      const vibeHex = resolveVibeColor({
+        venueId: v?.id,
+        venueName: v?.name,
+        vibeKey: v?.vibeKey,
+        vibeHex: v?.vibeHex,
+      });
+
       emitEvent(Events.FLOQ_CONVERGENCE_DETECTED, {
         friendId: top.type === 'pair' ? top.participants.find((x:string)=>x!=='me') || 'friend'
                                       : 'group',
         friendName: top.type === 'pair' ? 'Friend' : 'Friends',
         probability: top.probability,
         timeToMeet: top.timeToMeet,
-        predictedLocation: { ...top.meetingPoint },
+        predictedLocation: {
+          ...top.meetingPoint,
+          venueId: v?.id,
+          venueName: v?.name,
+          vibeKey: v?.vibeKey,
+          vibeHex,
+        },
         confidence: top.confidence,
       });
     }, pollMs);
 
     return () => clearInterval(interval);
-  }, [enhancedFriends, myPath, pollMs]);
+  }, [enhancedFriends, myPath, pollMs, nearestVenue]);
 }

@@ -3,7 +3,7 @@ import { layerManager } from '@/lib/map/LayerManager';
 import { createFlowRouteSpec } from '@/lib/map/overlays/flowRouteSpec';
 import { useFlowRoute } from '@/hooks/useFlowRoute';
 import { onEvent, Events } from '@/services/eventBridge';
-import { resolveVibeHex } from '@/lib/vibes/vibeColorResolver';
+import { resolveVibeColor } from '@/lib/vibe/vibeColor';
 import type mapboxgl from 'mapbox-gl';
 
 interface FlowRouteMapLayerProps {
@@ -82,7 +82,7 @@ export function FlowRouteMapLayer({ map }: FlowRouteMapLayerProps) {
     venues.forEach((p: RoutePoint, i: number) => {
       // Compute vibe color if available
       const color = (p.vibeKey || p.vibeHex)
-        ? resolveVibeHex({ 
+        ? resolveVibeColor({ 
             vibeKey: p.vibeKey, 
             vibeHex: p.vibeHex, 
             venueId: p.venueId, 

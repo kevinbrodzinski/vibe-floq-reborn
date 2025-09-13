@@ -4,6 +4,7 @@ import { emitEvent, Events } from '@/services/eventBridge';
 import { useGeo } from '@/hooks/useGeo';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
 import { useSocialCache } from '@/hooks/useSocialCache';
+import { setVenueVibeForRoute } from '@/lib/flow/setVenueVibe';
 
 // Initialize MMKV storage
 const storage = new MMKV({ id: 'flow-route-storage' });
@@ -134,7 +135,7 @@ export function useFlowRoute() {
       
       const pos = getLngLat();
       if (duration >= MIN_VENUE_DURATION && pos) {
-        const routePoint: RoutePoint = {
+        let routePoint: RoutePoint = {
           id: `rp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           timestamp: Date.now(),
           position: pos,
@@ -143,6 +144,12 @@ export function useFlowRoute() {
           venueType: selectedVenue?.type,
           duration: Math.round(duration / 1000),
         };
+        
+        // 🔹 stamp vibe color on the point (future-proof; resolver handles unknowns)
+        routePoint = setVenueVibeForRoute(routePoint, {
+          vibeKey: (selectedVenue as any)?.vibeKey,
+          vibeHex: (selectedVenue as any)?.vibeHex,
+        });
         
         addRoutePoint(routePoint);
       }

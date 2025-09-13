@@ -88,8 +88,8 @@ export function createFlowRouteSpec(beforeId?: string): OverlaySpec {
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 6, 16, 10, 20, 14],
             // Use feature's 'color' if present, otherwise default
             'circle-color': [
-              'case',
-              ['has', 'color'], ['get', 'color'],
+              'coalesce', 
+              ['get', 'color'], 
               ['case', ['get', 'active'], '#EC4899', '#A855F7']
             ],
             'circle-opacity': ['case', ['get', 'active'], 1, 0.85],
@@ -117,8 +117,8 @@ export function createFlowRouteSpec(beforeId?: string): OverlaySpec {
             'text-color': '#fff',
             // Use feature's 'color' if present for consistent label glow
             'text-halo-color': [
-              'case',
-              ['has', 'color'], ['get', 'color'],
+              'coalesce', 
+              ['get', 'color'], 
               ['case', ['get', 'active'], '#EC4899', '#A855F7']
             ],
             'text-halo-width': 2,
