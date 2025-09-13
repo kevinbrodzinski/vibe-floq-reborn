@@ -1,308 +1,599 @@
-import { useState, useEffect, useCallback } from 'react';
-import { storage } from '@/lib/storage';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { MMKV } from 'react-native-mmkv';
+import { eventBridge, Events } from '@/services/eventBridge';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
+import { useSocialCache } from '@/hooks/useSocialCache';
 
-export interface FlowRouteVenue {
+// Initialize MMKV storage
+const storage = new MMKV({ id: 'flow-route-storage' });
+
+// Types
+interface RoutePoint {
   id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  visitedAt: number;
-  departedAt?: number;
-  duration?: number; // minutes
+  timestamp: number;
+  position: [number, number]; // [lng, lat]
+  venueId?: string;
+  venueName?: string;
+  venueType?: string;
+  duration?: number; // Time spent at venue in seconds
+  pathToNext?: Array<[number, number]>; // GPS path to next point
 }
 
-export interface FlowRoute {
-  venues: FlowRouteVenue[];
-  totalDuration: number;
-  startTime: number;
-  endTime: number;
+interface FlowPattern {
+  id: string;
+  points: string[]; // Venue IDs in order
+  frequency: number;
+  lastSeen: number;
+  timeOfDay: 'morning' | 'lunch' | 'evening' | 'night';
+  confidence: number;
 }
 
-interface FlowRouteState {
-  recentVenues: FlowRouteVenue[];
-  currentPath: FlowRoute | null;
-  isTracking: boolean;
+interface FlowRouteStats {
+  points: number;
+  uniqueVenues: number;
+  totalDistance: number; // meters
+  totalDuration: number; // seconds
+  oldestPoint: number;
+  newestPoint: number;
 }
 
-const RETENTION_TIME = 15 * 60 * 1000; // 15 minutes
-const MIN_VENUES_FOR_PATH = 2;
-const STORAGE_KEY = 'flow_route';
+// Constants
+const RETENTION_WINDOW = 15 * 60 * 1000; // 15 minutes
+const MIN_VENUE_DURATION = 30000; // 30 seconds to register venue visit
+const DEDUPLICATION_RADIUS = 20; // meters
+const CLEANUP_INTERVAL = 60000; // 1 minute
+const PATH_SIMPLIFICATION_TOLERANCE = 0.00001; // ~1 meter
 
-/**
- * Hook for tracking and managing flow routes
- * Automatically captures venue visits and provides retrace functionality
- */
 export function useFlowRoute() {
-  const [state, setState] = useState<FlowRouteState>({
-    recentVenues: [],
-    currentPath: null,
-    isTracking: true
+  const userLocation = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: false,
+    hookId: 'flow-route'
   });
+  const { myPath } = useSocialCache();
+  
+  // Mock selected venue for now
+  const selectedVenue = null;
+  
+  const [flowRoute, setFlowRoute] = useState<RoutePoint[]>([]);
+  const [patterns, setPatterns] = useState<FlowPattern[]>([]);
+  const [isRetracing, setIsRetracing] = useState(false);
+  const [currentRetraceIndex, setCurrentRetraceIndex] = useState<number>(-1);
+  
+  const lastVenueRef = useRef<string | null>(null);
+  const venueEntryTime = useRef<number>(0);
+  const pathBuffer = useRef<Array<[number, number]>>([]);
+  const cleanupTimer = useRef<NodeJS.Timeout>();
 
-  // Load persisted route on mount
+  // Load existing route from storage
   useEffect(() => {
-    const loadPersistedRoute = async () => {
-      try {
-        const stored = await storage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          // Filter out old venues
-          const now = Date.now();
-          const recentVenues = parsed.recentVenues.filter(
-            (venue: FlowRouteVenue) => now - venue.visitedAt < RETENTION_TIME
-          );
-          
-          setState(prev => ({
-            ...prev,
-            recentVenues,
-            currentPath: recentVenues.length >= MIN_VENUES_FOR_PATH 
-              ? generateRoute(recentVenues) 
-              : null
-          }));
-        }
-      } catch (error) {
-        console.warn('Failed to load flow route:', error);
-      }
-    };
-
-    loadPersistedRoute();
-  }, []);
-
-  // Persist route changes
-  const persistRoute = useCallback(async (venues: FlowRouteVenue[]) => {
     try {
-      await storage.setItem(STORAGE_KEY, JSON.stringify({ recentVenues: venues }));
+      const storedRoute = storage.getString('current-flow-route');
+      if (storedRoute) {
+        const parsed = JSON.parse(storedRoute) as RoutePoint[];
+        const now = Date.now();
+        const valid = parsed.filter(p => now - p.timestamp < RETENTION_WINDOW);
+        setFlowRoute(valid);
+      }
+
+      const storedPatterns = storage.getString('flow-patterns');
+      if (storedPatterns) {
+        setPatterns(JSON.parse(storedPatterns));
+      }
     } catch (error) {
-      console.warn('Failed to persist flow route:', error);
+      console.error('Failed to load flow route:', error);
     }
   }, []);
 
-  // Clean up old venues periodically
+  // Save route to storage
+  useEffect(() => {
+    if (flowRoute.length > 0) {
+      storage.set('current-flow-route', JSON.stringify(flowRoute));
+    }
+  }, [flowRoute]);
+
+  // Save patterns to storage
+  useEffect(() => {
+    if (patterns.length > 0) {
+      storage.set('flow-patterns', JSON.stringify(patterns));
+    }
+  }, [patterns]);
+
+  // Track venue visits
+  useEffect(() => {
+    if (selectedVenue) {
+      if (selectedVenue.id !== lastVenueRef.current) {
+        // Entered new venue
+        lastVenueRef.current = selectedVenue.id;
+        venueEntryTime.current = Date.now();
+        
+        // Save path buffer as connection to previous point
+        if (flowRoute.length > 0 && pathBuffer.current.length > 0) {
+          const simplified = simplifyPath(pathBuffer.current);
+          setFlowRoute(prev => {
+            const updated = [...prev];
+            const lastPoint = updated[updated.length - 1];
+            if (lastPoint) {
+              lastPoint.pathToNext = simplified;
+            }
+            return updated;
+          });
+        }
+        
+        pathBuffer.current = [];
+      }
+    } else if (lastVenueRef.current) {
+      // Left venue
+      const duration = Date.now() - venueEntryTime.current;
+      
+      if (duration >= MIN_VENUE_DURATION && userLocation?.location) {
+        const routePoint: RoutePoint = {
+          id: `rp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: Date.now(),
+          position: [userLocation.location.longitude, userLocation.location.latitude],
+          venueId: lastVenueRef.current,
+          venueName: selectedVenue?.name,
+          venueType: selectedVenue?.type,
+          duration: Math.round(duration / 1000),
+        };
+        
+        addRoutePoint(routePoint);
+      }
+      
+      lastVenueRef.current = null;
+      venueEntryTime.current = 0;
+    }
+  }, [selectedVenue, userLocation?.current, flowRoute]);
+
+  // Track movement between venues
+  useEffect(() => {
+    if (userLocation?.location && !selectedVenue) {
+      const point: [number, number] = [
+        userLocation.location.longitude,
+        userLocation.location.latitude
+      ];
+      
+      // Add to path buffer with deduplication
+      if (pathBuffer.current.length === 0 || 
+          getDistance(point, pathBuffer.current[pathBuffer.current.length - 1]) > DEDUPLICATION_RADIUS) {
+        pathBuffer.current.push(point);
+        
+        // Limit buffer size and simplify if needed
+        if (pathBuffer.current.length > 100) {
+          pathBuffer.current = simplifyPath(pathBuffer.current);
+        }
+      }
+    }
+  }, [userLocation?.location, selectedVenue]);
+
+  // Cleanup old route points
   useEffect(() => {
     const cleanup = () => {
       const now = Date.now();
-      setState(prev => {
-        const filtered = prev.recentVenues.filter(
-          venue => now - venue.visitedAt < RETENTION_TIME
-        );
-        
-        if (filtered.length !== prev.recentVenues.length) {
-          persistRoute(filtered);
-          return {
-            ...prev,
-            recentVenues: filtered,
-            currentPath: filtered.length >= MIN_VENUES_FOR_PATH 
-              ? generateRoute(filtered) 
-              : null
-          };
+      setFlowRoute(prev => {
+        const filtered = prev.filter(p => now - p.timestamp < RETENTION_WINDOW);
+        if (filtered.length !== prev.length) {
+          storage.set('current-flow-route', JSON.stringify(filtered));
         }
-        return prev;
+        return filtered;
       });
     };
 
-    const interval = setInterval(cleanup, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [persistRoute]);
-
-  /**
-   * Add a venue visit to the route
-   */
-  const addRoutePoint = useCallback((venue: {
-    id: string;
-    name: string; 
-    lat: number;
-    lng: number;
-  }) => {
-    if (!state.isTracking) return;
-
-    const now = Date.now();
-    const newVenue: FlowRouteVenue = {
-      ...venue,
-      visitedAt: now
+    cleanupTimer.current = setInterval(cleanup, CLEANUP_INTERVAL);
+    return () => {
+      if (cleanupTimer.current) {
+        clearInterval(cleanupTimer.current);
+      }
     };
+  }, []);
 
-    setState(prev => {
-      // Update departure time for previous venue
-      const updatedVenues = [...prev.recentVenues];
-      if (updatedVenues.length > 0) {
-        const lastVenue = updatedVenues[updatedVenues.length - 1];
-        if (!lastVenue.departedAt) {
-          lastVenue.departedAt = now;
-          lastVenue.duration = Math.round((now - lastVenue.visitedAt) / 60000); // minutes
-        }
+  // Add a route point to the flow route
+  const addRoutePoint = useCallback((routePoint: RoutePoint) => {
+    setFlowRoute(prev => {
+      // Check for duplicate venue within deduplication time
+      const lastPoint = prev[prev.length - 1];
+      if (lastPoint && 
+          lastPoint.venueId === routePoint.venueId &&
+          routePoint.timestamp - lastPoint.timestamp < 60000) {
+        // Update duration instead of adding duplicate
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...lastPoint,
+          duration: (lastPoint.duration || 0) + (routePoint.duration || 0)
+        };
+        return updated;
       }
 
-      // Don't add duplicate consecutive venues
-      if (updatedVenues.length > 0 && updatedVenues[updatedVenues.length - 1].id === venue.id) {
-        return prev;
+      const updated = [...prev, routePoint];
+      
+      // Detect patterns if this is a venue visit
+      if (routePoint.venueId) {
+        detectPattern(updated);
       }
+      
+      // Keep route size manageable
+      if (updated.length > 50) {
+        return updated.slice(-50);
+      }
+      
+      return updated;
+    });
+  }, []);
 
-      // Add new venue
-      updatedVenues.push(newVenue);
+  // Detect recurring patterns
+  const detectPattern = useCallback((currentRoute: RoutePoint[]) => {
+    const venueSequence = currentRoute
+      .filter(p => p.venueId)
+      .map(p => p.venueId!)
+      .slice(-5); // Look at last 5 venues
 
-      // Keep only recent venues
-      const recentVenues = updatedVenues.filter(
-        v => now - v.visitedAt < RETENTION_TIME
+    if (venueSequence.length < 3) return;
+
+    const timeOfDay = getTimeOfDay();
+    const sequenceKey = venueSequence.join('->');
+
+    setPatterns(prev => {
+      const existing = prev.find(p => 
+        p.points.join('->') === sequenceKey && 
+        p.timeOfDay === timeOfDay
       );
 
-      // Generate route if we have enough venues
-      const currentPath = recentVenues.length >= MIN_VENUES_FOR_PATH 
-        ? generateRoute(recentVenues) 
-        : null;
-
-      // Persist changes
-      persistRoute(recentVenues);
-
-      return {
-        ...prev,
-        recentVenues,
-        currentPath
-      };
-    });
-  }, [state.isTracking, persistRoute]);
-
-  /**
-   * Mark departure from current venue
-   */
-  const markDeparture = useCallback(() => {
-    const now = Date.now();
-    
-    setState(prev => {
-      if (prev.recentVenues.length === 0) return prev;
-
-      const updatedVenues = [...prev.recentVenues];
-      const lastVenue = updatedVenues[updatedVenues.length - 1];
-      
-      if (!lastVenue.departedAt) {
-        lastVenue.departedAt = now;
-        lastVenue.duration = Math.round((now - lastVenue.visitedAt) / 60000);
-        
-        persistRoute(updatedVenues);
-        
-        return {
-          ...prev,
-          recentVenues: updatedVenues,
-          currentPath: updatedVenues.length >= MIN_VENUES_FOR_PATH 
-            ? generateRoute(updatedVenues) 
-            : null
+      if (existing) {
+        // Update existing pattern
+        existing.frequency++;
+        existing.lastSeen = Date.now();
+        existing.confidence = Math.min(0.9, existing.frequency * 0.1);
+        return [...prev];
+      } else {
+        // New pattern detected
+        const newPattern: FlowPattern = {
+          id: `pattern-${Date.now()}`,
+          points: venueSequence,
+          frequency: 1,
+          lastSeen: Date.now(),
+          timeOfDay,
+          confidence: 0.1
         };
+        
+        // Keep only recent patterns (last 30 days)
+        const filtered = prev.filter(p => 
+          Date.now() - p.lastSeen < 30 * 24 * 60 * 60 * 1000
+        );
+        
+        return [...filtered, newPattern].slice(-20); // Max 20 patterns
       }
-      
-      return prev;
     });
-  }, [persistRoute]);
-
-  /**
-   * Get venues for retrace functionality
-   */
-  const getRoutePoints = useCallback(() => {
-    if (!state.currentPath || state.currentPath.venues.length < MIN_VENUES_FOR_PATH) {
-      return [];
-    }
-
-    // Return venues in reverse chronological order for retracing
-    return [...state.currentPath.venues].reverse();
-  }, [state.currentPath]);
-
-  /**
-   * Clear the route
-   */
-  const clearRoute = useCallback(async () => {
-    setState(prev => ({
-      ...prev,
-      recentVenues: [],
-      currentPath: null
-    }));
-    
-    try {
-      await storage.removeItem(STORAGE_KEY);
-    } catch (error) {
-      console.warn('Failed to clear flow route:', error);
-    }
   }, []);
 
-  /**
-   * Toggle tracking
-   */
-  const setTracking = useCallback((enabled: boolean) => {
-    setState(prev => ({ ...prev, isTracking: enabled }));
+  // Start retracing the flow route
+  const startRetrace = useCallback((fromIndex?: number) => {
+    if (flowRoute.length === 0) return;
+
+    setIsRetracing(true);
+    const startIdx = fromIndex ?? flowRoute.length - 1;
+    setCurrentRetraceIndex(startIdx);
+
+    // Navigate to first retrace point
+    const point = flowRoute[startIdx];
+    if (point?.position) {
+      eventBridge.emit(Events.UI_MAP_FLY_TO, {
+        lng: point.position[0],
+        lat: point.position[1],
+        zoom: 17,
+        duration: 1000
+      });
+
+      // Show flow route on map
+      eventBridge.emit(Events.FLOQ_BREADCRUMB_SHOW, {
+        path: flowRoute.slice(0, startIdx + 1).reverse().map(p => ({
+          id: p.id,
+          position: p.position,
+          venueName: p.venueName
+        })),
+        mode: 'retrace'
+      });
+    }
+  }, [flowRoute]);
+
+  // Stop retracing
+  const stopRetrace = useCallback(() => {
+    setIsRetracing(false);
+    setCurrentRetraceIndex(-1);
+    eventBridge.emit(Events.FLOQ_BREADCRUMB_HIDE);
   }, []);
 
-  /**
-   * Get route statistics
-   */
-  const getRouteStats = useCallback(() => {
-    if (!state.currentPath) return null;
+  // Navigate to next/previous point in retrace
+  const navigateRetrace = useCallback((direction: 'next' | 'previous') => {
+    if (!isRetracing || flowRoute.length === 0) return;
+
+    let newIndex = currentRetraceIndex;
+    if (direction === 'next') {
+      newIndex = Math.max(0, currentRetraceIndex - 1);
+    } else {
+      newIndex = Math.min(flowRoute.length - 1, currentRetraceIndex + 1);
+    }
+
+    if (newIndex !== currentRetraceIndex) {
+      setCurrentRetraceIndex(newIndex);
+      const point = flowRoute[newIndex];
+      
+      if (point?.position) {
+        eventBridge.emit(Events.UI_MAP_FLY_TO, {
+          lng: point.position[0],
+          lat: point.position[1],
+          zoom: 18,
+          duration: 800
+        });
+
+        eventBridge.emit(Events.UI_MAP_PULSE, {
+          lng: point.position[0],
+          lat: point.position[1],
+          color: '#EC4899'
+        });
+      }
+    }
+  }, [isRetracing, currentRetraceIndex, flowRoute]);
+
+  // Get suggested next venue based on patterns
+  const getSuggestedNext = useCallback((): {
+    venueId: string;
+    confidence: number;
+    pattern: FlowPattern;
+  } | null => {
+    if (flowRoute.length === 0) return null;
+
+    const recentVenues = flowRoute
+      .filter(p => p.venueId)
+      .map(p => p.venueId!)
+      .slice(-4);
+
+    if (recentVenues.length < 2) return null;
+
+    const timeOfDay = getTimeOfDay();
+
+    // Find matching patterns
+    const matches = patterns
+      .filter(p => p.timeOfDay === timeOfDay && p.confidence > 0.3)
+      .map(pattern => {
+        // Check if recent venues match the beginning of this pattern
+        for (let i = 0; i <= pattern.points.length - recentVenues.length; i++) {
+          const patternSlice = pattern.points.slice(i, i + recentVenues.length);
+          if (patternSlice.join('->') === recentVenues.join('->')) {
+            // Found a match, predict next venue
+            if (i + recentVenues.length < pattern.points.length) {
+              return {
+                venueId: pattern.points[i + recentVenues.length],
+                confidence: pattern.confidence,
+                pattern
+              };
+            }
+          }
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.confidence - a!.confidence);
+
+    return matches[0] || null;
+  }, [flowRoute, patterns]);
+
+  // Navigate to specific flow route point
+  const navigateToRoutePoint = useCallback((routePointId: string) => {
+    const point = flowRoute.find(p => p.id === routePointId);
+    if (point?.position) {
+      eventBridge.emit(Events.UI_MAP_FLY_TO, {
+        lng: point.position[0],
+        lat: point.position[1],
+        zoom: 18,
+        duration: 800
+      });
+
+      eventBridge.emit(Events.UI_MAP_PULSE, {
+        lng: point.position[0],
+        lat: point.position[1],
+        color: '#EC4899'
+      });
+    }
+  }, [flowRoute]);
+
+  // Get flow route statistics
+  const getFlowRouteStats = useCallback((): FlowRouteStats => {
+    let totalDistance = 0;
+    let totalDuration = 0;
+
+    for (let i = 0; i < flowRoute.length; i++) {
+      const point = flowRoute[i];
+      
+      // Add duration
+      if (point.duration) {
+        totalDuration += point.duration;
+      }
+
+      // Calculate distance to next point
+      if (i < flowRoute.length - 1) {
+        const nextPoint = flowRoute[i + 1];
+        if (point.pathToNext && point.pathToNext.length > 0) {
+          // Calculate path distance
+          for (let j = 0; j < point.pathToNext.length - 1; j++) {
+            totalDistance += getDistance(point.pathToNext[j], point.pathToNext[j + 1]);
+          }
+        } else {
+          // Direct distance
+          totalDistance += getDistance(point.position, nextPoint.position);
+        }
+      }
+    }
+
+    const uniqueVenues = new Set(flowRoute.map(p => p.venueId).filter(Boolean)).size;
 
     return {
-      venueCount: state.currentPath.venues.length,
-      totalDuration: state.currentPath.totalDuration,
-      averageDuration: state.currentPath.totalDuration / state.currentPath.venues.length,
-      startTime: state.currentPath.startTime,
-      endTime: state.currentPath.endTime
+      points: flowRoute.length,
+      uniqueVenues,
+      totalDistance: Math.round(totalDistance),
+      totalDuration,
+      oldestPoint: flowRoute[0]?.timestamp || Date.now(),
+      newestPoint: flowRoute[flowRoute.length - 1]?.timestamp || Date.now()
     };
-  }, [state.currentPath]);
+  }, [flowRoute]);
+
+  // Legacy compatibility methods
+  const getRetraceVenues = useCallback(() => {
+    return flowRoute
+      .filter(p => p.venueId)
+      .slice(-10) // Last 10 venues
+      .reverse()
+      .map((point, index) => ({
+        id: point.venueId!,
+        name: point.venueName || `Venue ${index + 1}`,
+        lat: point.position[1],
+        lng: point.position[0],
+        visitedAt: point.timestamp,
+        duration: point.duration
+      }));
+  }, [flowRoute]);
+
+  const getPathStats = useCallback(() => {
+    const stats = getFlowRouteStats();
+    return {
+      venueCount: stats.uniqueVenues,
+      totalDuration: Math.round(stats.totalDuration / 60), // Convert to minutes
+    };
+  }, [getFlowRouteStats]);
+
+  // Clear flow route
+  const clearRoute = useCallback(() => {
+    setFlowRoute([]);
+    pathBuffer.current = [];
+    storage.delete('current-flow-route');
+    if (isRetracing) {
+      stopRetrace();
+    }
+  }, [isRetracing, stopRetrace]);
+
+  // Clear patterns
+  const clearPatterns = useCallback(() => {
+    setPatterns([]);
+    storage.delete('flow-patterns');
+  }, []);
 
   return {
     // State
-    recentVenues: state.recentVenues,
-    currentPath: state.currentPath,
-    isTracking: state.isTracking,
+    flowRoute,
+    patterns,
+    isRetracing,
+    currentRetraceIndex,
     
     // Actions
     addRoutePoint,
-    markDeparture,
+    startRetrace,
+    stopRetrace,
+    navigateRetrace,
+    navigateToRoutePoint,
     clearRoute,
-    setTracking,
-    
-    // Utilities
-    getRoutePoints,
-    getRouteStats,
+    clearPatterns,
     
     // Computed
-    hasRecentPath: state.currentPath !== null,
-    canRetrace: state.recentVenues.length >= MIN_VENUES_FOR_PATH,
-
-    // Legacy compatibility (keep these for RetracePathChip)
-    getRetraceVenues: () => {
-      if (!state.currentPath || state.currentPath.venues.length < MIN_VENUES_FOR_PATH) {
-        return [];
-      }
-      return [...state.currentPath.venues].reverse();
-    },
-    getPathStats: () => {
-      if (!state.currentPath) return null;
-      return {
-        venueCount: state.currentPath.venues.length,
-        totalDuration: state.currentPath.totalDuration,
-        averageDuration: state.currentPath.totalDuration / state.currentPath.venues.length,
-        startTime: state.currentPath.startTime,
-        endTime: state.currentPath.endTime
-      };
-    }
+    getSuggestedNext,
+    getFlowRouteStats,
+    hasRecentActivity: flowRoute.length >= 2,
+    canRetrace: flowRoute.length > 0 && !isRetracing,
+    retraceProgress: isRetracing ? 
+      `${flowRoute.length - currentRetraceIndex} / ${flowRoute.length}` : null,
+    
+    // Legacy compatibility
+    getRetraceVenues,
+    getPathStats,
+    currentPath: flowRoute.length > 0 ? flowRoute : null,
+    trail: flowRoute, // Alias for legacy code
   };
 }
 
-/**
- * Generate a route object from venues
- */
-function generateRoute(venues: FlowRouteVenue[]): FlowRoute {
-  if (venues.length === 0) {
-    return {
-      venues: [],
-      totalDuration: 0,
-      startTime: 0,
-      endTime: 0
-    };
+// Helper functions
+function getDistance(p1: [number, number], p2: [number, number]): number {
+  const R = 6371000; // Earth radius in meters
+  const lat1 = p1[1] * Math.PI / 180;
+  const lat2 = p2[1] * Math.PI / 180;
+  const deltaLat = (p2[1] - p1[1]) * Math.PI / 180;
+  const deltaLng = (p2[0] - p1[0]) * Math.PI / 180;
+
+  const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+function simplifyPath(path: Array<[number, number]>): Array<[number, number]> {
+  if (path.length <= 2) return path;
+  
+  // Simple Douglas-Peucker implementation
+  const tolerance = PATH_SIMPLIFICATION_TOLERANCE;
+  
+  // Find point with maximum distance from line between first and last
+  let maxDist = 0;
+  let maxIndex = 0;
+  
+  for (let i = 1; i < path.length - 1; i++) {
+    const dist = pointToLineDistance(path[i], path[0], path[path.length - 1]);
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIndex = i;
+    }
+  }
+  
+  // If max distance is greater than tolerance, recursively simplify
+  if (maxDist > tolerance) {
+    const left = simplifyPath(path.slice(0, maxIndex + 1));
+    const right = simplifyPath(path.slice(maxIndex));
+    return [...left.slice(0, -1), ...right];
+  }
+  
+  // Otherwise, return just the endpoints
+  return [path[0], path[path.length - 1]];
+}
+
+function pointToLineDistance(
+  point: [number, number],
+  lineStart: [number, number],
+  lineEnd: [number, number]
+): number {
+  const A = point[0] - lineStart[0];
+  const B = point[1] - lineStart[1];
+  const C = lineEnd[0] - lineStart[0];
+  const D = lineEnd[1] - lineStart[1];
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let param = -1;
+
+  if (lenSq !== 0) {
+    param = dot / lenSq;
   }
 
-  const sortedVenues = [...venues].sort((a, b) => a.visitedAt - b.visitedAt);
-  const totalDuration = sortedVenues.reduce((sum, venue) => sum + (venue.duration || 0), 0);
+  let xx, yy;
 
-  return {
-    venues: sortedVenues,
-    totalDuration,
-    startTime: sortedVenues[0].visitedAt,
-    endTime: sortedVenues[sortedVenues.length - 1].departedAt || Date.now()
-  };
+  if (param < 0) {
+    xx = lineStart[0];
+    yy = lineStart[1];
+  } else if (param > 1) {
+    xx = lineEnd[0];
+    yy = lineEnd[1];
+  } else {
+    xx = lineStart[0] + param * C;
+    yy = lineStart[1] + param * D;
+  }
+
+  const dx = point[0] - xx;
+  const dy = point[1] - yy;
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTimeOfDay(): 'morning' | 'lunch' | 'evening' | 'night' {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 14) return 'lunch';
+  if (hour < 20) return 'evening';
+  return 'night';
 }

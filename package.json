@@ -157,7 +157,7 @@
     "react-native-draggable-flatlist": "^4.0.3",
     "react-native-gesture-handler": "^2.27.2",
     "react-native-get-random-values": "^1.11.0",
-    "react-native-mmkv": "^3.3.0",
+    "react-native-mmkv": "^3.3.1",
     "react-native-reanimated": "^3.18.0",
     "react-native-web": "^0.20.0",
     "react-resizable-panels": "^2.1.3",
