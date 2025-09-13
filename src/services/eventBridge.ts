@@ -127,7 +127,12 @@ export const Events = {
   FLOQ_RALLY_INBOX_CLOSE: 'ui:rallyInbox:close',
   FLOQ_RALLY_INBOX_THREAD: 'ui:rallyInbox:openThread',
   
-  // Breadcrumb System
+  // Flow System (new) - replaces breadcrumb
+  FLOQ_FLOW_SHOW: 'floq:flow:show',
+  FLOQ_FLOW_HIDE: 'floq:flow:hide',
+  FLOQ_FLOW_RETRACE: 'floq:flow:retrace',
+  
+  // Breadcrumb System (legacy - use Flow events instead)
   FLOQ_BREADCRUMB_SHOW: 'floq:breadcrumb:show',
   FLOQ_BREADCRUMB_HIDE: 'floq:breadcrumb:hide',
   FLOQ_BREADCRUMB_RETRACE: 'floq:breadcrumb:retrace',
@@ -173,6 +178,15 @@ export interface EventPayloads {
   };
   [Events.FLOQ_RALLY_INBOX_THREAD]: { threadId: string };
   
+  // Flow System events (new)
+  [Events.FLOQ_FLOW_SHOW]: { 
+    path?: Array<{ id: string; position: [number, number]; venueName?: string; vibeKey?: string; vibeHex?: string }>; 
+    mode?: 'retrace' | 'display' 
+  };
+  [Events.FLOQ_FLOW_HIDE]: {};
+  [Events.FLOQ_FLOW_RETRACE]: { fromPoint?: string };
+  
+  // Breadcrumb System events (legacy)
   [Events.FLOQ_BREADCRUMB_SHOW]: { 
     path: Array<{ id: string; position: [number, number]; venueName?: string }>; 
     mode: 'retrace' | 'display' 

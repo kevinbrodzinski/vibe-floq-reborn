@@ -16,7 +16,8 @@ export function useConvergenceMonitor(pollMs = 4000) {
     if (!path || path.length < 2) return { vx: 0, vy: 0, speed: 0, conf: 0.6 };
     const a = path[path.length - 2], b = path[path.length - 1];
     const dt = ((b.t ?? Date.now()) - (a.t ?? Date.now())) / 1000;
-    if (dt <= 0) return { vx: 0, vy: 0, speed: 0, conf: 0.6 };
+    // Guard rails: reject invalid or extreme time deltas
+    if (dt <= 0 || dt > 600) return { vx: 0, vy: 0, speed: 0, conf: 0.6 }; // max 10 minutes
     const mLng = metersPerDegLng((a.lat + b.lat) / 2);
     const dx = (b.lng - a.lng) * mLng;           // meters east
     const dy = (b.lat - a.lat) * METERS_PER_DEG_LAT; // meters north

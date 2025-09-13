@@ -289,12 +289,15 @@ export function useFlowRoute() {
         duration: 1000
       });
 
-      // Show flow route on map
-      emitEvent(Events.FLOQ_BREADCRUMB_SHOW, {
+      // Show flow route on map (use new Flow events)
+      emitEvent(Events.FLOQ_FLOW_SHOW, {
         path: flowRoute.slice(0, startIdx + 1).reverse().map(p => ({
           id: p.id,
           position: p.position,
-          venueName: p.venueName
+          venueName: p.venueName,
+          // Future: add vibe data when available
+          // vibeKey: p.vibeKey,
+          // vibeHex: p.vibeHex
         })),
         mode: 'retrace'
       });
@@ -305,7 +308,7 @@ export function useFlowRoute() {
   const stopRetrace = useCallback(() => {
     setIsRetracing(false);
     setCurrentRetraceIndex(-1);
-    emitEvent(Events.FLOQ_BREADCRUMB_HIDE, {});
+    emitEvent(Events.FLOQ_FLOW_HIDE, {});
   }, []);
 
   // Navigate to next/previous point in retrace
