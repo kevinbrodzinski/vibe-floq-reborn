@@ -7,10 +7,12 @@ import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { resolveVibeColor, getUserVibeHex } from '@/lib/vibe/vibeColor';
 import { gradientStops } from '@/lib/color/mixOklab';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { usePerfWatchdog } from '@/hooks/usePerfWatchdog';
 
 export function FlowRouteMapLayer(){
-  // Respect user motion preferences
+  // Respect user motion preferences and performance
   const prefersReducedMotion = usePrefersReducedMotion();
+  const { ok: perfOk } = usePerfWatchdog(1000, 40);
   
   // register spec once
   useEffect(()=>{ 
@@ -41,10 +43,10 @@ export function FlowRouteMapLayer(){
     layerManager.apply('flow-route', visible?fc:{ type:'FeatureCollection', features:[] }); 
   },[fc,visible]);
 
-  // shimmer loop (respect reduced motion)
+  // shimmer loop (respect reduced motion and performance)
   useEffect(()=>{
     const map=getCurrentMap();
-    if (!visible || !retrace || !map || prefersReducedMotion){ 
+    if (!visible || !retrace || !map || prefersReducedMotion || !perfOk){ 
       try{ map?.setPaintProperty('flow:route:anim','line-opacity',0) }catch{}; 
       return; 
     }
@@ -57,7 +59,7 @@ export function FlowRouteMapLayer(){
     };
     raf=requestAnimationFrame(step);
     return ()=> cancelAnimationFrame(raf);
-  },[visible,retrace,prefersReducedMotion]);
+  },[visible,retrace,prefersReducedMotion,perfOk]);
 
   return null;
 }

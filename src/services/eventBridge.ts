@@ -173,7 +173,7 @@ export interface EventPayloads {
   [Events.UI_MAP_PULSE]: { lng: number; lat: number; color?: string; duration?: number };
   [Events.UI_NAV_DEST]: { lng: number; lat: number; duration?: number };
   [Events.UI_VENUE_SELECT]: { venueId: string };
-  [Events.UI_OPEN_DIRECTIONS]: { lat: number; lng: number; label?: string; mode?: 'transit'|'drive'|'walk' };
+  [Events.UI_OPEN_DIRECTIONS]: { lat: number; lng: number; label?: string; mode?: 'transit'|'walk'|'bike'|'drive' };
 
   // Flow & Venue UI fallbacks
   [Events.UI_VENUE_JOIN]: { venueId: string };

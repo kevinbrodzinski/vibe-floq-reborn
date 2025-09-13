@@ -47,7 +47,7 @@ import { DirectionsBridge } from '@/components/nav/DirectionsBridge';
 import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
 import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 import { FlowAndVenueBridge } from '@/components/system/FlowAndVenueBridge';
-import { mountAnalytics } from '@/analytics/instrumentation';
+import { mountAnalytics } from '@/lib/analytics/bridge';
 // Dev QA harness
 import '@/dev/emit';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
@@ -56,8 +56,11 @@ interface FieldLayoutProps {
 }
 
 export const FieldLayout = () => {
-  // Analytics mounting
-  React.useEffect(()=>mountAnalytics(),[]);
+  // Analytics mounting with cleanup
+  React.useEffect(() => {
+    const off = mountAnalytics();
+    return off;
+  }, []);
   
   const data = useFieldData();
   const { 
