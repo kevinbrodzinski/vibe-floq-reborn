@@ -27,6 +27,11 @@ export const LayerSelectionFab = () => {
     try { const raw = localStorage.getItem(LS_KEY); return raw == null ? true : raw === 'true'; }
     catch { return true; }
   });
+  // NEW: flow-route persisted state
+  const LS_KEY_FLOW = 'floq:layers:flow-route:enabled';
+  const [flowOn, setFlowOn] = useState<boolean>(() => {
+    try { const raw = localStorage.getItem(LS_KEY_FLOW); return raw == null ? true : raw === 'true'; } catch { return true; }
+  });
   const [vibePrevOn, setVibePrevOn] = useState(() => isVibePreviewEnabled());
   
   // Hook into existing functionality
@@ -99,6 +104,34 @@ export const LayerSelectionFab = () => {
               Cycle
             </button>
           </div>
+        </div>
+        
+        <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5">
+          <div className="flex items-center gap-3">
+            <span className="text-lg">🌀</span>
+            <span className="text-sm">Flow route</span>
+          </div>
+          <button
+            type="button"
+            aria-pressed={flowOn}
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+              flowOn ? "bg-pink-500/70" : "bg-white/20"
+            )}
+            onClick={() => {
+              const next = !flowOn;
+              setFlowOn(next);
+              try { localStorage.setItem(LS_KEY_FLOW, String(next)); } catch {}
+              emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'flow-route', enabled: next });
+            }}
+          >
+            <span
+              className={cn(
+                "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                flowOn ? "translate-x-6" : "translate-x-1"
+              )}
+            />
+          </button>
         </div>
         
         <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5">

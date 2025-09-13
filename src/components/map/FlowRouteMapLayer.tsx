@@ -7,35 +7,75 @@ import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import mapboxgl from 'mapbox-gl';
 
 export function FlowRouteMapLayer() {
+  // persisted local toggle
+  const LS_KEY = 'floq:layers:flow-route:enabled';
+  const [enabled, setEnabled] = useState<boolean>(() => {
+    try { const raw = localStorage.getItem(LS_KEY); return raw == null ? true : raw === 'true'; } catch { return true; }
+  });
+
   useEffect(() => {
     layerManager.register(createFlowRouteSpec());
     return () => layerManager.unregister('flow-route');
   }, []);
 
   const [visible, setVisible] = useState(false);
-  const [retrace, setRetrace] = useState(false);
+  const [isRetracing, setIsRetracing] = useState(false);
   const [fc, setFC] = useState<GeoJSON.FeatureCollection>({ type:'FeatureCollection', features:[] });
 
+  // Observe layer toggle events for "flow-route"
+  useEffect(() => {
+    const offToggle = onEvent(Events.FLOQ_LAYER_TOGGLE, (p) => {
+      if (!p || p.id !== 'flow-route') return;
+      setEnabled(prev => {
+        const next = p.enabled == null ? !prev : !!p.enabled;
+        try { localStorage.setItem(LS_KEY, String(next)); } catch {}
+        // if disabling, also hide and stop retrace
+        if (!next) {
+          setVisible(false);
+          setIsRetracing(false);
+          setFC({ type:'FeatureCollection', features:[] });
+          try { getCurrentMap()?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
+        }
+        return next;
+      });
+    });
+    const offSet = onEvent(Events.FLOQ_LAYER_SET, (p) => {
+      if (!p || p.id !== 'flow-route') return;
+      setEnabled(!!p.enabled);
+      try { localStorage.setItem(LS_KEY, String(!!p.enabled)); } catch {}
+      if (!p.enabled) {
+        setVisible(false);
+        setIsRetracing(false);
+        setFC({ type:'FeatureCollection', features:[] });
+        try { getCurrentMap()?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
+      }
+    });
+    return () => { offToggle(); offSet(); };
+  }, []);
+
+  // listen to flow show/hide
   useEffect(() => {
     const offShow = onEvent(Events.FLOQ_FLOW_SHOW, (p) => {
+      if (!enabled) return; // ignore if disabled
       setVisible(true);
-      setRetrace((p?.mode ?? 'display') === 'retrace');
+      setIsRetracing((p?.mode ?? 'display') === 'retrace');
       setFC(toFC(p?.path ?? []));
     });
     const offHide = onEvent(Events.FLOQ_FLOW_HIDE, () => {
       setVisible(false);
-      setRetrace(false);
+      setIsRetracing(false);
       setFC({ type:'FeatureCollection', features:[] });
     });
     return () => { offShow(); offHide(); };
-  }, []);
+  }, [enabled]);
 
   // cache points array for hover math
   const pointsRef = useRef<Array<{position:[number,number]}>>([]);
   const hoverMarkerRef = useRef<mapboxgl.Marker|null>(null);
 
   useEffect(() => {
-    layerManager.apply('flow-route', fc);
+    // suppress application if disabled
+    layerManager.apply('flow-route', enabled ? fc : { type:'FeatureCollection', features:[] });
     // cache points array for hover math
     try {
       const features = (fc as any).features || [];
@@ -44,12 +84,12 @@ export function FlowRouteMapLayer() {
         .sort((a:any,b:any)=> (a.properties.index||0) - (b.properties.index||0))
         .map((f:any)=>({ position: f.geometry.coordinates as [number,number]}));
     } catch { pointsRef.current = []; }
-  }, [fc]);
+  }, [fc, enabled]);
 
-  // shimmer loop only when retracing + visible
+  // shimmer loop only when retracing + visible + enabled
   useEffect(() => {
     const map = getCurrentMap();
-    if (!visible) {
+    if (!visible || !enabled) {
       try { map?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
       // cleanup hover marker
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
@@ -74,12 +114,12 @@ export function FlowRouteMapLayer() {
     map.on('click','flow:route:venues', onClickDots);
 
     // hover affordance on the line (only retrace)
-    const onEnterLine = () => { map.getCanvas().style.cursor = retrace ? 'pointer' : ''; };
+    const onEnterLine = () => { map.getCanvas().style.cursor = isRetracing ? 'pointer' : ''; };
     const onLeaveLine = () => { map.getCanvas().style.cursor = ''; try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {} };
     // simple throttle for pointer-move (avoid flood)
     let lastMove = 0;
     const onMoveLine = (e:any) => {
-      if (!retrace) return;
+      if (!isRetracing) return;
       const now = performance.now();
       if (now - lastMove < 32) return;
       lastMove = now;
@@ -96,7 +136,7 @@ export function FlowRouteMapLayer() {
       }
     };
     const onClickLine = (e:any) => {
-      if (!retrace) return;
+      if (!isRetracing) return;
       const idx = nearestIndex(e.lngLat.lng, e.lngLat.lat, pointsRef.current);
       emitEvent(Events.FLOQ_FLOW_RETRACE_GOTO, { index: idx });
     };
@@ -106,7 +146,7 @@ export function FlowRouteMapLayer() {
     map.on('click','flow:route:line', onClickLine);
 
     // shimmer animation for retrace mode
-    if (retrace) {
+    if (isRetracing) {
       let raf = 0;
       const start = performance.now();
       const step = () => {
@@ -140,7 +180,7 @@ export function FlowRouteMapLayer() {
       map.off('click','flow:route:venues', onClickDots);
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
     };
-  }, [visible, retrace]);
+  }, [visible, isRetracing, enabled]);
 
   return null;
 }
