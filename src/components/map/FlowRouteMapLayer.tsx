@@ -7,8 +7,12 @@ import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import mapboxgl from 'mapbox-gl';
 import { getUserVibeHex, resolveVibeColor } from '@/lib/vibe/vibeColor';
 import { gradientStops } from '@/lib/vibe/vibeGradient';
+import { usePerfBudget } from '@/hooks/usePerfBudget';
 
 export function FlowRouteMapLayer() {
+  // Performance watchdog for auto-tuning shimmer
+  const { ok: perfOk } = usePerfBudget(1500);
+    
   // persisted local toggle
   const LS_KEY = 'floq:layers:flow-route:enabled';
   const [enabled, setEnabled] = useState<boolean>(() => {
@@ -88,10 +92,10 @@ export function FlowRouteMapLayer() {
     } catch { pointsRef.current = []; }
   }, [fc]);
 
-  // shimmer loop only when retracing + visible + enabled
+  // shimmer loop only when retracing + visible + enabled + perf OK
   useEffect(() => {
     const map = getCurrentMap();
-    if (!visible || !enabled) {
+    if (!visible || !enabled || !perfOk) {
       try { map?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
       // cleanup hover marker
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
@@ -118,12 +122,12 @@ export function FlowRouteMapLayer() {
     // hover affordance on the line (only retrace)
     const onEnterLine = () => { map.getCanvas().style.cursor = isRetracing ? 'pointer' : ''; };
     const onLeaveLine = () => { map.getCanvas().style.cursor = ''; try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {} };
-    // simple throttle for pointer-move (avoid flood)
-    let lastMove = 0;
+    // throttle pointer move (tighter when perf low)
+    let lastMove = 0, minGap = perfOk ? 32 : 64;
     const onMoveLine = (e:any) => {
       if (!isRetracing) return;
       const now = performance.now();
-      if (now - lastMove < 32) return;
+      if (now - lastMove < minGap) return;
       lastMove = now;
       const idx = nearestIndex(e.lngLat.lng, e.lngLat.lat, pointsRef.current);
       const coord = pointsRef.current[idx]?.position;
@@ -182,7 +186,7 @@ export function FlowRouteMapLayer() {
       map.off('click','flow:route:venues', onClickDots);
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
     };
-  }, [visible, enabled, isRetracing]);
+  }, [visible, enabled, isRetracing, perfOk]);
 
   return null;
 }

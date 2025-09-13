@@ -42,9 +42,11 @@ import { RallyNavBridge } from '@/components/rally/RallyNavBridge';
 import { RallyInboxHost } from '@/components/rally/RallyInboxHost';
 import { MapNavBridge } from '@/components/nav/MapNavBridge';
 import { InboxNavBridge } from '@/components/nav/InboxNavBridge';
+import { DirectionsBridge } from '@/components/nav/DirectionsBridge';
 import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
 import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 import { FlowAndVenueBridge } from '@/components/system/FlowAndVenueBridge';
+import { mountAnalytics } from '@/analytics/instrumentation';
 // Dev QA harness
 import '@/dev/emit';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
@@ -53,6 +55,9 @@ interface FieldLayoutProps {
 }
 
 export const FieldLayout = () => {
+  // Analytics mounting
+  React.useEffect(()=>mountAnalytics(),[]);
+  
   const data = useFieldData();
   const { 
     location, 
@@ -258,6 +263,9 @@ export const FieldLayout = () => {
 
                  {/* Flow route layers & lightweight UI */}
                 <FlowRouteMapLayer />
+
+                {/* Navigation Bridges */}
+                <DirectionsBridge />
 
                 {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
                 <BottomHud>

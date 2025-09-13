@@ -225,6 +225,22 @@ export function ExploreDrawer({
                   Plan
                 </button>
                 <button
+                  type="button"
+                  onClick={safeClick(() => emitEvent(Events.UI_OPEN_DIRECTIONS, {
+                    // @ts-ignore - TileVenue might not expose lat/lng, but this is safe fallback
+                    lat: (primary as any).lat ?? 0,
+                    lng: (primary as any).lng ?? 0,
+                    label: primary.name,
+                    mode: 'transit'
+                  }))}
+                  disabled={busy}
+                  aria-busy={busy}
+                  className="px-3 py-2 rounded-md text-xs bg-white/10 text-white/85 hover:bg-white/15 transition-all duration-150 disabled:opacity-60"
+                  data-testid="venue-route"
+                >
+                  Route
+                </button>
+                <button
                   ref={changeBtnRef}
                   onClick={() => onChangeVenue(primary.pid)}
                   className="ml-auto text-[11px] underline text-white/85 hover:text-white/95"
