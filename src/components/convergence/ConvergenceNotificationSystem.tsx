@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { eventBridge, Events } from '@/services/eventBridge';
+import { Events, onEvent, emitEvent } from '@/services/eventBridge';
 import { useEnhancedHaptics } from '@/hooks/useEnhancedHaptics';
 
 type Payload = {
@@ -17,17 +17,12 @@ export function ConvergenceNotificationSystem() {
   const { success } = useEnhancedHaptics();
 
   React.useEffect(() => {
-    const handleConvergence = (payload: Payload) => {
-      setEvt(payload);
+    // Typed subscription with auto-unsub
+    return onEvent(Events.FLOQ_CONVERGENCE_DETECTED, (payload) => {
+      setEvt(payload || null);
       // auto-dismiss after 10s
       window.setTimeout(() => setEvt(prev => prev && prev === payload ? null : prev), 10000);
-    };
-
-    eventBridge.on(Events.FLOQ_CONVERGENCE_DETECTED, handleConvergence);
-    
-    return () => {
-      eventBridge.off(Events.FLOQ_CONVERGENCE_DETECTED, handleConvergence);
-    };
+    });
   }, []);
 
   const startRally = async () => {
@@ -37,11 +32,7 @@ export function ConvergenceNotificationSystem() {
       const center = evt.predictedLocation;
       
       // Emit rally creation events
-      eventBridge.emit(Events.UI_MAP_FLY_TO, { 
-        lng: center.lng, 
-        lat: center.lat, 
-        zoom: 16 
-      });
+      emitEvent(Events.UI_MAP_FLY_TO, { lng: center.lng, lat: center.lat, zoom: 16 });
       
       try { 
         success(); 

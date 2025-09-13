@@ -136,7 +136,6 @@ export const Events = {
   FLOQ_CONVERGENCE_DETECTED: 'floq:convergence:detected',
   FLOQ_CONVERGENCE_RALLY_CREATE: 'floq:convergence:rallyCreate',
   RALLY_CREATE_REQUEST: 'floq:rally:createRequest',
-  CONVERGENCE_DETECTED: 'floq:convergence:detected',
   
   // Social & Presence
   FLOQ_PRESENCE_UPDATE: 'floq:presence:update',
@@ -146,6 +145,10 @@ export const Events = {
   FLOQ_HEAT_TOGGLE: 'floq:heatline:toggle',
   FLOQ_HEAT_SET: 'floq:heatline:set',
   FLOQ_OPEN_CONVERGENCE: 'floq:open-convergence',
+  
+  // Layer toggles (generic)
+  FLOQ_LAYER_TOGGLE: 'floq:layer:toggle',
+  FLOQ_LAYER_SET: 'floq:layer:set',
 } as const;
 
 // Type definitions for common event payloads
@@ -194,16 +197,6 @@ export interface EventPayloads {
     type?: 'convergence' | 'manual';
   };
   
-  [Events.CONVERGENCE_DETECTED]: {
-    agentIds?: string[];
-    friendId: string;
-    friendName: string;
-    probability: number;
-    timeToMeet: number;
-    predictedLocation: { lat: number; lng: number; venueName?: string };
-    confidence: number;
-  };
-  
   [Events.FLOQ_PRESENCE_UPDATE]: { 
     profileId: string; 
     position: [number, number]; 
@@ -214,21 +207,25 @@ export interface EventPayloads {
     position: [number, number]; 
     velocity?: [number, number] 
   };
+  
+  // Generic layer toggle payloads
+  [Events.FLOQ_LAYER_TOGGLE]: { id: string; enabled?: boolean };
+  [Events.FLOQ_LAYER_SET]: { id: string; enabled: boolean };
 }
 
-// Typed emit helper
+// Typed helpers
 export function emitEvent<K extends keyof EventPayloads>(
   event: K,
   payload: EventPayloads[K]
 ): void {
-  eventBridge.emit(event, payload);
+  eventBridge.emit(event as string, payload);
 }
 
-// Typed listener helper
 export function onEvent<K extends keyof EventPayloads>(
   event: K,
   listener: (payload: EventPayloads[K]) => void
 ): () => void {
-  eventBridge.on(event, listener);
-  return () => eventBridge.off(event, listener);
+  const handler = (p: unknown) => listener(p as EventPayloads[K]);
+  eventBridge.on(event as string, handler);
+  return () => eventBridge.off(event as string, handler);
 }

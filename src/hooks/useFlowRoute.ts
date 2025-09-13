@@ -97,6 +97,14 @@ export function useFlowRoute() {
     }
   }, [patterns]);
 
+  const getLngLat = () => {
+    const c = userLocation?.coords as any;
+    if (!c) return null;
+    if ('lng' in c && 'lat' in c) return [c.lng, c.lat] as [number, number];
+    if ('longitude' in c && 'latitude' in c) return [c.longitude, c.latitude] as [number, number];
+    return null;
+  };
+
   // Track venue visits
   useEffect(() => {
     if (selectedVenue) {
@@ -124,11 +132,12 @@ export function useFlowRoute() {
       // Left venue
       const duration = Date.now() - venueEntryTime.current;
       
-      if (duration >= MIN_VENUE_DURATION && userLocation?.coords) {
+      const pos = getLngLat();
+      if (duration >= MIN_VENUE_DURATION && pos) {
         const routePoint: RoutePoint = {
           id: `rp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           timestamp: Date.now(),
-          position: [userLocation.coords.lng, userLocation.coords.lat],
+          position: pos,
           venueId: lastVenueRef.current,
           venueName: selectedVenue?.name,
           venueType: selectedVenue?.type,
@@ -145,11 +154,10 @@ export function useFlowRoute() {
 
   // Track movement between venues
   useEffect(() => {
-    if (userLocation?.coords && !selectedVenue) {
-      const point: [number, number] = [
-        userLocation.coords.lng,
-        userLocation.coords.lat
-      ];
+    if (!selectedVenue) {
+      const p = getLngLat();
+      if (!p) return;
+      const point = p;
       
       // Add to path buffer with deduplication
       if (pathBuffer.current.length === 0 || 

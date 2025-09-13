@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { layerManager } from '@/lib/map/LayerManager';
 import { createPredictedMeetSpec, applyPredictedMeetFeatureCollection } from '@/lib/map/overlays/predictedMeetSpec';
-import { eventBridge, Events } from '@/services/eventBridge';
+import { onEvent, Events } from '@/services/eventBridge';
 import { shouldSuppress, buildSuppressionKey, prune } from '@/lib/predictedMeet/suppressStore';
 
 // ring animation tuning
@@ -20,11 +20,24 @@ type Item = {
 };
 
 export function PredictedMeetingPointsLayer() {
-  // Register spec once
+  // Small persisted flag
+  const LS_KEY = 'floq:layers:predicted-meet:enabled';
+  const [enabled, setEnabled] = React.useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      return raw == null ? true : raw === 'true';
+    } catch { return true; }
+  });
+
+  // Register/unregister based on enabled
   React.useEffect(() => {
+    if (!enabled) {
+      try { layerManager.unregister('predicted-meet'); } catch {}
+      return;
+    }
     layerManager.register(createPredictedMeetSpec());
-    return () => layerManager.unregister('predicted-meet');
-  }, []);
+    return () => { try { layerManager.unregister('predicted-meet'); } catch {} };
+  }, [enabled]);
 
   const itemsRef = React.useRef<Item[]>([]);
 
@@ -85,17 +98,35 @@ export function PredictedMeetingPointsLayer() {
     applyPredictedMeetFeatureCollection(fc);
   }, [buildFC]);
 
-  // Listen for convergence events and add points
+  // Toggle handling
   React.useEffect(() => {
-    const unsubscribe = () => eventBridge.off(Events.FLOQ_CONVERGENCE_DETECTED, handler);
-    const handler = (payload: any) => {
+    const offToggle = onEvent(Events.FLOQ_LAYER_TOGGLE, (p) => {
+      if (!p || p.id !== 'predicted-meet') return;
+      setEnabled(prev => {
+        const next = p.enabled == null ? !prev : !!p.enabled;
+        try { localStorage.setItem(LS_KEY, String(next)); } catch {}
+        return next;
+      });
+    });
+    const offSet = onEvent(Events.FLOQ_LAYER_SET, (p) => {
+      if (!p || p.id !== 'predicted-meet') return;
+      setEnabled(!!p.enabled);
+      try { localStorage.setItem(LS_KEY, String(!!p.enabled)); } catch {}
+    });
+    return () => { offToggle(); offSet(); };
+  }, []);
+
+  // Listen for convergence events and add points (only when enabled)
+  React.useEffect(() => {
+    if (!enabled) return;
+    const off = onEvent(Events.FLOQ_CONVERGENCE_DETECTED, (payload) => {
       if (!payload?.predictedLocation) return;
       const { lng, lat } = payload.predictedLocation;
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
 
       const key = buildSuppressionKey({
         friendId: payload.friendId,
-        participants: payload.participants,
+        participants: payload.agentIds,
         lng, lat,
         timeToMeet: payload.timeToMeet,
       });
@@ -105,16 +136,11 @@ export function PredictedMeetingPointsLayer() {
       const prob = Math.max(0, Math.min(1, payload.probability ?? 0.7));
       pushItem(lng, lat, etaSec, prob);
       render();
-    };
-
-    eventBridge.on(Events.FLOQ_CONVERGENCE_DETECTED, handler);
-
-    // lightweight animation loop
+    });
     const id = setInterval(render, FPS_MS);
     render();
-
-    return () => { unsubscribe(); clearInterval(id); };
-  }, [pushItem, render]);
+    return () => { off(); clearInterval(id); };
+  }, [enabled, pushItem, render]);
 
   return null;
 }
