@@ -32,6 +32,11 @@ export const LayerSelectionFab = () => {
   const [flowOn, setFlowOn] = useState<boolean>(() => {
     try { const raw = localStorage.getItem(LS_KEY_FLOW); return raw == null ? true : raw === 'true'; } catch { return true; }
   });
+  // NEW: breadcrumb-trail persisted state
+  const LS_KEY_BREADCRUMB = 'floq:layers:breadcrumb-trail:enabled';
+  const [breadcrumbOn, setBreadcrumbOn] = useState<boolean>(() => {
+    try { const raw = localStorage.getItem(LS_KEY_BREADCRUMB); return raw == null ? true : raw === 'true'; } catch { return true; }
+  });
   const [vibePrevOn, setVibePrevOn] = useState(() => isVibePreviewEnabled());
   
   // Hook into existing functionality
@@ -129,6 +134,34 @@ export const LayerSelectionFab = () => {
               className={cn(
                 "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
                 flowOn ? "translate-x-6" : "translate-x-1"
+              )}
+            />
+          </button>
+        </div>
+        
+        <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5">
+          <div className="flex items-center gap-3">
+            <span className="text-lg">🍞</span>
+            <span className="text-sm">Breadcrumb trail</span>
+          </div>
+          <button
+            type="button"
+            aria-pressed={breadcrumbOn}
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+              breadcrumbOn ? "bg-pink-500/70" : "bg-white/20"
+            )}
+            onClick={() => {
+              const next = !breadcrumbOn;
+              setBreadcrumbOn(next);
+              try { localStorage.setItem(LS_KEY_BREADCRUMB, String(next)); } catch {}
+              emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'breadcrumb-trail', enabled: next });
+            }}
+          >
+            <span
+              className={cn(
+                "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                breadcrumbOn ? "translate-x-6" : "translate-x-1"
               )}
             />
           </button>

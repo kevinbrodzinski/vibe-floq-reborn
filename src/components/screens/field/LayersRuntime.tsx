@@ -5,6 +5,7 @@ import { useNavDestination } from '@/hooks/useNavDestination';
 import { useTileVenuesLayer } from '@/map/layers/useTileVenuesLayer';
 import { useSocialWeatherLayer } from '@/map/layers/useSocialWeatherLayer';
 import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPointsLayer';
+import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import type { FieldData } from './FieldDataProvider';
 
 interface LayersRuntimeProps {
@@ -23,5 +24,11 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   useSocialWeatherLayer(map, data.weatherCells);
 
   // Predicted meeting points (tiny circles) driven by convergence events
-  return <PredictedMeetingPointsLayer />;
+  // Breadcrumb trail system
+  return (
+    <>
+      <PredictedMeetingPointsLayer />
+      <BreadcrumbMapLayer map={map} />
+    </>
+  );
 }

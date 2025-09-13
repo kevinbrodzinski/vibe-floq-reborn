@@ -1,6 +1,5 @@
 import React from 'react';
 import { ConvergenceNotificationSystem } from '@/components/convergence/ConvergenceNotificationSystem';
-// import { BreadcrumbTrailOverlay } from '@/components/map/BreadcrumbTrailOverlay';
 import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 
 interface FieldWithProactiveFeaturesProps {
