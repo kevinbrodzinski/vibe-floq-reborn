@@ -5,8 +5,8 @@ import { layerManager } from '@/lib/map/LayerManager';
 import { createFlowRouteSpec } from '@/lib/map/overlays/flowRouteSpec';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import mapboxgl from 'mapbox-gl';
-import { getUserVibeHex } from '@/lib/vibe/vibeColor';
-import { mixHexOklab } from '@/lib/vibe/vibeGradient';
+import { getUserVibeHex, resolveVibeColor } from '@/lib/vibe/vibeColor';
+import { gradientStops } from '@/lib/vibe/vibeGradient';
 
 export function FlowRouteMapLayer() {
   // persisted local toggle
@@ -193,14 +193,13 @@ function toFeatureCollection(data: { path?: any[]; mode?: 'retrace'|'display' })
   const pts = (data.path ?? []).filter((p: any) => Array.isArray(p.position));
 
   if (pts.length > 1) {
-    // gradient colors (user → venue with OKLab mid)
-    const userColor  = getUserVibeHex?.() ?? '#8B5CF6';
-    const venueColor = (pts[pts.length-1]?.color) || '#EC4899';
-    const midColor   = mixHexOklab(userColor, venueColor, 0.5);
+    const userC = getUserVibeHex?.() ?? resolveVibeColor({ vibeKey:'social' });
+    const venueC = pts[0]?.color || resolveVibeColor({ vibeKey:'mellow' });
+    const [s0,s1,s2,s3] = gradientStops(userC, venueC).map(s=>s[1]);
     features.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: pts.map((p:any)=>p.position) },
-      properties: { type: 'flow', userColor, midColor, venueColor }
+      properties: { type: 'flow', g0:s0, g1:s1, g2:s2, g3:s3 }
     } as any);
   }
 

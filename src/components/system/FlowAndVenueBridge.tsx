@@ -4,6 +4,8 @@ import { useFlowRecorder } from '@/hooks/useFlowRecorder';
 import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useVenueActions } from '@/hooks/useVenueActions';
 import { useGeo } from '@/hooks/useGeo';
+import { toastOk, toastWarn, toastErr } from '@/lib/ui/toast';
+import { enqueue, drain, isOnline } from '@/lib/offline/venueQueue';
 
 export function FlowAndVenueBridge() {
   const recorder = useFlowRecorder();
@@ -12,75 +14,101 @@ export function FlowAndVenueBridge() {
   const { coords } = useGeo();
 
   React.useEffect(() => {
-    const offFlowStart = onEvent(Events.FLOQ_FLOW_START_REQUEST, ({ venueId }) => {
+    // Replay queued actions when coming back online
+    const onUp = () => drain(async (job) => {
+      if (job.t==='join'    && checkIn) await checkIn(job.id, { lat: coords?.lat, lng: coords?.lng });
+      if (job.t==='save'    && share)   await share(job.id,   { lat: coords?.lat, lng: coords?.lng });
+      if (job.t==='plan'    && plan)    await plan(job.id,    { lat: coords?.lat, lng: coords?.lng });
+      if (job.t==='checkin' && checkIn) await checkIn(job.id, { lat: job.lat, lng: job.lng });
+    });
+    window.addEventListener('online', onUp, { passive: true });
+    onUp();
+
+    const offFlowStart = onEvent(Events.FLOQ_FLOW_START_REQUEST, async ({ venueId }) => {
       try {
         if (recorder?.start) {
-          recorder.start({ 
+          await recorder.start({ 
             visibility: 'public',
             start_center: coords ? { lng: coords.lng, lat: coords.lat } : undefined 
           });
-          console.info('[Bridge] ✅ Flow recording started', venueId);
+          toastOk('Flow started');
         } else {
-          console.info('[Bridge] 📝 Start flow requested (recorder not available)', venueId);
+          toastWarn('Flow recorder not available');
         }
       } catch (error) {
-        console.warn('[Bridge] ❌ Error starting flow:', error);
+        toastErr('Could not start flow');
       }
     });
 
-    const offJoin = onEvent(Events.UI_VENUE_JOIN, ({ venueId }) => {
+    const offJoin = onEvent(Events.UI_VENUE_JOIN, async ({ venueId }) => {
       try {
-        if (checkIn && venueId) {
-          checkIn(venueId, { 
-            lat: coords?.lat, 
-            lng: coords?.lng,
-            vibe: null // will use current vibe from store
-          });
-          console.info('[Bridge] ✅ Venue check-in completed', venueId);
+        if (venueId && checkIn) {
+          if (isOnline()) { 
+            await checkIn(venueId, { 
+              lat: coords?.lat, 
+              lng: coords?.lng,
+              vibe: null // will use current vibe from store
+            }); 
+            toastOk('Checked in'); 
+          } else { 
+            enqueue({ t:'join', id: venueId }); 
+            toastOk('Queued: will check in when online'); 
+          }
         } else {
-          console.info('[Bridge] 📝 Join venue requested (hook not available)', venueId);
+          toastWarn('Join unavailable');
         }
       } catch (error) {
-        console.warn('[Bridge] ❌ Error joining venue:', error);
+        toastErr('Could not join venue');
       }
     });
 
-    const offSave = onEvent(Events.UI_VENUE_SAVE, ({ venueId }) => {
+    const offSave = onEvent(Events.UI_VENUE_SAVE, async ({ venueId }) => {
       try {
-        if (share && venueId) {
-          share(venueId, {
-            lat: coords?.lat,
-            lng: coords?.lng,
-          });
-          console.info('[Bridge] ✅ Venue saved/shared', venueId);
+        if (venueId && share) {
+          if (isOnline()) { 
+            await share(venueId, {
+              lat: coords?.lat,
+              lng: coords?.lng,
+            }); 
+            toastOk('Saved to places'); 
+          } else { 
+            enqueue({ t:'save', id: venueId }); 
+            toastOk('Queued: will save when online'); 
+          }
         } else {
-          console.info('[Bridge] 📝 Save venue requested (hook not available)', venueId);
+          toastWarn('Save unavailable');
         }
       } catch (error) {
-        console.warn('[Bridge] ❌ Error saving venue:', error);
+        toastErr('Could not save venue');
       }
     });
 
-    const offPlan = onEvent(Events.UI_VENUE_PLAN, ({ venueId }) => {
+    const offPlan = onEvent(Events.UI_VENUE_PLAN, async ({ venueId }) => {
       try {
-        if (plan && venueId) {
-          plan(venueId, {
-            lat: coords?.lat,
-            lng: coords?.lng,
-          });
-          console.info('[Bridge] ✅ Venue added to plan', venueId);
+        if (venueId && plan) {
+          if (isOnline()) { 
+            await plan(venueId, {
+              lat: coords?.lat,
+              lng: coords?.lng,
+            }); 
+            toastOk('Added to plan'); 
+          } else { 
+            enqueue({ t:'plan', id: venueId }); 
+            toastOk('Queued: will add to plan when online'); 
+          }
         } else if (onCreatePlan && venueId) {
           onCreatePlan(venueId);
-          console.info('[Bridge] ✅ Plan creation initiated', venueId);
+          toastOk('Plan started');
         } else {
-          console.info('[Bridge] 📝 Plan venue requested (hook not available)', venueId);
+          toastWarn('Plan unavailable');
         }
       } catch (error) {
-        console.warn('[Bridge] ❌ Error planning venue:', error);
+        toastErr('Could not add to plan');
       }
     });
 
     return () => {
+      window.removeEventListener('online', onUp);
       offFlowStart();
       offJoin();
       offSave();

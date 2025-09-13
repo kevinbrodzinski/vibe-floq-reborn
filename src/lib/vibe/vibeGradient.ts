@@ -47,3 +47,13 @@ export function mixHexOklab(aHex:string, bHex:string, t:number): string {
   const lab = { L: a.L + (b.L-a.L)*t, a: a.a + (b.a-a.a)*t, b: a.b+(b.b-a.b)*t }
   return rgbToHex(oklabToRgb(lab))
 }
+
+export function gradientStops(userHex: string, venueHex: string) {
+  // 0 → user, 1 → venue (can tune gamma/weighting later)
+  return [
+    [0.00, userHex],
+    [0.35, userHex],
+    [0.65, venueHex],
+    [1.00, venueHex],
+  ] as Array<[number, string]>;
+}

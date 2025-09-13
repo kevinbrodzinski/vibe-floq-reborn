@@ -110,7 +110,7 @@ export function ExploreDrawer({
       {/* Bottom sheet */}
       {open && (
         <div
-          className="fixed left-0 right-0 bottom-0 z-[720] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur pointer-events-auto"
+          className="fixed left-0 right-0 bottom-0 z-[760] px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur pointer-events-auto"
           style={{ background:'rgba(12,16,26,0.9)', borderTop:'1px solid rgba(255,255,255,0.15)' }}
           role="dialog" aria-label="Explore nearby"
         >
@@ -159,7 +159,7 @@ export function ExploreDrawer({
                     aria-busy={busy}
                     className="px-3 py-2 rounded-md text-xs font-semibold bg-green-500/80 text-white hover:bg-green-500 transition-all duration-150 disabled:opacity-60"
                     aria-label="Start Flow"
-                    data-testid="start-flow"
+                    data-testid="venue-start-flow"
                   >
                     ▶ Start Flow
                   </button>
