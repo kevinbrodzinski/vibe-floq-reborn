@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MMKV } from 'react-native-mmkv';
-import { emitEvent, Events } from '@/services/eventBridge';
+import { emitEvent, onEvent, Events } from '@/services/eventBridge';
 import { useGeo } from '@/hooks/useGeo';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
 import { useSocialCache } from '@/hooks/useSocialCache';
@@ -410,6 +410,33 @@ export function useFlowRoute() {
         color: '#EC4899'
       });
     }
+  }, [flowRoute]);
+
+  // NEW: direct "goto" retrace index (from line/venue click)
+  useEffect(() => {
+    return onEvent(Events.FLOQ_FLOW_RETRACE_GOTO, ({ index }) => {
+      if (!flowRoute.length) return;
+      const clamped = Math.max(0, Math.min(flowRoute.length - 1, index));
+      setIsRetracing(true);
+      setCurrentRetraceIndex(clamped);
+      const p = flowRoute[clamped];
+      if (p?.position) {
+        try {
+          emitEvent(Events.UI_MAP_FLY_TO, {
+            lng: p.position[0],
+            lat: p.position[1],
+            zoom: 18,
+            duration: 700
+          });
+          // map pulse: use resolved vibe color
+          emitEvent(Events.UI_MAP_PULSE, { 
+            lng: p.position[0], 
+            lat: p.position[1], 
+            color: (p as any).color || '#EC4899' 
+          });
+        } catch {}
+      }
+    });
   }, [flowRoute]);
 
   // Get flow route statistics

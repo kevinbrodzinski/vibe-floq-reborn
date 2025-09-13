@@ -134,6 +134,7 @@ export const Events = {
   FLOQ_FLOW_SHOW: 'floq:flow:show',
   FLOQ_FLOW_HIDE: 'floq:flow:hide',
   FLOQ_FLOW_RETRACE: 'floq:flow:retrace',
+  FLOQ_FLOW_RETRACE_GOTO: 'floq:flow:retrace:goto', // NEW: direct step jump
   
   // Breadcrumb System (legacy - use Flow events instead)
   FLOQ_BREADCRUMB_SHOW: 'floq:breadcrumb:show',
@@ -188,6 +189,7 @@ export interface EventPayloads {
   };
   [Events.FLOQ_FLOW_HIDE]: {};
   [Events.FLOQ_FLOW_RETRACE]: { fromPoint?: string };
+  [Events.FLOQ_FLOW_RETRACE_GOTO]: { index: number }; // NEW
   
   // Breadcrumb System events (legacy)
   [Events.FLOQ_BREADCRUMB_SHOW]: { 
