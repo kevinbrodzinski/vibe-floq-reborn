@@ -97,6 +97,7 @@ export function useConvergenceMonitor(pollMs = 4000) {
       const friendHeads = enhancedFriends;
       const path = myPath;
       if (!friendHeads?.length || path.length < 1) return;
+      
       const mePoint = path[path.length - 1];
       const self = computeSelfVelocity(path);
       const meAgent: Agent = {
@@ -146,5 +147,5 @@ export function useConvergenceMonitor(pollMs = 4000) {
     }, pollMs);
 
     return () => clearInterval(interval);
-  }, [pollMs]);
+  }, [enhancedFriends, myPath, pollMs]);
 }

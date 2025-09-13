@@ -48,7 +48,8 @@ export function ConvergenceNotificationSystem() {
 
   if (!evt) return null;
 
-  const minutes = Math.max(1, Math.ceil(evt.timeToMeet / 60));
+  // Clamp duration to prevent infinite animations
+  const minutes = Math.max(1, Math.ceil(Math.min(180, evt.timeToMeet) / 60));
   const probPct = Math.round(evt.probability * 100);
 
   return (

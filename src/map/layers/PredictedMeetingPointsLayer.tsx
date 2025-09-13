@@ -126,7 +126,7 @@ export function PredictedMeetingPointsLayer() {
 
       const key = buildSuppressionKey({
         friendId: payload.friendId,
-        participants: payload.agentIds,
+        participants: [payload.friendId], // Use friendId as participant for now
         lng, lat,
         timeToMeet: payload.timeToMeet,
       });
