@@ -15,6 +15,7 @@ export function FlowRouteMapLayer() {
     try { const raw = localStorage.getItem(LS_KEY); return raw == null ? true : raw === 'true'; } catch { return true; }
   });
 
+  // register spec once
   useEffect(() => {
     layerManager.register(createFlowRouteSpec());
     return () => layerManager.unregister('flow-route');
@@ -22,7 +23,7 @@ export function FlowRouteMapLayer() {
 
   const [visible, setVisible] = useState(false);
   const [isRetracing, setIsRetracing] = useState(false);
-  const [fc, setFC] = useState<GeoJSON.FeatureCollection>({ type:'FeatureCollection', features:[] });
+  const [fc, setFC] = useState<any>({ type:'FeatureCollection', features: [] });
 
   // Observe layer toggle events for "flow-route"
   useEffect(() => {
@@ -31,11 +32,9 @@ export function FlowRouteMapLayer() {
       setEnabled(prev => {
         const next = p.enabled == null ? !prev : !!p.enabled;
         try { localStorage.setItem(LS_KEY, String(next)); } catch {}
-        // if disabling, also hide and stop retrace
         if (!next) {
-          setVisible(false);
-          setIsRetracing(false);
-          setFC({ type:'FeatureCollection', features:[] });
+          setVisible(false); setIsRetracing(false);
+          setFC({ type:'FeatureCollection', features: [] });
           try { getCurrentMap()?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
         }
         return next;
@@ -46,9 +45,8 @@ export function FlowRouteMapLayer() {
       setEnabled(!!p.enabled);
       try { localStorage.setItem(LS_KEY, String(!!p.enabled)); } catch {}
       if (!p.enabled) {
-        setVisible(false);
-        setIsRetracing(false);
-        setFC({ type:'FeatureCollection', features:[] });
+        setVisible(false); setIsRetracing(false);
+        setFC({ type:'FeatureCollection', features: [] });
         try { getCurrentMap()?.setPaintProperty('flow:route:anim', 'line-opacity', 0); } catch {}
       }
     });
@@ -58,27 +56,29 @@ export function FlowRouteMapLayer() {
   // listen to flow show/hide
   useEffect(() => {
     const offShow = onEvent(Events.FLOQ_FLOW_SHOW, (p) => {
-      if (!enabled) return; // ignore if disabled
+      if (!enabled) return;
       setVisible(true);
       setIsRetracing((p?.mode ?? 'display') === 'retrace');
-      setFC(toFC(p?.path ?? []));
+      setFC(toFeatureCollection(p ?? { path: [], mode: 'display' }));
     });
     const offHide = onEvent(Events.FLOQ_FLOW_HIDE, () => {
       setVisible(false);
       setIsRetracing(false);
-      setFC({ type:'FeatureCollection', features:[] });
+      setFC({ type:'FeatureCollection', features: [] });
     });
     return () => { offShow(); offHide(); };
   }, [enabled]);
+
+  // apply FC (suppressed when disabled)
+  useEffect(() => {
+    layerManager.apply('flow-route', enabled ? fc : { type:'FeatureCollection', features: [] });
+  }, [fc, enabled]);
 
   // cache points array for hover math
   const pointsRef = useRef<Array<{position:[number,number]}>>([]);
   const hoverMarkerRef = useRef<mapboxgl.Marker|null>(null);
 
   useEffect(() => {
-    // suppress application if disabled
-    layerManager.apply('flow-route', enabled ? fc : { type:'FeatureCollection', features:[] });
-    // cache points array for hover math
     try {
       const features = (fc as any).features || [];
       pointsRef.current = features
@@ -86,7 +86,7 @@ export function FlowRouteMapLayer() {
         .sort((a:any,b:any)=> (a.properties.index||0) - (b.properties.index||0))
         .map((f:any)=>({ position: f.geometry.coordinates as [number,number]}));
     } catch { pointsRef.current = []; }
-  }, [fc, enabled]);
+  }, [fc]);
 
   // shimmer loop only when retracing + visible + enabled
   useEffect(() => {
@@ -182,39 +182,34 @@ export function FlowRouteMapLayer() {
       map.off('click','flow:route:venues', onClickDots);
       try { hoverMarkerRef.current?.remove(); hoverMarkerRef.current=null; } catch {}
     };
-  }, [visible, isRetracing, enabled]);
+  }, [visible, enabled, isRetracing]);
 
   return null;
 }
 
-function toFC(path: Array<{ position:[number,number], venueName?:string, color?:string }>): GeoJSON.FeatureCollection {
+// Helper: same shape you've been using (path entries: {id, position:[lng,lat], venueName?, color?})
+function toFeatureCollection(data: { path?: any[]; mode?: 'retrace'|'display' }): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = [];
-  const pts = path.filter(p => Array.isArray(p.position));
-
-  // DI: get user vibe and (optionally) the destination vibe
-  const userColor = getUserVibeHex?.() ?? '#8B5CF6'
-  const venueColor = (pts.length>0 && pts[pts.length-1]?.color) || '#EC4899'
+  const pts = (data.path ?? []).filter((p: any) => Array.isArray(p.position));
 
   if (pts.length > 1) {
+    // gradient colors (user → venue with OKLab mid)
+    const userColor  = getUserVibeHex?.() ?? '#8B5CF6';
+    const venueColor = (pts[pts.length-1]?.color) || '#EC4899';
+    const midColor   = mixHexOklab(userColor, venueColor, 0.5);
     features.push({
-      type:'Feature',
-      geometry:{ type:'LineString', coordinates: pts.map(p=>p.position) },
-      properties:{
-        type:'flow',
-        userColor: userColor,
-        venueColor: venueColor,
-        // simple mid = 50% blend (replace with real vibe distance scalar later)
-        midColor: mixHexOklab(userColor, venueColor, 0.5),
-      }
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: pts.map((p:any)=>p.position) },
+      properties: { type: 'flow', userColor, midColor, venueColor }
     } as any);
   }
 
   pts.forEach((p, i) => {
     features.push({
-      type:'Feature',
-      geometry:{ type:'Point', coordinates: p.position },
-      properties:{
-        type:'venue',
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: p.position },
+      properties: {
+        type: 'venue',
         venueName: p.venueName ?? 'Unknown',
         index: pts.length - i,
         ...(p.color ? { color: p.color } : {})
@@ -222,15 +217,17 @@ function toFC(path: Array<{ position:[number,number], venueName?:string, color?:
     } as any);
   });
 
-  return { type:'FeatureCollection', features };
+  return { type: 'FeatureCollection', features };
 }
 
-function nearestIndex(lng:number,lat:number, pts:Array<{position:[number,number]}>) {
-  if (!pts.length) return 0;
+// nearest route index for hover/click
+function nearestIndex(lng:number, lat:number, points: Array<{position:[number,number]}>): number {
+  if (!points.length) return 0;
   let best = 0; let bestD = Infinity;
-  for (let i=0;i<pts.length;i++) {
-    const dx = pts[i].position[0]-lng, dy = pts[i].position[1]-lat;
-    const d = dx*dx+dy*dy;
+  for (let i=0;i<points.length;i++) {
+    const [x,y] = points[i].position;
+    const dx = x - lng, dy = y - lat;
+    const d = dx*dx + dy*dy;
     if (d < bestD) { bestD = d; best = i; }
   }
   return best;

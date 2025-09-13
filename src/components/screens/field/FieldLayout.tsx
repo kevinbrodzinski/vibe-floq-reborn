@@ -255,7 +255,14 @@ export const FieldLayout = () => {
                 />
 
                 {/* Flow route layers & lightweight UI */}
-                <FlowRetraceHUD />
+                <FlowRouteMapLayer />
+
+                {/* Micro retrace HUD (centered, synced to shimmer) */}
+                <div className="fixed top-[calc(60px+env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[670] pointer-events-none">
+                  <FlowRetraceHUD />
+                </div>
+
+                {/* Continue pattern chip (appears when suggestions exist) */}
                 <ContinuePatternChip />
 
                 {/* Bottom HUD - Friends and Timewarp drawers - z-60 */}
@@ -270,10 +277,18 @@ export const FieldLayout = () => {
                 {/* Proximity Notifications - z-50 */}
                 <ProximityNotifications />
 
-                {/* System Layer (FAB, accessibility) - z-70+ */}
-                <FieldSystemLayer data={data} />
+          {/* System Layer (FAB, accessibility) - z-70+ */}
+          <FieldSystemLayer data={data} />
 
-                {/* Lens System - z-600 */}
+          {/* Micro retrace HUD (centered, synced to shimmer) */}
+          <div className="fixed top-[calc(60px+env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[670] pointer-events-none">
+            <FlowRetraceHUD />
+          </div>
+
+          {/* Continue pattern chip (appears when suggestions exist) */}
+          <ContinuePatternChip />
+
+          {/* Lens System - z-600 */}
                 <LensHotkeys />
                 {/* Centered, immune to clipping */}
                 <div

@@ -122,6 +122,10 @@ export const Events = {
   UI_NAV_DEST: 'ui:nav:dest',
   UI_VENUE_SELECT: 'ui:venue:select',
   
+  // Layer toggles
+  FLOQ_LAYER_TOGGLE: 'floq:layer:toggle',
+  FLOQ_LAYER_SET: 'floq:layer:set',
+  
   // Rally System
   FLOQ_RALLY_START: 'floq:rally:start',
   FLOQ_RALLY_CREATED: 'floq:rally:created',
@@ -134,7 +138,6 @@ export const Events = {
   FLOQ_FLOW_SHOW: 'floq:flow:show',
   FLOQ_FLOW_HIDE: 'floq:flow:hide',
   FLOQ_FLOW_RETRACE: 'floq:flow:retrace',
-  // NEW: jump to a specific step during retrace (0-based index)
   FLOQ_FLOW_RETRACE_GOTO: 'floq:flow:retrace:goto',
   
   // Breadcrumb System (legacy - use Flow events instead)
@@ -155,10 +158,6 @@ export const Events = {
   FLOQ_HEAT_TOGGLE: 'floq:heatline:toggle',
   FLOQ_HEAT_SET: 'floq:heatline:set',
   FLOQ_OPEN_CONVERGENCE: 'floq:open-convergence',
-  
-  // Layer toggles (generic)
-  FLOQ_LAYER_TOGGLE: 'floq:layer:toggle',
-  FLOQ_LAYER_SET: 'floq:layer:set',
 } as const;
 
 // Type definitions for common event payloads
@@ -167,6 +166,10 @@ export interface EventPayloads {
   [Events.UI_MAP_PULSE]: { lng: number; lat: number; color?: string; duration?: number };
   [Events.UI_NAV_DEST]: { lng: number; lat: number; duration?: number };
   [Events.UI_VENUE_SELECT]: { venueId: string };
+
+  // Layer toggles
+  [Events.FLOQ_LAYER_TOGGLE]: { id: 'flow-route'|'predicted-meet'|'breadcrumb-trail'; enabled?: boolean };
+  [Events.FLOQ_LAYER_SET]: { id: 'flow-route'|'predicted-meet'|'breadcrumb-trail'; enabled: boolean };
   
   [Events.FLOQ_RALLY_START]: { 
     rallyId: string; 
@@ -185,12 +188,12 @@ export interface EventPayloads {
   
   // Flow System events (new)
   [Events.FLOQ_FLOW_SHOW]: { 
-    path?: Array<{ id: string; position: [number, number]; venueName?: string; vibeKey?: string; vibeHex?: string }>; 
+    path?: Array<{ id: string; position: [number, number]; venueName?: string; color?: string }>; 
     mode?: 'retrace' | 'display' 
   };
   [Events.FLOQ_FLOW_HIDE]: {};
   [Events.FLOQ_FLOW_RETRACE]: { fromPoint?: string };
-  [Events.FLOQ_FLOW_RETRACE_GOTO]: { index: number }; // NEW
+  [Events.FLOQ_FLOW_RETRACE_GOTO]: { index: number };
   
   // Breadcrumb System events (legacy)
   [Events.FLOQ_BREADCRUMB_SHOW]: { 

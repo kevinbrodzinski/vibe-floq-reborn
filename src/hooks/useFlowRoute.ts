@@ -435,7 +435,8 @@ export function useFlowRoute() {
           });
           // map pulse: use resolved vibe color
           emitEvent(Events.UI_MAP_PULSE, {
-            lng: p.position[0], lat: p.position[1],
+            lng: p.position[0],
+            lat: p.position[1],
             color: (p as any).color ?? resolveVibeColor({
               venueId: p.venueId, venueName: p.venueName,
               vibeKey: (p as any).vibeKey, vibeHex: (p as any).vibeHex

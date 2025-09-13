@@ -72,6 +72,34 @@ export const LayerSelectionFab = () => {
           <MapPin className="h-4 w-4" />
           <span>Nearby venues</span>
         </DropdownMenuItem>
+
+        {/* Flow route */}
+        <DropdownMenuItem
+          onSelect={() => {
+            const next = !flowOn; setFlowOn(next);
+            try { localStorage.setItem(LS_KEY_FLOW, String(next)); } catch {}
+            emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'flow-route', enabled: next });
+          }}
+          className="flex items-center gap-3 h-10"
+        >
+          <span>🌀</span>
+          <span>Flow route</span>
+          <span className="ml-auto opacity-70 text-xs">{flowOn ? 'On' : 'Off'}</span>
+        </DropdownMenuItem>
+
+        {/* Breadcrumb trail */}
+        <DropdownMenuItem
+          onSelect={() => {
+            const next = !breadcrumbOn; setBreadcrumbOn(next);
+            try { localStorage.setItem(LS_KEY_BREADCRUMB, String(next)); } catch {}
+            emitEvent(Events.FLOQ_LAYER_TOGGLE, { id: 'breadcrumb-trail', enabled: next });
+          }}
+          className="flex items-center gap-3 h-10"
+        >
+          <span>🍞</span>
+          <span>Breadcrumb trail</span>
+          <span className="ml-auto opacity-70 text-xs">{breadcrumbOn ? 'On' : 'Off'}</span>
+        </DropdownMenuItem>
         
         {/* Vibe preview (design QA) */}
         <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5">
