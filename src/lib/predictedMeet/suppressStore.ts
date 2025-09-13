@@ -2,6 +2,7 @@
 
 type SuppressionKey = {
   friendId: string;
+  participants?: string[];
   lng: number;
   lat: number;
   timeToMeet: number;
@@ -13,7 +14,8 @@ export function buildSuppressionKey(key: SuppressionKey): string {
   const lngRounded = Math.round(key.lng * 1000) / 1000; // 3 decimal places
   const latRounded = Math.round(key.lat * 1000) / 1000;
   const etaRounded = Math.round(key.timeToMeet / 10) * 10; // 10s buckets
-  return `${key.friendId}-${lngRounded}-${latRounded}-${etaRounded}`;
+  const participants = key.participants && key.participants.length ? key.participants.sort().join(',') : key.friendId;
+  return `${participants}-${lngRounded}-${latRounded}-${etaRounded}`;
 }
 
 export function shouldSuppress(key: string): boolean {

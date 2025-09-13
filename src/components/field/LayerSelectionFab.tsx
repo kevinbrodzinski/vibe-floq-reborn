@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Fingerprint, Rewind, Users, Maximize2, Minimize2, Shield, MapPin, Bug, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { emitEvent, Events } from '@/services/eventBridge';
+import { enableVibePreview, cycleVibePreview, isVibePreviewEnabled, getVibePreviewColor } from '@/lib/vibe/vibeColor';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export const LayerSelectionFab = () => {
     try { const raw = localStorage.getItem(LS_KEY); return raw == null ? true : raw === 'true'; }
     catch { return true; }
   });
+  const [vibePrevOn, setVibePrevOn] = useState(() => isVibePreviewEnabled());
   
   // Hook into existing functionality
   const { open: timewarpOpen, toggle: toggleTimewarp } = useTimewarpDrawer();
@@ -60,6 +62,44 @@ export const LayerSelectionFab = () => {
           <MapPin className="h-4 w-4" />
           <span>Nearby venues</span>
         </DropdownMenuItem>
+        
+        {/* Vibe preview (design QA) */}
+        <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5">
+          <button
+            onClick={() => {
+              const next = !vibePrevOn;
+              setVibePrevOn(next);
+              enableVibePreview(next);
+            }}
+            className="flex items-center gap-3"
+            title="Preview pulse colors (cycles palette)"
+          >
+            <span
+              className="w-4 h-4 rounded-full border border-white/20"
+              style={{ background: vibePrevOn ? getVibePreviewColor() : 'transparent' }}
+            />
+            <span className="text-sm">Vibe preview</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={vibePrevOn}
+                onChange={e => { setVibePrevOn(e.target.checked); enableVibePreview(e.target.checked); }}
+                className="peer sr-only"
+              />
+              <div className="peer h-5 w-9 rounded-full bg-white/10 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white/70 after:transition-all peer-checked:bg-white/20 peer-checked:after:translate-x-[16px]" />
+            </label>
+            <button
+              onClick={() => { cycleVibePreview(); setVibePrevOn(p => p); }}
+              disabled={!vibePrevOn}
+              className="px-2 py-1 text-xs rounded-md border border-white/15 hover:bg-white/10 disabled:opacity-40"
+              title="Cycle preview color"
+            >
+              Cycle
+            </button>
+          </div>
+        </div>
         
         <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5">
           <div className="flex items-center gap-3">

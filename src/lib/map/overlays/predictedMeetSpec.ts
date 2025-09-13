@@ -23,7 +23,7 @@ export function createPredictedMeetSpec(): OverlaySpec {
           filter: ['==', ['get', 'kind'], 'dot'],
           paint: {
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 16, 8],
-            'circle-color': 'rgba(236,72,153,0.85)', // pink
+            'circle-color': ['get', 'color'],
             'circle-opacity': 0.9,
             'circle-stroke-color': 'rgba(255,255,255,0.95)',
             'circle-stroke-width': 1.5,
@@ -44,7 +44,7 @@ export function createPredictedMeetSpec(): OverlaySpec {
             // We write ring radius (in px) into feature props `r`
             'circle-radius': ['get', 'r'],
             'circle-color': 'rgba(0,0,0,0)',      // transparent fill
-            'circle-stroke-color': 'rgba(236,72,153,1)',
+            'circle-stroke-color': ['get', 'color'],
             // opacity fades with `o` we compute per-frame
             'circle-stroke-opacity': ['get', 'o'],
             'circle-stroke-width': 2,
