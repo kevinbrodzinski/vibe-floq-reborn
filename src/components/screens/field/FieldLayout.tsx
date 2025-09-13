@@ -26,6 +26,7 @@ import { LayerSelectionFab } from "@/components/field/LayerSelectionFab";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 // Flow-first spatial UI
 import { FlowRouteMapLayer } from "@/components/map/FlowRouteMapLayer";
+import { FlowRetraceHUD } from "@/components/flow/FlowRetraceHUD";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
 import { TimewarpDrawerProvider } from "@/contexts/TimewarpDrawerContext";
@@ -261,8 +262,9 @@ export const FieldLayout = () => {
                   data={data}
                 />
 
-                 {/* Flow route layers & lightweight UI */}
+                {/* Flow route layers & lightweight UI */}
                 <FlowRouteMapLayer />
+                <FlowRetraceHUD />
 
                 {/* Navigation Bridges */}
                 <DirectionsBridge />

@@ -1,162 +1,81 @@
 import * as React from 'react';
 import { layerManager } from '@/lib/map/LayerManager';
-import { createPredictedMeetSpec, applyPredictedMeetFeatureCollection } from '@/lib/map/overlays/predictedMeetSpec';
+import { createPredictedMeetSpec } from '@/lib/map/overlays/predictedMeetSpec';
 import { onEvent, Events } from '@/services/eventBridge';
-import { shouldSuppress, buildSuppressionKey, prune } from '@/lib/predictedMeet/suppressStore';
 import { resolveVibeColor, getUserVibeHex } from '@/lib/vibe/vibeColor';
-import { mixHexOklab } from '@/lib/vibe/vibeGradient';
+import { mixHexOklab } from '@/lib/color/mixOklab';
 
-// ring animation tuning
-const PERIOD_MS = 1600;          // full pulse period
-const MIN_RING_PX = 8;           // min ring radius (px)
-const MAX_RING_PX = 28;          // max ring radius (px)
-const FPS_MS = 160;              // ~6fps is plenty (low power)
-
+// feature type kept tiny for perf
 type Item = {
-  id: string;
-  lng: number; lat: number;
-  prob: number;
-  createdAt: number;
-  etaSec: number;     // seconds
-  expiresAt: number;  // absolute ms
-  venueId?: string;
-  venueName?: string;
-  vibeHex?: string;
-  vibeKey?: string;
+  id:string; lng:number; lat:number; createdAt:number; expiresAt:number;
+  // vibe context (optional)
+  venueId?:string; venueName?:string; vibeHex?:string; vibeKey?:string;
 };
 
-export function PredictedMeetingPointsLayer() {
-  // Small persisted flag
-  const LS_KEY = 'floq:layers:predicted-meet:enabled';
-  const [enabled, setEnabled] = React.useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      return raw == null ? true : raw === 'true';
-    } catch { return true; }
-  });
-
-  // Register/unregister based on enabled
-  React.useEffect(() => {
-    if (!enabled) {
-      try { layerManager.unregister('predicted-meet'); } catch {}
-      return;
-    }
-    layerManager.register(createPredictedMeetSpec());
-    return () => { try { layerManager.unregister('predicted-meet'); } catch {} };
-  }, [enabled]);
-
+export function PredictedMeetingPointsLayer(){
+  // mount spec
+  React.useEffect(()=>{ layerManager.register(createPredictedMeetSpec()); return ()=>layerManager.unregister('predicted-meet'); },[]);
   const itemsRef = React.useRef<Item[]>([]);
 
-  const pushItem = React.useCallback((lng: number, lat: number, etaSec: number, prob: number, extra?: {
-    venueId?: string; venueName?: string; vibeHex?: string; vibeKey?: string;
-  }) => {
+  const buildFC = React.useCallback(()=>{
     const now = Date.now();
-    itemsRef.current.push({
-      id: `pm-${now}-${Math.random().toString(36).slice(2)}`,
-      lng, lat,
-      prob,
-      createdAt: now,
-      etaSec,
-      expiresAt: now + Math.min(180_000, Math.max(15_000, (etaSec + 15) * 1000)),
-      venueId: extra?.venueId,
-      venueName: extra?.venueName,
-      vibeHex: extra?.vibeHex,
-      vibeKey: extra?.vibeKey,
-    });
-  }, []);
+    itemsRef.current = itemsRef.current.filter(it=>it.expiresAt>now);
+    const features:any[] = [];
+    for (const it of itemsRef.current){
+      // gradient colors: user → venue
+      const user = getUserVibeHex();
+      const venue = resolveVibeColor({ venueId:it.venueId, venueName:it.venueName, vibeHex:it.vibeHex, vibeKey:it.vibeKey });
+      const cA = mixHexOklab(user, venue, 0.35);
+      const cB = mixHexOklab(user, venue, 0.65);
 
-  const buildFC = React.useCallback(() => {
-    // prune expired + store
-    const now = Date.now();
-    prune();
-    itemsRef.current = itemsRef.current.filter(it => it.expiresAt > now);
-
-    // Pulse progress [0..1]
-    const features: any[] = [];
-    for (const it of itemsRef.current) {
-      // Prepare colors: user vibe to venue vibe blended by elapsed progress
-      const userHex  = getUserVibeHex?.() ?? '#8B5CF6'
-      const venueHex = resolveVibeColor({ venueId: it.venueId, venueName: it.venueName, vibeHex: it.vibeHex, vibeKey: it.vibeKey })
-      const life = Math.max(0, Math.min(1, (now - it.createdAt) / Math.max(2000, it.etaSec*1000)))
-      const ringHex = mixHexOklab(userHex, venueHex, life)  // inner→outer over time
-      
-      // Anchor dot (user color)
+      // base
       features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [it.lng, it.lat] as [number, number] },
-        properties: { kind: 'dot', prob: it.prob, color: userHex },
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[it.lng,it.lat] },
+        properties:{ kind:'dot', color: venue }
       });
 
-      // Ring: compute progress (wrap) with dynamic color transition
-      const t = (now - it.createdAt) % PERIOD_MS;
-      // ease-out radius
-      const p = t / PERIOD_MS;              // 0..1
-      // simple ease: accelerate fast then slow (quartic-ish)
-      const ease = 1 - Math.pow(1 - p, 3);
-      const r = MIN_RING_PX + (MAX_RING_PX - MIN_RING_PX) * ease;
-      const o = Math.max(0, 0.7 * (1 - p)); // fades out
+      // animate radii with time fade
+      const life = 3000; // 3s pulse fade
+      const age = (now - it.createdAt)%life;
+      const p = age/life;
+      const rBase = 8 + p*22;           // 8..30 px
+      const oBase = Math.max(0, 0.6*(1-p)); // fade out
 
       features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [it.lng, it.lat] as [number, number] },
-        properties: { kind: 'ring', r, o, color: ringHex },
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[it.lng,it.lat] },
+        properties:{ kind:'ringA', r:rBase*0.65, o:oBase*0.9, color:cA }
+      });
+      features.push({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[it.lng,it.lat] },
+        properties:{ kind:'ringB', r:rBase, o:oBase*0.75, color:cB }
       });
     }
+    return { type:'FeatureCollection', features };
+  },[]);
 
-    return { type: 'FeatureCollection', features };
-  }, []);
+  const render = React.useCallback(()=>{ layerManager.apply('predicted-meet', buildFC()); },[buildFC]);
 
-  const render = React.useCallback(() => {
-    const fc = buildFC();
-    applyPredictedMeetFeatureCollection(fc);
-  }, [buildFC]);
-
-  // Toggle handling
-  React.useEffect(() => {
-    const offToggle = onEvent(Events.FLOQ_LAYER_TOGGLE, (p) => {
-      if (!p || p.id !== 'predicted-meet') return;
-      setEnabled(prev => {
-        const next = p.enabled == null ? !prev : !!p.enabled;
-        try { localStorage.setItem(LS_KEY, String(next)); } catch {}
-        return next;
+  // subscribe to convergence events
+  React.useEffect(()=>{
+    const off = onEvent(Events.FLOQ_CONVERGENCE_DETECTED, (p)=>{
+      const loc = p?.predictedLocation; if (!loc) return;
+      const eta = Math.max(5, Math.min(180, Math.floor(p.timeToMeet ?? 60)));
+      const now = Date.now();
+      itemsRef.current.push({
+        id: `pm-${now}-${Math.random().toString(36).slice(2)}`,
+        lng: loc.lng, lat: loc.lat, createdAt: now,
+        expiresAt: now + (eta+15)*1000, // keep a smidge past ETA
+        venueId: loc.venueId, venueName: loc.venueName, vibeHex: loc.vibeHex, vibeKey: loc.vibeKey
       });
-    });
-    const offSet = onEvent(Events.FLOQ_LAYER_SET, (p) => {
-      if (!p || p.id !== 'predicted-meet') return;
-      setEnabled(!!p.enabled);
-      try { localStorage.setItem(LS_KEY, String(!!p.enabled)); } catch {}
-    });
-    return () => { offToggle(); offSet(); };
-  }, []);
-
-  // Listen for convergence events and add points (only when enabled)
-  React.useEffect(() => {
-    if (!enabled) return;
-    const off = onEvent(Events.FLOQ_CONVERGENCE_DETECTED, (payload) => {
-      if (!payload?.predictedLocation) return;
-      const { lng, lat, venueId, venueName, vibeHex, vibeKey } = payload.predictedLocation as any;
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
-
-      // Improved suppression with group handling
-      const key = buildSuppressionKey({
-        friendId: payload.friendId,
-        participants: payload.agentIds && payload.agentIds.length ? payload.agentIds : [payload.friendId],
-        lng, lat,
-        timeToMeet: payload.timeToMeet,
-      });
-      if (shouldSuppress(key)) return;
-
-      const etaSec = Number.isFinite(payload.timeToMeet) ? Math.max(5, Math.min(180, Math.floor(payload.timeToMeet))) : 60;
-      const prob = Math.max(0, Math.min(1, payload.probability ?? 0.7));
-      pushItem(lng, lat, etaSec, prob, { venueId, venueName, vibeHex, vibeKey });
       render();
     });
-    const id = setInterval(() => {
-      if (itemsRef.current.length > 0) render();
-    }, FPS_MS);
-    render(); // one eager draw
-    return () => { off(); clearInterval(id); };
-  }, [enabled, pushItem, render]);
+    const id = setInterval(render, 96); // light pulse timer
+    render();
+    return ()=>{ off(); clearInterval(id); };
+  },[render]);
 
   return null;
 }

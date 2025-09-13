@@ -5,9 +5,10 @@
 //  - enableVibePreview(true) / cycleVibePreview()         // design QA
 //  - setUserVibeHex/getUserVibeHex for gradient computation
 
-let userVibeHex = '#8B5CF6' // violet as safe default
-export function setUserVibeHex(hex:string) { userVibeHex = hex }
-export function getUserVibeHex(): string { return userVibeHex }
+// User vibe (used for gradients)
+let userVibeHex = '#8B5CF6'; // violet as safe default
+export function setUserVibeHex(hex:string) { userVibeHex = hex.startsWith('#')?hex:'#'+hex; }
+export function getUserVibeHex(): string { return userVibeHex; }
 
 export type VibeKey =
   | 'social' | 'chill' | 'mellow' | 'outdoors' | 'energetic'
