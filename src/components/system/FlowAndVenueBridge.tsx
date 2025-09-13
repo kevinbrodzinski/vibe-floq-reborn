@@ -5,7 +5,7 @@ export function FlowAndVenueBridge() {
   React.useEffect(() => {
     const offFlowStart = onEvent(Events.FLOQ_FLOW_START_REQUEST, ({ venueId }) => {
       try {
-        console.log('[FlowAndVenueBridge] Flow start requested for venue:', venueId);
+        console.info('[Bridge] Start flow requested', venueId);
         // TODO: Connect to actual flow recorder when available
         // recorder.start?.({ venueId });
       } catch (error) {
@@ -15,7 +15,7 @@ export function FlowAndVenueBridge() {
 
     const offJoin = onEvent(Events.UI_VENUE_JOIN, ({ venueId }) => {
       try {
-        console.log('[FlowAndVenueBridge] Join venue requested:', venueId);
+        console.info('[Bridge] Join venue requested', venueId);
         // TODO: Connect to actual venue join logic when available
         // venues?.join?.(venueId);
       } catch (error) {
@@ -25,7 +25,7 @@ export function FlowAndVenueBridge() {
 
     const offSave = onEvent(Events.UI_VENUE_SAVE, ({ venueId }) => {
       try {
-        console.log('[FlowAndVenueBridge] Save venue requested:', venueId);
+        console.info('[Bridge] Save venue requested', venueId);
         // TODO: Connect to actual venue save logic when available
         // venues?.save?.(venueId);
       } catch (error) {
@@ -35,7 +35,7 @@ export function FlowAndVenueBridge() {
 
     const offPlan = onEvent(Events.UI_VENUE_PLAN, ({ venueId }) => {
       try {
-        console.log('[FlowAndVenueBridge] Plan venue requested:', venueId);
+        console.info('[Bridge] Plan venue requested', venueId);
         // TODO: Connect to actual venue planning logic when available
         // venues?.plan?.(venueId);
       } catch (error) {

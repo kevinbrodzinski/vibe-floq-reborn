@@ -201,7 +201,7 @@ export interface EventPayloads {
   [Events.FLOQ_FLOW_HIDE]: {};
   [Events.FLOQ_FLOW_RETRACE]: { fromPoint?: string };
   [Events.FLOQ_FLOW_RETRACE_GOTO]: { index: number };
-  [Events.FLOQ_FLOW_START_REQUEST]: { venueId: string };
+  [Events.FLOQ_FLOW_START_REQUEST]: { venueId?: string };
   
   // Breadcrumb System events (legacy)
   [Events.FLOQ_BREADCRUMB_SHOW]: { 
