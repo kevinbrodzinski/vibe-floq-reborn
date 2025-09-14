@@ -6,6 +6,7 @@ import { useSignalCollector } from '@/core/vibe/SignalCollector';
 import type { VibeReading } from '@/core/vibe/types';
 import { setUserVibeHex } from '@/lib/vibe/vibeColor';
 import { saveSnapshot } from '@/storage/vibeSnapshots';
+import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -17,6 +18,14 @@ interface VibeEngineState {
     movement: number;
     environmental: number;
     behavioral: number;
+  };
+  patterns?: {
+    chronotype: 'lark' | 'owl' | 'balanced';
+    energyType: 'high-energy' | 'balanced' | 'low-energy';
+    socialType: 'social' | 'balanced' | 'solo';
+    consistency: 'very-consistent' | 'consistent' | 'adaptive' | 'highly-adaptive';
+    hasEnoughData: boolean;
+    correctionCount: number;
   };
 }
 
@@ -36,6 +45,7 @@ const FLAG = (import.meta as any).env?.VITE_VIBE_DETECTION ?? "on";
  */
 export function useVibeEngine(enabled: boolean = true) {
   const [inputsCache, setInputsCache] = useState<any>(null);
+  const personalityInsights = usePersonalityInsights();
 
   const [state, setState] = useState<VibeEngineState>({
     currentVibe: 'chill',
@@ -47,7 +57,8 @@ export function useVibeEngine(enabled: boolean = true) {
       movement: 0.3,
       environmental: 0.6,
       behavioral: 0.8,
-    }
+    },
+    patterns: undefined
   });
 
   const [snapshots, setSnapshots] = useState<VibeSnapshot[]>([]);
@@ -134,6 +145,18 @@ export function useVibeEngine(enabled: boolean = true) {
   const productionTick = useCallback(() => {
     if (FLAG === "on") {
       const inputs = collect();
+      
+      // Add pattern intelligence to inputs
+      if (personalityInsights?.hasEnoughData) {
+        inputs.patterns = {
+          chronotype: personalityInsights.chronotype,
+          energyType: personalityInsights.energyType,
+          socialType: personalityInsights.socialType,
+          consistency: personalityInsights.consistency,
+          hasEnoughData: personalityInsights.hasEnoughData
+        };
+      }
+      
       const reading = evaluate(inputs);
       setProductionReading(reading);
       
@@ -165,7 +188,8 @@ export function useVibeEngine(enabled: boolean = true) {
           movement: reading.components.movement || 0,
           environmental: reading.components.venueEnergy || 0,
           behavioral: reading.components.deviceUsage || 0,
-        }
+        },
+        patterns: personalityInsights || undefined
       }));
     }
   }, [collect]);
@@ -198,6 +222,18 @@ export function useVibeEngine(enabled: boolean = true) {
       if (!alive) return;
       const inputs = collect();
       setInputsCache(inputs);
+      
+      // Add pattern intelligence to inputs
+      if (personalityInsights?.hasEnoughData) {
+        inputs.patterns = {
+          chronotype: personalityInsights.chronotype,
+          energyType: personalityInsights.energyType,
+          socialType: personalityInsights.socialType,
+          consistency: personalityInsights.consistency,
+          hasEnoughData: personalityInsights.hasEnoughData
+        };
+      }
+      
       const r = evaluate(inputs);
       setProductionReading(r);
 
@@ -248,7 +284,7 @@ export function useVibeEngine(enabled: boolean = true) {
       if (raf) cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', onVis); 
     };
-  }, [collect]);
+  }, [collect, personalityInsights]);
 
   // Legacy detection loop for dev mode
   useEffect(() => {
@@ -321,6 +357,7 @@ export function useVibeEngine(enabled: boolean = true) {
     isDetecting: state.isDetecting,
     lastUpdate: state.lastUpdate,
     components: state.components,
+    patterns: state.patterns,
 
     // For UI integration
     currentVibeHex: vibeToHex(state.currentVibe),
