@@ -1,4 +1,5 @@
 import { ContextFact, ContextFactWithId } from './types';
+import { storage } from '@/lib/storage';
 
 const STORE_KEY = 'ctx:ledger:v1';
 
@@ -13,7 +14,9 @@ export class ContextTruthLedger {
   private chain: ChainEntry[] = [];
 
   constructor() {
-    this.load();
+    this.load().catch(() => {
+      // Fail silently on load error
+    });
   }
 
   /** Append a fact (returns the fact with ledger id) */
@@ -26,7 +29,9 @@ export class ContextTruthLedger {
 
     const entry: ChainEntry = { id, prev: prev?.id ?? null, hash, fact };
     this.chain.push(entry);
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
 
     return Object.assign({ id }, fact);
   }
@@ -69,16 +74,16 @@ export class ContextTruthLedger {
   }
 
   /** Storage */
-  private load() {
+  private async load() {
     try {
-      const raw = localStorage.getItem(STORE_KEY);
+      const raw = await storage.getItem(STORE_KEY);
       if (raw) this.chain = JSON.parse(raw);
     } catch {}
   }
   
-  private persist() {
+  private async persist() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(this.chain));
+      await storage.setItem(STORE_KEY, JSON.stringify(this.chain));
     } catch {}
   }
 
@@ -88,23 +93,22 @@ export class ContextTruthLedger {
     const initialCount = this.chain.length;
     
     // Find first fact to keep (keeping hash chain integrity)
-    let keepFromIndex = 0;
-    for (let i = 0; i < this.chain.length; i++) {
-      if (this.chain[i].fact.t >= cutoff) {
-        keepFromIndex = i;
-        break;
-      }
-    }
+    const keepFromIndex = this.chain.findIndex(e => e.fact.t >= cutoff);
     
-    if (keepFromIndex > 0) {
+    if (keepFromIndex === -1) {
+      // All facts are older than cutoff
+      this.chain = [];
+    } else if (keepFromIndex > 0) {
+      // Remove old facts and fix chain
       this.chain = this.chain.slice(keepFromIndex);
-      // Fix the chain - first kept entry has no prev
       if (this.chain.length > 0) {
         this.chain[0].prev = null;
       }
-      this.persist();
     }
     
+    this.persist().catch(() => {
+      // Fail silently on persist error  
+    });
     return initialCount - this.chain.length;
   }
 }

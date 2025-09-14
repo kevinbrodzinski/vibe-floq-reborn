@@ -1,4 +1,5 @@
 import { ContextTruthLedger } from './ContextTruthLedger';
+import { storage } from '@/lib/storage';
 import type {
   ContextFact, ContextFactWithId,
   TransitionFact, NoteFact
@@ -44,7 +45,9 @@ export class WorkingSetManager {
 
   constructor(ledger = new ContextTruthLedger()) {
     this.ledger = ledger;
-    this.load();
+    this.load().catch(() => {
+      // Fail silently on load error
+    });
   }
 
   /** --------- Public API --------- */
@@ -57,7 +60,9 @@ export class WorkingSetManager {
     this.ws.viewStack.push(view);
     if (this.ws.viewStack.length > MAX_VIEWS) this.ws.viewStack.shift();
     this.ws.t = t;
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
 
     // Record transition fact (from prev.route → next.route)
     const fact: TransitionFact = {
@@ -74,7 +79,9 @@ export class WorkingSetManager {
     Object.assign(v, patch);
     v.t = Date.now();
     this.ws.t = v.t;
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
 
   /** Pop view (optionally record a transition) */
@@ -82,7 +89,9 @@ export class WorkingSetManager {
     const t = Date.now();
     const prev = this.ws.viewStack.pop();
     this.ws.t = t;
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
 
     const curr = this.currentView();
     if (prev && curr) {
@@ -98,26 +107,34 @@ export class WorkingSetManager {
   saveDraft(d: Draft) {
     this.ws.drafts[d.id] = { ...d, updatedAt: Date.now() };
     this.ws.t = Date.now();
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
   
   removeDraft(id: string) {
     delete this.ws.drafts[id];
     this.ws.t = Date.now();
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
 
   /** Focus management */
   setFocus(f: Focus) {
     this.ws.focus = { ...f, t: Date.now() };
     this.ws.t = this.ws.focus.t;
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
   
   clearFocus() {
     this.ws.focus = undefined;
     this.ws.t = Date.now();
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
 
   /** Lightweight references (urls/ids) */
@@ -125,14 +142,18 @@ export class WorkingSetManager {
     const list = this.ws.refs ?? (this.ws.refs = []);
     if (!list.includes(ref)) list.push(ref);
     this.ws.t = Date.now();
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
   
   removeReference(ref: string) {
     if (!this.ws.refs) return;
     this.ws.refs = this.ws.refs.filter(r => r !== ref);
     this.ws.t = Date.now();
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
 
   /** Append a low-risk note fact to the ledger (for audit/trail) */
@@ -149,7 +170,9 @@ export class WorkingSetManager {
   restore(snap: WorkingSetSnapshot) {
     if (!snap || !Array.isArray(snap.viewStack) || !snap.drafts) return;
     this.ws = JSON.parse(JSON.stringify(snap));
-    this.persist();
+    this.persist().catch(() => {
+      // Fail silently on persist error
+    });
   }
 
   /** Helpers */
@@ -162,10 +185,9 @@ export class WorkingSetManager {
   }
 
   /** --------- Storage --------- */
-  private load() {
+  private async load() {
     try {
-      if (typeof localStorage === 'undefined') return;
-      const raw = localStorage.getItem(STORE_KEY);
+      const raw = await storage.getItem(STORE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as WorkingSetSnapshot;
         if (Array.isArray(parsed.viewStack) && parsed.drafts) this.ws = parsed;
@@ -173,10 +195,9 @@ export class WorkingSetManager {
     } catch {}
   }
   
-  private persist() {
+  private async persist() {
     try {
-      if (typeof localStorage === 'undefined') return;
-      localStorage.setItem(STORE_KEY, JSON.stringify(this.ws));
+      await storage.setItem(STORE_KEY, JSON.stringify(this.ws));
     } catch {}
   }
 }

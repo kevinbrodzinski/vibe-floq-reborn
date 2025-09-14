@@ -1,14 +1,21 @@
 import * as React from 'react';
-import { Link, LinkProps } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
-export function LedgerLink(props: LinkProps & { onEmit?: () => void }) {
-  const { onEmit, onClick, ...rest } = props;
+type LedgerLinkProps = React.ComponentProps<typeof Link>;
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    (window as any).__nav_t0 = performance.now(); // for latency
-    onEmit?.();
-    onClick?.(e);
+export function LedgerLink(props: LedgerLinkProps) {
+  const location = useLocation();
+
+  const onClick: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
+    // If user's handler prevented navigation, don't mark
+    if (e.defaultPrevented) {
+      props.onClick && props.onClick(e);
+      return;
+    }
+    // Mark start; router will complete measurement on location change
+    (window as any).__nav_t0 = performance.now();
+    props.onClick && props.onClick(e);
   };
 
-  return <Link {...rest} onClick={handleClick} />;
+  return <Link {...props} onClick={onClick} />;
 }

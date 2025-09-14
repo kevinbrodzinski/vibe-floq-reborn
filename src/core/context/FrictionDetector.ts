@@ -122,7 +122,10 @@ export function detectFriction(
 /** --------- utils --------- */
 const clamp01 = (n:number) => Math.max(0, Math.min(1, n));
 
-function weighted(signals: FrictionSignal[], w: Record<FrictionSignal['kind'], number>) {
+function weighted(
+  signals: FrictionSignal[], 
+  w: Partial<Record<FrictionSignal['kind'], number>>
+): number {
   let s = 0, d = 0;
   for (const sig of signals) {
     const ww = w[sig.kind] ?? 0.25;

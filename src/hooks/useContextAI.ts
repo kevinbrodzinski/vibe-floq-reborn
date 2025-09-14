@@ -138,18 +138,18 @@ export function useContextAI(): ContextAIState & {
   }, [recordFact]);
 
   const recordTransition = useCallback(async (from: string, to: string, latencyMs?: number) => {
-    const transitionFact: TransitionFact = {
-      kind: 'transition',
-      t: Date.now(),
-      c: 0.8,
-      data: { from, to, latencyMs }
-    };
-    
-    await recordFact(transitionFact);
-    
-    // Also record in working set
+    // Record in working set (which also records transition fact)
     if (workingSetRef.current) {
       await workingSetRef.current.pushView({ route: to }, { from, latencyMs });
+    } else {
+      // Fallback: record transition fact directly if working set not ready
+      const transitionFact: TransitionFact = {
+        kind: 'transition',
+        t: Date.now(),
+        c: 0.8,
+        data: { from, to, latencyMs }
+      };
+      await recordFact(transitionFact);
     }
   }, [recordFact]);
 
@@ -158,6 +158,6 @@ export function useContextAI(): ContextAIState & {
     recordFact,
     recordVibeReading,
     recordTransition,
-    workingSet: workingSetRef.current!
+    workingSet: workingSetRef.current ?? null
   };
 }
