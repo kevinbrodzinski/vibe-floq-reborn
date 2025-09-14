@@ -1,4 +1,5 @@
 import type { Vibe } from "@/lib/vibes";
+import type { VenueIntelligence } from "@/types/venues";
 
 export type { Vibe };
 
@@ -64,6 +65,7 @@ export type EngineInputs = {
   venueArrived?: boolean;
   venueType?: string | null;
   venueEnergyBase?: number | null;
+  venueIntelligence?: VenueIntelligence | null;
 };
 
 export type VibeReading = {
@@ -73,4 +75,5 @@ export type VibeReading = {
   components: ComponentScores;
   vector: VibeVector;               // normalized scores
   calcMs: number;                   // perf
+  venueIntelligence?: VenueIntelligence | null;
 };

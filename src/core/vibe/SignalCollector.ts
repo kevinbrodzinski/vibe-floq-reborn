@@ -5,6 +5,7 @@ import { DwellTracker } from './collectors/DwellTracker';
 import { DeviceUsageTracker } from './collectors/DeviceUsage';
 import { VenueClassifier } from './collectors/VenueClassifier';
 import { getWeatherSignal } from './collectors/WeatherCollector';
+import { EnhancedVenueIntelligence } from './collectors/EnhancedVenueIntelligence';
 import haversine from 'haversine-distance';
 
 type LngLat = { lat: number; lng: number } | null;
@@ -14,6 +15,7 @@ export function useSignalCollector() {
   const dwell = React.useRef(new DwellTracker());
   const device = React.useRef(new DeviceUsageTracker());
   const venue = React.useRef(new VenueClassifier());
+  const enhancedVenue = React.useRef(new EnhancedVenueIntelligence());
 
   const coordsRef = React.useRef<LngLat>(null);
   const arrivedRef = React.useRef(false);
@@ -61,8 +63,12 @@ export function useSignalCollector() {
         .catch(() => {});
     }
 
-    // Smart venue classification with movement threshold
-    const venueRef = (collect as any)._venue || ((collect as any)._venue = { base: null as number | null, type: null as string | null });
+    // Enhanced venue intelligence with movement threshold
+    const venueRef = (collect as any)._venue || ((collect as any)._venue = { 
+      base: null as number | null, 
+      type: null as string | null,
+      intelligence: null as any
+    });
     const lastRef = (collect as any)._venueRef || ((collect as any)._venueRef = { t: 0, p: undefined as LngLat | undefined });
     
     const VENUE_REFRESH_M = 120;
@@ -76,11 +82,22 @@ export function useSignalCollector() {
     if ((moved || stale) && coords) {
       lastRef.t = Date.now(); 
       lastRef.p = coords;
+      
+      // Get both basic and enhanced venue data
       venue.current.classify(coords).then(v => { 
         if (v) { 
           venueRef.base = v.energy; 
           venueRef.type = v.type; 
         } 
+      }).catch(() => {});
+      
+      // Get enhanced venue intelligence (parallel)
+      enhancedVenue.current.getVenueIntelligence(coords).then(intelligence => {
+        if (intelligence) {
+          venueRef.intelligence = intelligence;
+          // Update base energy from enhanced data if available
+          venueRef.base = Math.max(venueRef.base || 0, intelligence.vibeProfile.energyLevel);
+        }
       }).catch(() => {});
     }
 
@@ -95,10 +112,11 @@ export function useSignalCollector() {
       isDaylight: wx?.isDaylight,
       weatherEnergyOffset: wx?.energyOffset,
       weatherConfidenceBoost: wx?.confidenceBoost,
-      // venue
+      // venue (enhanced)
       venueArrived: justArrived,
       venueType: venueRef.type,
       venueEnergyBase: venueRef.base,
+      venueIntelligence: venueRef.intelligence,
     };
   }, []);
 
