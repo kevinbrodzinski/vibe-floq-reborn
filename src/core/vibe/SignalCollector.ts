@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { EngineInputs } from './types';
 import { MovementFromLocationTracker } from './collectors/MovementFromLocation';
 import { DwellTracker } from './collectors/DwellTracker';
-import { DeviceUsageTracker } from './collectors/DeviceUsage';
+import { DeviceUsageTracker } from './collectors/DeviceUsageTracker';
 import { getWeatherSignal } from './collectors/WeatherCollector';
 
 type Coords = { lat: number; lng: number } | null;
@@ -31,9 +31,6 @@ export function useSignalCollector() {
     };
   }, []);
 
-  React.useEffect(() => {
-    return () => device.current.dispose();
-  }, []);
 
   const collect = React.useCallback((): EngineInputs => {
     const now = new Date();
@@ -54,7 +51,7 @@ export function useSignalCollector() {
     }
 
     // NEW: screen-on ratio since last collect
-    const screenOnRatio01 = device.current.pullRatio();
+    const screenOnRatio01 = device.current.ratioSinceLastTick();
 
     return {
       hour,
