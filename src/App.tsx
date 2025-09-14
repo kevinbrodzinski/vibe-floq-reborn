@@ -55,7 +55,7 @@ const App = () => {
   // Non-blocking auth initialization with timeout
   const [authReady, setAuthReady] = useState(false);
   
-  // Auto-join presence channels for all users
+  // Auto-join presence channels for all users  
   usePresenceChannel();
   
   // Track online status
