@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Heart, X, Clock, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PATTERN_CONFIDENCE_GATES } from '@/core/patterns/enhanced-learning';
 import type { Vibe } from '@/lib/vibes';
 import type { VibeReading } from '@/core/vibe/types';
 import type { PersonalityInsights } from '@/types/personality';
@@ -71,7 +72,7 @@ export function ActionableRecommendations({
       });
     }
 
-    return predictions.filter(p => p.confidence >= 0.6);
+    return predictions.filter(p => p.confidence >= PATTERN_CONFIDENCE_GATES.MIN_CONFIDENCE);
   }, [patterns]);
 
   // Generate venue recommendations

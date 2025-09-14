@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getCachedVenueImpacts } from '@/core/patterns/service';
+import { PATTERN_CONFIDENCE_GATES } from '@/core/patterns/enhanced-learning';
+import { ChartErrorBoundary, PatternDataGuard } from '@/components/ui/ChartErrorBoundary';
 import { vibeEmoji } from '@/utils/vibe';
 import type { VenueImpacts } from '@/core/patterns/store';
 
@@ -50,7 +52,7 @@ export function VenueImpactHeatmap() {
           .map(([vibe, weight]) => ({ vibe, weight: weight || 0 })),
         dwellTime: impact.optimalDwellMin
       }))
-      .filter(v => v.sampleCount >= 3)
+      .filter(v => v.sampleCount >= PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE)
       .sort((a, b) => b.confidence - a.confidence);
   };
 
@@ -102,7 +104,9 @@ export function VenueImpactHeatmap() {
       </CardHeader>
       
       <CardContent>
-        <Tabs defaultValue="energy" className="w-full">
+        <ChartErrorBoundary>
+          <PatternDataGuard sampleCount={venueData.length} minSamples={1}>
+            <Tabs defaultValue="energy" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="energy">Energy Impact</TabsTrigger>
             <TabsTrigger value="vibes">Vibe Preferences</TabsTrigger>
@@ -189,8 +193,10 @@ export function VenueImpactHeatmap() {
                 </div>
               ))}
             </div>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+            </Tabs>
+          </PatternDataGuard>
+        </ChartErrorBoundary>
       </CardContent>
     </Card>
   );

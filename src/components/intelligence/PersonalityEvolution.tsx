@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { storage } from '@/lib/storage';
-import { STORAGE_KEYS, EMPTY_TIMELINE } from '@/core/patterns/store';
+import { readTimeline, writeTimeline } from '@/core/patterns/service';
+import { PATTERN_CONFIDENCE_GATES } from '@/core/patterns/enhanced-learning';
+import { ChartErrorBoundary, PatternDataGuard } from '@/components/ui/ChartErrorBoundary';
 import { usePatternEnrichedPersonality } from '@/hooks/usePatternEnrichedPersonality';
 import type { PersonalitySnapshot } from '@/core/patterns/store';
 
@@ -39,7 +40,7 @@ export function PersonalityEvolution() {
 
   const loadTimelineData = async () => {
     try {
-      const timelineStore = await readPersonalityTimeline();
+      const timelineStore = await readTimeline();
       const processedData = processTimelineData(timelineStore.data);
       setTimeline(processedData);
       setTrends(analyzeTrends(processedData));
@@ -65,7 +66,8 @@ export function PersonalityEvolution() {
   };
 
   const analyzeTrends = (data: TimelineData[]): PersonalityTrend[] => {
-    if (data.length < 2) return [];
+    // Only analyze trends if we have sufficient data
+    if (data.length < PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE) return [];
 
     const trends: PersonalityTrend[] = [];
     const recent = data.slice(-4); // Last 4 snapshots
@@ -146,7 +148,7 @@ export function PersonalityEvolution() {
 
   const saveCurrentSnapshot = async () => {
     try {
-      const timelineStore = await readPersonalityTimeline();
+      const timelineStore = await readTimeline();
       
       const snapshot: PersonalitySnapshot = {
         timestamp: Date.now(),
@@ -171,7 +173,7 @@ export function PersonalityEvolution() {
         timelineStore.data = timelineStore.data.slice(-52);
       }
       
-      await writePersonalityTimeline(timelineStore);
+      await writeTimeline(timelineStore);
       await loadTimelineData();
     } catch (error) {
       console.warn('Failed to save personality snapshot:', error);
@@ -229,74 +231,78 @@ export function PersonalityEvolution() {
           </TabsList>
           
           <TabsContent value="timeline" className="space-y-4">
-            {timeline.length >= 2 ? (
-              <div className="space-y-6">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeline}>
-                      <XAxis 
-                        dataKey="date"
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis domain={[-1, 1]} />
-                      <Tooltip 
-                        formatter={(value: number, name: string) => [
-                          value.toFixed(2),
-                          name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-                        ]}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="energyPreference" 
-                        stroke="#ef4444" 
-                        strokeWidth={2}
-                        dot={{ fill: '#ef4444', r: 4 }}
-                        name="Energy Preference"
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="socialPreference" 
-                        stroke="#3b82f6" 
-                        strokeWidth={2}
-                        dot={{ fill: '#3b82f6', r: 4 }}
-                        name="Social Preference"
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="consistency" 
-                        stroke="#10b981" 
-                        strokeWidth={2}
-                        dot={{ fill: '#10b981', r: 4 }}
-                        name="Consistency"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span>Energy Preference</span>
+            <ChartErrorBoundary>
+              <PatternDataGuard sampleCount={timeline.length} minSamples={PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE}>
+                {timeline.length >= PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE ? (
+                  <div className="space-y-6">
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={timeline}>
+                          <XAxis 
+                            dataKey="date"
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis domain={[-1, 1]} />
+                          <Tooltip 
+                            formatter={(value: number, name: string) => [
+                              value.toFixed(2),
+                              name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+                            ]}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="energyPreference" 
+                            stroke="#ef4444" 
+                            strokeWidth={2}
+                            dot={{ fill: '#ef4444', r: 4 }}
+                            name="Energy Preference"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="socialPreference" 
+                            stroke="#3b82f6" 
+                            strokeWidth={2}
+                            dot={{ fill: '#3b82f6', r: 4 }}
+                            name="Social Preference"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="consistency" 
+                            stroke="#10b981" 
+                            strokeWidth={2}
+                            dot={{ fill: '#10b981', r: 4 }}
+                            name="Consistency"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span>Energy Preference</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span>Social Preference</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>Consistency</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span>Social Preference</span>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-4xl mb-2">📊</div>
+                    <h3 className="font-medium mb-2">Not enough timeline data</h3>
+                    <p className="text-sm">
+                      Save snapshots over time to see your personality evolution
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span>Consistency</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-2">📊</div>
-                <h3 className="font-medium mb-2">Not enough timeline data</h3>
-                <p className="text-sm">
-                  Save snapshots over time to see your personality evolution
-                </p>
-              </div>
-            )}
+                )}
+              </PatternDataGuard>
+            </ChartErrorBoundary>
           </TabsContent>
           
           <TabsContent value="trends" className="space-y-4">
@@ -334,23 +340,4 @@ export function PersonalityEvolution() {
       </CardContent>
     </Card>
   );
-}
-
-// Storage operations for personality timeline
-async function readPersonalityTimeline() {
-  try {
-    const stored = await storage.getItem(STORAGE_KEYS.TIMELINE);
-    return stored ? JSON.parse(stored) : EMPTY_TIMELINE;
-  } catch {
-    return EMPTY_TIMELINE;
-  }
-}
-
-async function writePersonalityTimeline(timeline: typeof EMPTY_TIMELINE) {
-  try {
-    timeline.updatedAt = Date.now();
-    await storage.setJSON(STORAGE_KEYS.TIMELINE, timeline);
-  } catch (error) {
-    console.warn('Failed to write personality timeline:', error);
-  }
 }

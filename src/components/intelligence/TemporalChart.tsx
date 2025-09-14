@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getCachedTemporalPrefs } from '@/core/patterns/service';
+import { PATTERN_CONFIDENCE_GATES } from '@/core/patterns/enhanced-learning';
+import { ChartErrorBoundary, PatternDataGuard } from '@/components/ui/ChartErrorBoundary';
 import { usePatternEnrichedPersonality } from '@/hooks/usePatternEnrichedPersonality';
 import { vibeEmoji } from '@/utils/vibe';
 import type { TemporalPrefs } from '@/core/patterns/store';
@@ -73,7 +75,7 @@ export function TemporalChart() {
         topVibe: topVibe ? topVibe[0] : null,
         vibeWeight: topVibe ? topVibe[1] || 0 : 0,
         confidence: Math.min(1, sampleEstimate / 10),
-        hasData: topVibe ? (topVibe[1] || 0) > 0.2 : false
+        hasData: topVibe ? (topVibe[1] || 0) > 0.3 && sampleEstimate >= PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE : false
       };
     });
   };
@@ -112,11 +114,11 @@ export function TemporalChart() {
     }
 
     // Use detected chronotype if we have enough data
-    if (patternMetadata.sampleCount > 20) {
+    if (patternMetadata.sampleCount >= PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE * 7) { // 21+ samples for chronotype confidence
       type = detectedType as 'lark' | 'owl' | 'balanced';
     }
 
-    const confidence = Math.min(1, patternMetadata.sampleCount / 30);
+    const confidence = Math.min(1, patternMetadata.sampleCount / (PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE * 10));
 
     return {
       type,
@@ -165,7 +167,12 @@ export function TemporalChart() {
           </TabsList>
           
           <TabsContent value="wheel" className="space-y-4">
-            <div className="grid grid-cols-6 gap-2">
+            <ChartErrorBoundary>
+              <PatternDataGuard 
+                sampleCount={patternMetadata.sampleCount} 
+                minSamples={PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE}
+              >
+                <div className="grid grid-cols-6 gap-2">
               {hourlyData.map((data) => (
                 <div
                   key={data.hour}
@@ -189,33 +196,40 @@ export function TemporalChart() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-200 rounded"></div>
-                  <span>Morning (6-12)</span>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-200 rounded"></div>
-                  <span>Afternoon (12-18)</span>
+                
+                <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-yellow-200 rounded"></div>
+                      <span>Morning (6-12)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-green-200 rounded"></div>
+                      <span>Afternoon (12-18)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-orange-200 rounded"></div>
+                      <span>Evening (18-22)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-200 rounded"></div>
+                      <span>Night (22-6)</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-200 rounded"></div>
-                  <span>Evening (18-22)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-200 rounded"></div>
-                  <span>Night (22-6)</span>
-                </div>
-              </div>
-            </div>
+              </PatternDataGuard>
+            </ChartErrorBoundary>
           </TabsContent>
           
           <TabsContent value="chronotype" className="space-y-4">
-            {chronotype && (
+            <ChartErrorBoundary>
+              <PatternDataGuard 
+                sampleCount={patternMetadata.sampleCount} 
+                minSamples={PATTERN_CONFIDENCE_GATES.MIN_SAMPLE_SIZE}
+              >
+                {chronotype && (
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="text-4xl mb-2">
@@ -262,11 +276,13 @@ export function TemporalChart() {
                   </div>
                 )}
                 
-                <div className="text-sm text-muted-foreground">
-                  Based on {patternMetadata.sampleCount} behavioral samples
+                  <div className="text-sm text-muted-foreground">
+                    Based on {patternMetadata.sampleCount} behavioral samples
+                  </div>
                 </div>
-              </div>
-            )}
+                )}
+              </PatternDataGuard>
+            </ChartErrorBoundary>
           </TabsContent>
         </Tabs>
       </CardContent>
