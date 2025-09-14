@@ -3,6 +3,7 @@ import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { VibeSummaryCard } from "@/components/vibe/VibeSummaryCard";
 import { VibeSelectionSheet } from "@/components/vibe/VibeSelectionSheet";
+import { VibeStatusChip } from "@/components/vibe/VibeStatusChip";
 import { SocialWeatherStatus } from "@/features/field/status/SocialWeatherStatus";
 import type { Vibe } from "@/types";
 import type { SocialWeatherPhrase } from "@/features/field/status/SocialWeatherComposer";
@@ -67,6 +68,11 @@ export const FieldOverlay = memo(({
       {/* Avatar Region - Top right */}
       <div className="absolute top-16 right-4 pointer-events-auto" {...zIndex('overlay')}>
         <AvatarDropdown />
+      </div>
+
+      {/* Vibe Status Chip - Top right below avatar */}
+      <div className="absolute top-28 right-4 pointer-events-auto" {...zIndex('overlay')}>
+        <VibeStatusChip className="shadow-lg" />
       </div>
 
       {/* Controls Region - Right center column */}
