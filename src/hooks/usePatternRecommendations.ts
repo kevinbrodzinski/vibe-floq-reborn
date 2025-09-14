@@ -40,10 +40,10 @@ export function usePatternRecommendations(): PatternRecommendationsState {
       try {
         const recommendations = await PatternStore.getRecommendations();
         
-        // Sort by relevance and confidence
+        // Sort by confidence (replacing relevanceScore)
         const sorted = recommendations.sort((a, b) => {
-          const scoreA = a.relevanceScore * a.confidence;
-          const scoreB = b.relevanceScore * b.confidence;
+          const scoreA = a.confidence;
+          const scoreB = b.confidence;
           return scoreB - scoreA;
         });
 
@@ -106,7 +106,7 @@ export function useRecommendationActions() {
       // Filter and score recommendations based on current context
       return recommendations
         .map(rec => {
-          let contextRelevance = rec.relevanceScore;
+          let contextRelevance = rec.confidence; // Use confidence as base relevance
           
           // Boost temporal recommendations based on current hour
           if (rec.type === 'temporal') {
@@ -137,11 +137,11 @@ export function useRecommendationActions() {
           
           return {
             ...rec,
-            relevanceScore: Math.min(1, contextRelevance)
+            confidence: Math.min(1, contextRelevance) // Update confidence with context boost
           };
         })
-        .filter(rec => rec.relevanceScore > 0.5)
-        .sort((a, b) => (b.relevanceScore * b.confidence) - (a.relevanceScore * a.confidence));
+        .filter(rec => rec.confidence > 0.5)
+        .sort((a, b) => b.confidence - a.confidence);
         
     } catch (error) {
       console.warn('[useRecommendationActions] Failed to get contextual recommendations:', error);
