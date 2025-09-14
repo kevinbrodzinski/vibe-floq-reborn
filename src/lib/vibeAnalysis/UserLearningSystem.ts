@@ -2,6 +2,45 @@ import type { Vibe } from '@/lib/vibes';
 import { VIBES } from '@/lib/vibes';
 import type { AnalysisContext, SensorData } from './VibeAnalysisEngine';
 
+// --- Personality & temporal helpers -----------------------------------------
+const ENERGY_VIBES: Vibe[] = ['hype', 'flowing'];
+const SOLO_VIBES: Vibe[] = ['solo', 'down', 'chill'];
+const SOCIAL_VIBES: Vibe[] = ['social', 'open', 'romantic', 'curious', 'weird'];
+
+// Simple clamp
+const clamp = (n: number, lo = -1, hi = 1) => Math.max(lo, Math.min(hi, n));
+
+// Normalize a map's values to sum 1 (or to 0 if empty)
+function normalizeRecord<T extends string>(rec: Partial<Record<T, number>>): Partial<Record<T, number>> {
+  const values = Object.values(rec).filter((v): v is number => typeof v === 'number');
+  const sum = values.reduce((s, v) => s + v, 0);
+  if (sum <= 0) return rec;
+  const out: Partial<Record<T, number>> = {};
+  Object.entries(rec).forEach(([k, v]) => {
+    if (typeof v === 'number') {
+      out[k as T] = v / sum;
+    }
+  });
+  return out;
+}
+
+// Extract an "energy score" from a vibe vector: (high-energy vibes) + 0.5*flowing
+function energyFromVector(vec: Record<Vibe, number>): number {
+  const flowing = vec.flowing ?? 0;
+  return (vec.hype ?? 0) + 0.5 * flowing;
+}
+
+// Quick chronotype detection from hourly patterns
+export function chronotypeFromHourly(hourly: Record<number, Partial<Record<Vibe, number>>>): 'lark'|'owl'|'balanced' {
+  const energyAtHour = (h: number) => energyFromVector(Object.assign(Object.fromEntries(VIBES.map(v => [v, 0])), hourly[h] ?? {}) as Record<Vibe, number>);
+  const morning = [6, 7, 8, 9, 10, 11].reduce((s, h) => s + energyAtHour(h), 0);
+  const evening = [17, 18, 19, 20, 21, 22].reduce((s, h) => s + energyAtHour(h), 0);
+  const diff = (morning - evening) / Math.max(1, morning + evening);
+  if (diff > 0.15) return 'lark';
+  if (diff < -0.15) return 'owl';
+  return 'balanced';
+}
+
 // Helper function to create a zero-filled vibe count object
 const createEmptyVibeCounts = (): Record<Vibe, number> => {
   return VIBES.reduce((acc, vibe) => {
@@ -770,14 +809,83 @@ export class UserLearningSystem {
      };
   }
 
-  // Missing methods required by the interface
-  buildPersonalityProfile(corrections: any[]): any {
-    // Implementation stub
-    return {};
+  // Enhanced personality and temporal pattern methods
+  buildPersonalityProfile(corrections: UserCorrection[]): PersonalFactors['personalityProfile'] {
+    // Use last N corrections for stability
+    const recent = corrections.slice(-50);
+
+    // Tally vibes
+    const tally: Record<Vibe, number> = {} as any;
+    recent.forEach(c => {
+      tally[c.userChoice] = (tally[c.userChoice] ?? 0) + 1;
+    });
+
+    // Energy preference ∈ [-1..1]: (#energy - #non-energy)/total
+    const total = recent.length || 1;
+    const energyCount = ENERGY_VIBES.reduce((s, v) => s + (tally[v] ?? 0), 0);
+    const nonEnergy = total - energyCount;
+    const energyPreference = clamp((energyCount - nonEnergy) / total);
+
+    // Social preference ∈ [-1..1]: (social - solo)/total
+    const socialCount = SOCIAL_VIBES.reduce((s, v) => s + (tally[v] ?? 0), 0);
+    const soloCount = SOLO_VIBES.reduce((s, v) => s + (tally[v] ?? 0), 0);
+    const socialPreference = clamp((socialCount - soloCount) / total);
+
+    // Consistency: how often the mode is chosen vs. others (0..1)
+    const top = Object.entries(tally).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0]?.[1] ?? 0;
+    const consistencyScore = clamp(top / total, 0, 1);
+
+    // Adaptability: how often user changes across contexts (hour + venue type)
+    // Higher diversity of (context -> choice) → higher adaptability
+    const seen: Record<string, Set<Vibe>> = {};
+    recent.forEach(c => {
+      const hr = c.context?.hourOfDay ?? 0;
+      const venueType = c.context?.locationHistory?.[c.context.locationHistory.length - 1]?.context ?? 'unknown';
+      const key = `${hr}|${venueType}`;
+      seen[key] ??= new Set();
+      seen[key].add(c.userChoice);
+    });
+    const diversity = Object.values(seen).reduce((s, set) => s + set.size, 0);
+    const contexts = Object.keys(seen).length || 1;
+    const adaptabilityScore = clamp((diversity / contexts - 1) / 3, 0, 1); // gentle 0..1
+
+    return {
+      energyPreference,        // -1 .. +1
+      socialPreference,        // -1 .. +1
+      consistencyScore,        // 0 .. 1
+      adaptabilityScore        // 0 .. 1
+    };
   }
 
-  extractTemporalPatterns(corrections: any[]): any {
-    // Implementation stub
-    return {};
+  extractTemporalPatterns(corrections: UserCorrection[]): PersonalFactors['temporalPatterns'] {
+    // We'll compute preferences for (hour -> vibe distribution) and (weekday -> vibe distribution)
+    // Use corrected vibes (explicit user signal)
+    const hourly: Record<number, Partial<Record<Vibe, number>>> = {};
+    const week: Record<number, Partial<Record<Vibe, number>>> = {};
+
+    corrections.forEach(c => {
+      const hour = c.context?.hourOfDay ?? new Date(c.timestamp).getHours();
+      const dow = new Date(c.timestamp).getDay();
+      hourly[hour] ??= {};
+      week[dow] ??= {};
+      hourly[hour]![c.userChoice] = (hourly[hour]![c.userChoice] ?? 0) + 1;
+      week[dow]![c.userChoice] = (week[dow]![c.userChoice] ?? 0) + 1;
+    });
+
+    // Normalize each bucket to probability distributions
+    const hourlyPreferences: Record<number, Partial<Record<Vibe, number>>> = {};
+    const dayOfWeekPreferences: Record<number, Partial<Record<Vibe, number>>> = {};
+
+    for (let h = 0; h < 24; h++) {
+      hourlyPreferences[h] = normalizeRecord(hourly[h] ?? {});
+    }
+    for (let d = 0; d < 7; d++) {
+      dayOfWeekPreferences[d] = normalizeRecord(week[d] ?? {});
+    }
+
+    // Optional seasonal trends – return empty to start (fill later when you have enough data)
+    const seasonalTrends: Array<{ timeRange: string; vibeShift: Partial<Record<Vibe, number>> }> = [];
+
+    return { hourlyPreferences, dayOfWeekPreferences, seasonalTrends };
   }
 }
