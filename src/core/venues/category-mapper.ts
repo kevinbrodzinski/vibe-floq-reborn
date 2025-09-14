@@ -180,7 +180,7 @@ export function mapCategoriesToVenueType(input: {
   const final: VenueTypeResult = {
     venueType,
     confidence: g.length + f.length + l.length === 0 ? 0 : confidence,
-    reasons: reasons.length ? reasons : ["no strong category keywords"],
+    reasons: reasons.length ? reasons : ( (g.length+f.length+l.length)>0 ? ["only weak/ambiguous keywords"] : ["no category tokens"] ),
     matchedTokens,
   };
   return final;

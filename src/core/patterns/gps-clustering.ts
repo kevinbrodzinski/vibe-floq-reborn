@@ -170,6 +170,25 @@ export function suggestClusterLabel(cluster: VenueCluster): string | null {
   return 'Frequent location';
 }
 
+// Update cluster label with user input
+export async function updateClusterLabel(clusterId: string, label: string): Promise<VenueCluster | null> {
+  try {
+    const record = await readClusters();
+    const clusters: VenueClusters = record.data;
+    const cluster = clusters[clusterId];
+    
+    if (!cluster) return null;
+    
+    cluster.userLabel = label.trim();
+    record.updatedAt = Date.now();
+    await writeClusters(record);
+    return cluster;
+  } catch (error) {
+    console.warn('Failed to update cluster label:', error);
+    return null;
+  }
+}
+
 // Utility functions
 function isValidCoordinate(lat: number, lng: number): boolean {
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;

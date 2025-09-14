@@ -122,11 +122,16 @@ export async function classifyVenue(lat: number, lng: number): Promise<VenueClas
     }
   }
 
+  if (results.length > 1) {
+    incrVenue('fused');
+  }
+
   // Best merged pick
   let best = results.sort((a,b)=> b.confidence01 - a.confidence01)[0];
 
   // GPS fallback
   if (!best) {
+    incrVenue('gpsFallback');
     best = {
       type: 'general',
       energyBase: 0.5,
@@ -153,7 +158,7 @@ function deriveEnergyFromType(vt: VenueType): number {
   let s = 0, w = 0;
   for (const [v, p] of Object.entries(dist)) { 
     const probability = Number(p) || 0;
-    s += (energy[v] ?? 0.5) * probability; 
+    s += (energy[v as keyof typeof energy] ?? 0.5) * probability; 
     w += probability; 
   }
   return Number((w ? s / w : 0.5).toFixed(2));
