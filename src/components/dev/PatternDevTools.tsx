@@ -1,10 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
-import { PatternDevTools } from '@/components/dev/PatternDevTools';
-import { LearningFeedbackPanel } from '@/components/intelligence/LearningFeedbackPanel';
-import { PredictiveVibePanel } from '@/components/intelligence/PredictiveVibePanel';
-import { ActivityRecommendationPanel } from '@/components/intelligence/ActivityRecommendationPanel';
 
 export function PatternDevTools() {
   const insights = usePersonalityInsights();
@@ -50,11 +46,74 @@ export function PatternDevTools() {
   };
 
   return (
-    <div className="space-y-4">
-      <PatternDevTools />
-      <LearningFeedbackPanel />
-      <PredictiveVibePanel />
-      <ActivityRecommendationPanel />
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Pattern Intelligence</CardTitle>
+        <CardDescription>
+          Personality insights from {insights.correctionCount} corrections
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Chronotype</label>
+            <Badge 
+              variant="outline" 
+              className={`mt-1 ${getChronotypeColor(insights.chronotype)}`}
+            >
+              {insights.chronotype}
+            </Badge>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Energy Type</label>
+            <Badge 
+              variant="outline" 
+              className={`mt-1 ${getEnergyColor(insights.energyType)}`}
+            >
+              {insights.energyType}
+            </Badge>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Social Type</label>
+            <Badge 
+              variant="outline" 
+              className={`mt-1 ${getSocialColor(insights.socialType)}`}
+            >
+              {insights.socialType}
+            </Badge>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Consistency</label>
+            <Badge variant="outline" className="mt-1">
+              {insights.consistency}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Pattern Confidence:</span>
+            <span className={insights.hasEnoughData ? 'text-green-600' : 'text-yellow-600'}>
+              {insights.hasEnoughData ? 'High' : 'Building'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm mt-1">
+            <span className="text-muted-foreground">Data Points:</span>
+            <span>{insights.correctionCount}</span>
+          </div>
+        </div>
+
+        {insights.hasEnoughData && (
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground">
+              ✨ Pattern nudges active in vibe engine
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
