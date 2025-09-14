@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { UserLearningSystem, type PersonalFactors } from '@/lib/vibeAnalysis/UserLearningSystem';
 import { chronotypeFromHourly } from '@/lib/vibeAnalysis/UserLearningSystem';
+import { PatternStore } from '@/core/vibe/storage/PatternStore';
+import { storage } from '@/lib/storage';
 
 export interface PersonalityInsights {
   chronotype: 'lark' | 'owl' | 'balanced';
@@ -14,11 +16,45 @@ export interface PersonalityInsights {
 export function usePersonalityInsights(): PersonalityInsights | null {
   const [insights, setInsights] = useState<PersonalityInsights | null>(null);
   const [learningSystem] = useState(() => new UserLearningSystem());
+  const [lastCorrectionsHash, setLastCorrectionsHash] = useState<string | null>(null);
+
+  // Generate hash of corrections for cache invalidation
+  const generateCorrectionsHash = useCallback(async (): Promise<string> => {
+    try {
+      const corrections = await storage.getJSON('vibe-user-learning-v2') || [];
+      return JSON.stringify(corrections).slice(0, 100); // Simple hash
+    } catch {
+      return Date.now().toString();
+    }
+  }, []);
 
   useEffect(() => {
     const updateInsights = async () => {
       try {
-        // Get personal factors with mock context (just need corrections)
+        // Check for cached insights first
+        const correctionsHash = await generateCorrectionsHash();
+        
+        // If hash hasn't changed, use cached insights
+        if (lastCorrectionsHash === correctionsHash) {
+          const cached = await PatternStore.getCachedInsights();
+          if (cached) {
+            setInsights(cached.insights);
+            return;
+          }
+        }
+
+        // Check cache validity with new hash
+        const isCacheValid = await PatternStore.isCacheValid(correctionsHash);
+        if (isCacheValid) {
+          const cached = await PatternStore.getCachedInsights();
+          if (cached) {
+            setInsights(cached.insights);
+            setLastCorrectionsHash(correctionsHash);
+            return;
+          }
+        }
+
+        // Compute fresh insights
         const mockContext = {
           timestamp: new Date(),
           dayOfWeek: new Date().getDay(),
@@ -74,14 +110,35 @@ export function usePersonalityInsights(): PersonalityInsights | null {
           consistency = 'adaptive';
         }
 
-        setInsights({
+        const newInsights: PersonalityInsights = {
           chronotype,
           energyType,
           socialType,
           consistency,
           hasEnoughData,
           correctionCount
-        });
+        };
+
+        setInsights(newInsights);
+        setLastCorrectionsHash(correctionsHash);
+
+        // Cache the computed insights
+        await PatternStore.setCachedInsights(newInsights, correctionsHash);
+
+        // Record trend data for analytics
+        if (hasEnoughData) {
+          const confidenceScore = personalFactors.accuracy;
+          const chronotypeStability = personalFactors.personalityProfile.consistencyScore;
+          await PatternStore.recordTrend(
+            correctionCount,
+            confidenceScore,
+            personalFactors.accuracy,
+            chronotypeStability
+          );
+
+          // Update recommendations based on new insights
+          await PatternStore.updateRecommendations(newInsights);
+        }
 
       } catch (error) {
         console.warn('Failed to calculate personality insights:', error);
@@ -91,10 +148,11 @@ export function usePersonalityInsights(): PersonalityInsights | null {
 
     updateInsights();
     
-    // Update insights every 30 seconds when user is active
-    const interval = setInterval(updateInsights, 30000);
+    // Update insights only when corrections change (more efficient)
+    // Still check periodically but less frequently 
+    const interval = setInterval(updateInsights, 5 * 60 * 1000); // 5 minutes
     return () => clearInterval(interval);
-  }, [learningSystem]);
+  }, [learningSystem, generateCorrectionsHash]);
 
   return insights;
 }
