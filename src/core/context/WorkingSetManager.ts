@@ -38,6 +38,7 @@ export interface WorkingSetSnapshot {
 
 const STORE_KEY = 'ctx:ws:v1';
 const MAX_VIEWS = 20;
+const MAX_DRAFTS = 200;
 
 export class WorkingSetManager {
   private ws: WorkingSetSnapshot = { viewStack: [], drafts: {}, t: Date.now() };
@@ -106,6 +107,14 @@ export class WorkingSetManager {
   /** Drafts */
   saveDraft(d: Draft) {
     this.ws.drafts[d.id] = { ...d, updatedAt: Date.now() };
+    
+    // Bound drafts growth
+    if (Object.keys(this.ws.drafts).length > MAX_DRAFTS) {
+      const oldest = Object.entries(this.ws.drafts)
+        .sort((a, b) => a[1].updatedAt - b[1].updatedAt)[0]?.[0];
+      if (oldest) delete this.ws.drafts[oldest];
+    }
+    
     this.ws.t = Date.now();
     this.persist().catch(() => {
       // Fail silently on persist error

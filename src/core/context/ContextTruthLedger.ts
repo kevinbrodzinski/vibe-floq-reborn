@@ -120,8 +120,13 @@ async function sha256(s: string): Promise<string> {
     const buf = await crypto.subtle.digest('SHA-256', enc);
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
   } catch {
-    // Non-crypto environments: weak fallback (dev only)
-    let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;
-    return 'x' + Math.abs(h).toString(16);
+    // Harden non-crypto fallback with salt to avoid trivial collisions
+    let h = 0;
+    const salt = 1315423911; // salt for better distribution
+    for (let i = 0; i < s.length; i++) {
+      h ^= (h << 5) + s.charCodeAt(i) + (h >> 2);
+    }
+    h ^= salt;
+    return 'x' + (h >>> 0).toString(16);
   }
 }

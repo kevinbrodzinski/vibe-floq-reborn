@@ -105,8 +105,23 @@ export function useContextAI(): ContextAIState & {
     };
 
     updateContext();
-    const interval = setInterval(updateContext, 30000); // Every 30 seconds
-    return () => clearInterval(interval);
+    let interval = setInterval(updateContext, 30000); // Every 30 seconds
+    
+    // Pause on hidden tab for performance
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        interval = setInterval(updateContext, 30000);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [state.isInitialized]);
 
   const recordFact = useCallback(async (fact: ContextFact): Promise<string> => {

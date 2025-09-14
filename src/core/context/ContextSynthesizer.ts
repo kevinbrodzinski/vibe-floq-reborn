@@ -123,7 +123,10 @@ export function synthesizeContextSummary(facts: ContextFactWithId[]): ContextSum
     venueSequence.push({
       venueType,
       visitCount: visits.length,
-      averageEnergy: visits.reduce((sum, v) => sum + (v.data.rating || 3), 0) / visits.length / 5,
+      averageEnergy: visits.reduce((sum, v) => {
+        const rating = typeof v.data.rating === 'number' ? v.data.rating : 3;
+        return sum + rating;
+      }, 0) / visits.length / 5,
       energyImpact: 0.5,
       optimalDuration: 30 * 60 * 1000
     });
