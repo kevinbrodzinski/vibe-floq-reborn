@@ -3,8 +3,8 @@ import { VIBES } from '@/lib/vibes';
 import type { AnalysisContext, SensorData } from './VibeAnalysisEngine';
 
 // --- Personality & temporal helpers -----------------------------------------
-const ENERGY_VIBES: Vibe[] = ['hype', 'flowing'];
-const SOLO_VIBES: Vibe[] = ['solo', 'down', 'chill'];
+const ENERGY_VIBES: Vibe[] = ['hype', 'flowing', 'open'];
+const SOLO_VIBES: Vibe[] = ['solo', 'down', 'chill', 'curious'];
 const SOCIAL_VIBES: Vibe[] = ['social', 'open', 'romantic', 'curious', 'weird'];
 
 // Simple clamp
@@ -24,14 +24,17 @@ function normalizeRecord<T extends string>(rec: Partial<Record<T, number>>): Par
   return out;
 }
 
-// Extract an "energy score" from a vibe vector: (high-energy vibes) + 0.5*flowing
+// Extract an "energy score" from a vibe vector: all high-energy vibes
 function energyFromVector(vec: Record<Vibe, number>): number {
-  const flowing = vec.flowing ?? 0;
-  return (vec.hype ?? 0) + 0.5 * flowing;
+  return (vec.hype ?? 0) + (vec.flowing ?? 0) + (vec.open ?? 0);
 }
 
-// Quick chronotype detection from hourly patterns
+// Quick chronotype detection from hourly patterns (with sparse data guard)
 export function chronotypeFromHourly(hourly: Record<number, Partial<Record<Vibe, number>>>): 'lark'|'owl'|'balanced' {
+  // Guard against sparse data
+  const nonEmptyHours = Object.values(hourly).filter(p => Object.values(p ?? {}).some(v => (v ?? 0) > 0)).length;
+  if (nonEmptyHours < 6) return 'balanced';
+  
   const energyAtHour = (h: number) => energyFromVector(Object.assign(Object.fromEntries(VIBES.map(v => [v, 0])), hourly[h] ?? {}) as Record<Vibe, number>);
   const morning = [6, 7, 8, 9, 10, 11].reduce((s, h) => s + energyAtHour(h), 0);
   const evening = [17, 18, 19, 20, 21, 22].reduce((s, h) => s + energyAtHour(h), 0);

@@ -66,6 +66,16 @@ export type EngineInputs = {
   venueType?: string | null;
   venueEnergyBase?: number | null;
   venueIntelligence?: VenueIntelligence | null;
+  
+  // Pattern integration
+  patterns?: {
+    chronotype: 'lark' | 'owl' | 'balanced';
+    energyType: 'high-energy' | 'balanced' | 'low-energy';
+    socialType: 'social' | 'balanced' | 'solo';
+    consistency: 'very-consistent' | 'consistent' | 'adaptive' | 'highly-adaptive';
+    hasEnoughData: boolean;
+    temporalPrefs?: Record<number, Partial<Record<Vibe, number>>>;
+  };
 };
 
 export type VibeReading = {
