@@ -134,7 +134,20 @@ export function useVibeEngine(enabled: boolean = true) {
       const inputs = collect();
       const reading = evaluate(inputs);
       setProductionReading(reading);
-      setUserVibeHex(vibeToHex(safeVibe(reading.vibe)));
+      
+      // Confidence → UI intensity
+      const vibeHex = vibeToHex(safeVibe(reading.vibe));
+      const vibeAlpha = 0.5 + 0.5 * reading.confidence01;
+      
+      document.documentElement.style.setProperty('--vibe-alpha', String(vibeAlpha));
+      document.documentElement.style.setProperty('--vibe-hex', vibeHex);
+      setUserVibeHex(vibeHex);
+      
+      // Performance logging (dev-only)
+      if (import.meta.env.DEV && reading.calcMs > 80) {
+        console.warn('[vibe] slow step', reading.calcMs);
+      }
+      
       saveSnapshot(reading);
       
       // Update legacy state for compatibility
@@ -165,11 +178,17 @@ export function useVibeEngine(enabled: boolean = true) {
     let interval: number;
     let raf = 0;
 
+    // Visibility guard (pause in background; resume on return)
+    const onVisibilityChange = () => { 
+      if (!document.hidden) raf = requestAnimationFrame(productionTick); 
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
+
     if (FLAG === "on") {
       // Production engine: immediate tick + 60s interval
       raf = requestAnimationFrame(productionTick);
       interval = window.setInterval(() => { 
-        raf = requestAnimationFrame(productionTick); 
+        if (!document.hidden) raf = requestAnimationFrame(productionTick); 
       }, 60000);
     } else {
       // Legacy engine: compute + interval
@@ -199,7 +218,8 @@ export function useVibeEngine(enabled: boolean = true) {
 
     return () => { 
       clearInterval(interval); 
-      cancelAnimationFrame(raf); 
+      cancelAnimationFrame(raf);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [enabled, computeVibe, recordSnapshot, productionTick]);
 

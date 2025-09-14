@@ -3,11 +3,11 @@ import { VIBES, safeVibe } from "@/lib/vibes";
 
 /** Map component → vibe influence (positive or negative) */
 const W: Record<keyof ComponentScores, Partial<Record<Vibe, number>>> = {
-  circadian: { hype: +0.8, energetic:+0.7, social:+0.4, chill:+0.1, down:-0.2 },
-  movement : { hype: +0.9, flowing:+0.5, open:+0.4, social:+0.3, solo:-0.2, down:-0.3 },
+  circadian:   { hype:+0.7, energetic:+0.6, social:+0.4, chill:+0.1, down:-0.2 },
+  movement:    { energetic:+0.8, flowing:+0.5, open:+0.3, social:+0.2, solo:-0.2, down:-0.3 },
   venueEnergy: { social:+0.6, romantic:+0.2, hype:+0.2, solo:-0.2, down:-0.2 },
   deviceUsage: { focused:+0.7, solo:+0.4, curious:+0.2, social:-0.2, hype:-0.3 },
-  weather: { open:+0.2, flowing:+0.2, social:+0.2, down:-0.2 },
+  weather:     { open:+0.2, flowing:+0.2, social:+0.2, down:-0.2 },
 };
 
 const sigmoid = (x:number)=> 1/(1+Math.exp(-x*2));

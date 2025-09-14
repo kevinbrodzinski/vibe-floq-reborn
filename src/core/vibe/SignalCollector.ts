@@ -1,23 +1,62 @@
-import type { EngineInputs } from "./types";
+import * as React from 'react';
+import type { EngineInputs } from './types';
+import { MovementFromLocationTracker } from './collectors/MovementFromLocation';
+import { DwellTracker } from './collectors/DwellTracker';
+import { getWeatherSignal } from './collectors/WeatherCollector';
 
-// NOTE: this is a HOOK wrapper for convenience
+type Coords = { lat: number; lng: number } | null;
+
 export function useSignalCollector() {
-  // Simple implementation - can be enhanced with useGeo later
-  return {
-    collect: (): EngineInputs => {
-      const now = new Date();
-      // speed: if you don't have motion yet, derive from location delta later; start at 0
-      const hour = now.getHours();
-      return {
-        hour,
-        isWeekend: [0,6].includes(now.getDay()),
-        speedMps: 0,
-        dwellMinutes: 0,
-        screenOnRatio01: 0,     // wire to real screen/on time if available
-        // minimal weather/daylight (defer to P2)
-        isDaylight: undefined,
-        tempC: undefined,
-      };
+  const move = React.useRef(new MovementFromLocationTracker());
+  const dwell = React.useRef(new DwellTracker());
+  const coordsRef = React.useRef<Coords>(null);
+
+  // Geolocation watch (battery-light, SSR-safe)
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) return;
+    let watchId = -1;
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          coordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        },
+        () => {},
+        { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 }
+      );
+    } catch {}
+    return () => {
+      try { if (watchId !== -1) navigator.geolocation.clearWatch(watchId); } catch {}
+    };
+  }, []);
+
+  const collect = React.useCallback((): EngineInputs => {
+    const now = new Date();
+    const hour = now.getHours();
+    const isWeekend = [0, 6].includes(now.getDay());
+
+    const coords = coordsRef.current ?? undefined;
+    const m = move.current.update(coords || undefined);
+    dwell.current.update(m.moving01);
+
+    // Weather: use cached stub (async fetch avoided here)
+    // We keep the last daylight flag in a ref to stay sync/non-blocking.
+    const daylightRef = (collect as any)._daylightRef || ((collect as any)._daylightRef = { v: undefined as boolean | undefined });
+    // Opportunistic refresh (non-blocking)
+    if ((collect as any)._lastWxT == null || Date.now() - (collect as any)._lastWxT > 10 * 60 * 1000) {
+      (collect as any)._lastWxT = Date.now();
+      getWeatherSignal(coords?.lat, coords?.lng).then((wx) => (daylightRef.v = wx.isDaylight)).catch(() => {});
     }
-  };
+
+    return {
+      hour,
+      isWeekend,
+      speedMps: m.speedMps,
+      dwellMinutes: Number(dwell.current.dwellMinutes().toFixed(2)),
+      screenOnRatio01: undefined, // wire later from device usage
+      isDaylight: daylightRef.v,
+      tempC: undefined,
+    };
+  }, []);
+
+  return { collect };
 }
