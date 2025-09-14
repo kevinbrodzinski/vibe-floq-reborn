@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { VIBES } from '@/lib/vibes';
 import { VIBE_RGB } from '@/lib/vibes';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 
 interface VibeDistributionData {
   name: string;
@@ -34,7 +36,7 @@ const PersistentVibeDistributionComponent: React.FC<PersistentVibeDistributionPr
     return VIBES.map(vibe => ({
       name: vibe.charAt(0).toUpperCase() + vibe.slice(1),
       value: Math.floor(5 + Math.random() * 25), // Smaller values since we have more vibes
-      color: getVibeColor(vibe)
+      color: vibeToHex(safeVibe(vibe))
     }));
   }, [getVibeColor]);
 
