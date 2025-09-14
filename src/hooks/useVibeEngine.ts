@@ -147,13 +147,14 @@ export function useVibeEngine(enabled: boolean = true) {
       const inputs = collect();
       
       // Add pattern intelligence to inputs
-      if (personalityInsights?.hasEnoughData) {
+      if (import.meta.env.VITE_VIBE_PATTERNS === 'on' && personalityInsights?.hasEnoughData) {
         inputs.patterns = {
+          hasEnoughData: personalityInsights.hasEnoughData,
           chronotype: personalityInsights.chronotype,
           energyType: personalityInsights.energyType,
           socialType: personalityInsights.socialType,
           consistency: personalityInsights.consistency,
-          hasEnoughData: personalityInsights.hasEnoughData
+          temporalPrefs: personalityInsights.temporalPrefs
         };
       }
       
@@ -224,13 +225,14 @@ export function useVibeEngine(enabled: boolean = true) {
       setInputsCache(inputs);
       
       // Add pattern intelligence to inputs
-      if (personalityInsights?.hasEnoughData) {
+      if (import.meta.env.VITE_VIBE_PATTERNS === 'on' && personalityInsights?.hasEnoughData) {
         inputs.patterns = {
+          hasEnoughData: personalityInsights.hasEnoughData,
           chronotype: personalityInsights.chronotype,
           energyType: personalityInsights.energyType,
           socialType: personalityInsights.socialType,
           consistency: personalityInsights.consistency,
-          hasEnoughData: personalityInsights.hasEnoughData
+          temporalPrefs: personalityInsights.temporalPrefs
         };
       }
       

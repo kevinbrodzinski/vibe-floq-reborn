@@ -1,6 +1,6 @@
 import type { EngineInputs, VibeReading, ComponentScores, Vibe } from './types';
 import { combine, confidence } from './MasterEquation';
-import { renormalizeVector } from './vectorUtils';
+import { renormalizeVector } from './vector';
 import { VIBES } from '@/lib/vibes';
 import type { VenueIntelligence } from '@/types/venues';
 
