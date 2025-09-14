@@ -14,8 +14,21 @@ import {
   EMPTY_SEQUENCES,
   EMPTY_PROFILE
 } from './store';
+import { migrateVenueImpacts, migrateTemporalPrefs, migrateProfile } from './migrations';
 
-// Generic JSON storage helpers
+// Telemetry counters
+let patternWriteCount = 0;
+
+export function bumpWrite() { patternWriteCount++; }
+
+export function getPatternTelemetry() {
+  return {
+    totalWrites: patternWriteCount,
+    enabled: import.meta.env.VITE_VIBE_PATTERNS !== 'off'
+  };
+}
+
+// Generic JSON storage helpers with quota resilience
 async function getJSON<T>(key: string, fallback: T): Promise<T> {
   try {
     const stored = await storage.getItem(key);
@@ -26,32 +39,46 @@ async function getJSON<T>(key: string, fallback: T): Promise<T> {
   }
 }
 
-async function setJSON<T>(key: string, value: T): Promise<void> {
+async function safeWriteJSON<T>(key: string, value: T): Promise<void> {
   try {
-    await storage.setItem(key, JSON.stringify(value));
-  } catch {
-    // Fail silently - patterns are enhancement, not critical
+    await storage.setJSON(key, value);
+    bumpWrite();
+  } catch (e: any) {
+    // Attempt cleanup and one retry
+    try {
+      await cleanupOldPatterns(); // low-risk cleanup
+      await storage.setJSON(key, value);
+      bumpWrite();
+    } catch {
+      if (import.meta.env.DEV) {
+        console.warn(`[Patterns] Write failed after cleanup for key=${key}`);
+      }
+    }
   }
 }
 
 // Venue impact patterns
 export async function readVenueImpacts(): Promise<V1<VenueImpacts>> {
-  return getJSON(STORAGE_KEYS.VENUE, EMPTY_VENUE_IMPACTS);
+  const raw = await getJSON(STORAGE_KEYS.VENUE, EMPTY_VENUE_IMPACTS);
+  return migrateVenueImpacts(raw);
 }
 
 export async function writeVenueImpacts(impacts: V1<VenueImpacts>): Promise<void> {
   impacts.updatedAt = Date.now();
-  await setJSON(STORAGE_KEYS.VENUE, impacts);
+  await safeWriteJSON(STORAGE_KEYS.VENUE, impacts);
+  invalidatePatternCache();
 }
 
 // Temporal preference patterns  
 export async function readTemporalPrefs(): Promise<V1<TemporalPrefs>> {
-  return getJSON(STORAGE_KEYS.TEMPORAL, EMPTY_TEMPORAL_PREFS);
+  const raw = await getJSON(STORAGE_KEYS.TEMPORAL, EMPTY_TEMPORAL_PREFS);
+  return migrateTemporalPrefs(raw);
 }
 
 export async function writeTemporalPrefs(prefs: V1<TemporalPrefs>): Promise<void> {
   prefs.updatedAt = Date.now();
-  await setJSON(STORAGE_KEYS.TEMPORAL, prefs);
+  await safeWriteJSON(STORAGE_KEYS.TEMPORAL, prefs);
+  invalidatePatternCache();
 }
 
 // Sequence patterns
@@ -61,17 +88,19 @@ export async function readSequences(): Promise<V1<SequenceMap>> {
 
 export async function writeSequences(sequences: V1<SequenceMap>): Promise<void> {
   sequences.updatedAt = Date.now();
-  await setJSON(STORAGE_KEYS.SEQUENCES, sequences);
+  await safeWriteJSON(STORAGE_KEYS.SEQUENCES, sequences);
 }
 
 // Personality profile
 export async function readProfile(): Promise<V1<PersonalityProfile>> {
-  return getJSON(STORAGE_KEYS.PROFILE, EMPTY_PROFILE);
+  const raw = await getJSON(STORAGE_KEYS.PROFILE, EMPTY_PROFILE);
+  return migrateProfile(raw);
 }
 
 export async function writeProfile(profile: V1<PersonalityProfile>): Promise<void> {
   profile.updatedAt = Date.now();
-  await setJSON(STORAGE_KEYS.PROFILE, profile);
+  await safeWriteJSON(STORAGE_KEYS.PROFILE, profile);
+  invalidatePatternCache();
 }
 
 // Batch operations for efficiency
@@ -86,7 +115,7 @@ export async function readAllPatterns() {
   return { venue, temporal, sequences, profile };
 }
 
-// Cache for performance (patterns don't change frequently)
+// Per-bucket cache TTL (venue/temporal/profile independent)
 let patternCache = {
   venue: { v: undefined as V1<VenueImpacts>|undefined, t: 0 },
   temporal: { v: undefined as V1<TemporalPrefs>|undefined, t: 0 },
@@ -123,7 +152,11 @@ export async function getCachedProfile(): Promise<V1<PersonalityProfile>> {
 
 // Invalidate cache when patterns are updated
 export function invalidatePatternCache(): void {
-  patternCache = { venue:{v:undefined,t:0}, temporal:{v:undefined,t:0}, profile:{v:undefined,t:0} };
+  patternCache = {
+    venue: { v: undefined, t: 0 },
+    temporal: { v: undefined, t: 0 },
+    profile: { v: undefined, t: 0 },
+  };
 }
 
 // Cleanup old pattern data (for periodic maintenance)

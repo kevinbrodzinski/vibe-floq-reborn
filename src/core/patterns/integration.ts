@@ -4,6 +4,23 @@ import type { EngineInputs, VibeVector } from '@/core/vibe/types';
 import { getCachedTemporalPrefs } from './service';
 import { VIBES } from '@/lib/vibes';
 
+// Telemetry counters
+let patternApplyMs = 0;
+let patternReadCount = 0;
+let patternNudgeCount = 0;
+
+export function bumpNudge() { patternNudgeCount++; }
+
+export function getPatternTelemetry() {
+  return {
+    averageApplyMs:
+      patternReadCount > 0 ? (patternApplyMs / patternReadCount).toFixed(2) : '0',
+    totalReads: patternReadCount,
+    nudgesApplied: patternNudgeCount,
+    enabled: import.meta.env.VITE_VIBE_PATTERNS !== 'off'
+  };
+}
+
 // Apply temporal pattern nudges to vibe vector (called from VibeEngine.evaluate)
 export async function applyTemporalNudges(
   inputs: EngineInputs,

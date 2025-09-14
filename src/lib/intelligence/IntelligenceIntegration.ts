@@ -7,6 +7,7 @@ import { ContextTruthLedger } from '@/core/context/ContextTruthLedger';
 import { synthesizeContextSummary } from '@/core/context/ContextSynthesizer';
 import { readVenueImpacts, writeVenueImpacts } from '@/core/patterns/service';
 import { evolveVenueImpact } from '@/core/patterns/evolve';
+import { extractVenueType } from '@/core/patterns/venue';
 import type { Vibe } from '@/lib/vibes';
 import type { ComponentKey } from '@/core/vibe/types';
 import type { PersonalityInsights } from '@/types/personality';
@@ -21,6 +22,10 @@ class IntelligenceIntegration {
   private predictiveEngine: PredictiveVibeEngine | null = null;
   private activityEngine: ActivityRecommendationEngine | null = null;
   private contextLedger: ContextTruthLedger | null = null;
+
+  private extractVenueType(vi?: any): string {
+    return extractVenueType(vi);
+  }
 
   /**
    * Initialize engines with personality insights
@@ -89,25 +94,36 @@ class IntelligenceIntegration {
 
       // --- VENUE EVOLUTION (bounded, silent on error) ---
       try {
-        // Find venue type from context ledger or use general fallback
-        const venueFacts = this.contextLedger?.getFactsByKind<VenueFact>('venue');
-        const venueType = venueFacts?.slice(-1)[0]?.data?.type ?? 'general';
+        // Only learn from confident corrections (confidence >= 0.6)
+        if (this.contextLedger && confidence >= 0.6) {
+          const venueFacts = this.contextLedger.getFactsByKind<VenueFact>('venue');
+          const latestVenueFact = venueFacts?.slice(-1)[0];
 
-        if (venueType) {
-          const v = await readVenueImpacts();
-          v.data[venueType] = evolveVenueImpact(v.data[venueType], {
-            energyDelta: Math.max(-1, Math.min(1, (componentScores.venueEnergy ?? 0) - 0.5)),
-            preferredVibe: corrected,
-            // dwellMin: pass if available from DwellTracker
-          });
-          await writeVenueImpacts(v);
-          
-          if (import.meta.env.DEV) {
-            console.log(`[Patterns] Evolved venue ${venueType}:`, {
-              energyDelta: ((componentScores.venueEnergy ?? 0) - 0.5).toFixed(3),
+          const venueType =
+            (latestVenueFact?.data as any)?.type ||
+            this.extractVenueType((this as any).currentVenueIntelligence) ||
+            'general';
+
+          if (venueType) {
+            const v = await readVenueImpacts();
+            v.data[venueType] = evolveVenueImpact(v.data[venueType], {
+              energyDelta: Math.max(
+                -1,
+                Math.min(1, (componentScores.venueEnergy ?? 0) - 0.5)
+              ),
               preferredVibe: corrected,
-              sampleCount: v.data[venueType]?.sampleN
+              // dwellMin: attach if available
             });
+            await writeVenueImpacts(v);
+            
+            if (import.meta.env.DEV) {
+              console.log(`[Patterns] Evolved venue ${venueType}:`, {
+                energyDelta: ((componentScores.venueEnergy ?? 0) - 0.5).toFixed(3),
+                preferredVibe: corrected,
+                sampleCount: v.data[venueType]?.sampleN,
+                confidence: confidence.toFixed(2)
+              });
+            }
           }
         }
       } catch (venueError) {
