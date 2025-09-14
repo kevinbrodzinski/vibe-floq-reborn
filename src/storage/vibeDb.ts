@@ -6,13 +6,22 @@ import type { VibeReading } from '@/core/vibe/types';
 let dbReady = false;
 let sqlite: any = null;
 
-// try dynamic import for RN/Expo
+// try dynamic import for RN/Expo (only in React Native environment)
 async function tryLoadExpoSqlite() {
+  // Skip expo-sqlite in web builds to avoid Vite resolution errors
+  if (typeof window !== 'undefined') {
+    sqlite = null;
+    return;
+  }
+  
   try {
-    // @ts-ignore
-    const mod = await import('expo-sqlite');
+    // Only attempt import in React Native environment
+    // Use string import to avoid TypeScript resolution
+    const mod = await import('expo-sqlite' as any);
     sqlite = mod.openDatabase?.('vibe.db') || null;
-  } catch { sqlite = null; }
+  } catch { 
+    sqlite = null; 
+  }
 }
 
 export async function initVibeDb() {
