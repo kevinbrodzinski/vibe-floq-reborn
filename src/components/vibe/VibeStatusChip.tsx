@@ -2,11 +2,11 @@ import * as React from 'react';
 import clsx from 'clsx';
 import { useVibeEngine } from '@/hooks/useVibeEngine';
 import { useVibeSnapshots } from '@/hooks/useVibeSnapshots';
+import { getRecentReadings } from '@/storage/vibeSnapshots';
+import { computeTrend } from './trend';
 import { vibeToHex } from '@/lib/vibe/color';
 import { safeVibe, type Vibe } from '@/lib/vibes';
 import { getVibeEmoji, getVibeLabel } from '@/lib/vibeConstants';
-import { computeTrend } from './trend';
-import { getRecentReadings } from '@/storage/vibeSnapshots';
 
 type Props = {
   className?: string;
@@ -14,12 +14,13 @@ type Props = {
   compact?: boolean;   // fewer labels for tiny HUDs
 };
 
-export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact = false }) => {
+export const VibeStatusChip: React.FC<Props> = ({ className = '', limit = 20, compact = false }) => {
   const eng = useVibeEngine();
   const { data } = useVibeSnapshots(limit);
+
   const [open, setOpen] = React.useState(false);
-  const [recent, setRecent] = React.useState(data);
   const panelRef = React.useRef<HTMLDivElement | null>(null);
+  const [recent, setRecent] = React.useState(data);
 
   React.useEffect(() => { setRecent(data); }, [data]);
 
@@ -29,7 +30,7 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
   const learning = confidence < 0.5;
   const percent = Math.floor(confidence * 100);
 
-  // build sparkline from confidences
+  // build sparkline from confidences (clamped)
   const values = React.useMemo(() => {
     if (!recent?.length) return [];
     const arr = recent.slice(-limit);
@@ -38,7 +39,7 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
 
   const trend = React.useMemo(() => computeTrend(values), [values]);
 
-  // quick SVG path
+  // sparkline path
   const { path, w, h } = React.useMemo(() => {
     const W = 84, H = 24, P = 2;
     if (!values.length) return { path: '', w: W, h: H };
@@ -51,24 +52,15 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
     return { path: d, w: W, h: H };
   }, [values]);
 
-  // optional local saturation to mirror confidence
+  // confidence → saturation (mirrors engine's --vibe-alpha)
   const sat = 0.65 + 0.35 * confidence;
   const styleVars: React.CSSProperties = {
     '--chip-stroke': color,
-    '--chip-fill': color + '20',
+    '--chip-fill': color + '20',  // css hex + alpha nibble
     '--chip-sat': String(sat),
   } as React.CSSProperties;
 
-  const Arrow = () => {
-    if (values.length < 5 || confidence < 0.4) return null;
-    const cls =
-      trend === 'rising' ? 'text-emerald-400' :
-      trend === 'easing' ? 'text-amber-400' : 'text-white/60';
-    const glyph = trend === 'rising' ? '▲' : trend === 'easing' ? '▼' : '▬';
-    return <span className={cls + ' text-[10px] ml-1'} aria-label={`trend ${trend}`}>{glyph}</span>;
-  };
-
-  // a11y: Esc to close, focus drawer on open
+  // a11y: Esc to close; focus the panel when open
   React.useEffect(() => {
     if (!open || typeof window === 'undefined') return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
@@ -77,18 +69,26 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
   }, [open]);
   React.useEffect(() => { if (open) panelRef.current?.focus(); }, [open]);
 
+  const Arrow: React.FC = () => {
+    if (values.length < 7 || confidence < 0.4) return null;
+    const cls =
+      trend === 'rising' ? 'text-emerald-400' :
+      trend === 'easing' ? 'text-amber-400' : 'text-white/60';
+    const glyph = trend === 'rising' ? '▲' : trend === 'easing' ? '▼' : '▬';
+    return <span className={cls} aria-label={`trend ${trend}`} title={`trend ${trend}`}>{glyph}</span>;
+  };
+
+  const onOpen = React.useCallback(async () => {
+    setOpen(true);
+    try { setRecent(await getRecentReadings(100)); } catch {}
+  }, []);
+
   return (
     <>
       <button
         type="button"
-        onClick={async () => {
-          setOpen(true);
-          // lazy refresh when user opens
-          try { 
-            setRecent(await getRecentReadings(100)); 
-          } catch {}
-        }}
-        aria-label="Open vibe history"
+        onClick={onOpen}
+        aria-expanded={open}
         aria-controls="vibe-history"
         className={clsx(
           'inline-flex items-center gap-2 rounded-full border px-3 py-1.5',
@@ -101,73 +101,30 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
         title={`Vibe: ${getVibeLabel(vibe)} · Confidence: ${percent}% · Click for history`}
         data-testid="vibe-status-chip"
       >
-        <span className="text-base leading-none" aria-hidden="true">
-          {getVibeEmoji(vibe)}
-        </span>
-
-        {!compact && (
-          <span className="text-xs font-medium">{getVibeLabel(vibe)}</span>
-        )}
-
-        <span className={clsx('text-[11px] tabular-nums opacity-80', learning && 'opacity-60')}>
-          {percent}%
-        </span>
-
+        <span aria-hidden="true">{getVibeEmoji(vibe)}</span>
+        {!compact && <span>{getVibeLabel(vibe)}</span>}
         <Arrow />
+        <span className="opacity-70">{percent}%</span>
 
         {learning && (
-          <span
-            className="ml-1 rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-white/80"
-            aria-label="Learning mode"
-          >
+          <span className="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">
             learning
           </span>
         )}
 
-        <svg
-          width={w} height={h}
-          viewBox={`0 0 ${w} ${h}`}
-          className="ml-2"
-          aria-hidden="true"
-          focusable="false"
-          style={{ filter: `saturate(var(--chip-sat))` }}
-        >
-          {!!path && (
-            <path
-              d={`${path} L ${w - 2} ${h - 2} L 2 ${h - 2} Z`}
-              fill="var(--chip-fill)"
-              stroke="none"
-            />
-          )}
-          {!!path && (
-            <path
-              d={path}
-              fill="none"
-              stroke="var(--chip-stroke)"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ opacity: 0.95 }}
-            />
-          )}
-          {values.length > 0 && (
-            <circle
-              cx={w - 2}
-              cy={2 + (1 - values[values.length - 1]) * (h - 4)}
-              r="2.5"
-              fill="var(--chip-stroke)"
-              stroke="#fff"
-              strokeWidth="1"
-            />
-          )}
+        {/* sparkline */}
+        <svg className="ml-2" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          {path && <path d={path} fill="none" stroke="var(--chip-fill)" strokeWidth="4" />}
+          {path && <path d={path} fill="none" stroke="var(--chip-stroke)" strokeWidth="1.5" />}
         </svg>
       </button>
 
-      {/* History Drawer */}
+      {/* Drawer */}
       {open && (
         <div
           role="dialog"
           aria-modal="true"
+          aria-labelledby="vibe-history-title"
           id="vibe-history"
           className="fixed inset-0 z-[700] flex items-end sm:items-center justify-center"
           onClick={() => setOpen(false)}
@@ -180,41 +137,38 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <div className="text-sm font-semibold text-white">Vibe History</div>
+              <h2 id="vibe-history-title" className="text-sm font-semibold text-white">Vibe History</h2>
               <button
-                className="text-white/70 hover:text-white text-sm p-1"
-                onClick={() => setOpen(false)}
+                type="button"
+                className="text-white/70 hover:text-white"
                 aria-label="Close history"
+                onClick={() => setOpen(false)}
               >
                 ✕
               </button>
             </div>
-            <div className="p-3 space-y-2 overflow-y-auto max-h-[60vh]">
+
+            <div className="max-h-[60vh] overflow-auto divide-y divide-white/5">
               {recent.length === 0 && (
-                <div className="text-xs text-white/60 text-center py-8">
-                  No vibe snapshots yet.
-                </div>
+                <div className="px-4 py-6 text-sm text-white/60">No vibe snapshots yet.</div>
               )}
-              {recent.slice().reverse().map((r) => (
-                <div 
-                  key={r.timestamp}
-                  className="flex items-center justify-between text-[11px] text-white/80 py-1"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{getVibeEmoji(safeVibe(r.vibe as Vibe))}</span>
-                    <span className="font-medium">{getVibeLabel(safeVibe(r.vibe as Vibe))}</span>
+              {recent.slice().reverse().map((r) => {
+                const v = safeVibe(r.vibe as Vibe);
+                return (
+                  <div key={r.timestamp} className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span aria-hidden="true">{getVibeEmoji(v)}</span>
+                      <span className="text-sm text-white/90">{getVibeLabel(v)}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-white/70">
+                      <span>{Math.floor((r.confidence01 ?? 0) * 100)}%</span>
+                      <time dateTime={new Date(r.timestamp).toISOString()}>
+                        {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </time>
+                    </div>
                   </div>
-                  <div className="tabular-nums font-mono">
-                    {Math.floor((r.confidence01 ?? 0) * 100)}%
-                  </div>
-                  <div className="text-white/50 tabular-nums">
-                    {new Date(r.timestamp).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
