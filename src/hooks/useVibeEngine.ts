@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { vibeToHex } from '@/lib/vibe';
 import { safeVibe, type Vibe } from '@/lib/vibes';
 import { evaluate } from '@/core/vibe/VibeEngine';
@@ -9,6 +9,7 @@ import { saveSnapshot } from '@/storage/vibeSnapshots';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 import { useIntelligenceFlags } from '@/hooks/useIntelligenceFlags';
 import { usePerformanceTelemetry } from '@/hooks/usePerformanceTelemetry';
+import { readTemporalPrefs, writeTemporalPrefs } from '@/core/patterns/service';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -50,6 +51,10 @@ export function useVibeEngine(enabled: boolean = true) {
   const personalityInsights = usePersonalityInsights();
   const { flags } = useIntelligenceFlags();
   const { recordMetrics, incrementCacheHit, getMetrics } = usePerformanceTelemetry();
+
+  // Pattern caching refs for performance
+  const temporalCacheRef = useRef<{ hour: number; prefs: Record<string, number> } | null>(null);
+  const lastPrefUpdateRef = useRef(0);
 
   const [state, setState] = useState<VibeEngineState>({
     currentVibe: 'chill',
@@ -150,9 +155,42 @@ export function useVibeEngine(enabled: boolean = true) {
     if (FLAG === "on") {
       const inputs = collect();
       
+      // ----- TEMPORAL PREFERENCES (cheap cache, avoid IO every tick) -----
+      if (import.meta.env.VITE_VIBE_PATTERNS === 'on') {
+        try {
+          const hour = new Date().getHours();
+          const cached = temporalCacheRef.current;
+          if (!cached || cached.hour !== hour) {
+            // Cache temporal prefs for this hour (async, non-blocking)
+            readTemporalPrefs().then(t => {
+              const hourPrefs = t.data[hour] ?? {};
+              temporalCacheRef.current = { hour, prefs: hourPrefs as Record<string, number> };
+            }).catch(() => {
+              // Fail silently, patterns are enhancement not critical
+            });
+          }
+          
+          // Attach to patterns input for evaluate() with current cache
+          if (temporalCacheRef.current?.prefs && Object.keys(temporalCacheRef.current.prefs).length > 0) {
+            inputs.patterns ??= {
+              hasEnoughData: true,
+              chronotype: personalityInsights?.chronotype ?? 'balanced',
+              energyType: personalityInsights?.energyType ?? 'balanced',
+              socialType: personalityInsights?.socialType ?? 'balanced',
+              consistency: personalityInsights?.consistency ?? 'adaptive',
+            } as any;
+            (inputs.patterns as any).temporalPrefs = { [hour]: temporalCacheRef.current.prefs };
+          }
+        } catch (error) {
+          if (import.meta.env.DEV) {
+            console.warn('[Patterns] Temporal preference loading failed:', error);
+          }
+        }
+      }
+      
       // Add pattern intelligence to inputs (only if flags allow)
       if (flags.patterns && import.meta.env.VITE_VIBE_PATTERNS !== 'off' && personalityInsights?.hasEnoughData) {
-        inputs.patterns = {
+        inputs.patterns ??= {
           hasEnoughData: personalityInsights.hasEnoughData,
           chronotype: personalityInsights.chronotype,
           energyType: personalityInsights.energyType,
@@ -175,6 +213,9 @@ export function useVibeEngine(enabled: boolean = true) {
       
       const reading = evaluate(inputs);
       setProductionReading(reading);
+      
+      // ----- MAYBE RECORD TEMPORAL PREFERENCE FROM CONFIDENT READINGS -----
+      maybeRecordTemporalFrom(reading);
       
       // Confidence → UI intensity
       const vibeHex = vibeToHex(safeVibe(reading.vibe));
@@ -210,7 +251,44 @@ export function useVibeEngine(enabled: boolean = true) {
         patterns: personalityInsights || undefined
       }));
     }
-  }, [collect]);
+  }, [collect, personalityInsights, flags, recordMetrics, getMetrics]);
+
+  // Record temporal preferences from confident readings (throttled)
+  const maybeRecordTemporalFrom = useCallback(async (reading: VibeReading) => {
+    const now = Date.now();
+    if (now - lastPrefUpdateRef.current < 6 * 60_000) return; // at most every 6 min
+    lastPrefUpdateRef.current = now;
+
+    if ((reading.confidence01 ?? 0) < 0.7) return; // only confident readings
+
+    try {
+      const hour = new Date().getHours();
+      const store = await readTemporalPrefs();
+      const dist = store.data[hour] ?? {};
+      const chosen = reading.vibe as Vibe;
+
+      // Increment count then normalize (soft count approach)
+      const next = { ...dist, [chosen]: (dist[chosen] ?? 0) + 1 };
+      const sum = Object.values(next).reduce((a, b) => a + (b ?? 0), 0) || 1;
+      Object.keys(next).forEach(k => {
+        next[k as Vibe] = Number(((next[k as Vibe] ?? 0) / sum).toFixed(4));
+      });
+      store.data[hour] = next;
+      await writeTemporalPrefs(store);
+
+      if (import.meta.env.DEV) {
+        console.log(`[Patterns] Updated temporal hour ${hour}:`, {
+          chosen,
+          confidence: reading.confidence01,
+          newDistribution: next
+        });
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[Patterns] Temporal preference update failed:', error);
+      }
+    }
+  }, []);
 
   // Production engine with adaptive polling
   useEffect(() => {
@@ -241,9 +319,42 @@ export function useVibeEngine(enabled: boolean = true) {
       const inputs = collect();
       setInputsCache(inputs);
       
+      // ----- TEMPORAL PREFERENCES (cheap cache, avoid IO every tick) -----
+      if (import.meta.env.VITE_VIBE_PATTERNS === 'on') {
+        try {
+          const hour = new Date().getHours();
+          const cached = temporalCacheRef.current;
+          if (!cached || cached.hour !== hour) {
+            // Cache temporal prefs for this hour (async, non-blocking)
+            readTemporalPrefs().then(t => {
+              const hourPrefs = t.data[hour] ?? {};
+              temporalCacheRef.current = { hour, prefs: hourPrefs as Record<string, number> };
+            }).catch(() => {
+              // Fail silently, patterns are enhancement not critical
+            });
+          }
+          
+          // Attach to patterns input for evaluate() with current cache
+          if (temporalCacheRef.current?.prefs && Object.keys(temporalCacheRef.current.prefs).length > 0) {
+            inputs.patterns ??= {
+              hasEnoughData: true,
+              chronotype: personalityInsights?.chronotype ?? 'balanced',
+              energyType: personalityInsights?.energyType ?? 'balanced',
+              socialType: personalityInsights?.socialType ?? 'balanced',
+              consistency: personalityInsights?.consistency ?? 'adaptive',
+            } as any;
+            (inputs.patterns as any).temporalPrefs = { [hour]: temporalCacheRef.current.prefs };
+          }
+        } catch (error) {
+          if (import.meta.env.DEV) {
+            console.warn('[Patterns] Temporal preference loading failed:', error);
+          }
+        }
+      }
+      
       // Add pattern intelligence to inputs (respecting flags)
       if (flags.patterns && import.meta.env.VITE_VIBE_PATTERNS !== 'off' && personalityInsights?.hasEnoughData) {
-        inputs.patterns = {
+        inputs.patterns ??= {
           hasEnoughData: personalityInsights.hasEnoughData,
           chronotype: personalityInsights.chronotype,
           energyType: personalityInsights.energyType,
@@ -266,6 +377,9 @@ export function useVibeEngine(enabled: boolean = true) {
       
       const r = evaluate(inputs);
       setProductionReading(r);
+      
+      // ----- MAYBE RECORD TEMPORAL PREFERENCE FROM CONFIDENT READINGS -----
+      maybeRecordTemporalFrom(r);
 
       // CSS vars for confidence tint
       const vibeHex = vibeToHex(safeVibe(r.vibe));
@@ -314,7 +428,7 @@ export function useVibeEngine(enabled: boolean = true) {
       if (raf) cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', onVis); 
     };
-  }, [collect, personalityInsights]);
+  }, [collect, personalityInsights, flags, maybeRecordTemporalFrom]);
 
   // Legacy detection loop for dev mode
   useEffect(() => {

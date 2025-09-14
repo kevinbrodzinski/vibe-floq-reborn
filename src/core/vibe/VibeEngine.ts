@@ -3,6 +3,7 @@ import { combine, confidence } from './MasterEquation';
 import { renormalizeVector } from './vector';
 import { VIBES } from '@/lib/vibes';
 import type { VenueIntelligence } from '@/types/venues';
+import { applyTemporalNudges } from '@/core/patterns/integration';
 
 // helpers
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -194,6 +195,22 @@ export function evaluate(inp: EngineInputs): VibeReading {
   // Tiny bonus for stable weather (Clear/Clouds)
   if (inp.weatherConfidenceBoost) {
     conf = Math.min(0.95, conf + inp.weatherConfidenceBoost);
+  }
+
+  // Apply temporal pattern nudges (async, non-blocking)
+  if (import.meta.env.VITE_VIBE_PATTERNS !== 'off' && inp.patterns?.hasEnoughData) {
+    try {
+      // Non-blocking pattern enrichment
+      applyTemporalNudges(inp, vector, conf).then(result => {
+        if (result.applied && import.meta.env.DEV) {
+          console.log(`🎯 Temporal pattern nudge applied: confidence ${conf.toFixed(3)} → ${result.confidence.toFixed(3)}`);
+        }
+      }).catch(() => {
+        // Fail silently - patterns are enhancement not critical
+      });
+    } catch {
+      // Patterns are not critical to core functionality
+    }
   }
 
   return {

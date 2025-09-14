@@ -5,10 +5,12 @@ import { learnFromCorrection } from '@/core/vibe/learning/PersonalWeightStore';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 import { ContextTruthLedger } from '@/core/context/ContextTruthLedger';
 import { synthesizeContextSummary } from '@/core/context/ContextSynthesizer';
+import { readVenueImpacts, writeVenueImpacts } from '@/core/patterns/service';
+import { evolveVenueImpact } from '@/core/patterns/evolve';
 import type { Vibe } from '@/lib/vibes';
 import type { ComponentKey } from '@/core/vibe/types';
 import type { PersonalityInsights } from '@/types/personality';
-import type { ContextSummary, VibeFact } from '@/core/context/types';
+import type { ContextSummary, VibeFact, VenueFact } from '@/core/context/types';
 
 /**
  * Central intelligence integration system that connects
@@ -83,6 +85,35 @@ class IntelligenceIntegration {
           componentScores,
           confidence
         );
+      }
+
+      // --- VENUE EVOLUTION (bounded, silent on error) ---
+      try {
+        // Find venue type from context ledger or use general fallback
+        const venueFacts = this.contextLedger?.getFactsByKind<VenueFact>('venue');
+        const venueType = venueFacts?.slice(-1)[0]?.data?.type ?? 'general';
+
+        if (venueType) {
+          const v = await readVenueImpacts();
+          v.data[venueType] = evolveVenueImpact(v.data[venueType], {
+            energyDelta: Math.max(-1, Math.min(1, (componentScores.venueEnergy ?? 0) - 0.5)),
+            preferredVibe: corrected,
+            // dwellMin: pass if available from DwellTracker
+          });
+          await writeVenueImpacts(v);
+          
+          if (import.meta.env.DEV) {
+            console.log(`[Patterns] Evolved venue ${venueType}:`, {
+              energyDelta: ((componentScores.venueEnergy ?? 0) - 0.5).toFixed(3),
+              preferredVibe: corrected,
+              sampleCount: v.data[venueType]?.sampleN
+            });
+          }
+        }
+      } catch (venueError) {
+        if (import.meta.env.DEV) {
+          console.warn('[Patterns] Venue evolution failed:', venueError);
+        }
       }
 
       if (this.contextLedger) {

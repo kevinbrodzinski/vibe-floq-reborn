@@ -4,7 +4,7 @@ import type { VenueImpacts, PersonalityProfile } from './store';
 
 // Learning parameters (tuned for stability)
 const LR = 0.08;         // learning rate for updates
-const DECAY = 0.995;     // periodic decay toward neutral  
+export const DECAY = 0.995;     // periodic decay toward neutral  
 const PROFILE_LR = 0.05; // slower learning for personality traits
 
 export function ewma(old: number, fresh: number, lr = LR): number {

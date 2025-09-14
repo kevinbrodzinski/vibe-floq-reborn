@@ -5,12 +5,16 @@ import { PredictiveVibePanel } from '@/components/intelligence/PredictiveVibePan
 import { ActivityRecommendationPanel } from '@/components/intelligence/ActivityRecommendationPanel';
 import { PatternInsightsPanel } from '@/components/intelligence/PatternInsightsPanel';
 import { initializePatternLearning } from '@/core/patterns/learner';
+import { usePatternMaintenance } from '@/hooks/usePatternMaintenance';
 
 export function IntelligenceDashboard() {
+  // Initialize pattern learning and maintenance
   useEffect(() => {
-    // Initialize pattern learning system on dashboard mount
     initializePatternLearning();
   }, []);
+
+  // Enable weekly pattern maintenance
+  usePatternMaintenance();
 
   return (
     <div className="space-y-4">
