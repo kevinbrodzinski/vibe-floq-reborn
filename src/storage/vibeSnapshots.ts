@@ -8,3 +8,6 @@ export async function saveSnapshot(r: VibeReading) {
 export async function loadSnapshots(limit = 100): Promise<VibeReading[]> {
   try { return await getRecentReadings(limit); } catch { return []; }
 }
+
+// Re-export for external use
+export { getRecentReadings };
