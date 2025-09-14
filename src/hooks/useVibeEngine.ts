@@ -7,6 +7,8 @@ import type { VibeReading } from '@/core/vibe/types';
 import { setUserVibeHex } from '@/lib/vibe/vibeColor';
 import { saveSnapshot } from '@/storage/vibeSnapshots';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
+import { useIntelligenceFlags } from '@/hooks/useIntelligenceFlags';
+import { usePerformanceTelemetry } from '@/hooks/usePerformanceTelemetry';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -46,6 +48,8 @@ const FLAG = (import.meta as any).env?.VITE_VIBE_DETECTION ?? "on";
 export function useVibeEngine(enabled: boolean = true) {
   const [inputsCache, setInputsCache] = useState<any>(null);
   const personalityInsights = usePersonalityInsights();
+  const { flags } = useIntelligenceFlags();
+  const { recordMetrics, incrementCacheHit, getMetrics } = usePerformanceTelemetry();
 
   const [state, setState] = useState<VibeEngineState>({
     currentVibe: 'chill',
@@ -146,8 +150,8 @@ export function useVibeEngine(enabled: boolean = true) {
     if (FLAG === "on") {
       const inputs = collect();
       
-      // Add pattern intelligence to inputs
-      if (import.meta.env.VITE_VIBE_PATTERNS === 'on' && personalityInsights?.hasEnoughData) {
+      // Add pattern intelligence to inputs (only if flags allow)
+      if (flags.patterns && import.meta.env.VITE_VIBE_PATTERNS !== 'off' && personalityInsights?.hasEnoughData) {
         inputs.patterns = {
           hasEnoughData: personalityInsights.hasEnoughData,
           chronotype: personalityInsights.chronotype,
@@ -156,6 +160,17 @@ export function useVibeEngine(enabled: boolean = true) {
           consistency: personalityInsights.consistency,
           temporalPrefs: personalityInsights.temporalPrefs
         };
+      }
+      
+      // Disable venue/weather if flags are off
+      if (!flags.venue) {
+        inputs.venueType = null;
+        inputs.venueEnergyBase = null;
+        inputs.venueIntelligence = null;
+      }
+      if (!flags.weather) {
+        inputs.weatherEnergyOffset = undefined;
+        inputs.weatherConfidenceBoost = undefined;
       }
       
       const reading = evaluate(inputs);
@@ -171,10 +186,12 @@ export function useVibeEngine(enabled: boolean = true) {
       document.documentElement.style.setProperty('--vibe-sat', String(vibeSat));
       setUserVibeHex(vibeHex);
       
-      // Performance logging (dev-only)
-      if (import.meta.env.DEV && reading.calcMs > 80) {
-        console.warn('[vibe] slow step', reading.calcMs);
-      }
+      // Performance telemetry
+      recordMetrics({
+        calcMs: reading.calcMs,
+        intervalMs: 0, // Will be set by adaptive scheduler
+        cacheHits: getMetrics().cacheHits
+      });
       
       saveSnapshot(reading);
       
@@ -224,8 +241,8 @@ export function useVibeEngine(enabled: boolean = true) {
       const inputs = collect();
       setInputsCache(inputs);
       
-      // Add pattern intelligence to inputs
-      if (import.meta.env.VITE_VIBE_PATTERNS === 'on' && personalityInsights?.hasEnoughData) {
+      // Add pattern intelligence to inputs (respecting flags)
+      if (flags.patterns && import.meta.env.VITE_VIBE_PATTERNS !== 'off' && personalityInsights?.hasEnoughData) {
         inputs.patterns = {
           hasEnoughData: personalityInsights.hasEnoughData,
           chronotype: personalityInsights.chronotype,
@@ -234,6 +251,17 @@ export function useVibeEngine(enabled: boolean = true) {
           consistency: personalityInsights.consistency,
           temporalPrefs: personalityInsights.temporalPrefs
         };
+      }
+      
+      // Apply feature flags to inputs
+      if (!flags.venue) {
+        inputs.venueType = null;
+        inputs.venueEnergyBase = null;
+        inputs.venueIntelligence = null;
+      }
+      if (!flags.weather) {
+        inputs.weatherEnergyOffset = undefined;
+        inputs.weatherConfidenceBoost = undefined;
       }
       
       const r = evaluate(inputs);

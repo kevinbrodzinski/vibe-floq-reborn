@@ -1,12 +1,14 @@
 import React from 'react';
-import { Brain, Lightbulb, Target, Settings } from 'lucide-react';
+import { Brain, Lightbulb, Target, Settings, Trash2, MapPin, Cloud } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useSmartSuggestionToggle } from '@/hooks/useSmartSuggestionToggle';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 import { useAuth } from '@/hooks/useAuth';
+import { useIntelligenceFlags } from '@/hooks/useIntelligenceFlags';
 import { IntelligenceOnboarding } from './IntelligenceOnboarding';
+import { intelligenceIntegration } from '@/lib/intelligence/IntelligenceIntegration';
 
 export function IntelligenceSettings() {
   const { user } = useAuth();
@@ -16,7 +18,32 @@ export function IntelligenceSettings() {
     useSmartSuggestionToggle(profileId || '');
     
   const insights = usePersonalityInsights();
+  const { flags, updateFlag } = useIntelligenceFlags();
   const [showOnboarding, setShowOnboarding] = React.useState(false);
+  const [isClearing, setIsClearing] = React.useState(false);
+
+  const handleClearIntelligenceData = async () => {
+    if (!confirm('Clear all intelligence data? This will reset your personal patterns and learning progress.')) {
+      return;
+    }
+    
+    setIsClearing(true);
+    try {
+      // Clear all intelligence-related storage
+      localStorage.removeItem('vibe:personal:delta:v1');
+      localStorage.removeItem('pattern-insights-cache-v1');
+      localStorage.removeItem('vibe-user-learning-v2');
+      localStorage.removeItem('venue-cache-v1');
+      localStorage.removeItem('weather-cache-v1');
+      intelligenceIntegration.reset();
+      
+      console.log('[Settings] Intelligence data cleared');
+    } catch (error) {
+      console.error('[Settings] Failed to clear intelligence data:', error);
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   if (!profileId) {
     return (
@@ -68,22 +95,44 @@ export function IntelligenceSettings() {
           </div>
         </div>
 
-        {/* Contextual Recommendations */}
+        {/* Venue Intelligence */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" />
-              Contextual Recommendations
+              <MapPin className="w-4 h-4" />
+              Venue Intelligence
             </Label>
             <p className="text-xs text-muted-foreground">
-              Location and time-aware activity suggestions
+              Location-based vibe detection and recommendations
             </p>
           </div>
-          <Switch defaultChecked disabled={!smartSuggestionsEnabled} />
+          <Switch
+            checked={flags.venue}
+            onCheckedChange={(checked) => updateFlag('venue', checked)}
+            disabled={!smartSuggestionsEnabled}
+          />
         </div>
 
-        {/* Intelligence Dashboard Access */}
-        <div className="pt-2 border-t">
+        {/* Weather Intelligence */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              Weather Intelligence
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Weather-aware vibe adjustments
+            </p>
+          </div>
+          <Switch
+            checked={flags.weather}
+            onCheckedChange={(checked) => updateFlag('weather', checked)}
+            disabled={!smartSuggestionsEnabled}
+          />
+        </div>
+
+        {/* Intelligence Controls */}
+        <div className="pt-2 border-t space-y-2">
           <Button
             variant="outline"
             size="sm"
@@ -92,6 +141,17 @@ export function IntelligenceSettings() {
           >
             <Settings className="w-4 h-4 mr-2" />
             Learn About Intelligence Features
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start text-destructive hover:text-destructive"
+            onClick={handleClearIntelligenceData}
+            disabled={isClearing}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {isClearing ? 'Clearing...' : 'Clear Intelligence Data'}
           </Button>
         </div>
 

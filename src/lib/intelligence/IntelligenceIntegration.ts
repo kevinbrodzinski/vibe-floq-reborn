@@ -41,11 +41,21 @@ class IntelligenceIntegration {
   }
 
   /**
-   * Get current personality insights (would normally come from hook, but we need it in service)
+   * Get current personality insights from storage
    */
   private getCurrentInsights(): PersonalityInsights | null {
-    // In a real implementation, this would come from a store or service
-    // For now, we'll return null and handle gracefully
+    try {
+      // Try to get insights from the pattern store cache
+      const cached = localStorage.getItem('pattern-insights-cache-v1');
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (data.insights && data.timestamp > Date.now() - 5 * 60 * 1000) {
+          return data.insights;
+        }
+      }
+    } catch (error) {
+      console.warn('[Intelligence] Failed to get cached insights:', error);
+    }
     return null;
   }
 
