@@ -1,7 +1,8 @@
-import type { VenueVibeProfile, VenueIntelligence, VenueType, DayPart } from '@/types/venues';
+import type { VenueVibeProfile, VenueIntelligence, DayPart } from '@/types/venues';
 import { VENUE_VIBE_MAPPING, derivePopularity } from '@/types/venues';
 import type { Vibe } from '@/lib/vibes';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchVenue } from '@/core/venues/service';
+import { mapCategoriesToVenueType, vibeToVenueType, type VenueType } from '@/core/venues/category-mapper';
 
 type LngLat = { lat: number; lng: number };
 export type VenueClass = { 
@@ -74,7 +75,7 @@ function mapCategoriesToTypeEnergy(cats: string[]): { type: VenueType; energy: n
 
 type ProviderHit = { name?: string; categories: string[]; distanceM?: number; provider: 'fsq'|'google' };
 
-// Enhanced classifier using Supabase Edge Function for server-side API calls
+// Enhanced classifier using new venues-proxy with intelligent fusion
 export class VenueClassifier {
   private cache = new Map<string, VenueClass>();
   private inflight = new Map<string, Promise<VenueClass | null>>();
@@ -87,36 +88,45 @@ export class VenueClassifier {
 
     const job = (async () => {
       try {
-        // Call server-side classifier for better key management
-        const { data, error } = await supabase.functions.invoke('places-classify', {
-          body: { 
-            lat: p.lat, 
-            lng: p.lng, 
-            includeRaw: import.meta.env.DEV // Only include raw categories in dev
-          }
-        });
-
-        if (error) throw error;
+        // Use enhanced venue service with fusion & rate limiting
+        const venueData = await fetchVenue(p.lat, p.lng);
         
-        const result = data?.result;
-        if (!result) throw new Error('No result from places-classify');
+        if (venueData.confidence > 0.3) {
+          // Use canonical mapper for consistent categorization
+          const mapping = mapCategoriesToVenueType({
+            googleTypes: venueData.categories.filter(c => !c.includes(' ')),
+            fsqCategories: venueData.categories.filter(c => c.includes(' ')),
+          });
+          
+          const out: VenueClass = {
+            type: mapping.venueType,
+            energy: this.deriveEnergyFromType(mapping.venueType),
+            name: venueData.name || undefined,
+            provider: venueData.providers.includes('google') ? 'google' : 
+                     venueData.providers.includes('fsq') ? 'fsq' : 'gps'
+          };
 
-        const out: VenueClass = {
-          type: result.type || 'general',
-          energy: typeof result.energyBase === 'number' ? result.energyBase : 0.5,
-          name: result.name,
-          provider: 'google' // Server-side uses Google primarily
-        };
+          if (import.meta.env.DEV) {
+            console.log('[VenueClassifier] Enhanced classification:', {
+              venue: out.name,
+              type: out.type,
+              confidence: mapping.confidence,
+              providers: venueData.providers
+            });
+          }
 
-        if (out) this.cache.set(key, out);
-        this.inflight.delete(key);
-        return out;
+          this.cache.set(key, out);
+          this.inflight.delete(key);
+          return out;
+        }
+
+        throw new Error('Low confidence venue data');
       } catch (error) {
         if (import.meta.env.DEV) {
-          console.warn('[VenueClassifier] Places API failed, trying GPS fallback:', error);
+          console.warn('[VenueClassifier] Enhanced venue failed, trying GPS fallback:', error);
         }
         
-        // GPS venue fallback integration
+        // Enhanced GPS venue fallback with canonical mapping
         try {
           const { getOrCreateCluster, getClusterInsights } = await import('@/core/patterns/gps-clustering');
           const cluster = await getOrCreateCluster(p.lat, p.lng, 0);
@@ -124,19 +134,25 @@ export class VenueClassifier {
           if (cluster) {
             const insights = getClusterInsights(cluster);
             
-            // Use cluster data for venue classification
+            // Use canonical mapper for GPS clusters
+            const mapping = mapCategoriesToVenueType({
+              label: cluster.userLabel || cluster.dominantVibe
+            });
+            
             const fallback: VenueClass = {
-              type: cluster.dominantVibe ? this.mapVibeToVenueType(cluster.dominantVibe) : 'general',
+              type: mapping.venueType !== 'general' ? mapping.venueType : 
+                    cluster.dominantVibe ? vibeToVenueType(cluster.dominantVibe as Vibe) : 'general',
               energy: insights.isFrequentSpot ? 0.7 : 0.5,
               name: cluster.userLabel || 'Frequent spot',
               provider: 'gps',
-              distanceM: 0 // At the cluster center
+              distanceM: 0
             };
             
             if (import.meta.env.DEV) {
-              console.log('[VenueClassifier] GPS fallback successful:', {
+              console.log('[VenueClassifier] Enhanced GPS fallback:', {
                 clusterId: cluster.id,
                 type: fallback.type,
+                mapping: mapping.venueType,
                 isFrequent: insights.isFrequentSpot
               });
             }
@@ -163,16 +179,15 @@ export class VenueClassifier {
     return job;
   }
 
-  // Map vibe to likely venue type for GPS fallback
-  private mapVibeToVenueType(vibe: string): VenueType {
-    const vibeToVenue: Record<string, VenueType> = {
-      'hype': 'nightclub',
-      'social': 'bar',
-      'chill': 'coffee', 
-      'focused': 'office',
-      'flowing': 'park',
-      'romantic': 'restaurant'
+  // Enhanced energy derivation using canonical mapping
+  private deriveEnergyFromType(vt: VenueType): number {
+    const energyMap: Record<VenueType, number> = {
+      nightclub: 0.9, bar: 0.7, coffee: 0.6, restaurant: 0.6,
+      gym: 0.8, park: 0.4, office: 0.5, school: 0.6,
+      museum: 0.4, theater: 0.5, music_venue: 0.9, stadium: 0.9,
+      hotel: 0.4, store: 0.5, transit: 0.3, home: 0.2, general: 0.5
     };
-    return vibeToVenue[vibe] || 'general';
+    return energyMap[vt] ?? 0.5;
   }
+
 }

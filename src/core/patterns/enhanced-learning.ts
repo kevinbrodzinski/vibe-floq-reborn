@@ -4,7 +4,8 @@ import type { SocialContext } from './store';
 import { learnFromCorrection as baseLearnFromCorrection, type CorrectionContext } from './learner';
 import { getOrCreateCluster, getClusterInsights } from './gps-clustering';
 import { detectSocialContext, learnSocialContextPattern } from './social-context';
-import { extractVenueType } from './venue';
+import { extractVenueTypeFromVI } from '@/core/venues/category-mapper';
+import { incr } from './telemetry';
 
 // Safe event emitter for React Native compatibility
 const safeEmitLearningEvent = (detail: any) => {

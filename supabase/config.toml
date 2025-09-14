@@ -1,5 +1,8 @@
 project_id = "reztyrrafsmlvvlqvsqt"
 
+[functions.venues-proxy]
+verify_jwt = false
+
 [functions.create-rally]
 verify_jwt = true
 
