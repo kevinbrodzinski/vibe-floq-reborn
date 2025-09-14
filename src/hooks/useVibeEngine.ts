@@ -6,8 +6,6 @@ import { useSignalCollector } from '@/core/vibe/SignalCollector';
 import type { VibeReading } from '@/core/vibe/types';
 import { setUserVibeHex } from '@/lib/vibe/vibeColor';
 import { saveSnapshot } from '@/storage/vibeSnapshots';
-import { CorrectionStore } from '@/core/vibe/learning/CorrectionStore';
-import { AdaptiveScheduler } from '@/core/vibe/AdaptiveScheduler';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -37,8 +35,6 @@ const FLAG = (import.meta as any).env?.VITE_VIBE_DETECTION ?? "on";
  * Ready to drive unified color system and gradients
  */
 export function useVibeEngine(enabled: boolean = true) {
-  const correctionStore = useCallback(() => new CorrectionStore(), [])();
-  const scheduler = useCallback(() => new AdaptiveScheduler(), [])();
   const [inputsCache, setInputsCache] = useState<any>(null);
 
   const [state, setState] = useState<VibeEngineState>({
@@ -179,6 +175,7 @@ export function useVibeEngine(enabled: boolean = true) {
     if (FLAG !== 'on') return;
     
     let tm: number | null = null;
+    let raf: number | null = null;
     let alive = true;
 
     // compute next interval from inputs and visibility
@@ -187,8 +184,15 @@ export function useVibeEngine(enabled: boolean = true) {
       const s = inp.speedMps ?? 0;
       if (s <= 0.1) return 5 * 60_000;        // stationary
       if (s <= 1.5) return 2 * 60_000;        // walking
-      return 60_000;                           // moving faster
+      return Math.max(20_000, 60_000);         // moving faster, but min 20s
     }
+
+    const schedule = (ms: number) => {
+      if (tm) clearTimeout(tm);
+      tm = window.setTimeout(() => {
+        raf = requestAnimationFrame(step);
+      }, ms);
+    };
 
     const step = () => {
       if (!alive) return;
@@ -208,15 +212,9 @@ export function useVibeEngine(enabled: boolean = true) {
 
       saveSnapshot(r);
 
-      // Schedule next tick adaptively
-      scheduler.schedule(
-        () => requestAnimationFrame(step),
-        {
-          movement: { speedMps: inputs.speedMps },
-          device: { screenOnRatio01: inputs.screenOnRatio01 },
-          venue: inputs.venueType ? { type: inputs.venueType } : null,
-        }
-      );
+      const hidden = typeof document !== 'undefined' ? document.hidden : false;
+      const ms = nextIntervalMs(inputs, hidden);
+      schedule(ms);
     };
 
     // prime immediately
@@ -225,13 +223,14 @@ export function useVibeEngine(enabled: boolean = true) {
     // pause/resume on visibility
     const onVis = () => { 
       if (!document.hidden && tm == null) 
-        tm = window.setTimeout(() => requestAnimationFrame(step), 250); 
+        schedule(250); 
     };
     document.addEventListener('visibilitychange', onVis, { passive: true });
 
     return () => { 
       alive = false; 
-      scheduler.cancel();
+      if (tm) clearTimeout(tm);
+      if (raf) cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', onVis); 
     };
   }, [collect]);
@@ -274,26 +273,13 @@ export function useVibeEngine(enabled: boolean = true) {
     if (!reading) return;
 
     try {
-      // Save correction with full context
-      await correctionStore.save({
-        timestamp: Date.now(),
-        predicted: reading.vector,
-        corrected: safeVibe(actualVibe),
-        components: reading.components,
-        context: {
-          venue: inputsCache?.venueType ? { 
-            type: inputsCache.venueType, 
-            energy: inputsCache.venueEnergyBase 
-          } : null,
-          movement: { 
-            speedMps: inputsCache?.speedMps, 
-            moving01: undefined 
-          },
-          temporal: { 
-            hour: new Date().getHours(), 
-            isWeekend: [0,6].includes(new Date().getDay()) 
-          },
-        },
+      // Use unified delta learning approach
+      const { learnFromCorrection } = await import('@/core/vibe/learning/PersonalWeightStore');
+      learnFromCorrection({
+        predicted: reading.vibe,
+        target: actualVibe,
+        componentScores: reading.components,
+        eta: 0.02,
       });
 
       console.log(`🎯 Learning: ${reading.vibe} → ${actualVibe}`, { 
@@ -311,7 +297,7 @@ export function useVibeEngine(enabled: boolean = true) {
       confidence: 0.9, // High confidence in user input
       lastUpdate: new Date(),
     }));
-  }, [productionReading, inputsCache, correctionStore]);
+  }, [productionReading]);
 
   return {
     // Current state

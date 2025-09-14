@@ -4,15 +4,20 @@ import { VIBES, type Vibe } from '@/lib/vibes';
 export type ComponentKey = 'circadian' | 'movement' | 'venueEnergy' | 'deviceUsage' | 'weather';
 
 // Delta table: how much we nudge each vibe for each component (additive over base weights)
-export type PersonalDelta = Partial<Record<ComponentKey, Partial<Record<Vibe, number>>>>;
+export type PersonalDelta = Record<ComponentKey, Partial<Record<Vibe, number>>>;
 
 const LS_KEY = 'vibe:personal:delta:v1';
 
 // Small helper to create empty table
 function emptyDelta(): PersonalDelta {
-  const out: PersonalDelta = {};
-  (['circadian','movement','venueEnergy','deviceUsage','weather'] as ComponentKey[])
-    .forEach(c => { out[c] = {}; VIBES.forEach(v => (out[c]![v] = 0)); });
+  const out: PersonalDelta = { circadian: {}, movement: {}, venueEnergy: {}, deviceUsage: {}, weather: {} };
+  VIBES.forEach(v => {
+    out.circadian[v] = 0; 
+    out.movement[v] = 0; 
+    out.venueEnergy[v] = 0; 
+    out.deviceUsage[v] = 0; 
+    out.weather[v] = 0;
+  });
   return out;
 }
 
@@ -54,16 +59,14 @@ export function learnFromCorrection(params: {
 }
 
 /** Merge base weights + personal delta at read-time */
-export function applyPersonalDelta<T extends Record<string, Partial<Record<Vibe, number>>>>(
+export function applyPersonalDelta<T extends Record<ComponentKey, Partial<Record<Vibe, number>>>>(
   base: T,
-  delta: PersonalDelta
+  d: PersonalDelta
 ): T {
-  const merged = JSON.parse(JSON.stringify(base)) as T; // shallow-safe clone
-  (Object.keys(delta) as ComponentKey[]).forEach((ck) => {
-    const map = delta[ck]!;
-    Object.entries(map).forEach(([vibe, d]) => {
-      if (d == null) return;
-      merged[ck]![vibe as Vibe] = (merged[ck]![vibe as Vibe] ?? 0) + d;
+  const merged = JSON.parse(JSON.stringify(base)) as T;
+  (Object.keys(d) as ComponentKey[]).forEach((ck) => {
+    Object.entries(d[ck] || {}).forEach(([vibe, delta]) => {
+      merged[ck]![vibe as Vibe] = (merged[ck]![vibe as Vibe] ?? 0) + (delta ?? 0);
     });
   });
   return merged;
