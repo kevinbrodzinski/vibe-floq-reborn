@@ -5,7 +5,7 @@ import { useVibeSnapshots } from '@/hooks/useVibeSnapshots';
 import { getRecentReadings } from '@/storage/vibeSnapshots';
 import { computeTrend } from './trend';
 import { vibeToHex } from '@/lib/vibe/color';
-import { safeVibe, type Vibe } from '@/lib/vibes';
+import { safeVibe, VIBES, type Vibe } from '@/lib/vibes';
 import { getVibeEmoji, getVibeLabel } from '@/lib/vibeConstants';
 
 type Props = {
@@ -137,7 +137,10 @@ export const VibeStatusChip: React.FC<Props> = ({ className = '', limit = 20, co
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <h2 id="vibe-history-title" className="text-sm font-semibold text-white">Vibe History</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{getVibeEmoji(vibe)}</span>
+                <h2 id="vibe-history-title" className="text-sm font-semibold text-white">Vibe History</h2>
+              </div>
               <button
                 type="button"
                 className="text-white/70 hover:text-white"
@@ -148,14 +151,51 @@ export const VibeStatusChip: React.FC<Props> = ({ className = '', limit = 20, co
               </button>
             </div>
 
-            <div className="max-h-[60vh] overflow-auto divide-y divide-white/5">
+            {/* Quick correction grid */}
+            <div className="px-4 py-3 border-b border-white/5">
+              <div className="text-xs text-white/60 mb-2">Not quite right? Correct now:</div>
+              <div className="grid grid-cols-3 gap-1">
+                {VIBES.slice(0, 12).map(v => (
+                  <button
+                    key={v}
+                    className={clsx(
+                      'px-2 py-1 rounded text-[11px] border flex items-center gap-1',
+                      'border-white/10 bg-white/5 hover:bg-white/10 transition-colors',
+                      v === vibe && 'bg-white/15 border-white/20'
+                    )}
+                    onClick={() => {
+                      const correctedVibe = safeVibe(v);
+                      // Immediate UI override for responsiveness
+                      eng?.setVibeOverride?.(correctedVibe);
+                      // Feed learning system (if available)
+                      eng?.recordCorrection?.(correctedVibe);
+                      try { 
+                        (window as any).__analytics?.track?.('vibe_corrected', { 
+                          from: vibe, 
+                          to: correctedVibe,
+                          confidence: confidence 
+                        }); 
+                      } catch {}
+                      setOpen(false);
+                    }}
+                    aria-label={`Correct vibe to ${getVibeLabel(v)}`}
+                    title={`Set vibe to ${getVibeLabel(v)}`}
+                  >
+                    <span>{getVibeEmoji(v)}</span>
+                    <span className="text-white/80">{getVibeLabel(v)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-4 py-3 max-h-[50vh] overflow-auto divide-y divide-white/5">
               {recent.length === 0 && (
-                <div className="px-4 py-6 text-sm text-white/60">No vibe snapshots yet.</div>
+                <div className="py-6 text-sm text-white/60 text-center">No vibe snapshots yet.</div>
               )}
               {recent.slice().reverse().map((r) => {
                 const v = safeVibe(r.vibe as Vibe);
                 return (
-                  <div key={r.timestamp} className="px-4 py-3 flex items-center justify-between">
+                  <div key={r.timestamp} className="py-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span aria-hidden="true">{getVibeEmoji(v)}</span>
                       <span className="text-sm text-white/90">{getVibeLabel(v)}</span>
