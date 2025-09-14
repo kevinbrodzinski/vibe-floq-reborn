@@ -24,9 +24,12 @@ function normalizeRecord<T extends string>(rec: Partial<Record<T, number>>): Par
   return out;
 }
 
-// Extract an "energy score" from a vibe vector: all high-energy vibes
+// Extract an "energy score" from a vibe vector: use energetic/excited instead of open, keep flowing half-weight
 function energyFromVector(vec: Record<Vibe, number>): number {
-  return (vec.hype ?? 0) + (vec.flowing ?? 0) + (vec.open ?? 0);
+  return (vec.hype ?? 0) 
+       + (vec.energetic ?? 0) 
+       + (vec.excited ?? 0) 
+       + 0.5 * (vec.flowing ?? 0);
 }
 
 // Quick chronotype detection from hourly patterns (with sparse data guard)

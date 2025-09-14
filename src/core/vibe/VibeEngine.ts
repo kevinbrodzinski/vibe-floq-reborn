@@ -90,29 +90,41 @@ export function evaluate(inp: EngineInputs): VibeReading {
     weather:     weatherScore(inp.isDaylight, inp.weatherEnergyOffset),
   };
 
-  // Pattern nudges (subtle ±0.1 max adjustments)
-  if (inp.patterns?.hasEnoughData) {
+  // Pattern nudges (subtle ±0.1 max adjustments) - env gated
+  if ((import.meta.env.VITE_VIBE_PATTERNS !== 'off') && inp.patterns?.hasEnoughData) {
     const { chronotype, energyType, socialType, temporalPrefs } = inp.patterns;
+    const nudges: string[] = []; // Dev logging
     
     // Temporal confidence boost when chronotype aligns with hour
     if (chronotype === 'lark' && inp.hour >= 6 && inp.hour <= 11) {
       components.circadian = Math.min(1, components.circadian + 0.1);
+      nudges.push(`chronotype-lark-boost(+0.1-circadian)`);
     } else if (chronotype === 'owl' && inp.hour >= 17 && inp.hour <= 22) {
       components.circadian = Math.min(1, components.circadian + 0.1);
+      nudges.push(`chronotype-owl-boost(+0.1-circadian)`);
     }
     
     // Energy type nudges to movement component
     if (energyType === 'high-energy') {
       components.movement = Math.min(1, components.movement + 0.05);
+      nudges.push(`energy-type-high(+0.05-movement)`);
     } else if (energyType === 'low-energy') {
       components.movement = Math.max(0, components.movement - 0.05);
+      nudges.push(`energy-type-low(-0.05-movement)`);
     }
     
     // Social type nudges to venue energy (proxy for social context)
     if (socialType === 'social') {
       components.venueEnergy = Math.min(1, components.venueEnergy + 0.05);
+      nudges.push(`social-type-social(+0.05-venue)`);
     } else if (socialType === 'solo') {
       components.venueEnergy = Math.max(0, components.venueEnergy - 0.05);
+      nudges.push(`social-type-solo(-0.05-venue)`);
+    }
+    
+    // Dev logging for component nudges
+    if (import.meta.env.DEV && nudges.length > 0) {
+      console.log(`🎯 Pattern nudges: ${nudges.join(', ')}`);
     }
   }
 
@@ -142,8 +154,8 @@ export function evaluate(inp: EngineInputs): VibeReading {
     }
   }
   
-  // Pattern-enhanced vibe selection
-  if (inp.patterns?.hasEnoughData && inp.patterns.temporalPrefs) {
+  // Pattern-enhanced vibe selection (env gated)
+  if ((import.meta.env.VITE_VIBE_PATTERNS !== 'off') && inp.patterns?.hasEnoughData && inp.patterns.temporalPrefs) {
     const hourPrefs = inp.patterns.temporalPrefs[inp.hour];
     if (hourPrefs) {
       // Find strongest temporal preference for this hour
@@ -158,6 +170,11 @@ export function evaluate(inp: EngineInputs): VibeReading {
             vector[preferredVibe] = Math.max(prefScore, currentBest * 1.05);
             best = preferredVibe;
             conf = Math.min(0.95, conf + 0.05); // Temporal confidence boost
+            
+            // Dev logging for temporal preference nudge
+            if (import.meta.env.DEV) {
+              console.log(`🎯 Temporal preference nudge: ${preferredVibe} (strength: ${maxPref.toFixed(2)})`);
+            }
             
             // Renormalize
             const sum = VIBES.reduce((acc, v) => acc + (vector[v] ?? 0), 0) || 1;
