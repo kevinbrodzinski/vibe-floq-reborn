@@ -13,6 +13,7 @@ import { useUserSettings } from '@/hooks/useUserSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { IntelligenceSettings } from '@/components/settings/IntelligenceSettings';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -338,6 +339,19 @@ const Settings = () => {
                 </div>
                 <Switch defaultChecked />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Intelligence Features */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Zap className="w-4 h-4" />
+                Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <IntelligenceSettings />
             </CardContent>
           </Card>
 

@@ -54,6 +54,7 @@ import { VibeDebugPanel } from "@/components/vibe/VibeDebugPanel";
 import '@/dev/emit';
 import '@/dev/vibeQA';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
+import { IntelligenceWidgets } from './IntelligenceWidgets';
 
 interface FieldLayoutProps {
 }
@@ -284,6 +285,19 @@ export const FieldLayout = () => {
                   <FriendDrawer />
                   <TimewarpDrawer />
                 </BottomHud>
+                
+                {/* Intelligence Widgets - z-55 */}
+                <IntelligenceWidgets 
+                  location={location?.coords}
+                  weather={data.weatherCells}
+                  onViewIntelligenceDashboard={() => {
+                    // Navigate to intelligence dashboard in dev mode
+                    if (import.meta.env.DEV) {
+                      console.log('Opening Intelligence Dashboard');
+                      // For now, just log - could open in a modal or navigate
+                    }
+                  }}
+                />
 
                 {/* Layer Selection FAB - consolidated controls - z-65 */}
                 <LayerSelectionFab />
