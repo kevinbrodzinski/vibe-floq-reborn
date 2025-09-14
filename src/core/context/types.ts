@@ -29,6 +29,49 @@ export interface WorkingSet {
   venueContext: VenueIntelligence | null;
   timestamp: number;
   sessionDuration: number;
+  
+  // Extended context for advanced restoration
+  viewState?: {
+    route: string;
+    scroll: number;
+    viewport: { width: number; height: number };
+    activePanel: string | null;
+    zoom: number;
+  };
+  focus?: {
+    elementId: string | null;
+    elementType: string | null;
+    caretPosition: number;
+    selection: string | null;
+  };
+  drafts?: Record<string, any>;
+  references?: {
+    currentLocation: { lat: number; lng: number } | null;
+    recentVibes: Record<string, any>;
+    activePatterns: any[];
+    venueContext: VenueIntelligence | null;
+  };
+  taskMarkers?: {
+    notifications: any[];
+    incompleteFlows: any[];
+    queuedActions: any[];
+  };
+  relationships?: {
+    nearbyUsers: any[];
+    activeFloqs: any[];
+    recentInteractions: any[];
+  };
+  metadata?: {
+    extractedAt: number;
+    contextHash: string;
+    deviceClass: string;
+    resourceState: {
+      battery: number;
+      memory: number;
+      network: 'fast' | 'slow' | 'offline';
+      cpu: 'low' | 'medium' | 'high';
+    };
+  };
 }
 
 // Context synthesis results

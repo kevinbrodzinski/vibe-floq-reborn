@@ -42,6 +42,7 @@ export class ContextSynthesizer {
       const prev = vibeFacts[i - 1];
       const curr = vibeFacts[i];
       
+      // Type guard to ensure both facts are vibe corrections
       if (prev.type === 'vibe_correction' && curr.type === 'vibe_correction') {
         transitions.push({
           from: prev.data.from,
@@ -61,12 +62,15 @@ export class ContextSynthesizer {
     const venueMap = new Map<string, any[]>();
     
     venueFacts.forEach(fact => {
-      if (fact.type === 'venue_transition' && fact.data.to) {
+      // Type guard to ensure fact is venue transition
+      if (fact.type === 'venue_transition') {
         const venueType = fact.data.to;
-        if (!venueMap.has(venueType)) {
-          venueMap.set(venueType, []);
+        if (venueType) {
+          if (!venueMap.has(venueType)) {
+            venueMap.set(venueType, []);
+          }
+          venueMap.get(venueType)!.push(fact.data);
         }
-        venueMap.get(venueType)!.push(fact.data);
       }
     });
     
@@ -103,6 +107,16 @@ export class ContextSynthesizer {
       });
     }
     
+    if (facts.length > 15) {
+      insights.push({
+        id: 'pattern-emerging',
+        text: 'Your vibe patterns are becoming clearer',
+        confidence: 0.7,
+        category: 'temporal',
+        contextual: true
+      });
+    }
+    
     return insights;
   }
   
@@ -116,7 +130,12 @@ export class ContextSynthesizer {
     venues: VenuePattern[], 
     trends: CorrectionTrend[]
   ): number {
-    return 0.7;
+    const baseConfidence = 0.3;
+    const transitionBonus = Math.min(0.3, transitions.length * 0.1);
+    const venueBonus = Math.min(0.2, venues.length * 0.05);
+    const trendBonus = Math.min(0.2, trends.length * 0.1);
+    
+    return Math.min(0.9, baseConfidence + transitionBonus + venueBonus + trendBonus);
   }
   
   private generateSummary(
@@ -124,6 +143,24 @@ export class ContextSynthesizer {
     venues: VenuePattern[], 
     trends: CorrectionTrend[]
   ): string {
-    return 'Building context awareness...';
+    if (transitions.length === 0 && venues.length === 0) {
+      return 'Building context awareness...';
+    }
+    
+    const parts: string[] = [];
+    
+    if (transitions.length > 0) {
+      parts.push(`${transitions.length} vibe transitions tracked`);
+    }
+    
+    if (venues.length > 0) {
+      parts.push(`${venues.length} venue patterns detected`);
+    }
+    
+    if (trends.length > 0 && trends[0].accuracy > 0.7) {
+      parts.push('learning accuracy improving');
+    }
+    
+    return parts.length > 0 ? parts.join(', ') : 'Context AI active';
   }
 }
