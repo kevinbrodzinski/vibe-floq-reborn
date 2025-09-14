@@ -1,5 +1,6 @@
-// Import for local use and re-export
-import { 
+// DEPRECATED: Use canonical vibe definitions from "@/lib/vibes"
+// Temporary re-export for migration compatibility
+export { 
   VIBES,
   VIBE_ORDER, 
   VIBE_COLORS,
@@ -9,16 +10,7 @@ import {
   safeVibe
 } from '@/lib/vibes';
 
-// Re-export canonical vibe definitions from lib/vibes
-export { 
-  VIBES,
-  VIBE_ORDER, 
-  VIBE_COLORS,
-  VIBE_RGB,
-  type Vibe,
-  isValidVibe,
-  safeVibe
-};
+import { VIBE_ORDER, type Vibe } from '@/lib/vibes';
 
 // Legacy exports for backward compatibility
 export type VibeEnum = Vibe;

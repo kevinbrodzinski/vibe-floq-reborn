@@ -11,9 +11,16 @@ const rgbToHex = ([r,g,b]:[number,number,number]) =>
   `#${[r,g,b].map(v=>Math.max(0,Math.min(255, v|0)).toString(16).padStart(2,'0')).join('')}`;
 export const vibeToRgb = (vibe: Vibe): [number,number,number] => VIBE_RGB[vibe];
 export const vibeToHex = (vibe: Vibe) => rgbToHex(vibeToRgb(vibe));
+
+// Micro cache for repeated PIXI conversions (performance)
+const pixiCache = new Map<Vibe, number>();
 export const vibeToPixi = (vibe: Vibe) => {
+  const hit = pixiCache.get(vibe);
+  if (hit !== undefined) return hit;
   const [r,g,b] = vibeToRgb(vibe);
-  return (r << 16) + (g << 8) + b;
+  const val = (r << 16) + (g << 8) + b;
+  pixiCache.set(vibe, val);
+  return val;
 };
 
 // ---------- OKLab mixing (perceptual) ----------

@@ -1,3 +1,2 @@
-// DEPRECATED: Use "@/lib/vibe/color" directly
-// This file provides temporary compatibility during migration
+// DEPRECATED: Use unified vibe system from "@/lib/vibe/color"
 export { vibeToHex as getVibeColor } from '@/lib/vibe/color';

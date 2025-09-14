@@ -71,6 +71,18 @@ export const VIBE_COLORS: Record<Vibe, string> = {
   focused:  `rgb(${VIBE_RGB.focused.join(', ')})`,
 };
 
+// Runtime enum parity check (DEV only)
+if (import.meta?.env?.DEV) {
+  const dbEnum = [
+    'chill','hype','curious','social','solo','romantic','weird','down','flowing','open','energetic','excited','focused',
+  ] as const;
+  const ui = new Set(VIBES), db = new Set(dbEnum);
+  if (ui.size !== db.size || [...ui].some(v => !db.has(v))) {
+    // eslint-disable-next-line no-console
+    console.warn('[vibes] UI/DB mismatch', { ui: [...ui], db: [...db] });
+  }
+}
+
 // Optional dev assert on boot:
 if (import.meta && (import.meta as any).env?.DEV) {
   const ui = new Set(VIBES);
