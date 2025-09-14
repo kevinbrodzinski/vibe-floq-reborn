@@ -56,24 +56,24 @@ export type EngineInputs = {
   dwellMinutes?: number;
   screenOnRatio01?: number;
   
-  // Weather (unified)
+  // Weather (unified shape)
   isDaylight?: boolean;
-  weatherEnergyOffset?: number;
-  weatherConfidenceBoost?: number;
+  weatherEnergyOffset?: number;     // from WeatherSignal.energyOffset
+  weatherConfidenceBoost?: number;  // from WeatherSignal.confidenceBoost
   
-  // Venue enrichment (if present)
+  // Venue intelligence (optional)
   venueArrived?: boolean;
   venueType?: string | null;
   venueEnergyBase?: number | null;
   venueIntelligence?: VenueIntelligence | null;
   
-  // Pattern integration
+  // Pattern nudges
   patterns?: {
-    chronotype: 'lark' | 'owl' | 'balanced';
-    energyType: 'high-energy' | 'balanced' | 'low-energy';
-    socialType: 'social' | 'balanced' | 'solo';
-    consistency: 'very-consistent' | 'consistent' | 'adaptive' | 'highly-adaptive';
     hasEnoughData: boolean;
+    chronotype: 'lark' | 'owl' | 'balanced';
+    energyType: 'high-energy' | 'low-energy' | 'balanced';
+    socialType: 'social' | 'solo' | 'balanced';
+    consistency: 'very-consistent' | 'consistent' | 'adaptive' | 'highly-adaptive';
     temporalPrefs?: Record<number, Partial<Record<Vibe, number>>>;
   };
 };

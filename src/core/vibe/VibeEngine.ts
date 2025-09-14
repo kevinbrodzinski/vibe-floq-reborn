@@ -1,5 +1,6 @@
 import type { EngineInputs, VibeReading, ComponentScores, Vibe } from './types';
 import { combine, confidence } from './MasterEquation';
+import { renormalizeVector } from './vectorUtils';
 import { VIBES } from '@/lib/vibes';
 import type { VenueIntelligence } from '@/types/venues';
 
@@ -148,8 +149,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
         conf = Math.min(0.95, conf + (vibeProfile.confidence * 0.1));
         
         // Keep distribution valid - renormalize vector to maintain probability distribution
-        const sum = VIBES.reduce((acc, v) => acc + (vector[v] ?? 0), 0) || 1;
-        VIBES.forEach(v => vector[v] = (vector[v] ?? 0) / sum);
+        renormalizeVector(vector);
       }
     }
   }
@@ -177,8 +177,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
             }
             
             // Renormalize
-            const sum = VIBES.reduce((acc, v) => acc + (vector[v] ?? 0), 0) || 1;
-            VIBES.forEach(v => vector[v] = (vector[v] ?? 0) / sum);
+            renormalizeVector(vector);
           }
         }
       }
