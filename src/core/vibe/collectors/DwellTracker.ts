@@ -1,32 +1,35 @@
-// DwellTracker.ts
-// Tracks "stillness" time and exposes arrived/departing state with hysteresis.
-
+// Arrived/departing detection + dwell minutes
 export class DwellTracker {
-  private enterAt: number | null = null;
-  private lastMoving: number = Date.now();
+  private arrivedAt: number | null = null;
+  private lastMoving = 0;
+  private readonly ARRIVE_SEC = 90;
+  private readonly LEAVE_SEC = 120;
 
   update(moving01: number) {
     const now = Date.now();
-    const still = moving01 < 0.2;
-    if (still) {
-      if (this.enterAt == null) this.enterAt = now;
-    } else {
-      this.enterAt = null;
+    if (moving01 > 0.15) {
       this.lastMoving = now;
+      if (this.arrivedAt !== null && now - this.lastMoving > this.LEAVE_SEC * 1000) {
+        this.arrivedAt = null; // departed
+      }
+    } else {
+      // still
+      if (this.arrivedAt == null) {
+        // Arrive if stationary long enough since last move
+        if (now - this.lastMoving > this.ARRIVE_SEC * 1000) this.arrivedAt = now;
+      }
     }
   }
 
-  dwellMinutes() {
-    return this.enterAt ? (Date.now() - this.enterAt) / 60000 : 0;
+  arrived() { 
+    return this.arrivedAt != null; 
   }
 
-  arrived() {
-    // Consider "arrived" after 3+ min of stillness
-    return this.dwellMinutes() >= 3;
+  departing() { 
+    return this.arrivedAt == null && Date.now() - this.lastMoving < this.LEAVE_SEC * 1000; 
   }
 
-  departing() {
-    // Consider "departing" within 2 min of last movement event
-    return this.enterAt == null && Date.now() - this.lastMoving < 2 * 60 * 1000;
+  dwellMinutes() { 
+    return this.arrivedAt ? (Date.now() - this.arrivedAt) / 60000 : 0; 
   }
 }
