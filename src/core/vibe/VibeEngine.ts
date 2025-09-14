@@ -130,7 +130,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
     }
   }
 
-  const vector = combine(components);
+  let vector = combine(components);
   let best = VIBES.reduce((a, b) => (vector[b] > vector[a] ? b : a), VIBES[0]);
   let conf = confidence(components);
   
@@ -155,62 +155,39 @@ export function evaluate(inp: EngineInputs): VibeReading {
     }
   }
   
-  // Pattern-enhanced vibe selection (env gated)
-  if ((import.meta.env.VITE_VIBE_PATTERNS !== 'off') && inp.patterns?.hasEnoughData && inp.patterns.temporalPrefs) {
+  // --- Temporal nudge (sync, bounded, using inputs.patterns.temporalPrefs) ---
+  if (inp.patterns?.temporalPrefs) {
     const hourPrefs = inp.patterns.temporalPrefs[inp.hour];
-    if (hourPrefs) {
-      // Find strongest temporal preference for this hour
-      const maxPref = Math.max(...Object.values(hourPrefs).filter(v => v != null) as number[]);
-      if (maxPref > 0.3) { // Strong preference threshold
-        const preferredVibe = Object.entries(hourPrefs).find(([_, v]) => v === maxPref)?.[0] as Vibe;
-        if (preferredVibe && vector[preferredVibe]) {
-          // Boost temporal preference if close to current best
-          const currentBest = vector[best] || 0;
-          const prefScore = vector[preferredVibe] || 0;
-          if (prefScore > currentBest * 0.7) {
-            vector[preferredVibe] = Math.max(prefScore, currentBest * 1.05);
-            best = preferredVibe;
-            conf = Math.min(0.95, conf + 0.05); // Temporal confidence boost
-            
-            // Dev logging for temporal preference nudge
-            if (import.meta.env.DEV) {
-              console.log(`🎯 Temporal preference nudge: ${preferredVibe} (strength: ${maxPref.toFixed(2)})`);
-            }
-            
-            // Renormalize
-            renormalizeVector(vector);
+    if (hourPrefs && Object.keys(hourPrefs).length) {
+      const [pv, w] = Object.entries(hourPrefs).sort(([,a],[,b]) => (b ?? 0) - (a ?? 0))[0] as [Vibe, number];
+      if ((w ?? 0) >= 0.35) {
+        const currentBest = VIBES.reduce((a,b)=> vector[b] > vector[a] ? b : a, VIBES[0]);
+        if (vector[pv] >= vector[currentBest] * 0.7) {
+          const boost = Math.min(0.03, (w ?? 0) * 0.1);
+          vector = { ...vector, [pv]: vector[pv] + boost };
+          const s = VIBES.reduce((a,v)=> a + (vector[v] ?? 0), 0) || 1;
+          VIBES.forEach(v => vector[v] = (vector[v] ?? 0) / s);
+          conf = Math.min(0.95, conf + 0.01);
+          best = VIBES.reduce((a, b) => (vector[b] > vector[a] ? b : a), VIBES[0]);
+          
+          if (import.meta.env.DEV) {
+            console.log(`🎯 Temporal nudge: ${pv} (strength: ${w.toFixed(2)}, boost: +${boost.toFixed(3)})`);
           }
         }
       }
     }
-    
-    // Consistency adjustments
-    if (inp.patterns.consistency === 'very-consistent') {
-      conf = Math.min(0.95, conf + 0.03); // Boost confidence for consistent users
-    } else if (inp.patterns.consistency === 'highly-adaptive') {
-      conf = Math.max(0.3, conf - 0.02); // Slight confidence reduction for highly adaptive users
-    }
+  }
+  
+  // Consistency adjustments
+  if (inp.patterns?.consistency === 'very-consistent') {
+    conf = Math.min(0.95, conf + 0.03);
+  } else if (inp.patterns?.consistency === 'highly-adaptive') {
+    conf = Math.max(0.3, conf - 0.02);
   }
   
   // Tiny bonus for stable weather (Clear/Clouds)
   if (inp.weatherConfidenceBoost) {
     conf = Math.min(0.95, conf + inp.weatherConfidenceBoost);
-  }
-
-  // Apply temporal pattern nudges (async, non-blocking)
-  if (import.meta.env.VITE_VIBE_PATTERNS !== 'off' && inp.patterns?.hasEnoughData) {
-    try {
-      // Non-blocking pattern enrichment
-      applyTemporalNudges(inp, vector, conf).then(result => {
-        if (result.applied && import.meta.env.DEV) {
-          console.log(`🎯 Temporal pattern nudge applied: confidence ${conf.toFixed(3)} → ${result.confidence.toFixed(3)}`);
-        }
-      }).catch(() => {
-        // Fail silently - patterns are enhancement not critical
-      });
-    } catch {
-      // Patterns are not critical to core functionality
-    }
   }
 
   return {

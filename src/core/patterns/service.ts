@@ -87,45 +87,43 @@ export async function readAllPatterns() {
 }
 
 // Cache for performance (patterns don't change frequently)
-let patternCache: {
-  venue?: V1<VenueImpacts>;
-  temporal?: V1<TemporalPrefs>;
-  profile?: V1<PersonalityProfile>;
-  lastRead: number;
-} = { lastRead: 0 };
-
+let patternCache = {
+  venue: { v: undefined as V1<VenueImpacts>|undefined, t: 0 },
+  temporal: { v: undefined as V1<TemporalPrefs>|undefined, t: 0 },
+  profile: { v: undefined as V1<PersonalityProfile>|undefined, t: 0 },
+};
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 export async function getCachedVenueImpacts(): Promise<V1<VenueImpacts>> {
   const now = Date.now();
-  if (!patternCache.venue || (now - patternCache.lastRead) > CACHE_TTL_MS) {
-    patternCache.venue = await readVenueImpacts();
-    patternCache.lastRead = now;
+  if (!patternCache.venue.v || now - patternCache.venue.t > CACHE_TTL_MS) {
+    patternCache.venue.v = await readVenueImpacts();
+    patternCache.venue.t = now;
   }
-  return patternCache.venue;
+  return patternCache.venue.v!;
 }
 
 export async function getCachedTemporalPrefs(): Promise<V1<TemporalPrefs>> {
   const now = Date.now();
-  if (!patternCache.temporal || (now - patternCache.lastRead) > CACHE_TTL_MS) {
-    patternCache.temporal = await readTemporalPrefs();
-    patternCache.lastRead = now;
+  if (!patternCache.temporal.v || now - patternCache.temporal.t > CACHE_TTL_MS) {
+    patternCache.temporal.v = await readTemporalPrefs();
+    patternCache.temporal.t = now;
   }
-  return patternCache.temporal;
+  return patternCache.temporal.v!;
 }
 
 export async function getCachedProfile(): Promise<V1<PersonalityProfile>> {
   const now = Date.now();
-  if (!patternCache.profile || (now - patternCache.lastRead) > CACHE_TTL_MS) {
-    patternCache.profile = await readProfile();
-    patternCache.lastRead = now;
+  if (!patternCache.profile.v || now - patternCache.profile.t > CACHE_TTL_MS) {
+    patternCache.profile.v = await readProfile();
+    patternCache.profile.t = now;
   }
-  return patternCache.profile;
+  return patternCache.profile.v!;
 }
 
 // Invalidate cache when patterns are updated
 export function invalidatePatternCache(): void {
-  patternCache = { lastRead: 0 };
+  patternCache = { venue:{v:undefined,t:0}, temporal:{v:undefined,t:0}, profile:{v:undefined,t:0} };
 }
 
 // Cleanup old pattern data (for periodic maintenance)

@@ -9,6 +9,7 @@ import {
   invalidatePatternCache
 } from '@/core/patterns/service';
 import { DECAY } from '@/core/patterns/evolve';
+import { storage } from '@/lib/storage';
 import type { Vibe } from '@/lib/vibes';
 
 const MAINTENANCE_KEY = 'pattern:lastDecay';
@@ -18,7 +19,7 @@ export function usePatternMaintenance() {
   useEffect(() => {
     const performMaintenance = async () => {
       try {
-        const lastMaintenance = Number(localStorage.getItem(MAINTENANCE_KEY) ?? 0);
+        const lastMaintenance = Number(await storage.getItem(MAINTENANCE_KEY) ?? 0);
         const now = Date.now();
         const isDue = (now - lastMaintenance) > WEEK_MS;
 
@@ -104,7 +105,7 @@ export function usePatternMaintenance() {
         invalidatePatternCache();
 
         // Record maintenance completion
-        localStorage.setItem(MAINTENANCE_KEY, String(now));
+        await storage.setItem(MAINTENANCE_KEY, String(now));
 
         if (import.meta.env.DEV) {
           console.log('[Patterns] Weekly maintenance completed');
@@ -126,8 +127,8 @@ export function usePatternMaintenance() {
 
   return {
     // Expose manual maintenance trigger for admin/dev use
-    triggerMaintenance: () => {
-      localStorage.removeItem(MAINTENANCE_KEY); // Force maintenance
+    triggerMaintenance: async () => {
+      await storage.removeItem(MAINTENANCE_KEY); // Force maintenance
       window.location.reload(); // Simple way to re-trigger useEffect
     }
   };
