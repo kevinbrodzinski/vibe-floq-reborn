@@ -1,5 +1,10 @@
 import type { WeatherSignal, WeatherCondition } from '@/core/vibe/types';
 
+// Global window extension for dev mock weather
+declare global {
+  interface Window { floq?: any }
+}
+
 const OPEN_WEATHER_KEY = (import.meta as any).env?.VITE_OPENWEATHER_KEY ?? '';
 const RICH = ((import.meta as any).env?.VITE_WEATHER_RICH ?? 'off') === 'on';
 
@@ -59,6 +64,28 @@ const confidenceBoost = (cond: WeatherCondition) => (cond === 'Clear' || cond ==
 
 export async function getWeatherSignal(lat?: number, lng?: number): Promise<WeatherSignal> {
   const now = Date.now();
+  
+  // Dev override check (before cache or network calls)
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    const mw = (window.floq?.mockWeather) as Partial<WeatherSignal> | undefined;
+    if (mw) {
+      const data: WeatherSignal = {
+        isDaylight: mw.isDaylight ?? isDaylightAt(lat ?? NaN, lng ?? NaN, new Date()),
+        tempC: mw.tempC,
+        condition: mw.condition,
+        // Compute offsets from mock condition if provided
+        energyOffset: mw.energyOffset ?? (typeof mw.condition !== 'undefined'
+          ? energyOffset(mw.condition as WeatherCondition, mw.tempC)
+          : undefined),
+        confidenceBoost: mw.confidenceBoost ?? (typeof mw.condition !== 'undefined'
+          ? confidenceBoost(mw.condition as WeatherCondition)
+          : 0),
+      };
+      cache = { t: now, lat: lat ?? 0, lng: lng ?? 0, data };
+      return data;
+    }
+  }
+  
   if (cache && (now - cache.t) < TTL && lat && lng) {
     const same = Math.abs(cache.lat - lat) < 0.1 && Math.abs(cache.lng - lng) < 0.1;
     if (same) return cache.data;
