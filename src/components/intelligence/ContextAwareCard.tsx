@@ -1,127 +1,143 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import { Brain, Clock, MapPin, TrendingUp, Activity } from 'lucide-react';
 import { useContextAI } from '@/hooks/useContextAI';
-import { Brain, TrendingUp, MapPin, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ContextAwareCardProps {
   className?: string;
   compact?: boolean;
 }
 
-/**
- * Context-Aware Card - shows contextual intelligence and memory
- * Integrates with existing intelligence system
- */
-export function ContextAwareCard({ className, compact = false }: ContextAwareCardProps) {
-  const { context, workingSet, isInitialized } = useContextAI();
-  const [stats, setStats] = React.useState<any>(null);
-  
-  // Get context facts count for display
-  const factCount = context?.factCount || 0;
-  
-  if (!isInitialized || !context) {
+export function ContextAwareCard({ className = '', compact = false }: ContextAwareCardProps) {
+  const { context, isInitialized, factCount, friction } = useContextAI();
+
+  if (!isInitialized) {
     return (
       <motion.div 
-        initial={{ opacity: 0, y: 10 }}
+        className={`p-4 rounded-lg bg-white/5 backdrop-blur-sm ${className}`}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          "p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-border/50",
-          compact && "p-3",
-          className
-        )}
+        transition={{ duration: 0.3 }}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <Brain className="w-4 h-4 text-primary animate-pulse" />
-          <span className="text-sm font-medium text-foreground">Context AI</span>
+        <div className="flex items-center space-x-2 mb-3">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          >
+            <Brain className="w-4 h-4 text-primary" />
+          </motion.div>
+          <h3 className="text-sm font-medium text-foreground">Context Memory</h3>
         </div>
-        <div className="text-xs text-muted-foreground">
-          Building context awareness...
+        
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 rounded-full bg-primary/30 animate-pulse" />
+            <p className="text-xs text-muted-foreground">Initializing context awareness...</p>
+          </div>
         </div>
       </motion.div>
     );
   }
-  
+
+  if (!context) {
+    return (
+      <motion.div 
+        className={`p-4 rounded-lg bg-white/5 backdrop-blur-sm ${className}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="flex items-center space-x-2 mb-3">
+          <Brain className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-medium text-foreground">Context Memory</h3>
+          <span className="text-xs text-muted-foreground">({factCount} facts)</span>
+        </div>
+        
+        <p className="text-xs text-muted-foreground">Building context awareness...</p>
+      </motion.div>
+    );
+  }
+
+  const { contextualInsights, vibeTransitions, confidence, summary } = context;
+
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }}
+      className={`p-4 rounded-lg bg-white/5 backdrop-blur-sm ${className}`}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        "p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-border/50",
-        compact && "p-3",
-        className
-      )}
+      transition={{ duration: 0.3 }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2">
           <Brain className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">Context Memory</span>
+          <h3 className="text-sm font-medium text-foreground">Context Memory</h3>
+          <span className="text-xs text-muted-foreground">({factCount} facts)</span>
         </div>
+        
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs text-muted-foreground">Live</span>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {/* Context Summary */}
         <div className="text-xs text-muted-foreground">
-          {factCount} events
+          {summary}
         </div>
-      </div>
-      
-      {/* Summary */}
-      <div className="text-xs text-foreground/80 mb-3 line-clamp-2">
-        {context.summary}
-      </div>
-      
-      {/* Key Insights */}
-      <div className="space-y-2 mb-3">
-        {context.contextualInsights.slice(0, compact ? 2 : 3).map(insight => (
-          <motion.div 
-            key={insight.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-start gap-2 text-xs"
-          >
-            <div className="mt-0.5">
-              {insight.category === 'temporal' && <Clock className="w-3 h-3 text-primary/60" />}
-              {insight.category === 'venue' && <MapPin className="w-3 h-3 text-secondary/60" />}
-              {insight.category === 'energy' && <TrendingUp className="w-3 h-3 text-accent/60" />}
-              {insight.category === 'behavioral' && <Brain className="w-3 h-3 text-primary/60" />}
-            </div>
-            <div className="flex-1">
-              <span className="text-foreground/70">{insight.text}</span>
-              {insight.contextual && (
-                <span className="text-primary/60 ml-1 text-[10px]">(learned)</span>
-              )}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      
-      {/* Recent Patterns */}
-      {!compact && context.vibeTransitions.length > 0 && (
-        <div className="border-t border-border/30 pt-2">
-          <div className="text-[10px] text-muted-foreground mb-1">Recent Transitions</div>
-          <div className="flex gap-1 flex-wrap">
-            {context.vibeTransitions.slice(0, 3).map((transition, idx) => (
-              <div key={idx} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                {transition.from} → {transition.to}
+
+        {/* Key Insights */}
+        {contextualInsights.length > 0 && (
+          <div className="space-y-1">
+            {contextualInsights.slice(0, compact ? 2 : 4).map((insight) => (
+              <div key={insight.id} className="flex items-start space-x-2">
+                <div className="mt-0.5">
+                  {insight.category === 'temporal' && <Clock className="w-3 h-3 text-primary/70" />}
+                  {insight.category === 'venue' && <MapPin className="w-3 h-3 text-primary/70" />}
+                  {insight.category === 'energy' && <TrendingUp className="w-3 h-3 text-primary/70" />}
+                  {insight.category === 'behavioral' && <Brain className="w-3 h-3 text-primary/70" />}
+                </div>
+                <p className="text-xs text-foreground leading-relaxed">{insight.text}</p>
               </div>
             ))}
           </div>
-        </div>
-      )}
-      
-      {/* Confidence Indicator */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-        <span className="text-[10px] text-muted-foreground">Context Confidence</span>
-        <div className="flex items-center gap-1">
-          <div className="w-12 h-1 bg-border/30 rounded-full overflow-hidden">
-            <motion.div 
-              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
+        )}
+
+        {/* Vibe Transitions (if not compact) */}
+        {!compact && vibeTransitions.length > 0 && (
+          <div className="space-y-1">
+            <h4 className="text-xs font-medium text-muted-foreground">Recent Patterns</h4>
+            {vibeTransitions.slice(0, 2).map((transition, i) => (
+              <div key={i} className="text-xs text-muted-foreground">
+                <span className="text-foreground">{transition.from}</span> → <span className="text-foreground">{transition.to}</span>
+                {transition.trigger && <span className="ml-2 text-primary/70">({transition.trigger})</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Friction Indicator */}
+        {friction && friction.overall01 > 0.1 && (
+          <div className="flex items-center space-x-2">
+            <Activity className="w-3 h-3 text-yellow-500" />
+            <span className="text-xs text-yellow-500">
+              Friction detected ({Math.round(friction.overall01 * 100)}%)
+            </span>
+          </div>
+        )}
+
+        {/* Confidence Bar */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">Context Confidence</span>
+            <span className="text-xs text-foreground">{Math.round(confidence * 100)}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-1">
+            <motion.div
+              className="h-1 bg-primary rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: `${context.confidence * 100}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              animate={{ width: `${confidence * 100}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
             />
           </div>
-          <span className="text-[10px] text-foreground/60 ml-1">
-            {Math.round(context.confidence * 100)}%
-          </span>
         </div>
       </div>
     </motion.div>

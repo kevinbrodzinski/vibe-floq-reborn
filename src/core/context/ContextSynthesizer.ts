@@ -1,166 +1,184 @@
-import type { 
-  ContextFactWithId, 
-  ContextSummary, 
-  VibeTransition, 
-  VenuePattern, 
-  CorrectionTrend,
-  ContextualInsight 
+import {
+  ContextFactWithId, ContextSnapshot, isTemporal, isTransition, isVenue,
+  isVibe, isDevice, isWeather, Confidence01, ContextSummary, VibeTransition,
+  VenuePattern, CorrectionTrend, ContextualInsight, VenueFact, VibeFact
 } from './types';
-import type { VibeReading } from '@/core/vibe/types';
+
+/** Aggregate context safely from fact list (type-safe reducers) */
+export function synthesizeContext(facts: ContextFactWithId[]): ContextSnapshot {
+  if (!Array.isArray(facts) || facts.length === 0) {
+    return { t0: 0, t1: 0, transitions: [], confidence: 0 };
+  }
+
+  const sorted = [...facts].sort((a,b) => a.t - b.t);
+  const t0 = sorted[0].t ?? 0;
+  const t1 = sorted[sorted.length - 1].t ?? t0;
+
+  // latest pointers
+  let temporal: ContextSnapshot['latest']['temporal'];
+  let venue:    ContextSnapshot['latest']['venue'];
+  let vibe:     ContextSnapshot['latest']['vibe'];
+  let device:   ContextSnapshot['latest']['device'];
+  let weather:  ContextSnapshot['latest']['weather'];
+
+  // transitions aggregation
+  const transMap = new Map<string, { n: number; totalLatency: number; samples: number }>();
+
+  // confidence accumulator
+  let confSum = 0;
+  let confN   = 0;
+
+  for (const f of sorted) {
+    const c: Confidence01 = (typeof f.c === 'number' && f.c >= 0 && f.c <= 1) ? f.c : 0.5;
+    confSum += c; confN++;
+
+    // Exhaustive "if guard → use" blocks; no unsafe access to union
+    if (isTemporal(f)) {
+      temporal = { ...f.data };
+      continue;
+    }
+    if (isVenue(f)) {
+      venue = { ...f.data };
+      continue;
+    }
+    if (isVibe(f)) {
+      vibe = { ...f.data };
+      continue;
+    }
+    if (isDevice(f)) {
+      device = { ...f.data };
+      continue;
+    }
+    if (isWeather(f)) {
+      weather = { ...f.data };
+      continue;
+    }
+    if (isTransition(f)) {
+      const key = `${f.data.from}→${f.data.to}`;
+      const prev = transMap.get(key) ?? { n: 0, totalLatency: 0, samples: 0 };
+      prev.n += 1;
+      if (typeof f.data.latencyMs === 'number') {
+        prev.totalLatency += f.data.latencyMs;
+        prev.samples += 1;
+      }
+      transMap.set(key, prev);
+      continue;
+    }
+    // NoteFact or any future kind is intentionally ignored in synthesis
+  }
+
+  const transitions = [...transMap.entries()].map(([key, v]) => {
+    const m = key.split('→');
+    const avgLatencyMs = v.samples ? Math.round(v.totalLatency / v.samples) : undefined;
+    return { from: m[0], to: m[1], n: v.n, avgLatencyMs };
+  }).sort((a,b) => b.n - a.n);
+
+  const confidence = confN ? Math.max(0, Math.min(1, confSum / confN)) : 0;
+
+  return {
+    t0, t1,
+    latest: { temporal, venue, vibe, device, weather },
+    transitions,
+    confidence,
+  };
+}
 
 /**
- * Context Synthesizer - analyzes facts to generate contextual insights
- * Builds patterns from your existing fact streams
+ * Legacy compatibility - converts new ContextSnapshot to old ContextSummary format
  */
-export class ContextSynthesizer {
-  private static readonly RECENT_WINDOW = 60 * 60 * 1000; // 1 hour
+export function synthesizeContextSummary(facts: ContextFactWithId[]): ContextSummary {
+  const snapshot = synthesizeContext(facts);
   
-  synthesize(facts: ContextFactWithId[], currentReading?: VibeReading): ContextSummary {
-    const recentFacts = this.getRecentFacts(facts);
-    
-    const vibeTransitions = this.analyzeVibeFlow(recentFacts);
-    const venueSequence = this.analyzeVenuePattern(recentFacts);
-    const correctionTrends = this.analyzeLearningPattern(recentFacts);
-    const contextualInsights = this.generateInsights(recentFacts, currentReading);
-    
-    return {
-      vibeTransitions,
-      venueSequence,
-      correctionTrends,
-      contextualInsights,
-      factCount: facts.length,
-      confidence: this.calculateOverallConfidence(vibeTransitions, venueSequence, correctionTrends),
-      summary: this.generateSummary(vibeTransitions, venueSequence, correctionTrends)
-    };
-  }
+  // Extract vibe transitions from facts
+  const vibeTransitions: VibeTransition[] = [];
+  const vibeFacts = facts.filter(isVibe).sort((a, b) => a.t - b.t);
   
-  private analyzeVibeFlow(facts: ContextFactWithId[]): VibeTransition[] {
-    const vibeFacts = facts.filter(f => f.type === 'vibe_correction');
-    const transitions: VibeTransition[] = [];
+  for (let i = 1; i < vibeFacts.length; i++) {
+    const prev = vibeFacts[i - 1] as ContextFactWithId & VibeFact;
+    const curr = vibeFacts[i] as ContextFactWithId & VibeFact;
     
-    for (let i = 1; i < vibeFacts.length; i++) {
-      const prev = vibeFacts[i - 1];
-      const curr = vibeFacts[i];
-      
-      // Type guard to ensure both facts are vibe corrections
-      if (prev.type === 'vibe_correction' && curr.type === 'vibe_correction') {
-        transitions.push({
-          from: prev.data.from,
-          to: curr.data.to,
-          duration: curr.timestamp - prev.timestamp,
-          confidence: (prev.data.confidence + curr.data.confidence) / 2,
-          trigger: 'gradual_shift'
-        });
-      }
-    }
-    
-    return transitions.slice(-5);
-  }
-  
-  private analyzeVenuePattern(facts: ContextFactWithId[]): VenuePattern[] {
-    const venueFacts = facts.filter(f => f.type === 'venue_transition');
-    const venueMap = new Map<string, any[]>();
-    
-    venueFacts.forEach(fact => {
-      // Type guard to ensure fact is venue transition
-      if (fact.type === 'venue_transition') {
-        const venueType = fact.data.to;
-        if (venueType) {
-          if (!venueMap.has(venueType)) {
-            venueMap.set(venueType, []);
-          }
-          venueMap.get(venueType)!.push(fact.data);
-        }
-      }
+    vibeTransitions.push({
+      from: prev.data.vibe,
+      to: curr.data.vibe,
+      duration: curr.t - prev.t,
+      confidence: (prev.data.confidence + curr.data.confidence) / 2,
+      trigger: 'detected_change'
     });
-    
-    return Array.from(venueMap.entries()).map(([venueType, visits]) => ({
+  }
+
+  // Extract venue patterns
+  const venueSequence: VenuePattern[] = [];
+  const venueFacts = facts.filter(isVenue);
+  const venueMap = new Map<string, (ContextFactWithId & VenueFact)[]>();
+  
+  venueFacts.forEach(fact => {
+    const venueFact = fact as ContextFactWithId & VenueFact;
+    if (!venueMap.has(venueFact.data.type)) {
+      venueMap.set(venueFact.data.type, []);
+    }
+    venueMap.get(venueFact.data.type)!.push(venueFact);
+  });
+  
+  venueMap.forEach((visits, venueType) => {
+    venueSequence.push({
       venueType,
       visitCount: visits.length,
-      averageEnergy: 0.5,
+      averageEnergy: visits.reduce((sum, v) => sum + (v.data.rating || 3), 0) / visits.length / 5,
       energyImpact: 0.5,
       optimalDuration: 30 * 60 * 1000
-    }));
-  }
+    });
+  });
+
+  // Generate correction trends
+  const correctionTrends: CorrectionTrend[] = [{
+    pattern: 'Context learning',
+    frequency: facts.length / Math.max(100, facts.length),
+    accuracy: Math.min(0.9, snapshot.confidence),
+    improvement: 0.1
+  }];
+
+  // Generate contextual insights
+  const contextualInsights: ContextualInsight[] = [];
   
-  private analyzeLearningPattern(facts: ContextFactWithId[]): CorrectionTrend[] {
-    const correctionFacts = facts.filter(f => f.type === 'vibe_correction');
-    
-    return [{
-      pattern: 'Learning progress',
-      frequency: correctionFacts.length / Math.max(facts.length, 1),
-      accuracy: Math.max(0.1, 1 - (correctionFacts.length / 10)),
-      improvement: 0.1
-    }];
+  if (facts.length > 5) {
+    contextualInsights.push({
+      id: 'context-active',
+      text: 'Context AI is learning from your patterns',
+      confidence: snapshot.confidence,
+      category: 'behavioral',
+      contextual: true
+    });
   }
-  
-  private generateInsights(facts: ContextFactWithId[], currentReading?: VibeReading): ContextualInsight[] {
-    const insights: ContextualInsight[] = [];
-    
-    if (facts.length > 5) {
-      insights.push({
-        id: 'context-active',
-        text: 'Building context awareness from your interactions',
-        confidence: 0.8,
-        category: 'behavioral',
-        contextual: true
-      });
-    }
-    
-    if (facts.length > 15) {
-      insights.push({
-        id: 'pattern-emerging',
-        text: 'Your vibe patterns are becoming clearer',
-        confidence: 0.7,
-        category: 'temporal',
-        contextual: true
-      });
-    }
-    
-    return insights;
+
+  if (vibeTransitions.length > 3) {
+    contextualInsights.push({
+      id: 'vibe-patterns',
+      text: `Detected ${vibeTransitions.length} vibe transitions`,
+      confidence: 0.8,
+      category: 'temporal',
+      contextual: true
+    });
   }
-  
-  private getRecentFacts(facts: ContextFactWithId[]): ContextFactWithId[] {
-    const cutoff = Date.now() - ContextSynthesizer.RECENT_WINDOW;
-    return facts.filter(f => f.timestamp > cutoff);
+
+  if (venueSequence.length > 2) {
+    contextualInsights.push({
+      id: 'venue-patterns',
+      text: `Active in ${venueSequence.length} venue types`,
+      confidence: 0.7,
+      category: 'venue',
+      contextual: true
+    });
   }
-  
-  private calculateOverallConfidence(
-    transitions: VibeTransition[], 
-    venues: VenuePattern[], 
-    trends: CorrectionTrend[]
-  ): number {
-    const baseConfidence = 0.3;
-    const transitionBonus = Math.min(0.3, transitions.length * 0.1);
-    const venueBonus = Math.min(0.2, venues.length * 0.05);
-    const trendBonus = Math.min(0.2, trends.length * 0.1);
-    
-    return Math.min(0.9, baseConfidence + transitionBonus + venueBonus + trendBonus);
-  }
-  
-  private generateSummary(
-    transitions: VibeTransition[], 
-    venues: VenuePattern[], 
-    trends: CorrectionTrend[]
-  ): string {
-    if (transitions.length === 0 && venues.length === 0) {
-      return 'Building context awareness...';
-    }
-    
-    const parts: string[] = [];
-    
-    if (transitions.length > 0) {
-      parts.push(`${transitions.length} vibe transitions tracked`);
-    }
-    
-    if (venues.length > 0) {
-      parts.push(`${venues.length} venue patterns detected`);
-    }
-    
-    if (trends.length > 0 && trends[0].accuracy > 0.7) {
-      parts.push('learning accuracy improving');
-    }
-    
-    return parts.length > 0 ? parts.join(', ') : 'Context AI active';
-  }
+
+  return {
+    vibeTransitions: vibeTransitions.slice(-5),
+    venueSequence: venueSequence.slice(-10),
+    correctionTrends,
+    contextualInsights,
+    factCount: facts.length,
+    confidence: snapshot.confidence,
+    summary: facts.length > 0 
+      ? `Tracking ${facts.length} context facts with ${Math.round(snapshot.confidence * 100)}% confidence`
+      : 'Building context awareness...'
+  };
 }
