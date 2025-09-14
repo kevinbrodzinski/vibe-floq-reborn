@@ -400,6 +400,12 @@ All colors MUST be HSL.
     --vibe-alpha: 0.8;
     --vibe-hex: #8B5CF6;
     --vibe-sat: 0.9;
+  }
+
+  /* Vibe colored utility class */
+  .vibe-colored {
+    filter: saturate(var(--vibe-sat, 1));
+    opacity: var(--vibe-alpha, 1);
 }
 
 @layer components {

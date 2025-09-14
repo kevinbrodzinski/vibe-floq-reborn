@@ -21,14 +21,21 @@ export class DeviceUsageTracker {
     // AppState fallback
     this.subApp = AppState.addEventListener('change', this.onAppState);
 
-    // Android screen on/off (optional)
+    // Android screen on/off (optional) - guard against iOS and missing module
     if (Platform.OS === 'android' && ScreenState?.addListener) {
-      this.subScreen = ScreenState.addListener!((state) => {
-        const now = Date.now();
-        if (this.screenOn) this.activeMs += (now - this.lastChange);
-        this.screenOn = (state === 'SCREEN_ON');
-        this.lastChange = now;
-      });
+      try {
+        this.subScreen = ScreenState.addListener!((state) => {
+          const now = Date.now();
+          if (this.screenOn) this.activeMs += (now - this.lastChange);
+          this.screenOn = (state === 'SCREEN_ON');
+          this.lastChange = now;
+        });
+      } catch {
+        // Graceful fallback if module fails to load
+        this.subScreen = undefined;
+      }
+    } else {
+      this.subScreen = undefined;
     }
   }
 

@@ -2,10 +2,43 @@ type LngLat = { lat: number; lng: number };
 export type VenueClass = { type: string; energy: number; name?: string; provider?: 'fsq'|'google'; distanceM?: number };
 
 const ORDER = String((import.meta as any).env?.VITE_PLACES_ORDER ?? 'fsq,google')
-  .split(',').map(s => s.trim().toLowerCase()) as Array<'fsq'|'google'>;
+  .split(',').map(s => s.trim().toLowerCase()).filter(Boolean) as Array<'fsq'|'google'>;
 
 const FSQ_KEY = (import.meta as any).env?.VITE_FSQ_API_KEY ?? '';
 const GP_KEY  = (import.meta as any).env?.VITE_GOOGLE_PLACES_KEY ?? '';
+
+// API resilience constants
+const TIMEOUT_MS = 4500;
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+async function withTimeout<T>(p: Promise<T>, ms = TIMEOUT_MS): Promise<T | null> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try { 
+    return await Promise.race([
+      p, 
+      new Promise<T>((_, rej) => ctl.signal.addEventListener('abort', () => rej(new Error('TO'))))
+    ]); 
+  } catch { 
+    return null; 
+  } finally { 
+    clearTimeout(timer); 
+  }
+}
+
+async function fetchSafe(url: string, init?: RequestInit): Promise<any | null> {
+  try {
+    const res = await fetch(url, { ...init, cache: 'no-store' });
+    if (res.status === 429) { 
+      await sleep(800); 
+      return null; 
+    }
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { 
+    return null; 
+  }
+}
 
 /** Coarse 250m grid cache key */
 function gridKey(p: LngLat) {
@@ -38,17 +71,15 @@ async function fsqNear(p: LngLat): Promise<ProviderHit | null> {
   const u = new URL('https://api.foursquare.com/v3/places/search');
   u.searchParams.set('ll', `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`);
   u.searchParams.set('limit', '1');
-  u.searchParams.set('radius', '80');     // tight; adjust as needed
+  u.searchParams.set('radius', '80');
   u.searchParams.set('sort', 'DISTANCE');
 
-  const res = await fetch(u.toString(), {
-    headers: { Authorization: FSQ_KEY, Accept: 'application/json' },
-  });
-  if (!res.ok) return null;
-  const j = await res.json();
-  const first = j.results?.[0];
-  if (!first) return null;
-
+  const j = await withTimeout(fetchSafe(u.toString(), { 
+    headers: { Authorization: FSQ_KEY, Accept: 'application/json' }
+  }));
+  if (!j?.results?.[0]) return null;
+  
+  const first = j.results[0];
   const cats = (first.categories || []).map((c: any) => c.name || '').filter(Boolean);
   const dist = first.distance ?? undefined;
   return { name: first.name, categories: cats, distanceM: dist, provider: 'fsq' };
@@ -56,16 +87,13 @@ async function fsqNear(p: LngLat): Promise<ProviderHit | null> {
 
 async function googleNear(p: LngLat): Promise<ProviderHit | null> {
   if (!GP_KEY) return null;
-  // Nearby Search: rankby=distance requires a keyword/type. 'establishment' is a good generic.
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${p.lat},${p.lng}&rankby=distance&type=establishment&key=${GP_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const j = await res.json();
-  const first = j.results?.[0];
-  if (!first) return null;
-
+  
+  const j = await withTimeout(fetchSafe(url));
+  if (!j?.results?.[0]) return null;
+  
+  const first = j.results[0];
   const cats = (first.types || []) as string[];
-  // distanceM not returned here; OK to omit (we sort by order/provider)
   return { name: first.name, categories: cats, provider: 'google' };
 }
 
@@ -86,8 +114,8 @@ function pickBest(a: ProviderHit | null, b: ProviderHit | null): ProviderHit | n
   // tie-breaker: distance (if any)
   if (a!.distanceM != null && b!.distanceM != null) return a!.distanceM < b!.distanceM ? a! : b!;
   // final: keep provider order preference
-  const orderIndex = (h: ProviderHit) => ORDER.indexOf(h.provider);
-  return orderIndex(a!) <= orderIndex(b!) ? a! : b!;
+  const orderIndex = (p: 'fsq' | 'google') => Math.max(0, ORDER.indexOf(p));
+  return orderIndex(a!.provider) <= orderIndex(b!.provider) ? a! : b!;
 }
 
 export class VenueClassifier {

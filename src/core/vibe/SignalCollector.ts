@@ -5,6 +5,7 @@ import { DwellTracker } from './collectors/DwellTracker';
 import { DeviceUsageTracker } from './collectors/DeviceUsage';
 import { VenueClassifier } from './collectors/VenueClassifier';
 import { getWeatherSignal } from './collectors/WeatherCollector';
+import haversine from 'haversine-distance';
 
 type LngLat = { lat: number; lng: number } | null;
 
@@ -58,12 +59,26 @@ export function useSignalCollector() {
       getWeatherSignal(coords?.lat, coords?.lng).then(wx => (daylightRef.v = wx.isDaylight)).catch(() => {});
     }
 
-    // coarse venue classification (async update of base energy + type)
+    // Smart venue classification with movement threshold
     const venueRef = (collect as any)._venue || ((collect as any)._venue = { base: null as number | null, type: null as string | null });
-    if ((collect as any)._lastVenueT == null || Date.now() - (collect as any)._lastVenueT > 5 * 60 * 1000) {
-      (collect as any)._lastVenueT = Date.now();
-      venue.current.classify(coords || undefined).then((v) => {
-        if (v) { venueRef.base = v.energy; venueRef.type = v.type; }
+    const lastRef = (collect as any)._venueRef || ((collect as any)._venueRef = { t: 0, p: undefined as LngLat | undefined });
+    
+    const VENUE_REFRESH_M = 120;
+    const VENUE_REFRESH_MS = 5 * 60 * 1000;
+    
+    const moved = lastRef.p && coords 
+      ? haversine(lastRef.p, coords) > VENUE_REFRESH_M 
+      : true;
+    const stale = Date.now() - lastRef.t > VENUE_REFRESH_MS;
+    
+    if ((moved || stale) && coords) {
+      lastRef.t = Date.now(); 
+      lastRef.p = coords;
+      venue.current.classify(coords).then(v => { 
+        if (v) { 
+          venueRef.base = v.energy; 
+          venueRef.type = v.type; 
+        } 
       }).catch(() => {});
     }
 
