@@ -48,14 +48,20 @@ import { ConvergenceNotificationSystem } from '@/components/convergence/Converge
 import { useConvergenceMonitor } from '@/hooks/useConvergenceMonitor';
 import { FlowAndVenueBridge } from '@/components/system/FlowAndVenueBridge';
 import { mountAnalytics } from '@/lib/analytics/bridge';
+import { useVibeEngine } from "@/hooks/useVibeEngine";
+import { VibeDebugPanel } from "@/components/vibe/VibeDebugPanel";
 // Dev QA harness
 import '@/dev/emit';
+import '@/dev/vibeQA';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 
 interface FieldLayoutProps {
 }
 
 export const FieldLayout = () => {
+  // Vibe Engine: starts 60s loop (on-device, no perms required)
+  useVibeEngine(true);
+
   // Analytics mounting with cleanup
   React.useEffect(() => {
     const off = mountAnalytics();
@@ -236,6 +242,7 @@ export const FieldLayout = () => {
                 
                 {/* Convergence notifications */}
                 <ConvergenceNotificationSystem />
+                <VibeDebugPanel open={false} />
               <div className="relative h-svh w-full">
                 {/* Motion Permission Banner - Global Level */}
                 <MotionPermissionBanner
