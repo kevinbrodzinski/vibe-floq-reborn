@@ -1,5 +1,6 @@
 import { VIBES, safeVibe, type Vibe } from '@/lib/vibes';
 import { applyPersonalDelta, loadPersonalDelta, type PersonalDelta, type ComponentKey } from './learning/PersonalWeightStore';
+import type { ComponentScores, VibeVector } from './types';
 
 // Base weights (your current table)
 const BASE_WEIGHTS: Record<ComponentKey, Partial<Record<Vibe, number>>> = {
@@ -24,8 +25,7 @@ function getEffectiveWeights() {
 
 const sigmoid = (x:number)=> 1/(1+Math.exp(-x*2));
 
-export type ComponentScores = Record<ComponentKey, number>;
-export type VibeVector = Record<Vibe, number>;
+// Remove duplicate type exports - they're now in types.ts
 
 export function combine(components: ComponentScores): VibeVector {
   const W = getEffectiveWeights();

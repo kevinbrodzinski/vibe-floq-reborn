@@ -1,12 +1,23 @@
 import { VIBES, type Vibe } from '@/lib/vibes';
+import type { ComponentKey } from '@/core/vibe/types';
 
 // Component keys used by the engine
-export type ComponentKey = 'circadian' | 'movement' | 'venueEnergy' | 'deviceUsage' | 'weather';
+export { type ComponentKey } from '@/core/vibe/types';
 
 // Delta table: how much we nudge each vibe for each component (additive over base weights)
 export type PersonalDelta = Record<ComponentKey, Partial<Record<Vibe, number>>>;
 
 const LS_KEY = 'vibe:personal:delta:v1';
+
+// Safe JSON parse with fallback
+function safeParse<T>(raw: string | null, fallback: T): T {
+  try { 
+    const x = JSON.parse(raw ?? ''); 
+    return (x && typeof x === 'object') ? x as T : fallback;
+  } catch { 
+    return fallback; 
+  }
+}
 
 // Small helper to create empty table
 function emptyDelta(): PersonalDelta {
@@ -23,7 +34,11 @@ function emptyDelta(): PersonalDelta {
 
 // Load/save
 export function loadPersonalDelta(): PersonalDelta {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null') ?? emptyDelta(); } catch { return emptyDelta(); }
+  try { 
+    return safeParse(localStorage.getItem(LS_KEY), emptyDelta());
+  } catch { 
+    return emptyDelta(); 
+  }
 }
 export function savePersonalDelta(d: PersonalDelta) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch {}
@@ -70,4 +85,16 @@ export function applyPersonalDelta<T extends Record<ComponentKey, Partial<Record
     });
   });
   return merged;
+}
+
+/** Optional: very small periodic decay to re-center deltas */
+export function decayPersonalDelta(factor = 0.995) {
+  const d = loadPersonalDelta();
+  (Object.keys(d) as ComponentKey[]).forEach(k => {
+    Object.keys(d[k]!).forEach(v => {
+      const next = +((d[k]![v as Vibe] ?? 0) * factor).toFixed(3);
+      d[k]![v as Vibe] = Math.abs(next) < 0.001 ? 0 : next;
+    });
+  });
+  savePersonalDelta(d);
 }

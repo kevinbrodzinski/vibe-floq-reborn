@@ -13,6 +13,11 @@ function circadianScore(hour: number, isWeekend: boolean) {
 }
 const movementScore = (speed?: number) => clamp01((speed ?? 0) / 2);
 
+function weatherScore(isDaylight?: boolean, offset?: number) {
+  const base = isDaylight ? 0.4 : 0.1;
+  return clamp01(base + (offset ?? 0));
+}
+
 // NEW: base + arrival bump + dwell bump
 function venueEnergyScore(base?: number | null, dwellMin?: number, arrived?: boolean) {
   let score = base ?? 0.5;
@@ -24,7 +29,6 @@ function venueEnergyScore(base?: number | null, dwellMin?: number, arrived?: boo
   return clamp01(score);
 }
 const deviceUsageScore = (ratio?: number) => (ratio == null ? 0.3 : clamp01(0.2 + 0.8 * ratio));
-const weatherScore = (isDaylight?: boolean) => (isDaylight ? 0.4 : 0.1);
 
 export function evaluate(inp: EngineInputs): VibeReading {
   const t0 = performance.now();
@@ -33,12 +37,17 @@ export function evaluate(inp: EngineInputs): VibeReading {
     movement:    movementScore(inp.speedMps),
     venueEnergy: venueEnergyScore(inp.venueEnergyBase, inp.dwellMinutes, inp.venueArrived),
     deviceUsage: deviceUsageScore(inp.screenOnRatio01),
-    weather:     weatherScore(inp.isDaylight),
+    weather:     weatherScore(inp.isDaylight, inp.weatherEnergyOffset),
   };
 
   const vector = combine(components);
   const best = VIBES.reduce((a, b) => (vector[b] > vector[a] ? b : a), VIBES[0]);
-  const conf = confidence(components);
+  let conf = confidence(components);
+  
+  // Tiny bonus for stable weather (Clear/Clouds)
+  if (inp.weatherConfidenceBoost) {
+    conf = Math.min(0.95, conf + inp.weatherConfidenceBoost);
+  }
 
   return {
     timestamp: Date.now(),

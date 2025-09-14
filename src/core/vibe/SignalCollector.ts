@@ -53,10 +53,12 @@ export function useSignalCollector() {
     const screenOnRatio01 = device.current.pullRatio();
 
     // daylight cached (async)
-    const daylightRef = (collect as any)._dayRef || ((collect as any)._dayRef = { v: undefined as boolean | undefined });
-    if ((collect as any)._lastWxT == null || Date.now() - (collect as any)._lastWxT > 10 * 60 * 1000) {
+    const daylightRef = (collect as any)._dayRef || ((collect as any)._dayRef = { v: undefined as any });
+    if ((collect as any)._lastWxT == null || Date.now() - (collect as any)._lastWxT > 30 * 60_000) {
       (collect as any)._lastWxT = Date.now();
-      getWeatherSignal(coords?.lat, coords?.lng).then(wx => (daylightRef.v = wx.isDaylight)).catch(() => {});
+      getWeatherSignal(coords?.lat, coords?.lng)
+        .then(wx => (daylightRef.v = wx))
+        .catch(() => {});
     }
 
     // Smart venue classification with movement threshold
@@ -82,19 +84,26 @@ export function useSignalCollector() {
       }).catch(() => {});
     }
 
+    const wx = daylightRef.v;
     return {
       hour,
       isWeekend,
       speedMps: m.speedMps,
       dwellMinutes: dwellMin,
       screenOnRatio01,
-      isDaylight: daylightRef.v,
-      tempC: undefined,
+      // keep old fields for backward compatibility:
+      isDaylight: wx?.isDaylight,
+      tempC: wx?.tempC,
 
       // new:
       venueArrived: justArrived,
       venueType: venueRef.type,
       venueEnergyBase: venueRef.base,
+      
+      // Rich weather fields
+      weatherCondition: wx?.condition,
+      weatherEnergyOffset: wx?.energyOffset,
+      weatherConfidenceBoost: wx?.confidenceBoost,
     };
   }, []);
 
