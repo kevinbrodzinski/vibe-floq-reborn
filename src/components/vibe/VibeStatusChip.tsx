@@ -19,6 +19,7 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
   const { data } = useVibeSnapshots(limit);
   const [open, setOpen] = React.useState(false);
   const [recent, setRecent] = React.useState(data);
+  const panelRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => { setRecent(data); }, [data]);
 
@@ -42,7 +43,7 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
     const W = 84, H = 24, P = 2;
     if (!values.length) return { path: '', w: W, h: H };
     const n = values.length;
-    const step = (W - P * 2) / Math.max(1, n - 1);
+    const step = n > 1 ? (W - P * 2) / (n - 1) : 0;
     const y = (v: number) => P + (1 - v) * (H - P * 2);
     const x = (i: number) => P + i * step;
     let d = `M ${x(0)} ${y(values[0])}`;
@@ -67,6 +68,15 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
     return <span className={cls + ' text-[10px] ml-1'} aria-label={`trend ${trend}`}>{glyph}</span>;
   };
 
+  // a11y: Esc to close, focus drawer on open
+  React.useEffect(() => {
+    if (!open || typeof window === 'undefined') return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey, { passive: true });
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+  React.useEffect(() => { if (open) panelRef.current?.focus(); }, [open]);
+
   return (
     <>
       <button
@@ -78,7 +88,7 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
             setRecent(await getRecentReadings(100)); 
           } catch {}
         }}
-        aria-expanded={open}
+        aria-label="Open vibe history"
         aria-controls="vibe-history"
         className={clsx(
           'inline-flex items-center gap-2 rounded-full border px-3 py-1.5',
@@ -164,6 +174,8 @@ export const VibeStatusChip: React.FC<Props> = ({ className, limit = 20, compact
         >
           <div className="absolute inset-0 bg-black/50" />
           <div
+            ref={panelRef}
+            tabIndex={-1}
             className="relative w-full sm:max-w-md max-h-[80vh] bg-[#0B0F1A] border border-white/10 rounded-t-2xl sm:rounded-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >

@@ -3,6 +3,7 @@
 
 import type { VibeReading } from '@/core/vibe/types';
 
+const SNAP_EVT = 'vibe:snapshot';
 const KEY = 'vibe:snapshots:v2';
 const LIMIT = 100;
 
@@ -16,6 +17,11 @@ export async function insertReading(r: VibeReading) {
     arr.push(r);
     while (arr.length > LIMIT) arr.shift();
     localStorage.setItem(KEY, JSON.stringify(arr));
+    // notify listeners (SSR-safe)
+    try {
+      // @ts-ignore
+      document?.dispatchEvent?.(new CustomEvent(SNAP_EVT, { detail: r.timestamp }));
+    } catch {}
   } catch {}
 }
 
