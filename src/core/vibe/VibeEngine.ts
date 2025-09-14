@@ -19,7 +19,7 @@ function weatherScore(isDaylight?: boolean, offset?: number) {
   return clamp01(base + (offset ?? 0));
 }
 
-// ENHANCED: venue intelligence + contextual scoring
+// ENHANCED: venue intelligence + contextual scoring (safer aggregation)
 function venueEnergyScore(
   base?: number | null, 
   dwellMin?: number, 
@@ -37,39 +37,46 @@ function venueEnergyScore(
     else if (dwellMin > 5) score += 0.1;
   }
   
-  // Enhanced venue intelligence integration
+  // Enhanced venue intelligence integration (avoid double-counting base)
   if (venueIntelligence) {
     const { vibeProfile, realTimeMetrics, placeData } = venueIntelligence;
     
-    // Base venue energy from intelligence
-    score = Math.max(score, vibeProfile.energyLevel * 0.7); // Don't override too aggressively
+    // Use venue energy as floor, not replacement
+    const floor = (vibeProfile.energyLevel ?? 0.5) * 0.7;
+    score = Math.max(score, floor);
     
     // Real-time occupancy influence
-    const occupancyBoost = realTimeMetrics.currentOccupancy * 0.15;
+    const occupancyBoost = (realTimeMetrics?.currentOccupancy ?? 0) * 0.15;
     score += occupancyBoost;
     
-    // Open status boost
-    if (placeData.isOpen) {
+    // Open status boost/penalty
+    if (placeData.isOpen === true) {
       score += 0.08;
+    } else if (placeData.isOpen === false) {
+      score -= 0.05; // Closed venues dampen energy
     }
     
     // High-rated venue boost
-    if (placeData.rating && placeData.rating > 4.0 && placeData.totalRatings && placeData.totalRatings > 50) {
+    const rating = placeData.rating;
+    const totalRatings = placeData.totalRatings;
+    if (rating && totalRatings && rating > 4.0 && totalRatings > 50) {
       score += 0.05;
     }
     
-    // Time-of-day alignment
+    // Time-of-day alignment (multiplier, not addition)
     const hour = new Date().getHours();
-    const timeKey = hour < 6 ? 'night' : 
-                   hour < 12 ? 'morning' : 
-                   hour < 17 ? 'afternoon' : 
-                   hour < 22 ? 'evening' : 'night';
+    const timeKey: keyof typeof vibeProfile.timeOfDayPreferences = 
+      hour < 6 ? 'night' : 
+      hour < 12 ? 'morning' : 
+      hour < 17 ? 'afternoon' : 
+      hour < 22 ? 'evening' : 'night';
     
-    const timeAlignment = vibeProfile.timeOfDayPreferences[timeKey];
+    const timeAlignment = vibeProfile.timeOfDayPreferences[timeKey] ?? 0.5;
     score *= (0.7 + (timeAlignment * 0.3)); // Adjust by time preference
   }
   
-  return clamp01(score);
+  // Cap total venue contribution to prevent dominance
+  return clamp01(Math.min(score, 0.5 + 0.35)); // Max +0.35 over baseline
 }
 const deviceUsageScore = (ratio?: number) => (ratio == null ? 0.3 : clamp01(0.2 + 0.8 * ratio));
 
@@ -87,7 +94,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
   let best = VIBES.reduce((a, b) => (vector[b] > vector[a] ? b : a), VIBES[0]);
   let conf = confidence(components);
   
-  // Enhanced venue-vibe alignment
+  // Enhanced venue-vibe alignment with vector normalization
   if (inp.venueIntelligence) {
     const { vibeProfile } = inp.venueIntelligence;
     
@@ -101,6 +108,10 @@ export function evaluate(inp: EngineInputs): VibeReading {
         vector[vibeProfile.primaryVibe] = Math.max(venueVibeScore, currentBestScore * 1.1);
         best = vibeProfile.primaryVibe;
         conf = Math.min(0.95, conf + (vibeProfile.confidence * 0.1));
+        
+        // Keep distribution valid - renormalize vector to maintain probability distribution
+        const sum = VIBES.reduce((acc, v) => acc + (vector[v] ?? 0), 0) || 1;
+        VIBES.forEach(v => vector[v] = (vector[v] ?? 0) / sum);
       }
     }
   }

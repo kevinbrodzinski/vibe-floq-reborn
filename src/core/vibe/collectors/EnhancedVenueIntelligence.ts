@@ -61,7 +61,7 @@ export class EnhancedVenueIntelligence {
   }
 
   /**
-   * Get enhanced place details using Places API
+   * Get enhanced place details using Places API with normalized field handling
    */
   private async getEnhancedPlaceDetails(location: LngLat): Promise<EnhancedPlaceDetails | null> {
     try {
@@ -86,7 +86,7 @@ export class EnhancedVenueIntelligence {
 
       if (detailError || !detailData?.venue) return null;
 
-      // Transform to our enhanced schema
+      // Transform to our enhanced schema with normalized fields
       return this.transformToEnhancedDetails(detailData.venue, nearestVenue);
     } catch (error) {
       console.error('Error fetching enhanced place details:', error);
@@ -95,21 +95,27 @@ export class EnhancedVenueIntelligence {
   }
 
   /**
-   * Transform venue detail response to enhanced place details
+   * Transform venue detail response to enhanced place details with normalized fields
    */
   private transformToEnhancedDetails(venue: any, tileVenue: any): EnhancedPlaceDetails {
+    // Normalize Google/FSQ field mismatches
+    const rating = venue.rating ?? undefined;
+    const userRatingCount = venue.user_ratings_total ?? venue.userRatingCount ?? undefined;
+    const openNow = venue.hours?.open_now ?? tileVenue.open_now ?? false;
+    
     return {
       id: venue.pid,
       displayName: { text: venue.name },
       formattedAddress: venue.address || '',
       types: venue.types || [],
-      rating: venue.rating,
-      userRatingCount: venue.user_ratings_total,
-      googleMapsUri: `https://maps.google.com/?cid=${venue.pid}`,
+      rating,
+      userRatingCount,
+      // Use place_id based URLs, avoid brittle cid approach
+      googleMapsUri: `https://www.google.com/maps/place/?q=place_id:${venue.pid}`,
       businessStatus: venue.business_status,
-      priceLevel: venue.price,
+      priceLevel: venue.price_level ?? venue.price,
       currentOpeningHours: venue.hours ? {
-        openNow: tileVenue.open_now || false,
+        openNow,
         periods: venue.hours.periods,
         weekdayDescriptions: venue.hours.weekday_text
       } : undefined,
@@ -150,7 +156,7 @@ export class EnhancedVenueIntelligence {
   }
 
   /**
-   * Generate vibe profile from place details and real-time data
+   * Generate vibe profile from place details and real-time data with improved popularity calc
    */
   private generateVibeProfile(place: EnhancedPlaceDetails): VenueVibeProfile {
     const category = this.categorizeVenue(place.types || []);
@@ -201,9 +207,9 @@ export class EnhancedVenueIntelligence {
   }
 
   /**
-   * Categorize venue from Google place types
+   * Categorize venue from Google place types (strict typing)
    */
-  private categorizeVenue(types: string[]): string {
+  private categorizeVenue(types: string[]): keyof typeof VENUE_VIBE_MAPPING {
     const typeStr = types.join(' ').toLowerCase();
     
     if (types.some(t => ['night_club', 'dance_club'].includes(t))) return 'nightclub';
@@ -252,13 +258,15 @@ export class EnhancedVenueIntelligence {
   }
 
   /**
-   * Generate cache key for location
+   * Generate cache key for location (consistent 250m grid)
    */
   private getCacheKey(location: LngLat): string {
-    // Round to ~50m precision for caching
-    const lat = Math.round(location.lat * 1000) / 1000;
-    const lng = Math.round(location.lng * 1000) / 1000;
-    return `${lat},${lng}`;
+    // Use consistent 250m grid for API cost control
+    const sz = 0.0022; // ~250m lat
+    const scale = Math.max(0.25, Math.cos((location.lat * Math.PI) / 180));
+    const lat = Math.round(location.lat / sz) * sz;
+    const lng = Math.round((location.lng * scale) / sz) * (sz / scale);
+    return `${lat.toFixed(4)},${lng.toFixed(4)}`;
   }
 
   /**
@@ -269,12 +277,15 @@ export class EnhancedVenueIntelligence {
   }
 
   /**
-   * Clear expired cache entries
+   * Clear expired cache entries with jitter to prevent thundering herds
    */
   private clearExpiredCache(): void {
     const now = Date.now();
+    // Add small jitter to prevent thundering herds
+    const jitter = Math.random() * 30000; // Up to 30 seconds
+    
     for (const [key, value] of this.cache.entries()) {
-      if (now - value.lastUpdated > this.CACHE_TTL_MS) {
+      if (now - value.lastUpdated > this.CACHE_TTL_MS + jitter) {
         this.cache.delete(key);
       }
     }

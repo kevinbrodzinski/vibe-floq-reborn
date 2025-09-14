@@ -63,7 +63,7 @@ export function useSignalCollector() {
         .catch(() => {});
     }
 
-    // Enhanced venue intelligence with movement threshold
+    // Enhanced venue intelligence with movement threshold (consistent 250m grid)
     const venueRef = (collect as any)._venue || ((collect as any)._venue = { 
       base: null as number | null, 
       type: null as string | null,
@@ -71,7 +71,7 @@ export function useSignalCollector() {
     });
     const lastRef = (collect as any)._venueRef || ((collect as any)._venueRef = { t: 0, p: undefined as LngLat | undefined });
     
-    const VENUE_REFRESH_M = 120;
+    const VENUE_REFRESH_M = 250; // Consistent with 250m grid
     const VENUE_REFRESH_MS = 5 * 60 * 1000;
     
     const moved = lastRef.p && coords 
@@ -95,7 +95,7 @@ export function useSignalCollector() {
       enhancedVenue.current.getVenueIntelligence(coords).then(intelligence => {
         if (intelligence) {
           venueRef.intelligence = intelligence;
-          // Update base energy from enhanced data if available
+          // Update base energy from enhanced data if available (use as floor)
           venueRef.base = Math.max(venueRef.base || 0, intelligence.vibeProfile.energyLevel);
         }
       }).catch(() => {});

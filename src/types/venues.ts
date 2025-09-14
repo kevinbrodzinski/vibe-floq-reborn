@@ -1,18 +1,15 @@
 import { z } from "zod";
 import type { Vibe } from "@/lib/vibes";
 
-// Enhanced venue classification with vibe prediction
+// Enhanced venue types with strict type safety
+export type DayPart = 'morning' | 'afternoon' | 'evening' | 'night';
+export type VenueType = 'nightclub' | 'bar' | 'coffee' | 'restaurant' | 'gym' | 'park' | 'office' | 'general';
 export interface VenueVibeProfile {
   primaryVibe: Vibe;
   secondaryVibe?: Vibe;
   energyLevel: number; // 0-1 scale
   socialFactor: number; // 0-1 scale (solo-friendly vs social)
-  timeOfDayPreferences: {
-    morning: number;
-    afternoon: number;
-    evening: number;
-    night: number;
-  };
+  timeOfDayPreferences: Record<DayPart, number>; // 0-1 scale for each time period
   confidence: number; // 0-1 scale
 }
 
@@ -126,14 +123,14 @@ export const EnhancedPlaceDetailsSchema = z.object({
 
 export type EnhancedPlaceDetails = z.infer<typeof EnhancedPlaceDetailsSchema>;
 
-// Venue type to vibe mapping with time-of-day considerations
-export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
+// Venue type to vibe mapping with time-of-day considerations (strict typing)
+export const VENUE_VIBE_MAPPING: Record<VenueType, VenueVibeProfile> = {
   nightclub: {
     primaryVibe: 'hype',
     secondaryVibe: 'social',
     energyLevel: 0.9,
     socialFactor: 0.95,
-    timeOfDayPreferences: { morning: 0.1, afternoon: 0.2, evening: 0.7, night: 1.0 },
+    timeOfDayPreferences: { morning: 0.1, afternoon: 0.2, evening: 0.7, night: 1.0 } as Record<DayPart, number>,
     confidence: 0.9
   },
   bar: {
@@ -141,7 +138,7 @@ export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
     secondaryVibe: 'chill',
     energyLevel: 0.7,
     socialFactor: 0.8,
-    timeOfDayPreferences: { morning: 0.1, afternoon: 0.4, evening: 0.9, night: 0.8 },
+    timeOfDayPreferences: { morning: 0.1, afternoon: 0.4, evening: 0.9, night: 0.8 } as Record<DayPart, number>,
     confidence: 0.8
   },
   coffee: {
@@ -149,7 +146,7 @@ export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
     secondaryVibe: 'chill',
     energyLevel: 0.6,
     socialFactor: 0.4,
-    timeOfDayPreferences: { morning: 1.0, afternoon: 0.8, evening: 0.3, night: 0.1 },
+    timeOfDayPreferences: { morning: 1.0, afternoon: 0.8, evening: 0.3, night: 0.1 } as Record<DayPart, number>,
     confidence: 0.8
   },
   gym: {
@@ -157,7 +154,7 @@ export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
     secondaryVibe: 'focused',
     energyLevel: 0.8,
     socialFactor: 0.3,
-    timeOfDayPreferences: { morning: 0.9, afternoon: 0.7, evening: 0.8, night: 0.4 },
+    timeOfDayPreferences: { morning: 0.9, afternoon: 0.7, evening: 0.8, night: 0.4 } as Record<DayPart, number>,
     confidence: 0.9
   },
   park: {
@@ -165,7 +162,7 @@ export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
     secondaryVibe: 'open',
     energyLevel: 0.4,
     socialFactor: 0.6,
-    timeOfDayPreferences: { morning: 0.8, afternoon: 0.9, evening: 0.6, night: 0.3 },
+    timeOfDayPreferences: { morning: 0.8, afternoon: 0.9, evening: 0.6, night: 0.3 } as Record<DayPart, number>,
     confidence: 0.7
   },
   restaurant: {
@@ -173,7 +170,7 @@ export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
     secondaryVibe: 'romantic',
     energyLevel: 0.6,
     socialFactor: 0.7,
-    timeOfDayPreferences: { morning: 0.3, afternoon: 0.6, evening: 1.0, night: 0.7 },
+    timeOfDayPreferences: { morning: 0.3, afternoon: 0.6, evening: 1.0, night: 0.7 } as Record<DayPart, number>,
     confidence: 0.7
   },
   office: {
@@ -181,14 +178,25 @@ export const VENUE_VIBE_MAPPING: Record<string, VenueVibeProfile> = {
     secondaryVibe: 'solo',
     energyLevel: 0.5,
     socialFactor: 0.2,
-    timeOfDayPreferences: { morning: 0.9, afternoon: 1.0, evening: 0.3, night: 0.1 },
+    timeOfDayPreferences: { morning: 0.9, afternoon: 1.0, evening: 0.3, night: 0.1 } as Record<DayPart, number>,
     confidence: 0.8
   },
   general: {
     primaryVibe: 'chill',
     energyLevel: 0.5,
     socialFactor: 0.5,
-    timeOfDayPreferences: { morning: 0.5, afternoon: 0.6, evening: 0.6, night: 0.4 },
+    timeOfDayPreferences: { morning: 0.5, afternoon: 0.6, evening: 0.6, night: 0.4 } as Record<DayPart, number>,
     confidence: 0.5
   }
 };
+
+/**
+ * Improved popularity derivation with bias toward quality venues
+ */
+export function derivePopularity(rating?: number, count?: number): number {
+  if (!rating || !count) return 0;
+  // Bias toward 4.3+ and 100+ ratings, soft cap
+  const r = Math.max(0, (rating - 4.0) / 1.0); // 0..1 when rating=5
+  const c = Math.min(1, Math.log10(Math.max(1, count)) / 3); // ~0..1 by 1k ratings
+  return Math.min(1, 0.6 * r + 0.4 * c);
+}
