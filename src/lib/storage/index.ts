@@ -42,5 +42,24 @@ export const storage = {
     } catch {
       // Fail silently
     }
+  },
+
+  // JSON helpers for pattern storage
+  async getJSON<T>(key: string, fallback: T): Promise<T> {
+    try {
+      const stored = await this.getItem(key);
+      if (!stored) return fallback;
+      return JSON.parse(stored);
+    } catch {
+      return fallback;
+    }
+  },
+
+  async setJSON<T>(key: string, value: T): Promise<void> {
+    try {
+      await this.setItem(key, JSON.stringify(value));
+    } catch {
+      // Fail silently
+    }
   }
 };
