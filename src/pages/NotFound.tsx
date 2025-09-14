@@ -1,7 +1,8 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Home, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LedgerLink } from '@/core/context/useRouterLedger';
 
 const NotFound = () => {
   const location = useLocation();
@@ -28,10 +29,10 @@ const NotFound = () => {
         
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button asChild variant="default">
-            <Link to="/field">
+            <LedgerLink to="/field">
               <Home className="mr-2 h-4 w-4" />
               Go Home
-            </Link>
+            </LedgerLink>
           </Button>
           <Button asChild variant="outline" onClick={() => window.history.back()}>
             <button>

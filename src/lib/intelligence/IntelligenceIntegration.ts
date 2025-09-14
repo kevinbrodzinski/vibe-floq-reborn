@@ -124,16 +124,68 @@ class IntelligenceIntegration {
     };
   }
 
-  async getContextSummary(): Promise<ContextSummary | null> {
+  async getContextualSuggestions(context: {
+    location?: { lat: number; lng: number };
+    time?: Date;
+    weather?: any;
+    recentVibes?: Vibe[];
+    currentReading?: any;
+  }) {
+    if (!this.ensureEnginesInitialized() || !this.predictiveEngine) {
+      return null;
+    }
+
+    try {
+      const hour = context.time?.getHours() || new Date().getHours();
+      const dayOfWeek = context.time?.getDay() || new Date().getDay();
+      
+      const predictiveContext = {
+        hour,
+        dayOfWeek,
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+        weatherCondition: context.weather?.condition
+      };
+
+      const predictions = this.predictiveEngine.predictUpcomingVibes(predictiveContext);
+      
+      // Get context facts and synthesize patterns
+      let contextualReasons: string[] = [];
+      if (this.contextLedger) {
+        const facts = this.contextLedger.getFacts({ limit: 100 });
+        const contextSummary = synthesizeContextSummary(facts);
+        contextualReasons = contextSummary.contextualInsights.map(insight => insight.text);
+      }
+      
+      return {
+        vibePredictions: predictions.map(p => ({
+          vibe: p.vibe,
+          confidence: p.confidence,
+          reasoning: p.reasoning.join('. ')
+        })),
+        contextualReasons,
+        activitySuggestions: [],
+        confidence: predictions.length > 0 ? predictions[0].confidence : 0
+      };
+    } catch (error) {
+      console.error('[Intelligence] Failed to generate contextual suggestions:', error);
+      return null;
+    }
+  }
+
+  async recordContextFact(fact: { kind: any; data: any; t?: number; c?: number }): Promise<string | null> {
     if (!this.ensureEnginesInitialized() || !this.contextLedger) {
       return null;
     }
 
     try {
-      const facts = this.contextLedger.getFacts({ limit: 100 });
-      return synthesizeContextSummary(facts);
+      const factWithId = await this.contextLedger.append({
+        ...fact,
+        t: fact.t || Date.now(),
+        c: fact.c || 0.5
+      });
+      return factWithId.id;
     } catch (error) {
-      console.error('[Intelligence] Failed to get context summary:', error);
+      console.error('[Intelligence] Failed to record context fact:', error);
       return null;
     }
   }

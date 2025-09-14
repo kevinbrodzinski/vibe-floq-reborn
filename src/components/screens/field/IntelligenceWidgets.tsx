@@ -2,6 +2,7 @@ import React from 'react';
 import { IntelligenceCard } from '@/components/intelligence/IntelligenceCard';
 import { ContextualVibeRecommendations } from '@/components/intelligence/ContextualVibeRecommendations';
 import { ContextAwareCard } from '@/components/intelligence/ContextAwareCard';
+import { FrictionReport } from '@/components/intelligence/FrictionReport';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 
 interface IntelligenceWidgetsProps {
@@ -33,17 +34,18 @@ export function IntelligenceWidgets({
   }
 
   return (
-    <div className="space-y-3">
-      <IntelligenceCard 
-        variant="compact" 
-        onViewDetails={onViewIntelligenceDashboard}
-      />
-      <ContextAwareCard compact />
-      <ContextualVibeRecommendations 
-        location={location}
-        weather={weather}
-        compact
-      />
-    </div>
+      <div className="space-y-3">
+        <ContextAwareCard compact />
+        <FrictionReport compact />
+        <IntelligenceCard 
+          variant="compact" 
+          onViewDetails={onViewIntelligenceDashboard}
+        />
+        <ContextualVibeRecommendations 
+          location={location}
+          weather={weather}
+          compact
+        />
+      </div>
   );
 }

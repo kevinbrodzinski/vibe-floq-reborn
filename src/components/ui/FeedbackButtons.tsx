@@ -67,10 +67,7 @@ export const FeedbackButtons = ({
         predicted: suggestedVibe,
         corrected: correctedVibe,
         componentScores: mockComponentScores,
-        confidence,
-        context: {
-          time: new Date()
-        }
+        confidence
       });
 
       onCorrect(correctedVibe);
