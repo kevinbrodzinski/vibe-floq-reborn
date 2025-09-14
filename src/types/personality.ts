@@ -12,6 +12,7 @@ export type PersonalityInsights = {
   confidence: number;            // 0..1
   lastUpdated: number;           // epoch ms
   dataQuality: 'low' | 'medium' | 'high';
+  correctionCount: number;       // For backward compatibility
   
   // Enhanced pattern analysis
   venueImpacts?: import('@/core/vibe/analysis/VenuePatternAnalyzer').VenueImpact[];
