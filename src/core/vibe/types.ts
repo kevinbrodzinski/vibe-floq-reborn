@@ -22,6 +22,8 @@ export type EngineInputs = {
   tempC?: number;                   // optional (weather)
   isDaylight?: boolean;             // optional
   venueArrived?: boolean;           // NEW: arrived state
+  venueType?: string | null;        // coarse class (bar, cafe, gym...)
+  venueEnergyBase?: number | null;  // baseline energy 0..1 from classifier
 };
 
 export type VibeReading = {

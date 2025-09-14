@@ -2,34 +2,36 @@ import * as React from 'react';
 import type { EngineInputs } from './types';
 import { MovementFromLocationTracker } from './collectors/MovementFromLocation';
 import { DwellTracker } from './collectors/DwellTracker';
-import { DeviceUsageTracker } from './collectors/DeviceUsageTracker';
+import { DeviceUsageTracker } from './collectors/DeviceUsage';
+import { VenueClassifier } from './collectors/VenueClassifier';
 import { getWeatherSignal } from './collectors/WeatherCollector';
 
-type Coords = { lat: number; lng: number } | null;
+type LngLat = { lat: number; lng: number } | null;
 
 export function useSignalCollector() {
   const move = React.useRef(new MovementFromLocationTracker());
   const dwell = React.useRef(new DwellTracker());
   const device = React.useRef(new DeviceUsageTracker());
-  const coordsRef = React.useRef<Coords>(null);
+  const venue = React.useRef(new VenueClassifier());
 
-  // Geolocation watch (battery-light, SSR-safe)
+  const coordsRef = React.useRef<LngLat>(null);
+  const arrivedRef = React.useRef(false);
+
+  // Geolocation (battery-light)
   React.useEffect(() => {
     if (typeof window === 'undefined' || !('geolocation' in navigator)) return;
-    let watchId = -1;
+    let id = -1;
     try {
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          coordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        },
+      id = navigator.geolocation.watchPosition(
+        (pos) => { coordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
         () => {},
         { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 }
       );
     } catch {}
-    return () => {
-      try { if (watchId !== -1) navigator.geolocation.clearWatch(watchId); } catch {}
-    };
+    return () => { try { if (id !== -1) navigator.geolocation.clearWatch(id); } catch {} };
   }, []);
+
+  React.useEffect(() => () => device.current.dispose(), []);
 
 
   const collect = React.useCallback((): EngineInputs => {
@@ -40,28 +42,44 @@ export function useSignalCollector() {
     const coords = coordsRef.current ?? undefined;
     const m = move.current.update(coords || undefined);
     dwell.current.update(m.moving01);
+    const dwellMin = Number(dwell.current.dwellMinutes().toFixed(2));
 
-    // Weather: use cached stub (async fetch avoided here)
-    // We keep the last daylight flag in a ref to stay sync/non-blocking.
-    const daylightRef = (collect as any)._daylightRef || ((collect as any)._daylightRef = { v: undefined as boolean | undefined });
-    // Opportunistic refresh (non-blocking)
+    // one-shot arrival edge
+    const justArrived = dwell.current.arrived() && !arrivedRef.current;
+    arrivedRef.current = dwell.current.arrived();
+
+    // foreground ratio since last tick
+    const screenOnRatio01 = device.current.pullRatio();
+
+    // daylight cached (async)
+    const daylightRef = (collect as any)._dayRef || ((collect as any)._dayRef = { v: undefined as boolean | undefined });
     if ((collect as any)._lastWxT == null || Date.now() - (collect as any)._lastWxT > 10 * 60 * 1000) {
       (collect as any)._lastWxT = Date.now();
-      getWeatherSignal(coords?.lat, coords?.lng).then((wx) => (daylightRef.v = wx.isDaylight)).catch(() => {});
+      getWeatherSignal(coords?.lat, coords?.lng).then(wx => (daylightRef.v = wx.isDaylight)).catch(() => {});
     }
 
-    // NEW: screen-on ratio since last collect
-    const screenOnRatio01 = device.current.ratioSinceLastTick();
+    // coarse venue classification (async update of base energy + type)
+    const venueRef = (collect as any)._venue || ((collect as any)._venue = { base: null as number | null, type: null as string | null });
+    if ((collect as any)._lastVenueT == null || Date.now() - (collect as any)._lastVenueT > 5 * 60 * 1000) {
+      (collect as any)._lastVenueT = Date.now();
+      venue.current.classify(coords || undefined).then((v) => {
+        if (v) { venueRef.base = v.energy; venueRef.type = v.type; }
+      }).catch(() => {});
+    }
 
     return {
       hour,
       isWeekend,
       speedMps: m.speedMps,
-      dwellMinutes: Number(dwell.current.dwellMinutes().toFixed(2)),
+      dwellMinutes: dwellMin,
       screenOnRatio01,
       isDaylight: daylightRef.v,
       tempC: undefined,
-      venueArrived: dwell.current.arrived(),
+
+      // new:
+      venueArrived: justArrived,
+      venueType: venueRef.type,
+      venueEnergyBase: venueRef.base,
     };
   }, []);
 
