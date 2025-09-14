@@ -1,5 +1,7 @@
 import { storage } from '@/lib/storage';
-import type { PersonalityInsights } from '@/hooks/usePersonalityInsights';
+import type { PersonalityInsights } from '@/types/personality';
+import { VenuePatternAnalyzer } from '../analysis/VenuePatternAnalyzer';
+import { SequenceDetector } from '../analysis/SequenceDetector';
 
 /**
  * Pattern Storage & Caching System
@@ -32,9 +34,19 @@ export interface PatternRecommendation {
   title: string;
   description: string;
   confidence: number;       // 0-1 confidence in recommendation
-  actionText: string;       // "Try coffee shops 9-11am"
-  relevanceScore: number;   // How relevant to current context
+  actionable: boolean;      // Whether user can act on this
+  context?: any;            // Additional context data
   lastSeen?: Date;          // When user last saw this recommendation
+}
+
+export interface PatternSuggestion {
+  id: string;
+  type: 'venue' | 'sequence' | 'temporal';
+  title: string;
+  description: string;
+  confidence: number;
+  actionable: boolean;
+  context?: any;
 }
 
 class PatternStoreImpl {
@@ -173,8 +185,8 @@ class PatternStoreImpl {
           title: 'Morning Energy Peak',
           description: 'You tend to be most energetic between 6-11am',
           confidence: 0.8,
-          actionText: 'Schedule important activities in the morning',
-          relevanceScore: 0.9
+          actionable: true,
+          context: { timeRange: 'morning', activity: 'important tasks' }
         });
       } else if (insights.chronotype === 'owl') {
         recommendations.push({
@@ -183,8 +195,8 @@ class PatternStoreImpl {
           title: 'Evening Energy Peak',
           description: 'You tend to be most energetic between 5-10pm',
           confidence: 0.8,
-          actionText: 'Save creative work for evening hours',
-          relevanceScore: 0.9
+          actionable: true,
+          context: { timeRange: 'evening', activity: 'creative work' }
         });
       }
 
