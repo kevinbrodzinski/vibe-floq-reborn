@@ -2,10 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { UserLearningSystem } from '@/core/vibe/learning/UserLearningSystem';
 import { PatternStore } from '@/core/vibe/storage/PatternStore';
 import { storage } from '@/lib/storage';
-import type { PersonalityInsights } from '@/types/personality';
+import { EMPTY_INSIGHTS, type PersonalityInsights } from '@/types/personality';
 
-export function usePersonalityInsights(): PersonalityInsights | null {
-  const [insights, setInsights] = useState<PersonalityInsights | null>(null);
+export function usePersonalityInsights(): PersonalityInsights {
+  const [insights, setInsights] = useState<PersonalityInsights>(EMPTY_INSIGHTS);
   const [learningSystem] = useState(() => new UserLearningSystem());
   const [lastCorrectionsHash, setLastCorrectionsHash] = useState<string | null>(null);
 
@@ -28,8 +28,8 @@ export function usePersonalityInsights(): PersonalityInsights | null {
         // If hash hasn't changed, use cached insights
         if (lastCorrectionsHash === correctionsHash) {
           const cached = await PatternStore.getCachedInsights();
-          if (cached) {
-            setInsights(cached.insights);
+          if (cached?.insights) {
+            setInsights({ ...EMPTY_INSIGHTS, ...cached.insights });
             return;
           }
         }
@@ -38,8 +38,8 @@ export function usePersonalityInsights(): PersonalityInsights | null {
         const isCacheValid = await PatternStore.isCacheValid(correctionsHash);
         if (isCacheValid) {
           const cached = await PatternStore.getCachedInsights();
-          if (cached) {
-            setInsights(cached.insights);
+          if (cached?.insights) {
+            setInsights({ ...EMPTY_INSIGHTS, ...cached.insights });
             setLastCorrectionsHash(correctionsHash);
             return;
           }
@@ -48,7 +48,7 @@ export function usePersonalityInsights(): PersonalityInsights | null {
         // Compute fresh insights
         const newInsights = await learningSystem.getPersonalityInsights();
         
-        setInsights(newInsights);
+        setInsights(newInsights ? { ...EMPTY_INSIGHTS, ...newInsights } : EMPTY_INSIGHTS);
         setLastCorrectionsHash(correctionsHash);
 
         // Cache the computed insights
@@ -69,7 +69,8 @@ export function usePersonalityInsights(): PersonalityInsights | null {
 
       } catch (error) {
         console.warn('Failed to calculate personality insights:', error);
-        setInsights(null);
+        // Never set null; keep last value (safe default at worst)
+        setInsights((prev) => prev ?? EMPTY_INSIGHTS);
       }
     };
 

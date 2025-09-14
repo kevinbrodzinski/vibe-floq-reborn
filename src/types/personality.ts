@@ -21,3 +21,17 @@ export type PersonalityInsights = {
   temporalInsights?: import('@/core/vibe/analysis/AdvancedTemporalAnalyzer').TemporalInsight;
   microTemporalPatterns?: import('@/core/vibe/analysis/AdvancedTemporalAnalyzer').MicroTemporalPattern[];
 };
+
+// 🚨 Non-null, safe default used everywhere
+export const EMPTY_INSIGHTS: PersonalityInsights = {
+  hasEnoughData: false,
+  chronotype: 'balanced',
+  energyType: 'balanced',
+  socialType: 'balanced',
+  consistency: 'adaptive',
+  temporalPrefs: {},
+  confidence: 0,
+  lastUpdated: 0,
+  dataQuality: 'low',
+  correctionCount: 0,
+};

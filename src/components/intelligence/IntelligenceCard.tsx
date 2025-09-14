@@ -7,18 +7,22 @@ import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 import { intelligenceIntegration } from '@/lib/intelligence/IntelligenceIntegration';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { EMPTY_INSIGHTS, type PersonalityInsights } from '@/types/personality';
 
 interface IntelligenceCardProps {
   variant?: 'compact' | 'full';
   className?: string;
   onViewDetails?: () => void;
+  insights?: PersonalityInsights | null;
 }
 
 /**
  * Main UI card for surfacing intelligence features in the home screen
  */
-export function IntelligenceCard({ variant = 'compact', className, onViewDetails }: IntelligenceCardProps) {
-  const insights = usePersonalityInsights();
+export function IntelligenceCard({ variant = 'compact', className, onViewDetails, insights: propInsights }: IntelligenceCardProps) {
+  const hookInsights = usePersonalityInsights();
+  // Normalize: prefer prop, else hook, never null
+  const insights = propInsights ?? hookInsights ?? EMPTY_INSIGHTS;
   const [intelligenceState, setIntelligenceState] = React.useState<any>(null);
 
   React.useEffect(() => {
