@@ -212,6 +212,12 @@ export function useVibeEngine(enabled: boolean = true) {
 
       saveSnapshot(r);
 
+      // Expose reading for dev tools
+      if (import.meta.env.DEV && typeof window !== 'undefined') {
+        (window as any).floq ??= {};
+        (window as any).floq.vibeReading = r;
+      }
+
       const hidden = typeof document !== 'undefined' ? document.hidden : false;
       const ms = nextIntervalMs(inputs, hidden);
       schedule(ms);
@@ -219,6 +225,15 @@ export function useVibeEngine(enabled: boolean = true) {
 
     // prime immediately
     requestAnimationFrame(step);
+
+    // Expose forceUpdate in dev mode
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      (window as any).floq ??= {};
+      (window as any).floq.vibeEngine = {
+        ...(window as any).floq.vibeEngine,
+        forceUpdate: () => Promise.resolve().then(() => requestAnimationFrame(step)),
+      };
+    }
 
     // pause/resume on visibility
     const onVis = () => { 

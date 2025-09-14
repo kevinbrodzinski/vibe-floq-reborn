@@ -43,6 +43,7 @@ import { PublicShortlistPage } from "./pages/PublicShortlistPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import FlowReflectionPage from "./pages/FlowReflectionPage";
 import VibeEngineTestPage from "./pages/VibeEngineTestPage";
+import { VibeDevTools } from "./components/vibe/VibeDevTools";
 
 
 const App = () => {
@@ -140,6 +141,7 @@ const App = () => {
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
+                      {import.meta.env.MODE === 'development' && <VibeDevTools />}
                     </BrowserRouter>
                   </TooltipProvider>
                 </BannerProvider>
