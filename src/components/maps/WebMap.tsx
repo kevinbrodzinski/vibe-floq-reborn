@@ -64,9 +64,16 @@ export const WebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         });
 
         map.on('error', e => {
-          console.error('[WebMap] mapbox error →', e.error?.message || e);
+          const msg = e.error?.message;
+          
+          // Ignore benign "layer does not exist" styling races
+          if (msg && msg.includes('does not exist in the map\'s style and cannot be styled')) {
+            return;
+          }
+          
+          console.error('[WebMap] mapbox error →', msg || e);
           if (!aborted) {
-            setErrMsg(e.error?.message);
+            setErrMsg(msg);
             setStatus('error');
           }
         });

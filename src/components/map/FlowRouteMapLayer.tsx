@@ -9,16 +9,61 @@ import { gradientStops } from '@/lib/color/mixOklab';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { usePerfWatchdog } from '@/hooks/usePerfWatchdog';
 
+const ANIM_ID = 'flow:route:anim';
+
+function setAnimOpacitySafe(map: mapboxgl.Map | undefined, alpha: number) {
+  try {
+    if (map && map.getLayer(ANIM_ID)) {
+      map.setPaintProperty(ANIM_ID, 'line-opacity', alpha);
+    }
+  } catch { /* swallow */ }
+}
+
 export function FlowRouteMapLayer(){
   // Respect user motion preferences and performance
   const prefersReducedMotion = usePrefersReducedMotion();
   const { ok: perfOk } = usePerfWatchdog(1000, 40);
   
-  // register spec once
-  useEffect(()=>{ 
-    layerManager.register(createFlowRouteSpec()); 
-    return ()=>layerManager.unregister('flow-route'); 
-  },[]);
+  
+  function ensureFlowLayers(map?: mapboxgl.Map) {
+    if (!map) return;
+    // Only re-register if the anim or main line is missing
+    const missing =
+      !map.getLayer('flow:route:line') ||
+      !map.getLayer('flow:route:path') ||
+      !map.getLayer('flow:route:venues') ||
+      !map.getLayer('flow:route:labels') ||
+      !map.getLayer('flow:route:anim');
+
+    if (missing) {
+      // idempotent: spec only adds what's missing
+      layerManager.register(createFlowRouteSpec());
+    }
+  }
+
+  // register spec once and re-register after style changes
+  useEffect(() => { 
+    const map = getCurrentMap();
+    layerManager.register(createFlowRouteSpec());
+
+    if (map) {
+      // On every style data event, ensure our layers exist again
+      const onStyle = () => ensureFlowLayers(map);
+      map.on('styledata', onStyle);
+
+      // Run once immediately (covers first load)
+      ensureFlowLayers(map);
+
+      return () => {
+        try { 
+          map.off('styledata', onStyle); 
+          layerManager.unregister('flow-route');
+        } catch {}
+      };
+    }
+
+    return () => layerManager.unregister('flow-route'); 
+  }, []);
   
   const [visible,setVisible]=useState(false);
   const [retrace,setRetrace]=useState(false);
@@ -33,7 +78,7 @@ export function FlowRouteMapLayer(){
     });
     const offHide = onEvent(Events.FLOQ_FLOW_HIDE,()=>{
       setVisible(false); setRetrace(false); setFC({ type:'FeatureCollection', features:[] });
-      try{ getCurrentMap()?.setPaintProperty('flow:route:anim','line-opacity',0) }catch{}
+      setAnimOpacitySafe(getCurrentMap(), 0);
     });
     return ()=>{ offShow(); offHide(); };
   },[]);
@@ -47,14 +92,22 @@ export function FlowRouteMapLayer(){
   useEffect(()=>{
     const map=getCurrentMap();
     if (!visible || !retrace || !map || prefersReducedMotion || !perfOk){ 
-      try{ map?.setPaintProperty('flow:route:anim','line-opacity',0) }catch{}; 
+      setAnimOpacitySafe(map, 0); 
       return; 
     }
     let raf=0; const start=performance.now();
-    const step=()=>{ 
+    const step=()=>{
+      const map = getCurrentMap();
+      // If anim layer isn't there yet, poke ensure + try again on next frame
+      if (!map || !map.getLayer(ANIM_ID)) {
+        ensureFlowLayers(map);
+        raf = requestAnimationFrame(step);
+        return;
+      }
+
       const t=(performance.now()-start)%3000; 
       const op=Math.max(0,Math.sin((t/3000)*Math.PI)*0.4);
-      try{ map.setPaintProperty('flow:route:anim','line-opacity', op) }catch{}; 
+      setAnimOpacitySafe(map, op); 
       raf=requestAnimationFrame(step); 
     };
     raf=requestAnimationFrame(step);

@@ -486,8 +486,15 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         
         // Add error handling for map load
         map.on('error', (e) => {
+          const msg: string | undefined = e?.error?.message || e?.message;
+          
+          // Ignore benign "layer does not exist" styling races
+          if (msg && msg.includes('does not exist in the map\'s style and cannot be styled')) {
+            return;
+          }
+          
           // Log but do NOT block rendering for minor 4xx tile/style errors
-          console.warn('[Mapbox warning]', e.error?.message);
+          console.warn('[Mapbox warning]', msg);
         });
 
         // Add user location source and layer
@@ -1039,7 +1046,14 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
         map.on('error',e=>{
           if(dead) return;
-          setErr(e.error?.message || 'unknown');
+          const msg = e.error?.message || 'unknown';
+          
+          // Ignore benign "layer does not exist" styling races
+          if (msg && typeof msg === 'string' && msg.includes('does not exist in the map\'s style and cannot be styled')) {
+            return;
+          }
+          
+          setErr(msg);
           setStatus('error');
         });
       }catch(e:any){
