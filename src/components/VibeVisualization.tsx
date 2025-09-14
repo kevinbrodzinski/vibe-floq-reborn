@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { vibeEmoji } from "@/utils/vibe";
-import { getVibeColor } from "@/utils/getVibeColor";
+import { vibeToHex } from "@/lib/vibe/color";
+import { safeVibe } from '@/lib/vibes';
 
 interface VibeVisualizationProps {
   vibeData: Array<{

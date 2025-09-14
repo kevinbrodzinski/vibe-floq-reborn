@@ -2,7 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getVibeIcon } from '@/utils/vibeIcons';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { cn } from '@/lib/utils';
 
 interface TimelineEntry {
@@ -54,7 +55,7 @@ export const TimelineCarousel: React.FC<TimelineCarouselProps> = ({ onVibeSelect
                 "hover:bg-card/60 hover:scale-105 active:scale-95"
               )}
               style={{
-                borderColor: getVibeColor(entry.vibe) + '40',
+                borderColor: vibeToHex(safeVibe(entry.vibe)) + '40',
               }}
               onClick={() => handleChipClick(entry.vibe)}
               initial={{ opacity: 0, x: 20 }}

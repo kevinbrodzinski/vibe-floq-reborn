@@ -66,7 +66,7 @@ import { openNativeMaps } from '@/utils/nativeNavigation';
 import { useState, useEffect } from 'react';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
-import { vibeToBorder } from '@/utils/vibeColors';
+import { vibeToHex } from '@/lib/vibe/color';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -1,5 +1,6 @@
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { useProfileStats, VibeEntry } from '@/hooks/useProfileStats';
 import { Card } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';

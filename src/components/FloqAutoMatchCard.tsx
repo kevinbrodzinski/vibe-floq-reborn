@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { useFloqAutoMatch } from "@/hooks/useEnhancedVenueDetails";
 import { vibeEmoji } from "@/utils/vibe";
-import { getVibeColor } from "@/utils/getVibeColor";
+import { vibeToHex } from "@/lib/vibe/color";
 
 interface FloqAutoMatchCardProps {
   profileId: string | null;

@@ -19,7 +19,8 @@ import {
   PieChart as PieChartIcon,
   LineChart as LineChartIcon
 } from 'lucide-react';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { VIBES } from '@/lib/vibes';
 import { cn } from '@/lib/utils';
 

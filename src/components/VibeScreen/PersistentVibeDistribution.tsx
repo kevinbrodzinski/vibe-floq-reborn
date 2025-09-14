@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { VIBES } from '@/lib/vibes';
-import { VIBE_RGB } from '@/constants/vibes';
+import { VIBE_RGB } from '@/lib/vibes';
 
 interface VibeDistributionData {
   name: string;

@@ -19,7 +19,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { VibeSystemIntegration, type EnhancedSocialContextData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { getVibeIcon } from '@/utils/vibeIcons';
 import { cn } from '@/lib/utils';
 import { useRealProximityData } from '@/hooks/useRealProximityData';
@@ -180,14 +181,14 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
                         <div className="relative">
                           <div 
                             className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
-                            style={{ borderColor: getVibeColor(hotspot.dominantVibe) }}
+                            style={{ borderColor: vibeToHex(safeVibe(hotspot.dominantVibe)) }}
                           >
                             <span className="text-sm">{getVibeIcon(hotspot.dominantVibe)}</span>
                           </div>
                           <div 
                             className="absolute -inset-1 rounded-full border opacity-30"
                             style={{ 
-                              borderColor: getVibeColor(hotspot.dominantVibe),
+                              borderColor: vibeToHex(safeVibe(hotspot.dominantVibe)),
                               borderWidth: Math.max(1, hotspot.intensity * 3)
                             }}
                           />
@@ -310,8 +311,8 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
                                 value={hotspot.socialMetrics.vibeCoherence * 100}
                                 className="h-1.5"
                                 style={{
-                                  '--progress-background': `${getVibeColor(hotspot.dominantVibe)}20`,
-                                  '--progress-foreground': getVibeColor(hotspot.dominantVibe)
+                                  '--progress-background': `${vibeToHex(safeVibe(hotspot.dominantVibe))}20`,
+                                  '--progress-foreground': vibeToHex(safeVibe(hotspot.dominantVibe))
                                 } as any}
                               />
                             </div>

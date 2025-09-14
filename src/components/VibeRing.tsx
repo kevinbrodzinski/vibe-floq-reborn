@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
 import type { Vibe } from '@/types';
 
 interface VibeRingProps {
@@ -11,7 +11,7 @@ interface VibeRingProps {
 }
 
 export function VibeRing({ vibe, pulse=false, className, children }: VibeRingProps) {
-  const hsl = getVibeColor(vibe); // "hsl(300 90% 60%)"
+  const hsl = vibeToHex(vibe); // "#ff4757"
   return (
     <div
       style={{ ['--ring-color' as any]: hsl }}

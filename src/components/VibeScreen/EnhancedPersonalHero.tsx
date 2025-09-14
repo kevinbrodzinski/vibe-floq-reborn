@@ -17,7 +17,8 @@ import {
   Activity
 } from 'lucide-react';
 import { useCurrentVibe } from '@/lib/store/useVibe';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { getVibeIcon } from '@/utils/vibeIcons';
 import { usePulseTime } from '@/hooks/usePulseTime';
 import { VibeSystemIntegration, type EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
@@ -119,15 +120,15 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
               <motion.div 
                 className="relative w-12 h-12 rounded-full border-2 flex items-center justify-center"
                 style={{
-                  borderColor: getVibeColor(vibe || 'chill'),
+                  borderColor: vibeToHex(safeVibe(vibe) || 'chill'),
                   scale: pulseScale,
-                  boxShadow: `0 0 ${20 * glowIntensity}px ${getVibeColor(vibe || 'chill')}40`
+                  boxShadow: `0 0 ${20 * glowIntensity}px ${vibeToHex(safeVibe(vibe) || 'chill')}40`
                 }}
               >
                 {/* Inner core */}
                 <div 
                   className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: getVibeColor(vibe || 'chill') }}
+                  style={{ backgroundColor: vibeToHex(safeVibe(vibe) || 'chill') }}
                 />
                 
                 {/* Quality ring overlay */}
@@ -135,7 +136,7 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
                   className="absolute inset-0 rounded-full border-2 border-white/20"
                   style={{
                     rotate: pulseTime * 360,
-                    borderTopColor: `${getVibeColor(vibe || 'chill')}80`
+                    borderTopColor: `${vibeToHex(safeVibe(vibe) || 'chill')}80`
                   }}
                 />
               </motion.div>
@@ -257,8 +258,8 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
               value={heroData.accuracy * 100} 
               className="h-1.5"
               style={{
-                '--progress-background': `${getVibeColor(vibe || 'chill')}20`,
-                '--progress-foreground': getVibeColor(vibe || 'chill')
+                '--progress-background': `${vibeToHex(safeVibe(vibe) || 'chill')}20`,
+                '--progress-foreground': vibeToHex(safeVibe(vibe) || 'chill')
               } as any}
             />
           </div>

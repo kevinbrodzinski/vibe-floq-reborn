@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Palette, Brain, TrendingUp, Star, Sparkles } from 'lucide-react';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { VIBES } from '@/lib/vibes';
 import { cn } from '@/lib/utils';
 
