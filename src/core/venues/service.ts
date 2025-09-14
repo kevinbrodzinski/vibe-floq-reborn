@@ -1,9 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { VenueClass, VenueType } from './types';
-import { mapCategoriesToVenueType } from './category-mapper';
+import { mapCategoriesToVenueType, venueTypeToVibeDist } from './category-mapper';
 import { googleNearby } from './provider/PlacesClient';
 import { fsqNearby } from './provider/FoursquareClient';
 import { getCached, setCached, coalesce } from './cache';
+import { incrVenue } from '@/lib/telemetry/venues';
 
 type VenuePayload = { 
   name: string | null; 
@@ -31,8 +32,12 @@ function gridKey(p: { lat: number; lng: number }) {
 export async function fetchVenue(lat: number, lng: number): Promise<VenuePayload> {
   const key = gridKey({ lat, lng });
   const cached = getCached<VenuePayload>(key);
-  if (cached) return cached;
+  if (cached) {
+    incrVenue('clientCacheHits');
+    return cached;
+  }
 
+  incrVenue('venueFetch');
   return coalesce(key, async () => {
     try {
       const { data, error } = await supabase.functions.invoke('venues-proxy', {
@@ -137,24 +142,19 @@ export async function classifyVenue(lat: number, lng: number): Promise<VenueClas
 }
 
 function deriveEnergyFromType(vt: VenueType): number {
-  const energyMap: Record<VenueType, number> = {
-    nightclub: 0.9,
-    bar: 0.7,
-    coffee: 0.6,
-    restaurant: 0.6,
-    gym: 0.8,
-    park: 0.4,
-    office: 0.5,
-    school: 0.4,
-    museum: 0.4,
-    theater: 0.5,
-    music_venue: 0.8,
-    stadium: 0.9,
-    hotel: 0.4,
-    store: 0.5,
-    transit: 0.3,
-    home: 0.3,
-    general: 0.5
+  const dist = venueTypeToVibeDist(vt);
+  
+  const energy: Record<string, number> = {
+    hype: 1, energetic: 0.9, excited: 0.85, social: 0.75, flowing: 0.65, 
+    open: 0.6, curious: 0.55, focused: 0.55, romantic: 0.5, chill: 0.45, 
+    solo: 0.4, weird: 0.6, down: 0.3
   };
-  return energyMap[vt] ?? 0.5;
+  
+  let s = 0, w = 0;
+  for (const [v, p] of Object.entries(dist)) { 
+    const probability = Number(p) || 0;
+    s += (energy[v] ?? 0.5) * probability; 
+    w += probability; 
+  }
+  return Number((w ? s / w : 0.5).toFixed(2));
 }

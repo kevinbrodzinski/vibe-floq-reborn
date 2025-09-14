@@ -1,6 +1,7 @@
 import { RateLimiter, withBackoff } from './RateLimiter';
 import { getCached, setCached, coalesce } from '../cache';
 import type { ProviderResult } from '../types';
+import { incrVenue } from '@/lib/telemetry/venues';
 
 const API = 'https://api.foursquare.com/v3/places/search';
 const TTL = 90_000;
@@ -9,10 +10,14 @@ const limiter = new RateLimiter(5, 5);
 export async function fsqNearby(lat: number, lng: number, key: string): Promise<ProviderResult | null> {
   const ck = `fsq:nearby:${lat.toFixed(4)},${lng.toFixed(4)}`;
   const cached = getCached<ProviderResult>(ck); 
-  if (cached) return { ...cached, provider: 'foursquare' };
+  if (cached) {
+    incrVenue('clientCacheHits');
+    return { ...cached, provider: 'foursquare' };
+  }
 
   return coalesce(ck, async () => {
     await limiter.take();
+    incrVenue('fsqHits');
     const url = new URL(API);
     url.searchParams.set('ll', `${lat.toFixed(6)},${lng.toFixed(6)}`);
     url.searchParams.set('limit', '1'); 

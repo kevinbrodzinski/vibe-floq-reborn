@@ -177,7 +177,17 @@ serve(async (req) => {
       "Cache-Control": `public, max-age=${CFG.CLIENT_TTL_S}`,
     };
     
-    return new Response(JSON.stringify({ venue: payload }), { headers });
+    return new Response(
+      JSON.stringify({ 
+        venue: payload,
+        meta: { 
+          rateLimited: payload?.rateLimited ?? false,
+          providersUsed: payload?.providers?.length ?? 0,
+          gridKey: gridKey ?? `${lat.toFixed(4)},${lng.toFixed(4)}`
+        }
+      }), 
+      { headers }
+    );
   } catch (e) {
     console.error('[venues-proxy] Error:', e);
     return new Response(JSON.stringify({ error: String(e) }), { 

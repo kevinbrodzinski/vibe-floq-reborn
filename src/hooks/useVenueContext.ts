@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { VenueClass } from '@/core/venues/types';
-import { fetchVenue } from '@/core/venues/service';
+import { fetchVenue, classifyVenue } from '@/core/venues/service';
+import { calculateDistance } from '@/lib/location/standardGeo';
+
+const MIN_MOVE_M = 120;
 
 export function useVenueContext() {
   const [venue, setVenue] = useState<VenueClass | null>(null);
   const [loading, setLoading] = useState(false);
+  const lastLocationRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -18,28 +22,27 @@ export function useVenueContext() {
           async (pos) => {
             if (cancelled) return;
             
-            try {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              const venueData = await fetchVenue(lat, lng);
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            
+            // Movement gate - only update if we've moved significantly
+            const movedEnough = !lastLocationRef.current ||
+              calculateDistance(lastLocationRef.current, { lat, lng }) > MIN_MOVE_M;
               
-              if (!cancelled && venueData) {
-                // Convert venue payload to VenueClass
-                const venueClass: VenueClass = {
-                  type: 'general', // Will be enhanced by category mapper
-                  energyBase: 0.5,
-                  name: venueData.name || undefined,
-                  provider: venueData.providers?.[0] as any || 'gps',
-                  lat,
-                  lng,
-                  categories: venueData.categories,
-                  confidence01: venueData.confidence || 0.5
-                };
-                
+            if (!movedEnough) {
+              setLoading(false);
+              return;
+            }
+            
+            lastLocationRef.current = { lat, lng };
+            
+            try {
+              const venueClass = await classifyVenue(lat, lng);
+              if (!cancelled) {
                 setVenue(venueClass);
               }
             } catch (error) {
-              console.error('Error fetching venue:', error);
+              console.error('Error classifying venue:', error);
             } finally {
               if (!cancelled) setLoading(false);
             }
