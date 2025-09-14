@@ -72,10 +72,36 @@ class IntelligenceIntegration {
     corrected: Vibe;
     componentScores: Record<ComponentKey, number>;
     confidence: number;
+    context?: {
+      lat?: number;
+      lng?: number;
+      nearbyFriends?: number;
+      sessionDurationMin?: number;
+      venueType?: string;
+    };
   }) {
-    const { predicted, corrected, componentScores, confidence } = params;
+    const { predicted, corrected, componentScores, confidence, context } = params;
 
     try {
+      // Enhanced learning with multi-context
+      const { learnFromEnhancedCorrection } = await import('@/core/patterns/enhanced-learning');
+      
+      await learnFromEnhancedCorrection({
+        predicted,
+        corrected,
+        confidence,
+        componentScores,
+        timestamp: Date.now(),
+        lat: context?.lat,
+        lng: context?.lng,
+        nearbyFriends: context?.nearbyFriends,
+        sessionDurationMin: context?.sessionDurationMin,
+        venueType: context?.venueType,
+        hourOfDay: new Date().getHours(),
+        dwellMinutes: context?.sessionDurationMin || 30
+      });
+
+      // Legacy learning system (still needed for component scores)
       learnFromCorrection({
         predicted,
         target: corrected,

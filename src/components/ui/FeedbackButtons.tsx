@@ -50,6 +50,39 @@ export const FeedbackButtons = ({
         navigator.vibrate(80);
       }
 
+      // Get context for enhanced learning
+      const getContext = async () => {
+        try {
+          // Get location context
+          const geoPermission = await navigator.permissions.query({ name: 'geolocation' });
+          let coords: { lat: number; lng: number } | undefined;
+          
+          if (geoPermission.state === 'granted') {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 2000 });
+            });
+            coords = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+          }
+
+          // Get social context (simple approach without importing hooks)
+          const friendData = sessionStorage.getItem('nearby-friends-cache');
+          const nearbyFriends = friendData ? JSON.parse(friendData).filter((f: any) => f.distance <= 100).length : 0;
+
+          return {
+            lat: coords?.lat,
+            lng: coords?.lng,
+            nearbyFriends,
+            sessionDurationMin: 30 // Default session duration
+          };
+        } catch (error) {
+          console.warn('[FeedbackButtons] Failed to get context:', error);
+          return {};
+        }
+      };
+
       // Import intelligence integration
       const { intelligenceIntegration } = await import('@/lib/intelligence/IntelligenceIntegration');
       
@@ -62,12 +95,15 @@ export const FeedbackButtons = ({
         weather: 0.6
       };
 
-      // Record the correction with intelligence system
+      const context = await getContext();
+
+      // Record the correction with enhanced intelligence system
       await intelligenceIntegration.handleVibeCorrection({
         predicted: suggestedVibe,
         corrected: correctedVibe,
         componentScores: mockComponentScores,
-        confidence
+        confidence,
+        context
       });
 
       onCorrect(correctedVibe);

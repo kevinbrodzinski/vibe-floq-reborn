@@ -44,6 +44,17 @@ export async function learnFromEnhancedCorrection(
             correctedVibe: context.corrected
           });
         }
+        
+        // Emit learning event for UI feedback
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('pattern-learning', {
+            detail: {
+              type: 'gps',
+              message: `Learned preference for ${insights.isFrequentSpot ? 'frequent spot' : 'new location'}`,
+              confidence: insights.isFrequentSpot ? 0.8 : 0.6
+            }
+          }));
+        }
       }
     } catch (error) {
       console.warn('GPS cluster learning failed:', error);
@@ -73,6 +84,17 @@ export async function learnFromEnhancedCorrection(
           correctedVibe: context.corrected,
           energyDelta
         });
+      }
+      
+      // Emit learning event for UI feedback
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('pattern-learning', {
+          detail: {
+            type: 'social',
+            message: `Learning ${socialContext} vibe preferences`,
+            confidence: Math.min(0.9, 0.5 + (context.nearbyFriends || 0) * 0.1)
+          }
+        }));
       }
     } catch (error) {
       console.warn('Social context learning failed:', error);

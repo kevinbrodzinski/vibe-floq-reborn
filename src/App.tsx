@@ -27,6 +27,7 @@ import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 
 import { ProductionModeGuard } from "@/components/ProductionModeGuard";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
+import { PatternLearningIndicator } from "@/components/intelligence/PatternLearningIndicator";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { BootScreen } from "@/components/ui/BootScreen";
@@ -128,6 +129,7 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <NetworkStatusBanner />
+                    <PatternLearningIndicator />
                     <BrowserRouter>
                       <RouterLedger />
                       <PlanInviteProvider />

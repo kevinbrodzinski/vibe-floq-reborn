@@ -8,7 +8,7 @@ export type VenueClass = {
   type: VenueType; 
   energy: number; 
   name?: string; 
-  provider?: 'fsq'|'google'; 
+  provider?: 'fsq'|'google'|'gps'; 
   distanceM?: number; 
 };
 
@@ -113,9 +113,45 @@ export class VenueClassifier {
         return out;
       } catch (error) {
         if (import.meta.env.DEV) {
-          console.warn('[VenueClassifier] Places API failed, using fallback:', error);
+          console.warn('[VenueClassifier] Places API failed, trying GPS fallback:', error);
         }
-        // Graceful fallback
+        
+        // GPS venue fallback integration
+        try {
+          const { getOrCreateCluster, getClusterInsights } = await import('@/core/patterns/gps-clustering');
+          const cluster = await getOrCreateCluster(p.lat, p.lng, 0);
+          
+          if (cluster) {
+            const insights = getClusterInsights(cluster);
+            
+            // Use cluster data for venue classification
+            const fallback: VenueClass = {
+              type: cluster.dominantVibe ? this.mapVibeToVenueType(cluster.dominantVibe) : 'general',
+              energy: insights.isFrequentSpot ? 0.7 : 0.5,
+              name: cluster.userLabel || 'Frequent spot',
+              provider: 'gps',
+              distanceM: 0 // At the cluster center
+            };
+            
+            if (import.meta.env.DEV) {
+              console.log('[VenueClassifier] GPS fallback successful:', {
+                clusterId: cluster.id,
+                type: fallback.type,
+                isFrequent: insights.isFrequentSpot
+              });
+            }
+            
+            this.cache.set(key, fallback);
+            this.inflight.delete(key);
+            return fallback;
+          }
+        } catch (gpsError) {
+          if (import.meta.env.DEV) {
+            console.warn('[VenueClassifier] GPS fallback also failed:', gpsError);
+          }
+        }
+        
+        // Final fallback
         const fallback: VenueClass = { type: 'general', energy: 0.5 };
         this.cache.set(key, fallback);
         this.inflight.delete(key);
@@ -125,5 +161,18 @@ export class VenueClassifier {
 
     this.inflight.set(key, job);
     return job;
+  }
+
+  // Map vibe to likely venue type for GPS fallback
+  private mapVibeToVenueType(vibe: string): VenueType {
+    const vibeToVenue: Record<string, VenueType> = {
+      'hype': 'nightclub',
+      'social': 'bar',
+      'chill': 'coffee', 
+      'focused': 'office',
+      'flowing': 'park',
+      'romantic': 'restaurant'
+    };
+    return vibeToVenue[vibe] || 'general';
   }
 }
