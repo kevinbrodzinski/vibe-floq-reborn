@@ -1,5 +1,5 @@
 import { weightedHue, blendHue } from './color';
-import { VIBE_RGB } from '@/constants/vibes';
+import { VIBE_RGB } from '@/lib/vibes';
 import type { Vibe } from '@/lib/vibes';
 
 export interface VibeMatchResult {

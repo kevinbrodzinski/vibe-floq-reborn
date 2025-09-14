@@ -1,20 +1,9 @@
 // Single canonical source of truth for vibes
 // These are the vibes that appear on the vibe wheel and are used throughout the UI
+// Enforce at compile-time that VIBES is only values of Vibe:
 export const VIBES = [
-  'chill',
-  'flowing', 
-  'romantic',
-  'hype',
-  'weird',
-  'solo',
-  'social',
-  'open',
-  'down',
-  'curious',
-  'energetic',
-  'excited',
-  'focused',
-] as const;
+  'chill','flowing','romantic','hype','weird','solo','social','open','down','curious','energetic','excited','focused',
+] as const satisfies readonly Vibe[];
 
 import { Database } from '@/integrations/supabase/types';
 
@@ -81,3 +70,18 @@ export const VIBE_COLORS: Record<Vibe, string> = {
   excited:  `rgb(${VIBE_RGB.excited.join(', ')})`,
   focused:  `rgb(${VIBE_RGB.focused.join(', ')})`,
 };
+
+// Optional dev assert on boot:
+if (import.meta && (import.meta as any).env?.DEV) {
+  const ui = new Set(VIBES);
+  const db = new Set<Vibe>([
+    "chill","hype","curious","social","solo","romantic","weird","down","flowing","open","energetic","excited","focused"
+  ]);
+  for (const k of [...ui, ...db]) {
+    if (!ui.has(k) || !db.has(k)) {
+      // eslint-disable-next-line no-console
+      console.warn("[vibes] UI/DB mismatch:", { ui: [...ui], db: [...db] });
+      break;
+    }
+  }
+}
