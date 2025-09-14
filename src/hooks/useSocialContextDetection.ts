@@ -13,11 +13,21 @@ export function useSocialContextDetection() {
   useEffect(() => {
     const updateSocialContext = () => {
       try {
-        // Get cached friend data (set by friend distance systems)
-        const friendData = sessionStorage.getItem('nearby-friends-cache');
-        const nearbyFriends = friendData 
-          ? JSON.parse(friendData).filter((f: any) => f.distance && f.distance <= 100).length 
-          : 0;
+        // Get cached friend data with safe session storage access
+        let nearbyFriends = 0;
+        if (typeof window !== 'undefined') {
+          try {
+            const friendData = sessionStorage.getItem('nearby-friends-cache');
+            if (friendData) {
+              const friends = JSON.parse(friendData);
+              nearbyFriends = Array.isArray(friends) 
+                ? friends.filter((f: any) => f?.distance && f.distance <= 100).length 
+                : 0;
+            }
+          } catch (parseError) {
+            console.warn('[SocialContext] Failed to parse friend data:', parseError);
+          }
+        }
         
         const detectedContext = detectSocialContext(nearbyFriends);
         setSocialContext(detectedContext);

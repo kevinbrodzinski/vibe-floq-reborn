@@ -1,7 +1,28 @@
 // GPS-based venue clustering for missing venue intelligence
-import { latLngToCell, cellToLatLng, gridDisk } from 'h3-js';
 import { readClusters, writeClusters } from './service';
 import type { VenueCluster, VenueClusters } from './store';
+
+// Dynamic H3 import for better compatibility
+let h3: any | null = null;
+async function ensureH3() {
+  if (h3) return h3;
+  try {
+    h3 = await import('h3-js');
+  } catch (error) {
+    console.warn('[GPS Clustering] H3 not available, using fallback:', error);
+    h3 = null;
+  }
+  return h3;
+}
+
+// Fallback cell generation when H3 unavailable
+function fallbackCell(lat: number, lng: number): string {
+  // Simple grid-based fallback (~200m cells)
+  const gridSize = 0.002; // ~200m at equator
+  const gridLat = Math.floor(lat / gridSize) * gridSize;
+  const gridLng = Math.floor(lng / gridSize) * gridSize;
+  return `fallback_${gridLat.toFixed(6)}_${gridLng.toFixed(6)}`;
+}
 
 // H3 precision 9 ≈ 50m hexagons - good balance of privacy and accuracy
 const H3_PRECISION = 9;
@@ -16,7 +37,19 @@ export async function getOrCreateCluster(
   if (!isValidCoordinate(lat, lng)) return null;
 
   try {
-    const h3Index = latLngToCell(lat, lng, H3_PRECISION);
+    const H3 = await ensureH3();
+    let h3Index: string;
+    let center: { lat: number; lng: number };
+    
+    if (H3?.latLngToCell) {
+      h3Index = H3.latLngToCell(lat, lng, H3_PRECISION);
+      const centerCoords = H3.cellToLatLng(h3Index);
+      center = { lat: centerCoords[0], lng: centerCoords[1] };
+    } else {
+      h3Index = fallbackCell(lat, lng);
+      center = { lat, lng }; // Use original coords for fallback
+    }
+
     const record = await readClusters();
     const clusters: VenueClusters = record.data;
     
@@ -24,10 +57,9 @@ export async function getOrCreateCluster(
     
     if (!cluster) {
       // Create new cluster
-      const center = cellToLatLng(h3Index);
       clusters[h3Index] = {
         id: h3Index,
-        center: { lat: center[0], lng: center[1] },
+        center,
         radiusM: 50, // Default 50m radius
         visitCount: 1,
         totalDwellMin: dwellMinutes,
@@ -59,13 +91,20 @@ export async function findNearbyClusters(
   if (!isValidCoordinate(lat, lng)) return [];
 
   try {
-    const centerH3 = latLngToCell(lat, lng, H3_PRECISION);
+    const H3 = await ensureH3();
     const record = await readClusters();
     const clusters: VenueClusters = record.data;
     
-    // Get all hexagons within approximate radius
-    const searchRadius = Math.ceil(radiusM / 100); // rough conversion to H3 rings
-    const nearbyHexes = gridDisk(centerH3, searchRadius);
+    let nearbyHexes: string[];
+    
+    if (H3?.latLngToCell && H3?.gridDisk) {
+      const centerH3 = H3.latLngToCell(lat, lng, H3_PRECISION);
+      const searchRadius = Math.ceil(radiusM / 100); // rough conversion to H3 rings
+      nearbyHexes = H3.gridDisk(centerH3, searchRadius);
+    } else {
+      // Fallback: check all clusters within distance
+      nearbyHexes = Object.keys(clusters);
+    }
     
     const nearbyClusters: VenueCluster[] = [];
     

@@ -53,23 +53,35 @@ export const FeedbackButtons = ({
       // Get context for enhanced learning
       const getContext = async () => {
         try {
-          // Get location context
-          const geoPermission = await navigator.permissions.query({ name: 'geolocation' });
+          // Get location context with safe geolocation
           let coords: { lat: number; lng: number } | undefined;
           
-          if (geoPermission.state === 'granted') {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 2000 });
+          if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+            coords = await new Promise<{ lat: number; lng: number } | undefined>((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                (position) => resolve({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude
+                }),
+                () => resolve(undefined), // Soft fail on error
+                { timeout: 2000 }
+              );
             });
-            coords = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
           }
 
-          // Get social context (simple approach without importing hooks)
-          const friendData = sessionStorage.getItem('nearby-friends-cache');
-          const nearbyFriends = friendData ? JSON.parse(friendData).filter((f: any) => f.distance <= 100).length : 0;
+          // Get social context with safe session storage
+          let nearbyFriends = 0;
+          if (typeof window !== 'undefined') {
+            try {
+              const friendData = sessionStorage.getItem('nearby-friends-cache');
+              if (friendData) {
+                const friends = JSON.parse(friendData);
+                nearbyFriends = Array.isArray(friends) ? friends.filter((f: any) => f?.distance <= 100).length : 0;
+              }
+            } catch (error) {
+              console.warn('[FeedbackButtons] Failed to parse friend data:', error);
+            }
+          }
 
           return {
             lat: coords?.lat,

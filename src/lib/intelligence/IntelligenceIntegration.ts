@@ -125,26 +125,24 @@ class IntelligenceIntegration {
           const venueFacts = this.contextLedger.getFactsByKind<VenueFact>('venue');
           const latestVenueFact = venueFacts?.slice(-1)[0];
 
-          const venueType =
-            (latestVenueFact?.data as any)?.type ||
-            this.extractVenueType((this as any).currentVenueIntelligence) ||
+          const venueType: string =
+            (latestVenueFact?.data as { type?: string })?.type ||
+            this.extractVenueType(context?.venueType) ||
             'general';
 
           if (venueType) {
             const v = await readVenueImpacts();
+            const energyDelta = Math.max(-1, Math.min(1, (componentScores.venueEnergy ?? 0) - 0.5));
             v.data[venueType] = evolveVenueImpact(v.data[venueType], {
-              energyDelta: Math.max(
-                -1,
-                Math.min(1, (componentScores.venueEnergy ?? 0) - 0.5)
-              ),
+              energyDelta,
               preferredVibe: corrected,
-              // dwellMin: attach if available
+              dwellMin: context?.sessionDurationMin
             });
             await writeVenueImpacts(v);
             
             if (import.meta.env.DEV) {
               console.log(`[Patterns] Evolved venue ${venueType}:`, {
-                energyDelta: ((componentScores.venueEnergy ?? 0) - 0.5).toFixed(3),
+                energyDelta: energyDelta.toFixed(3),
                 preferredVibe: corrected,
                 sampleCount: v.data[venueType]?.sampleN,
                 confidence: confidence.toFixed(2)

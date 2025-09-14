@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Brain, MapPin, Users, Clock, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChartErrorBoundary } from '@/components/ui/ChartErrorBoundary';
 
 interface LearningEvent {
   type: 'gps' | 'social' | 'temporal' | 'venue';
@@ -15,6 +16,7 @@ interface LearningEvent {
 export function PatternLearningIndicator() {
   const [events, setEvents] = useState<LearningEvent[]>([]);
   const [showIndicator, setShowIndicator] = useState(false);
+  const timeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
     // Listen for pattern learning events
@@ -23,18 +25,33 @@ export function PatternLearningIndicator() {
       setEvents(prev => [newEvent, ...prev.slice(0, 4)]); // Keep last 5 events
       setShowIndicator(true);
       
-      // Auto-hide after 3 seconds
-      setTimeout(() => {
-        setEvents(prev => prev.filter(e => e.timestamp !== newEvent.timestamp));
-        if (events.length <= 1) {
-          setShowIndicator(false);
-        }
+      // Auto-hide after 3 seconds with proper cleanup
+      const timeout = window.setTimeout(() => {
+        setEvents(prev => {
+          const filtered = prev.filter(e => e.timestamp !== newEvent.timestamp);
+          if (filtered.length === 0) {
+            setShowIndicator(false);
+          }
+          return filtered;
+        });
       }, 3000);
+      
+      timeoutsRef.current.push(timeout);
     };
 
-    window.addEventListener('pattern-learning' as any, handleLearningEvent);
-    return () => window.removeEventListener('pattern-learning' as any, handleLearningEvent);
-  }, [events.length]);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pattern-learning' as any, handleLearningEvent);
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pattern-learning' as any, handleLearningEvent);
+      }
+      // Clean up all timeouts
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+    };
+  }, []);
 
   const getIcon = (type: string) => {
     switch (type) {

@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, Area
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ChartErrorBoundary, PatternDataGuard } from '@/components/ui/ChartErrorBoundary';
 import { TrendingUp, Clock, Zap, Target } from 'lucide-react';
 import { vibeToHex } from '@/lib/vibe/color';
 import { safeVibe } from '@/lib/vibes';
@@ -198,9 +199,11 @@ export const VibeFlowChart: React.FC<VibeFlowChartProps> = ({
       </div>
 
       {/* Chart */}
-      <div className="h-48 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={flowData}>
+      <ChartErrorBoundary>
+        <PatternDataGuard sampleCount={flowData.length} minSamples={3}>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={flowData}>
             <defs>
               <linearGradient id="vibeGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="rgb(99, 102, 241)" stopOpacity={0.3}/>
@@ -259,7 +262,9 @@ export const VibeFlowChart: React.FC<VibeFlowChartProps> = ({
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+          </div>
+        </PatternDataGuard>
+      </ChartErrorBoundary>
 
       {/* Selected Point Details */}
       <AnimatePresence>

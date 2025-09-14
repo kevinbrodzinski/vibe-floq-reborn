@@ -15,6 +15,15 @@ export interface EnhancedCorrectionContext extends CorrectionContext {
   sessionDurationMin?: number;
 }
 
+// Confidence gates for pattern learning
+export const PATTERN_CONFIDENCE_GATES = {
+  MIN_SAMPLE_SIZE: 3,
+  MIN_CONFIDENCE: 0.6,
+  HIGH_CONFIDENCE: 0.8,
+  VENUE_MIN_VISITS: 5,
+  SOCIAL_MIN_SESSIONS: 3
+} as const;
+
 // Main entry point for enhanced pattern learning
 export async function learnFromEnhancedCorrection(
   context: EnhancedCorrectionContext
@@ -22,8 +31,8 @@ export async function learnFromEnhancedCorrection(
   // Always run base learning
   await baseLearnFromCorrection(context);
   
-  // GPS-based venue clustering (when venue intelligence is missing)
-  if (context.lat && context.lng && !context.venueType) {
+  // GPS-based venue clustering (only with sufficient confidence)
+  if (context.lat && context.lng && !context.venueType && context.confidence >= PATTERN_CONFIDENCE_GATES.MIN_CONFIDENCE) {
     try {
       const cluster = await getOrCreateCluster(
         context.lat, 
@@ -61,8 +70,8 @@ export async function learnFromEnhancedCorrection(
     }
   }
   
-  // Social context pattern learning
-  if (typeof context.nearbyFriends === 'number') {
+  // Social context pattern learning (only with sufficient confidence)
+  if (typeof context.nearbyFriends === 'number' && context.confidence >= PATTERN_CONFIDENCE_GATES.MIN_CONFIDENCE) {
     try {
       const socialContext = context.socialContext || detectSocialContext(context.nearbyFriends);
       const sessionDuration = context.sessionDurationMin || 30; // default session length
