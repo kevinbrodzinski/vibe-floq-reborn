@@ -21,6 +21,7 @@ export type EngineInputs = {
   screenOnRatio01?: number;         // device activity 0..1
   tempC?: number;                   // optional (weather)
   isDaylight?: boolean;             // optional
+  venueArrived?: boolean;           // NEW: arrived state
 };
 
 export type VibeReading = {

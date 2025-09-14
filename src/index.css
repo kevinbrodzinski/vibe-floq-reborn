@@ -399,6 +399,7 @@ All colors MUST be HSL.
     /* Vibe Engine CSS Variables */
     --vibe-alpha: 0.8;
     --vibe-hex: #8B5CF6;
+    --vibe-sat: 0.9;
 }
 
 @layer components {
@@ -507,6 +508,13 @@ All colors MUST be HSL.
   .vibe-ring {
     opacity: var(--vibe-alpha);
     border-color: var(--vibe-hex);
+  }
+
+  /* Vibe-colored elements with saturation control */
+  .vibe-colored {
+    color: var(--vibe-hex);
+    opacity: var(--vibe-alpha);
+    filter: saturate(var(--vibe-sat));
   }
 
   /* Transition utilities */

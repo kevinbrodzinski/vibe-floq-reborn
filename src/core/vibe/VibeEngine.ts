@@ -15,16 +15,20 @@ function movementScore(speedMps: number | undefined) {
   return Math.max(0, Math.min(1, speedMps / 2)); // ~2m/s cap
 }
 
-function venueEnergyScore(dwellMin: number | undefined) {
-  if (!dwellMin) return 0;
-  if (dwellMin > 20) return 0.7;
-  if (dwellMin > 5) return 0.4;
-  return 0.2;
+function venueEnergyScore(dwellMin: number | undefined, arrived?: boolean) {
+  let score = 0;
+  if (arrived) score += 0.05;            // arrived bump
+  if (dwellMin != null) {
+    if (dwellMin > 20) score += 0.2;     // long dwell bump
+    else if (dwellMin > 5) score += 0.1; // minor dwell bump
+  }
+  return Math.min(1, score);
 }
 
 function deviceUsageScore(screenOn01: number | undefined) {
   if (screenOn01 == null) return 0.3;
-  return Math.max(0, Math.min(1, 0.2 + 0.8 * screenOn01));
+  // recent foreground time drives "focused/engaged" component
+  return 0.2 + 0.8 * Math.max(0, Math.min(1, screenOn01));
 }
 
 function weatherScore(isDaylight: boolean | undefined) {
@@ -36,7 +40,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
   const components: ComponentScores = {
     circadian: circadianScore(inp.hour, inp.isWeekend),
     movement: movementScore(inp.speedMps),
-    venueEnergy: venueEnergyScore(inp.dwellMinutes),
+    venueEnergy: venueEnergyScore(inp.dwellMinutes, inp.venueArrived),
     deviceUsage: deviceUsageScore(inp.screenOnRatio01),
     weather: weatherScore(inp.isDaylight),
   };

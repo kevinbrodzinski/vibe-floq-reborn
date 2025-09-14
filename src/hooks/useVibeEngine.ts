@@ -137,10 +137,12 @@ export function useVibeEngine(enabled: boolean = true) {
       
       // Confidence → UI intensity
       const vibeHex = vibeToHex(safeVibe(reading.vibe));
-      const vibeAlpha = 0.5 + 0.5 * reading.confidence01;
+      const vibeAlpha = 0.5 + 0.5 * reading.confidence01;              // 0.5..1.0
+      const vibeSat = 0.6 + 0.4 * Math.max(0, Math.min(1, reading.confidence01)); // 0.6..1.0
       
       document.documentElement.style.setProperty('--vibe-alpha', String(vibeAlpha));
       document.documentElement.style.setProperty('--vibe-hex', vibeHex);
+      document.documentElement.style.setProperty('--vibe-sat', String(vibeSat));
       setUserVibeHex(vibeHex);
       
       // Performance logging (dev-only)

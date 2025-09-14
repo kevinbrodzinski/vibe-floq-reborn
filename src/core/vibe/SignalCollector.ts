@@ -2,6 +2,7 @@ import * as React from 'react';
 import type { EngineInputs } from './types';
 import { MovementFromLocationTracker } from './collectors/MovementFromLocation';
 import { DwellTracker } from './collectors/DwellTracker';
+import { DeviceUsageTracker } from './collectors/DeviceUsage';
 import { getWeatherSignal } from './collectors/WeatherCollector';
 
 type Coords = { lat: number; lng: number } | null;
@@ -9,6 +10,7 @@ type Coords = { lat: number; lng: number } | null;
 export function useSignalCollector() {
   const move = React.useRef(new MovementFromLocationTracker());
   const dwell = React.useRef(new DwellTracker());
+  const device = React.useRef(new DeviceUsageTracker());
   const coordsRef = React.useRef<Coords>(null);
 
   // Geolocation watch (battery-light, SSR-safe)
@@ -29,6 +31,10 @@ export function useSignalCollector() {
     };
   }, []);
 
+  React.useEffect(() => {
+    return () => device.current.dispose();
+  }, []);
+
   const collect = React.useCallback((): EngineInputs => {
     const now = new Date();
     const hour = now.getHours();
@@ -47,14 +53,18 @@ export function useSignalCollector() {
       getWeatherSignal(coords?.lat, coords?.lng).then((wx) => (daylightRef.v = wx.isDaylight)).catch(() => {});
     }
 
+    // NEW: screen-on ratio since last collect
+    const screenOnRatio01 = device.current.pullRatio();
+
     return {
       hour,
       isWeekend,
       speedMps: m.speedMps,
       dwellMinutes: Number(dwell.current.dwellMinutes().toFixed(2)),
-      screenOnRatio01: undefined, // wire later from device usage
+      screenOnRatio01,
       isDaylight: daylightRef.v,
       tempC: undefined,
+      venueArrived: dwell.current.arrived(),
     };
   }, []);
 
