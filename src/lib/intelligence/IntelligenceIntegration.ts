@@ -1,0 +1,185 @@
+import { RealTimeLearningFeedback } from '@/core/intelligence/RealTimeLearningFeedback';
+import { PredictiveVibeEngine } from '@/core/intelligence/PredictiveVibeEngine';
+import { ActivityRecommendationEngine } from '@/core/intelligence/ActivityRecommendationEngine';
+import { learnFromCorrection } from '@/core/vibe/learning/PersonalWeightStore';
+import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
+import type { Vibe } from '@/lib/vibes';
+import type { ComponentKey } from '@/core/vibe/types';
+import type { PersonalityInsights } from '@/types/personality';
+
+/**
+ * Central intelligence integration system that connects
+ * real-time learning feedback to the existing correction flow
+ */
+class IntelligenceIntegration {
+  private learningFeedback: RealTimeLearningFeedback | null = null;
+  private predictiveEngine: PredictiveVibeEngine | null = null;
+  private activityEngine: ActivityRecommendationEngine | null = null;
+
+  /**
+   * Initialize engines with personality insights
+   */
+  private ensureEnginesInitialized(): boolean {
+    // We need to get fresh insights each time since they update
+    const insights = this.getCurrentInsights();
+    if (!insights || !insights.hasEnoughData) {
+      return false;
+    }
+
+    // Initialize engines if they don't exist or need refresh
+    if (!this.learningFeedback) {
+      this.learningFeedback = new RealTimeLearningFeedback(insights);
+    }
+    if (!this.predictiveEngine) {
+      this.predictiveEngine = new PredictiveVibeEngine(insights);
+    }
+    if (!this.activityEngine) {
+      this.activityEngine = new ActivityRecommendationEngine(insights);
+    }
+
+    return true;
+  }
+
+  /**
+   * Get current personality insights (would normally come from hook, but we need it in service)
+   */
+  private getCurrentInsights(): PersonalityInsights | null {
+    // In a real implementation, this would come from a store or service
+    // For now, we'll return null and handle gracefully
+    return null;
+  }
+
+  /**
+   * Enhanced correction handler that integrates with real-time learning
+   */
+  async handleVibeCorrection(params: {
+    predicted: Vibe;
+    corrected: Vibe;
+    componentScores: Record<ComponentKey, number>;
+    confidence: number;
+    context?: {
+      location?: { lat: number; lng: number };
+      time?: Date;
+      weather?: any;
+    };
+  }) {
+    const { predicted, corrected, componentScores, confidence } = params;
+
+    try {
+      // 1. Apply learning to personal weight store (existing flow)
+      learnFromCorrection({
+        predicted,
+        target: corrected,
+        componentScores,
+        eta: 0.02
+      });
+
+      // 2. Record correction in real-time learning system if available
+      if (this.ensureEnginesInitialized() && this.learningFeedback) {
+        this.learningFeedback.recordCorrection(
+          predicted,
+          corrected,
+          componentScores,
+          confidence
+        );
+      }
+
+      console.log('[Intelligence] Processed correction:', { predicted, corrected, confidence });
+
+    } catch (error) {
+      console.error('[Intelligence] Failed to process correction:', error);
+      // Don't throw - this is enhancement, shouldn't break basic flow
+    }
+  }
+
+  /**
+   * Get current intelligence state for UI display
+   */
+  getIntelligenceState() {
+    if (!this.ensureEnginesInitialized()) {
+      return {
+        learningStatus: { isActivelyLearning: false, recentCorrections: 0 },
+        recentInsights: [],
+        predictiveInsights: [],
+        activityRecommendations: []
+      };
+    }
+
+    return {
+      learningStatus: this.learningFeedback?.getCurrentFeedback()?.currentLearningState || { isActivelyLearning: false, recentCorrections: 0 },
+      recentInsights: this.learningFeedback?.getCurrentFeedback()?.recentEvents || [],
+      predictiveInsights: [],
+      activityRecommendations: []
+    };
+  }
+
+  /**
+   * Get contextual vibe suggestions for current situation
+   */
+  async getContextualSuggestions(context: {
+    location?: { lat: number; lng: number };
+    time?: Date;
+    weather?: any;
+    recentVibes?: Vibe[];
+  }) {
+    if (!this.ensureEnginesInitialized() || !this.predictiveEngine) {
+      return null;
+    }
+
+    try {
+      const hour = context.time?.getHours() || new Date().getHours();
+      const dayOfWeek = context.time?.getDay() || new Date().getDay();
+      
+      const predictiveContext = {
+        hour,
+        dayOfWeek,
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+        weatherCondition: context.weather?.condition
+      };
+
+      const predictions = this.predictiveEngine.predictUpcomingVibes(predictiveContext);
+      
+      return {
+        vibePredictions: predictions.map(p => ({
+          vibe: p.vibe,
+          confidence: p.confidence,
+          reasoning: p.reasoning.join('. ')
+        })),
+        activitySuggestions: [],
+        confidence: predictions.length > 0 ? predictions[0].confidence : 0
+      };
+    } catch (error) {
+      console.error('[Intelligence] Failed to generate contextual suggestions:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if this correction should trigger activity recommendation updates
+   */
+  private shouldUpdateActivityRecommendations(predicted: Vibe, corrected: Vibe): boolean {
+    // Update if it's a significant vibe change that affects activity preferences
+    const significantVibeChanges = [
+      ['solo', 'social'], ['social', 'solo'],
+      ['chill', 'hype'], ['hype', 'chill'],
+      ['down', 'open'], ['open', 'down']
+    ];
+
+    return significantVibeChanges.some(([from, to]) => 
+      (predicted === from && corrected === to) ||
+      (predicted === to && corrected === from)
+    );
+  }
+
+  /**
+   * Reset all intelligence state (for testing/debugging)
+   */
+  reset() {
+    this.learningFeedback = null;
+    this.predictiveEngine = null;
+    this.activityEngine = null;
+  }
+}
+
+// Singleton instance
+export const intelligenceIntegration = new IntelligenceIntegration();

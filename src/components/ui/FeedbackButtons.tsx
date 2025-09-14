@@ -44,12 +44,43 @@ export const FeedbackButtons = ({
     setShowCorrection(true);
   };
 
-  const handleVibeCorrection = (vibe: Vibe) => {
-    if (navigator.vibrate) {
-      navigator.vibrate(80);
+  const handleVibeCorrection = async (correctedVibe: Vibe) => {
+    try {
+      if (navigator.vibrate) {
+        navigator.vibrate(80);
+      }
+
+      // Import intelligence integration
+      const { intelligenceIntegration } = await import('@/lib/intelligence/IntelligenceIntegration');
+      
+      // Get component scores (would normally come from vibe engine)
+      const mockComponentScores = {
+        circadian: 0.7,
+        movement: 0.5,
+        venueEnergy: 0.8,
+        deviceUsage: 0.3,
+        weather: 0.6
+      };
+
+      // Record the correction with intelligence system
+      await intelligenceIntegration.handleVibeCorrection({
+        predicted: suggestedVibe,
+        corrected: correctedVibe,
+        componentScores: mockComponentScores,
+        confidence,
+        context: {
+          time: new Date()
+        }
+      });
+
+      onCorrect(correctedVibe);
+      setShowCorrection(false);
+    } catch (error) {
+      console.error('Failed to process vibe correction:', error);
+      // Fallback to basic correction
+      onCorrect(correctedVibe);
+      setShowCorrection(false);
     }
-    onCorrect(vibe);
-    setShowCorrection(false);
   };
 
   if (showCorrection) {

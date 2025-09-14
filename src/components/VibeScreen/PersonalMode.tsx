@@ -29,6 +29,7 @@ import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocation
 import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
 import type { EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
 import { useVibeContext } from '@/hooks/useVibeContext';
+import { intelligenceIntegration } from '@/lib/intelligence/IntelligenceIntegration';
 
 /**
  * PersonalMode - Enhanced immersive self-dashboard with ML-powered vibe detection
@@ -140,7 +141,12 @@ export const PersonalMode: React.FC = () => {
     }
   };
 
-  const handleBasicFeedback = (action: string) => {
+  const handleBasicFeedback = async (action: string) => {
+    if (action === 'Correct' && stableFeedbackData) {
+      // This is where we can add a correction interface later
+      // For now, just log the correction intent
+      console.log('User wants to correct vibe suggestion');
+    }
     console.log(`${action} suggestion`);
     // Dismiss feedback after interaction
     setShowFeedback(false);
