@@ -6,6 +6,8 @@ import { useSignalCollector } from '@/core/vibe/SignalCollector';
 import type { VibeReading } from '@/core/vibe/types';
 import { setUserVibeHex } from '@/lib/vibe/vibeColor';
 import { saveSnapshot } from '@/storage/vibeSnapshots';
+import { CorrectionStore } from '@/core/vibe/learning/CorrectionStore';
+import { AdaptiveScheduler } from '@/core/vibe/AdaptiveScheduler';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -35,6 +37,10 @@ const FLAG = (import.meta as any).env?.VITE_VIBE_DETECTION ?? "on";
  * Ready to drive unified color system and gradients
  */
 export function useVibeEngine(enabled: boolean = true) {
+  const correctionStore = useCallback(() => new CorrectionStore(), [])();
+  const scheduler = useCallback(() => new AdaptiveScheduler(), [])();
+  const [inputsCache, setInputsCache] = useState<any>(null);
+
   const [state, setState] = useState<VibeEngineState>({
     currentVibe: 'chill',
     confidence: 0.8,
@@ -186,14 +192,15 @@ export function useVibeEngine(enabled: boolean = true) {
 
     const step = () => {
       if (!alive) return;
-      const inputs = collect();            // from SignalCollector (now includes speed/dwell, etc.)
+      const inputs = collect();
+      setInputsCache(inputs);
       const r = evaluate(inputs);
       setProductionReading(r);
 
       // CSS vars for confidence tint
       const vibeHex = vibeToHex(safeVibe(r.vibe));
       const vibeAlpha = 0.5 + 0.5 * r.confidence01;
-      const vibeSat = Math.max(0.3, r.confidence01); // Saturation based on confidence
+      const vibeSat = Math.max(0.3, r.confidence01);
       
       document.documentElement.style.setProperty('--vibe-hex', vibeHex);
       document.documentElement.style.setProperty('--vibe-alpha', String(vibeAlpha));
@@ -201,9 +208,15 @@ export function useVibeEngine(enabled: boolean = true) {
 
       saveSnapshot(r);
 
-      const hidden = typeof document !== 'undefined' ? document.hidden : false;
-      const ms = nextIntervalMs(inputs, hidden);
-      tm = window.setTimeout(() => requestAnimationFrame(step), ms);
+      // Schedule next tick adaptively
+      scheduler.schedule(
+        () => requestAnimationFrame(step),
+        {
+          movement: { speedMps: inputs.speedMps },
+          device: { screenOnRatio01: inputs.screenOnRatio01 },
+          venue: inputs.venueType ? { type: inputs.venueType } : null,
+        }
+      );
     };
 
     // prime immediately
@@ -218,7 +231,7 @@ export function useVibeEngine(enabled: boolean = true) {
 
     return () => { 
       alive = false; 
-      if (tm) clearTimeout(tm); 
+      scheduler.cancel();
       document.removeEventListener('visibilitychange', onVis); 
     };
   }, [collect]);
@@ -261,15 +274,26 @@ export function useVibeEngine(enabled: boolean = true) {
     if (!reading) return;
 
     try {
-      // Import learning system
-      const { learnFromCorrection } = await import('@/core/vibe/learning/PersonalWeightStore');
-
-      // Learn tiny per-component deltas (on-device)
-      learnFromCorrection({
-        predicted: reading.vibe,
-        target: actualVibe,
-        componentScores: reading.components, // already 0..1
-        eta: 0.02, // small step
+      // Save correction with full context
+      await correctionStore.save({
+        timestamp: Date.now(),
+        predicted: reading.vector,
+        corrected: safeVibe(actualVibe),
+        components: reading.components,
+        context: {
+          venue: inputsCache?.venueType ? { 
+            type: inputsCache.venueType, 
+            energy: inputsCache.venueEnergyBase 
+          } : null,
+          movement: { 
+            speedMps: inputsCache?.speedMps, 
+            moving01: undefined 
+          },
+          temporal: { 
+            hour: new Date().getHours(), 
+            isWeekend: [0,6].includes(new Date().getDay()) 
+          },
+        },
       });
 
       console.log(`🎯 Learning: ${reading.vibe} → ${actualVibe}`, { 
@@ -287,7 +311,7 @@ export function useVibeEngine(enabled: boolean = true) {
       confidence: 0.9, // High confidence in user input
       lastUpdate: new Date(),
     }));
-  }, [productionReading]);
+  }, [productionReading, inputsCache, correctionStore]);
 
   return {
     // Current state
