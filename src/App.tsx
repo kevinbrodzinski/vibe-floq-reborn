@@ -16,7 +16,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { RouterLedger } from "@/core/context/useRouterLedger";
+import { useLedgerReactRouter } from "@/lib/ledger/router/useLedgerReactRouter";
 import { EnhancedAuthProvider } from "@/components/auth/EnhancedAuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
@@ -60,6 +60,9 @@ const App = () => {
   
   // Track online status
   usePresenceTracker();
+  
+  // Track route changes for context ledger
+  useLedgerReactRouter();
 
   // Wait for auth ready with fail-open timeout
   useEffect(() => {
@@ -129,7 +132,6 @@ const App = () => {
                     <Toaster />
                     <NetworkStatusBanner />
                     <BrowserRouter>
-                      <RouterLedger />
                       <PlanInviteProvider />
                       <Routes>
                         <Route path="/a/:slug" element={<SharedAfterglow />} />

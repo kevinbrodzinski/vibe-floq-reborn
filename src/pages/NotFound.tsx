@@ -2,7 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LedgerLink } from '@/core/context/useRouterLedger';
+import { LedgerLink } from '@/components/ledger/LedgerLink';
 
 const NotFound = () => {
   const location = useLocation();
