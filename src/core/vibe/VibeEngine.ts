@@ -36,7 +36,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
     weather:     weatherScore(inp.isDaylight),
   };
 
-  const vector = combine(components, true); // Enable personalization
+  const vector = combine(components);
   const best = VIBES.reduce((a, b) => (vector[b] > vector[a] ? b : a), VIBES[0]);
   const conf = confidence(components);
 

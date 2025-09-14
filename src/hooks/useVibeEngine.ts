@@ -168,62 +168,92 @@ export function useVibeEngine(enabled: boolean = true) {
     }
   }, [collect]);
 
-  // Main detection loop
+  // Production engine with adaptive polling
   useEffect(() => {
-    if (!enabled) {
-      setState(prev => ({ ...prev, isDetecting: false }));
-      return;
+    if (FLAG !== 'on') return;
+    
+    let tm: number | null = null;
+    let alive = true;
+
+    // compute next interval from inputs and visibility
+    function nextIntervalMs(inp: any, hidden: boolean) {
+      if (hidden) return 5 * 60_000;          // hidden → chill
+      const s = inp.speedMps ?? 0;
+      if (s <= 0.1) return 5 * 60_000;        // stationary
+      if (s <= 1.5) return 2 * 60_000;        // walking
+      return 60_000;                           // moving faster
     }
+
+    const step = () => {
+      if (!alive) return;
+      const inputs = collect();            // from SignalCollector (now includes speed/dwell, etc.)
+      const r = evaluate(inputs);
+      setProductionReading(r);
+
+      // CSS vars for confidence tint
+      const vibeHex = vibeToHex(safeVibe(r.vibe));
+      const vibeAlpha = 0.5 + 0.5 * r.confidence01;
+      const vibeSat = Math.max(0.3, r.confidence01); // Saturation based on confidence
+      
+      document.documentElement.style.setProperty('--vibe-hex', vibeHex);
+      document.documentElement.style.setProperty('--vibe-alpha', String(vibeAlpha));
+      document.documentElement.style.setProperty('--vibe-sat', String(vibeSat));
+
+      saveSnapshot(r);
+
+      const hidden = typeof document !== 'undefined' ? document.hidden : false;
+      const ms = nextIntervalMs(inputs, hidden);
+      tm = window.setTimeout(() => requestAnimationFrame(step), ms);
+    };
+
+    // prime immediately
+    requestAnimationFrame(step);
+
+    // pause/resume on visibility
+    const onVis = () => { 
+      if (!document.hidden && tm == null) 
+        tm = window.setTimeout(() => requestAnimationFrame(step), 250); 
+    };
+    document.addEventListener('visibilitychange', onVis, { passive: true });
+
+    return () => { 
+      alive = false; 
+      if (tm) clearTimeout(tm); 
+      document.removeEventListener('visibilitychange', onVis); 
+    };
+  }, [collect]);
+
+  // Legacy detection loop for dev mode
+  useEffect(() => {
+    if (FLAG === 'on' || !enabled) return;
 
     setState(prev => ({ ...prev, isDetecting: true }));
 
-    let interval: number;
-    let raf = 0;
-
-    // Visibility guard (pause in background; resume on return)
-    const onVisibilityChange = () => { 
-      if (!document.hidden) raf = requestAnimationFrame(productionTick); 
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
-
-    if (FLAG === "on") {
-      // Production engine: immediate tick + 60s interval
-      raf = requestAnimationFrame(productionTick);
-      interval = window.setInterval(() => { 
-        if (!document.hidden) raf = requestAnimationFrame(productionTick); 
-      }, 60000);
-    } else {
-      // Legacy engine: compute + interval
-      interval = window.setInterval(() => {
-        const { vibe, confidence, components } = computeVibe();
-        
-        setState(prev => ({
-          ...prev,
-          currentVibe: vibe,
-          confidence,
-          lastUpdate: new Date(),
-          components,
-        }));
-
-        recordSnapshot(vibe, confidence, components);
-      }, 60000);
-
-      // Initial computation
-      const initial = computeVibe();
+    const interval = window.setInterval(() => {
+      const { vibe, confidence, components } = computeVibe();
+      
       setState(prev => ({
         ...prev,
-        currentVibe: initial.vibe,
-        confidence: initial.confidence,
-        components: initial.components,
+        currentVibe: vibe,
+        confidence,
+        lastUpdate: new Date(),
+        components,
       }));
-    }
 
-    return () => { 
-      clearInterval(interval); 
-      cancelAnimationFrame(raf);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, [enabled, computeVibe, recordSnapshot, productionTick]);
+      recordSnapshot(vibe, confidence, components);
+    }, 60000);
+
+    // Initial computation
+    const initial = computeVibe();
+    setState(prev => ({
+      ...prev,
+      currentVibe: initial.vibe,
+      confidence: initial.confidence,
+      components: initial.components,
+    }));
+
+    return () => clearInterval(interval);
+  }, [enabled, computeVibe, recordSnapshot]);
 
   // User feedback for learning
   const recordCorrection = useCallback(async (actualVibe: Vibe, reason?: string) => {
@@ -232,35 +262,19 @@ export function useVibeEngine(enabled: boolean = true) {
 
     try {
       // Import learning system
-      const { CorrectionStore } = await import('@/core/vibe/storage/CorrectionStore');
-      const { PersonalWeights } = await import('@/core/vibe/learning/PersonalWeights');
+      const { learnFromCorrection } = await import('@/core/vibe/learning/PersonalWeightStore');
 
-      // Create correction record
-      const correction = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        timestamp: Date.now(),
-        predicted: state.currentVibe,
-        corrected: actualVibe,
-        confidence: state.confidence,
-        context: {
-          components: reading.components,
-          timeOfDay: new Date().getHours(),
-          dayOfWeek: new Date().getDay(),
-          venue: reading.components.venueEnergy > 0.5 ? 'venue' : undefined,
-        },
-        reason
-      };
+      // Learn tiny per-component deltas (on-device)
+      learnFromCorrection({
+        predicted: reading.vibe,
+        target: actualVibe,
+        componentScores: reading.components, // already 0..1
+        eta: 0.02, // small step
+      });
 
-      // Save correction
-      await CorrectionStore.save(correction);
-
-      // Trigger learning update
-      const patterns = CorrectionStore.analyzePatterns();
-      PersonalWeights.learn(patterns);
-
-      console.log(`🎯 Learning: ${state.currentVibe} → ${actualVibe}`, { 
-        patterns: patterns.length, 
-        confidence: PersonalWeights.getStats().confidence 
+      console.log(`🎯 Learning: ${reading.vibe} → ${actualVibe}`, { 
+        reason, 
+        confidence: reading.confidence01 
       });
     } catch (error) {
       console.warn('[Learning] Failed to record correction:', error);
@@ -273,7 +287,7 @@ export function useVibeEngine(enabled: boolean = true) {
       confidence: 0.9, // High confidence in user input
       lastUpdate: new Date(),
     }));
-  }, [state.currentVibe, state.confidence, productionReading]);
+  }, [productionReading]);
 
   return {
     // Current state
