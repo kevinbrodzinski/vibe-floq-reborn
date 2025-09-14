@@ -9,6 +9,8 @@ import { schedulePatternWork } from '@/utils/patternScheduler';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 import { intelligenceIntegration } from '@/lib/intelligence/IntelligenceIntegration';
 
+const isBrowser = typeof window !== 'undefined';
+
 export function VibeDebugPanel({ open = false }: { open?: boolean }) {
   const engine = useVibeEngine();
   const insights = usePersonalityInsights();
@@ -41,6 +43,8 @@ export function VibeDebugPanel({ open = false }: { open?: boolean }) {
   };
 
   const downloadSnapshot = () => {
+    if (!import.meta.env.DEV || !isBrowser) return;
+    
     const snapshot = {
       timestamp: new Date().toISOString(),
       reading: r,

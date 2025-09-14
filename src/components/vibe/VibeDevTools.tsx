@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { VIBES, type Vibe } from '@/lib/vibes';
 import type { WeatherSignal, WeatherCondition } from '@/core/vibe/types';
 
+const isBrowser = typeof window !== 'undefined';
+
 const CONDITIONS: WeatherCondition[] = [
   'Clear','Clouds','Rain','Drizzle','Thunderstorm','Snow',
   'Mist','Fog','Haze','Dust','Smoke','Sand','Ash','Squall','Tornado','unknown'
@@ -19,8 +21,10 @@ export function VibeDevTools() {
 
   // ——— Friends ———
   const forceTick = async () => {
+    if (!import.meta.env.DEV || !isBrowser) return;
+    
     try {
-      const engine = (typeof window !== 'undefined' ? (window as any).floq?.vibeEngine : null);
+      const engine = (window as any).floq?.vibeEngine;
       if (engine?.forceUpdate) {
         await engine.forceUpdate();
         setOutput(`Forced tick @ ${new Date().toLocaleTimeString()}`);
@@ -35,7 +39,7 @@ export function VibeDevTools() {
   const injectCorrection = async (target: Vibe) => {
     try {
       // Prefer live reading if exposed
-      const reading = (typeof window !== 'undefined' ? (window as any).floq?.vibeReading : null) as
+      const reading = (isBrowser ? (window as any).floq?.vibeReading : null) as
         | { vector: Record<string, number>; components: Record<string, number>; vibe: Vibe }
         | null;
 
@@ -98,6 +102,8 @@ export function VibeDevTools() {
 
   // ——— New: Download snapshots ———
   const downloadSnapshots = async () => {
+    if (!import.meta.env.DEV || !isBrowser) return;
+    
     try {
       const { getRecentReadings } = await import('@/storage/vibeSnapshots');
       const rows = await getRecentReadings(100);
@@ -114,6 +120,8 @@ export function VibeDevTools() {
 
   // ——— New: Mock weather ———
   const applyMockWeather = async () => {
+    if (!import.meta.env.DEV || !isBrowser) return;
+    
     try {
       (window as any).floq ??= {};
       const mw: Partial<WeatherSignal> = {
@@ -131,6 +139,8 @@ export function VibeDevTools() {
   };
 
   const clearMockWeather = async () => {
+    if (!import.meta.env.DEV || !isBrowser) return;
+    
     try {
       if ((window as any).floq?.mockWeather) delete (window as any).floq.mockWeather;
       setOutput('Mock weather cleared');

@@ -37,6 +37,20 @@ export function IntelligenceSettings() {
       localStorage.removeItem('weather-cache-v1');
       intelligenceIntegration.reset();
       
+      // Reset delta decay timers by re-seeding zero deltas
+      try {
+        const { savePersonalDelta } = await import('@/core/vibe/learning/PersonalWeightStore');
+        await savePersonalDelta({ 
+          circadian: {}, 
+          movement: {}, 
+          venueEnergy: {}, 
+          deviceUsage: {}, 
+          weather: {} 
+        });
+      } catch (deltaResetError) {
+        console.warn('[Settings] Could not reset delta timers:', deltaResetError);
+      }
+      
       console.log('[Settings] Intelligence data cleared');
     } catch (error) {
       console.error('[Settings] Failed to clear intelligence data:', error);
