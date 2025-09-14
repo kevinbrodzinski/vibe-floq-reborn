@@ -48,22 +48,22 @@ export type SignalSnapshot = {
 };
 
 export type EngineInputs = {
-  // jot what you have locally; all optional (engine will degrade gracefully)
-  hour: number;                     // 0-23
+  hour: number;
   isWeekend: boolean;
-  speedMps?: number;                // movement proxy (0..)
-  dwellMinutes?: number;            // at current venue
-  screenOnRatio01?: number;         // device activity 0..1
-  tempC?: number;                   // optional (weather)
-  isDaylight?: boolean;             // optional
-  venueArrived?: boolean;           // NEW: arrived state
-  venueType?: string | null;        // coarse class (bar, cafe, gym...)
-  venueEnergyBase?: number | null;  // baseline energy 0..1 from classifier
   
-  // Rich weather fields
-  weatherCondition?: WeatherCondition;
+  speedMps?: number;
+  dwellMinutes?: number;
+  screenOnRatio01?: number;
+  
+  // Weather (unified)
+  isDaylight?: boolean;
   weatherEnergyOffset?: number;
   weatherConfidenceBoost?: number;
+  
+  // Venue enrichment (if present)
+  venueArrived?: boolean;
+  venueType?: string | null;
+  venueEnergyBase?: number | null;
 };
 
 export type VibeReading = {

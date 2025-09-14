@@ -11,6 +11,11 @@ const cleanupDevLogging = initDevLogging();
 // Bridge legacy breadcrumb events to new flow events
 const cleanupEventBridge = initFlowEventBridgeAdapters();
 
+// Optional decay in development
+if (import.meta.env.DEV) {
+  import('./core/vibe/learning/PersonalWeightStore').then(m => m.decayPersonalDelta?.(0.995));
+}
+
 // Cleanup on app unmount (optional)
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {

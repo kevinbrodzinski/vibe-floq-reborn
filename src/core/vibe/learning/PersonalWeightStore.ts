@@ -88,6 +88,7 @@ export function applyPersonalDelta<T extends Record<ComponentKey, Partial<Record
 }
 
 /** Optional: very small periodic decay to re-center deltas */
+/** Optional: very small periodic decay to re-center deltas */
 export function decayPersonalDelta(factor = 0.995) {
   const d = loadPersonalDelta();
   (Object.keys(d) as ComponentKey[]).forEach(k => {

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { EngineInputs } from './types';
+import type { EngineInputs, WeatherSignal } from './types';
 import { MovementFromLocationTracker } from './collectors/MovementFromLocation';
 import { DwellTracker } from './collectors/DwellTracker';
 import { DeviceUsageTracker } from './collectors/DeviceUsage';
@@ -52,12 +52,12 @@ export function useSignalCollector() {
     // foreground ratio since last tick
     const screenOnRatio01 = device.current.pullRatio();
 
-    // daylight cached (async)
-    const daylightRef = (collect as any)._dayRef || ((collect as any)._dayRef = { v: undefined as any });
+    // weather signal cached (async)
+    const wxRef = (collect as any)._wxRef || ((collect as any)._wxRef = { s: undefined as WeatherSignal | undefined });
     if ((collect as any)._lastWxT == null || Date.now() - (collect as any)._lastWxT > 30 * 60_000) {
       (collect as any)._lastWxT = Date.now();
       getWeatherSignal(coords?.lat, coords?.lng)
-        .then(wx => (daylightRef.v = wx))
+        .then(wx => (wxRef.s = wx))
         .catch(() => {});
     }
 
@@ -84,26 +84,21 @@ export function useSignalCollector() {
       }).catch(() => {});
     }
 
-    const wx = daylightRef.v;
+    const wx = wxRef.s;
     return {
       hour,
       isWeekend,
       speedMps: m.speedMps,
       dwellMinutes: dwellMin,
       screenOnRatio01,
-      // keep old fields for backward compatibility:
+      // weather → engine inputs (all optional)
       isDaylight: wx?.isDaylight,
-      tempC: wx?.tempC,
-
-      // new:
+      weatherEnergyOffset: wx?.energyOffset,
+      weatherConfidenceBoost: wx?.confidenceBoost,
+      // venue
       venueArrived: justArrived,
       venueType: venueRef.type,
       venueEnergyBase: venueRef.base,
-      
-      // Rich weather fields
-      weatherCondition: wx?.condition,
-      weatherEnergyOffset: wx?.energyOffset,
-      weatherConfidenceBoost: wx?.confidenceBoost,
     };
   }, []);
 
