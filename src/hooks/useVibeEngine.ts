@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { vibeToHex } from '@/lib/vibe';
 import { safeVibe, type Vibe } from '@/lib/vibes';
+import { evaluate } from '@/core/vibe/VibeEngine';
+import { useSignalCollector } from '@/core/vibe/SignalCollector';
+import type { VibeReading } from '@/core/vibe/types';
+import { setUserVibeHex } from '@/lib/vibe/vibeColor';
+import { saveSnapshot } from '@/storage/vibeSnapshots';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -22,12 +27,14 @@ interface VibeSnapshot {
   components: VibeEngineState['components'];
 }
 
+const FLAG = (import.meta as any).env?.VITE_VIBE_DETECTION ?? "on";
+
 /**
  * Vibe Engine MVP Hook
  * Computes real-time vibe from multiple signal sources
  * Ready to drive unified color system and gradients
  */
-export function useVibeEngine(enabled: boolean = false) {
+export function useVibeEngine(enabled: boolean = true) {
   const [state, setState] = useState<VibeEngineState>({
     currentVibe: 'chill',
     confidence: 0.8,
@@ -42,6 +49,8 @@ export function useVibeEngine(enabled: boolean = false) {
   });
 
   const [snapshots, setSnapshots] = useState<VibeSnapshot[]>([]);
+  const [productionReading, setProductionReading] = useState<VibeReading | null>(null);
+  const { collect } = useSignalCollector();
 
   // Temporal component (time of day, day of week)
   const computeTemporalVibe = useCallback((): number => {
@@ -119,6 +128,31 @@ export function useVibeEngine(enabled: boolean = false) {
     // await db.vibe_snapshots.insert(snapshot);
   }, []);
 
+  // Production engine tick
+  const productionTick = useCallback(() => {
+    if (FLAG === "on") {
+      const inputs = collect();
+      const reading = evaluate(inputs);
+      setProductionReading(reading);
+      setUserVibeHex(vibeToHex(safeVibe(reading.vibe)));
+      saveSnapshot(reading);
+      
+      // Update legacy state for compatibility
+      setState(prev => ({
+        ...prev,
+        currentVibe: reading.vibe,
+        confidence: reading.confidence01,
+        lastUpdate: new Date(),
+        components: {
+          temporal: reading.components.circadian || 0,
+          movement: reading.components.movement || 0,
+          environmental: reading.components.venueEnergy || 0,
+          behavioral: reading.components.deviceUsage || 0,
+        }
+      }));
+    }
+  }, [collect]);
+
   // Main detection loop
   useEffect(() => {
     if (!enabled) {
@@ -128,31 +162,46 @@ export function useVibeEngine(enabled: boolean = false) {
 
     setState(prev => ({ ...prev, isDetecting: true }));
 
-    const interval = setInterval(() => {
-      const { vibe, confidence, components } = computeVibe();
-      
+    let interval: number;
+    let raf = 0;
+
+    if (FLAG === "on") {
+      // Production engine: immediate tick + 60s interval
+      raf = requestAnimationFrame(productionTick);
+      interval = window.setInterval(() => { 
+        raf = requestAnimationFrame(productionTick); 
+      }, 60000);
+    } else {
+      // Legacy engine: compute + interval
+      interval = window.setInterval(() => {
+        const { vibe, confidence, components } = computeVibe();
+        
+        setState(prev => ({
+          ...prev,
+          currentVibe: vibe,
+          confidence,
+          lastUpdate: new Date(),
+          components,
+        }));
+
+        recordSnapshot(vibe, confidence, components);
+      }, 60000);
+
+      // Initial computation
+      const initial = computeVibe();
       setState(prev => ({
         ...prev,
-        currentVibe: vibe,
-        confidence,
-        lastUpdate: new Date(),
-        components,
+        currentVibe: initial.vibe,
+        confidence: initial.confidence,
+        components: initial.components,
       }));
+    }
 
-      recordSnapshot(vibe, confidence, components);
-    }, 60000); // Update every minute
-
-    // Initial computation
-    const initial = computeVibe();
-    setState(prev => ({
-      ...prev,
-      currentVibe: initial.vibe,
-      confidence: initial.confidence,
-      components: initial.components,
-    }));
-
-    return () => clearInterval(interval);
-  }, [enabled, computeVibe, recordSnapshot]);
+    return () => { 
+      clearInterval(interval); 
+      cancelAnimationFrame(raf); 
+    };
+  }, [enabled, computeVibe, recordSnapshot, productionTick]);
 
   // User feedback for learning
   const recordCorrection = useCallback((actualVibe: Vibe, reason?: string) => {
@@ -181,6 +230,7 @@ export function useVibeEngine(enabled: boolean = false) {
     
     // Debug/learning data
     snapshots,
+    productionReading, // Full production engine reading when available
     
     // Actions
     recordCorrection,
@@ -192,5 +242,8 @@ export function useVibeEngine(enabled: boolean = false) {
       confidence: 1.0,
       lastUpdate: new Date()
     })),
+    
+    // Production engine status
+    isProductionMode: FLAG === "on",
   };
 }
