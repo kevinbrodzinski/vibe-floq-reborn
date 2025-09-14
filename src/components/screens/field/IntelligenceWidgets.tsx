@@ -19,7 +19,7 @@ export function IntelligenceWidgets({
 }: IntelligenceWidgetsProps) {
   const insights = usePersonalityInsights();
 
-  if (!insights.hasEnoughData) {
+  if (!insights || !insights.hasEnoughData) {
     // Show building intelligence card
     return (
       <div className="space-y-3">
