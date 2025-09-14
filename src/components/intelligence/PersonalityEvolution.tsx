@@ -339,7 +339,7 @@ export function PersonalityEvolution() {
 // Storage operations for personality timeline
 async function readPersonalityTimeline() {
   try {
-    const stored = await storage.getItem(STORAGE_KEYS.PERSONALITY_TIMELINE);
+    const stored = await storage.getItem(STORAGE_KEYS.TIMELINE);
     return stored ? JSON.parse(stored) : EMPTY_TIMELINE;
   } catch {
     return EMPTY_TIMELINE;
@@ -349,7 +349,7 @@ async function readPersonalityTimeline() {
 async function writePersonalityTimeline(timeline: typeof EMPTY_TIMELINE) {
   try {
     timeline.updatedAt = Date.now();
-    await storage.setJSON(STORAGE_KEYS.PERSONALITY_TIMELINE, timeline);
+    await storage.setJSON(STORAGE_KEYS.TIMELINE, timeline);
   } catch (error) {
     console.warn('Failed to write personality timeline:', error);
   }

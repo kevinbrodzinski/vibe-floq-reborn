@@ -1,4 +1,3 @@
-// Pattern storage types with versioning for clean evolution
 import type { Vibe } from '@/lib/vibes';
 
 export type V1<T> = { 
@@ -7,41 +6,36 @@ export type V1<T> = {
   data: T;
 };
 
-// GPS-based venue clustering for missing venue intelligence
+// ── Core pattern records ─────────────────────────────────────────────
+export type VenueImpacts = Record<
+  string,
+  { sampleN: number; energyDelta: number; preferredVibes: Partial<Record<Vibe, number>>; optimalDwellMin: number }
+>;
+export type TemporalPrefs = Record<number, Partial<Record<Vibe, number>>>;
+export type EnhancedSequenceMap = Record<
+  string,
+  { next: Partial<Record<Vibe, number>>; confidence: number; avgMinutes: number; sampleN: number; lastSeen: number }
+>;
+
+export type SocialContext = 'alone' | 'with-friend' | 'small-group' | 'large-group';
+export type SocialContextPatterns = Record<
+  SocialContext,
+  { sampleN: number; energyBoost: number; preferredVibes: Partial<Record<Vibe, number>>; avgSessionMin: number }
+>;
+
 export type VenueCluster = {
-  id: string; // H3 geohash  
+  id: string;
   center: { lat: number; lng: number };
-  radius: number; // meters
+  radiusM: number;
   visitCount: number;
   totalDwellMin: number;
-  userLabel?: string; // "My favorite coffee spot"
-  confidence: number; // 0-1
+  userLabel?: string;
+  confidence01: number;
   lastVisit: number;
-  energyDelta: number; // learned energy impact
-  preferredVibes: Partial<Record<Vibe, number>>;
+  dominantVibe?: Vibe;
 };
+export type VenueClusters = Record<string, VenueCluster>;
 
-// Social context patterns (alone vs with friends)
-export type SocialContext = 'alone' | 'with-friend' | 'small-group' | 'large-group';
-
-export type SocialContextPatterns = Record<SocialContext, {
-  sampleN: number;
-  energyBoost: number; // -1..+1  
-  preferredVibes: Partial<Record<Vibe, number>>;
-  avgSessionMin: number;
-}>;
-
-// Enhanced sequence learning with confidence and time sensitivity
-export type EnhancedSequenceMap = Record<string, {
-  next: Partial<Record<Vibe, number>>; // outcome distribution
-  confidence: number; // 0-1
-  avgMinutes: number; // time between venues
-  sampleN: number;
-  lastSeen: number; // for decay
-  timeOfDay?: number; // hour when sequence typically occurs
-}>;
-
-// Personality evolution timeline  
 export type PersonalitySnapshot = {
   timestamp: number;
   energyPreference: number;
@@ -49,30 +43,8 @@ export type PersonalitySnapshot = {
   chronotype: 'lark' | 'owl' | 'balanced';
   consistency01: number;
   sampleCount: number;
-  contextInfo: {
-    totalVenues: number;
-    dominantVenueTypes: string[];
-    socialSessionRatio: number; // % of time with others
-  };
+  contextInfo: { totalVenues: number; dominantVenueTypes: string[]; socialSessionRatio: number };
 };
-
-// Venue impacts per venue type (learned from user behavior)
-export type VenueImpacts = Record<string, {
-  sampleN: number;
-  energyDelta: number;          // -1..+1 (EWMA average impact on energy)
-  preferredVibes: Partial<Record<Vibe, number>>; // normalized distribution
-  optimalDwellMin: number;      // sweet-spot dwell time
-}>;
-
-// Hour-of-day (0..23) → vibe distribution preferences
-export type TemporalPrefs = Record<number, Partial<Record<Vibe, number>>>;
-
-// Light sequence mapping: "A→B" outcome distribution + average time
-export type SequenceMap = Record<string, {
-  next: Partial<Record<Vibe, number>>;
-  avgMinutes: number;
-  sampleN: number;
-}>;
 
 // Persistent personality profile (evolves slowly)
 export type PersonalityProfile = {
@@ -84,68 +56,33 @@ export type PersonalityProfile = {
   sampleCount: number;          // number of sessions contributing to profile
 };
 
-// Storage keys (versioned for clean migration)
+// ── Storage keys (single source of truth) ────────────────────────────────────
 export const STORAGE_KEYS = {
   VENUE: 'pattern:venue:v1',
   TEMPORAL: 'pattern:temporal:v1', 
   SEQUENCES: 'pattern:sequences:v1',
   PROFILE: 'pattern:profile:v1',
-  GPS_CLUSTERS: 'pattern:gps-clusters:v1',
-  SOCIAL_CONTEXT: 'pattern:social-context:v1',
-  PERSONALITY_TIMELINE: 'pattern:personality-timeline:v1'
+  SOCIAL: 'pattern:social:v1',
+  CLUSTERS: 'pattern:clusters:v1',
+  TIMELINE: 'pattern:timeline:v1'
 } as const;
 
-// Default empty states
-export const EMPTY_VENUE_IMPACTS: V1<VenueImpacts> = {
-  version: 1,
-  updatedAt: 0,
-  data: {}
-};
-
-export const EMPTY_TEMPORAL_PREFS: V1<TemporalPrefs> = {
-  version: 1,
-  updatedAt: 0,
-  data: {}
-};
-
-export const EMPTY_SEQUENCES: V1<EnhancedSequenceMap> = {
-  version: 1,
-  updatedAt: 0,
-  data: {}
-};
-
-export const EMPTY_GPS_CLUSTERS: V1<Record<string, VenueCluster>> = {
-  version: 1,
-  updatedAt: 0,
-  data: {}
-};
-
-export const EMPTY_SOCIAL_CONTEXT: V1<SocialContextPatterns> = {
-  version: 1,
-  updatedAt: 0,
-  data: {
-    alone: { sampleN: 0, energyBoost: 0, preferredVibes: {}, avgSessionMin: 0 },
-    'with-friend': { sampleN: 0, energyBoost: 0, preferredVibes: {}, avgSessionMin: 0 },
-    'small-group': { sampleN: 0, energyBoost: 0, preferredVibes: {}, avgSessionMin: 0 },
-    'large-group': { sampleN: 0, energyBoost: 0, preferredVibes: {}, avgSessionMin: 0 }
-  }
-};
-
-export const EMPTY_TIMELINE: V1<PersonalitySnapshot[]> = {
-  version: 1,
-  updatedAt: 0,
-  data: []
-};
-
+// ── Empty envelopes ──────────────────────────────────────────────────
+export const EMPTY_VENUE_IMPACTS: V1<VenueImpacts> = { version: 1, updatedAt: 0, data: {} };
+export const EMPTY_TEMPORAL_PREFS: V1<TemporalPrefs> = { version: 1, updatedAt: 0, data: {} };
+export const EMPTY_SEQUENCES: V1<EnhancedSequenceMap> = { version: 1, updatedAt: 0, data: {} };
 export const EMPTY_PROFILE: V1<PersonalityProfile> = {
-  version: 1,
-  updatedAt: 0,
+  version: 1, updatedAt: 0,
+  data: { energyPreference: 0, socialPreference: 0, chronotype: 'balanced', consistency01: 0.5, updatedAt: 0, sampleCount: 0 }
+};
+export const EMPTY_SOCIAL: V1<SocialContextPatterns> = {
+  version: 1, updatedAt: 0,
   data: {
-    energyPreference: 0,
-    socialPreference: 0,
-    chronotype: 'balanced',
-    consistency01: 0.5,
-    updatedAt: 0,
-    sampleCount: 0
+    'alone': { sampleN:0, energyBoost:0, preferredVibes:{}, avgSessionMin:0 },
+    'with-friend': { sampleN:0, energyBoost:0, preferredVibes:{}, avgSessionMin:0 },
+    'small-group': { sampleN:0, energyBoost:0, preferredVibes:{}, avgSessionMin:0 },
+    'large-group': { sampleN:0, energyBoost:0, preferredVibes:{}, avgSessionMin:0 },
   }
 };
+export const EMPTY_CLUSTERS: V1<VenueClusters> = { version: 1, updatedAt: 0, data: {} };
+export const EMPTY_TIMELINE: V1<PersonalitySnapshot[]> = { version: 1, updatedAt: 0, data: [] };

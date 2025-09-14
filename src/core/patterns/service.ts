@@ -1,186 +1,101 @@
-// Pattern persistence service with cross-platform storage
-import { storage } from '@/lib/storage';
-import type { 
-  V1, 
-  VenueImpacts, 
-  TemporalPrefs, 
-  SequenceMap, 
-  PersonalityProfile,
-} from './store';
-import { 
-  STORAGE_KEYS,
-  EMPTY_VENUE_IMPACTS,
-  EMPTY_TEMPORAL_PREFS, 
-  EMPTY_SEQUENCES,
-  EMPTY_PROFILE
-} from './store';
-import { migrateVenueImpacts, migrateTemporalPrefs, migrateProfile } from './migrations';
+import { storage } from "@/lib/storage";
+import {
+  STORAGE_KEYS, V1, VenueImpacts, TemporalPrefs, EnhancedSequenceMap, PersonalityProfile,
+  SocialContextPatterns, VenueClusters, PersonalitySnapshot,
+  EMPTY_VENUE_IMPACTS, EMPTY_TEMPORAL_PREFS, EMPTY_SEQUENCES, EMPTY_PROFILE, EMPTY_SOCIAL, EMPTY_CLUSTERS, EMPTY_TIMELINE
+} from "./store";
 
-// Telemetry counters
-let patternWriteCount = 0;
+// telemetry
+let writes = 0; 
+export const getPatternTelemetry = () => ({ writes, enabled: import.meta.env.VITE_VIBE_PATTERNS !== "off" });
 
-export function bumpWrite() { patternWriteCount++; }
-
-export function getPatternTelemetry() {
-  return {
-    totalWrites: patternWriteCount,
-    enabled: import.meta.env.VITE_VIBE_PATTERNS !== 'off'
-  };
-}
-
-// Generic JSON storage helpers with quota resilience
-async function getJSON<T>(key: string, fallback: T): Promise<T> {
-  try {
-    const stored = await storage.getItem(key);
-    if (!stored) return fallback;
-    return JSON.parse(stored);
-  } catch {
-    return fallback;
+const getJSON = async <T>(k: string, fb: T) => { 
+  try { 
+    const s = await storage.getItem(k); 
+    return s ? JSON.parse(s) : fb;
+  } catch { 
+    return fb;
   }
-}
+};
 
-async function safeWriteJSON<T>(key: string, value: T): Promise<void> {
-  try {
-    await storage.setJSON(key, value);
-    bumpWrite();
-  } catch (e: any) {
-    // Attempt cleanup and one retry
-    try {
-      await cleanupOldPatterns(); // low-risk cleanup
-      await storage.setJSON(key, value);
-      bumpWrite();
-    } catch {
-      if (import.meta.env.DEV) {
-        console.warn(`[Patterns] Write failed after cleanup for key=${key}`);
-      }
-    }
-  }
-}
+const setJSON = async <T>(k: string, v: T) => { 
+  try { 
+    await storage.setJSON(k, v); 
+    writes++;
+  } catch {}
+};
 
-// Venue impact patterns
-export async function readVenueImpacts(): Promise<V1<VenueImpacts>> {
-  const raw = await getJSON(STORAGE_KEYS.VENUE, EMPTY_VENUE_IMPACTS);
-  return migrateVenueImpacts(raw);
-}
+// venue impacts
+export const readVenueImpacts = async (): Promise<V1<VenueImpacts>> => getJSON(STORAGE_KEYS.VENUE, EMPTY_VENUE_IMPACTS);
+export const writeVenueImpacts = async (v: V1<VenueImpacts>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.VENUE, v));
+export const getCachedVenueImpacts = readVenueImpacts; // alias for backward compatibility
 
-export async function writeVenueImpacts(impacts: V1<VenueImpacts>): Promise<void> {
-  impacts.updatedAt = Date.now();
-  await safeWriteJSON(STORAGE_KEYS.VENUE, impacts);
-  invalidatePatternCache();
-}
+// temporal prefs
+export const readTemporalPrefs = async (): Promise<V1<TemporalPrefs>> => getJSON(STORAGE_KEYS.TEMPORAL, EMPTY_TEMPORAL_PREFS);
+export const writeTemporalPrefs = async (v: V1<TemporalPrefs>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.TEMPORAL, v));
+export const getCachedTemporalPrefs = readTemporalPrefs; // alias for backward compatibility
 
-// Temporal preference patterns  
-export async function readTemporalPrefs(): Promise<V1<TemporalPrefs>> {
-  const raw = await getJSON(STORAGE_KEYS.TEMPORAL, EMPTY_TEMPORAL_PREFS);
-  return migrateTemporalPrefs(raw);
-}
+// sequences
+export const readSequences = async (): Promise<V1<EnhancedSequenceMap>> => getJSON(STORAGE_KEYS.SEQUENCES, EMPTY_SEQUENCES);
+export const writeSequences = async (v: V1<EnhancedSequenceMap>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.SEQUENCES, v));
 
-export async function writeTemporalPrefs(prefs: V1<TemporalPrefs>): Promise<void> {
-  prefs.updatedAt = Date.now();
-  await safeWriteJSON(STORAGE_KEYS.TEMPORAL, prefs);
-  invalidatePatternCache();
-}
+// profile
+export const readProfile = async (): Promise<V1<PersonalityProfile>> => getJSON(STORAGE_KEYS.PROFILE, EMPTY_PROFILE);
+export const writeProfile = async (v: V1<PersonalityProfile>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.PROFILE, v));
+export const getCachedProfile = readProfile; // alias for backward compatibility
 
-// Sequence patterns
-export async function readSequences(): Promise<V1<SequenceMap>> {
-  return getJSON(STORAGE_KEYS.SEQUENCES, EMPTY_SEQUENCES);
-}
+// social
+export const readSocial = async (): Promise<V1<SocialContextPatterns>> => getJSON(STORAGE_KEYS.SOCIAL, EMPTY_SOCIAL);
+export const writeSocial = async (v: V1<SocialContextPatterns>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.SOCIAL, v));
 
-export async function writeSequences(sequences: V1<SequenceMap>): Promise<void> {
-  sequences.updatedAt = Date.now();
-  await safeWriteJSON(STORAGE_KEYS.SEQUENCES, sequences);
-}
+// clusters
+export const readClusters = async (): Promise<V1<VenueClusters>> => getJSON(STORAGE_KEYS.CLUSTERS, EMPTY_CLUSTERS);
+export const writeClusters = async (v: V1<VenueClusters>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.CLUSTERS, v));
 
-// Personality profile
-export async function readProfile(): Promise<V1<PersonalityProfile>> {
-  const raw = await getJSON(STORAGE_KEYS.PROFILE, EMPTY_PROFILE);
-  return migrateProfile(raw);
-}
+// timeline
+export const readTimeline = async (): Promise<V1<PersonalitySnapshot[]>> => getJSON(STORAGE_KEYS.TIMELINE, EMPTY_TIMELINE);
+export const writeTimeline = async (v: V1<PersonalitySnapshot[]>) => (v.updatedAt = Date.now(), setJSON(STORAGE_KEYS.TIMELINE, v));
 
-export async function writeProfile(profile: V1<PersonalityProfile>): Promise<void> {
-  profile.updatedAt = Date.now();
-  await safeWriteJSON(STORAGE_KEYS.PROFILE, profile);
-  invalidatePatternCache();
-}
-
-// Batch operations for efficiency
-export async function readAllPatterns() {
-  const [venue, temporal, sequences, profile] = await Promise.all([
+// Read all patterns (for insights panel)
+export const readAllPatterns = async () => {
+  const [venue, temporal, sequences, profile, social, clusters, timeline] = await Promise.all([
     readVenueImpacts(),
-    readTemporalPrefs(), 
+    readTemporalPrefs(),
     readSequences(),
-    readProfile()
+    readProfile(),
+    readSocial(),
+    readClusters(),
+    readTimeline()
   ]);
   
-  return { venue, temporal, sequences, profile };
-}
-
-// Per-bucket cache TTL (venue/temporal/profile independent)
-let patternCache = {
-  venue: { v: undefined as V1<VenueImpacts>|undefined, t: 0 },
-  temporal: { v: undefined as V1<TemporalPrefs>|undefined, t: 0 },
-  profile: { v: undefined as V1<PersonalityProfile>|undefined, t: 0 },
+  return { venue, temporal, sequences, profile, social, clusters, timeline };
 };
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-export async function getCachedVenueImpacts(): Promise<V1<VenueImpacts>> {
-  const now = Date.now();
-  if (!patternCache.venue.v || now - patternCache.venue.t > CACHE_TTL_MS) {
-    patternCache.venue.v = await readVenueImpacts();
-    patternCache.venue.t = now;
-  }
-  return patternCache.venue.v!;
-}
-
-export async function getCachedTemporalPrefs(): Promise<V1<TemporalPrefs>> {
-  const now = Date.now();
-  if (!patternCache.temporal.v || now - patternCache.temporal.t > CACHE_TTL_MS) {
-    patternCache.temporal.v = await readTemporalPrefs();
-    patternCache.temporal.t = now;
-  }
-  return patternCache.temporal.v!;
-}
-
-export async function getCachedProfile(): Promise<V1<PersonalityProfile>> {
-  const now = Date.now();
-  if (!patternCache.profile.v || now - patternCache.profile.t > CACHE_TTL_MS) {
-    patternCache.profile.v = await readProfile();
-    patternCache.profile.t = now;
-  }
-  return patternCache.profile.v!;
-}
-
-// Invalidate cache when patterns are updated
-export function invalidatePatternCache(): void {
-  patternCache = {
-    venue: { v: undefined, t: 0 },
-    temporal: { v: undefined, t: 0 },
-    profile: { v: undefined, t: 0 },
-  };
-}
-
-// Cleanup old pattern data (for periodic maintenance)
-export async function cleanupOldPatterns(maxAgeMs = 90 * 24 * 60 * 60 * 1000): Promise<void> {
-  const cutoff = Date.now() - maxAgeMs;
-  
+// Cleanup old patterns
+export const cleanupOldPatterns = async (maxAgeMs = 90 * 24 * 60 * 60 * 1000) => {
   try {
-    const patterns = await readAllPatterns();
+    const cutoff = Date.now() - maxAgeMs;
+    
+    // Clean up sequences with old lastSeen timestamps
+    const sequences = await readSequences();
     let cleaned = false;
     
-    // Remove venue impacts older than cutoff with low sample count
-    Object.keys(patterns.venue.data).forEach(venueType => {
-      const impact = patterns.venue.data[venueType];
-      if (impact && impact.sampleN < 5 && patterns.venue.updatedAt < cutoff) {
-        delete patterns.venue.data[venueType];
+    Object.keys(sequences.data).forEach(key => {
+      if (sequences.data[key].lastSeen < cutoff) {
+        delete sequences.data[key];
         cleaned = true;
       }
     });
     
     if (cleaned) {
-      await writeVenueImpacts(patterns.venue);
-      invalidatePatternCache();
+      await writeSequences(sequences);
     }
-  } catch {
-    // Cleanup is not critical
+  } catch (error) {
+    console.warn('Failed to cleanup old patterns:', error);
   }
-}
+};
+
+// Invalidate pattern cache (no-op since we don't cache)
+export const invalidatePatternCache = () => {
+  // No-op - we read from storage directly
+};

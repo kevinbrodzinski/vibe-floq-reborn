@@ -105,12 +105,12 @@ async function applyTemporalEnrichment(
     
     // Find most preferred vibe for this hour
     const sortedPrefs = Object.entries(hourPrefs)
-      .sort(([,a], [,b]) => (b ?? 0) - (a ?? 0));
+      .sort(([,a], [,b]) => ((b as number) ?? 0) - ((a as number) ?? 0));
     
     const [preferredVibe, preferredWeight] = sortedPrefs[0];
     
     // Only apply if preference is strong enough and doesn't fight current prediction
-    if ((preferredWeight ?? 0) < 0.35) {
+    if (((preferredWeight as number) ?? 0) < 0.35) {
       return { applied: false, vector, confidence };
     }
     
@@ -125,7 +125,7 @@ async function applyTemporalEnrichment(
     
     // Apply bounded nudge (+3% max)
     const adjustedVector = { ...vector };
-    const boost = Math.min(0.03, (preferredWeight ?? 0) * 0.1);
+    const boost = Math.min(0.03, ((preferredWeight as number) ?? 0) * 0.1);
     adjustedVector[preferredVibe as Vibe] += boost;
     
     // Renormalize vector
