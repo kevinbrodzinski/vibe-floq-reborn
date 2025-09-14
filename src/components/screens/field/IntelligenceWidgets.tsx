@@ -1,6 +1,7 @@
 import React from 'react';
 import { IntelligenceCard } from '@/components/intelligence/IntelligenceCard';
 import { ContextualVibeRecommendations } from '@/components/intelligence/ContextualVibeRecommendations';
+import { ContextAwareCard } from '@/components/intelligence/ContextAwareCard';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 
 interface IntelligenceWidgetsProps {
@@ -37,6 +38,7 @@ export function IntelligenceWidgets({
         variant="compact" 
         onViewDetails={onViewIntelligenceDashboard}
       />
+      <ContextAwareCard compact />
       <ContextualVibeRecommendations 
         location={location}
         weather={weather}

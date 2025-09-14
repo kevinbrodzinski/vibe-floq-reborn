@@ -3,9 +3,12 @@ import { PredictiveVibeEngine } from '@/core/intelligence/PredictiveVibeEngine';
 import { ActivityRecommendationEngine } from '@/core/intelligence/ActivityRecommendationEngine';
 import { learnFromCorrection } from '@/core/vibe/learning/PersonalWeightStore';
 import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
+import { ContextFactStore } from '@/core/context/ContextFactStore';
+import { ContextSynthesizer } from '@/core/context/ContextSynthesizer';
 import type { Vibe } from '@/lib/vibes';
 import type { ComponentKey } from '@/core/vibe/types';
 import type { PersonalityInsights } from '@/types/personality';
+import type { ContextSummary } from '@/core/context/types';
 
 /**
  * Central intelligence integration system that connects
@@ -15,6 +18,8 @@ class IntelligenceIntegration {
   private learningFeedback: RealTimeLearningFeedback | null = null;
   private predictiveEngine: PredictiveVibeEngine | null = null;
   private activityEngine: ActivityRecommendationEngine | null = null;
+  private contextStore: ContextFactStore | null = null;
+  private contextSynthesizer: ContextSynthesizer | null = null;
 
   /**
    * Initialize engines with personality insights
@@ -35,6 +40,12 @@ class IntelligenceIntegration {
     }
     if (!this.activityEngine) {
       this.activityEngine = new ActivityRecommendationEngine(insights);
+    }
+    if (!this.contextStore) {
+      this.contextStore = new ContextFactStore();
+    }
+    if (!this.contextSynthesizer) {
+      this.contextSynthesizer = new ContextSynthesizer();
     }
 
     return true;
@@ -94,6 +105,19 @@ class IntelligenceIntegration {
         );
       }
 
+      // 3. Record context fact for AI learning
+      if (this.contextStore) {
+        await this.contextStore.append({
+          type: 'vibe_correction',
+          data: {
+            from: predicted,
+            to: corrected,
+            components: componentScores,
+            confidence
+          }
+        });
+      }
+
       console.log('[Intelligence] Processed correction:', { predicted, corrected, confidence });
 
     } catch (error) {
@@ -131,6 +155,7 @@ class IntelligenceIntegration {
     time?: Date;
     weather?: any;
     recentVibes?: Vibe[];
+    currentReading?: any;
   }) {
     if (!this.ensureEnginesInitialized() || !this.predictiveEngine) {
       return null;
@@ -149,17 +174,59 @@ class IntelligenceIntegration {
 
       const predictions = this.predictiveEngine.predictUpcomingVibes(predictiveContext);
       
+      // Get context facts and synthesize patterns
+      let contextualReasons: string[] = [];
+      if (this.contextStore && this.contextSynthesizer) {
+        const facts = await this.contextStore.getRecent(100);
+        const contextSummary = this.contextSynthesizer.synthesize(facts, context.currentReading);
+        contextualReasons = contextSummary.contextualInsights.map(insight => insight.text);
+      }
+      
       return {
         vibePredictions: predictions.map(p => ({
           vibe: p.vibe,
           confidence: p.confidence,
           reasoning: p.reasoning.join('. ')
         })),
+        contextualReasons,
         activitySuggestions: [],
         confidence: predictions.length > 0 ? predictions[0].confidence : 0
       };
     } catch (error) {
       console.error('[Intelligence] Failed to generate contextual suggestions:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get current context summary
+   */
+  async getContextSummary(): Promise<ContextSummary | null> {
+    if (!this.ensureEnginesInitialized() || !this.contextStore || !this.contextSynthesizer) {
+      return null;
+    }
+
+    try {
+      const facts = await this.contextStore.getRecent(100);
+      return this.contextSynthesizer.synthesize(facts);
+    } catch (error) {
+      console.error('[Intelligence] Failed to get context summary:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Record a context fact
+   */
+  async recordContextFact(fact: { type: any; data: any }): Promise<string | null> {
+    if (!this.ensureEnginesInitialized() || !this.contextStore) {
+      return null;
+    }
+
+    try {
+      return await this.contextStore.append(fact);
+    } catch (error) {
+      console.error('[Intelligence] Failed to record context fact:', error);
       return null;
     }
   }
@@ -188,6 +255,8 @@ class IntelligenceIntegration {
     this.learningFeedback = null;
     this.predictiveEngine = null;
     this.activityEngine = null;
+    this.contextStore = null;
+    this.contextSynthesizer = null;
   }
 }
 
