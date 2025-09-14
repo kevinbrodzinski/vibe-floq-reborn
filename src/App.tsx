@@ -44,6 +44,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import FlowReflectionPage from "./pages/FlowReflectionPage";
 import VibeEngineTestPage from "./pages/VibeEngineTestPage";
 import { VibeDevTools } from "./components/vibe/VibeDevTools";
+import { DevGate } from "./components/vibe/DevGate";
 
 
 const App = () => {
@@ -141,7 +142,11 @@ const App = () => {
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
-                      {import.meta.env.MODE === 'development' && <VibeDevTools />}
+                      {import.meta.env.DEV && (
+                        <DevGate>
+                          <VibeDevTools />
+                        </DevGate>
+                      )}
                     </BrowserRouter>
                   </TooltipProvider>
                 </BannerProvider>
