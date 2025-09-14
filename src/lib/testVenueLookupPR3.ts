@@ -1,11 +1,49 @@
-// PR-3 Venue Lookup Testing Script
-// Test nearest venue RPC and venue-aware floq creation
+// PR-3 Venue Lookup Testing Script  
+// Test enhanced venue flow with category mapping + rate limiting
 
 import { supabase } from '@/integrations/supabase/client';
+import { fetchVenue } from '@/core/venues/service';
+import { mapCategoriesToVenueType } from '@/core/venues/category-mapper';
 import { getVenuesWithIntelligence } from '@/lib/venues/getVenuesWithIntelligence';
 
+export async function testEnhancedVenueFlow(lat: number = 34.0522, lng: number = -118.2437) {
+  console.log('🏢 Testing enhanced venue flow at:', lat, lng);
+  
+  try {
+    // Test 1: Enhanced venue service with Google + FSQ fusion
+    console.log('📍 Step 1: Testing fetchVenue with rate limiting...');
+    const venuePayload = await fetchVenue(lat, lng);
+    
+    console.log('✅ Venue payload:', {
+      name: venuePayload.name,
+      categories: venuePayload.categories,
+      confidence: venuePayload.confidence,
+      providers: venuePayload.providers
+    });
+    
+    // Test 2: Category mapping
+    console.log('📍 Step 2: Testing category mapper...');
+    const venueTypeResult = mapCategoriesToVenueType({
+      googleTypes: ['night_club', 'bar', 'establishment'], 
+      fsqCategories: venuePayload.categories,
+      label: venuePayload.name || undefined
+    });
+    
+    console.log('✅ Venue type mapping:', venueTypeResult);
+    
+    return {
+      venuePayload,
+      venueTypeResult,
+      success: true
+    };
+  } catch (error) {
+    console.error('❌ Exception testing enhanced venue flow:', error);
+    return { success: false, error };
+  }
+}
+
 export async function testNearestVenueRPC(lat: number = 34.0522, lng: number = -118.2437) {
-  console.log('🏢 Testing nearest venue RPC at:', lat, lng);
+  console.log('🏢 Testing fallback venue RPC at:', lat, lng);
   
   try {
     const venues = await getVenuesWithIntelligence({
@@ -15,15 +53,9 @@ export async function testNearestVenueRPC(lat: number = 34.0522, lng: number = -
       limit: 1,
     });
     const data = venues[0] || null;
-    const error = null;
-
-    if (error) {
-      console.error('❌ Nearest venue RPC failed:', error);
-      return false;
-    }
 
     if (data) {
-      console.log('✅ Found nearest venue:', {
+      console.log('✅ Found fallback venue:', {
         id: data.id,
         name: data.name,
         distance: `${data.distance_m}m`,
@@ -35,7 +67,7 @@ export async function testNearestVenueRPC(lat: number = 34.0522, lng: number = -
       return null;
     }
   } catch (error) {
-    console.error('❌ Exception testing nearest venue:', error);
+    console.error('❌ Exception testing fallback venue:', error);
     return false;
   }
 }
@@ -93,29 +125,31 @@ export async function testVenueAwareFloqCreation() {
 }
 
 export async function testCompleteVenueFlow() {
-  console.log('🎯 Testing complete venue lookup flow...');
-  console.log('👀 This simulates: Wave tap → Venue lookup → "Let\'s Floq at {Venue}"');
+  console.log('🎯 Testing complete enhanced venue flow...');
+  console.log('👀 This simulates: Enhanced venue detection → Category mapping → Learning integration');
   
-  // Test 1: Venue RPC
-  console.log('📍 Step 1: Testing venue lookup...');
+  // Test 1: Enhanced venue flow
+  console.log('📍 Step 1: Testing enhanced venue detection...');
+  const enhanced = await testEnhancedVenueFlow();
+  
+  // Test 2: Fallback RPC
+  console.log('📍 Step 2: Testing fallback venue lookup...');
   const venue = await testNearestVenueRPC();
   
-  // Test 2: Venue-aware creation
-  console.log('📍 Step 2: Testing venue-aware floq creation...');
+  // Test 3: Venue-aware creation
+  console.log('📍 Step 3: Testing venue-aware floq creation...');
   const result = await testVenueAwareFloqCreation();
   
-  if (result && typeof result === 'object') {
-    console.log('🎉 Complete venue flow test PASSED!');
-    console.log('✅ Expected UI behavior:');
-    console.log('  1. User taps wave on map');
-    console.log('  2. Bottom sheet shows wave details');
-    console.log('  3. User taps "Continue"');
-    console.log('  4. Second sheet shows venue lookup with spinner');
-    console.log('  5. CTA updates to "Let\'s Floq at {Venue}" or "Let\'s Floq here"');
-    console.log('  6. User taps CTA → floq created with venue context');
-    console.log('  7. User navigates to momentary floq UI');
+  if (enhanced?.success && result && typeof result === 'object') {
+    console.log('🎉 Complete enhanced venue flow test PASSED!');
+    console.log('✅ Enhanced flow benefits:');
+    console.log('  1. Rate-limited Google + FSQ fusion with confidence scoring');
+    console.log('  2. Request coalescing prevents duplicate API calls');  
+    console.log('  3. Canonical category mapping for consistent venue types');
+    console.log('  4. Enhanced learning with venue context + telemetry');
+    console.log('  5. Graceful degradation with fallback chain');
     
-    return result;
+    return { enhanced, venue, floqResult: result };
   }
   
   return false;
@@ -124,7 +158,8 @@ export async function testCompleteVenueFlow() {
 // Make available globally for console testing
 if (typeof window !== 'undefined') {
   (window as any).testVenueLookup = {
-    testNearestVenueRPC,
+    testEnhancedVenueFlow,
+    testNearestVenueRPC, 
     testVenueAwareFloqCreation,
     testCompleteVenueFlow
   };
