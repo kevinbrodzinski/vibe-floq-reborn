@@ -1,8 +1,9 @@
 import type { ComponentScores, Vibe, VibeVector } from "./types";
 import { VIBES, safeVibe } from "@/lib/vibes";
+import { PersonalWeights } from "./learning/PersonalWeights";
 
-/** Map component → vibe influence (positive or negative) */
-const W: Record<keyof ComponentScores, Partial<Record<Vibe, number>>> = {
+/** Base component → vibe influence (positive or negative) */
+const BASE_WEIGHTS: Record<keyof ComponentScores, Partial<Record<Vibe, number>>> = {
   circadian:   { hype:+0.7, energetic:+0.6, social:+0.4, chill:+0.1, down:-0.2 },
   movement:    { energetic:+0.8, flowing:+0.5, open:+0.3, social:+0.2, solo:-0.2, down:-0.3 },
   venueEnergy: { social:+0.6, romantic:+0.2, hype:+0.2, solo:-0.2, down:-0.2 },
@@ -12,7 +13,10 @@ const W: Record<keyof ComponentScores, Partial<Record<Vibe, number>>> = {
 
 const sigmoid = (x:number)=> 1/(1+Math.exp(-x*2));
 
-export function combine(components: ComponentScores): VibeVector {
+export function combine(components: ComponentScores, usePersonalization = true): VibeVector {
+  // Apply personal learning if available
+  const personalWeights = usePersonalization ? PersonalWeights.load() : null;
+  const W = PersonalWeights.applyPersonalWeights(BASE_WEIGHTS, personalWeights);
   const raw: Record<Vibe, number> = Object.fromEntries(VIBES.map(v=>[v,0])) as any;
   (Object.keys(components) as (keyof ComponentScores)[]).forEach(k=>{
     const c = components[k] ?? 0;

@@ -226,9 +226,45 @@ export function useVibeEngine(enabled: boolean = true) {
   }, [enabled, computeVibe, recordSnapshot, productionTick]);
 
   // User feedback for learning
-  const recordCorrection = useCallback((actualVibe: Vibe, reason?: string) => {
-    // TODO: Implement learning system
-    console.log(`🎯 User correction: ${state.currentVibe} → ${actualVibe}`, { reason, confidence: state.confidence });
+  const recordCorrection = useCallback(async (actualVibe: Vibe, reason?: string) => {
+    const reading = productionReading;
+    if (!reading) return;
+
+    try {
+      // Import learning system
+      const { CorrectionStore } = await import('@/core/vibe/storage/CorrectionStore');
+      const { PersonalWeights } = await import('@/core/vibe/learning/PersonalWeights');
+
+      // Create correction record
+      const correction = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        timestamp: Date.now(),
+        predicted: state.currentVibe,
+        corrected: actualVibe,
+        confidence: state.confidence,
+        context: {
+          components: reading.components,
+          timeOfDay: new Date().getHours(),
+          dayOfWeek: new Date().getDay(),
+          venue: reading.components.venueEnergy > 0.5 ? 'venue' : undefined,
+        },
+        reason
+      };
+
+      // Save correction
+      await CorrectionStore.save(correction);
+
+      // Trigger learning update
+      const patterns = CorrectionStore.analyzePatterns();
+      PersonalWeights.learn(patterns);
+
+      console.log(`🎯 Learning: ${state.currentVibe} → ${actualVibe}`, { 
+        patterns: patterns.length, 
+        confidence: PersonalWeights.getStats().confidence 
+      });
+    } catch (error) {
+      console.warn('[Learning] Failed to record correction:', error);
+    }
     
     // Immediately update to user's vibe
     setState(prev => ({
@@ -237,7 +273,7 @@ export function useVibeEngine(enabled: boolean = true) {
       confidence: 0.9, // High confidence in user input
       lastUpdate: new Date(),
     }));
-  }, [state.currentVibe, state.confidence]);
+  }, [state.currentVibe, state.confidence, productionReading]);
 
   return {
     // Current state
