@@ -1,5 +1,6 @@
 import type { Vibe } from "@/lib/vibes";
 import type { VenueIntelligence } from "@/types/venues";
+import type { VibeDist } from "@/types/personality";
 
 export type { Vibe };
 
@@ -28,16 +29,17 @@ export type WeatherSignal = {
   confidenceBoost?: number; // 0..0.1: tiny confidence nudge for stable conditions
 };
 
-// User correction record used by learner
+// User correction record used by learner - CANONICAL VERSION
 export type CorrectionHistory = {
   timestamp: number;
-  predicted: VibeVector;                  // engine vector at the time
-  corrected: Vibe;                        // user's chosen vibe
-  components: ComponentScores;            // 0..1 component strengths
+  predicted: VibeVector;
+  corrected: Vibe;
+  components: ComponentScores;
   context: {
-    temporal: { hour: number; isWeekend: boolean };
-    venue: { type: string; energy?: number } | null;
-    movement: { speedMps?: number; moving01?: number } | null;
+    hourOfDay: number;
+    dayOfWeek: number;            // 0–6
+    isWeekend: boolean;
+    venue?: { type: string } | null;
   };
 };
 

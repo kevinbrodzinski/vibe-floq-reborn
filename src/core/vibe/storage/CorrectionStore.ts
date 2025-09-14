@@ -1,18 +1,19 @@
 import type { Vibe } from "@/lib/vibes";
-import type { ComponentScores, VibeReading } from "../types";
+import type { ComponentScores, CorrectionHistory } from "../types";
 
+// Use canonical CorrectionHistory from types with correction-specific fields
 export interface VibeCorrection {
   id: string;
   timestamp: number;
-  predicted: Vibe;
+  predicted: Vibe; // Single vibe for corrections
   corrected: Vibe;
   confidence: number;
+  components: ComponentScores;
   context: {
-    components: ComponentScores;
-    location?: { lat: number; lng: number };
-    timeOfDay: number;
+    hourOfDay: number;
     dayOfWeek: number;
-    venue?: string;
+    isWeekend: boolean;
+    venue?: { type: string } | null;
   };
   reason?: string;
 }
@@ -77,7 +78,7 @@ class CorrectionStoreImpl {
         }
 
         // Calculate how much this component should have influenced the corrected vibe
-        const componentValue = correction.context.components[component] || 0;
+        const componentValue = correction.components[component] || 0;
         const shouldHaveInfluenced = componentValue > 0.6 ? 1 : componentValue > 0.3 ? 0.5 : 0;
         
         vibeAdjustments[correctedVibe].push(shouldHaveInfluenced);

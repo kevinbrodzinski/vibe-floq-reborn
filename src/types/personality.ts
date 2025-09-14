@@ -1,16 +1,17 @@
 import type { Vibe } from '@/lib/vibes';
 
+export type VibeDist = Partial<Record<Vibe, number>>;
+
 export type PersonalityInsights = {
   hasEnoughData: boolean;
   chronotype: 'lark' | 'owl' | 'balanced';
   energyType: 'high-energy' | 'low-energy' | 'balanced';
   socialType: 'social' | 'solo' | 'balanced';
   consistency: 'very-consistent' | 'consistent' | 'adaptive' | 'highly-adaptive';
-  temporalPrefs?: Record<number, Partial<Record<Vibe, number>>>;
-  confidence: number; // 0-1
-  lastUpdated: number;
+  temporalPrefs?: Record<number, VibeDist>;
+  confidence: number;            // 0..1
+  lastUpdated: number;           // epoch ms
   dataQuality: 'low' | 'medium' | 'high';
-  correctionCount: number; // Add this for compatibility
   
   // Enhanced pattern analysis
   venueImpacts?: import('@/core/vibe/analysis/VenuePatternAnalyzer').VenueImpact[];

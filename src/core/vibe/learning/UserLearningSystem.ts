@@ -29,8 +29,7 @@ export class UserLearningSystem {
         consistency: 'adaptive',
         confidence: 0,
         lastUpdated: Date.now(),
-        dataQuality: 'low',
-        correctionCount: recent.length
+        dataQuality: 'low'
       };
     }
 
@@ -64,7 +63,6 @@ export class UserLearningSystem {
       confidence,
       lastUpdated: Date.now(),
       dataQuality: hasEnoughData ? 'high' : recent.length > 15 ? 'medium' : 'low',
-      correctionCount: recent.length,
       // Enhanced pattern data
       venueImpacts,
       behaviorSequences,
@@ -78,7 +76,7 @@ export class UserLearningSystem {
 
   private analyzeChronotype(corrections: any[]): 'lark' | 'owl' | 'balanced' {
     const timeVibes = corrections.reduce((acc, c) => {
-      const hour = c.context.timeOfDay;
+      const hour = c.context.hourOfDay;
       if (hour <= 10) acc.morning++;
       else if (hour >= 20) acc.evening++;
       else acc.midday++;
@@ -133,7 +131,7 @@ export class UserLearningSystem {
     const hourlyPrefs: Record<number, Record<string, number>> = {};
     
     corrections.forEach(c => {
-      const hour = c.context.timeOfDay;
+      const hour = c.context.hourOfDay;
       if (!hourlyPrefs[hour]) hourlyPrefs[hour] = {};
       hourlyPrefs[hour][c.corrected] = (hourlyPrefs[hour][c.corrected] || 0) + 1;
     });

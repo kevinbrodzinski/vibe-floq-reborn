@@ -1,5 +1,6 @@
 import type { VibeCorrection } from '@/core/vibe/storage/CorrectionStore';
 import type { Vibe } from '@/lib/vibes';
+import { getHour, getDow, getIsWeekend, getVenueType } from '@/core/vibe/analysis/ctx';
 
 export type BehaviorSequence = {
   sequence: Vibe[];
@@ -205,8 +206,8 @@ export class SequenceDetector {
     const triggers: TriggerPattern[] = [];
     
     // Weekend vs weekday patterns
-    const weekendCorrections = corrections.filter(c => c.context.dayOfWeek % 6 === 0);
-    const weekdayCorrections = corrections.filter(c => c.context.dayOfWeek % 6 !== 0);
+    const weekendCorrections = corrections.filter(c => getIsWeekend(c));
+    const weekdayCorrections = corrections.filter(c => !getIsWeekend(c));
     
     if (weekendCorrections.length >= 3 && weekdayCorrections.length >= 3) {
       const weekendVibes = this.getMostCommonVibes(weekendCorrections);
@@ -236,8 +237,8 @@ export class SequenceDetector {
     
     // Group by venue type
     corrections.forEach(correction => {
-      const venueType = correction.context.venue;
-      if (!venueType) return;
+      const venueType = getVenueType(correction);
+      if (venueType === 'unknown') return;
       
       if (!venueVibes.has(venueType)) {
         venueVibes.set(venueType, {} as Record<Vibe, number>);

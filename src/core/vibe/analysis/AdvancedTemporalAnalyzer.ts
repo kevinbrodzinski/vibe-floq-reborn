@@ -1,5 +1,7 @@
 import type { VibeCorrection } from '@/core/vibe/storage/CorrectionStore';
 import type { Vibe } from '@/lib/vibes';
+import { VIBE_ENERGY } from '@/core/vibe/vector';
+import { getHour, getDow, getIsWeekend } from '@/core/vibe/analysis/ctx';
 
 export type MicroTemporalPattern = {
   hour: number;
@@ -64,7 +66,7 @@ export class AdvancedTemporalAnalyzer {
 
     // Group corrections by hour
     corrections.forEach(correction => {
-      const hour = correction.context.timeOfDay;
+      const hour = getHour(correction);
       const data = hourlyData.get(hour)!;
       
       data.corrections.push(correction);
@@ -128,7 +130,7 @@ export class AdvancedTemporalAnalyzer {
     corrections.forEach(correction => {
       const date = new Date(correction.timestamp);
       const dayOfWeek = date.getDay();
-      const hour = correction.context.timeOfDay;
+      const hour = getHour(correction);
       
       const data = dailyData.get(dayOfWeek)!;
       
@@ -212,24 +214,7 @@ export class AdvancedTemporalAnalyzer {
   }
 
   private calculateVibeEnergy(vibe: Vibe): number {
-    // Map vibes to energy levels (0-1 scale)
-    const energyMap: Record<Vibe, number> = {
-      'hype': 1.0,
-      'flowing': 0.8,
-      'social': 0.7,
-      'open': 0.6,
-      'curious': 0.6,
-      'weird': 0.5,
-      'romantic': 0.4,
-      'chill': 0.3,
-      'solo': 0.3,
-      'down': 0.1,
-      'energetic': 0.9,
-      'excited': 0.85,
-      'focused': 0.6
-    };
-
-    return energyMap[vibe] || 0.5;
+    return VIBE_ENERGY[vibe] || 0.5;
   }
 
   private determineChronotype(patterns: MicroTemporalPattern[]): 'lark' | 'owl' | 'balanced' {

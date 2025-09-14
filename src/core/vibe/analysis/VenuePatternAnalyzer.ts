@@ -1,11 +1,13 @@
 import type { VibeCorrection } from '@/core/vibe/storage/CorrectionStore';
 import type { Vibe } from '@/lib/vibes';
-import { VIBES } from '@/lib/vibes';
+import type { VibeDist } from '@/types/personality';
+import { VIBE_ENERGY } from '@/core/vibe/vector';
+import { getHour, getDow, getVenueType, isSome } from '@/core/vibe/analysis/ctx';
 
 export type VenueImpact = {
   venueType: string;
   energyDelta: number; // -1 to +1, how much this venue affects energy
-  preferredVibes: Record<Vibe, number>; // which vibes user prefers here
+  preferredVibes: VibeDist; // which vibes user prefers here
   optimalDwellMinutes: number; // sweet spot for time spent
   confidence: number; // 0-1, based on sample size
   sampleSize: number;
@@ -35,20 +37,20 @@ export class VenuePatternAnalyzer {
   analyzeVenueImpact(corrections: VibeCorrection[]): VenueImpact[] {
     const venueData = new Map<string, {
       energyChanges: number[];
-      vibeSelections: Record<Vibe, number>;
+      vibeSelections: VibeDist;
       dwellTimes: number[];
       corrections: VibeCorrection[];
     }>();
 
     // Group corrections by venue type
     corrections.forEach(correction => {
-      const venueType = correction.context.venue;
-      if (!venueType) return;
+      const venueType = getVenueType(correction);
+      if (venueType === 'unknown') return;
 
       if (!venueData.has(venueType)) {
         venueData.set(venueType, {
           energyChanges: [],
-          vibeSelections: Object.fromEntries(VIBES.map(v => [v, 0])) as Record<Vibe, number>,
+          vibeSelections: {},
           dwellTimes: [],
           corrections: []
         });
@@ -56,26 +58,31 @@ export class VenuePatternAnalyzer {
 
       const data = venueData.get(venueType)!;
       data.corrections.push(correction);
-      data.vibeSelections[correction.corrected]++;
+      data.vibeSelections[correction.corrected] = (data.vibeSelections[correction.corrected] || 0) + 1;
       
       // Calculate energy change (predicted vs corrected)
-      const predictedEnergy = this.calculateVibeEnergy(correction.predicted);
-      const correctedEnergy = this.calculateVibeEnergy(correction.corrected);
+      const predictedEnergy = VIBE_ENERGY[correction.predicted];
+      const correctedEnergy = VIBE_ENERGY[correction.corrected];
       data.energyChanges.push(correctedEnergy - predictedEnergy);
     });
 
-    // Convert to VenueImpact objects
+    // Convert to VenueImpact objects with safe math
     return Array.from(venueData.entries()).map(([venueType, data]) => {
       const sampleSize = data.corrections.length;
       const confidence = Math.min(1, sampleSize / 10); // confidence grows to 1 with 10+ samples
       
       const avgEnergyDelta = data.energyChanges.reduce((sum, delta) => sum + delta, 0) / sampleSize;
-      const totalSelections = Object.values(data.vibeSelections).reduce((sum, count) => sum + count, 0);
+      const totalSelections = Object.values(data.vibeSelections).reduce((sum, count) => sum + (count || 0), 0);
       
-      // Normalize vibe preferences
-      const preferredVibes = Object.fromEntries(
-        VIBES.map(vibe => [vibe, data.vibeSelections[vibe] / totalSelections])
-      ) as Record<Vibe, number>;
+      // Normalize vibe preferences with safe division
+      const preferredVibes: VibeDist = {};
+      if (totalSelections > 0) {
+        Object.entries(data.vibeSelections).forEach(([vibe, count]) => {
+          if (count && count > 0) {
+            preferredVibes[vibe as Vibe] = count / totalSelections;
+          }
+        });
+      }
 
       return {
         venueType,
@@ -158,10 +165,10 @@ export class VenuePatternAnalyzer {
     impacts: VenueImpact[], 
     targetVibe: Vibe, 
     currentHour: number
-  ): VenueRecommendation[] {
+    ): VenueRecommendation[] {
     return impacts
       .filter(impact => impact.confidence > 0.3)
-      .map(impact => {
+      .map((impact): VenueRecommendation | null => {
         const vibePreference = impact.preferredVibes[targetVibe] || 0;
         const energyAlignment = this.getEnergyAlignment(targetVibe, impact.energyDelta);
         
@@ -177,30 +184,13 @@ export class VenuePatternAnalyzer {
                          impact.energyDelta < -0.1 ? 'calming' : 'neutral'
         };
       })
-      .filter(Boolean)
-      .sort((a, b) => b!.confidence - a!.confidence)
-      .slice(0, 3) as VenueRecommendation[];
+      .filter(isSome)
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 3);
   }
 
   private calculateVibeEnergy(vibe: Vibe): number {
-    // Map vibes to energy levels (0-1 scale)
-    const energyMap: Record<Vibe, number> = {
-      'hype': 1.0,
-      'flowing': 0.7,
-      'social': 0.8,
-      'open': 0.6,
-      'curious': 0.5,
-      'romantic': 0.4,
-      'chill': 0.3,
-      'solo': 0.3,
-      'weird': 0.6,
-      'down': 0.1,
-      'energetic': 0.9,
-      'excited': 0.85,
-      'focused': 0.6
-    };
-
-    return energyMap[vibe] || 0.5;
+    return VIBE_ENERGY[vibe] || 0.5;
   }
 
   private calculateOptimalDwell(corrections: VibeCorrection[]): number {
@@ -210,7 +200,7 @@ export class VenuePatternAnalyzer {
   }
 
   private getEnergyAlignment(targetVibe: Vibe, venueEnergyDelta: number): number {
-    const vibeEnergy = this.calculateVibeEnergy(targetVibe);
+    const vibeEnergy = VIBE_ENERGY[targetVibe];
     const energyDistance = Math.abs(vibeEnergy - (0.5 + venueEnergyDelta));
     return Math.max(0, 1 - energyDistance * 2); // Closer energy = higher alignment
   }
@@ -220,7 +210,7 @@ export class VenuePatternAnalyzer {
     targetVibe: Vibe, 
     score: number
   ): string {
-    const preference = Math.round(impact.preferredVibes[targetVibe] * 100);
+    const preference = Math.round((impact.preferredVibes[targetVibe] || 0) * 100);
     
     if (impact.energyDelta > 0.2) {
       return `Energizing venue - you choose "${targetVibe}" here ${preference}% of the time`;
