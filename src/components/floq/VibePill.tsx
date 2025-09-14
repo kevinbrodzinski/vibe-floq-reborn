@@ -1,5 +1,6 @@
 import { getVibeIcon } from '@/utils/vibeIcons';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import type { Vibe } from '@/types';
 
 interface VibePillProps {
@@ -8,7 +9,7 @@ interface VibePillProps {
 }
 
 export const VibePill = ({ vibe, className = '' }: VibePillProps) => {
-  const vibeColor = getVibeColor(vibe);
+  const vibeColor = vibeToHex(safeVibe(vibe));
   const icon = getVibeIcon(vibe);
 
   return (

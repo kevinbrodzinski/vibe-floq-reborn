@@ -13,7 +13,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',            // ← built-in; no external package needed
       reportsDirectory: 'coverage'
-    }
+    },
+    include: [
+      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'
+    ]
   },
   resolve: {
     alias: {

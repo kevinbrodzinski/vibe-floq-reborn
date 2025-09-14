@@ -135,6 +135,7 @@ html, body, #root {
   .pulse-soft { animation: none !important; }
   .animate-glow-flow { animation: none !important; }
   .animate-flow { animation: none !important; }
+  .pulse { animation: none !important; }
 }
 
 @keyframes ripple-wave {
@@ -392,8 +393,12 @@ All colors MUST be HSL.
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
+  --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Vibe Engine CSS Variables */
+    --vibe-alpha: 0.8;
+    --vibe-hex: #8B5CF6;
 }
 
 @layer components {
@@ -496,6 +501,17 @@ All colors MUST be HSL.
   /* Floq Energy Utilities */
   .gradient-primary {
     background: var(--gradient-primary);
+  }
+
+  /* Vibe ring styling */
+  .vibe-ring {
+    opacity: var(--vibe-alpha);
+    border-color: var(--vibe-hex);
+  }
+
+  /* Transition utilities */
+  .transition-smooth {
+    transition: var(--transition-smooth);
   }
   
   .gradient-secondary {

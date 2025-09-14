@@ -15,3 +15,8 @@ export function smokeTestMovementDwell() {
   
   console.log('✅ Movement+Dwell smoke test passed');
 }
+
+// Actually call the test in development
+if (import.meta.env.DEV) {
+  smokeTestMovementDwell();
+}

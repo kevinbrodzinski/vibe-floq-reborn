@@ -44,7 +44,7 @@ export const DynamicVibeToggle: React.FC<DynamicVibeToggleProps> = ({
     return index >= 0 ? index : 0;
   };
 
-  // Get vibe color
+  // Get vibe color using unified system
   const getVibeColor = (vibe: string) => {
     const rgb = VIBE_RGB[vibe as keyof typeof VIBE_RGB];
     return rgb ? `rgb(${rgb.join(', ')})` : '#666';

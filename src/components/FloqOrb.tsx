@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { WalkableFloq } from "@/types";
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 
 interface FloqOrbProps {
   floq: WalkableFloq;
@@ -9,25 +11,8 @@ interface FloqOrbProps {
   onClick?: () => void;
 }
 
-const getVibeColor = (vibe: string) => {
-  switch (vibe) {
-    case 'hype':
-      return 'hsl(280 70% 60%)';
-    case 'social':
-      return 'hsl(30 70% 60%)';
-    case 'chill':
-      return 'hsl(240 70% 60%)';
-    case 'flowing':
-      return 'hsl(200 70% 60%)';
-    case 'open':
-      return 'hsl(120 70% 60%)';
-    default:
-      return 'hsl(240 70% 60%)';
-  }
-};
-
 export const FloqOrb = ({ floq, x, y, isWalkable = false, onClick }: FloqOrbProps) => {
-  const color = getVibeColor(floq.primary_vibe);
+  const color = vibeToHex(safeVibe(floq.primary_vibe));
   const size = Math.min(Math.max(40 + floq.participant_count * 8, 40), 100);
   
   return (

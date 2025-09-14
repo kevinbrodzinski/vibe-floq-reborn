@@ -515,9 +515,12 @@ export const UserProfileByUsername = () => {
                           <span className="text-sm font-light">{vibeData.percentage}%</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full bg-gradient-to-r ${getVibeColor(vibeData.vibe)}`}
-                            style={{ width: `${vibeData.percentage}%` }}
+                           <div 
+                             className="h-2 rounded-full vibe-ring"
+                             style={{ 
+                               backgroundColor: `var(--vibe-hex)`,
+                               width: `${vibeData.percentage}%`
+                             }}
                           />
                         </div>
                       </div>

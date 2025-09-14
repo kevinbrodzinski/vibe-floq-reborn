@@ -43,9 +43,10 @@ export function useUserPreferences(profileId?: string) {
 }
 
 /**
- * Hook to get vibe colors mapping
+ * @deprecated Use vibeToHex from '@/lib/vibe/color' instead
  */
 export function getVibeColor(vibe: string): string {
+  console.warn('getVibeColor is deprecated. Use vibeToHex from @/lib/vibe/color instead');
   const vibeColors: Record<string, string> = {
     chill: 'hsl(var(--chart-2))',
     energetic: 'hsl(var(--chart-3))',
