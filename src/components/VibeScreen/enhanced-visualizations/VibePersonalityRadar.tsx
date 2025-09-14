@@ -52,7 +52,7 @@ export const VibePersonalityRadar: React.FC<VibePersonalityRadarProps> = ({
         consistency,
         growth,
         recent,
-        color: getVibeColor(vibe),
+        color: vibeToHex(safeVibe(vibe)),
         rank: index + 1
       };
     }).sort((a, b) => b.percentage - a.percentage);

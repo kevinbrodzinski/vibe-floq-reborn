@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from '@/hooks/use-toast';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 
 import type { NearbyRow } from '@/hooks/useNearbyPeople'
 
@@ -37,7 +38,7 @@ export const SocialInteractionModal = ({
     id: person.profile_id || 'unknown',
     name: person.profile_id ? `User ${person.profile_id.slice(-4)}` : 'Anonymous',
     vibe: person.vibe,
-    color: getVibeColor(person.vibe),
+    color: vibeToHex(safeVibe(person.vibe)),
     isFriend: false // TODO: Add friend status check
   }
 

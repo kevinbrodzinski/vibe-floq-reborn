@@ -5,6 +5,8 @@ import { FloqOrb } from "@/components/FloqOrb";
 // import { ClusterPin } from "@/components/map/ClusterPin";
 // import { VenuePin } from "@/components/map/VenuePin";
 import { Z } from "@/constants/z";
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 // import { ViewportControls } from "@/components/map/ViewportControls";
 
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
@@ -257,8 +259,8 @@ export const FieldVisualization = ({
                                 transform: 'translate(-50%, -50%)',
                                 left: '50%',
                                 top: '50%',
-                                '--dynamic-ring-color': getVibeColor(person.vibe),
-                                borderColor: `${getVibeColor(person.vibe)}60`,
+                                  '--dynamic-ring-color': vibeToHex(safeVibe(person.vibe)),
+                                  borderColor: `${vibeToHex(safeVibe(person.vibe))}60`,
                               } as React.CSSProperties} 
                             />
                           )}
@@ -338,8 +340,8 @@ export const FieldVisualization = ({
                                   transform: 'translate(-50%, -50%)',
                                   left: '50%',
                                   top: '50%',
-                                  '--dynamic-ring-color': getVibeColor(person.vibe),
-                                  borderColor: `${getVibeColor(person.vibe)}60`,
+                                  '--dynamic-ring-color': vibeToHex(safeVibe(person.vibe)),
+                                  borderColor: `${vibeToHex(safeVibe(person.vibe))}60`,
                                 } as React.CSSProperties} 
                               />
                             )}

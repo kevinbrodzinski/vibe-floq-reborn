@@ -79,9 +79,9 @@ export function VibeVisualization({
           centerX, centerY, innerRadius,
           centerX, centerY, outerRadius
         );
-        const baseColor = getVibeColor(vibe.vibe);
-        vibeGradient.addColorStop(0, baseColor.replace('60%)', '60% / 0.6)'));
-        vibeGradient.addColorStop(1, baseColor.replace('60%)', '60% / 0.2)'));
+        const baseColor = vibeToHex(safeVibe(vibe.vibe));
+        vibeGradient.addColorStop(0, baseColor + 'CC'); // 80% opacity
+        vibeGradient.addColorStop(1, baseColor + '33'); // 20% opacity
         
         ctx.beginPath();
         ctx.arc(centerX, centerY, outerRadius, currentAngle, currentAngle + segmentAngle);
@@ -91,7 +91,7 @@ export function VibeVisualization({
         ctx.fill();
         
         // Add border
-        ctx.strokeStyle = getVibeColor(vibe.vibe).replace('60%)', '60% / 0.8)');
+        ctx.strokeStyle = vibeToHex(safeVibe(vibe.vibe)) + 'CC'; // 80% opacity
         ctx.lineWidth = 1;
         ctx.stroke();
         
@@ -103,15 +103,15 @@ export function VibeVisualization({
         centerX, centerY, 0,
         centerX, centerY, innerRadius
       );
-      const dominantColor = getVibeColor(dominantVibe);
-      centerGradient.addColorStop(0, dominantColor.replace('60%)', '60% / 0.8)'));
-      centerGradient.addColorStop(1, dominantColor.replace('60%)', '60% / 0.4)'));
+      const dominantColor = vibeToHex(safeVibe(dominantVibe));
+      centerGradient.addColorStop(0, dominantColor + 'CC'); // 80% opacity
+      centerGradient.addColorStop(1, dominantColor + '66'); // 40% opacity
       
       ctx.beginPath();
       ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
       ctx.fillStyle = centerGradient;
       ctx.fill();
-      ctx.strokeStyle = getVibeColor(dominantVibe);
+      ctx.strokeStyle = vibeToHex(safeVibe(dominantVibe));
       ctx.lineWidth = 2;
       ctx.stroke();
 

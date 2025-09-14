@@ -92,7 +92,7 @@ export const VibeFlowChart: React.FC<VibeFlowChartProps> = ({
         <div className="flex items-center gap-2 mb-2">
           <div 
             className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: getVibeColor(data.vibe) }}
+            style={{ backgroundColor: vibeToHex(safeVibe(data.vibe)) }}
           />
           <span className="text-sm font-medium capitalize">{data.vibe}</span>
         </div>
@@ -130,7 +130,7 @@ export const VibeFlowChart: React.FC<VibeFlowChartProps> = ({
         cx={cx}
         cy={cy}
         r={isSelected ? 6 : isHovered ? 5 : 3}
-        fill={getVibeColor(payload.vibe)}
+        fill={vibeToHex(safeVibe(payload.vibe))}
         stroke="white"
         strokeWidth={isSelected ? 3 : isHovered ? 2 : 1}
         className="cursor-pointer drop-shadow-sm"
@@ -273,7 +273,7 @@ export const VibeFlowChart: React.FC<VibeFlowChartProps> = ({
             <div className="flex items-center gap-3">
               <div 
                 className="w-4 h-4 rounded-full shadow-sm"
-                style={{ backgroundColor: getVibeColor(selectedPoint.vibe) }}
+                style={{ backgroundColor: vibeToHex(safeVibe(selectedPoint.vibe)) }}
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">

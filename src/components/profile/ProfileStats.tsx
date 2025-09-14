@@ -2,7 +2,8 @@ import { TrendingUp, Users, Zap, Calendar, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { CountUp } from '@/components/ui/count-up';
 import { useProfileStats } from '@/hooks/useProfileStats';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { LeaderboardMini } from '@/components/LeaderboardMini';
 
 export function ProfileStats() {
@@ -31,7 +32,7 @@ export function ProfileStats() {
       value: stats?.most_active_vibe || 'unknown',
       subtext: 'this week',
       icon: Zap,
-      color: getVibeColor(stats?.most_active_vibe || 'social'),
+      color: vibeToHex(safeVibe(stats?.most_active_vibe || 'social')),
       isNumeric: false
     },
     {

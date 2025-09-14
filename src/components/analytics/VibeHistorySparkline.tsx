@@ -53,7 +53,7 @@ export function VibeHistorySparkline() {
       const data = payload[0].payload;
       return (
         <div className="bg-popover border border-border rounded-md p-2 shadow-md">
-          <p className="text-xs font-medium capitalize" style={{ color: getVibeColor(data.vibe) }}>
+          <p className="text-xs font-medium capitalize" style={{ color: vibeToHex(safeVibe(data.vibe)) }}>
             {data.vibe}
           </p>
           <p className="text-xs text-muted-foreground">{data.formattedTime}</p>

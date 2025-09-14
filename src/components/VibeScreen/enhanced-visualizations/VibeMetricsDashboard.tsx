@@ -126,7 +126,7 @@ export const VibeMetricsDashboard: React.FC<VibeMetricsDashboardProps> = ({
       return VIBES.slice(0, 6).map(vibe => ({
         name: vibe.charAt(0).toUpperCase() + vibe.slice(1),
         value: Math.floor(10 + Math.random() * 40),
-        color: getVibeColor(vibe)
+        color: vibeToHex(safeVibe(vibe))
       }));
     };
 

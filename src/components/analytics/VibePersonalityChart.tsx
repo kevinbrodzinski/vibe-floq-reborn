@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 import { useProfileStats, VibeDistribution } from '@/hooks/useProfileStats';
 import { Card } from '@/components/ui/card';
 import { Palette } from 'lucide-react';
@@ -29,7 +30,7 @@ export function VibePersonalityChart() {
     name: item.vibe,
     value: item.percentage,
     count: item.count,
-    fill: getVibeColor(item.vibe)
+    fill: vibeToHex(safeVibe(item.vibe))
   }));
 
   // Custom tooltip for pie chart

@@ -18,7 +18,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeToHex } from '@/lib/vibe/color';
+import { safeVibe } from '@/lib/vibes';
 
 interface VibeFloqCardProps {
   floq: {
@@ -53,7 +54,7 @@ const VibeIcon = ({ vibe, size = 16 }: { vibe: string; size?: number }) => {
 };
 
 export const VibeFloqCard: React.FC<VibeFloqCardProps> = ({ floq }) => {
-  const vibeColor = getVibeColor(floq.vibe);
+  const vibeColor = vibeToHex(safeVibe(floq.vibe));
   const isFull = floq.participants >= floq.maxParticipants;
 
   return (
