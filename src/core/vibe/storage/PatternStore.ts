@@ -208,8 +208,8 @@ class PatternStoreImpl {
           title: 'High-Energy Venues',
           description: 'You prefer active, bustling environments',
           confidence: 0.7,
-          actionText: 'Try busy cafes, gyms, or social spaces',
-          relevanceScore: 0.8
+          actionable: true,
+          context: { venueTypes: ['gym', 'busy cafe', 'social space'] }
         });
       } else if (insights.energyType === 'low-energy') {
         recommendations.push({
@@ -218,8 +218,8 @@ class PatternStoreImpl {
           title: 'Calm Environments',
           description: 'You prefer quiet, peaceful settings',
           confidence: 0.7,
-          actionText: 'Seek libraries, parks, or quiet cafes',
-          relevanceScore: 0.8
+          actionable: true,
+          context: { venueTypes: ['library', 'park', 'quiet cafe'] }
         });
       }
 
@@ -231,8 +231,8 @@ class PatternStoreImpl {
           title: 'Social Energy Patterns',
           description: 'You gain energy from social interactions',
           confidence: 0.75,
-          actionText: 'Plan social activities when feeling low',
-          relevanceScore: 0.7
+          actionable: true,
+          context: { activity: 'social planning' }
         });
       } else if (insights.socialType === 'solo') {
         recommendations.push({
@@ -241,8 +241,8 @@ class PatternStoreImpl {
           title: 'Solo Recharge Time',
           description: 'You recharge best in solitude',
           confidence: 0.75,
-          actionText: 'Schedule alone time after social events',
-          relevanceScore: 0.7
+          actionable: true,
+          context: { activity: 'alone time scheduling' }
         });
       }
 
@@ -254,8 +254,8 @@ class PatternStoreImpl {
           title: 'Routine Optimization',
           description: 'Your patterns are very predictable',
           confidence: 0.9,
-          actionText: 'Stick to your established routines',
-          relevanceScore: 0.6
+          actionable: true,
+          context: { approach: 'maintain routines' }
         });
       } else if (insights.consistency === 'highly-adaptive') {
         recommendations.push({
@@ -264,8 +264,8 @@ class PatternStoreImpl {
           title: 'Variety & Flexibility',
           description: 'You thrive on changing environments',
           confidence: 0.85,
-          actionText: 'Try new venues and activities regularly',
-          relevanceScore: 0.8
+          actionable: true,
+          context: { approach: 'seek variety' }
         });
       }
 

@@ -10,6 +10,7 @@ export type PersonalityInsights = {
   confidence: number; // 0-1
   lastUpdated: number;
   dataQuality: 'low' | 'medium' | 'high';
+  correctionCount: number; // Add this for compatibility
   
   // Enhanced pattern analysis
   venueImpacts?: import('@/core/vibe/analysis/VenuePatternAnalyzer').VenueImpact[];

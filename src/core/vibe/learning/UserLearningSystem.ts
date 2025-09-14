@@ -29,7 +29,8 @@ export class UserLearningSystem {
         consistency: 'adaptive',
         confidence: 0,
         lastUpdated: Date.now(),
-        dataQuality: 'low'
+        dataQuality: 'low',
+        correctionCount: recent.length
       };
     }
 
@@ -63,6 +64,7 @@ export class UserLearningSystem {
       confidence,
       lastUpdated: Date.now(),
       dataQuality: hasEnoughData ? 'high' : recent.length > 15 ? 'medium' : 'low',
+      correctionCount: recent.length,
       // Enhanced pattern data
       venueImpacts,
       behaviorSequences,
