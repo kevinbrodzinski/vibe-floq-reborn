@@ -222,6 +222,11 @@ export default {
 		"text-muted",
 		"text-center",
 		"py-12",
+		// Converge suggestions vibe-ring token classes
+		'ring-[var(--vibe-ring)]',
+		'text-[var(--vibe-ring)]',
+		'border-[var(--vibe-ring)]',
+		'shadow-[0_0_24px_1px_var(--vibe-ring)]',
 	],
 	variants: {
 		animation: ['responsive', 'motion-safe'],

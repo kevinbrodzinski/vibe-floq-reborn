@@ -9,6 +9,8 @@ export function ConvergeSuggestions({ onClose }: Props) {
   const [points, setPoints] = React.useState<RankedPoint[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [prefillId, setPrefillId] = React.useState<string | null>(null);
+  const seqRef = React.useRef(0);
+  const closeBtnRef = React.useRef<HTMLButtonElement | null>(null);
 
   const close = React.useCallback(() => {
     setOpen(false);
@@ -18,6 +20,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
   React.useEffect(() => {
     const handler = async (e: Event) => {
       const { peer, anchor } = (e as CustomEvent<ConvergeInputs>).detail ?? {};
+      const mySeq = ++seqRef.current;
       setOpen(true);
       setLoading(true);
       try {
@@ -51,13 +54,24 @@ export function ConvergeSuggestions({ onClose }: Props) {
           }
         }
 
+        if (mySeq !== seqRef.current) return; // stale; ignore
+        
+        // Analytics: emit prefill event when friend's venue is shown at top
+        if (markedId) {
+          window.dispatchEvent(new CustomEvent('ui_converge_prefill', {
+            detail: { friendId: peer?.id, venueId: markedId }
+          }));
+        }
+
         setPrefillId(markedId);
         setPoints(merged.slice(0, 6));
       } catch (err) {
+        if (mySeq !== seqRef.current) return;
         console.warn('[ConvergeSuggestions] Ranking failed:', err);
         setPrefillId(null);
         setPoints([]);
       } finally {
+        if (mySeq !== seqRef.current) return;
         setLoading(false);
       }
     };
@@ -70,13 +84,21 @@ export function ConvergeSuggestions({ onClose }: Props) {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     window.addEventListener('keydown', onKey);
+    // Focus close button for accessibility
+    closeBtnRef.current?.focus();
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
 
   const request = React.useCallback((p: RankedPoint) => {
+    // Analytics: track when user selects a suggestion
+    const isPrefilled = prefillId !== null && p.id === prefillId;
+    window.dispatchEvent(new CustomEvent('ui_converge_request', {
+      detail: { from: isPrefilled ? 'prefill_top' : 'ranked', id: p.id }
+    }));
+    
     window.dispatchEvent(new CustomEvent('converge:request', { detail: { point: p } }));
     close();
-  }, [close]);
+  }, [close, prefillId]);
 
   if (!open) return null;
 
@@ -98,6 +120,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
         <div className="p-3 flex items-center justify-between">
           <div className="font-semibold">Suggested convergence points</div>
           <button
+            ref={closeBtnRef}
             onClick={close}
             aria-label="Close suggestions"
             className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15"

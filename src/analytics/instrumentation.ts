@@ -9,6 +9,23 @@ function getSink():Sink{
 
 export function mountAnalytics(){
   const sink = getSink();
+  
+  // Converge system analytics
+  window.addEventListener('ui_converge_prefill', (e: Event) => {
+    const { friendId, venueId } = (e as CustomEvent).detail ?? {};
+    sink('converge_prefill_shown', { friendId, venueId });
+  });
+
+  window.addEventListener('ui_converge_request', (e: Event) => {
+    const { from, id } = (e as CustomEvent).detail ?? {};
+    sink('converge_venue_selected', { source: from, venueId: id });
+  });
+
+  window.addEventListener('ui_banner_action', (e: Event) => {
+    const { action, friendId, source } = (e as CustomEvent).detail ?? {};
+    sink('cross_paths_banner_action', { action, friendId, source });
+  });
+
   const offs = [
     onEvent(Events.FLOQ_CONVERGENCE_DETECTED, p=>sink('convergence_detected', p)),
     onEvent(Events.FLOQ_FLOW_SHOW,          p=>sink('flow_show', p)),
