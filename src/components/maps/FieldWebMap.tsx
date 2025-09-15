@@ -928,13 +928,19 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           </div>
         `;
         
-        locationButton.addEventListener('click', () => {
+        locationButton.addEventListener('click', async () => {
           if (location?.coords?.lat && location.coords?.lng) {
-            map.flyTo({
-              center: [location.coords.lng, location.coords.lat],
-              zoom: 15,
-              duration: 1000,
-              easing: (t) => t * (2 - t)
+            // Import highlight function dynamically to avoid circular dependencies
+            const { recenterAndHighlight } = await import('@/lib/map/overlays/userAuraHighlight');
+            
+            // Use the elegant highlight feature instead of basic flyTo
+            await recenterAndHighlight(map, {
+              durationMs: 1100,
+              easeMs: 450,
+              innerBumpPx: 10,
+              outerBumpPx: 16,
+              alphaBoost: 0.25,
+              keepZoom: false, // Allow zoom adjustment for better view
             });
           }
         });

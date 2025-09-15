@@ -37,6 +37,19 @@ function ensureSource(map: mapboxgl.Map) {
   }
 }
 
+function moveAuraToTop(map: mapboxgl.Map) {
+  const ids = [LAYER_ID_OUTER, LAYER_ID_INNER, LAYER_ID_DOT];
+  // Add after *all* layers to guarantee it sits on top
+  const all = map.getStyle()?.layers?.map(l => l.id) ?? [];
+  const topId = all[all.length - 1];
+
+  ids.forEach(id => {
+    if (map.getLayer(id)) {
+      try { map.moveLayer(id, topId); } catch {}
+    }
+  });
+}
+
 function addLayers(map: mapboxgl.Map, beforeId?: string) {
   // Outer soft aura
   if (!map.getLayer(LAYER_ID_OUTER)) {
@@ -47,12 +60,12 @@ function addLayers(map: mapboxgl.Map, beforeId?: string) {
       paint: {
         'circle-radius': [
           'interpolate', ['linear'], ['zoom'],
-          10, 20,
-          14, 40,
-          16, 65
+          10, 24,
+          14, 48,
+          16, 80
         ],
         'circle-color': vibeRgba(0.20),     // will be updated
-        'circle-blur': 0.7,                 // soft aura edge
+        'circle-blur': 0.75,                // buttery edge
         'circle-opacity': 1.0               // alpha embedded in color
       }
     }, beforeId);
@@ -67,9 +80,9 @@ function addLayers(map: mapboxgl.Map, beforeId?: string) {
       paint: {
         'circle-radius': [
           'interpolate', ['linear'], ['zoom'],
-          10, 10,
-          14, 20,
-          16, 35
+          10, 12,
+          14, 26,
+          16, 44
         ],
         'circle-color': vibeRgba(0.35),     // will be updated
         'circle-blur': 0.35,
@@ -92,8 +105,8 @@ function addLayers(map: mapboxgl.Map, beforeId?: string) {
           16, 6
         ],
         'circle-color': vibeRgba(1.0),      // will be updated
-        'circle-stroke-color': '#FFFFFF',
-        'circle-stroke-width': 1.5,
+        'circle-stroke-color': 'rgba(0,0,0,0.55)', // subtle dark edge
+        'circle-stroke-width': 1.25,
         'circle-opacity': 1.0
       }
     }, beforeId ?? LAYER_ID_INNER);
@@ -122,10 +135,10 @@ function setData(map: mapboxgl.Map, data: AuraData) {
   };
   src.setData(fc);
 
-  // Confidence affects aura intensity
+  // Confidence affects aura intensity (stronger, more visible defaults)
   const c = Math.max(0, Math.min(1, data.confidence01));
-  const outerAlpha = 0.10 + 0.20 * c; // 0.10..0.30
-  const innerAlpha = 0.20 + 0.35 * c; // 0.20..0.55
+  const outerAlpha = 0.18 + 0.22 * c; // 0.18..0.40 (strong but soft)
+  const innerAlpha = 0.30 + 0.35 * c; // 0.30..0.65
 
   const outerColor = hexToRgba(data.colorHex, outerAlpha);
   const innerColor = hexToRgba(data.colorHex, innerAlpha);
@@ -158,6 +171,7 @@ export function createUserAuraSpec(beforeId?: string) {
       }
       ensureSource(map);
       addLayers(map, beforeId);
+      moveAuraToTop(map);
     },
     update(map: mapboxgl.Map, data?: AuraData) {
       if (!data) return;

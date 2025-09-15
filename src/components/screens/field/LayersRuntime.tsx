@@ -6,6 +6,8 @@ import { useTileVenuesLayer } from '@/map/layers/useTileVenuesLayer';
 import { useSocialWeatherLayer } from '@/map/layers/useSocialWeatherLayer';
 import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPointsLayer';
 import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
+import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
+import { layerManager } from '@/lib/map/LayerManager';
 import type { FieldData } from './FieldDataProvider';
 
 interface LayersRuntimeProps {
@@ -23,12 +25,12 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   useTileVenuesLayer(map, data.nearbyVenues);
   useSocialWeatherLayer(map, data.weatherCells);
 
-  // Predicted meeting points (tiny circles) driven by convergence events
-  // Breadcrumb trail system
+  // User aura overlay with vibe-colored ring
   return (
     <>
       <PredictedMeetingPointsLayer />
       <BreadcrumbMapLayer map={map} />
+      <UserAuraOverlay map={map} layerManager={layerManager} enabled />
     </>
   );
 }
