@@ -8,20 +8,36 @@ export function ConvergeSuggestions({ onClose }: Props) {
   const [open, setOpen] = React.useState(false);
   const [points, setPoints] = React.useState<RankedPoint[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [showSpinner, setShowSpinner] = React.useState(false);
   const [prefillId, setPrefillId] = React.useState<string | null>(null);
   const seqRef = React.useRef(0);
   const closeBtnRef = React.useRef<HTMLButtonElement | null>(null);
+  const lastActiveRef = React.useRef<HTMLElement | null>(null);
+
+  const openModal = React.useCallback(() => {
+    lastActiveRef.current = (document.activeElement as HTMLElement) ?? null;
+    setOpen(true);
+  }, []);
 
   const close = React.useCallback(() => {
     setOpen(false);
     onClose?.();
+    // Restore focus after microtask so DOM has settled
+    queueMicrotask(() => lastActiveRef.current?.focus?.());
   }, [onClose]);
+
+  // Spinner flicker control - only show after 120ms
+  React.useEffect(() => {
+    if (!loading) return setShowSpinner(false);
+    const t = setTimeout(() => setShowSpinner(true), 120);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   React.useEffect(() => {
     const handler = async (e: Event) => {
       const { peer, anchor } = (e as CustomEvent<ConvergeInputs>).detail ?? {};
       const mySeq = ++seqRef.current;
-      setOpen(true);
+      openModal();
       setLoading(true);
       try {
         // 1) baseline ranking
@@ -130,7 +146,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
         </div>
 
         <div className="p-2 space-y-2">
-          {loading ? (
+          {showSpinner ? (
             <div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div>
           ) : points.length === 0 ? (
             <div className="px-3 py-8 text-sm text-white/80">No strong options nearby.</div>
