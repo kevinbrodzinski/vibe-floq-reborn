@@ -1,37 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-type PresenceKind = "friend" | "self" | "venue";
-
-export type PresenceSelectPayload = {
-  kind: PresenceKind;
-  id: string;
-  name?: string;
-  lngLat?: { lng: number; lat: number };
-
-  // Optional presence signals for friend/self
-  energy01?: number;                   // 0..1 current energy
-  direction?: "up" | "flat" | "down";  // vibe direction
-  etaMin?: number;                     // runway when winding down
-  distanceM?: number;                  // distance from me
-  venueName?: string;                  // current venue
-  openNow?: boolean;
-
-  // Optional visuals
-  avatarUrl?: string;
-  color?: string;                      // vibe tint e.g. #22d3ee
-
-  // For venue cards
-  category?: string;
-  rating?: number;
-  userRatings?: number;
-
-  // Raw properties if needed
-  properties?: Record<string, unknown>;
-};
-
-// Export as PresencePayload for compatibility
-export type PresencePayload = PresenceSelectPayload;
+import { PresencePayload } from '@/types/presence';
 
 type Props = {
   onClose?: () => void;
@@ -61,7 +30,7 @@ const fire = (name: string, detail?: any) =>
 
 /** local event bus subscription */
 function usePresenceSelection() {
-  const [sel, setSel] = React.useState<PresenceSelectPayload | null>(null);
+  const [sel, setSel] = React.useState<PresencePayload | null>(null);
   React.useEffect(() => {
     const onFriend = (e: Event) => setSel((e as CustomEvent).detail);
     const onVenue = (e: Event) => setSel((e as CustomEvent).detail);

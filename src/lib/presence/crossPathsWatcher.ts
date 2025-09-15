@@ -1,37 +1,19 @@
-import { useEffect, useRef } from "react";
-
-// Simple haversine distance calculation
-function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = (b.lat - a.lat) * Math.PI / 180;
-  const dLng = (b.lng - a.lng) * Math.PI / 180;
-  const lat1 = a.lat * Math.PI / 180;
-  const lat2 = b.lat * Math.PI / 180;
-  
-  const aVal = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.sin(dLng/2) * Math.sin(dLng/2) * Math.cos(lat1) * Math.cos(lat2);
-  const c = 2 * Math.atan2(Math.sqrt(aVal), Math.sqrt(1-aVal));
-  
-  return R * c;
-}
-
-type Friend = { 
-  id: string; 
-  lat: number; 
-  lng: number; 
-  tier: "bestie" | "friend" | "other"; 
-};
+import { useEffect, useMemo, useRef } from "react";
+import { Friend } from '@/types/presence';
+import { haversineMeters } from '@/lib/geo/haversine';
 
 type Options = {
   bestieRadiusM?: number;
   friendRadiusM?: number;
   cooldownMin?: number;
+  throttleMs?: number;
 };
 
 const DEFAULTS: Required<Options> = { 
   bestieRadiusM: 200, 
   friendRadiusM: 400, 
-  cooldownMin: 45 
+  cooldownMin: 45,
+  throttleMs: 5000
 };
 
 export function useCrossPathsWatcher(
@@ -40,20 +22,36 @@ export function useCrossPathsWatcher(
   opts?: Options
 ) {
   const lastSeenRef = useRef<Record<string, number>>({});
-  const { bestieRadiusM, friendRadiusM, cooldownMin } = { ...DEFAULTS, ...(opts||{}) };
+  const lastRun = useRef(0);
+  const { bestieRadiusM, friendRadiusM, cooldownMin, throttleMs } = { ...DEFAULTS, ...(opts || {}) };
+
+  // Create stable dependency key from coordinates
+  const depKey = useMemo(() => {
+    const mine = my?.lat && my?.lng ? `${my.lat.toFixed(5)},${my.lng.toFixed(5)}` : 'none';
+    const fs = (friends || [])
+      .map(f => `${f.id}:${(f.lat ?? 0).toFixed(5)},${(f.lng ?? 0).toFixed(5)}:${f.tier ?? ''}`)
+      .join('|');
+    return `${mine}|${fs}`;
+  }, [my?.lat, my?.lng, friends]);
 
   useEffect(() => {
-    if (!my?.lat || !my?.lng || !Array.isArray(friends)) return;
+    // SSR guard
+    if (typeof window === 'undefined') return;
+    if (!my?.lat || !my?.lng || !Array.isArray(friends) || friends.length === 0) return;
 
     const now = Date.now();
+    // Simple throttling
+    if (now - lastRun.current < throttleMs) return;
+    lastRun.current = now;
+
     const seen = lastSeenRef.current;
 
     for (const f of friends) {
-      if (!Number.isFinite(f.lat) || !Number.isFinite(f.lng)) continue;
+      if (!Number.isFinite(f.lat!) || !Number.isFinite(f.lng!)) continue;
       
       const d = haversineMeters(
         { lat: my.lat!, lng: my.lng! }, 
-        { lat: f.lat, lng: f.lng }
+        { lat: f.lat!, lng: f.lng! }
       );
       
       const limit = f.tier === "bestie" ? bestieRadiusM : 
@@ -75,5 +73,5 @@ export function useCrossPathsWatcher(
         }));
       }
     }
-  }, [my?.lat, my?.lng, friends?.length, bestieRadiusM, friendRadiusM, cooldownMin]);
+  }, [depKey, bestieRadiusM, friendRadiusM, cooldownMin, throttleMs]);
 }

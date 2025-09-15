@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { rankConvergence, RankedPoint, ConvergeInputs } from "@/lib/converge/rankConvergence";
+import { ConvergeInputs, RankedPoint } from '@/types/presence';
+import { rankConvergence } from "@/lib/converge/rankConvergence";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -14,7 +15,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
 
   React.useEffect(() => {
     const handler = async (e: Event) => {
-      const { peer, anchor } = (e as CustomEvent).detail ?? {};
+      const { peer, anchor } = (e as CustomEvent<ConvergeInputs>).detail ?? {};
       setOpen(true);
       setLoading(true);
       
@@ -34,6 +35,16 @@ export function ConvergeSuggestions({ onClose }: Props) {
     return () => window.removeEventListener("converge:open", handler as EventListener);
   }, []);
 
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    if (open) {
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+  }, [open]);
+
   const request = (p: RankedPoint) => {
     window.dispatchEvent(new CustomEvent("converge:request", { 
       detail: { point: p } 
@@ -51,6 +62,8 @@ export function ConvergeSuggestions({ onClose }: Props) {
     <AnimatePresence>
       {open && (
         <motion.div 
+          role="dialog"
+          aria-label="Suggested convergence points"
           className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
