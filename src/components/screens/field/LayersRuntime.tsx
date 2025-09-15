@@ -12,6 +12,7 @@ import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
 import { PresenceCardHost } from '@/components/map/PresenceCardHost';
 import { CrossPathsBanner } from '@/components/presence/CrossPathsBanner';
 import { useCrossPathsWatcher } from '@/lib/presence/crossPathsWatcher';
+import type { Friend } from '@/types/presence';
 import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
@@ -57,19 +58,26 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   );
 
   // Convert friendsList to proper format for crossPathsWatcher
-  const watcherFriends = useMemo(() => 
-    friendsList.map((f: any) => ({
-      id: String(f.id ?? ''),
-      name: f.display_name ?? f.name ?? '',
-      lat: Number(f.lat),
-      lng: Number(f.lng),
-      tier: f.tier === 'bestie' ? 'bestie' as const : 'friend' as const
-    })).filter((f: any) => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.id),
+  const watcherFriends: Friend[] = useMemo(() => 
+    friendsList
+      .map((f: any) => ({
+        id: String(f.id ?? ''),
+        name: f.display_name ?? f.name ?? '',
+        lat: Number(f.lat),
+        lng: Number(f.lng),
+        tier: f.tier === 'bestie' ? 'bestie' as const : 'friend' as const,
+      }))
+      .filter((f) => !!f.id && Number.isFinite(f.lat) && Number.isFinite(f.lng)),
     [friendsList]
   );
 
+  // Only pass coordinates when they're available; otherwise null
+  const myLL = location?.coords && Number.isFinite(location.coords.lat) && Number.isFinite(location.coords.lng)
+    ? { lat: location.coords.lat, lng: location.coords.lng }
+    : null;
+
   // Watch for friends crossing paths to trigger banner notifications
-  useCrossPathsWatcher(location.coords, watcherFriends);
+  useCrossPathsWatcher(myLL, watcherFriends);
 
   // Load avatar sprites and get iconIds map
   const { iconIds } = useAvatarSprites(

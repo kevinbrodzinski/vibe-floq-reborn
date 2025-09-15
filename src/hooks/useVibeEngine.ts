@@ -10,6 +10,7 @@ import { usePersonalityInsights } from '@/hooks/usePersonalityInsights';
 import { useIntelligenceFlags } from '@/hooks/useIntelligenceFlags';
 import { usePerformanceTelemetry } from '@/hooks/usePerformanceTelemetry';
 import { readTemporalPrefs, writeTemporalPrefs } from '@/core/patterns/service';
+import { setVibeRing } from '@/lib/map/cssVars';
 
 interface VibeEngineState {
   currentVibe: Vibe;
@@ -389,6 +390,9 @@ export function useVibeEngine(enabled: boolean = true) {
       document.documentElement.style.setProperty('--vibe-hex', vibeHex);
       document.documentElement.style.setProperty('--vibe-alpha', String(vibeAlpha));
       document.documentElement.style.setProperty('--vibe-sat', String(vibeSat));
+      
+      // Update vibe ring for converge suggestions glow
+      setVibeRing(vibeHex);
 
       saveSnapshot(r);
 

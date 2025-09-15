@@ -414,7 +414,7 @@ All colors MUST be HSL.
     --vibe-alpha: 0.8;
     --vibe-hex: #8B5CF6;
     --vibe-sat: 0.9;
-    --vibe-ring: 252 100% 75%; /* Primary color for vibe-related ring effects */
+    --vibe-ring: #22d3ee; /* Safe default; overridden at runtime */
   }
 
   /* Vibe colored utility class */
