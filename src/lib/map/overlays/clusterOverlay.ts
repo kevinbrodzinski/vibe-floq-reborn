@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mapboxgl from 'mapbox-gl';
 import type { OverlaySpec } from '@/lib/map/LayerManager';
+import { ensureAvatarImage } from '@/lib/map/avatarSprite';
 
 type Kind = 'friends' | 'venues';
 
@@ -27,13 +28,13 @@ const isTouch = () =>
   typeof window !== 'undefined' &&
   ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-const debounce = <F extends (...args: any[]) => void>(fn: F, ms = 120) => {
-  let t = 0;
+function debounce<F extends (...a: any[]) => void>(fn: F, ms = 120) {
+  let t: number | undefined;
   return (...args: Parameters<F>) => {
-    window.clearTimeout(t);
+    if (t !== undefined) window.clearTimeout(t);
     t = window.setTimeout(() => fn(...args), ms);
   };
-};
+}
 
 function ensureSource(map: mapboxgl.Map, id: string, fc?: GeoJSON.FeatureCollection) {
   const sid = srcId(id);
@@ -54,17 +55,25 @@ function addLayers(map: mapboxgl.Map, id: string, color: string, clusterColor: s
   const CL = lyr(id,'cluster');
   const CL_NUM = lyr(id,'cluster-count');
   const PT = lyr(id,'point');
+  const PT_AVATAR = lyr(id,'point-avatar');
 
-  // cluster circles
+  // cluster circles with dynamic sizing
   if (!map.getLayer(CL)) {
     map.addLayer({
       id: CL, type: 'circle', source: sid, filter: ['has','point_count'],
       paint: {
-        'circle-radius': z(10, 18, 16, 30),
+        'circle-radius': [
+          'interpolate', ['linear'], ['get', 'point_count'],
+          5,  14,
+          25, 18,
+          50, 22,
+          100, 26
+        ],
         'circle-color': clusterColor,
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
-        'circle-opacity': 0.9
+        'circle-opacity': 0.9,
+        'circle-pitch-scale': 'viewport'
       }
     } as mapboxgl.CircleLayer, beforeId);
   }
@@ -83,7 +92,7 @@ function addLayers(map: mapboxgl.Map, id: string, color: string, clusterColor: s
     } as mapboxgl.SymbolLayer, beforeId);
   }
 
-  // unclustered points
+  // unclustered points (fallback circles)
   if (!map.getLayer(PT)) {
     map.addLayer({
       id: PT, type: 'circle', source: sid, filter: ['!', ['has','point_count']],
@@ -92,14 +101,36 @@ function addLayers(map: mapboxgl.Map, id: string, color: string, clusterColor: s
         'circle-color': ['coalesce',['get','vibeHex'], color],
         'circle-stroke-color': '#fff',
         'circle-stroke-width': 2,
-        'circle-opacity': 1
+        'circle-opacity': 1,
+        'circle-pitch-scale': 'viewport'
       }
     } as mapboxgl.CircleLayer, beforeId);
+  }
+
+  // avatar symbol layer for friends
+  if (!map.getLayer(PT_AVATAR)) {
+    const sym: mapboxgl.SymbolLayer = {
+      id: PT_AVATAR,
+      type: 'symbol',
+      source: sid,
+      filter: ['all',
+        ['!', ['has','point_count']], 
+        ['==',['get','kind'],'friend'],
+        ['has','iconId']
+      ],
+      layout: {
+        'icon-image': ['get','iconId'],
+        'icon-size': ['interpolate',['linear'],['zoom'], 12,0.35, 16,0.55, 18,0.7],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true
+      }
+    };
+    map.addLayer(sym, PT);
   }
 }
 
 function removeLayers(map: mapboxgl.Map, id: string) {
-  [lyr(id,'cluster-count'), lyr(id,'cluster'), lyr(id,'point')].forEach(L => { 
+  [lyr(id,'point-avatar'), lyr(id,'cluster-count'), lyr(id,'cluster'), lyr(id,'point')].forEach(L => { 
     try { if (map.getLayer(L)) map.removeLayer(L); } catch {} 
   });
   const sid = srcId(id);
@@ -111,10 +142,27 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
   const SID = srcId(id);
   const CL = lyr(id,'cluster');
   const PT = lyr(id,'point');
+  const PT_AVATAR = lyr(id,'point-avatar');
+  
+  // Drag protection
+  let dragging = false;
+  let lastDataset: GeoJSON.FeatureCollection | undefined;
 
   // Popup refs (one per overlay)
   let hoverPopup: mapboxgl.Popup | null = null;
   let hoverClusterPopup: mapboxgl.Popup | null = null;
+
+  function moveToTop(map: mapboxgl.Map) {
+    const layers = map.getStyle()?.layers ?? [];
+    const top = layers[layers.length - 1]?.id;
+    if (!top) return;
+    const ids = [PT_AVATAR, PT, lyr(id,'cluster-count'), CL];
+    ids.forEach(layerId => { 
+      if (map.getLayer(layerId)) { 
+        try { map.moveLayer(layerId, top); } catch {} 
+      } 
+    });
+  }
 
   function ensurePopup(map: mapboxgl.Map) {
     if (!hoverPopup) {
@@ -155,14 +203,15 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
   }
 
   const clickUnclustered = (map: mapboxgl.Map, e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+    if (dragging || map.isMoving()) return;
     const f = e.features?.[0];
     if (!f) return;
 
-    // Dispatch crisp select events your card system already understands
+    const pt = e.lngLat.wrap();
     const payload = {
       id: f.properties?.[idProp] ?? f.properties?.id ?? '',
       name: f.properties?.[titleProp] ?? '',
-      lngLat: (e.lngLat && [e.lngLat.lng,e.lngLat.lat]) || undefined,
+      lngLat: { lng: pt.lng, lat: pt.lat },
       color: f.properties?.[hexProp] ?? color,
       properties: f.properties ?? {}
     };
@@ -172,6 +221,7 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
   };
 
   const clickCluster = async (map: mapboxgl.Map, e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+    if (dragging || map.isMoving()) return;
     const clusterFeature = e.features?.[0];
     if (!clusterFeature) return;
     const clusterId = clusterFeature.properties?.cluster_id;
@@ -225,12 +275,35 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
           'circle-radius': 7,
           'circle-color': ['coalesce',['get',hexProp], color],
           'circle-stroke-color':'#fff',
-          'circle-stroke-width': 2
+          'circle-stroke-width': 2,
+          'circle-pitch-scale': 'viewport'
         }
       });
 
-      // self-clean on move/zoom or second click
+      // Spider click handler
+      const onSpiderClick = (ev: any) => {
+        const f = ev.features?.[0];
+        if (!f) return;
+        const pt = ev.lngLat.wrap();
+        const payload = {
+          id: f.properties?.[idProp] ?? f.properties?.id ?? '',
+          name: f.properties?.[titleProp] ?? '',
+          lngLat: { lng: pt.lng, lat: pt.lat },
+          color: f.properties?.[hexProp] ?? color,
+          properties: f.properties ?? {}
+        };
+        window.dispatchEvent(new CustomEvent(
+          kind === 'friends' ? 'friends:select' : 'venues:select',
+          { detail: payload }
+        ));
+        cleanup();
+      };
+
+      map.on('click', layerId, onSpiderClick);
+
+      // Enhanced cleanup
       const cleanup = () => {
+        try { map.off('click', layerId, onSpiderClick); } catch {}
         try { if (map.getLayer(layerId)) map.removeLayer(layerId); } catch {}
         try { if (map.getSource(spiderSrcId)) map.removeSource(spiderSrcId); } catch {}
         map.off('move', cleanup);
@@ -241,24 +314,12 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
       map.on('zoom', cleanup);
       map.on('mousedown', cleanup);
 
-      // click a spider point → same card flow
-      map.on('click', layerId, (ev) => {
-        const f = ev.features?.[0];
-        if (!f) return;
-        const payload = {
-          id: f.properties?.[idProp] ?? f.properties?.id ?? '',
-          name: f.properties?.[titleProp] ?? '',
-          lngLat: (ev.lngLat && [ev.lngLat.lng,ev.lngLat.lat]) || undefined,
-          color: f.properties?.[hexProp] ?? color,
-          properties: f.properties ?? {}
-        };
-        const evt = new CustomEvent(kind === 'friends' ? 'friends:select' : 'venues:select', { detail: payload });
-        window.dispatchEvent(evt);
-        cleanup();
-      });
-
     } catch {}
   };
+
+  // Drag guards
+  const ds = () => { dragging = true; };
+  const de = () => { setTimeout(() => dragging = false, 120); };
 
   return {
     id,
@@ -268,9 +329,14 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
       ensureSource(map, id, sourceData);
       addLayers(map, id, color, clusterColor!, textColor!, beforeId);
 
-      // interactions (tap already wired; add hover previews for mouse only)
-      map.on('click', lyr(id,'point'), (e) => clickUnclustered(map, e));
-      map.on('click', lyr(id,'cluster'), (e) => clickCluster(map, e));
+      // Drag protection
+      map.on('dragstart', ds);
+      map.on('dragend', de);
+
+      // interactions
+      map.on('click', PT, (e) => clickUnclustered(map, e));
+      map.on('click', PT_AVATAR, (e) => clickUnclustered(map, e));
+      map.on('click', CL, (e) => clickCluster(map, e));
 
       if (!isTouch()) {
         // Unclustered hover preview
@@ -319,50 +385,81 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
           map.getCanvas().style.cursor = '';
         };
 
-        map.on('mouseenter', lyr(id,'point'), onPointEnter);
-        map.on('mousemove',  lyr(id,'point'), onPointMove);
-        map.on('mouseleave', lyr(id,'point'), onPointLeave);
+        map.on('mouseenter', PT, onPointEnter);
+        map.on('mousemove',  PT, onPointMove);
+        map.on('mouseleave', PT, onPointLeave);
+        
+        map.on('mouseenter', PT_AVATAR, onPointEnter);
+        map.on('mousemove',  PT_AVATAR, onPointMove);
+        map.on('mouseleave', PT_AVATAR, onPointLeave);
 
-        map.on('mouseenter', lyr(id,'cluster'), onClusterEnter);
-        map.on('mousemove',  lyr(id,'cluster'), onClusterMove);
-        map.on('mouseleave', lyr(id,'cluster'), onClusterLeave);
+        map.on('mouseenter', CL, onClusterEnter);
+        map.on('mousemove',  CL, onClusterMove);
+        map.on('mouseleave', CL, onClusterLeave);
 
-        // Clean popups when the map moves/zooms
+        // Clean popups when the map moves/zooms/style changes
         const clean = () => destroyPopups();
+        const styleCleanup = () => destroyPopups();
         map.on('dragstart', clean);
         map.on('zoomstart', clean);
+        map.on('styledata', styleCleanup);
 
         // store cleanup closures on the spec (we'll remove in unmount)
         (this as any).__hoverHandlers = {
           onPointEnter,onPointMove,onPointLeave,
           onClusterEnter,onClusterMove,onClusterLeave,
-          clean
+          clean, styleCleanup
         };
       }
 
-      // cursor affordance for all interactions
-      map.on('mouseenter', lyr(id,'point'), () => map.getCanvas().style.cursor = 'pointer');
-      map.on('mouseleave', lyr(id,'point'), () => map.getCanvas().style.cursor = '');
-      map.on('mouseenter', lyr(id,'cluster'), () => map.getCanvas().style.cursor = 'pointer');
-      map.on('mouseleave', lyr(id,'cluster'), () => map.getCanvas().style.cursor = '');
+      // Z-order guarantees
+      const raise = () => moveToTop(map);
+      map.on('styledata', raise);
+      map.on('load', raise);
+      (this as any).__raiseHandler = raise;
+
+      // cursor affordance for all interactions  
+      map.on('mouseenter', PT, () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', PT, () => map.getCanvas().style.cursor = '');
+      map.on('mouseenter', PT_AVATAR, () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', PT_AVATAR, () => map.getCanvas().style.cursor = '');
+      map.on('mouseenter', CL, () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', CL, () => map.getCanvas().style.cursor = '');
+
+      // Initial z-order
+      moveToTop(map);
     },
     update(map, fc?: GeoJSON.FeatureCollection) {
       if (!fc) return;
+      lastDataset = fc;
       const src = map.getSource(SID) as mapboxgl.GeoJSONSource | undefined;
       if (src) src.setData(fc as any);
     },
     unmount(map) {
       try {
+        map.off('dragstart', ds);
+        map.off('dragend', de);
+        
         const H = (this as any).__hoverHandlers;
         if (H) {
-          map.off('mouseenter', lyr(id,'point'), H.onPointEnter);
-          map.off('mousemove',  lyr(id,'point'), H.onPointMove);
-          map.off('mouseleave', lyr(id,'point'), H.onPointLeave);
-          map.off('mouseenter', lyr(id,'cluster'), H.onClusterEnter);
-          map.off('mousemove',  lyr(id,'cluster'), H.onClusterMove);
-          map.off('mouseleave', lyr(id,'cluster'), H.onClusterLeave);
+          map.off('mouseenter', PT, H.onPointEnter);
+          map.off('mousemove',  PT, H.onPointMove);
+          map.off('mouseleave', PT, H.onPointLeave);
+          map.off('mouseenter', PT_AVATAR, H.onPointEnter);
+          map.off('mousemove',  PT_AVATAR, H.onPointMove);
+          map.off('mouseleave', PT_AVATAR, H.onPointLeave);
+          map.off('mouseenter', CL, H.onClusterEnter);
+          map.off('mousemove',  CL, H.onClusterMove);
+          map.off('mouseleave', CL, H.onClusterLeave);
           map.off('dragstart', H.clean);
           map.off('zoomstart', H.clean);
+          map.off('styledata', H.styleCleanup);
+        }
+        
+        const raiseHandler = (this as any).__raiseHandler;
+        if (raiseHandler) {
+          map.off('styledata', raiseHandler);
+          map.off('load', raiseHandler);
         }
       } catch {}
       destroyPopups();
