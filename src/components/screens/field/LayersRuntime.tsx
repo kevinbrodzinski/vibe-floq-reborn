@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { useLayerManager } from '@/hooks/useLayerManager';
 import { useNavDestination } from '@/hooks/useNavDestination';
@@ -9,10 +9,10 @@ import { useFieldLocation } from '@/components/field/contexts/FieldLocationConte
 import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPointsLayer';
 import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
-import { PresenceClusterOverlay } from '@/components/map/PresenceClusterOverlay';
 import { FriendInfoCard } from '@/components/map/FriendInfoCard';
 import { VenueInfoCard } from '@/components/map/VenueInfoCard';
 import { layerManager } from '@/lib/map/LayerManager';
+import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
 import '@/styles/map-popups.css';
 
@@ -26,11 +26,22 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
 
   // Centralized LayerManager binding
   useLayerManager(map);
-  useNavDestination(map); // NEW glow overlay listener
+  useNavDestination(map);
 
-  // Mount venues and weather as map layers
-  useTileVenuesLayer(map, data.nearbyVenues);
-  useSocialWeatherLayer(map, data.weatherCells);
+  // ---------- Normalize inputs safely ----------
+  const nearbyVenues = useMemo(
+    () => (Array.isArray(data?.nearbyVenues) ? data.nearbyVenues : []),
+    [data?.nearbyVenues]
+  );
+
+  const weatherCells = useMemo(
+    () => (Array.isArray(data?.weatherCells) ? data.weatherCells : []),
+    [data?.weatherCells]
+  );
+
+  // Mount venues and weather as map layers with safe data
+  useTileVenuesLayer(map, nearbyVenues);
+  useSocialWeatherLayer(map, weatherCells);
 
   // Get nearby friends data
   const { data: nearbyFriends } = useNearbyFriends(
@@ -39,24 +50,77 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     { km: 2, enabled: !!location.coords }
   );
 
-  // Transform data for unified presence overlay
-  const presenceData = {
-    friends: nearbyFriends?.map(f => ({
-      id: f.id,
-      name: f.display_name,
-      photoUrl: f.avatar_url,
-      lat: f.lat,
-      lng: f.lng,
-      distance_m: f.distance_m
-    })),
-    venues: data.nearbyVenues?.map(v => ({
-      id: v.pid,
-      name: v.name,
-      lat: v.lat,
-      lng: v.lng,
-      category: v.category
-    }))
-  };
+  const friendsList = useMemo(
+    () => (Array.isArray(nearbyFriends) ? nearbyFriends : []),
+    [nearbyFriends]
+  );
+
+  // Build unified presence data safely
+  const presenceFC = useMemo(() => {
+    const self = location.coords ? {
+      lat: Number(location.coords.lat),
+      lng: Number(location.coords.lng)
+    } : undefined;
+
+    const friends = friendsList
+      .map((f: any) => ({
+        id: String(f.id ?? ''),
+        name: f.display_name ?? f.name ?? '',
+        photoUrl: f.avatar_url ?? f.photoUrl ?? '',
+        lat: Number(f.lat),
+        lng: Number(f.lng),
+        vibe: f.vibe ?? f.currentVibe ?? undefined,
+      }))
+      .filter((f: any) => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.id);
+
+    const venues = nearbyVenues
+      .map((v: any) => ({
+        id: String(v.pid ?? v.id ?? ''),
+        name: v.name ?? 'Venue',
+        lat: Number(v.lat),
+        lng: Number(v.lng),
+        category: v.category ?? undefined,
+      }))
+      .filter((v: any) => Number.isFinite(v.lat) && Number.isFinite(v.lng) && v.id);
+
+    return buildPresenceFC({ self, friends, venues });
+  }, [nearbyVenues, friendsList, location.coords]);
+
+  // ---------- Register and apply unified presence overlay ----------
+  useEffect(() => {
+    if (!map) return;
+
+    const spec = createPresenceClusterOverlay({
+      id: 'presence',
+      beforeId: 'user-aura-outer',
+      initial: { type: 'FeatureCollection', features: [] },
+    });
+
+    layerManager.register(spec);
+
+    const reapply = () => {
+      if (!map.isStyleLoaded()) { 
+        map.once('idle', reapply); 
+        return; 
+      }
+      spec.mount(map);
+    };
+    
+    map.on('styledata', reapply);
+    map.on('load', reapply);
+
+    return () => {
+      map.off('styledata', reapply);
+      map.off('load', reapply);
+      layerManager.unregister('presence');
+    };
+  }, [map]);
+
+  // Apply feature collection when it changes
+  useEffect(() => {
+    if (!map) return;
+    layerManager.apply('presence', presenceFC);
+  }, [map, presenceFC]);
 
   // Overlays with clustering + cards
   return (
@@ -64,13 +128,6 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       <PredictedMeetingPointsLayer />
       <BreadcrumbMapLayer map={map} />
       <UserAuraOverlay map={map} layerManager={layerManager} enabled />
-      
-      {/* Unified presence overlay - friends, venues, and self hit target */}
-      <PresenceClusterOverlay 
-        data={presenceData} 
-        enabled={true} 
-        beforeId="user-aura-outer" 
-      />
       
       {/* Info cards */}
       <FriendInfoCard />
