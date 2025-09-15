@@ -7,7 +7,7 @@ import { createUserAuraSpec, type AuraData } from '@/lib/map/overlays/userAuraSp
 import { useVibeEngine } from '@/hooks/useVibeEngine';
 import { safeVibe } from '@/lib/vibes';
 import { vibeToHex } from '@/lib/vibe/color';
-import { calculateDistance } from '@/lib/location/standardGeo';
+import { calculateDistance as calculateDistanceMeters } from '@/lib/location/standardGeo';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import type { LayerManager } from '@/lib/map/LayerManager';
 
@@ -92,7 +92,7 @@ export function UserAuraOverlay({
     const conf = Math.max(0, Math.min(1, eng?.confidence ?? 0.5));
 
     const last = lastRef.current;
-    const movedEnough = !last || calculateDistance(last, pos) > MIN_MOVE_M;
+    const movedEnough = !last || calculateDistanceMeters(last, pos) > MIN_MOVE_M;
     const confChanged = !last || Math.abs(conf - last.conf) > MIN_DELTA_CONF;
 
     // Throttle updates to avoid spamming on noisy GPS

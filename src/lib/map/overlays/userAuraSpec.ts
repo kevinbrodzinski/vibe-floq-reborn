@@ -108,7 +108,8 @@ function removeLayers(map: mapboxgl.Map) {
 }
 
 function setData(map: mapboxgl.Map, data: AuraData) {
-  const src = map.getSource(SRC_ID) as mapboxgl.GeoJSONSource | undefined;
+  let src = map.getSource(SRC_ID) as mapboxgl.GeoJSONSource | undefined;
+  if (!src) { ensureSource(map); src = map.getSource(SRC_ID) as mapboxgl.GeoJSONSource | undefined; }
   if (!src) return;
   
   const fc: GeoJSON.FeatureCollection = {

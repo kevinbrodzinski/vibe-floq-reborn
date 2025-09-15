@@ -111,6 +111,7 @@ export function useUserLocation(opts: Opts = {}) {
         // Handle permission denied
         if (error.code === error.PERMISSION_DENIED) {
           setState(s => ({ ...s, permission: 'denied' }));
+          stop(); // stop watcher to save battery
         }
         // Ignore other errors to keep silent UX
       },
