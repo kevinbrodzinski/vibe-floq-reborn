@@ -9,6 +9,7 @@ import { safeVibe } from '@/lib/vibes';
 import { vibeToHex } from '@/lib/vibe/color';
 import { calculateDistance as calculateDistanceMeters } from '@/lib/location/standardGeo';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { incrAura } from '@/lib/telemetry';
 import type { LayerManager } from '@/lib/map/LayerManager';
 
 type Props = {
@@ -53,6 +54,7 @@ export function UserAuraOverlay({
 
     const spec = createUserAuraSpec(beforeId);
     layerManager.register(spec);
+    incrAura('mounts');
 
     // Style reload resilience
     const reapply = () => {
@@ -61,6 +63,7 @@ export function UserAuraOverlay({
         return; 
       }
       spec.mount(map);
+      incrAura('reapplies');
       // update will run on next tick when data arrives
     };
     
@@ -71,6 +74,7 @@ export function UserAuraOverlay({
       map.off('styledata', reapply);
       map.off('load', reapply);
       layerManager.unregister('user-aura');
+      incrAura('unmounts');
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (tRef.current) { 
         clearTimeout(tRef.current); 
@@ -110,12 +114,15 @@ export function UserAuraOverlay({
           };
           layerManager.apply('user-aura', data);
           lastRef.current = { ...pos, conf };
+          incrAura('updates');
         });
       }, TICK_MS);
     };
 
     if (movedEnough || confChanged) {
       schedule();
+    } else {
+      incrAura('throttled');
     }
   }, [map, layerManager, enabled, pos, eng?.currentVibe, eng?.confidence, userLocation.permission]);
 

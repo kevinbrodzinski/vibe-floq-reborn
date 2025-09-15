@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { calculateDistance } from '@/lib/location/standardGeo';
+import { incrAura } from '@/lib/telemetry';
 
 export type LocationState = {
   lat: number | null;
@@ -43,6 +44,7 @@ export function useUserLocation(opts: Opts = {}) {
         navigator.geolocation.clearWatch(watchIdRef.current); 
       } catch {}
       watchIdRef.current = null;
+      incrAura('watchStops');
     }
     setState(s => ({ ...s, watching: false }));
   }, []);
@@ -111,6 +113,7 @@ export function useUserLocation(opts: Opts = {}) {
         // Handle permission denied
         if (error.code === error.PERMISSION_DENIED) {
           setState(s => ({ ...s, permission: 'denied' }));
+          incrAura('permissionDenied');
           stop(); // stop watcher to save battery
         }
         // Ignore other errors to keep silent UX
@@ -124,6 +127,7 @@ export function useUserLocation(opts: Opts = {}) {
     
     watchIdRef.current = id;
     setState(s => ({ ...s, watching: true }));
+    incrAura('watchStarts');
   }, [highAccuracy, minMoveM, minIntervalMs]);
 
   useEffect(() => {
