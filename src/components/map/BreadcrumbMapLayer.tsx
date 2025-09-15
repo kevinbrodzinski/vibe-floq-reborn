@@ -98,8 +98,12 @@ export function BreadcrumbMapLayer({ map }: BreadcrumbMapLayerProps) {
 
       // Handle style reloads (map.setStyle() wipes layers)
       const reapply = () => {
+        if (!map.isStyleLoaded()) {
+          map.once('idle', reapply); // idle fires after sources/layers loaded
+          return;
+        }
         spec.mount(map);
-        spec.update(map, geoJson);
+        if (geoJson) spec.update(map, geoJson);
         // Theme watcher will reapply colors automatically
       };
 

@@ -16,3 +16,17 @@ export function applyLayerColors(map: mapboxgl.Map, layerId: string, paint: Pain
     map.setPaintProperty(layerId, prop, hslVar(def.var, def.fallback));
   }
 }
+
+export type LayerPaintBatch = Array<{
+  id: string;
+  paint: PaintSpec;
+}>;
+
+/**
+ * Apply colors to multiple layers in one call
+ */
+export function applyColorsBatch(map: mapboxgl.Map, batch: LayerPaintBatch) {
+  for (const { id, paint } of batch) {
+    applyLayerColors(map, id, paint);
+  }
+}

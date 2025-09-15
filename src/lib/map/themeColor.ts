@@ -6,6 +6,13 @@ export function invalidateThemeColorCache() {
   _cacheStamp = Date.now();
 }
 
+// Handle early CSS var access on SSR hydration or very early mount
+if (typeof document !== 'undefined' && document.readyState !== 'complete') {
+  document.addEventListener('DOMContentLoaded', () => {
+    invalidateThemeColorCache();
+  }, { once: true });
+}
+
 /**
  * Normalize HSL tokens to support both space and alpha syntax
  * Accepts "230 35% 7%" or "230 35% 7% / 0.6"
