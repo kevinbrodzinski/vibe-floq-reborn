@@ -1,4 +1,16 @@
 /**
+ * Normalize HSL tokens to support both space and alpha syntax
+ * Accepts "230 35% 7%" or "230 35% 7% / 0.6"
+ */
+function normalizeHslToken(token: string): string {
+  const parts = token.split('/').map(s => s.trim());
+  if (parts.length === 2) {
+    return `hsl(${parts[0]} / ${parts[1]})`;
+  }
+  return `hsl(${token})`;
+}
+
+/**
  * Resolve Tailwind-style HSL CSS vars (e.g., --background = "230 35% 7%")
  * into real color strings usable by Mapbox ("hsl(230 35% 7%)").
  * Falls back to the supplied fallbackHsl if not found.
@@ -17,7 +29,7 @@ export function hslVar(varName: string, fallbackHsl: string): string {
 
     // Tailwind HSL form is usually "H S% L%" — preserve spaces to keep modern CSS HSL syntax
     const cleaned = raw.replace(/\s+/g, ' ').trim();
-    return `hsl(${cleaned})`;
+    return normalizeHslToken(cleaned);
   } catch {
     return fallbackHsl;
   }
