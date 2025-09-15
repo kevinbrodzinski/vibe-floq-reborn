@@ -1,4 +1,3 @@
-// Global type declarations for window.floq
 declare global {
   interface Window {
     floq?: {
@@ -17,5 +16,4 @@ declare global {
     };
   }
 }
-
 export {};

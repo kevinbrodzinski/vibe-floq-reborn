@@ -1,4 +1,3 @@
-// Shared types for presence system
 export type LngLat = { lng: number; lat: number };
 
 export type PresenceKind = 'friend' | 'self' | 'venue';
@@ -11,11 +10,11 @@ export type PresencePayload = {
   color?: string;
   
   // Optional presence signals for friend/self
-  energy01?: number;                   // 0..1 current energy
-  direction?: "up" | "flat" | "down";  // vibe direction
-  etaMin?: number;                     // runway when winding down
-  distanceM?: number;                  // distance from me
-  venueName?: string;                  // current venue
+  energy01?: number;
+  direction?: "up" | "flat" | "down";
+  etaMin?: number;
+  distanceM?: number;
+  venueName?: string;
   openNow?: boolean;
 
   // Optional visuals
