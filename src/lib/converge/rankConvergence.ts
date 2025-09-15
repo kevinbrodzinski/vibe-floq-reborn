@@ -68,7 +68,7 @@ export function scoreCandidate(
   const comp =
     0.45 * vibeCompatibility(peer, v) +
     0.30 * (1 - Math.min(1, Math.max(eta.meMin, eta.friendMin) / 30)) +
-    0.15 * (v.openNow === true ? 1 : 0) +
+    0.15 * (v.openNow === true ? 1 : v.openNow === false ? -0.67 : 0) +
     0.10 * (1 - Math.min(1, Math.abs(eta.meMin - eta.friendMin) / 30));
   return {
     id: v.id,
