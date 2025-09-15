@@ -126,7 +126,15 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   useEffect(() => {
     if (!map || !layerManager) return;
     layerManager.apply('presence', presenceFC);
-  }, [map, layerManager, presenceFC]);
+    
+    // Expose global state for convergence ranking
+    (window as any).floq ??= {};
+    (window as any).floq.nearbyVenues = nearbyVenues;
+    (window as any).floq.myLocation = location.coords ? { 
+      lng: location.coords.lng, 
+      lat: location.coords.lat 
+    } : undefined;
+  }, [map, layerManager, presenceFC, nearbyVenues, location.coords]);
 
   // Overlays with clustering + cards
   return (

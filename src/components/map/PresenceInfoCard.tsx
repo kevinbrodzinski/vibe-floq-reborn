@@ -1,511 +1,171 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, Clock, MapPin, Navigation, Share, MessageCircle, Star } from 'lucide-react';
-import { formatDistance, formatTimeAgo } from '@/lib/utils/formatters';
-import { ConvergeSuggestions } from './ConvergeSuggestions';
+import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+type Kind = 'friend' | 'venue' | 'self';
 
 type LngLat = { lng: number; lat: number };
 
-export type PresenceSelection =
-  | {
-      kind: 'friend';
-      id: string;
-      name?: string;
-      avatarUrl?: string;
-      vibe?: string;
-      color?: string;
-      distanceM?: number;
-      lastSeenMs?: number;
-      lngLat?: LngLat;
-      // Enhanced presence data
-      energy01?: number;
-      direction?: 'up' | 'flat' | 'down';
-      etaMin?: number;
-      venue?: { id: string; name: string; openNow?: boolean };
-      nextPlan?: { label: string; etaMin?: number };
-      availability?: 'open' | 'busy' | 'dnd';
-      lastUpdated?: number;
-      properties?: Record<string, any>;
-    }
-  | {
-      kind: 'self';
-      id: 'self';
-      name?: string;
-      color?: string;
-      lngLat?: LngLat;
-      properties?: Record<string, any>;
-    }
-  | {
-      kind: 'venue';
-      id: string;
-      name?: string;
-      category?: string;
-      isOpen?: boolean;
-      rating?: number;
-      userRatings?: number;
-      color?: string;
-      lngLat?: LngLat;
-      properties?: Record<string, any>;
-    };
-
-type CardAction = {
-  key: string;
-  label: string;
-  intent?: 'primary' | 'secondary' | 'ghost';
-  icon?: React.ReactNode;
-  hidden?: boolean;
-  onClick: () => void;
+export type PresencePayload = {
+  kind: Kind;
+  id: string;
+  name?: string;
+  lngLat?: LngLat;
+  color?: string;
+  properties?: Record<string, any>;
 };
 
 type Props = {
-  selection: PresenceSelection | null;
+  data: PresencePayload | null;
   onClose: () => void;
-  onPing?: (id: string) => void;
-  onNavigate?: (to: LngLat, meta?: any) => void;
-  onRecenter?: () => void;
-  className?: string;
-  maxWidth?: number;
 };
 
-export function PresenceInfoCard({
-  selection,
-  onClose,
-  onPing,
-  onNavigate,
-  onRecenter,
-  className,
-  maxWidth = 420,
-}: Props) {
-  const open = !!selection;
-  const [showConvergence, setShowConvergence] = React.useState(false);
+const Row: React.FC<{label:string; value?:React.ReactNode}> = ({label,value}) => (
+  <div className="flex items-center justify-between text-sm text-white/80">
+    <span className="font-medium text-white">{label}</span>
+    <span className="ml-3">{value ?? '—'}</span>
+  </div>
+);
 
-  // Keyboard support
+export const PresenceInfoCard: React.FC<Props> = ({ data, onClose }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+
   React.useEffect(() => {
-    if (!open) return;
-
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      } else if (e.key === 'Enter') {
-        // Trigger primary action
-        const actions = actionsFor(selection!, {
-          onPing,
-          onNavigate,
-          onRecenter,
-          onInvite: (idOrTo) => window.dispatchEvent(new CustomEvent('floq:invite', { detail: { idOrTo } })),
-          onSaveVenue: (id) => window.dispatchEvent(new CustomEvent('floq:save_venue', { detail: { id } })),
-          onShareLive: () => window.dispatchEvent(new CustomEvent('floq:share_live', { detail: { minutes: 10 } })),
-          onFavorite: (id) => window.dispatchEvent(new CustomEvent('floq:favorite_friend', { detail: { id } })),
-          onCopyLoc: (to) => {
-            try {
-              const s = to ? `${to.lat.toFixed(6)}, ${to.lng.toFixed(6)}` : 'No location';
-              navigator.clipboard.writeText(s);
-            } catch {}
-          },
-        });
-        const primary = actions.find(a => a.intent === 'primary');
-        primary?.onClick();
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Enter' && data) primaryAction(data);
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [data, onClose]);
 
-    document.addEventListener('keydown', handleKeydown);
-    return () => document.removeEventListener('keydown', handleKeydown);
-  }, [open, selection, onPing, onNavigate, onRecenter, onClose]);
+  if (!data) return null;
+  const { kind, name, color } = data;
+  const isSelf = kind === 'self';
 
-  if (!selection) return null;
+  const primaryLabel =
+    kind === 'venue' ? 'Flow to venue'
+    : isSelf ? 'Recenter'
+    : 'Ping';
 
-  const isFriend = selection.kind === 'friend';
-  const isSelf = selection.kind === 'self';
-  const isVenue = selection.kind === 'venue';
-
-  const title = isSelf
-    ? (selection.name || 'You')
-    : (selection.name || (isVenue ? 'Venue' : 'Friend'));
-
-  const vibeLabel = isFriend && selection.vibe ? capitalize(selection.vibe) : undefined;
-  const distanceLabel =
-    typeof (selection as any).distanceM === 'number'
-      ? formatDistance((selection as any).distanceM)
-      : 'Nearby';
-
-  const lastSeenLabel =
-    isFriend && typeof selection.lastSeenMs === 'number'
-      ? ` · ${formatTimeAgo(Date.now() - selection.lastSeenMs)}`
-      : '';
-
-  // Enhanced presence info
-  const direction = isFriend ? selection.direction : undefined;
-  const energy01 = isFriend ? selection.energy01 : undefined;
-  const etaMin = isFriend ? selection.etaMin : undefined;
-  const nextPlan = isFriend ? selection.nextPlan : undefined;
-  const venue = isFriend ? selection.venue : undefined;
-  const availability = isFriend ? selection.availability : undefined;
-
-  const getDirectionIcon = () => {
-    switch (direction) {
-      case 'up': return <TrendingUp size={12} className="text-emerald-400" />;
-      case 'down': return <TrendingDown size={12} className="text-orange-400" />;
-      case 'flat': return <Minus size={12} className="text-blue-400" />;
-      default: return null;
+  function primaryAction(d: PresencePayload) {
+    if (d.kind === 'venue') {
+      if (d.lngLat) window.dispatchEvent(new CustomEvent('floq:navigate', { detail: { to: d.lngLat }}));
+    } else if (d.kind === 'self') {
+      window.dispatchEvent(new CustomEvent('floq:geolocate'));
+    } else {
+      window.dispatchEvent(new CustomEvent('floq:ping', { detail: { id: d.id }}));
     }
-  };
+    onClose();
+  }
 
-  const getVibeStatus = () => {
-    if (!direction) return null;
-    
-    const statusMap = {
-      up: 'Building energy',
-      flat: 'Steady vibe',
-      down: etaMin ? `Winding down (~${etaMin}m left)` : 'Winding down'
-    };
-    
-    return statusMap[direction];
-  };
 
-  const metaLine = isVenue
-    ? [
-        selection.category || 'Place',
-        selection.isOpen != null ? (selection.isOpen ? 'Open now' : 'Closed') : null,
-        typeof selection.rating === 'number' ? `⭐ ${selection.rating.toFixed(1)}` : null,
-      ].filter(Boolean).join(' · ')
-    : `${distanceLabel}${lastSeenLabel}`;
-
-  const ringColor = selection.color || getVibeHexSafe();
-  const titleColor = 'text-white';
-
-  const handleConvergeRequest = (suggestion: any) => {
-    window.dispatchEvent(new CustomEvent('floq:converge_request', {
-      detail: {
-        requestId: `req_${Date.now()}`,
-        fromUserId: 'current-user', // Replace with actual user ID
-        toUserId: selection.id,
-        point: {
-          id: suggestion.id,
-          name: suggestion.name,
-          lng: suggestion.lngLat.lng,
-          lat: suggestion.lngLat.lat,
-          venueId: suggestion.id
-        },
-        eta: {
-          meMin: suggestion.etaMe,
-          friendMin: suggestion.etaFriend
-        },
-        createdAt: Date.now()
-      }
-    }));
-    
-    // Analytics
-    window.dispatchEvent(new CustomEvent('ui_card_action', {
-      detail: { kind: selection.kind, action: 'converge_request', id: selection.id }
-    }));
-  };
-
-  const rawActions = actionsFor(selection, {
-    onPing,
-    onNavigate,
-    onRecenter,
-    onInvite: (idOrTo) => window.dispatchEvent(new CustomEvent('floq:invite', { detail: { idOrTo } })),
-    onSaveVenue: (id) => window.dispatchEvent(new CustomEvent('floq:save_venue', { detail: { id } })),
-    onShareLive: () => window.dispatchEvent(new CustomEvent('floq:share_live', { detail: { minutes: 10 } })),
-    onFavorite: (id) => window.dispatchEvent(new CustomEvent('floq:favorite_friend', { detail: { id } })),
-    onCopyLoc: (to) => {
-      try {
-        const s = to ? `${to.lat.toFixed(6)}, ${to.lng.toFixed(6)}` : 'No location';
-        navigator.clipboard.writeText(s);
-      } catch {}
-    },
-  });
-
-  const actions = rawActions.filter(a => !a.hidden);
-  const primary = actions.find(a => a.intent === 'primary');
-  const secondaries = actions.filter(a => a.intent === 'secondary').slice(0, 2);
-  const more = actions.filter(a => a.intent === 'ghost').concat(
-    actions.filter(a => a.intent === 'secondary').slice(2)
-  );
 
   return (
     <AnimatePresence>
-      {open && (
-        <motion.aside
-          initial={{ y: 18, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 12, opacity: 0 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-          className={cn(
-            'fixed left-1/2 bottom-4 z-[200] -translate-x-1/2',
-            'rounded-2xl border border-white/15 bg-[#0B0C0F]/80 backdrop-blur-xl',
-            'shadow-xl shadow-black/40',
-            'px-4 py-3 sm:px-5 sm:py-4',
-            'text-white',
-            className
-          )}
-          style={{ width: 'calc(100vw - 24px)', maxWidth }}
-          role="dialog"
-          aria-label="Presence info"
-        >
-          <div className="flex items-center gap-3">
-            <HeaderGlyph selection={selection} ringColor={ringColor} />
-
-            <div className="min-w-0 flex-1">
-              <div className={cn('text-base font-semibold leading-none', titleColor, 'truncate')}>
-                {title}
+      <motion.div
+        ref={ref}
+        className="fixed left-0 right-0 bottom-0 z-[70] px-3 pb-6 pointer-events-none"
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 80, opacity: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <div className="pointer-events-auto mx-auto w-[min(560px,92%)] rounded-2xl border border-white/10 bg-black/70 backdrop-blur-lg shadow-xl">
+          <div className="p-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full border border-white/20" style={{ background: color ?? '#64748b' }} />
+            <div className="min-w-0">
+              <div className="text-white font-semibold truncate">
+                {name || (kind === 'venue' ? 'Venue' : isSelf ? 'You' : 'Friend')}
               </div>
-
-              <div className="mt-1 text-xs text-white/70 truncate">
-                {metaLine || '—'}
-              </div>
-
-              {/* Now → Next → Where Row for Friends */}
-              {isFriend && (direction || nextPlan || venue) && (
-                <div className="mt-2 mb-2 flex items-center gap-3 text-xs text-white/80">
-                  {/* Now: Vibe Direction */}
-                  {direction && (
-                    <div className="flex items-center gap-1">
-                      {getDirectionIcon()}
-                      <span>{getVibeStatus()}</span>
-                    </div>
-                  )}
-                  
-                  {/* Next: Plan */}
-                  {nextPlan && (
-                    <div className="flex items-center gap-1 text-blue-300">
-                      <Clock size={10} />
-                      <span>{nextPlan.label}</span>
-                    </div>
-                  )}
-                  
-                  {/* Where: Current venue */}
-                  {venue && (
-                    <div className="flex items-center gap-1 text-emerald-300">
-                      <MapPin size={10} />
-                      <span>{venue.name}</span>
-                      {venue.openNow !== undefined && (
-                        <span className={venue.openNow ? 'text-emerald-400' : 'text-red-400'}>
-                          ({venue.openNow ? 'open' : 'closed'})
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {isFriend && vibeLabel && (
-                  <Badge className="bg-white/10 border-white/20 text-white/90">{vibeLabel}</Badge>
-                )}
-                {isFriend && availability && (
-                  <Badge 
-                    className={cn(
-                      "border-white/20 text-white/90",
-                      availability === 'open' ? 'bg-emerald-500/20 border-emerald-400/40' :
-                      availability === 'busy' ? 'bg-yellow-500/20 border-yellow-400/40' :
-                      'bg-red-500/20 border-red-400/40'
-                    )}
-                  >
-                    {availability === 'open' ? 'Available' : availability === 'busy' ? 'Busy' : 'Do Not Disturb'}
-                  </Badge>
-                )}
-                {isVenue && selection.category && (
-                  <Badge className="bg-white/10 border-white/20 text-white/90">{selection.category}</Badge>
-                )}
-                {isVenue && typeof selection.rating === 'number' && (
-                  <Badge variant="outline" className="border-white/20 text-white/90">
-                    ⭐ {selection.rating.toFixed(1)}
-                  </Badge>
-                )}
-              </div>
+              <div className="text-xs text-white/60">{kind === 'venue' ? 'Place' : isSelf ? 'My location' : 'Friend'}</div>
             </div>
+          </div>
+
+          <div className="px-4 pb-3 space-y-2">
+            {data.properties?.category && <Row label="Category" value={data.properties.category} />}
+            {data.properties?.distance_m != null && (
+              <Row label="Distance" value={`${Math.round(Number(data.properties.distance_m))} m`} />
+            )}
+            {data.properties?.vibe && <Row label="Vibe" value={String(data.properties.vibe)} />}
+          </div>
+
+          <div className="p-3 pt-0 flex gap-2 justify-end">
+            {/* secondary actions vary by kind */}
+            {kind === 'venue' ? (
+              <>
+                <button
+                  onClick={() => {
+                    if (data.lngLat) window.dispatchEvent(new CustomEvent('floq:invite', { detail: { to: data.lngLat, id: data.id } }));
+                    onClose();
+                  }}
+                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
+                >
+                  Invite friends
+                </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('floq:save_venue', { detail: { id: data.id } }));
+                    onClose();
+                  }}
+                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
+                >
+                  Save
+                </button>
+              </>
+            ) : isSelf ? (
+              <>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('floq:share_location'));
+                    onClose();
+                  }}
+                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
+                >
+                  Share live
+                </button>
+                <button
+                  onClick={() => {
+                    if (data.lngLat) window.dispatchEvent(new CustomEvent('floq:set_meet_here', { detail: { at: data.lngLat } }));
+                    onClose();
+                  }}
+                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
+                >
+                  Set meet here
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('floq:message', { detail: { id: data.id }}));
+                    onClose();
+                  }}
+                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
+                >
+                  Message
+                </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('floq:invite', { detail: { id: data.id }}));
+                    onClose();
+                  }}
+                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
+                >
+                  Invite
+                </button>
+              </>
+            )}
 
             <button
-              aria-label="Close"
-              className="ml-2 rounded-lg p-1.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
-              onClick={onClose}
+              onClick={() => primaryAction(data)}
+              className="px-3 h-9 rounded-lg bg-white text-black font-medium hover:bg-white/90"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" className="opacity-80">
-                <path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59L7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.9a1 1 0 0 0 1.41-1.42L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4" />
-              </svg>
+              {primaryLabel}
             </button>
+            <button onClick={onClose} className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10">Close</button>
           </div>
-
-          <div className="mt-3 flex items-center gap-2">
-            {primary && (
-              <Button size="sm" className="min-w-[92px]" onClick={primary.onClick}>
-                {primary.label}
-              </Button>
-            )}
-            {secondaries.map(a => (
-              <Button key={a.key} size="sm" variant="secondary" className="min-w-[92px]" onClick={a.onClick}>
-                {a.label}
-              </Button>
-            ))}
-            
-            {/* Convergence button for friends */}
-            {isFriend && selection.lngLat && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-white/80 border-white/30 hover:bg-white/10"
-                onClick={() => setShowConvergence(true)}
-              >
-                <Star size={12} className="mr-1" />
-                Converge
-              </Button>
-            )}
-            {more.length > 0 && (
-              <MoreMenu items={more} onClose={onClose} />
-            )}
-            <Button size="sm" variant="ghost" className="text-white/80 hover:text-white ml-auto" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-        </motion.aside>
-      )}
-      
-      {/* Convergence Modal */}
-      {showConvergence && isFriend && selection.lngLat && (
-        <ConvergeSuggestions
-          friendId={selection.id}
-          friendName={selection.name || 'Friend'}
-          myLocation={{ lng: 0, lat: 0 }} // Replace with actual user location
-          friendLocation={selection.lngLat}
-          onRequest={handleConvergeRequest}
-          onClose={() => setShowConvergence(false)}
-        />
-      )}
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
-}
-
-function HeaderGlyph({
-  selection,
-  ringColor,
-}: {
-  selection: PresenceSelection;
-  ringColor: string;
-}) {
-  if (selection.kind === 'friend' || selection.kind === 'self') {
-    const initials = selection.kind === 'self'
-      ? 'You'.slice(0, 2).toUpperCase()
-      : (selection.name || 'F').slice(0, 2).toUpperCase();
-
-    return (
-      <div className="relative">
-        <div
-          className="absolute -inset-[2px] rounded-full"
-          style={{ boxShadow: `0 0 0 2px ${ringColor}` }}
-          aria-hidden
-        />
-        <Avatar className="h-10 w-10 ring-1 ring-white/15">
-          {selection.kind === 'friend' && selection.avatarUrl ? (
-            <AvatarImage src={selection.avatarUrl} alt={selection.name || 'Friend'} />
-          ) : null}
-          <AvatarFallback className="bg-white/10 text-white/90">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-white/15"
-      style={{ background: 'linear-gradient(180deg, #16a34a 0%, #0d5d2c 100%)' }}
-      aria-hidden
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" className="opacity-90 text-white">
-        <path
-          fill="currentColor"
-          d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7m0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"
-        />
-      </svg>
-    </div>
-  );
-}
-
-function MoreMenu({ items, onClose }: { items: CardAction[]; onClose: () => void }) {
-  const [open, setOpen] = React.useState(false);
-  return (
-    <div className="relative">
-      <Button size="sm" variant="ghost" onClick={() => setOpen(v => !v)}>More</Button>
-      {open && (
-        <div className="absolute bottom-9 right-0 min-w-[180px] rounded-xl border border-white/15 bg-[#0B0C0F]/95 p-1 shadow-lg">
-          {items.map(a => (
-            <button
-              key={a.key}
-              className="block w-full rounded-md px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10"
-              onClick={() => { a.onClick(); setOpen(false); onClose?.(); }}
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function actionsFor(
-  sel: PresenceSelection,
-  api: {
-    onPing?: (id: string) => void;
-    onNavigate?: (to: LngLat, meta?: any) => void;
-    onRecenter?: () => void;
-    onInvite?: (idOrTo: string | LngLat) => void;
-    onSaveVenue?: (venueId: string) => void;
-    onShareLive?: () => void;
-    onFavorite?: (id: string) => void;
-    onCopyLoc?: (to?: LngLat) => void;
-  }
-): CardAction[] {
-  const canNav = !!sel.lngLat;
-
-  if (sel.kind === 'friend') {
-    return [
-      { key: 'ping', label: 'Ping', intent: 'primary', onClick: () => api.onPing?.(sel.id) },
-      { key: 'nav', label: 'Flow toward', intent: 'secondary', hidden: !canNav, onClick: () => canNav && api.onNavigate?.(sel.lngLat!, { type: 'friend' }) },
-      { key: 'dm', label: 'Message', intent: 'secondary', hidden: !window?.dispatchEvent, onClick: () => window.dispatchEvent(new CustomEvent('floq:dm', { detail: { id: sel.id } })) },
-      { key: 'invite', label: 'Invite to meet here', intent: 'ghost', onClick: () => api.onInvite?.(sel.id) },
-      { key: 'fav', label: 'Favorite', intent: 'ghost', onClick: () => api.onFavorite?.(sel.id) },
-    ];
-  }
-
-  if (sel.kind === 'self') {
-    return [
-      { key: 'recenter', label: 'Recenter', intent: 'primary', onClick: () => api.onRecenter?.() },
-      { key: 'share', label: 'Share Live (10m)', intent: 'secondary', onClick: () => api.onShareLive?.() },
-      { key: 'anchor', label: 'Set Meet Here', intent: 'secondary', onClick: () => api.onInvite?.(sel.lngLat ?? { lng: 0, lat: 0 }) },
-      { key: 'flow', label: 'Flow toward…', intent: 'ghost', onClick: () => window.dispatchEvent(new CustomEvent('floq:flow_picker')) },
-      { key: 'copy', label: 'Copy location', intent: 'ghost', onClick: () => api.onCopyLoc?.(sel.lngLat) },
-    ];
-  }
-
-  return [
-    { key: 'nav', label: 'Flow to venue', intent: 'primary', hidden: !canNav, onClick: () => canNav && api.onNavigate?.(sel.lngLat!, { type: 'venue', venueId: sel.id }) },
-    { key: 'invite', label: 'Invite friends here', intent: 'secondary', onClick: () => api.onInvite?.(sel.lngLat ?? { lng: 0, lat: 0 }) },
-    { key: 'save', label: 'Save venue', intent: 'secondary', onClick: () => api.onSaveVenue?.(sel.id) },
-    { key: 'insights', label: 'Peak Times', intent: 'ghost', onClick: () => window.dispatchEvent(new CustomEvent('floq:venue_insights', { detail: { id: sel.id } })) },
-    { key: 'maps', label: 'Open in Maps', intent: 'ghost', onClick: () => window.dispatchEvent(new CustomEvent('floq:open_maps', { detail: { id: sel.id, to: sel.lngLat } })) },
-  ];
-}
-
-// Removed formatDistance - using formatDistance from utils instead
-
-// Removed formatAgo - using formatTimeAgo from utils instead
-
-function capitalize(s: string) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-}
-
-function getVibeHexSafe() {
-  try {
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--vibe-hex').trim();
-    return v || '#22d3ee';
-  } catch {
-    return '#22d3ee';
-  }
 }
