@@ -18,6 +18,7 @@ const SRC_ID = 'user-aura-src';
 const LAYER_ID_DOT = 'user-aura-dot';
 const LAYER_ID_INNER = 'user-aura-inner';
 const LAYER_ID_OUTER = 'user-aura-outer';
+const LAYER_ID_HIT = 'user-aura-hit'; // invisible hit target
 
 function hexToRgba(hex: string, alpha: number): string {
   // #RRGGBB -> rgba(r,g,b,a)
@@ -41,7 +42,7 @@ function ensureSource(map: mapboxgl.Map) {
 }
 
 function moveAuraToTop(map: mapboxgl.Map) {
-  const ids = [LAYER_ID_OUTER, LAYER_ID_INNER, LAYER_ID_DOT];
+  const ids = [LAYER_ID_OUTER, LAYER_ID_INNER, LAYER_ID_DOT, LAYER_ID_HIT];
   // Add after *all* layers to guarantee it sits on top
   const all = map.getStyle()?.layers?.map(l => l.id) ?? [];
   const topId = all[all.length - 1];
@@ -114,10 +115,57 @@ function addLayers(map: mapboxgl.Map, beforeId?: string) {
       }
     }, beforeId ?? LAYER_ID_INNER);
   }
+
+  // Large invisible hit target for tap
+  if (!map.getLayer(LAYER_ID_HIT)) {
+    map.addLayer({
+      id: LAYER_ID_HIT,
+      type: 'circle',
+      source: SRC_ID,
+      paint: {
+        'circle-radius': [
+          'interpolate', ['linear'], ['zoom'],
+          10, 24, 14, 32, 16, 40
+        ],
+        'circle-color': 'rgba(0,0,0,0)',
+        'circle-opacity': 1
+      }
+    }, LAYER_ID_DOT);
+  }
+
+  // Cursor affordance (desktop)
+  map.on('mouseenter', LAYER_ID_HIT, () => { 
+    map.getCanvas().style.cursor = 'pointer'; 
+  });
+  map.on('mouseleave', LAYER_ID_HIT, () => { 
+    map.getCanvas().style.cursor = ''; 
+  });
+
+  // Click → fire the same event the friend layer uses
+  map.on('click', LAYER_ID_HIT, () => {
+    if (!lastPoint) return;
+
+    // Pull current vibe color from CSS var set by useVibeEngine
+    let colorHex = '#22d3ee';
+    try {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue('--vibe-hex').trim();
+      if (raw) colorHex = raw;
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('friends:select', {
+      detail: {
+        id: 'self',
+        name: 'You',
+        avatarUrl: undefined,   // fill if you have a local profile photo
+        color: colorHex,
+        lngLat: lastPoint
+      }
+    }));
+  });
 }
 
 function removeLayers(map: mapboxgl.Map) {
-  [LAYER_ID_DOT, LAYER_ID_INNER, LAYER_ID_OUTER].forEach(id => {
+  [LAYER_ID_HIT, LAYER_ID_DOT, LAYER_ID_INNER, LAYER_ID_OUTER].forEach(id => {
     if (map.getLayer(id)) map.removeLayer(id);
   });
   if (map.getSource(SRC_ID)) map.removeSource(SRC_ID);
