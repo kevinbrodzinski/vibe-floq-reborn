@@ -1,30 +1,31 @@
-import * as React from "react";
+import * as React from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { ConvergeInputs, RankedPoint } from '@/types/presence';
-import { rankConvergence, scoreCandidate } from "@/lib/converge/rankConvergence";
+import { rankConvergence, scoreCandidate } from '@/lib/converge/rankConvergence';
 import { Button } from "@/components/ui/button";
 
-type Props = {
-  onClose?: () => void;
-};
+type Props = { onClose?: () => void };
 
 export function ConvergeSuggestions({ onClose }: Props) {
   const [open, setOpen] = React.useState(false);
   const [points, setPoints] = React.useState<RankedPoint[]>([]);
   const [loading, setLoading] = React.useState(false);
 
+  const close = React.useCallback(() => {
+    setOpen(false);
+    onClose?.();
+  }, [onClose]);
+
   React.useEffect(() => {
     const handler = async (e: Event) => {
       const { peer, anchor } = (e as CustomEvent<ConvergeInputs>).detail ?? {};
       setOpen(true);
       setLoading(true);
-      
       try {
-        // 1) baseline ranked list
-        const inputs: ConvergeInputs = { peer, anchor };
-        const ranked = await rankConvergence(inputs);
+        // 1) baseline ranking
+        const ranked = await rankConvergence({ peer, anchor: anchor ?? null });
 
-        // 2) pre-insert the friend's current venue if available (and valid)
+        // 2) pre-insert friend's current venue if available
         const me = (window as any)?.floq?.myLocation ?? null;
         const peerLL = peer?.lngLat ?? null;
         const fr = (window as any)?.floq?.friendsIndex?.[peer?.id ?? ''] ?? null;
@@ -38,54 +39,34 @@ export function ConvergeSuggestions({ onClose }: Props) {
             { lat: me.lat, lng: me.lng },
             { lat: peerLL.lat, lng: peerLL.lng },
           );
-
           const existingIx = ranked.findIndex(p => p.id === candidate.id);
-          if (existingIx === -1) {
-            // Not in list → add to front
-            merged = [candidate, ...ranked];
-          } else {
-            // Already present → keep the better of the two (usually equal math),
-            // then move it to the front if it's not already strongest.
-            const best = candidate.match >= ranked[existingIx].match ? candidate : ranked[existingIx];
-            merged = [best, ...ranked.filter((_, i) => i !== existingIx)];
-          }
+          merged = existingIx === -1 ? [candidate, ...ranked] : [candidate, ...ranked.filter((_, i) => i !== existingIx)];
         }
 
-        // 3) cap results to 6
         setPoints(merged.slice(0, 6));
       } catch (err) {
         console.warn('[ConvergeSuggestions] Ranking failed:', err);
         setPoints([]);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
-    
-    window.addEventListener("converge:open", handler as EventListener);
-    return () => window.removeEventListener("converge:open", handler as EventListener);
-  }, []);
+
+    window.addEventListener('converge:open', handler as EventListener);
+    return () => window.removeEventListener('converge:open', handler as EventListener);
+  }, [onClose]);
 
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     if (open) {
       window.addEventListener('keydown', onKey);
       return () => window.removeEventListener('keydown', onKey);
     }
-  }, [open]);
+  }, [open, close]);
 
   const request = (p: RankedPoint) => {
-    window.dispatchEvent(new CustomEvent("converge:request", { 
-      detail: { point: p } 
-    }));
-    setOpen(false);
-    onClose?.();
-  };
-
-  const close = () => {
-    setOpen(false);
-    onClose?.();
+    window.dispatchEvent(new CustomEvent('converge:request', { detail: { point: p } }));
+    close();
   };
 
   return (

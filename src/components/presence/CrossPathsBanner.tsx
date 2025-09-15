@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useBannerQueue } from '@/hooks/useBannerQueue';
 import { useUnifiedPrivacy } from '@/lib/store/usePrivacy';
-import { canConverge, openConvergeForFriend } from '@/lib/presence/openConverge';
 
 function metersToLabel(m?: number) {
   if (m == null) return '';
@@ -9,46 +8,27 @@ function metersToLabel(m?: number) {
   return `${Math.round(m)} m`;
 }
 
-/**
- * Cross-paths UI banner:
- * - Listens to `floq:nearby_banner` events emitted by useCrossPathsWatcher
- * - Queues multiple hits, shows one at a time
- * - Snooze (mutes) for a duration via localStorage
- * - Emits high-level UI actions for analytics/routing
- */
 export const CrossPathsBanner: React.FC<{
   className?: string;
-  autoSnoozeMinutes?: number; // optional default for "Mute for 1h" button
+  autoSnoozeMinutes?: number;
 }> = ({ className, autoSnoozeMinutes = 60 }) => {
   const { current, dismissCurrent, snooze, isSnoozed } = useBannerQueue();
-  const { isGhostMode, mode } = useUnifiedPrivacy();
+  const { mode, isGhostMode } = useUnifiedPrivacy();
 
-  // Respect privacy/ghost mode — hide entirely
   if (mode === 'off' || isGhostMode) return null;
-
-  // Nothing to show or snoozed
   if (!current || isSnoozed) return null;
 
   const label = current.tier === 'bestie' ? 'Nearby bestie' : 'Friend nearby';
   const dist = metersToLabel(current.distanceM);
-  const canOpenConverge = canConverge(current.id);
 
-  const onPrimary = () => {
-    // Try to open ConvergeSuggestions directly; fallback to "Suggest meet"
-    if (canOpenConverge && openConvergeForFriend(current.id)) {
-      window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'converge_from_banner', id: current.id } }));
-    } else {
-      window.dispatchEvent(new CustomEvent('ui:rallyInbox:open', { detail: { id: current.id } }));
-      window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'suggest_meet', id: current.id } }));
-    }
+  const onSuggest = () => {
+    window.dispatchEvent(new CustomEvent('ui:rallyInbox:open', { detail: { id: current.id } }));
+    window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'suggest_meet', id: current.id } }));
     dismissCurrent();
   };
 
   const onView = () => {
-    // You can switch to a more specific selection event if you have friend payloads in memory
-    window.dispatchEvent(new CustomEvent('friends:select', {
-      detail: { kind: 'friend', id: current.id, name: current.name }
-    }));
+    window.dispatchEvent(new CustomEvent('friends:select', { detail: { kind: 'friend', id: current.id, name: current.name } }));
     window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'view_profile', id: current.id } }));
     dismissCurrent();
   };
@@ -61,7 +41,6 @@ export const CrossPathsBanner: React.FC<{
   const onSettings = () => {
     window.dispatchEvent(new CustomEvent('ui:presenceSettings:open'));
     window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'open_settings' } }));
-    // don't dismiss; keep banner for explicit choice
   };
 
   const onSnooze = () => {
@@ -69,7 +48,6 @@ export const CrossPathsBanner: React.FC<{
     snooze(autoSnoozeMinutes);
   };
 
-  // ESC to close
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onDismiss(); };
     window.addEventListener('keydown', onKey);
@@ -90,29 +68,17 @@ export const CrossPathsBanner: React.FC<{
             <div className="text-sm font-semibold truncate">
               {label}{dist ? ` · ${dist}` : ''}
             </div>
-            {current.name && (
-              <div className="text-xs text-white/70 truncate">{current.name}</div>
-            )}
+            {current.name && <div className="text-xs text-white/70 truncate">{current.name}</div>}
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button
-              className="h-8 px-3 rounded-md bg-white text-black text-xs font-semibold hover:bg-white/90"
-              onClick={onPrimary}
-            >
-              {canOpenConverge ? 'Converge now' : 'Suggest meet'}
+            <button className="h-8 px-3 rounded-md bg-white text-black text-xs font-semibold hover:bg-white/90" onClick={onSuggest}>
+              Suggest meet
             </button>
-            <button
-              className="h-8 px-3 rounded-md bg-white/10 text-white text-xs hover:bg-white/15"
-              onClick={onView}
-            >
+            <button className="h-8 px-3 rounded-md bg-white/10 text-white text-xs hover:bg-white/15" onClick={onView}>
               View
             </button>
-            <button
-              className="h-8 px-3 rounded-md bg-white/10 text-white text-xs hover:bg-white/15"
-              onClick={onDismiss}
-              aria-label="Dismiss notification"
-            >
+            <button className="h-8 px-3 rounded-md bg-white/10 text-white text-xs hover:bg-white/15" onClick={onDismiss} aria-label="Dismiss notification">
               Dismiss
             </button>
           </div>

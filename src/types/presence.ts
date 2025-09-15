@@ -1,3 +1,4 @@
+// Shared types for the presence system
 export type LngLat = { lng: number; lat: number };
 
 export type PresenceKind = 'friend' | 'self' | 'venue';
@@ -8,10 +9,10 @@ export type PresencePayload = {
   name?: string;
   lngLat?: LngLat;
   color?: string;
-  
+
   // Optional presence signals for friend/self
   energy01?: number;
-  direction?: "up" | "flat" | "down";
+  direction?: 'up' | 'flat' | 'down';
   etaMin?: number;
   distanceM?: number;
   venueName?: string;
@@ -24,8 +25,8 @@ export type PresencePayload = {
   category?: string;
   rating?: number;
   userRatings?: number;
-  
-  // Raw properties if needed
+
+  // Raw props (escape hatch)
   properties?: Record<string, any>;
 };
 
@@ -55,7 +56,7 @@ export type VenueCandidate = {
   lat: number;
   lng: number;
   category?: string;
-  openNow?: boolean; // undefined => unknown
+  openNow?: boolean; // undefined => unknown (neutral)
   crowd?: number;
 };
 
