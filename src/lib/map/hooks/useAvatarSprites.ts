@@ -151,7 +151,7 @@ export function useAvatarSprites(
   useEffect(() => {
     if (!map || !enabled) return;
 
-    const onStyleChange = () => {
+    const handleStyleData = () => {
       console.log('[useAvatarSprites] Style changed, re-queueing sprites');
       // Clear current state to trigger reload
       setIconIds({});
@@ -159,8 +159,11 @@ export function useAvatarSprites(
       retryCountRef.current = {};
     };
 
-    map.on('styledata', onStyleChange);
-    return () => map.off('styledata', onStyleChange);
+    map.on('styledata', handleStyleData);
+    
+    return () => {
+      map.off('styledata', handleStyleData);
+    };
   }, [map, enabled]);
 
   // Cleanup on unmount
