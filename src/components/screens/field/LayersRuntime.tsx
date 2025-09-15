@@ -11,6 +11,7 @@ import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
 import { PresenceCardHost } from '@/components/map/PresenceCardHost';
 import { CrossPathsBanner } from '@/components/presence/CrossPathsBanner';
+import { useCrossPathsWatcher } from '@/lib/presence/crossPathsWatcher';
 import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
@@ -54,6 +55,21 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     () => (Array.isArray(nearbyFriends) ? nearbyFriends : []),
     [nearbyFriends]
   );
+
+  // Convert friendsList to proper format for crossPathsWatcher
+  const watcherFriends = useMemo(() => 
+    friendsList.map((f: any) => ({
+      id: String(f.id ?? ''),
+      name: f.display_name ?? f.name ?? '',
+      lat: Number(f.lat),
+      lng: Number(f.lng),
+      tier: f.tier === 'bestie' ? 'bestie' as const : 'friend' as const
+    })).filter((f: any) => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.id),
+    [friendsList]
+  );
+
+  // Watch for friends crossing paths to trigger banner notifications
+  useCrossPathsWatcher(location.coords, watcherFriends);
 
   // Load avatar sprites and get iconIds map
   const { iconIds } = useAvatarSprites(
