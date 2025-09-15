@@ -1,3 +1,11 @@
+let _cache: Record<string, string> = {};
+let _cacheStamp = 0;
+
+export function invalidateThemeColorCache() {
+  _cache = {};
+  _cacheStamp = Date.now();
+}
+
 /**
  * Normalize HSL tokens to support both space and alpha syntax
  * Accepts "230 35% 7%" or "230 35% 7% / 0.6"
@@ -17,21 +25,24 @@ function normalizeHslToken(token: string): string {
  */
 export function hslVar(varName: string, fallbackHsl: string): string {
   if (typeof window === 'undefined') return fallbackHsl;
+  const k = `${_cacheStamp}:${varName}`;
+  if (_cache[k]) return _cache[k];
+
   try {
     const root = document.documentElement;
     const raw = getComputedStyle(root).getPropertyValue(varName).trim();
-    if (!raw) return fallbackHsl;
+    if (!raw) return (_cache[k] = fallbackHsl);
 
     // If already a full color string (e.g., "hsl(...)" or hex), return as-is
     if (/^(hsl|hsla|rgb|rgba)\(/i.test(raw) || /^#([0-9a-f]{3,8})$/i.test(raw)) {
-      return raw;
+      return (_cache[k] = raw);
     }
 
     // Tailwind HSL form is usually "H S% L%" — preserve spaces to keep modern CSS HSL syntax
     const cleaned = raw.replace(/\s+/g, ' ').trim();
-    return normalizeHslToken(cleaned);
+    return (_cache[k] = normalizeHslToken(cleaned));
   } catch {
-    return fallbackHsl;
+    return (_cache[k] = fallbackHsl);
   }
 }
 
@@ -42,10 +53,16 @@ export function onThemeChange(handler: () => void) {
   if (typeof window === 'undefined') return () => {};
   
   const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
-  const mediaListener = () => handler();
+  const mediaListener = () => { 
+    invalidateThemeColorCache(); 
+    handler(); 
+  };
 
   // Observe class / data-theme / style on <html>
-  const attrObserver = new MutationObserver(handler);
+  const attrObserver = new MutationObserver(() => { 
+    invalidateThemeColorCache(); 
+    handler(); 
+  });
   attrObserver.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['class', 'data-theme', 'style'],

@@ -2,6 +2,7 @@
 import type { OverlaySpec } from '@/lib/map/LayerManager';
 import type { Map } from 'mapbox-gl';
 import { hslVar, onThemeChange } from '@/lib/map/themeColor';
+import { applyLayerColors } from '@/lib/map/applyLayerColors';
 
 const SRC = 'breadcrumb-src';
 const LINE_LYR = 'breadcrumb-line';
@@ -87,17 +88,13 @@ export function installBreadcrumbThemeWatcher(map: Map, ids = {
   line: LINE_LYR,
 }) {
   const apply = () => {
-    const lineColor = hslVar('--primary', 'hsl(210 100% 50%)');
-    const circleColor = hslVar('--primary', 'hsl(210 100% 50%)');
-    const strokeColor = hslVar('--background', 'hsl(0 0% 100%)');
-
-    if (map.getLayer(ids.line)) {
-      map.setPaintProperty(ids.line, 'line-color', lineColor);
-    }
-    if (map.getLayer(ids.circle)) {
-      map.setPaintProperty(ids.circle, 'circle-color', circleColor);
-      map.setPaintProperty(ids.circle, 'circle-stroke-color', strokeColor);
-    }
+    applyLayerColors(map, ids.line, {
+      'line-color': { var: '--primary', fallback: 'hsl(210 100% 50%)' },
+    });
+    applyLayerColors(map, ids.circle, {
+      'circle-color': { var: '--primary', fallback: 'hsl(210 100% 50%)' },
+      'circle-stroke-color': { var: '--background', fallback: 'hsl(0 0% 100%)' },
+    });
   };
 
   // Apply immediately and subscribe to theme changes
