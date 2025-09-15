@@ -67,22 +67,26 @@ export function ConvergeSuggestions({ onClose }: Props) {
   }, [onClose]);
 
   React.useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
-    if (open) {
-      window.addEventListener('keydown', onKey);
-      return () => window.removeEventListener('keydown', onKey);
-    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
 
-  const request = (p: RankedPoint) => {
+  const request = React.useCallback((p: RankedPoint) => {
     window.dispatchEvent(new CustomEvent('converge:request', { detail: { point: p } }));
     close();
-  };
+  }, [close]);
 
   if (!open) return null;
 
   return (
-    <div role="dialog" aria-label="Suggested convergence points" className="fixed inset-0 z-[90]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Suggested convergence points"
+      className="fixed inset-0 z-[90]"
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={close} />
 
@@ -109,7 +113,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
             <div className="px-3 py-8 text-sm text-white/80">No strong options nearby.</div>
           ) : (
             points.map((p, idx) => {
-              const isPrefilledTop = prefillId && p.id === prefillId && idx === 0;
+              const isPrefilledTop = prefillId !== null && p.id === prefillId && idx === 0;
               return (
                 <button
                   key={p.id}
@@ -120,7 +124,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
                     "transition-[background,box-shadow,transform] duration-150",
                     // token glow for the top prefilled card
                     isPrefilledTop
-                      ? "ring-2 ring-[color:var(--vibe-ring)] shadow-[0_0_24px_1px_var(--vibe-ring)]"
+                      ? "ring-2 ring-[var(--vibe-ring)] shadow-[0_0_24px_1px_var(--vibe-ring)]"
                       : ""
                   ].join(" ")}
                   // small lift on hover to juice CTR a bit
@@ -135,11 +139,8 @@ export function ConvergeSuggestions({ onClose }: Props) {
                         {isPrefilledTop && (
                           <span
                             aria-label="Friend's current spot"
-                            className="inline-flex items-center rounded-full text-[10px] font-semibold
-                                       px-2 py-[2px] border
-                                       border-[color:var(--vibe-ring)]
-                                       text-[color:var(--vibe-ring)]
-                                       bg-white/5"
+                            className="inline-flex items-center rounded-full text-[10px] font-semibold px-2 py-[2px] border
+                                       border-[var(--vibe-ring)] text-[var(--vibe-ring)] bg-white/5"
                           >
                             Friend's current spot
                           </span>
