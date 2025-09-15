@@ -61,6 +61,12 @@ html, body, #root {
 #map { z-index: 200; }
 #pixi { z-index: 220; pointer-events: none; }  /* MUST be none so UI is clickable */
 
+/* Hide default Mapbox geolocation blue dot - aura replaces it */
+.mapboxgl-user-location-dot,
+.mapboxgl-user-location-accuracy-circle { 
+  display: none !important; 
+}
+
 /* UI overlays */
 .hud, .drawer, .lens-switcher { z-index: 600; pointer-events: auto; }
 

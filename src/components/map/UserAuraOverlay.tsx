@@ -124,6 +124,7 @@ export function UserAuraOverlay({
             if (confDelta >= 0.2) incrAura('confDeltaBig');
           }
           
+          
           lastRef.current = { ...pos, conf };
           incrAura('updates');
         });

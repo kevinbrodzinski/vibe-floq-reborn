@@ -188,9 +188,13 @@ export function createUserAuraSpec(beforeId?: string) {
       if (!data) return;
       if (!map.getSource(SRC_ID)) ensureSource(map);
       setData(map, data);
+      try { moveAuraToTop(map); } catch {}
     },
     unmount(map: mapboxgl.Map) {
       removeLayers(map);
+    },
+    moveToTop(map: mapboxgl.Map) {
+      try { moveAuraToTop(map); } catch {}
     }
   };
 }
