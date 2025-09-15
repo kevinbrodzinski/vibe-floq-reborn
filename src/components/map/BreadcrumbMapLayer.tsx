@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useBreadcrumbTrail } from '@/hooks/useBreadcrumbTrail';
-import { createBreadcrumbSpec } from '@/lib/map/overlays/breadcrumbSpec';
+import { createBreadcrumbSpec, installBreadcrumbThemeWatcher } from '@/lib/map/overlays/breadcrumbSpec';
 import { layerManager } from '@/lib/map/LayerManager';
 import { onEvent, Events } from '@/services/eventBridge';
 
@@ -87,15 +87,20 @@ export function BreadcrumbMapLayer({ map }: BreadcrumbMapLayerProps) {
     if (!map) return;
 
     const spec = createBreadcrumbSpec('venues'); // Add before venues layer
+    let themeUnsubscribe: (() => void) | undefined;
     
     if (enabled) {
       layerManager.register(spec);
       layerManager.apply(spec.id, geoJson);
+      
+      // Install theme watcher for color updates
+      themeUnsubscribe = installBreadcrumbThemeWatcher(map);
     } else {
       layerManager.unregister(spec.id);
     }
 
     return () => {
+      themeUnsubscribe?.();
       layerManager.unregister(spec.id);
     };
   }, [map, enabled, geoJson]);

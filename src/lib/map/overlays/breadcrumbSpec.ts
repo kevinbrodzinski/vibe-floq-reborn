@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { OverlaySpec } from '@/lib/map/LayerManager';
+import type { Map } from 'mapbox-gl';
+import { hslVar, onThemeChange } from '@/lib/map/themeColor';
 
 const SRC = 'breadcrumb-src';
 const LINE_LYR = 'breadcrumb-line';
@@ -17,6 +19,11 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
         });
       }
 
+      // Resolve colors at mount time
+      const lineColor = hslVar('--primary', 'hsl(210 100% 50%)');
+      const circleColor = hslVar('--primary', 'hsl(210 100% 50%)');
+      const strokeColor = hslVar('--background', 'hsl(0 0% 100%)');
+
       // Add dotted line layer for path
       if (!map.getLayer(LINE_LYR)) {
         const lineLayer: mapboxgl.LineLayer = {
@@ -25,7 +32,7 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
           source: SRC,
           filter: ['==', ['get', 'type'], 'path'],
           paint: {
-            'line-color': 'hsl(var(--primary))',
+            'line-color': lineColor,
             'line-width': 3,
             'line-opacity': 0.7,
             'line-dasharray': [2, 2]
@@ -51,8 +58,8 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
               12, 6,
               16, 10
             ],
-            'circle-color': 'hsl(var(--primary))',
-            'circle-stroke-color': 'hsl(var(--background))',
+            'circle-color': circleColor,
+            'circle-stroke-color': strokeColor,
             'circle-stroke-width': 2,
             'circle-opacity': 0.9
           }
@@ -70,4 +77,30 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
     }
   };
+}
+
+/**
+ * Re-apply colors if theme changes (Tailwind dark mode, data-theme, etc.)
+ */
+export function installBreadcrumbThemeWatcher(map: Map, ids = {
+  circle: VENUES_LYR,
+  line: LINE_LYR,
+}) {
+  const apply = () => {
+    const lineColor = hslVar('--primary', 'hsl(210 100% 50%)');
+    const circleColor = hslVar('--primary', 'hsl(210 100% 50%)');
+    const strokeColor = hslVar('--background', 'hsl(0 0% 100%)');
+
+    if (map.getLayer(ids.line)) {
+      map.setPaintProperty(ids.line, 'line-color', lineColor);
+    }
+    if (map.getLayer(ids.circle)) {
+      map.setPaintProperty(ids.circle, 'circle-color', circleColor);
+      map.setPaintProperty(ids.circle, 'circle-stroke-color', strokeColor);
+    }
+  };
+
+  // Apply immediately and subscribe to theme changes
+  apply();
+  return onThemeChange(apply);
 }

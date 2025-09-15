@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useBreadcrumbTrail } from '@/hooks/useBreadcrumbTrail';
 // Map instance will be passed as prop for now
-import { createBreadcrumbSpec } from '@/lib/map/overlays/breadcrumbSpec';
+import { createBreadcrumbSpec, installBreadcrumbThemeWatcher } from '@/lib/map/overlays/breadcrumbSpec';
 
 interface BreadcrumbTrailOverlayProps {
   map: mapboxgl.Map | null;
@@ -76,7 +76,11 @@ export function BreadcrumbTrailOverlay({ map }: BreadcrumbTrailOverlayProps) {
     // Update with current data
     spec.update(map, geoJson);
 
+    // Install theme watcher for color updates
+    const themeUnsubscribe = installBreadcrumbThemeWatcher(map);
+
     return () => {
+      themeUnsubscribe();
       spec.unmount(map);
     };
   }, [map, geoJson]);
