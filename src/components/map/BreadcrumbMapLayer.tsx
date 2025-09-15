@@ -86,7 +86,7 @@ export function BreadcrumbMapLayer({ map }: BreadcrumbMapLayerProps) {
   useEffect(() => {
     if (!map) return;
 
-    const spec = createBreadcrumbSpec('venues'); // Add before venues layer
+    const spec = createBreadcrumbSpec(); // safe resolver handles placement
     let themeUnsubscribe: (() => void) | undefined;
     
     if (enabled) {

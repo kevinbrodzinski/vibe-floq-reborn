@@ -15,7 +15,7 @@ import type { LayerManager } from '@/lib/map/LayerManager';
 type Props = {
   map: mapboxgl.Map | null;
   layerManager: LayerManager | null;
-  beforeId?: string;               // layer insert anchor (e.g., 'venues')
+  beforeId?: string;               // layer insert anchor (safe fallback applied)
   position?: { lat: number; lng: number } | null;  // optional external position
   enabled?: boolean;
 };
@@ -27,7 +27,7 @@ const TICK_MS = 500;               // throttle updates
 export function UserAuraOverlay({ 
   map, 
   layerManager, 
-  beforeId = 'venues', 
+  beforeId = 'poi-label', // safe default, fallback applies if missing 
   position, 
   enabled = true 
 }: Props) {

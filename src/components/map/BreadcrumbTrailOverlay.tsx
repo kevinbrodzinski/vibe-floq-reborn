@@ -68,7 +68,7 @@ export function BreadcrumbTrailOverlay({ map }: BreadcrumbTrailOverlayProps) {
   React.useEffect(() => {
     if (!map) return;
 
-    const spec = createBreadcrumbSpec('venues'); // Add before venues layer
+    const spec = createBreadcrumbSpec(); // safe resolver handles placement
     
     // Mount overlay
     spec.mount(map);

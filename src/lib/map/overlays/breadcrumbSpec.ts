@@ -8,6 +8,22 @@ const SRC = 'breadcrumb-src';
 const LINE_LYR = 'breadcrumb-line';
 const VENUES_LYR = 'breadcrumb-venues';
 
+/** Resolve a safe 'before' layer id if the requested one doesn't exist */
+function resolveBefore(map: Map, requested?: string): string | undefined {
+  // If requested exists, use it
+  if (requested && map.getLayer(requested)) return requested;
+  // Prefer inserting beneath labels if possible
+  const preferred = ['poi-label', 'road-label', 'place-label', 'poi'];
+  for (const id of preferred) if (map.getLayer(id)) return id;
+  // Else, find the topmost symbol layer as anchor
+  const layers = map.getStyle()?.layers ?? [];
+  for (let i = layers.length - 1; i >= 0; i--) {
+    if (layers[i].type === 'symbol') return layers[i].id;
+  }
+  // Fallback: undefined (adds to top)
+  return undefined;
+}
+
 export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
   return {
     id: 'breadcrumb',
@@ -24,6 +40,8 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
       const lineColor = hslVar('--primary', 'hsl(210 100% 50%)');
       const circleColor = hslVar('--primary', 'hsl(210 100% 50%)');
       const strokeColor = hslVar('--background', 'hsl(0 0% 100%)');
+
+      const safeBefore = resolveBefore(map, beforeId);
 
       // Add dotted line layer for path
       if (!map.getLayer(LINE_LYR)) {
@@ -43,7 +61,7 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
             'line-join': 'round'
           }
         };
-        beforeId && map.getLayer(beforeId) ? map.addLayer(lineLayer, beforeId) : map.addLayer(lineLayer);
+        map.addLayer(lineLayer, safeBefore);
       }
 
       // Add venue markers layer
@@ -65,8 +83,16 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
             'circle-opacity': 0.9
           }
         };
-        beforeId && map.getLayer(beforeId) ? map.addLayer(venuesLayer, beforeId) : map.addLayer(venuesLayer);
+        map.addLayer(venuesLayer, resolveBefore(map, safeBefore ?? LINE_LYR));
       }
+
+      // Move breadcrumb layers on top for visibility
+      try {
+        const allIds = [LINE_LYR, VENUES_LYR].filter(id => map.getLayer(id));
+        const layers = map.getStyle()?.layers ?? [];
+        const topId = layers[layers.length - 1]?.id;
+        if (topId) allIds.forEach(id => { try { map.moveLayer(id, topId); } catch {} });
+      } catch {}
     },
     update(map, fc) {
       const src = map.getSource(SRC) as mapboxgl.GeoJSONSource;
