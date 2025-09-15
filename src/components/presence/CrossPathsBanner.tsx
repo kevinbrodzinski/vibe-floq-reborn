@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useBannerQueue } from '@/hooks/useBannerQueue';
 import { useUnifiedPrivacy } from '@/lib/store/usePrivacy';
+import { canConverge, openConvergeForFriend } from '@/lib/presence/openConverge';
 
 function metersToLabel(m?: number) {
   if (m == null) return '';
@@ -20,10 +21,15 @@ export const CrossPathsBanner: React.FC<{
 
   const label = current.tier === 'bestie' ? 'Nearby bestie' : 'Friend nearby';
   const dist = metersToLabel(current.distanceM);
+  const canOpenConverge = canConverge(current.id);
 
-  const onSuggest = () => {
-    window.dispatchEvent(new CustomEvent('ui:rallyInbox:open', { detail: { id: current.id } }));
-    window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'suggest_meet', id: current.id } }));
+  const onPrimary = () => {
+    if (canOpenConverge && openConvergeForFriend(current.id)) {
+      window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'converge_from_banner', id: current.id } }));
+    } else {
+      window.dispatchEvent(new CustomEvent('ui:rallyInbox:open', { detail: { id: current.id } }));
+      window.dispatchEvent(new CustomEvent('ui_banner_action', { detail: { action: 'suggest_meet', id: current.id } }));
+    }
     dismissCurrent();
   };
 
@@ -72,8 +78,8 @@ export const CrossPathsBanner: React.FC<{
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button className="h-8 px-3 rounded-md bg-white text-black text-xs font-semibold hover:bg-white/90" onClick={onSuggest}>
-              Suggest meet
+            <button className="h-8 px-3 rounded-md bg-white text-black text-xs font-semibold hover:bg-white/90" onClick={onPrimary}>
+              {canOpenConverge ? 'Converge now' : 'Suggest meet'}
             </button>
             <button className="h-8 px-3 rounded-md bg-white/10 text-white text-xs hover:bg-white/15" onClick={onView}>
               View
