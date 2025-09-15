@@ -10,6 +10,7 @@ import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPoints
 import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
 import { PresenceCardHost } from '@/components/map/PresenceCardHost';
+import { CrossPathsBanner } from '@/components/presence/CrossPathsBanner';
 import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
@@ -134,6 +135,54 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       lng: location.coords.lng, 
       lat: location.coords.lat 
     } : undefined;
+
+    // Build friendsIndex from presence FeatureCollection
+    try {
+      const idx: Record<string, {
+        lngLat?: { lng:number; lat:number };
+        energy01?: number;
+        direction?: 'up'|'down'|'flat';
+        name?: string;
+        venue?: { id?: string; name?: string; lat?: number; lng?: number; category?: string; openNow?: boolean };
+      }> = {};
+
+      const feats = (presenceFC as any)?.features ?? [];
+      for (const f of feats) {
+        if (f?.properties?.kind !== 'friend') continue;
+
+        const p = f.properties ?? {};
+        const id = String(p.id ?? '');
+        if (!id) continue;
+
+        // friend lng/lat
+        const coords = Array.isArray(f?.geometry?.coordinates) ? f.geometry.coordinates : null;
+        const lngLat = (coords && Number.isFinite(coords[0]) && Number.isFinite(coords[1]))
+          ? { lng: coords[0], lat: coords[1] } : undefined;
+
+        // optional current venue (try multiple common keys)
+        const vlat = Number(p.venue_lat ?? p.venueLat ?? p.v_lat ?? p?.venue?.lat);
+        const vlng = Number(p.venue_lng ?? p.venueLng ?? p.v_lng ?? p?.venue?.lng);
+        const venue = Number.isFinite(vlat) && Number.isFinite(vlng) ? {
+          id: p.venue_id ?? p.venueId ?? p?.venue?.id,
+          name: p.venue_name ?? p.venueName ?? p?.venue?.name,
+          lat: vlat,
+          lng: vlng,
+          category: p.venue_category ?? p.venueCategory ?? p?.venue?.category,
+          openNow: (p.venue_open_now ?? p.venueOpenNow ?? p?.venue?.open_now ?? p?.venue?.openNow) ?? undefined
+        } : undefined;
+
+        idx[id] = {
+          lngLat,
+          energy01: typeof p.energy01 === 'number' ? p.energy01 : undefined,
+          direction: p.direction,
+          name: p.name,
+          venue
+        };
+      }
+      (window as any).floq.friendsIndex = idx;
+    } catch {
+      // keep UI resilient
+    }
   }, [map, layerManager, presenceFC, nearbyVenues, location.coords]);
 
   // Overlays with clustering + cards
@@ -145,6 +194,9 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       
       {/* Info cards */}
       <PresenceCardHost />
+      
+      {/* Cross paths banner */}
+      <CrossPathsBanner />
     </>
   );
 }

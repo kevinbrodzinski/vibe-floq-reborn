@@ -1,7 +1,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConvergeInputs, RankedPoint } from '@/types/presence';
-import { rankConvergence } from "@/lib/converge/rankConvergence";
+import { rankConvergence, scoreCandidate } from "@/lib/converge/rankConvergence";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -20,9 +20,39 @@ export function ConvergeSuggestions({ onClose }: Props) {
       setLoading(true);
       
       try {
+        // 1) baseline ranked list
         const inputs: ConvergeInputs = { peer, anchor };
         const ranked = await rankConvergence(inputs);
-        setPoints(ranked.slice(0, 6));
+
+        // 2) pre-insert the friend's current venue if available (and valid)
+        const me = (window as any)?.floq?.myLocation ?? null;
+        const peerLL = peer?.lngLat ?? null;
+        const fr = (window as any)?.floq?.friendsIndex?.[peer?.id ?? ''] ?? null;
+        const v = fr?.venue;
+
+        let merged = ranked;
+        if (me && peerLL && v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && v.name) {
+          const candidate = scoreCandidate(
+            { energy01: fr?.energy01, direction: fr?.direction, lngLat: peerLL },
+            { id: String(v.id ?? `${v.lat},${v.lng}`), name: v.name, lat: Number(v.lat), lng: Number(v.lng), category: v.category, openNow: v.openNow },
+            { lat: me.lat, lng: me.lng },
+            { lat: peerLL.lat, lng: peerLL.lng },
+          );
+
+          const existingIx = ranked.findIndex(p => p.id === candidate.id);
+          if (existingIx === -1) {
+            // Not in list → add to front
+            merged = [candidate, ...ranked];
+          } else {
+            // Already present → keep the better of the two (usually equal math),
+            // then move it to the front if it's not already strongest.
+            const best = candidate.match >= ranked[existingIx].match ? candidate : ranked[existingIx];
+            merged = [best, ...ranked.filter((_, i) => i !== existingIx)];
+          }
+        }
+
+        // 3) cap results to 6
+        setPoints(merged.slice(0, 6));
       } catch (err) {
         console.warn('[ConvergeSuggestions] Ranking failed:', err);
         setPoints([]);

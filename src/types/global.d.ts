@@ -13,6 +13,23 @@ declare global {
         crowd?: number;
       }>;
       myLocation?: { lng: number; lat: number };
+      friendsIndex?: Record<
+        string,
+        {
+          lngLat?: { lng: number; lat: number };
+          energy01?: number;
+          direction?: 'up' | 'down' | 'flat';
+          name?: string;
+          venue?: {
+            id?: string;
+            name?: string;
+            lat?: number;
+            lng?: number;
+            category?: string;
+            openNow?: boolean;
+          };
+        }
+      >;
     };
   }
 }

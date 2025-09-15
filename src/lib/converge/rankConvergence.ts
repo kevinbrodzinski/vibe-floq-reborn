@@ -36,33 +36,43 @@ function getNearbyVenues(): VenueCandidate[] {
     .filter((v) => v.id && Number.isFinite(v.lat) && Number.isFinite(v.lng));
 }
 
+export function scoreCandidate(
+  peer: ConvergeInputs['peer'],
+  v: VenueCandidate,
+  me: { lat: number; lng: number },
+  peerLL: { lat: number; lng: number }
+): RankedPoint {
+  const dMe = haversineMeters(me, { lat: v.lat, lng: v.lng });
+  const dFr = haversineMeters(peerLL, { lat: v.lat, lng: v.lng });
+  const eta = { meMin: etaMinutes(dMe), friendMin: etaMinutes(dFr) };
+  const comp =
+    0.45 * vibeCompatibility(peer, v) +
+    0.30 * (1 - Math.min(1, Math.max(eta.meMin, eta.friendMin) / 30)) +
+    0.15 * (v.openNow ? 1 : 0) +
+    0.10 * (1 - Math.min(1, Math.abs(eta.meMin - eta.friendMin) / 30));
+  return {
+    id: v.id,
+    name: v.name,
+    lat: v.lat,
+    lng: v.lng,
+    category: v.category,
+    match: clamp01(comp),
+    eta
+  };
+}
+
 export async function rankConvergence(inputs: ConvergeInputs): Promise<RankedPoint[]> {
   const me = window?.floq?.myLocation;
   const peerLL = inputs.peer.lngLat;
   if (!me || !peerLL) return [];
 
   const candidates = getNearbyVenues();
-  const out: RankedPoint[] = candidates.map((v) => {
-    const dMe = haversineMeters(me, { lat: v.lat, lng: v.lng });
-    const dFr = haversineMeters(peerLL, { lat: v.lat, lng: v.lng });
-    const eta = { meMin: etaMinutes(dMe), friendMin: etaMinutes(dFr) };
-
-    const comp =
-      0.45 * vibeCompatibility(inputs.peer, v) +
-      0.30 * (1 - Math.min(1, Math.max(eta.meMin, eta.friendMin) / 30)) +
-      0.15 * (v.openNow ? 1 : 0) +
-      0.10 * (1 - Math.min(1, Math.abs(eta.meMin - eta.friendMin) / 30));
-
-    return {
-      id: v.id,
-      name: v.name,
-      lat: v.lat,
-      lng: v.lng,
-      category: v.category,
-      match: clamp01(comp),
-      eta,
-    };
-  });
+  const out: RankedPoint[] = candidates.map((v) => scoreCandidate(
+    inputs.peer, 
+    v, 
+    { lat: me.lat, lng: me.lng }, 
+    { lat: peerLL.lat, lng: peerLL.lng }
+  ));
 
   // Stable tiebreak on total ETA
   out.sort(
