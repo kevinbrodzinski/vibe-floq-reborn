@@ -7,24 +7,30 @@ function getSink():Sink{
   return (n,p)=>console.info('[analytics]',n,p);
 }
 
+export function trackConvergeEvent(event: string, data: Record<string, any>) {
+  window.dispatchEvent(new CustomEvent(`ui_${event}`, { detail: data }));
+}
+
 export function mountAnalytics(){
   const sink = getSink();
   
-  // Converge system analytics
-  window.addEventListener('ui_converge_prefill', (e: Event) => {
-    const { friendId, venueId } = (e as CustomEvent).detail ?? {};
+  // Converge system analytics with proper cleanup
+  const onPrefill = (e: Event) => {
+    const { friendId, venueId } = (e as CustomEvent<{friendId?:string; venueId?:string}>).detail ?? {};
     sink('converge_prefill_shown', { friendId, venueId });
-  });
-
-  window.addEventListener('ui_converge_request', (e: Event) => {
-    const { from, id } = (e as CustomEvent).detail ?? {};
+  };
+  const onReq = (e: Event) => {
+    const { from, id } = (e as CustomEvent<{from?:string; id?:string}>).detail ?? {};
     sink('converge_venue_selected', { source: from, venueId: id });
-  });
-
-  window.addEventListener('ui_banner_action', (e: Event) => {
-    const { action, friendId, source } = (e as CustomEvent).detail ?? {};
+  };
+  const onBanner = (e: Event) => {
+    const { action, friendId, source } = (e as CustomEvent<{action?:string; friendId?:string; source?:string}>).detail ?? {};
     sink('cross_paths_banner_action', { action, friendId, source });
-  });
+  };
+
+  window.addEventListener('ui_converge_prefill', onPrefill);
+  window.addEventListener('ui_converge_request', onReq);
+  window.addEventListener('ui_banner_action', onBanner);
 
   const offs = [
     onEvent(Events.FLOQ_CONVERGENCE_DETECTED, p=>sink('convergence_detected', p)),
@@ -35,5 +41,11 @@ export function mountAnalytics(){
     onEvent(Events.UI_VENUE_PLAN,           p=>sink('venue_plan', p)),
     onEvent(Events.UI_OPEN_DIRECTIONS,      p=>sink('directions_open', p)),
   ];
-  return ()=> offs.forEach(off=>off());
+  
+  return () => {
+    offs.forEach(off => off());
+    window.removeEventListener('ui_converge_prefill', onPrefill);
+    window.removeEventListener('ui_converge_request', onReq);
+    window.removeEventListener('ui_banner_action', onBanner);
+  };
 }

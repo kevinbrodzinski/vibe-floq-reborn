@@ -78,7 +78,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
 
     window.addEventListener('converge:open', handler as EventListener);
     return () => window.removeEventListener('converge:open', handler as EventListener);
-  }, [onClose]);
+  }, []); // No dependencies - handler doesn't use onClose directly
 
   React.useEffect(() => {
     if (!open) return;

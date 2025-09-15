@@ -72,8 +72,10 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   );
 
   // Only pass coordinates when they're available; otherwise null
-  const myLL = location?.coords && Number.isFinite(location.coords.lat) && Number.isFinite(location.coords.lng)
-    ? { lat: location.coords.lat, lng: location.coords.lng }
+  const myLL = location?.coords && 
+    Number.isFinite((location.coords as any).lat) && 
+    Number.isFinite((location.coords as any).lng)
+    ? { lat: (location.coords as any).lat, lng: (location.coords as any).lng }
     : null;
 
   // Watch for friends crossing paths to trigger banner notifications
