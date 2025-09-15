@@ -63,6 +63,19 @@ export function UserAuraOverlay({
         return; 
       }
       spec.mount(map);
+      // Always keep aura on top after mount
+      try {
+        const auraLayerIds = ['user-aura-outer', 'user-aura-inner', 'user-aura-dot'];
+        const layers = map.getStyle()?.layers ?? [];
+        const topId = layers[layers.length - 1]?.id;
+        if (topId) {
+          auraLayerIds.forEach(id => {
+            if (map.getLayer(id)) {
+              try { map.moveLayer(id, topId); } catch {}
+            }
+          });
+        }
+      } catch {}
       incrAura('reapplies');
       // update will run on next tick when data arrives
     };

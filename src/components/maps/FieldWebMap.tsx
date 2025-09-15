@@ -7,7 +7,7 @@ import { MapContainerManager } from '@/lib/map/MapContainerManager';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
 import { setMapInstance } from '@/lib/geo/project';
 import { createMapSafely, cleanupMapSingleton } from '@/lib/geo/mapSingleton';
-import { attachUserLocationSource, setUserLocation, USER_LOC_SRC, USER_LOC_LAYER } from '@/lib/geo/withUserLocationSource';
+// REMOVED: Old user location system - replaced by UserAuraOverlay
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
@@ -63,8 +63,7 @@ interface Props {
 const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visible, floqs = [], realtime = false }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const userMarkerRef = useRef<mapboxgl.Marker|null>(null);
-  const detachUserLocationSourceRef = useRef<(() => void) | null>(null);
+  // REMOVED: Old user location refs - replaced by UserAuraOverlay
   const firstPosRef = useRef(true); // 🔧 FIX: Track first position for jumpTo vs flyTo
   const debounceRef = useRef<number>(); // Debounce loading state changes
   const [isLoading, setIsLoading] = useState(false);
@@ -467,22 +466,14 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         });
         mapRef.current = map;
 
-        // ✅ CRITICAL: Ensure user-location source persists through style reloads
-        console.log('[FieldWebMap] Attaching user location source...');
-        detachUserLocationSourceRef.current = attachUserLocationSource(map);
-        console.log('[FieldWebMap] User location source attached');
+        // REMOVED: Old user location source - UserAuraOverlay handles this now
         
         // Wait for style to fully load before continuing
         if (!map.isStyleLoaded()) {
           await new Promise(resolve => map.once('style.load', resolve));
         }
 
-        // Add user location marker
-        const userMarker = new mapboxgl.Marker({
-          color: '#3B82F6', // Blue color for user location
-          scale: 1.2
-        });
-        userMarkerRef.current = userMarker;
+        // REMOVED: Old user location marker - UserAuraOverlay handles this now
         
         // Add error handling for map load
         map.on('error', (e) => {
@@ -600,15 +591,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           (window as any).__FLOQ_MAP = map;
           setMapInstance(map);
           
-          // Now that map is fully ready, set initial user location if available
-          if (location.coords?.lat && location.coords?.lng) {
-            setUserLocation(
-              map,
-              location.coords.lat,
-              location.coords.lng,
-              location.coords.accuracy || 50
-            );
-          }
+          // REMOVED: Old user location setup - UserAuraOverlay handles this now
           
           console.log('🗺️ Map ready - layers exist, handlers safe to register');
         });
@@ -1088,11 +1071,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           cancelAnimationFrame(resizeRef.current);
         }
         
-        // FIX: Cleanup user location source listeners
-        if (detachUserLocationSourceRef.current) {
-          detachUserLocationSourceRef.current();
-          detachUserLocationSourceRef.current = null;
-        }
+        // REMOVED: Old user location cleanup - UserAuraOverlay handles this now
         
         // Cleanup Field PIXI GL layer
         const detach = (mapRef.current as any).__fieldPixiDetach as (() => void) | undefined;
@@ -1115,97 +1094,13 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           console.warn('🗺️ Map cleanup error:', error);
         }
       }
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove();
-        userMarkerRef.current = null;
-      }
+      // REMOVED: Old user marker cleanup - UserAuraOverlay handles this now
     };
   },[onRegionChange]);
 
   // Helper to safely access map source
 
-  // Update user location when it changes - Use safe utility function
-  useEffect(() => {
-    if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
-    
-    const map = mapRef.current;
-    
-    // Additional safety check before calling setUserLocation
-    if (!map || typeof map.isStyleLoaded !== 'function') {
-      console.warn('[FieldWebMap] Map reference invalid in location update effect');
-      return;
-    }
-    
-    // ✅ Robust user location update with fallback source creation
-    const updateLocation = () => {
-      // Check if the user location source is ready (attached by attachUserLocationSource)
-      const isSourceReady = (map as any).__userLocationSourceReady?.();
-      
-      if (!isSourceReady) {
-        // Fallback: Ensure source and layer exist even if attachment failed
-        try {
-          if (!map.getSource(USER_LOC_SRC)) {
-            map.addSource(USER_LOC_SRC, {
-              type: 'geojson',
-              data: { type: 'FeatureCollection', features: [] }
-            });
-          }
-          
-          if (!map.getLayer(USER_LOC_LAYER)) {
-            map.addLayer({
-              id: USER_LOC_LAYER,
-              type: 'circle',
-              source: USER_LOC_SRC,
-              paint: {
-                'circle-color': '#3B82F6',
-                'circle-radius': 8,
-                'circle-stroke-color': '#fff',
-                'circle-stroke-width': 2
-              }
-            });
-          }
-        } catch (error) {
-          console.warn('[FieldWebMap] Could not create user location source/layer:', error);
-          return;
-        }
-      }
-      
-      // Use the safe setUserLocation utility
-      setUserLocation(
-        map,
-        location.coords!.lat,
-        location.coords!.lng,
-        location.coords!.accuracy
-      );
-      
-      // Don't jumpTo if coords are still the SF demo
-      const isDemo = location.coords?.lat === 37.7749 && location.coords?.lng === -122.4194;
-      if (!isDemo && firstPosRef.current) {
-        firstPosRef.current = false;
-        console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
-        map.jumpTo({ 
-          center: [location.coords!.lng, location.coords!.lat], 
-          zoom: 14 
-        });
-      } else if (!map.isMoving()) {
-        console.log('[FieldWebMap] 🔧 Subsequent position update - using flyTo');
-        map.flyTo({
-          center: [location.coords!.lng, location.coords!.lat],
-          zoom: 14,
-          duration: 2000
-        });
-      } else {
-        console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
-      }
-    };
-    
-    // ✅ FIX: Use map.load event for proper timing
-    if (map.loaded()) {
-      updateLocation();
-    } else {
-      map.once('load', updateLocation);
-    }
-  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady]);
+  // REMOVED: Old user location update effect - UserAuraOverlay handles this now
 
   // Helper to safely access floqs source
   const withFloqsSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {

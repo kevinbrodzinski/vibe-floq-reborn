@@ -182,6 +182,20 @@ export function createUserAuraSpec(beforeId?: string) {
       }
       ensureSource(map);
       addLayers(map, beforeId);
+      
+      // Always move aura layers to top for visibility
+      try {
+        const auraLayerIds = [LAYER_ID_OUTER, LAYER_ID_INNER, LAYER_ID_DOT];
+        const layers = map.getStyle()?.layers ?? [];
+        const topId = layers[layers.length - 1]?.id;
+        if (topId) {
+          auraLayerIds.forEach(id => {
+            if (map.getLayer(id)) {
+              try { map.moveLayer(id, topId); } catch {}
+            }
+          });
+        }
+      } catch {}
       try { moveAuraToTop(map); } catch {}
     },
     update(map: mapboxgl.Map, data?: AuraData) {

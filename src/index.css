@@ -63,8 +63,16 @@ html, body, #root {
 
 /* Hide default Mapbox geolocation blue dot - aura replaces it */
 .mapboxgl-user-location-dot,
-.mapboxgl-user-location-accuracy-circle { 
+.mapboxgl-user-location-accuracy-circle,
+.mapboxgl-user-location-svg-layer { 
   display: none !important; 
+}
+
+/* Hide any legacy user-location layers that might appear */
+[data-layer-id="user-location-dot"],
+[data-layer-id="user-location"],
+.mapboxgl-marker[style*="rgb(59, 130, 246)"] {
+  display: none !important;
 }
 
 /* UI overlays */
