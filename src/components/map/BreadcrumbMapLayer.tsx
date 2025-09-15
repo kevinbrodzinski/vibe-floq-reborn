@@ -95,14 +95,26 @@ export function BreadcrumbMapLayer({ map }: BreadcrumbMapLayerProps) {
       
       // Install theme watcher for color updates
       themeUnsubscribe = installBreadcrumbThemeWatcher(map);
+
+      // Handle style reloads (map.setStyle() wipes layers)
+      const reapply = () => {
+        spec.mount(map);
+        spec.update(map, geoJson);
+        // Theme watcher will reapply colors automatically
+      };
+
+      map.on('styledata', reapply);
+      map.on('load', reapply);
+
+      return () => {
+        map.off('styledata', reapply);
+        map.off('load', reapply);
+        themeUnsubscribe?.();
+        layerManager.unregister(spec.id);
+      };
     } else {
       layerManager.unregister(spec.id);
     }
-
-    return () => {
-      themeUnsubscribe?.();
-      layerManager.unregister(spec.id);
-    };
   }, [map, enabled, geoJson]);
 
   return null;

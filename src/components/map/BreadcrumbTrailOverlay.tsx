@@ -79,7 +79,19 @@ export function BreadcrumbTrailOverlay({ map }: BreadcrumbTrailOverlayProps) {
     // Install theme watcher for color updates
     const themeUnsubscribe = installBreadcrumbThemeWatcher(map);
 
+    // Handle style reloads (map.setStyle() wipes layers)
+    const reapply = () => {
+      spec.mount(map);
+      spec.update(map, geoJson);
+      // Theme watcher will reapply colors automatically
+    };
+
+    map.on('styledata', reapply);
+    map.on('load', reapply);
+
     return () => {
+      map.off('styledata', reapply);
+      map.off('load', reapply);
       themeUnsubscribe();
       spec.unmount(map);
     };

@@ -52,17 +52,20 @@ export function hslVar(varName: string, fallbackHsl: string): string {
 export function onThemeChange(handler: () => void) {
   if (typeof window === 'undefined') return () => {};
   
-  const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
-  const mediaListener = () => { 
-    invalidateThemeColorCache(); 
-    handler(); 
+  let raf = 0;
+  const run = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      invalidateThemeColorCache();
+      handler();
+    });
   };
 
+  const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
+  const mediaListener = run;
+
   // Observe class / data-theme / style on <html>
-  const attrObserver = new MutationObserver(() => { 
-    invalidateThemeColorCache(); 
-    handler(); 
-  });
+  const attrObserver = new MutationObserver(run);
   attrObserver.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['class', 'data-theme', 'style'],
@@ -73,5 +76,26 @@ export function onThemeChange(handler: () => void) {
   return () => {
     try { mql?.removeEventListener?.('change', mediaListener); } catch {}
     try { attrObserver.disconnect(); } catch {}
+    cancelAnimationFrame(raf);
   };
+}
+
+/**
+ * Resolve HSL vars with separate alpha channel support
+ */
+export function hslVarWithAlpha(varHue: `--${string}`, varAlpha?: `--${string}`, fallbackHsl = 'hsl(210 100% 50%)') {
+  const hue = hslVar(varHue, fallbackHsl); // returns full hsl(...) or converted token
+  if (!varAlpha) return hue;
+  
+  try {
+    const aRaw = getComputedStyle(document.documentElement).getPropertyValue(varAlpha).trim();
+    if (!aRaw) return hue;
+    // hue is like "hsl(230 35% 7%)" or "hsl(230 35% 7% / 0.6)"
+    const body = hue.replace(/^hsl\(|\)$/g, '');
+    const parts = body.split('/').map(s => s.trim());
+    const core = parts[0];
+    return `hsl(${core} / ${aRaw})`;
+  } catch {
+    return hue;
+  }
 }
