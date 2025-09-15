@@ -1,171 +1,275 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Kind = 'friend' | 'venue' | 'self';
+type PresenceKind = "friend" | "self" | "venue";
 
-type LngLat = { lng: number; lat: number };
-
-export type PresencePayload = {
-  kind: Kind;
+export type PresenceSelectPayload = {
+  kind: PresenceKind;
   id: string;
   name?: string;
-  lngLat?: LngLat;
-  color?: string;
-  properties?: Record<string, any>;
+  lngLat?: { lng: number; lat: number };
+
+  // Optional presence signals for friend/self
+  energy01?: number;                   // 0..1 current energy
+  direction?: "up" | "flat" | "down";  // vibe direction
+  etaMin?: number;                     // runway when winding down
+  distanceM?: number;                  // distance from me
+  venueName?: string;                  // current venue
+  openNow?: boolean;
+
+  // Optional visuals
+  avatarUrl?: string;
+  color?: string;                      // vibe tint e.g. #22d3ee
+
+  // For venue cards
+  category?: string;
+  rating?: number;
+  userRatings?: number;
+
+  // Raw properties if needed
+  properties?: Record<string, unknown>;
 };
+
+// Export as PresencePayload for compatibility
+export type PresencePayload = PresenceSelectPayload;
 
 type Props = {
-  data: PresencePayload | null;
-  onClose: () => void;
+  onClose?: () => void;
 };
 
-const Row: React.FC<{label:string; value?:React.ReactNode}> = ({label,value}) => (
-  <div className="flex items-center justify-between text-sm text-white/80">
-    <span className="font-medium text-white">{label}</span>
-    <span className="ml-3">{value ?? '—'}</span>
-  </div>
-);
+/** Util: format distance compact */
+const fmtDistance = (m?: number) => {
+  if (!m || m <= 0) return "";
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+};
 
-export const PresenceInfoCard: React.FC<Props> = ({ data, onClose }) => {
-  const ref = React.useRef<HTMLDivElement>(null);
+/** Util: runway text when winding down */
+const runway = (eta?: number) => (eta && eta >= 5 ? `~${Math.round(eta)}m left` : "");
 
+/** Util: direction micro-status */
+const vibeStatus = (d?: "up" | "flat" | "down") =>
+  d === "up" ? "Building" : d === "down" ? "Winding down" : "Steady";
+
+/** Util: chip color from vibe tint */
+const chipStyle = (hex?: string) =>
+  ({ background: hex ? hex + "20" : "rgba(255,255,255,.08)", color: hex ?? "#fff" });
+
+/** Event helpers */
+const fire = (name: string, detail?: any) =>
+  typeof window !== "undefined" && window.dispatchEvent(new CustomEvent(name, { detail }));
+
+/** local event bus subscription */
+function usePresenceSelection() {
+  const [sel, setSel] = React.useState<PresenceSelectPayload | null>(null);
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'Enter' && data) primaryAction(data);
+    const onFriend = (e: Event) => setSel((e as CustomEvent).detail);
+    const onVenue = (e: Event) => setSel((e as CustomEvent).detail);
+    window.addEventListener("friends:select", onFriend as EventListener);
+    window.addEventListener("venues:select", onVenue as EventListener);
+    return () => {
+      window.removeEventListener("friends:select", onFriend as EventListener);
+      window.removeEventListener("venues:select", onVenue as EventListener);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [data, onClose]);
+  }, []);
+  return { sel, clear: () => setSel(null) };
+}
 
-  if (!data) return null;
-  const { kind, name, color } = data;
-  const isSelf = kind === 'self';
+export function PresenceInfoCard({ onClose }: Props) {
+  const { sel, clear } = usePresenceSelection();
+  const open = !!sel;
 
-  const primaryLabel =
-    kind === 'venue' ? 'Flow to venue'
-    : isSelf ? 'Recenter'
-    : 'Ping';
+  const close = () => {
+    clear();
+    onClose?.();
+  };
 
-  function primaryAction(d: PresencePayload) {
-    if (d.kind === 'venue') {
-      if (d.lngLat) window.dispatchEvent(new CustomEvent('floq:navigate', { detail: { to: d.lngLat }}));
-    } else if (d.kind === 'self') {
-      window.dispatchEvent(new CustomEvent('floq:geolocate'));
-    } else {
-      window.dispatchEvent(new CustomEvent('floq:ping', { detail: { id: d.id }}));
-    }
-    onClose();
-  }
+  const primaryColor = sel?.color ?? "hsl(var(--primary))";
+  const isFriend = sel?.kind === "friend";
+  const isSelf = sel?.kind === "self";
+  const isVenue = sel?.kind === "venue";
+
+  // ---- Actions (wired to your app events) ----
+  const act = {
+    ping: () => fire("floq:ping", { id: sel?.id }),
+    message: () => fire("floq:message", { id: sel?.id }),
+    invite: () => fire("floq:invite", { id: sel?.id, to: sel?.lngLat }),
+    flowTo: () => fire("floq:navigate", { to: sel?.lngLat, label: sel?.name }),
+    saveVenue: () => fire("floq:save_venue", { id: sel?.id }),
+    peakTimes: () => fire("floq:venue_peaks", { id: sel?.id }),
+    shareLive: () => fire("floq:share_live", { id: sel?.id }),
+    setMeetHere: () => fire("floq:set_meet_here", { at: sel?.lngLat, label: sel?.name }),
+    recenter: () => {
+      fire("floq:geolocate");
+      close();
+    },
+    convergeModal: () =>
+      fire("converge:open", { peer: sel, anchor: sel?.lngLat ?? null }),
+  };
+
+  const Now = (
+    <div className="flex items-center gap-2">
+      {/* vibe chip */}
+      {isFriend || isSelf ? (
+        <span
+          style={chipStyle(sel?.color)}
+          className="px-2 py-0.5 rounded-full text-xs font-medium"
+          title="Current vibe"
+        >
+          {vibeStatus(sel?.direction)}
+        </span>
+      ) : null}
+
+      {/* direction bar */}
+      {(isFriend || isSelf) && (
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-20 rounded-full overflow-hidden bg-white/10">
+            <div
+              className={`h-full ${sel?.direction === "up" ? "bg-emerald-400" :
+                sel?.direction === "down" ? "bg-rose-400" : "bg-sky-400"}`}
+              style={{ width: `${Math.round((sel?.energy01 ?? 0) * 100)}%` }}
+            />
+          </div>
+          <span className="text-xs text-white/70">
+            {sel?.direction === "up" ? "↑" : sel?.direction === "down" ? "↓" : "→"}
+          </span>
+        </div>
+      )}
+
+      {/* runway chip */}
+      {sel?.direction === "down" && sel?.etaMin && sel.etaMin >= 5 && (
+        <span className="px-2 py-0.5 rounded-full text-xs bg-white/8 text-white/80">
+          {runway(sel.etaMin)}
+        </span>
+      )}
+    </div>
+  );
+
+  const Next = (
+    <div className="text-xs text-white/70">
+      {isFriend || isSelf
+        ? sel?.properties?.nextLabel
+          ? `Next: ${sel.properties.nextLabel}`
+          : "Open to converge"
+        : isVenue
+        ? (sel?.openNow ? "Open now" : "Currently closed")
+        : ""}
+    </div>
+  );
+
+  const Where = (
+    <div className="text-xs text-white/80 flex items-center gap-2">
+      {sel?.venueName && (
+        <span className="px-1.5 py-0.5 rounded bg-white/8">{sel.venueName}</span>
+      )}
+      {sel?.distanceM != null && <span>{fmtDistance(sel.distanceM)}</span>}
+    </div>
+  );
+
+  const PrimaryCTA = () => {
+    if (isVenue) return (
+      <button className="px-3 h-9 rounded-lg bg-white text-black font-medium hover:bg-white/90" onClick={act.flowTo}>Flow to</button>
+    );
+    if (isSelf) return (
+      <button className="px-3 h-9 rounded-lg bg-white text-black font-medium hover:bg-white/90" onClick={act.recenter}>Recenter</button>
+    );
+    return <button className="px-3 h-9 rounded-lg bg-white text-black font-medium hover:bg-white/90" onClick={act.convergeModal}>Check convergence</button>;
+  };
+
+  const SecondaryCTAs = () => (
+    <>
+      {isFriend && (
+        <>
+          <button className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10" onClick={act.ping}>Ping</button>
+          <button className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10" onClick={act.message}>Message</button>
+        </>
+      )}
+      {isVenue && (
+        <>
+          <button className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10" onClick={act.invite}>Invite</button>
+          <button className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10" onClick={act.saveVenue}>Save</button>
+        </>
+      )}
+      {isSelf && (
+        <>
+          <button className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10" onClick={act.shareLive}>Share live</button>
+          <button className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10" onClick={act.setMeetHere}>Set meet here</button>
+        </>
+      )}
+    </>
+  );
 
 
 
   return (
     <AnimatePresence>
-      <motion.div
-        ref={ref}
-        className="fixed left-0 right-0 bottom-0 z-[70] px-3 pb-6 pointer-events-none"
-        initial={{ y: 80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 80, opacity: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
-      >
-        <div className="pointer-events-auto mx-auto w-[min(560px,92%)] rounded-2xl border border-white/10 bg-black/70 backdrop-blur-lg shadow-xl">
-          <div className="p-4 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full border border-white/20" style={{ background: color ?? '#64748b' }} />
-            <div className="min-w-0">
-              <div className="text-white font-semibold truncate">
-                {name || (kind === 'venue' ? 'Venue' : isSelf ? 'You' : 'Friend')}
+      {open && sel && (
+        <motion.div
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 40, opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          className="fixed left-0 right-0 bottom-0 z-[70] px-3 pb-3 pointer-events-none"
+        >
+          <div className="mx-auto w-full max-w-md rounded-2xl bg-black/70 backdrop-blur-xl border border-white/10 shadow-lg pointer-events-auto">
+            {/* header */}
+            <div className="flex gap-3 p-3">
+              {/* avatar / glyph */}
+              <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/20">
+                {isVenue ? (
+                  <div className="w-full h-full grid place-items-center bg-white/5">🏁</div>
+                ) : sel.avatarUrl ? (
+                  <img src={sel.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full grid place-items-center bg-white/5">🧭</div>
+                )}
               </div>
-              <div className="text-xs text-white/60">{kind === 'venue' ? 'Place' : isSelf ? 'My location' : 'Friend'}</div>
+
+              {/* title & meta */}
+              <div className="flex-1 overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <div className="font-semibold truncate text-white">{sel.name ?? (isSelf ? "You" : isVenue ? "Venue" : "Friend")}</div>
+                  {isVenue && sel.category && (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-white/8 text-white/80">{sel.category}</span>
+                  )}
+                </div>
+                
+                {/* Now → Next → Where layout */}
+                <div className="mt-2 space-y-1">
+                  {/* Now row */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-white/60">Now</div>
+                    <div className="flex-1 ml-2">{Now}</div>
+                  </div>
+                  
+                  {/* Next row */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-white/60">Next</div>
+                    <div className="flex-1 ml-2">{Next}</div>
+                  </div>
+                  
+                  {/* Where row */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-white/60">Where</div>
+                    <div className="flex-1 ml-2">{Where}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* close */}
+              <button className="ml-1 text-white/60 hover:text-white" onClick={close} aria-label="Close">✕</button>
+            </div>
+
+            {/* actions */}
+            <div className="px-3 pb-3 flex items-center gap-2">
+              <PrimaryCTA />
+              <div className="flex items-center gap-1 ml-auto">
+                <SecondaryCTAs />
+              </div>
             </div>
           </div>
-
-          <div className="px-4 pb-3 space-y-2">
-            {data.properties?.category && <Row label="Category" value={data.properties.category} />}
-            {data.properties?.distance_m != null && (
-              <Row label="Distance" value={`${Math.round(Number(data.properties.distance_m))} m`} />
-            )}
-            {data.properties?.vibe && <Row label="Vibe" value={String(data.properties.vibe)} />}
-          </div>
-
-          <div className="p-3 pt-0 flex gap-2 justify-end">
-            {/* secondary actions vary by kind */}
-            {kind === 'venue' ? (
-              <>
-                <button
-                  onClick={() => {
-                    if (data.lngLat) window.dispatchEvent(new CustomEvent('floq:invite', { detail: { to: data.lngLat, id: data.id } }));
-                    onClose();
-                  }}
-                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
-                >
-                  Invite friends
-                </button>
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent('floq:save_venue', { detail: { id: data.id } }));
-                    onClose();
-                  }}
-                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
-                >
-                  Save
-                </button>
-              </>
-            ) : isSelf ? (
-              <>
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent('floq:share_location'));
-                    onClose();
-                  }}
-                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
-                >
-                  Share live
-                </button>
-                <button
-                  onClick={() => {
-                    if (data.lngLat) window.dispatchEvent(new CustomEvent('floq:set_meet_here', { detail: { at: data.lngLat } }));
-                    onClose();
-                  }}
-                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
-                >
-                  Set meet here
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent('floq:message', { detail: { id: data.id }}));
-                    onClose();
-                  }}
-                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
-                >
-                  Message
-                </button>
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent('floq:invite', { detail: { id: data.id }}));
-                    onClose();
-                  }}
-                  className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10"
-                >
-                  Invite
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => primaryAction(data)}
-              className="px-3 h-9 rounded-lg bg-white text-black font-medium hover:bg-white/90"
-            >
-              {primaryLabel}
-            </button>
-            <button onClick={onClose} className="px-3 h-9 rounded-lg bg-white/6 text-white hover:bg-white/10">Close</button>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }
