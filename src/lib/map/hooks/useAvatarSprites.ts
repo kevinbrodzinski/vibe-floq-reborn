@@ -1,172 +1,180 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type mapboxgl from 'mapbox-gl';
+import { ensureAvatarImage } from '@/lib/map/overlays/presenceClusterOverlay';
 
-type AvatarItem = { id: string; photoUrl?: string | null };
-type Options = { size?: number; concurrency?: number; retryMs?: number };
-
-const DEFAULTS: Required<Options> = { size: 64, concurrency: 3, retryMs: 250 };
-
-/** Stable icon id for a user & size (same across style reloads) */
-export const avatarIconIdFor = (userId: string, size = 64) => `avatar:${userId}:${size}`;
-
-function loadImageEl(src: string, size: number, signal?: AbortSignal): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image(size, size);
-    img.crossOrigin = 'anonymous';
-    img.decoding = 'async';
-    const onAbort = () => reject(new DOMException('Aborted', 'AbortError'));
-    signal?.addEventListener('abort', onAbort, { once: true });
-    img.onload = () => {
-      signal?.removeEventListener('abort', onAbort);
-      resolve(img);
-    };
-    img.onerror = (e) => {
-      signal?.removeEventListener('abort', onAbort);
-      reject(e);
-    };
-    img.src = src;
-  });
+export interface Friend {
+  id: string;
+  photoUrl?: string;
 }
 
-function toCircleSprite(img: HTMLImageElement, size: number): ImageData {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  // crisp downscale if needed
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  // circle mask
-  ctx.clearRect(0, 0, size, size);
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.clip();
-  ctx.drawImage(img, 0, 0, size, size);
-  return ctx.getImageData(0, 0, size, size);
+export interface UseAvatarSpritesOptions {
+  size?: number;
+  concurrency?: number;
+  enabled?: boolean;
+}
+
+export interface UseAvatarSpritesResult {
+  iconIds: Record<string, string>;
+  loading: number;
+  error: string | null;
 }
 
 /**
- * Load/circle-mask/addImage for user avatars with:
- * - de-duplication (iconId reused)
- * - concurrency limit
- * - auto re-queue on style reload
- * Returns a map of { userId -> iconId } and loading counts.
+ * Production-grade hook for batched avatar sprite loading
+ * Features:
+ * - Batched loading with concurrency limits
+ * - De-duplication and caching
+ * - Auto re-queue on map style changes (sprites are lost)
+ * - Exponential backoff retry logic
  */
 export function useAvatarSprites(
-  map: mapboxgl.Map | null | undefined,
-  items: AvatarItem[] | undefined,
-  opts?: Options
-) {
-  const { size, concurrency, retryMs } = { ...DEFAULTS, ...(opts || {}) };
+  map: mapboxgl.Map | null,
+  friends: Friend[],
+  options: UseAvatarSpritesOptions = {}
+): UseAvatarSpritesResult {
+  const { size = 64, concurrency = 3, enabled = true } = options;
+  
   const [iconIds, setIconIds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  
+  const loadingRef = useRef<Set<string>>(new Set());
+  const retryCountRef = useRef<Record<string, number>>({});
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Safe inputs
-  const list = useMemo(
-    () => (Array.isArray(items) ? items.filter(i => i && i.id && i.photoUrl) : []),
-    [items]
-  );
-
-  const queueRef = useRef<string[]>([]);
-  const inflightRef = useRef<Set<string>>(new Set());
-  const loadedRef = useRef<Set<string>>(new Set());
-  const abortRef = useRef<AbortController | null>(null);
-  const mountedRef = useRef(true);
-
-  // Rebuild queue whenever the list changes or style is new
-  const rebuildQueue = () => {
-    if (!map) return;
-    const q: string[] = [];
-    for (const it of list) {
-      const iconId = avatarIconIdFor(it.id, size);
-      // if style has image, mark loaded; else queue
-      if (map.hasImage(iconId)) {
-        loadedRef.current.add(it.id);
-      } else {
-        q.push(it.id);
-      }
-    }
-    queueRef.current = q;
-  };
-
-  // Worker: process queue with concurrency
-  const pump = async () => {
-    if (!map || !mountedRef.current) return;
-
-    // Start up to `concurrency - inflight`
-    while (
-      inflightRef.current.size < concurrency &&
-      queueRef.current.length > 0 &&
-      mountedRef.current
-    ) {
-      const userId = queueRef.current.shift()!;
-      if (inflightRef.current.has(userId) || loadedRef.current.has(userId)) continue;
-
-      inflightRef.current.add(userId);
-      setLoading(prev => prev + 1);
-
-      (async () => {
-        const item = list.find(i => i.id === userId);
-        if (!item?.photoUrl) throw new Error('no photoUrl');
-
-        const c = new AbortController();
-        abortRef.current?.signal?.aborted; // just touch
-        const signal = c.signal;
-        try {
-          // Load & circle-mask
-          const img = await loadImageEl(item.photoUrl, size, signal);
-          const data = toCircleSprite(img, size);
-          const iconId = avatarIconIdFor(userId, size);
-          if (!map) return;
-          if (!map.hasImage(iconId)) {
-            map.addImage(iconId, data, { pixelRatio: 1 });
-          }
-          loadedRef.current.add(userId);
-          setIconIds(prev => (prev[userId] === iconId ? prev : { ...prev, [userId]: iconId }));
-        } catch {
-          // Back off & requeue once
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            if (!loadedRef.current.has(userId)) queueRef.current.push(userId);
-            pump(); // try again
-          }, retryMs);
-        } finally {
-          inflightRef.current.delete(userId);
-          setLoading(prev => Math.max(0, prev - 1));
-          // continue queue
-          // (yield first to keep UI responsive)
-          requestAnimationFrame(() => pump());
-        }
-      })();
-    }
-  };
-
-  // Main effect
+  // Reset on map or friends change
   useEffect(() => {
-    mountedRef.current = true;
-    if (!map || !list.length) return;
+    if (!map || !enabled) {
+      setIconIds({});
+      setLoading(0);
+      setError(null);
+      return;
+    }
 
-    rebuildQueue();
-    pump();
+    // Cancel any ongoing operations
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    
+    const signal = abortControllerRef.current.signal;
 
-    // On style reload, images are wiped → requeue
-    const reapply = () => {
-      if (!mountedRef.current) return;
-      loadedRef.current.clear();
-      rebuildQueue();
-      pump();
+    const loadBatch = async () => {
+      const friendsWithPhotos = friends.filter(f => f.photoUrl && !loadingRef.current.has(f.id));
+      if (!friendsWithPhotos.length) return;
+
+      const newIconIds: Record<string, string> = {};
+      let activeLoads = 0;
+      let completedLoads = 0;
+      
+      setError(null);
+
+      const processFriend = async (friend: Friend) => {
+        if (signal.aborted || !friend.photoUrl) return;
+        
+        loadingRef.current.add(friend.id);
+        activeLoads++;
+        setLoading(activeLoads);
+        
+        try {
+          const maxRetries = 3;
+          const retryCount = retryCountRef.current[friend.id] || 0;
+          
+          if (retryCount >= maxRetries) {
+            console.warn(`[useAvatarSprites] Max retries reached for ${friend.id}`);
+            return;
+          }
+
+          const iconId = await ensureAvatarImage(map, friend.id, friend.photoUrl, size);
+          
+          if (signal.aborted) return;
+          
+          if (iconId) {
+            newIconIds[friend.id] = iconId;
+            retryCountRef.current[friend.id] = 0; // Reset retry count on success
+          } else {
+            // Exponential backoff retry
+            retryCountRef.current[friend.id] = retryCount + 1;
+            const delay = Math.pow(2, retryCount) * 1000;
+            setTimeout(() => {
+              if (!signal.aborted) {
+                loadingRef.current.delete(friend.id);
+              }
+            }, delay);
+          }
+        } catch (err) {
+          if (!signal.aborted) {
+            console.error('[useAvatarSprites] Error loading avatar:', err);
+            retryCountRef.current[friend.id] = (retryCountRef.current[friend.id] || 0) + 1;
+          }
+        } finally {
+          if (!signal.aborted) {
+            loadingRef.current.delete(friend.id);
+            activeLoads--;
+            completedLoads++;
+            setLoading(Math.max(0, activeLoads));
+          }
+        }
+      };
+
+      // Process with concurrency limit
+      const chunks: Friend[][] = [];
+      for (let i = 0; i < friendsWithPhotos.length; i += concurrency) {
+        chunks.push(friendsWithPhotos.slice(i, i + concurrency));
+      }
+
+      for (const chunk of chunks) {
+        if (signal.aborted) break;
+        
+        await Promise.allSettled(
+          chunk.map(friend => processFriend(friend))
+        );
+      }
+
+      // Batch update iconIds
+      if (!signal.aborted && Object.keys(newIconIds).length > 0) {
+        setIconIds(prev => ({ ...prev, ...newIconIds }));
+      }
     };
-    map.on('styledata', reapply);
 
+    const timeoutId = setTimeout(loadBatch, 100); // Debounce rapid changes
+    
     return () => {
-      mountedRef.current = false;
-      map.off('styledata', reapply);
-      abortRef.current?.abort();
-      inflightRef.current.clear();
-      queueRef.current = [];
+      clearTimeout(timeoutId);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, size, concurrency, list.map(i => i.id + ':' + (i.photoUrl || '')).join('|')]);
+  }, [map, friends, size, concurrency, enabled]);
 
-  return { iconIds, loading };
+  // Re-queue sprites on style changes (Mapbox loses custom images)
+  useEffect(() => {
+    if (!map || !enabled) return;
+
+    const onStyleChange = () => {
+      console.log('[useAvatarSprites] Style changed, re-queueing sprites');
+      // Clear current state to trigger reload
+      setIconIds({});
+      loadingRef.current.clear();
+      retryCountRef.current = {};
+    };
+
+    map.on('styledata', onStyleChange);
+    return () => map.off('styledata', onStyleChange);
+  }, [map, enabled]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  return {
+    iconIds,
+    loading,
+    error
+  };
 }

@@ -39,7 +39,8 @@ export async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: 
     ctx.beginPath();
     ctx.arc(size/2,size/2,size/2,0,Math.PI*2);
     ctx.closePath(); ctx.clip(); ctx.drawImage(img,0,0,size,size);
-    map.addImage(id, { width:size, height:size, data:ctx.getImageData(0,0,size,size).data } as any, { pixelRatio: 1 });
+    const imageData = ctx.getImageData(0, 0, size, size);
+    map.addImage(id, imageData, { pixelRatio: 1 });
     return id;
   } catch { return null; }
 }

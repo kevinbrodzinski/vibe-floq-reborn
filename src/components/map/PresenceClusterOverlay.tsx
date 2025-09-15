@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
-import { layerManager } from '@/lib/map/LayerManager';
+import { useLayerManager } from '@/hooks/useLayerManager';
 import { createPresenceClusterOverlay, buildPresenceFC, ensureAvatarImage } from '@/lib/map/overlays/presenceClusterOverlay';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
@@ -33,6 +33,7 @@ interface Props {
 
 export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props) {
   const map = getCurrentMap();
+  const layerManager = useLayerManager(map);
   const { user } = useAuth();
   const { location } = useFieldLocation();
   
@@ -46,10 +47,7 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
     }
 
     return buildPresenceFC({
-      self: selfLocation ? {
-        lat: selfLocation.lat,
-        lng: selfLocation.lng
-      } : undefined,
+      self: undefined, // Leave self-hit to aura overlay to avoid double ownership
       friends: data.friends?.map(f => ({
         id: f.id,
         name: f.name,
@@ -125,7 +123,7 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
 
       // Build once with iconIds merged
       const updatedFC = buildPresenceFC({
-        self: selfLocation ? { lat: selfLocation.lat, lng: selfLocation.lng } : undefined,
+        self: undefined, // Keep consistent with main featureCollection
         friends: (data.friends ?? []).map(f => ({
           id: f.id,
           name: f.name,

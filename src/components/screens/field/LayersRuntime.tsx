@@ -9,8 +9,7 @@ import { useFieldLocation } from '@/components/field/contexts/FieldLocationConte
 import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPointsLayer';
 import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
-import { FriendInfoCard } from '@/components/map/FriendInfoCard';
-import { VenueInfoCard } from '@/components/map/VenueInfoCard';
+import { PresenceCardHost } from '@/components/map/PresenceCardHost';
 import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
