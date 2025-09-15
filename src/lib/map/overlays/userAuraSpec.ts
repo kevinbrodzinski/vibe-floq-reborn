@@ -54,7 +54,7 @@ function moveAuraToTop(map: mapboxgl.Map) {
   });
 }
 
-function addLayers(map: mapboxgl.Map, beforeId?: string) {
+function addLayers(map: mapboxgl.Map, onMouseEnter: () => void, onMouseLeave: () => void, dragging: () => boolean, beforeId?: string) {
   // Outer soft aura
   if (!map.getLayer(LAYER_ID_OUTER)) {
     map.addLayer({
@@ -123,27 +123,21 @@ function addLayers(map: mapboxgl.Map, beforeId?: string) {
       type: 'circle',
       source: SRC_ID,
       paint: {
-        'circle-radius': [
-          'interpolate', ['linear'], ['zoom'],
-          10, 24, 14, 32, 16, 40
-        ],
-        'circle-color': 'rgba(0,0,0,0)',
-        'circle-opacity': 1
+        'circle-radius': 26,
+        'circle-pitch-scale': 'viewport',
+        'circle-opacity': 0.01,
+        'circle-color': '#000'
       }
     }, LAYER_ID_DOT);
   }
 
   // Cursor affordance (desktop)
-  map.on('mouseenter', LAYER_ID_HIT, () => { 
-    map.getCanvas().style.cursor = 'pointer'; 
-  });
-  map.on('mouseleave', LAYER_ID_HIT, () => { 
-    map.getCanvas().style.cursor = ''; 
-  });
+  map.on('mouseenter', LAYER_ID_HIT, onMouseEnter);
+  map.on('mouseleave', LAYER_ID_HIT, onMouseLeave);
 
   // Click → fire the same event the friend layer uses
   map.on('click', LAYER_ID_HIT, () => {
-    if (!lastPoint) return;
+    if (dragging() || map.isMoving() || !lastPoint) return; // guard against accidental clicks
 
     // Pull current vibe color from CSS var set by useVibeEngine
     let colorHex = '#22d3ee';
@@ -154,11 +148,12 @@ function addLayers(map: mapboxgl.Map, beforeId?: string) {
 
     window.dispatchEvent(new CustomEvent('friends:select', {
       detail: {
+        kind: 'self',
         id: 'self',
         name: 'You',
         avatarUrl: undefined,   // fill if you have a local profile photo
         color: colorHex,
-        lngLat: lastPoint
+        lngLat: { lng: lastPoint[0], lat: lastPoint[1] }
       }
     }));
   });
@@ -219,6 +214,20 @@ function setData(map: mapboxgl.Map, data: AuraData) {
  * LayerManager-compatible overlay spec for user location aura
  */
 export function createUserAuraSpec(beforeId?: string) {
+  let isDragging = false;
+
+  function moveToTop(map: mapboxgl.Map, ids: string[]) {
+    const layers = map.getStyle()?.layers ?? [];
+    const top = layers[layers.length - 1]?.id;
+    if (!top) return;
+    ids.forEach(id => { if (map.getLayer(id)) { try { map.moveLayer(id, top); } catch {} } });
+  }
+
+  const onDragStart = () => { isDragging = true; };
+  const onDragEnd = () => { setTimeout(() => isDragging = false, 120); };
+  const onMouseEnter = (map: mapboxgl.Map) => () => { map.getCanvas().style.cursor = 'pointer'; };
+  const onMouseLeave = (map: mapboxgl.Map) => () => { map.getCanvas().style.cursor = ''; };
+
   return {
     id: 'user-aura',
     mount(map: mapboxgl.Map) {
@@ -229,22 +238,15 @@ export function createUserAuraSpec(beforeId?: string) {
         return;
       }
       ensureSource(map);
-      addLayers(map, beforeId);
+      addLayers(map, onMouseEnter(map), onMouseLeave(map), () => isDragging, beforeId);
       
+      // Drag guards
+      map.on('dragstart', onDragStart);
+      map.on('dragend', onDragEnd);
+
       // Always move aura layers to top for visibility
-      try {
-        const auraLayerIds = [LAYER_ID_OUTER, LAYER_ID_INNER, LAYER_ID_DOT];
-        const layers = map.getStyle()?.layers ?? [];
-        const topId = layers[layers.length - 1]?.id;
-        if (topId) {
-          auraLayerIds.forEach(id => {
-            if (map.getLayer(id)) {
-              try { map.moveLayer(id, topId); } catch {}
-            }
-          });
-        }
-      } catch {}
       try { moveAuraToTop(map); } catch {}
+      moveToTop(map, [LAYER_ID_OUTER, LAYER_ID_INNER, LAYER_ID_DOT, LAYER_ID_HIT]);
     },
     update(map: mapboxgl.Map, data?: AuraData) {
       if (!data) return;
@@ -253,6 +255,12 @@ export function createUserAuraSpec(beforeId?: string) {
       try { moveAuraToTop(map); } catch {}
     },
     unmount(map: mapboxgl.Map) {
+      try {
+        map.off('dragstart', onDragStart);
+        map.off('dragend', onDragEnd);
+        map.off('mouseenter', LAYER_ID_HIT, onMouseEnter(map));
+        map.off('mouseleave', LAYER_ID_HIT, onMouseLeave(map));
+      } catch {}
       removeLayers(map);
     },
     moveToTop(map: mapboxgl.Map) {

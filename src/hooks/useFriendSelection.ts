@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 
 export interface FriendSelectionDetail {
+  kind?: 'friend' | 'self';
   id: string;
   name?: string;
   avatarUrl?: string;
   vibe?: string;
   distanceM?: number;
   lastSeen?: number;
-  lngLat: [number, number];
+  lngLat: { lng: number; lat: number };
   color?: string;
 }
 
