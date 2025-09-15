@@ -94,7 +94,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_VENUE)) {
     map.addLayer({
       id: PT_VENUE, type:'circle', source: SID,
-      filter:['all', ['!has','point_count'], ['==',['get','kind'],'venue']],
+      filter:['all', ['!has','point_count'], ['==',['to-string',['get','kind']],'venue']],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,6, 16,9],
         'circle-color':['coalesce',['get','vibeHex'],'#22c55e'],
@@ -107,7 +107,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_FRIEND_AV)) {
     map.addLayer({
       id: PT_FRIEND_AV, type:'symbol', source: SID,
-      filter:['all',['!has','point_count'],['==',['get','kind'],'friend'],['has','iconId']],
+      filter:['all',['!has','point_count'],['==',['to-string',['get','kind']],'friend'],['has','iconId']],
       layout:{
         'icon-image':['get','iconId'],
         'icon-size':['interpolate',['linear'],['zoom'], 12,0.38, 16,0.6, 18,0.72],
@@ -119,7 +119,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_FRIEND_FALL)) {
     map.addLayer({
       id: PT_FRIEND_FALL, type:'circle', source: SID,
-      filter:['all',['!has','point_count'],['==',['get','kind'],'friend'],['!has','iconId']],
+      filter:['all',['!has','point_count'],['==',['to-string',['get','kind']],'friend'],['!has','iconId']],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,5.5, 16,7.5],
         'circle-color':['coalesce',['get','vibeHex'],'#60a5fa'],
@@ -132,7 +132,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (includeSelfHit && !map.getLayer(PT_SELF_HIT)) {
     map.addLayer({
       id: PT_SELF_HIT, type:'circle', source: SID,
-      filter:['all',['!has','point_count'],['==',['get','kind'],'self']],
+      filter:['all',['!has','point_count'],['==',['to-string',['get','kind']],'self']],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,12, 16,16],
         'circle-color':'rgba(0,0,0,0)',
@@ -373,6 +373,19 @@ export function createPresenceClusterOverlay(options: {
   };
 }
 
+// Helper to ensure string values for Mapbox filters
+const safeString = (value: unknown): string | null => {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value.join(',');
+  return String(value);
+};
+
+const safeNumber = (value: unknown): number => {
+  if (typeof value === 'number' && !isNaN(value)) return value;
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
 export function buildPresenceFC(input: {
   self?: { lat:number; lng:number };
   friends?: Array<{ id:string; name?:string; photoUrl?:string; lat:number; lng:number; vibe?:string; iconId?:string }>;
@@ -382,35 +395,71 @@ export function buildPresenceFC(input: {
   const venues = Array.isArray(input?.venues) ? input.venues : [];
   const feats: GeoJSON.Feature[] = [];
 
-  if (input.self) {
-    feats.push({
-      type:'Feature',
-      geometry:{ type:'Point', coordinates:[input.self.lng, input.self.lat] },
-      properties:{ kind:'self', id:'self' }
-    });
+  // Validate and process self
+  if (input.self && typeof input.self === 'object') {
+    const lat = safeNumber(input.self.lat);
+    const lng = safeNumber(input.self.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      feats.push({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[lng, lat] },
+        properties:{ kind:'self', id:'self' }
+      });
+    }
   }
   
-  venues.forEach(v=>{
-    feats.push({
-      type:'Feature',
-      geometry:{ type:'Point', coordinates:[v.lng, v.lat] },
-      properties:{ kind:'venue', id:v.id, name:v.name, category:v.category ?? null, vibeHex:'#22c55e' }
-    });
+  // Validate and process venues
+  venues.forEach(v => {
+    try {
+      const lat = safeNumber(v.lat);
+      const lng = safeNumber(v.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      
+      feats.push({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[lng, lat] },
+        properties:{ 
+          kind:'venue', 
+          id: safeString(v.id) || 'unknown-venue',
+          name: safeString(v.name) || 'Unknown Venue',
+          category: safeString(v.category),
+          vibeHex:'#22c55e' 
+        }
+      });
+    } catch (error) {
+      console.warn('[buildPresenceFC] Invalid venue data:', v, error);
+    }
   });
   
-  friends.forEach(f=>{
-    const hex = f.vibe ? vibeToHex(safeVibe(f.vibe as any)) : '#60a5fa';
-    const props: any = {
-      kind:'friend', id:f.id, name:f.name ?? null, avatarUrl:f.photoUrl ?? null,
-      vibeHex: hex
-    };
-    if (f.iconId) props.iconId = f.iconId;
-    
-    feats.push({
-      type:'Feature',
-      geometry:{ type:'Point', coordinates:[f.lng, f.lat] },
-      properties: props
-    });
+  // Validate and process friends
+  friends.forEach(f => {
+    try {
+      const lat = safeNumber(f.lat);
+      const lng = safeNumber(f.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      
+      const hex = f.vibe ? vibeToHex(safeVibe(f.vibe as any)) : '#60a5fa';
+      const props: Record<string, string | null> = {
+        kind: 'friend',
+        id: safeString(f.id) || 'unknown-friend',
+        name: safeString(f.name),
+        avatarUrl: safeString(f.photoUrl),
+        vibeHex: hex
+      };
+      
+      // Only add iconId if it's a valid string
+      if (f.iconId && typeof f.iconId === 'string') {
+        props.iconId = f.iconId;
+      }
+      
+      feats.push({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[lng, lat] },
+        properties: props
+      });
+    } catch (error) {
+      console.warn('[buildPresenceFC] Invalid friend data:', f, error);
+    }
   });
 
   return { type:'FeatureCollection', features: feats };
