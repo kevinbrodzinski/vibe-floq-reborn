@@ -1,10 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { layerManager } from '@/lib/map/LayerManager';
-import { createPresenceClusterOverlay, buildPresenceFC } from '@/lib/map/overlays/presenceClusterOverlay';
+import { createPresenceClusterOverlay, buildPresenceFC, ensureAvatarImage } from '@/lib/map/overlays/presenceClusterOverlay';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
-import { ensureAvatarImage } from '@/lib/map/avatarSprite';
 import { useAuth } from '@/hooks/useAuth';
 
 interface PresenceData {
@@ -70,7 +69,7 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
   }, [data, enabled, selfLocation]);
 
   useEffect(() => {
-    if (!map || !enabled) return;
+    if (!map || !layerManager || !enabled) return;
     
     const spec = createPresenceClusterOverlay({
       id: 'presence',
@@ -97,60 +96,53 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
       map.off('load', reapply);
       layerManager.unregister('presence');
     };
-  }, [map, enabled, beforeId, featureCollection]);
+  }, [map, layerManager, enabled, beforeId, featureCollection]);
 
   // Update data when it changes
   useEffect(() => {
-    if (map && enabled) {
+    if (map && layerManager && enabled) {
       layerManager.apply('presence', featureCollection);
     }
-  }, [map, featureCollection, enabled]);
+  }, [map, layerManager, featureCollection, enabled]);
 
-  // Preload friend avatar sprites
+  // Batch avatar loading to avoid multiple apply() calls
   useEffect(() => {
-    if (!map || !enabled || !data.friends) return;
+    if (!map || !layerManager || !enabled || !Array.isArray(data.friends) || !data.friends.length) return;
 
-    const loadAvatars = async () => {
-      for (const friend of data.friends || []) {
-        if (friend.photoUrl) {
-          try {
-            const iconId = await ensureAvatarImage(map, friend.id, friend.photoUrl, 64);
-            if (iconId) {
-              // Update the feature collection to include the iconId
-              // This will trigger a re-render with the avatar sprite
-              const updatedFC = buildPresenceFC({
-                self: selfLocation ? {
-                  lat: selfLocation.lat,
-                  lng: selfLocation.lng
-                } : undefined,
-                friends: data.friends?.map(f => ({
-                  ...f,
-                  // Mark this friend as having an avatar loaded
-                  iconId: f.id === friend.id ? iconId : (f as any).iconId
-                })),
-                venues: data.venues?.map(v => ({
-                  id: v.id,
-                  name: v.name,
-                  lat: v.lat,
-                  lng: v.lng,
-                  category: v.category
-                }))
-              });
-              
-              // Apply updated data with iconId
-              layerManager.apply('presence', updatedFC);
-            }
-          } catch (error) {
-            console.warn(`Failed to load avatar for ${friend.id}:`, error);
-          }
-        }
+    let cancelled = false;
+
+    const load = async () => {
+      const iconIds: Record<string, string> = {};
+      for (const f of data.friends!) {
+        if (!f.photoUrl) continue;
+        try {
+          const id = await ensureAvatarImage(map, f.id, f.photoUrl, 64);
+          if (cancelled || !id) continue;
+          iconIds[f.id] = id;
+        } catch {}
       }
+      if (cancelled) return;
+
+      // Build once with iconIds merged
+      const updatedFC = buildPresenceFC({
+        self: selfLocation ? { lat: selfLocation.lat, lng: selfLocation.lng } : undefined,
+        friends: (data.friends ?? []).map(f => ({
+          id: f.id,
+          name: f.name,
+          photoUrl: f.photoUrl,
+          lat: f.lat,
+          lng: f.lng,
+          vibe: f.vibe,
+          iconId: iconIds[f.id]
+        })),
+        venues: data.venues
+      });
+      layerManager.apply('presence', updatedFC);
     };
 
-    // Delay avatar loading slightly to let the map settle
-    const timeout = setTimeout(loadAvatars, 100);
-    return () => clearTimeout(timeout);
-  }, [map, enabled, data.friends, selfLocation, data.venues]);
+    const t = setTimeout(load, 120);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [map, layerManager, enabled, data.friends, data.venues, selfLocation]);
 
   return null;
 }

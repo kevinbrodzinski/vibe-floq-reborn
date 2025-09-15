@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import mapboxgl from 'mapbox-gl';
 import type { OverlaySpec } from '@/lib/map/LayerManager';
+import { safeVibe } from '@/lib/vibes';
+import { vibeToHex } from '@/lib/vibe/color';
 
 // ---------- small helpers ----------
 const lyr = (id:string,s:string)=>`${id}-${s}`;
@@ -23,7 +24,7 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
 }
 
 // ---------- sprite for avatars ----------
-async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: string, size=64): Promise<string|null> {
+export async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: string, size=64): Promise<string|null> {
   const id = `avatar:${userId}:${size}`;
   if (map.hasImage(id)) return id;
   try {
@@ -185,15 +186,24 @@ function wireInteractions(map: mapboxgl.Map, id: string) {
   map.on('click', PT_VENUE, clickPoint('venue'));
   map.on('click', PT_FRIEND_AV, clickPoint('friend'));
   map.on('click', PT_FRIEND_FALL, clickPoint('friend'));
-  map.on('click', PT_SELF_HIT, (e:any)=>{
+  map.on('click', PT_SELF_HIT, async (e:any)=>{
     if (dragging || map.isMoving()) return;
     const pt = e.lngLat.wrap();
-    select({
-      kind:'friend', id:'self', name:'You',
-      lngLat:{ lng: pt.lng, lat: pt.lat },
-      color: getComputedStyle(document.documentElement).getPropertyValue('--vibe-hex').trim() || '#22d3ee',
-      properties:{ self:true }
-    });
+    
+    window.dispatchEvent(new CustomEvent('friends:select', {
+      detail: { 
+        kind:'friend', id:'self', name:'You',
+        lngLat:{ lng: pt.lng, lat: pt.lat },
+        color: getComputedStyle(document.documentElement).getPropertyValue('--vibe-hex').trim() || '#22d3ee',
+        properties:{ self:true }
+      }
+    }));
+
+    // Gentle highlight, fire-and-forget
+    try {
+      const { recenterAndHighlight } = await import('@/lib/map/overlays/userAuraHighlight');
+      recenterAndHighlight(map, { durationMs: 900, easeMs: 350, alphaBoost: 0.2, keepZoom: true });
+    } catch {}
   });
 
   // cluster click → expand/spider
@@ -291,6 +301,12 @@ function wireInteractions(map: mapboxgl.Map, id: string) {
     const styleCleanup = ()=>{ try{popup.remove();}catch{} };
     map.on('styledata', styleCleanup);
   }
+
+  // Return cleanup function
+  return () => {
+    try { map.off('dragstart', ds); } catch {}
+    try { map.off('dragend', de); } catch {}
+  };
 }
 
 // ---------- public overlay ----------
@@ -301,6 +317,7 @@ export function createPresenceClusterOverlay(options: {
 }): OverlaySpec {
   const id = options.id ?? 'presence';
   const SID = srcId(id);
+  let disposeInteractions: (()=>void) | null = null;
 
   return {
     id,
@@ -309,7 +326,7 @@ export function createPresenceClusterOverlay(options: {
       if (!map.isStyleLoaded()) { map.once('idle', () => this.mount(map)); return; }
       ensureSource(map, SID, options.initial);
       addLayers(map, id);
-      wireInteractions(map, id);
+      disposeInteractions = wireInteractions(map, id);
       moveToTop(map, [lyr(id,'self-hit'), lyr(id,'friend-avatar'), lyr(id,'friend-fallback'),
                       lyr(id,'venue'), lyr(id,'cluster-count'), lyr(id,'cluster')]);
     },
@@ -318,17 +335,19 @@ export function createPresenceClusterOverlay(options: {
       if (src && fc) src.setData(fc as any);
     },
     unmount(map) {
+      try { disposeInteractions?.(); } catch {}
       removeLayers(map, id);
     }
   };
 }
 
-// FC builder you can reuse from your data layer
 export function buildPresenceFC(input: {
   self?: { lat:number; lng:number };
   friends?: Array<{ id:string; name?:string; photoUrl?:string; lat:number; lng:number; vibe?:string; iconId?:string }>;
   venues?: Array<{ id:string; name:string; lat:number; lng:number; category?:string }>;
-}): GeoJSON.FeatureCollection {
+} = {} as any): GeoJSON.FeatureCollection {
+  const friends = Array.isArray(input?.friends) ? input.friends : [];
+  const venues = Array.isArray(input?.venues) ? input.venues : [];
   const feats: GeoJSON.Feature[] = [];
 
   if (input.self) {
@@ -338,23 +357,27 @@ export function buildPresenceFC(input: {
       properties:{ kind:'self', id:'self' }
     });
   }
-  (input.venues ?? []).forEach(v=>{
+  
+  venues.forEach(v=>{
     feats.push({
       type:'Feature',
       geometry:{ type:'Point', coordinates:[v.lng, v.lat] },
       properties:{ kind:'venue', id:v.id, name:v.name, category:v.category ?? null, vibeHex:'#22c55e' }
     });
   });
-  (input.friends ?? []).forEach(f=>{
-    const hex = '#60a5fa'; // Default friend color
+  
+  friends.forEach(f=>{
+    const hex = f.vibe ? vibeToHex(safeVibe(f.vibe as any)) : '#60a5fa';
+    const props: any = {
+      kind:'friend', id:f.id, name:f.name ?? null, avatarUrl:f.photoUrl ?? null,
+      vibeHex: hex
+    };
+    if (f.iconId) props.iconId = f.iconId;
+    
     feats.push({
       type:'Feature',
       geometry:{ type:'Point', coordinates:[f.lng, f.lat] },
-      properties:{
-        kind:'friend', id:f.id, name:f.name ?? null, avatarUrl:f.photoUrl ?? null,
-        vibeHex: hex, // symbol color fallback
-        iconId: f.iconId ?? null // Avatar sprite ID when loaded
-      }
+      properties: props
     });
   });
 
