@@ -13,7 +13,13 @@ export function applyLayerColors(map: mapboxgl.Map, layerId: string, paint: Pain
   if (!map.getLayer(layerId)) return;
   
   for (const [prop, def] of Object.entries(paint)) {
-    map.setPaintProperty(layerId, prop, hslVar(def.var, def.fallback));
+    const color = hslVar(def.var, def.fallback) || def.fallback;
+    try {
+      map.setPaintProperty(layerId, prop, color);
+    } catch {
+      // last resort: white
+      map.setPaintProperty(layerId, prop, '#ffffff');
+    }
   }
 }
 

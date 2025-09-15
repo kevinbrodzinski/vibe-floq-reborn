@@ -14,15 +14,18 @@ if (typeof document !== 'undefined' && document.readyState !== 'complete') {
 }
 
 /**
- * Normalize HSL tokens to support both space and alpha syntax
- * Accepts "230 35% 7%" or "230 35% 7% / 0.6"
+ * Mapbox GL **does not** support CSS Color 4 space-separated HSL.
+ * It expects the legacy comma form: hsl(H, S%, L%) or hsla(H, S%, L%, A).
+ * This converts "230 35% 7%" or "230 35% 7% / 0.6" -> legacy strings.
  */
-function normalizeHslToken(token: string): string {
-  const parts = token.split('/').map(s => s.trim());
-  if (parts.length === 2) {
-    return `hsl(${parts[0]} / ${parts[1]})`;
-  }
-  return `hsl(${token})`;
+function normalizeHslTokenLegacy(token: string): string {
+  const [core, alpha] = token.split('/').map(s => s.trim());
+  const hsl = core.split(/\s+/);
+  const [H, S, L] = [hsl[0], hsl[1], hsl[2]];
+  if (!H || !S || !L) return '#ffffff';
+  return (alpha && alpha.length)
+    ? `hsla(${H}, ${S}, ${L}, ${alpha})`
+    : `hsl(${H}, ${S}, ${L})`;
 }
 
 /**
@@ -47,7 +50,7 @@ export function hslVar(varName: string, fallbackHsl: string): string {
 
     // Tailwind HSL form is usually "H S% L%" — preserve spaces to keep modern CSS HSL syntax
     const cleaned = raw.replace(/\s+/g, ' ').trim();
-    return (_cache[k] = normalizeHslToken(cleaned));
+    return (_cache[k] = normalizeHslTokenLegacy(cleaned));
   } catch {
     return (_cache[k] = fallbackHsl);
   }
@@ -90,19 +93,30 @@ export function onThemeChange(handler: () => void) {
 /**
  * Resolve HSL vars with separate alpha channel support
  */
-export function hslVarWithAlpha(varHue: `--${string}`, varAlpha?: `--${string}`, fallbackHsl = 'hsl(210 100% 50%)') {
-  const hue = hslVar(varHue, fallbackHsl); // returns full hsl(...) or converted token
+export function hslVarWithAlpha(
+  varHue: `--${string}`,
+  varAlpha?: `--${string}`,
+  fallbackHsl = 'hsl(210, 100%, 50%)'
+) {
+  // Resolve hue token then rebuild as legacy hsla with separate alpha var.
+  const hueRaw = (() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(varHue).trim();
+      return raw || null;
+    } catch { return null; }
+  })();
+
+  const hue = hueRaw ? normalizeHslTokenLegacy(hueRaw.replace(/\s+/g,' ').trim()) : fallbackHsl;
   if (!varAlpha) return hue;
-  
+
   try {
     const aRaw = getComputedStyle(document.documentElement).getPropertyValue(varAlpha).trim();
     if (!aRaw) return hue;
-    // hue is like "hsl(230 35% 7%)" or "hsl(230 35% 7% / 0.6)"
-    const body = hue.replace(/^hsl\(|\)$/g, '');
-    const parts = body.split('/').map(s => s.trim());
-    const core = parts[0];
-    return `hsl(${core} / ${aRaw})`;
-  } catch {
-    return hue;
-  }
+    // Convert hue -> hsla(H, S, L, A)
+    const match = hue.match(/^hsl[a]?\(\s*([^,]+),\s*([^,]+),\s*([^) ,]+)(?:,\s*([^)]+))?\s*\)$/i);
+    if (!match) return hue;
+    const [, H, S, L] = match;
+    return `hsla(${H}, ${S}, ${L}, ${aRaw})`;
+  } catch { return hue; }
 }
