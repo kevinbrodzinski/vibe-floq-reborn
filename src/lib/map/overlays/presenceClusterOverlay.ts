@@ -321,6 +321,7 @@ export function createPresenceClusterOverlay(options: {
 }): OverlaySpec {
   const id = options.id ?? 'presence';
   const SID = srcId(id);
+  const includeSelfHit = options.includeSelfHit === true;
   let disposeInteractions: (()=>void) | null = null;
 
   return {
