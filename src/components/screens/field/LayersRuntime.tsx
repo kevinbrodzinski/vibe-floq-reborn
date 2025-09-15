@@ -4,11 +4,12 @@ import { useLayerManager } from '@/hooks/useLayerManager';
 import { useNavDestination } from '@/hooks/useNavDestination';
 import { useTileVenuesLayer } from '@/map/layers/useTileVenuesLayer';
 import { useSocialWeatherLayer } from '@/map/layers/useSocialWeatherLayer';
+import { useNearbyFriends } from '@/hooks/useNearbyFriends';
+import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { PredictedMeetingPointsLayer } from '@/map/layers/PredictedMeetingPointsLayer';
 import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
-import { FriendsClusterOverlay } from '@/components/map/FriendsClusterOverlay';
-import { VenuesClusterOverlay } from '@/components/map/VenuesClusterOverlay';
+import { PresenceClusterOverlay } from '@/components/map/PresenceClusterOverlay';
 import { FriendInfoCard } from '@/components/map/FriendInfoCard';
 import { VenueInfoCard } from '@/components/map/VenueInfoCard';
 import { layerManager } from '@/lib/map/LayerManager';
@@ -21,6 +22,7 @@ interface LayersRuntimeProps {
 
 export function LayersRuntime({ data }: LayersRuntimeProps) {
   const map = getCurrentMap();
+  const { location } = useFieldLocation();
 
   // Centralized LayerManager binding
   useLayerManager(map);
@@ -30,23 +32,29 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   useTileVenuesLayer(map, data.nearbyVenues);
   useSocialWeatherLayer(map, data.weatherCells);
 
-  // Mock friend and venue data for now - replace with real data
-  const friendsData: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: [] // TODO: replace with actual friend locations
-  };
+  // Get nearby friends data
+  const { data: nearbyFriends } = useNearbyFriends(
+    location.coords?.lat,
+    location.coords?.lng,
+    { km: 2, enabled: !!location.coords }
+  );
 
-  const venuesData: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection', 
-    features: data.nearbyVenues.map(v => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
-      properties: {
-        venueId: v.pid,
-        name: v.name,
-        category: v.category,
-        vibeHex: '#22c55e'
-      }
+  // Transform data for unified presence overlay
+  const presenceData = {
+    friends: nearbyFriends?.map(f => ({
+      id: f.id,
+      name: f.display_name,
+      photoUrl: f.avatar_url,
+      lat: f.lat,
+      lng: f.lng,
+      distance_m: f.distance_m
+    })),
+    venues: data.nearbyVenues?.map(v => ({
+      id: v.pid,
+      name: v.name,
+      lat: v.lat,
+      lng: v.lng,
+      category: v.category
     }))
   };
 
@@ -57,16 +65,11 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       <BreadcrumbMapLayer map={map} />
       <UserAuraOverlay map={map} layerManager={layerManager} enabled />
       
-      {/* Clustering overlays */}
-      <FriendsClusterOverlay 
-        data={friendsData} 
+      {/* Unified presence overlay - friends, venues, and self hit target */}
+      <PresenceClusterOverlay 
+        data={presenceData} 
         enabled={true} 
         beforeId="user-aura-outer" 
-      />
-      <VenuesClusterOverlay 
-        data={venuesData} 
-        enabled={true} 
-        beforeId="friends-point" 
       />
       
       {/* Info cards */}
