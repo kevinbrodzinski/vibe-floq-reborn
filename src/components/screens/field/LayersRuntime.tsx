@@ -136,8 +136,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       <UserAuraOverlay map={map} layerManager={layerManager} enabled />
       
       {/* Info cards */}
-      <FriendInfoCard />
-      <VenueInfoCard />
+      <PresenceCardHost />
     </>
   );
 }
