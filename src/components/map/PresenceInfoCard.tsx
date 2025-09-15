@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, Clock, MapPin, Navigation, Share, MessageCircle, Star } from 'lucide-react';
+import { formatDistance, formatTimeAgo } from '@/lib/utils/formatters';
+import { ConvergeSuggestions } from './ConvergeSuggestions';
 
 type LngLat = { lng: number; lat: number };
 
@@ -18,6 +21,15 @@ export type PresenceSelection =
       distanceM?: number;
       lastSeenMs?: number;
       lngLat?: LngLat;
+      // Enhanced presence data
+      energy01?: number;
+      direction?: 'up' | 'flat' | 'down';
+      etaMin?: number;
+      venue?: { id: string; name: string; openNow?: boolean };
+      nextPlan?: { label: string; etaMin?: number };
+      availability?: 'open' | 'busy' | 'dnd';
+      lastUpdated?: number;
+      properties?: Record<string, any>;
     }
   | {
       kind: 'self';
@@ -25,6 +37,7 @@ export type PresenceSelection =
       name?: string;
       color?: string;
       lngLat?: LngLat;
+      properties?: Record<string, any>;
     }
   | {
       kind: 'venue';
@@ -36,6 +49,7 @@ export type PresenceSelection =
       userRatings?: number;
       color?: string;
       lngLat?: LngLat;
+      properties?: Record<string, any>;
     };
 
 type CardAction = {
@@ -67,6 +81,7 @@ export function PresenceInfoCard({
   maxWidth = 420,
 }: Props) {
   const open = !!selection;
+  const [showConvergence, setShowConvergence] = React.useState(false);
 
   // Keyboard support
   React.useEffect(() => {
@@ -119,8 +134,37 @@ export function PresenceInfoCard({
 
   const lastSeenLabel =
     isFriend && typeof selection.lastSeenMs === 'number'
-      ? ` · ${formatAgo(selection.lastSeenMs)}`
+      ? ` · ${formatTimeAgo(Date.now() - selection.lastSeenMs)}`
       : '';
+
+  // Enhanced presence info
+  const direction = isFriend ? selection.direction : undefined;
+  const energy01 = isFriend ? selection.energy01 : undefined;
+  const etaMin = isFriend ? selection.etaMin : undefined;
+  const nextPlan = isFriend ? selection.nextPlan : undefined;
+  const venue = isFriend ? selection.venue : undefined;
+  const availability = isFriend ? selection.availability : undefined;
+
+  const getDirectionIcon = () => {
+    switch (direction) {
+      case 'up': return <TrendingUp size={12} className="text-emerald-400" />;
+      case 'down': return <TrendingDown size={12} className="text-orange-400" />;
+      case 'flat': return <Minus size={12} className="text-blue-400" />;
+      default: return null;
+    }
+  };
+
+  const getVibeStatus = () => {
+    if (!direction) return null;
+    
+    const statusMap = {
+      up: 'Building energy',
+      flat: 'Steady vibe',
+      down: etaMin ? `Winding down (~${etaMin}m left)` : 'Winding down'
+    };
+    
+    return statusMap[direction];
+  };
 
   const metaLine = isVenue
     ? [
@@ -132,6 +176,33 @@ export function PresenceInfoCard({
 
   const ringColor = selection.color || getVibeHexSafe();
   const titleColor = 'text-white';
+
+  const handleConvergeRequest = (suggestion: any) => {
+    window.dispatchEvent(new CustomEvent('floq:converge_request', {
+      detail: {
+        requestId: `req_${Date.now()}`,
+        fromUserId: 'current-user', // Replace with actual user ID
+        toUserId: selection.id,
+        point: {
+          id: suggestion.id,
+          name: suggestion.name,
+          lng: suggestion.lngLat.lng,
+          lat: suggestion.lngLat.lat,
+          venueId: suggestion.id
+        },
+        eta: {
+          meMin: suggestion.etaMe,
+          friendMin: suggestion.etaFriend
+        },
+        createdAt: Date.now()
+      }
+    }));
+    
+    // Analytics
+    window.dispatchEvent(new CustomEvent('ui_card_action', {
+      detail: { kind: selection.kind, action: 'converge_request', id: selection.id }
+    }));
+  };
 
   const rawActions = actionsFor(selection, {
     onPing,
@@ -188,9 +259,55 @@ export function PresenceInfoCard({
                 {metaLine || '—'}
               </div>
 
+              {/* Now → Next → Where Row for Friends */}
+              {isFriend && (direction || nextPlan || venue) && (
+                <div className="mt-2 mb-2 flex items-center gap-3 text-xs text-white/80">
+                  {/* Now: Vibe Direction */}
+                  {direction && (
+                    <div className="flex items-center gap-1">
+                      {getDirectionIcon()}
+                      <span>{getVibeStatus()}</span>
+                    </div>
+                  )}
+                  
+                  {/* Next: Plan */}
+                  {nextPlan && (
+                    <div className="flex items-center gap-1 text-blue-300">
+                      <Clock size={10} />
+                      <span>{nextPlan.label}</span>
+                    </div>
+                  )}
+                  
+                  {/* Where: Current venue */}
+                  {venue && (
+                    <div className="flex items-center gap-1 text-emerald-300">
+                      <MapPin size={10} />
+                      <span>{venue.name}</span>
+                      {venue.openNow !== undefined && (
+                        <span className={venue.openNow ? 'text-emerald-400' : 'text-red-400'}>
+                          ({venue.openNow ? 'open' : 'closed'})
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {isFriend && vibeLabel && (
                   <Badge className="bg-white/10 border-white/20 text-white/90">{vibeLabel}</Badge>
+                )}
+                {isFriend && availability && (
+                  <Badge 
+                    className={cn(
+                      "border-white/20 text-white/90",
+                      availability === 'open' ? 'bg-emerald-500/20 border-emerald-400/40' :
+                      availability === 'busy' ? 'bg-yellow-500/20 border-yellow-400/40' :
+                      'bg-red-500/20 border-red-400/40'
+                    )}
+                  >
+                    {availability === 'open' ? 'Available' : availability === 'busy' ? 'Busy' : 'Do Not Disturb'}
+                  </Badge>
                 )}
                 {isVenue && selection.category && (
                   <Badge className="bg-white/10 border-white/20 text-white/90">{selection.category}</Badge>
@@ -225,6 +342,19 @@ export function PresenceInfoCard({
                 {a.label}
               </Button>
             ))}
+            
+            {/* Convergence button for friends */}
+            {isFriend && selection.lngLat && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-white/80 border-white/30 hover:bg-white/10"
+                onClick={() => setShowConvergence(true)}
+              >
+                <Star size={12} className="mr-1" />
+                Converge
+              </Button>
+            )}
             {more.length > 0 && (
               <MoreMenu items={more} onClose={onClose} />
             )}
@@ -233,6 +363,18 @@ export function PresenceInfoCard({
             </Button>
           </div>
         </motion.aside>
+      )}
+      
+      {/* Convergence Modal */}
+      {showConvergence && isFriend && selection.lngLat && (
+        <ConvergeSuggestions
+          friendId={selection.id}
+          friendName={selection.name || 'Friend'}
+          myLocation={{ lng: 0, lat: 0 }} // Replace with actual user location
+          friendLocation={selection.lngLat}
+          onRequest={handleConvergeRequest}
+          onClose={() => setShowConvergence(false)}
+        />
       )}
     </AnimatePresence>
   );
@@ -351,20 +493,9 @@ function actionsFor(
   ];
 }
 
-function formatDistance(n?: number) {
-  if (n == null) return 'Nearby';
-  if (n < 1000) return `${Math.round(n)} m away`;
-  return `${(n / 1000).toFixed(1)} km away`;
-}
+// Removed formatDistance - using formatDistance from utils instead
 
-function formatAgo(tsMs: number) {
-  const m = Math.floor((Date.now() - tsMs) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
+// Removed formatAgo - using formatTimeAgo from utils instead
 
 function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;

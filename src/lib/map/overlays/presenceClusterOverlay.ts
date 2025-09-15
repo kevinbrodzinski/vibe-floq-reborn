@@ -310,6 +310,30 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
   return () => {
     try { map.off('dragstart', ds); } catch {}
     try { map.off('dragend', de); } catch {}
+    
+    // Clean up all event listeners
+    try { map.off('click', PT_VENUE, () => {}); } catch {}
+    try { map.off('click', PT_FRIEND_AV, () => {}); } catch {}
+    try { map.off('click', PT_FRIEND_FALL, () => {}); } catch {}
+    try { map.off('click', CL, () => {}); } catch {}
+    
+    if (includeSelfHit) {
+      try { map.off('click', PT_SELF_HIT, () => {}); } catch {}
+    }
+    
+    // Clean up hover events if not touch
+    if (!isTouch()) {
+      try { map.off('mouseenter', PT_VENUE, () => {}); } catch {}
+      try { map.off('mousemove', PT_VENUE, () => {}); } catch {}
+      try { map.off('mouseleave', PT_VENUE, () => {}); } catch {}
+      try { map.off('mouseenter', PT_FRIEND_AV, () => {}); } catch {}
+      try { map.off('mousemove', PT_FRIEND_AV, () => {}); } catch {}
+      try { map.off('mouseleave', PT_FRIEND_AV, () => {}); } catch {}
+      try { map.off('mouseenter', PT_FRIEND_FALL, () => {}); } catch {}
+      try { map.off('mousemove', PT_FRIEND_FALL, () => {}); } catch {}
+      try { map.off('mouseleave', PT_FRIEND_FALL, () => {}); } catch {}
+      try { map.off('styledata', () => {}); } catch {}
+    }
   };
 }
 
