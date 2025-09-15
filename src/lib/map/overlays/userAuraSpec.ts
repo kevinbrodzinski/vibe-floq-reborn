@@ -1,6 +1,9 @@
 // User location aura overlay spec for LayerManager
 // Creates a multi-layered vibe-colored aura around user location
 
+// Cache coordinates for safe recenter operations
+let lastPoint: [number, number] | null = null;
+
 import type mapboxgl from 'mapbox-gl';
 import { vibeRgba } from '@/lib/map/vibeColor';
 
@@ -134,6 +137,14 @@ function setData(map: mapboxgl.Map, data: AuraData) {
     }]
   };
   src.setData(fc);
+  
+  // Cache point for safe recenter operations
+  lastPoint = [data.lng, data.lat];
+  
+  // Expose to global for highlight function (avoid private API)
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as any).__floq_lastPoint = lastPoint;
+  }
 
   // Confidence affects aura intensity (stronger, more visible defaults)
   const c = Math.max(0, Math.min(1, data.confidence01));
@@ -171,7 +182,7 @@ export function createUserAuraSpec(beforeId?: string) {
       }
       ensureSource(map);
       addLayers(map, beforeId);
-      moveAuraToTop(map);
+      try { moveAuraToTop(map); } catch {}
     },
     update(map: mapboxgl.Map, data?: AuraData) {
       if (!data) return;

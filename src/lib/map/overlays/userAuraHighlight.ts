@@ -11,24 +11,28 @@ const LAYER_ID_DOT   = 'user-aura-dot';
 let lastToken = 0;
 let revertTimer: number | null = null;
 
-// Parse rgba(..) → {r,g,b,a}
-function parseRgba(input: any): { r: number; g: number; b: number; a: number } | null {
-  if (typeof input !== 'string') return null;
-  const m = input.replace(/\s+/g, '').match(/^rgba?\((\d+),(\d+),(\d+)(?:,([0-9.]+))?\)$/i);
-  if (!m) return null;
-  const [, r, g, b, a] = m;
-  return { r: +r, g: +g, b: +b, a: a ? +a : 1 };
+// Parse rgba(..) and color expressions → {r,g,b,a}
+function parseRgba(c: any): { r: number; g: number; b: number; a: number } | null {
+  if (typeof c === 'string') {
+    const m = c.match(/rgba?\(([^)]+)\)/i);
+    if (!m) return null;
+    const parts = m[1].split(',').map(s => s.trim());
+    const [r, g, b, a] = parts.map(Number);
+    return { r, g, b, a: parts.length === 4 ? a : 1 };
+  }
+  if (Array.isArray(c) && (c[0] === 'rgba' || c[0] === 'rgb')) {
+    const [_, r, g, b, a] = c;
+    return { r, g, b, a: c[0] === 'rgba' ? a ?? 1 : 1 };
+  }
+  return null;
 }
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const makeRgba = (r:number,g:number,b:number,a:number) => `rgba(${r},${g},${b},${clamp01(a)})`;
 
-// Safely read point from the aura source
-function getUserLngLat(map: mapboxgl.Map): [number, number] | null {
-  const src = map.getSource(SRC_ID) as mapboxgl.GeoJSONSource | undefined;
-  if (!src) return null;
-  const fc: any = (src as any)._data || (src as any)._options?.data; // tolerate impl differences
-  const pt = fc?.features?.[0]?.geometry;
-  return pt?.type === 'Point' && Array.isArray(pt.coordinates) ? pt.coordinates as [number, number] : null;
+// Get cached user coordinates (no private API access)
+function getUserLngLat(): [number, number] | null {
+  // Import lastPoint from userAuraSpec module
+  return (globalThis as any).__floq_lastPoint || null;
 }
 
 /**
@@ -71,7 +75,7 @@ export async function recenterAndHighlight(
   }
 
   // 1) Recenter on the aura point
-  const coord = getUserLngLat(map);
+  const coord = getUserLngLat();
   if (coord) {
     const center = { center: coord as [number, number], duration: easeMs };
     keepZoom ? map.easeTo(center) : map.easeTo({ ...center, zoom: Math.max(map.getZoom(), 15) });

@@ -113,6 +113,17 @@ export function UserAuraOverlay({
             confidence01: conf 
           };
           layerManager.apply('user-aura', data);
+          
+          // Track movement quality metrics
+          if (last) {
+            const movedM = calculateDistanceMeters(last, pos);
+            const confDelta = Math.abs(conf - last.conf);
+            incrAura('movedMTotal', movedM);
+            if (movedM >= 50) incrAura('movedMBig');
+            incrAura('confDeltaTotal', confDelta);
+            if (confDelta >= 0.2) incrAura('confDeltaBig');
+          }
+          
           lastRef.current = { ...pos, conf };
           incrAura('updates');
         });

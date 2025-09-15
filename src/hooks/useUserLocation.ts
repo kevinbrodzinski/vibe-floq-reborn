@@ -2,7 +2,7 @@
 // Only emits location updates when user has moved significantly
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { calculateDistance } from '@/lib/location/standardGeo';
+import { calculateDistance as calculateDistanceMeters } from '@/lib/location/standardGeo';
 import { incrAura } from '@/lib/telemetry';
 
 export type LocationState = {
@@ -76,7 +76,7 @@ export function useUserLocation(opts: Opts = {}) {
         const now = Date.now();
 
         const last = lastEmitRef.current;
-        const moved = !last || calculateDistance(
+        const moved = !last || calculateDistanceMeters(
           { lat: last.lat, lng: last.lng }, 
           { lat, lng }
         ) > minMoveM;
