@@ -54,7 +54,7 @@ function ensureSource(map: mapboxgl.Map, sid: string, fc?: GeoJSON.FeatureCollec
   } as any);
 }
 
-function addLayers(map: mapboxgl.Map, id: string) {
+function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   const SID = srcId(id);
   const CL = lyr(id,'cluster');
   const CL_NUM = lyr(id,'cluster-count');
@@ -128,7 +128,7 @@ function addLayers(map: mapboxgl.Map, id: string) {
   }
 
   // self (invisible hit target – aura stays in its own overlay)
-  if (!map.getLayer(PT_SELF_HIT)) {
+  if (includeSelfHit && !map.getLayer(PT_SELF_HIT)) {
     map.addLayer({
       id: PT_SELF_HIT, type:'circle', source: SID,
       filter:['all',['!has','point_count'],['==',['get','kind'],'self']],
@@ -142,7 +142,10 @@ function addLayers(map: mapboxgl.Map, id: string) {
   }
 
   // keep on top
-  moveToTop(map, [PT_SELF_HIT, PT_FRIEND_AV, PT_FRIEND_FALL, PT_VENUE, CL_NUM, CL]);
+  const layers = includeSelfHit 
+    ? [PT_SELF_HIT, PT_FRIEND_AV, PT_FRIEND_FALL, PT_VENUE, CL_NUM, CL]
+    : [PT_FRIEND_AV, PT_FRIEND_FALL, PT_VENUE, CL_NUM, CL];
+  moveToTop(map, layers);
 }
 
 function removeLayers(map: mapboxgl.Map, id: string) {
@@ -152,7 +155,7 @@ function removeLayers(map: mapboxgl.Map, id: string) {
 }
 
 // ---------- click/hover wiring ----------
-function wireInteractions(map: mapboxgl.Map, id: string) {
+function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   const SID = srcId(id);
   const CL = lyr(id,'cluster');
   const PT_VENUE = lyr(id,'venue');
@@ -314,6 +317,7 @@ export function createPresenceClusterOverlay(options: {
   id?: string;
   beforeId?: string;
   initial?: GeoJSON.FeatureCollection;
+  includeSelfHit?: boolean; // default false – aura owns self-tap
 }): OverlaySpec {
   const id = options.id ?? 'presence';
   const SID = srcId(id);
@@ -325,10 +329,12 @@ export function createPresenceClusterOverlay(options: {
     mount(map) {
       if (!map.isStyleLoaded()) { map.once('idle', () => this.mount(map)); return; }
       ensureSource(map, SID, options.initial);
-      addLayers(map, id);
-      disposeInteractions = wireInteractions(map, id);
-      moveToTop(map, [lyr(id,'self-hit'), lyr(id,'friend-avatar'), lyr(id,'friend-fallback'),
-                      lyr(id,'venue'), lyr(id,'cluster-count'), lyr(id,'cluster')]);
+      addLayers(map, id, includeSelfHit);
+      disposeInteractions = wireInteractions(map, id, includeSelfHit);
+      const layers = includeSelfHit 
+        ? [lyr(id,'self-hit'), lyr(id,'friend-avatar'), lyr(id,'friend-fallback'), lyr(id,'venue'), lyr(id,'cluster-count'), lyr(id,'cluster')]
+        : [lyr(id,'friend-avatar'), lyr(id,'friend-fallback'), lyr(id,'venue'), lyr(id,'cluster-count'), lyr(id,'cluster')];
+      moveToTop(map, layers);
     },
     update(map, fc) {
       const src = map.getSource(SID) as mapboxgl.GeoJSONSource | undefined;

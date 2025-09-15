@@ -11,7 +11,7 @@ import { BreadcrumbMapLayer } from '@/components/map/BreadcrumbMapLayer';
 import { UserAuraOverlay } from '@/components/map/UserAuraOverlay';
 import { FriendInfoCard } from '@/components/map/FriendInfoCard';
 import { VenueInfoCard } from '@/components/map/VenueInfoCard';
-import { layerManager } from '@/lib/map/LayerManager';
+import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
 import '@/styles/map-popups.css';
@@ -24,8 +24,8 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   const map = getCurrentMap();
   const { location } = useFieldLocation();
 
-  // Centralized LayerManager binding
-  useLayerManager(map);
+  // Centralized LayerManager binding (returns the manager instance)
+  const layerManager = useLayerManager(map);
   useNavDestination(map);
 
   // ---------- Normalize inputs safely ----------
@@ -55,12 +55,17 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     [nearbyFriends]
   );
 
+  // Load avatar sprites and get iconIds map
+  const { iconIds } = useAvatarSprites(
+    map,
+    friendsList.map((f: any) => ({ id: String(f.id ?? ''), photoUrl: f.avatar_url ?? f.photoUrl ?? '' })),
+    { size: 64, concurrency: 3 }
+  );
+
   // Build unified presence data safely
   const presenceFC = useMemo(() => {
-    const self = location.coords ? {
-      lat: Number(location.coords.lat),
-      lng: Number(location.coords.lng)
-    } : undefined;
+    // self tap is handled by aura overlay → don't inject here
+    const self = undefined;
 
     const friends = friendsList
       .map((f: any) => ({
@@ -70,6 +75,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
         lat: Number(f.lat),
         lng: Number(f.lng),
         vibe: f.vibe ?? f.currentVibe ?? undefined,
+        iconId: iconIds[String(f.id ?? '')] ?? undefined,
       }))
       .filter((f: any) => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.id);
 
@@ -84,16 +90,17 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       .filter((v: any) => Number.isFinite(v.lat) && Number.isFinite(v.lng) && v.id);
 
     return buildPresenceFC({ self, friends, venues });
-  }, [nearbyVenues, friendsList, location.coords]);
+  }, [nearbyVenues, friendsList, iconIds]);
 
   // ---------- Register and apply unified presence overlay ----------
   useEffect(() => {
-    if (!map) return;
+    if (!map || !layerManager) return;
 
     const spec = createPresenceClusterOverlay({
       id: 'presence',
       beforeId: 'user-aura-outer',
       initial: { type: 'FeatureCollection', features: [] },
+      includeSelfHit: false, // aura owns it
     });
 
     layerManager.register(spec);
@@ -114,13 +121,13 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       map.off('load', reapply);
       layerManager.unregister('presence');
     };
-  }, [map]);
+  }, [map, layerManager]);
 
   // Apply feature collection when it changes
   useEffect(() => {
-    if (!map) return;
+    if (!map || !layerManager) return;
     layerManager.apply('presence', presenceFC);
-  }, [map, presenceFC]);
+  }, [map, layerManager, presenceFC]);
 
   // Overlays with clustering + cards
   return (
