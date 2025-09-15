@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { motion, AnimatePresence } from "framer-motion";
 import { ConvergeInputs, RankedPoint } from '@/types/presence';
 import { rankConvergence, scoreCandidate } from '@/lib/converge/rankConvergence';
-import { Button } from "@/components/ui/button";
 
 type Props = { onClose?: () => void };
 
@@ -10,6 +8,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
   const [open, setOpen] = React.useState(false);
   const [points, setPoints] = React.useState<RankedPoint[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [prefillId, setPrefillId] = React.useState<string | null>(null);
 
   const close = React.useCallback(() => {
     setOpen(false);
@@ -25,13 +24,15 @@ export function ConvergeSuggestions({ onClose }: Props) {
         // 1) baseline ranking
         const ranked = await rankConvergence({ peer, anchor: anchor ?? null });
 
-        // 2) pre-insert friend's current venue if available
+        // 2) pre-insert the friend's current venue if available (and valid)
         const me = (window as any)?.floq?.myLocation ?? null;
         const peerLL = peer?.lngLat ?? null;
         const fr = (window as any)?.floq?.friendsIndex?.[peer?.id ?? ''] ?? null;
         const v = fr?.venue;
 
         let merged = ranked;
+        let markedId: string | null = null;
+
         if (me && peerLL && v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && v.name) {
           const candidate = scoreCandidate(
             { energy01: fr?.energy01, direction: fr?.direction, lngLat: peerLL },
@@ -40,12 +41,21 @@ export function ConvergeSuggestions({ onClose }: Props) {
             { lat: peerLL.lat, lng: peerLL.lng },
           );
           const existingIx = ranked.findIndex(p => p.id === candidate.id);
-          merged = existingIx === -1 ? [candidate, ...ranked] : [candidate, ...ranked.filter((_, i) => i !== existingIx)];
+          if (existingIx === -1) {
+            merged = [candidate, ...ranked];
+            markedId = candidate.id;
+          } else {
+            const best = candidate.match >= ranked[existingIx].match ? candidate : ranked[existingIx];
+            merged = [best, ...ranked.filter((_, i) => i !== existingIx)];
+            markedId = best.id;
+          }
         }
 
+        setPrefillId(markedId);
         setPoints(merged.slice(0, 6));
       } catch (err) {
         console.warn('[ConvergeSuggestions] Ranking failed:', err);
+        setPrefillId(null);
         setPoints([]);
       } finally {
         setLoading(false);
@@ -69,73 +79,89 @@ export function ConvergeSuggestions({ onClose }: Props) {
     close();
   };
 
+  if (!open) return null;
+
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div 
-          role="dialog"
-          aria-label="Suggested convergence points"
-          className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }}
-        >
-          <div className="absolute inset-x-0 bottom-0 p-3">
-            <motion.div
-              className="mx-auto w-full max-w-md rounded-2xl bg-neutral-900 border border-white/10 shadow-xl"
-              initial={{ y: 40, opacity: 0 }} 
-              animate={{ y: 0, opacity: 1 }} 
-              exit={{ y: 40, opacity: 0 }}
-            >
-              <div className="p-3 flex items-center justify-between">
-                <div className="font-semibold text-white">Suggested convergence points</div>
-                <button 
-                  className="text-white/60 hover:text-white p-1 rounded"
-                  onClick={close}
+    <div role="dialog" aria-label="Suggested convergence points" className="fixed inset-0 z-[90]">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={close} />
+
+      {/* Card */}
+      <div
+        className="relative mx-auto mt-12 w-[min(560px,calc(100vw-24px))] rounded-xl bg-black/80 border border-white/10
+                   backdrop-blur-md text-white shadow-xl"
+      >
+        <div className="p-3 flex items-center justify-between">
+          <div className="font-semibold">Suggested convergence points</div>
+          <button
+            onClick={close}
+            aria-label="Close suggestions"
+            className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-2 space-y-2">
+          {loading ? (
+            <div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div>
+          ) : points.length === 0 ? (
+            <div className="px-3 py-8 text-sm text-white/80">No strong options nearby.</div>
+          ) : (
+            points.map((p, idx) => {
+              const isPrefilledTop = prefillId && p.id === prefillId && idx === 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => request(p)}
+                  className={[
+                    // base card
+                    "w-full text-left px-3 py-3 rounded-lg border border-white/10 bg-black/60 hover:bg-black/50",
+                    "transition-[background,box-shadow,transform] duration-150",
+                    // token glow for the top prefilled card
+                    isPrefilledTop
+                      ? "ring-2 ring-[color:var(--vibe-ring)] shadow-[0_0_24px_1px_var(--vibe-ring)]"
+                      : ""
+                  ].join(" ")}
+                  // small lift on hover to juice CTR a bit
+                  style={isPrefilledTop ? { transform: "translateZ(0)" } : undefined}
                 >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="max-h-[60vh] overflow-auto px-3 pb-3">
-                {loading ? (
-                  <div className="p-6 text-center text-white/60">
-                    Finding great spots…
-                  </div>
-                ) : points.length === 0 ? (
-                  <div className="p-6 text-center text-white/60">
-                    No strong options nearby.
-                  </div>
-                ) : (
-                  <ul className="flex flex-col gap-2">
-                    {points.map(p => (
-                      <li key={p.id} className="rounded-xl bg-white/5 px-3 py-2 border border-white/10">
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="font-medium text-white truncate">{p.name}</div>
-                            <div className="text-xs text-white/70">
-                              {p.category ?? "Place"} · {Math.round(p.match * 100)}% match
-                              <br />
-                              Me: {Math.round(p.eta.meMin)}m · Friend: {Math.round(p.eta.friendMin)}m
-                            </div>
-                          </div>
-                          <Button 
-                            size="sm"
-                            className="ml-2 shrink-0"
-                            onClick={() => request(p)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium truncate">{p.name}</div>
+
+                        {/* Tiny badge only for the prefilled top item */}
+                        {isPrefilledTop && (
+                          <span
+                            aria-label="Friend's current spot"
+                            className="inline-flex items-center rounded-full text-[10px] font-semibold
+                                       px-2 py-[2px] border
+                                       border-[color:var(--vibe-ring)]
+                                       text-[color:var(--vibe-ring)]
+                                       bg-white/5"
                           >
-                            Request converge
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                            Friend's current spot
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-0.5 text-xs text-white/70 truncate">
+                        {(p.category ?? 'Place')} · {Math.round(p.match * 100)}% match
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-xs text-white/80">
+                      <div>Me: {Math.round(p.eta.meMin)}m</div>
+                      <div>Friend: {Math.round(p.eta.friendMin)}m</div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
