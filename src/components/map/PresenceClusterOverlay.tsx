@@ -92,13 +92,13 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
           setFilterWhenReady(map, 'presence-friend-avatar', [
             "all",
             ["!has","point_count"],
-            ["in", ["get","kind"], "friend", "bestie"],
+            ["any", ["==", ["get","kind"], "friend"], ["==", ["get","kind"], "bestie"]],
             ["has","iconId"]
           ]);
           setFilterWhenReady(map, 'presence-friend-fallback', [
             "all",
             ["!has","point_count"],
-            ["in", ["get","kind"], "friend", "bestie"],
+            ["any", ["==", ["get","kind"], "friend"], ["==", ["get","kind"], "bestie"]],
             ["!has","iconId"]
           ]);
         } else {

@@ -10,7 +10,7 @@ export function normalizeFilter(node: any): any {
     return ['!has', node[1][1]];
   }
 
-  // Convert ["match", ["get","prop"], ["a","b"], true, false] -> ["in", ["get","prop"], "a","b"]
+  // Convert ["match", ["get","prop"], ["a","b"], true, false] -> ["any", ["==", ["get","prop"], "a"], ["==", ["get","prop"], "b"]]
   if (op === 'match' && Array.isArray(node[1])) {
     const getExpr = node[1]; // ["get","prop"]
     // haystack could be ["literal", [...]] or raw [...]
@@ -18,8 +18,15 @@ export function normalizeFilter(node: any): any {
     const yes = node[3], no = node[4];
     const arr = Array.isArray(hay) && hay[0] === 'literal' ? hay[1] : hay;
     if (Array.isArray(arr) && yes === true && no === false) {
-      return ['in', normalizeFilter(getExpr), ...arr];
+      return ['any', ...arr.map(val => ['==', normalizeFilter(getExpr), val])];
     }
+  }
+
+  // Convert ["in", ["get","prop"], "val1", "val2", ...] -> ["any", ["==", ["get","prop"], "val1"], ["==", ["get","prop"], "val2"], ...]
+  if (op === 'in' && Array.isArray(node[1]) && node[1][0] === 'get' && node.length > 2) {
+    const getExpr = node[1]; // ["get","prop"]
+    const values = node.slice(2); // ["val1", "val2", ...]
+    return ['any', ...values.map(val => ['==', normalizeFilter(getExpr), val])];
   }
 
   // Recurse children
