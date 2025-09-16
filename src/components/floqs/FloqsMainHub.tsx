@@ -15,6 +15,7 @@ import { FloqPeekSheet } from "./FloqPeekSheet";
 import { MockHotkeys } from "@/components/dev/MockHotkeys";
 import { ActiveMomentaryRail } from "./rails/ActiveMomentaryRail";
 import { PerfectTimingCard } from "./cards/PerfectTimingCard";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
@@ -42,7 +43,8 @@ export default function FloqsMainHub() {
   }, []);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <TooltipProvider delayDuration={200}>
+      <div className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center justify-between">
@@ -156,8 +158,9 @@ export default function FloqsMainHub() {
       {/* Dev: keyboard mocks toggle (⌘⌥M / Ctrl+Alt+M) */}
       {!import.meta.env.PROD && <MockHotkeys />}
       
-      {/* Mount Peek Sheet once */}
-      <FloqPeekSheet />
-    </div>
+        {/* Mount Peek Sheet once */}
+        <FloqPeekSheet />
+      </div>
+    </TooltipProvider>
   );
 }

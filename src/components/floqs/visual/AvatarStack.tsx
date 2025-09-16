@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export type AvatarItem = { 
   id: string; 
@@ -59,7 +60,10 @@ function AvatarBubble({
   const [broken, setBroken] = React.useState(false);
   const initials = initialsFromName(item.name ?? "");
   const clickable = !!onPress;
-  const baseCls = "relative inline-flex select-none items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground ring-background overflow-hidden";
+
+  const baseCls =
+    "relative inline-flex select-none items-center justify-center rounded-full " +
+    "bg-muted text-[11px] font-medium text-muted-foreground ring-background overflow-hidden";
 
   const common = {
     className: baseCls,
@@ -68,11 +72,32 @@ function AvatarBubble({
     "aria-label": item.name ? `${item.name} avatar` : "Avatar",
   } as const;
 
-  const content = (typeof document !== "undefined" && item.imageUrl && !broken)
-    ? <img src={item.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" onError={() => setBroken(true)} />
-    : <span>{initials}</span>;
+  const content =
+    typeof document !== "undefined" && item.imageUrl && !broken ? (
+      <img src={item.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" onError={() => setBroken(true)} />
+    ) : (
+      <span>{initials}</span>
+    );
 
-  if (!clickable) return <span {...common} role="img">{content}</span>;
+  const MaybeTooltip = item.name ? Tooltip : React.Fragment;
+  const maybeProps = item.name ? { delayDuration: 200 } : {};
+
+  if (!clickable) {
+    return (
+      <MaybeTooltip {...(maybeProps as any)}>
+        {item.name ? (
+          <>
+            <TooltipTrigger asChild>
+              <span {...common} role="img">{content}</span>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={6} className="px-2 py-1 text-xs">{item.name}</TooltipContent>
+          </>
+        ) : (
+          <span {...common} role="img">{content}</span>
+        )}
+      </MaybeTooltip>
+    );
+  }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") { 
@@ -82,17 +107,38 @@ function AvatarBubble({
   };
 
   return (
-    <button
-      {...common}
-      type="button"
-      role="button"
-      tabIndex={0}
-      onClick={(e) => onPress?.(item, e)}
-      onKeyDown={onKeyDown}
-      className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
-    >
-      {content}
-    </button>
+    <MaybeTooltip {...(maybeProps as any)}>
+      {item.name ? (
+        <>
+          <TooltipTrigger asChild>
+            <button
+              {...common}
+              type="button"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => onPress?.(item, e)}
+              onKeyDown={onKeyDown}
+              className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
+            >
+              {content}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="px-2 py-1 text-xs">{item.name}</TooltipContent>
+        </>
+      ) : (
+        <button
+          {...common}
+          type="button"
+          role="button"
+          tabIndex={0}
+          onClick={(e) => onPress?.(item, e)}
+          onKeyDown={onKeyDown}
+          className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
+        >
+          {content}
+        </button>
+      )}
+    </MaybeTooltip>
   );
 }
 

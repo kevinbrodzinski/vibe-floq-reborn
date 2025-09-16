@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
+import { useJoinFloq } from "@/hooks/actions/useJoinFloq";
+import { useFollowFloq } from "@/hooks/actions/useFollowFloq";
+import { useShareFloq } from "@/hooks/actions/useShareFloq";
 
 const PEEK_FALLBACK = {
   id: "__peek_fallback__", name: "Loading", status: "live",
@@ -39,10 +42,14 @@ export function FloqPeekSheet() {
   const scores = useFloqScores((item ?? PEEK_FALLBACK) as any);
   const frictionLabel = scores.friction < 0.25 ? "Low" : scores.friction < 0.6 ? "Moderate" : "High";
 
-  // Actions (wire real implementations later)
-  const onJoin   = () => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("floq:action", { detail: { id, action: "join" } }));
-  const onFollow = () => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("floq:action", { detail: { id, action: "follow" } }));
-  const onShare  = () => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("floq:action", { detail: { id, action: "share" } }));
+  // Real actions with optimistic UX
+  const join = useJoinFloq();
+  const follow = useFollowFloq();
+  const share = useShareFloq();
+
+  const onJoin   = () => item && join.mutate({ floqId: item.id });
+  const onFollow = () => item && follow.mutate({ floqId: item.id });
+  const onShare  = () => item && share.share({ floqId: item.id, name: item.name });
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) setOpen(false); }}>
@@ -78,8 +85,8 @@ export function FloqPeekSheet() {
 
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Button variant="secondary" onClick={onShare}>Share</Button>
-              <Button variant="outline" onClick={onFollow}>Follow</Button>
-              <Button onClick={onJoin}>Join</Button>
+              <Button variant="outline" onClick={onFollow} disabled={follow.isPending}>Follow</Button>
+              <Button onClick={onJoin} disabled={join.isPending}>Join</Button>
             </div>
           </>
         ) : (
