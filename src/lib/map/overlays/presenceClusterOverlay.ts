@@ -25,11 +25,21 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
   ids.forEach(id => { if(map.getLayer(id)) try{ map.moveLayer(id, top); }catch{} });
 }
 
-// ---------- shared friend-kind expressions ----------
-// Use correct "in" syntax that normalizer will convert to valid ops
-const FRIEND_KIND_FILTER = ["in", ["get","kind"], "friend", "bestie"] as const;
-const FILTER_FRIEND_FALLBACK = ["all", ["!has","point_count"], FRIEND_KIND_FILTER, ["!has","iconId"]] as const;
-const FILTER_FRIEND_AVATAR   = ["all", ["!has","point_count"], FRIEND_KIND_FILTER, ["has","iconId"]]   as const;
+// ---------- completely flat filter definitions (no nested references) ----------
+// Define filters as completely flat arrays to prevent any nesting issues
+const FILTER_FRIEND_FALLBACK = [
+  "all",
+  ["!has", "point_count"],
+  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
+  ["!has", "iconId"]
+] as const;
+
+const FILTER_FRIEND_AVATAR = [
+  "all", 
+  ["!has", "point_count"],
+  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
+  ["has", "iconId"]
+] as const;
 
 // ---------- sprite for avatars ----------
 export async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: string, size=64): Promise<string|null> {
