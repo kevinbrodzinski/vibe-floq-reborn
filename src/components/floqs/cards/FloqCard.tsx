@@ -61,6 +61,7 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
                   max={4}
                   size={24}
                   overlap={8}
+                  onAvatarPress={(a) => openFloqPeek(a.floqId || item.id)}
                 />
               </div>
             ) : null}
@@ -124,12 +125,15 @@ function timeLeft(item: FloqCardItem) {
 }
 
 function normalizeFaces(item: any): AvatarItem[] {
-  // Accepts friend_faces: [{id,name,avatar_url}] or friend_avatars: string[]
+  // Accept shapes like:
+  // friend_faces: [{ id, name, avatar_url, floq_id? }]
+  // friend_avatars: string[] (urls only)
   if (Array.isArray(item.friend_faces)) {
     return item.friend_faces.map((f: any, idx: number) => ({
       id: String(f.id ?? idx),
       name: f.name ?? "",
       imageUrl: f.avatar_url ?? f.imageUrl ?? null,
+      floqId: f.floq_id ?? null,
     }));
   }
   if (Array.isArray(item.friend_avatars)) {
@@ -137,6 +141,7 @@ function normalizeFaces(item: any): AvatarItem[] {
       id: String(idx),
       name: "",
       imageUrl: url,
+      floqId: null,
     }));
   }
   // Fallback: create placeholder avatars based on friends_in count
@@ -145,6 +150,7 @@ function normalizeFaces(item: any): AvatarItem[] {
       id: String(idx),
       name: `Friend ${idx + 1}`,
       imageUrl: null,
+      floqId: null,
     }));
   }
   return [];

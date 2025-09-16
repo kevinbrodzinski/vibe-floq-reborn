@@ -3,6 +3,9 @@ import { useMemo } from "react";
 import { useMyFloqs } from "@/hooks/useMyFloqs";
 import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
 import { useGeo } from "@/hooks/useGeo";
+import { getFloqsMock } from "@/mocks/floqs.mock";
+
+const USE_MOCKS = (import.meta as any)?.env?.VITE_FLOQS_MOCKS === "1";
 
 export type HubItem = {
   id: string;
@@ -45,6 +48,19 @@ export type ConstellationEdge = {
 };
 
 export function useFloqsHubData() {
+  if (USE_MOCKS) {
+    // DEV MOCKS — easy to remove
+    const mock = useMemo(() => getFloqsMock(), []);
+    return {
+      momentaryLive: mock.momentaryLive,
+      tribes: mock.tribes,
+      publicFloqs: mock.publicFloqs,
+      discover: mock.discover,
+      constellationNodes: mock.constellationNodes,
+      constellationEdges: mock.constellationEdges,
+    };
+  }
+
   const { coords } = useGeo();
   const lat = coords?.lat ?? 0;
   const lng = coords?.lng ?? 0;

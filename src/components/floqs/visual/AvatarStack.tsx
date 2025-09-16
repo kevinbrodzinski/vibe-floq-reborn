@@ -4,28 +4,23 @@ export type AvatarItem = {
   id: string;
   name?: string | null;
   imageUrl?: string | null;
+  /** If provided, clicking this avatar should open that floq's Peek. */
+  floqId?: string | null;
 };
 
 type Props = {
   items: AvatarItem[];
-  /** max avatars to render before showing a +N chip */
-  max?: number;
-  /** px, applied to h/w; defaults to 24 */
-  size?: number;
-  /** overlap in px (negative margin); defaults to 8 */
-  overlap?: number;
-  /** ring width in px; defaults to 2 (uses token ring color) */
-  ring?: number;
+  max?: number;      // default 4
+  size?: number;     // px, default 24
+  overlap?: number;  // px, default 8
+  ring?: number;     // px, default 2
   className?: string;
+  /** Optional click handler; if omitted avatars are non-interactive. */
+  onAvatarPress?: (item: AvatarItem, e: React.MouseEvent | React.KeyboardEvent) => void;
 };
 
 export function AvatarStack({
-  items,
-  max = 4,
-  size = 24,
-  overlap = 8,
-  ring = 2,
-  className = "",
+  items, max = 4, size = 24, overlap = 8, ring = 2, className = "", onAvatarPress,
 }: Props) {
   const visible = items.slice(0, Math.max(0, max));
   const overflow = Math.max(0, items.length - visible.length);
@@ -35,11 +30,11 @@ export function AvatarStack({
       {visible.map((p, i) => (
         <AvatarBubble
           key={p.id || `${i}`}
+          item={p}
           size={size}
           ring={ring}
           style={{ marginLeft: i === 0 ? 0 : -overlap }}
-          name={p.name ?? ""}
-          imageUrl={p.imageUrl ?? undefined}
+          onPress={onAvatarPress}
         />
       ))}
       {overflow > 0 && (
@@ -57,37 +52,74 @@ export function AvatarStack({
 /* — internals — */
 
 function AvatarBubble({
-  name,
-  imageUrl,
-  size,
-  ring,
-  style,
-}: { name: string; imageUrl?: string; size: number; ring: number; style?: React.CSSProperties }) {
+  item, size, ring, style, onPress,
+}: {
+  item: AvatarItem; size: number; ring: number; style?: React.CSSProperties;
+  onPress?: (item: AvatarItem, e: React.MouseEvent | React.KeyboardEvent) => void;
+}) {
   const [broken, setBroken] = React.useState(false);
-  const initials = initialsFromName(name);
+  const initials = initialsFromName(item.name ?? "");
 
+  const clickable = !!onPress;
+  const common = {
+    className:
+      "relative inline-flex select-none items-center justify-center rounded-full " +
+      "bg-muted text-[11px] font-medium text-muted-foreground ring-background overflow-hidden",
+    style: { width: size, height: size, boxShadow: `0 0 0 ${ring}px hsl(var(--background))`, ...style },
+    title: item.name || "Friend",
+    "aria-label": item.name ? `${item.name} avatar` : "Avatar",
+  } as const;
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (!onPress) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onPress(item, e);
+    }
+  };
+
+  if (!clickable) {
+    return (
+      <span {...common} role="img">
+        {renderImg(item.imageUrl, broken, () => setBroken(true), initials)}
+      </span>
+    );
+  }
+
+  // interactive & a11y-safe
   return (
-    <span
-      className="relative inline-flex select-none items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground ring-background overflow-hidden"
-      style={{ width: size, height: size, boxShadow: `0 0 0 ${ring}px hsl(var(--background))`, ...style }}
-      role="img"
-      aria-label={name ? `${name} avatar` : "Avatar"}
-      title={name || "Friend"}
+    <button
+      {...common}
+      type="button"
+      role="button"
+      tabIndex={0}
+      onClick={(e) => onPress?.(item, e)}
+      onKeyDown={handleKey}
+      className={`${common.className} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
     >
-      {imageUrl && !broken ? (
-        // plain <img> keeps bundle tiny; RNW maps it fine on web
-        <img
-          src={imageUrl}
-          alt={name || "avatar"}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          onError={() => setBroken(true)}
-        />
-      ) : (
-        <span>{initials}</span>
-      )}
-    </span>
+      {renderImg(item.imageUrl, broken, () => setBroken(true), initials)}
+    </button>
   );
+}
+
+function renderImg(
+  url: string | null | undefined,
+  broken: boolean,
+  onError: () => void,
+  initials: string,
+) {
+  if (url && !broken && typeof document !== "undefined") {
+    return (
+      <img
+        src={url}
+        alt=""
+        className="h-full w-full object-cover"
+        loading="lazy"
+        onError={onError}
+      />
+    );
+  }
+  return <span>{initials}</span>;
 }
 
 function OverflowChip({
