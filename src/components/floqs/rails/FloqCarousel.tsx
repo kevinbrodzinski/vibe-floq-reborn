@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { useTouchGestures } from "@/hooks/useTouchGestures";
 
 export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -20,6 +21,13 @@ export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
   const prev = () => toIndex((i - 1 + len) % len);
   const next = () => toIndex((i + 1) % len);
 
+  // Add touch gesture support
+  const touchBind = useTouchGestures({
+    onSwipeLeft: next,
+    onSwipeRight: prev,
+    swipeThreshold: 50
+  });
+
   React.useEffect(() => {
     const scroller = ref.current;
     if (!scroller) return;
@@ -38,10 +46,14 @@ export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
       {/* Atmospheric glow background */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent pointer-events-none rounded-lg -z-10" />
       
-      <div ref={ref} className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 no-scrollbar"
-           style={{ scrollBehavior: "smooth" }}>
+      <div 
+        ref={ref} 
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 scrollbar-hide"
+        style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
+        {...touchBind()}
+      >
         {React.Children.map(children, (child, idx) => (
-          <div key={idx} className="snap-center shrink-0 w-[88vw] max-w-[700px] relative">
+          <div key={idx} className="snap-center shrink-0 w-[85vw] max-w-[600px] relative">
             {/* Slide glow when in center */}
             {idx === i && (
               <div className="absolute -inset-2 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 rounded-xl -z-10 animate-pulse" />
