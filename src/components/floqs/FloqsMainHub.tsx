@@ -3,9 +3,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { MomentaryRail } from "./rails/MomentaryRail";
-import { TribesRail } from "./rails/TribesRail";
-import { PublicRail } from "./rails/PublicRail";
+import { FloqList } from "./rails/FloqList";
+import { SortBar, sortFloqs } from "./filters/SortBar";
+import { useListSort } from "@/hooks/useListSort";
 import { DiscoverRail } from "./rails/DiscoverRail";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
 import { ConstellationView } from "@/components/constellation/ConstellationView";
@@ -32,6 +32,7 @@ export default function FloqsMainHub() {
   const { coords } = useGeo();
   const { filters } = useMomentaryFilters();
   const userVibe = useUserVibe();
+  const { sort } = useListSort();
 
   function computeSmartFlags(f: any) {
     // Matches my vibe: use real vector sim if present, else fallback to recsys / vibe_delta
@@ -141,13 +142,18 @@ export default function FloqsMainHub() {
               <section>
                 <h2 className="px-2 mt-6 text-lg font-semibold">Active Momentary</h2>
                 <MomentaryFiltersBar />
-                {applyMomentaryFilters(hubData.momentaryLive).length > 0 ? (
-                  <ActiveMomentaryRail items={applyMomentaryFilters(hubData.momentaryLive)} />
-                ) : (
-                  <div className="px-2 py-6 text-sm text-muted-foreground">
-                    No momentary floqs match your filters
-                  </div>
-                )}
+                <SortBar />
+                {(() => {
+                  const filtered = applyMomentaryFilters(hubData.momentaryLive);
+                  const ordered = sortFloqs(filtered, sort);
+                  return ordered.length > 0 ? (
+                    <FloqList items={ordered as any} />
+                  ) : (
+                    <div className="px-2 py-6 text-sm text-muted-foreground">
+                      No momentary floqs match your filters
+                    </div>
+                  );
+                })()}
               </section>
               <section>
                 <h2 className="px-2 mt-8 text-lg font-semibold">Discover</h2>
@@ -162,8 +168,9 @@ export default function FloqsMainHub() {
             <>
               <section>
                 <h2 className="px-2 text-lg font-semibold">Your Tribes</h2>
+                <SortBar />
                 {hubData.tribes.length ? (
-                  <TribesRail items={hubData.tribes as any} />
+                  <FloqList items={sortFloqs(hubData.tribes as any, sort)} />
                 ) : (
                   <div className="px-2 py-6 text-sm text-muted-foreground">
                     You haven't joined any tribes yet
@@ -177,8 +184,9 @@ export default function FloqsMainHub() {
             <>
               <section>
                 <h2 className="px-2 text-lg font-semibold">Public Floqs</h2>
+                <SortBar />
                 {hubData.publicFloqs.length ? (
-                  <PublicRail items={hubData.publicFloqs as any} />
+                  <FloqList items={sortFloqs(hubData.publicFloqs as any, sort)} />
                 ) : (
                   <div className="px-2 py-6 text-sm text-muted-foreground">
                     No public floqs found nearby

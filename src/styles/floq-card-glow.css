@@ -1,0 +1,21 @@
+.floq-card-pro {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow:
+    0 0 0 1px hsl(var(--border)),
+    0 10px 26px hsl(var(--floq-card-glow) / .18),
+    0 2px 8px hsl(var(--floq-card-glow) / .12) inset;
+  background: hsl(var(--card) / .65);
+  backdrop-filter: blur(10px);
+}
+.floq-card-pro::after{
+  content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
+  background:
+    radial-gradient(120% 120% at 10% 10%, hsl(var(--ring) / .08), transparent 55%),
+    radial-gradient(120% 120% at 90% 20%, hsl(var(--accent) / .06), transparent 60%);
+}
+@media (prefers-reduced-motion: reduce){
+  .floq-card-pro{ transition:none }
+  .floq-card-pro::after{ background-position:center }
+}
