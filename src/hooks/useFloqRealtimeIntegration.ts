@@ -21,34 +21,52 @@ export function useFloqRealtimeIntegration(floqId: string, floqData?: HubItem) {
   const socialGraph = useSocialGraphIntegration();
 
   const enhancedFloq = useMemo((): RealtimeEnhancedFloq | null => {
-    if (!floqData) return null;
+    try {
+      if (!floqData) return null;
 
-    const { realtimeData, connectionQuality } = realtimeHook;
+      const { realtimeData, connectionQuality } = realtimeHook;
 
-    // Analyze live group vibe dynamics
-    const memberVibes = realtimeData.member_profiles
-      .map(p => p.current_vibe)
-      .filter(Boolean);
+      // Safely analyze live group vibe dynamics with fallbacks
+      const memberVibes = realtimeData.member_profiles
+        ?.map(p => p.current_vibe)
+        ?.filter(Boolean) || [];
 
-    const vibeAnalysis = memberVibes.length > 0 
-      ? vibeEngine.analyzeGroupVibes(memberVibes)
-      : null;
+      let vibeAnalysis = null;
+      try {
+        vibeAnalysis = memberVibes.length > 0 
+          ? vibeEngine.analyzeGroupVibes(memberVibes)
+          : null;
+      } catch (error) {
+        console.warn('[FloqRealtimeIntegration] Vibe analysis failed:', error);
+      }
 
-    return {
-      ...floqData,
-      realtime_data: realtimeData,
-      live_vibe_analysis: vibeAnalysis ? {
-        dominant_vibe: vibeAnalysis.dominant_vibe,
-        energy_level: vibeAnalysis.average_energy,
-        member_harmony: vibeAnalysis.harmony_score,
-        social_proof_score: 0.5 // TODO: Calculate based on social graph
-      } : undefined,
-      connection_quality: connectionQuality,
-      
-      // Override static counts with live data
-      participants: realtimeData.member_count || floqData.participants,
-    };
-  }, [floqData, realtimeHook, vibeEngine]);
+      // Calculate social proof score using social graph
+      let socialProofScore = 0.5;
+      try {
+        socialProofScore = socialGraph.socialGraph?.direct_friends?.length > 0 ? 0.7 : 0.3;
+      } catch (error) {
+        console.warn('[FloqRealtimeIntegration] Social proof calculation failed:', error);
+      }
+
+      return {
+        ...floqData,
+        realtime_data: realtimeData,
+        live_vibe_analysis: vibeAnalysis ? {
+          dominant_vibe: vibeAnalysis.dominant_vibe,
+          energy_level: vibeAnalysis.average_energy,
+          member_harmony: vibeAnalysis.harmony_score,
+          social_proof_score: socialProofScore
+        } : undefined,
+        connection_quality: connectionQuality,
+        
+        // Override static counts with live data (with fallback)
+        participants: realtimeData.member_count ?? floqData.participants,
+      };
+    } catch (error) {
+      console.error('[FloqRealtimeIntegration] Enhanced floq creation failed:', error);
+      return floqData; // Return original data as fallback
+    }
+  }, [floqData, realtimeHook, vibeEngine, socialGraph]);
 
   const getLiveUpdates = () => realtimeHook.getRecentActivity();
   

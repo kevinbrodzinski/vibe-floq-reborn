@@ -53,142 +53,154 @@ export function useEnhancedFloqRealtime(floqId: string) {
   const activityBuffer = useRef<FloqRealtimeData['recent_activity']>([]);
   const memberCache = useRef<Map<string, any>>(new Map());
 
-  // Initialize real-time subscriptions
+  // Initialize real-time subscriptions with error handling
   useEffect(() => {
     if (!floqId || !user) return;
 
-    console.log('[EnhancedFloqRealtime] Setting up real-time subscriptions for floq:', floqId);
+    console.log('[EnhancedFloqRealtime] Setting up subscriptions for floq:', floqId);
 
     const channel = supabase
-      .channel(`enhanced_floq:${floqId}`)
+      .channel(`floq_realtime:${floqId}`)
       
-      // Member join/leave tracking
+      // Member join/leave tracking using existing floq_participants table
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'floq_participants',
         filter: `floq_id=eq.${floqId}`
       }, async (payload) => {
-        const { eventType, new: newRecord, old: oldRecord } = payload;
-        const profileId = (newRecord as any)?.profile_id || (oldRecord as any)?.profile_id;
-        
-        if (!profileId) return;
-
-        // Fetch profile info if not cached
-        let profileInfo = memberCache.current.get(profileId);
-        if (!profileInfo && newRecord) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, avatar_url')
-            .eq('profile_id', profileId)
-            .single();
+        try {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          const profileId = (newRecord as any)?.profile_id || (oldRecord as any)?.profile_id;
           
-          profileInfo = profile;
-          memberCache.current.set(profileId, profileInfo);
+          if (!profileId) return;
+
+          // Fetch profile info if not cached
+          let profileInfo = memberCache.current.get(profileId);
+          if (!profileInfo && newRecord) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('id', profileId)
+              .single();
+            
+            profileInfo = profile;
+            if (profile) memberCache.current.set(profileId, profileInfo);
+          }
+
+          const activity = {
+            type: eventType === 'INSERT' ? 'join' as const : 'leave' as const,
+            profile_id: profileId,
+            display_name: profileInfo?.display_name || 'Someone',
+            timestamp: new Date().toISOString(),
+            metadata: {}
+          };
+
+          setRealtimeData(prev => ({
+            ...prev,
+            member_count: eventType === 'INSERT' 
+              ? prev.member_count + 1 
+              : Math.max(0, prev.member_count - 1),
+            recent_activity: [activity, ...prev.recent_activity].slice(0, 20),
+            member_profiles: eventType === 'INSERT'
+              ? [...prev.member_profiles, {
+                  profile_id: profileId,
+                  display_name: profileInfo?.display_name,
+                  avatar_url: profileInfo?.avatar_url,
+                  online_status: 'online' as const,
+                  joined_at: (newRecord as any)?.joined_at || new Date().toISOString()
+                }]
+              : prev.member_profiles.filter(p => p.profile_id !== profileId)
+          }));
+        } catch (error) {
+          console.error('[EnhancedFloqRealtime] Member update error:', error);
         }
-
-        const activity = {
-          type: eventType === 'INSERT' ? 'join' as const : 'leave' as const,
-          profile_id: profileId,
-          display_name: profileInfo?.display_name || 'Unknown',
-          timestamp: new Date().toISOString(),
-          metadata: {}
-        };
-
-        setRealtimeData(prev => ({
-          ...prev,
-          member_count: eventType === 'INSERT' 
-            ? prev.member_count + 1 
-            : Math.max(0, prev.member_count - 1),
-          recent_activity: [activity, ...prev.recent_activity].slice(0, 20),
-          member_profiles: eventType === 'INSERT'
-            ? [...prev.member_profiles, {
-                profile_id: profileId,
-                display_name: profileInfo?.display_name,
-                avatar_url: profileInfo?.avatar_url,
-                online_status: 'online' as const,
-                joined_at: newRecord.joined_at || new Date().toISOString()
-              }]
-            : prev.member_profiles.filter(p => p.profile_id !== profileId)
-        }));
       })
 
-      // Chat message activity
+      // Chat message activity using existing chat_messages table
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'chat_messages',
         filter: `thread_id=eq.${floqId}`
       }, async (payload) => {
-        const message = payload.new;
-        if (!message) return;
+        try {
+          const message = payload.new;
+          if (!message) return;
 
-        // Get sender profile info
-        let profileInfo = memberCache.current.get(message.sender_id);
-        if (!profileInfo) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('profile_id', message.sender_id)
-            .single();
-          
-          profileInfo = profile;
-          memberCache.current.set(message.sender_id, profileInfo);
-        }
-
-        const activity = {
-          type: 'message' as const,
-          profile_id: message.sender_id,
-          display_name: profileInfo?.display_name || 'Someone',
-          timestamp: message.created_at,
-          metadata: {
-            message_preview: message.body?.substring(0, 50) + (message.body?.length > 50 ? '...' : '')
+          // Get sender profile info
+          let profileInfo = memberCache.current.get((message as any).sender_id);
+          if (!profileInfo) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('id', (message as any).sender_id)
+              .single();
+            
+            profileInfo = profile;
+            if (profile) memberCache.current.set((message as any).sender_id, profileInfo);
           }
-        };
 
-        setRealtimeData(prev => ({
-          ...prev,
-          recent_activity: [activity, ...prev.recent_activity].slice(0, 20),
-          energy_now: Math.min(1, prev.energy_now + 0.05) // Slight energy boost from activity
-        }));
-      })
-
-      // User vibe state changes
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_vibe_states'
-      }, async (payload) => {
-        const { eventType, new: newRecord, old: oldRecord } = payload;
-        const profileId = (newRecord as any)?.profile_id || (oldRecord as any)?.profile_id;
-        
-        if (!profileId) return;
-
-        // Check if this user is in our floq
-        const isMember = realtimeData.member_profiles.some(m => m.profile_id === profileId);
-        if (!isMember) return;
-
-        if (eventType === 'UPDATE' && newRecord && oldRecord) {
           const activity = {
-            type: 'vibe_change' as const,
-            profile_id: profileId,
-            display_name: memberCache.current.get(profileId)?.display_name || 'Someone',
-            timestamp: new Date().toISOString(),
+            type: 'message' as const,
+            profile_id: (message as any).sender_id,
+            display_name: profileInfo?.display_name || 'Someone',
+            timestamp: (message as any).created_at,
             metadata: {
-              previous_vibe: oldRecord.vibe,
-              new_vibe: newRecord.vibe
+              message_preview: (message as any).body?.substring(0, 50) + ((message as any).body?.length > 50 ? '...' : '')
             }
           };
 
           setRealtimeData(prev => ({
             ...prev,
             recent_activity: [activity, ...prev.recent_activity].slice(0, 20),
-            member_profiles: prev.member_profiles.map(p => 
-              p.profile_id === profileId 
-                ? { ...p, current_vibe: newRecord.vibe }
-                : p
-            )
+            energy_now: Math.min(1, prev.energy_now + 0.05)
           }));
+        } catch (error) {
+          console.error('[EnhancedFloqRealtime] Message update error:', error);
+        }
+      })
+
+      // Track vibe presence updates using existing vibes_now table
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'vibes_now'
+      }, async (payload) => {
+        try {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          const profileId = (newRecord as any)?.profile_id || (oldRecord as any)?.profile_id;
+          
+          if (!profileId) return;
+
+          // Check if this user is in our floq
+          const isMember = realtimeData.member_profiles.some(m => m.profile_id === profileId);
+          if (!isMember) return;
+
+          if (newRecord && (eventType === 'INSERT' || eventType === 'UPDATE')) {
+            const activity = {
+              type: 'vibe_change' as const,
+              profile_id: profileId,
+              display_name: memberCache.current.get(profileId)?.display_name || 'Someone',
+              timestamp: new Date().toISOString(),
+              metadata: {
+                previous_vibe: (oldRecord as any)?.vibe,
+                new_vibe: (newRecord as any).vibe
+              }
+            };
+
+            setRealtimeData(prev => ({
+              ...prev,
+              recent_activity: [activity, ...prev.recent_activity].slice(0, 20),
+              member_profiles: prev.member_profiles.map(p => 
+                p.profile_id === profileId 
+                  ? { ...p, current_vibe: (newRecord as any).vibe }
+                  : p
+              )
+            }));
+          }
+        } catch (error) {
+          console.error('[EnhancedFloqRealtime] Vibe update error:', error);
         }
       })
 
@@ -219,7 +231,7 @@ export function useEnhancedFloqRealtime(floqId: string) {
     };
   }, [floqId, user]);
 
-  // Load initial member data
+  // Load initial member data with proper error handling
   const loadInitialData = async () => {
     if (!floqId) return;
 
@@ -236,9 +248,9 @@ export function useEnhancedFloqRealtime(floqId: string) {
       if (participants) {
         const memberProfiles = participants.map((p: any) => ({
           profile_id: p.profile_id,
-          display_name: p.profiles?.display_name,
+          display_name: p.profiles?.display_name || 'Member',
           avatar_url: p.profiles?.avatar_url,
-          online_status: 'online' as const, // TODO: Get real presence data
+          online_status: 'online' as const, // TODO: Get real presence data from user_online_status
           joined_at: p.joined_at
         }));
 
@@ -248,13 +260,40 @@ export function useEnhancedFloqRealtime(floqId: string) {
           member_profiles: memberProfiles
         }));
 
-        // Cache profile data
+        // Cache profile data for efficient lookups
         participants.forEach((p: any) => {
-          memberCache.current.set(p.profile_id, p.profiles);
+          if (p.profiles) {
+            memberCache.current.set(p.profile_id, p.profiles);
+          }
         });
+
+        // Fetch recent messages for energy calculation
+        const { data: recentMessages } = await supabase
+          .from('chat_messages')
+          .select('created_at')
+          .eq('thread_id', floqId)
+          .gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        // Calculate energy based on recent activity
+        const messageCount = recentMessages?.length || 0;
+        const energyLevel = Math.min(1, 0.3 + (messageCount * 0.05));
+
+        setRealtimeData(prev => ({
+          ...prev,
+          energy_now: energyLevel
+        }));
       }
     } catch (error) {
       console.error('[EnhancedFloqRealtime] Failed to load initial data:', error);
+      // Set minimal fallback data
+      setRealtimeData(prev => ({
+        ...prev,
+        member_count: 0,
+        member_profiles: [],
+        energy_now: 0.3 // Default energy level
+      }));
     }
   };
 

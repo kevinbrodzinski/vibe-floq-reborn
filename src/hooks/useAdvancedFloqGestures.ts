@@ -22,11 +22,22 @@ export function useAdvancedFloqGestures(options: FloqGestureOptions) {
   const commitmentThreshold = 0.7; // Pressure needed for commitment
 
   const bind = useGesture({
-    onDrag: ({ direction: [dx, dy], distance, velocity, cancel }) => {
+    onDrag: ({ direction: [dx, dy], distance, velocity, cancel, event }) => {
       const [vx] = velocity;
       
-      // Swipe actions with haptic feedback
-      if (distance[0] > 80 && Math.abs(vx) > 0.4) {
+      // Prevent conflicts with scroll on mobile
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
+        return; // Let native scroll handle vertical gestures
+      }
+      
+      // Swipe actions with haptic feedback - more tolerant on mobile
+      const threshold = window.innerWidth < 768 ? 60 : 80; // Lower threshold on mobile
+      const velocityThreshold = window.innerWidth < 768 ? 0.3 : 0.4;
+      
+      if (distance[0] > threshold && Math.abs(vx) > velocityThreshold) {
+        // Prevent default scroll behavior
+        event?.preventDefault?.();
+        
         if (dx > 0) {
           // Swipe right -> Save/Bookmark
           success();
