@@ -1,14 +1,13 @@
 import * as React from "react";
-import { FloqCardLarge, FloqLargeItem } from "@/components/floqs/cards/FloqCardLarge";
-import { FloqCarousel } from "./FloqCarousel";
+import { UnifiedFloqCard, UnifiedFloqItem } from "../cards/UnifiedFloqCard";
 
-export type PublicFloqItem = FloqLargeItem;
-
-export function PublicRail({ items }: { items: PublicFloqItem[] }) {
+export function PublicRail({ items }: { items: UnifiedFloqItem[] }) {
   if (!items?.length) return null;
   return (
-    <FloqCarousel>
-      {items.map((it) => <FloqCardLarge key={it.id} item={it} />)}
-    </FloqCarousel>
+    <div className="mt-3 flex flex-col gap-4">
+      {items.map((item) => (
+        <UnifiedFloqCard key={item.id} item={item} />
+      ))}
+    </div>
   );
 }

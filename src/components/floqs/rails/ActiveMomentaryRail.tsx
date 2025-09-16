@@ -1,11 +1,11 @@
 import * as React from "react";
-import { MomentaryMetricGrid, MomentaryMetricItem } from "../cards/MomentaryMetricGrid";
+import { UnifiedFloqCard, UnifiedFloqItem } from "../cards/UnifiedFloqCard";
 
-export function ActiveMomentaryRail({ items }: { items: MomentaryMetricItem[] }) {
+export function ActiveMomentaryRail({ items }: { items: UnifiedFloqItem[] }) {
   return (
-    <div className="mt-3 flex flex-col gap-6">
+    <div className="mt-3 flex flex-col gap-4">
       {items.map((item) => (
-        <MomentaryMetricGrid key={item.id} item={item} />
+        <UnifiedFloqCard key={item.id} item={item} />
       ))}
     </div>
   );

@@ -101,28 +101,15 @@ export default function FloqsMainHub() {
         <div className="absolute inset-0 bg-[var(--gradient-field)] -z-20" />
         <div className="absolute inset-0 bg-[var(--gradient-vibe)] opacity-5 -z-10" />
         
-        {/* Floating Particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-          <div className="absolute top-20 left-10 w-2 h-2 bg-primary/20 rounded-full animate-pulse" style={{ animationDelay: '0s', animationDuration: '4s' }} />
-          <div className="absolute top-32 right-20 w-1 h-1 bg-accent/30 rounded-full animate-pulse" style={{ animationDelay: '1s', animationDuration: '3s' }} />
-          <div className="absolute bottom-32 left-1/4 w-1.5 h-1.5 bg-primary/15 rounded-full animate-pulse" style={{ animationDelay: '2s', animationDuration: '5s' }} />
-        </div>
 
         {/* Header */}
         <div className="relative px-4 pt-4 pb-2 bg-background/30 backdrop-blur-md border-b border-border/20">
           <div className="flex items-center justify-between">
             <h1 className="relative text-4xl sm:text-5xl font-extrabold tracking-tight">
               <span className="absolute inset-0 blur-2xl opacity-40 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text -z-10" />
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-ripple-wave">
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                 Your Social Constellation
               </span>
-              {/* Orbital accent */}
-              <div className="absolute -top-2 -right-2 w-3 h-3">
-                <div className="floq-orbit slow">
-                  <span className="absolute w-1 h-1 bg-accent/60 rounded-full shadow-[0_0_8px_hsl(var(--accent))]" 
-                        style={{ left: 'calc(50% - 12px)', top: '50%', transform: 'translate(-50%, -50%) rotate(0deg) translateX(12px)' }} />
-                </div>
-              </div>
             </h1>
             <Button
               variant="secondary"
@@ -169,11 +156,7 @@ export default function FloqsMainHub() {
                   </h2>
                   <MomentaryFiltersBar />
                   {applyMomentaryFilters(hubData.momentaryLive).length > 0 ? (
-                    <div className="relative">
-                      <ActiveMomentaryRail items={applyMomentaryFilters(hubData.momentaryLive)} />
-                      {/* Energy field behind active floqs */}
-                      <div className="absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
-                    </div>
+                    <ActiveMomentaryRail items={applyMomentaryFilters(hubData.momentaryLive)} />
                   ) : (
                     <div className="px-2 py-6 text-sm text-muted-foreground/80">
                       No momentary floqs match your filters
@@ -200,11 +183,7 @@ export default function FloqsMainHub() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent h-px bottom-0" />
                   </h2>
                   {hubData.tribes.length ? (
-                    <div className="relative">
-                      <TribesRail items={hubData.tribes as any} />
-                      {/* Tribal energy field */}
-                      <div className="absolute inset-0 bg-gradient-conic from-primary/8 via-accent/4 to-primary/8 pointer-events-none opacity-60" />
-                    </div>
+                    <TribesRail items={hubData.tribes as any} />
                   ) : (
                     <div className="px-2 py-6 text-sm text-muted-foreground/80">
                       You haven't joined any tribes yet
@@ -222,11 +201,7 @@ export default function FloqsMainHub() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/20 to-transparent h-px bottom-0" />
                   </h2>
                   {hubData.publicFloqs.length ? (
-                    <div className="relative">
-                      <PublicRail items={hubData.publicFloqs as any} />
-                      {/* Public energy field */}
-                      <div className="absolute inset-0 bg-gradient-radial from-accent/10 via-primary/5 to-transparent pointer-events-none opacity-50" />
-                    </div>
+                    <PublicRail items={hubData.publicFloqs as any} />
                   ) : (
                     <div className="px-2 py-6 text-sm text-muted-foreground/80">
                       No public floqs found nearby
