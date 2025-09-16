@@ -15,7 +15,9 @@ export function ConvergeSuggestions({ onClose }: Props) {
   const lastActiveRef = React.useRef<HTMLElement | null>(null);
 
   const openModal = React.useCallback(() => {
-    lastActiveRef.current = (document.activeElement as HTMLElement) ?? null;
+    if (typeof document !== 'undefined') {
+      lastActiveRef.current = (document.activeElement as HTMLElement) ?? null;
+    }
     setOpen(true);
   }, []);
 
@@ -146,8 +148,10 @@ export function ConvergeSuggestions({ onClose }: Props) {
         </div>
 
         <div className="p-2 space-y-2">
-          {showSpinner ? (
-            <div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div>
+          {loading ? (
+            showSpinner ? (
+              <div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div>
+            ) : null
           ) : points.length === 0 ? (
             <div className="px-3 py-8 text-sm text-white/80">No strong options nearby.</div>
           ) : (
