@@ -1,4 +1,5 @@
 import type mapboxgl from 'mapbox-gl';
+import { hslVar } from './themeColor';
 
 /** Mapbox paint/layout dictionaries */
 type PaintDict  = Record<string, any>;
@@ -9,13 +10,6 @@ export type LayerColorSpec = Record<string, { paint?: PaintDict; layout?: Layout
 
 /** CSS-variable driven paint spec for single-layer helper */
 export type PaintSpec = Record<string, { var: string; fallback: string }>;
-
-/** Resolve an HSL CSS custom property (or return fallback) */
-function hslVar(cssVar: string, fallback: string): string {
-  if (typeof document === 'undefined') return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
-  return v || fallback;
-}
 
 /**
  * Generic helper to apply CSS custom property colors to Mapbox layers
