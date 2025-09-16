@@ -28,6 +28,17 @@ export function ConvergeSuggestions({ onClose }: Props) {
     queueMicrotask(() => lastActiveRef.current?.focus?.());
   }, [onClose]);
 
+  const request = React.useCallback((p: RankedPoint) => {
+    // Analytics: track when user selects a suggestion
+    const isPrefilled = prefillId !== null && p.id === prefillId;
+    window.dispatchEvent(new CustomEvent('ui_converge_request', {
+      detail: { from: isPrefilled ? 'prefill_top' : 'ranked', id: p.id }
+    }));
+    
+    window.dispatchEvent(new CustomEvent('converge:request', { detail: { point: p } }));
+    close();
+  }, [close, prefillId]);
+
   // Spinner flicker control - only show after 120ms
   React.useEffect(() => {
     if (!loading) return setShowSpinner(false);
@@ -96,35 +107,45 @@ export function ConvergeSuggestions({ onClose }: Props) {
 
     window.addEventListener('converge:open', handler as EventListener);
     return () => window.removeEventListener('converge:open', handler as EventListener);
-  }, []); // No dependencies - handler doesn't use onClose directly
+  }, [openModal]); // Include openModal to satisfy ESLint hook deps
+
+  // Lock page scroll while modal is open
+  React.useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+      if (e.key === 'Enter' && points.length > 0) {
+        // if focus isn't inside the list, fire the first suggestion
+        if (!document.activeElement || !(document.activeElement as HTMLElement).closest('[data-converge-list]')) {
+          request(points[0]);
+        }
+      }
+    };
     window.addEventListener('keydown', onKey);
     // Focus close button for accessibility
     closeBtnRef.current?.focus();
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, close]);
-
-  const request = React.useCallback((p: RankedPoint) => {
-    // Analytics: track when user selects a suggestion
-    const isPrefilled = prefillId !== null && p.id === prefillId;
-    window.dispatchEvent(new CustomEvent('ui_converge_request', {
-      detail: { from: isPrefilled ? 'prefill_top' : 'ranked', id: p.id }
-    }));
-    
-    window.dispatchEvent(new CustomEvent('converge:request', { detail: { point: p } }));
-    close();
-  }, [close, prefillId]);
+  }, [open, close, points, request]);
 
   if (!open) return null;
+
+  // Check for reduced motion preference
+  const prefersReduced = typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Suggested convergence points"
+      aria-busy={loading || undefined}
       className="fixed inset-0 z-[90]"
     >
       {/* Backdrop */}
@@ -147,7 +168,12 @@ export function ConvergeSuggestions({ onClose }: Props) {
           </button>
         </div>
 
-        <div className="p-2 space-y-2">
+        {/* Live region for prefill announcement */}
+        <div className="sr-only" aria-live="polite">
+          {prefillId ? "Friend's current spot is highlighted" : null}
+        </div>
+
+        <ul className="p-2 space-y-2" data-converge-list>
           {loading ? (
             showSpinner ? (
               <div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div>
@@ -158,53 +184,56 @@ export function ConvergeSuggestions({ onClose }: Props) {
             points.map((p, idx) => {
               const isPrefilledTop = prefillId !== null && p.id === prefillId && idx === 0;
               return (
-                <button
-                  key={p.id}
-                  onClick={() => request(p)}
-                  className={[
-                    // base card
-                    "w-full text-left px-3 py-3 rounded-lg border border-white/10 bg-black/60 hover:bg-black/50",
-                    "transition-[background,box-shadow,transform] duration-150",
-                    // token glow for the top prefilled card
-                    isPrefilledTop
-                      ? "ring-2 ring-[var(--vibe-ring)] shadow-[0_0_24px_1px_var(--vibe-ring)]"
-                      : ""
-                  ].join(" ")}
-                  // small lift on hover to juice CTR a bit
-                  style={isPrefilledTop ? { transform: "translateZ(0)" } : undefined}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium truncate">{p.name}</div>
+                <li key={p.id}>
+                  <button
+                    onClick={() => request(p)}
+                    className={[
+                      // base card
+                      "w-full text-left px-3 py-3 rounded-lg border border-white/10 bg-black/60 hover:bg-black/50",
+                      "transition-[background,box-shadow,transform] duration-150",
+                      // token glow for the top prefilled card (respect reduced motion)
+                      isPrefilledTop && !prefersReduced
+                        ? "ring-2 ring-[var(--vibe-ring)] shadow-[0_0_24px_1px_var(--vibe-ring)]"
+                        : isPrefilledTop
+                        ? "ring-2 ring-[var(--vibe-ring)]"
+                        : ""
+                    ].join(" ")}
+                    // small lift on hover to juice CTR a bit
+                    style={isPrefilledTop ? { transform: "translateZ(0)" } : undefined}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium truncate">{p.name}</div>
 
-                        {/* Tiny badge only for the prefilled top item */}
-                        {isPrefilledTop && (
-                          <span
-                            aria-label="Friend's current spot"
-                            className="inline-flex items-center rounded-full text-[10px] font-semibold px-2 py-[2px] border
-                                       border-[var(--vibe-ring)] text-[var(--vibe-ring)] bg-white/5"
-                          >
-                            Friend's current spot
-                          </span>
-                        )}
+                          {/* Tiny badge only for the prefilled top item */}
+                          {isPrefilledTop && (
+                            <span
+                              aria-label="Friend's current spot"
+                              className="inline-flex items-center rounded-full text-[10px] font-semibold px-2 py-[2px] border
+                                         border-[var(--vibe-ring)] text-[var(--vibe-ring)] bg-white/5"
+                            >
+                              Friend's current spot
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-0.5 text-xs text-white/70 truncate">
+                          {(p.category ?? 'Place')} · {Math.round(p.match * 100)}% match
+                        </div>
                       </div>
 
-                      <div className="mt-0.5 text-xs text-white/70 truncate">
-                        {(p.category ?? 'Place')} · {Math.round(p.match * 100)}% match
+                      <div className="shrink-0 text-xs text-white/80">
+                        <div>Me: {Math.round(p.eta.meMin)}m</div>
+                        <div>Friend: {Math.round(p.eta.friendMin)}m</div>
                       </div>
                     </div>
-
-                    <div className="shrink-0 text-xs text-white/80">
-                      <div>Me: {Math.round(p.eta.meMin)}m</div>
-                      <div>Friend: {Math.round(p.eta.friendMin)}m</div>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                </li>
               );
             })
           )}
-        </div>
+        </ul>
       </div>
     </div>
   );
