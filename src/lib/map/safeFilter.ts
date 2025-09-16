@@ -5,31 +5,40 @@ export function normalizeFilter(node: any): any {
   if (!Array.isArray(node)) return node;
   const op = node[0];
 
-  // Convert ["!", ["has","prop"]] -> ["!has","prop"]
+  // ["!", ["has","prop"]] -> ["!has","prop"]
   if (op === '!' && Array.isArray(node[1]) && node[1][0] === 'has' && typeof node[1][1] === 'string') {
     return ['!has', node[1][1]];
   }
 
-  // Convert ["match", ["get","prop"], ["a","b"], true, false] -> ["any", ["==", ["get","prop"], "a"], ["==", ["get","prop"], "b"]]
+  // ["match", ["get","prop"], ["a","b"], true, false] -> ["any", ["==", ["get","prop"], "a"], ...]
   if (op === 'match' && Array.isArray(node[1])) {
-    const getExpr = node[1]; // ["get","prop"]
-    // haystack could be ["literal", [...]] or raw [...]
+    const getExpr = node[1];
     const hay = node[2];
     const yes = node[3], no = node[4];
     const arr = Array.isArray(hay) && hay[0] === 'literal' ? hay[1] : hay;
     if (Array.isArray(arr) && yes === true && no === false) {
-      return ['any', ...arr.map(val => ['==', normalizeFilter(getExpr), val])];
+      return ['any', ...arr.map(v => ['==', normalizeFilter(getExpr), v])];
     }
   }
 
-  // Convert ["in", ["get","prop"], "val1", "val2", ...] -> ["any", ["==", ["get","prop"], "val1"], ["==", ["get","prop"], "val2"], ...]
+  // ["in", ["get","prop"], "a","b", ...] -> ["any", ["==", ["get","prop"], "a"], ...]
   if (op === 'in' && Array.isArray(node[1]) && node[1][0] === 'get' && node.length > 2) {
-    const getExpr = node[1]; // ["get","prop"]
-    const values = node.slice(2); // ["val1", "val2", ...]
-    return ['any', ...values.map(val => ['==', normalizeFilter(getExpr), val])];
+    if (Array.isArray(node[2]) && node[2][0] === 'literal' && Array.isArray(node[2][1])) {
+      const values = node[2][1];
+      return ['any', ...values.map(v => ['==', normalizeFilter(node[1]), v])];
+    }
+    const values = node.slice(2);
+    return ['any', ...values.map(v => ['==', normalizeFilter(node[1]), v])];
   }
 
-  // Recurse children
+  // ["!in", ["get","prop"], ...] -> ["all", ["!=", ["get","prop"], "a"], ...]
+  if (op === '!in' && Array.isArray(node[1]) && node[1][0] === 'get' && node.length > 2) {
+    const values = (Array.isArray(node[2]) && node[2][0] === 'literal' && Array.isArray(node[2][1]))
+      ? node[2][1]
+      : node.slice(2);
+    return ['all', ...values.map(v => ['!=', normalizeFilter(node[1]), v])];
+  }
+
   return node.map(normalizeFilter);
 }
 
