@@ -75,7 +75,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
         ],
         'circle-color':'#334155', 'circle-stroke-color':'#fff','circle-stroke-width':2,'circle-opacity':0.9
       }
-    } as mapboxgl.CircleLayer);
+    });
   }
   if (!map.getLayer(CL_NUM)) {
     map.addLayer({
@@ -87,7 +87,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
         'text-allow-overlap': true
       },
       paint:{ 'text-color':'#fff','text-halo-color':'#000','text-halo-width':1 }
-    } as mapboxgl.SymbolLayer);
+    });
   }
 
   // venues (circle)
@@ -100,7 +100,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
         'circle-color':['coalesce',['get','vibeHex'],'#22c55e'],
         'circle-stroke-color':'#fff', 'circle-stroke-width':2
       }
-    } as mapboxgl.CircleLayer, CL_NUM);
+    }, CL_NUM);
   }
 
   // friends (symbol avatar)
@@ -113,7 +113,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
         'icon-size':['interpolate',['linear'],['zoom'], 12,0.38, 16,0.6, 18,0.72],
         'icon-allow-overlap': true,'icon-ignore-placement': true
       }
-    } as mapboxgl.SymbolLayer, PT_VENUE);
+    }, PT_VENUE);
   }
   // friends fallback (small circle if icon not loaded yet)
   if (!map.getLayer(PT_FRIEND_FALL)) {
@@ -125,7 +125,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
         'circle-color':['coalesce',['get','vibeHex'],'#60a5fa'],
         'circle-stroke-color':'#fff','circle-stroke-width':2
       }
-    } as mapboxgl.CircleLayer, PT_FRIEND_AV);
+    }, PT_FRIEND_AV);
   }
 
   // self (invisible hit target – aura stays in its own overlay)
@@ -139,7 +139,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
         'circle-stroke-color':'rgba(0,0,0,0)',
         'circle-pitch-scale':'viewport'
       }
-    } as mapboxgl.CircleLayer, PT_FRIEND_FALL);
+    }, PT_FRIEND_FALL);
   }
 
   // keep on top
