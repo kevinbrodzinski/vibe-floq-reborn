@@ -1,0 +1,29 @@
+/* Orbits: rotate the container, dot stays on circumference */
+@keyframes floq-orbit { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+
+/* Ripples: expanding soft rings */
+@keyframes floq-ripple {
+  0%   { transform: scale(0.6); opacity: .35 }
+  70%  { opacity: .08 }
+  100% { transform: scale(1.6); opacity: 0 }
+}
+
+/* Utilities (tailwind-compatible class names) */
+.floq-orbit   { animation: floq-orbit 18s linear infinite }
+.floq-orbit.fast { animation-duration: 12s }
+.floq-orbit.slow { animation-duration: 24s }
+
+.floq-ripple       { position: relative }
+.floq-ripple > span {
+  position: absolute; inset: 0; border-radius: 9999px;
+  animation: floq-ripple 2.6s ease-out infinite;
+  /* ring color from token; canvas already uses --floq-edge-friend/time */
+  box-shadow: 0 0 0 1px hsl(var(--ring) / .35), 0 0 28px hsl(var(--ring) / .18) inset;
+  background: radial-gradient(ellipse at center, hsl(var(--ring) / .15) 0%, transparent 60%);
+}
+.floq-ripple > span:nth-child(2) { animation-delay: .9s }
+
+@media (prefers-reduced-motion: reduce) {
+  .floq-orbit, .floq-orbit.fast, .floq-orbit.slow, .floq-ripple > span { animation: none !important }
+  .hover\:translate-y-\[-1px\]:hover { transform: none !important; }
+}

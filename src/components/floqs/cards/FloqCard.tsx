@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { openFloqPeek } from "@/lib/peek";
 import { ProgressDonut } from "../visual/ProgressDonut";
+import { AvatarStack, AvatarItem } from "../visual/AvatarStack";
 import { cn } from "@/lib/utils";
 
 export type FloqCardItem = {
@@ -53,11 +54,14 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
             </div>
 
             {/* Avatars */}
-            {item.friends_in ? (
-              <div className="mt-1 flex -space-x-2">
-                <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-background" />
-                <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-background" />
-                <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-background" />
+            {normalizeFaces(item).length > 0 ? (
+              <div className="mt-1">
+                <AvatarStack
+                  items={normalizeFaces(item)}
+                  max={4}
+                  size={24}
+                  overlap={8}
+                />
               </div>
             ) : null}
 
@@ -114,6 +118,34 @@ function timeLeft(item: FloqCardItem) {
   if (!item.starts_at || !item.ends_at) return "";
   const now = Date.now(), end = +new Date(item.ends_at);
   const m = Math.max(0, Math.round((end - now) / 60000));
+  if (m === 0) return "<1 m left";
   if (m >= 60) return `${Math.floor(m/60)} h ${m%60} m left`;
   return `${m} m left`;
+}
+
+function normalizeFaces(item: any): AvatarItem[] {
+  // Accepts friend_faces: [{id,name,avatar_url}] or friend_avatars: string[]
+  if (Array.isArray(item.friend_faces)) {
+    return item.friend_faces.map((f: any, idx: number) => ({
+      id: String(f.id ?? idx),
+      name: f.name ?? "",
+      imageUrl: f.avatar_url ?? f.imageUrl ?? null,
+    }));
+  }
+  if (Array.isArray(item.friend_avatars)) {
+    return item.friend_avatars.map((url: string, idx: number) => ({
+      id: String(idx),
+      name: "",
+      imageUrl: url,
+    }));
+  }
+  // Fallback: create placeholder avatars based on friends_in count
+  if (item.friends_in && typeof item.friends_in === 'number' && item.friends_in > 0) {
+    return Array.from({ length: Math.min(item.friends_in, 4) }, (_, idx) => ({
+      id: String(idx),
+      name: `Friend ${idx + 1}`,
+      imageUrl: null,
+    }));
+  }
+  return [];
 }

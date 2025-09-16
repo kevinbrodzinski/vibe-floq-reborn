@@ -3,6 +3,8 @@ import { differenceInMinutes } from "date-fns";
 import { FloqCard, FloqCardItem } from "./FloqCard";
 import { TTLArc } from "../visual/TTLArc";
 import { CohesionRing } from "../visual/CohesionRing";
+import { MemberParticles } from "../visual/MemberParticles";
+import { RippleIndicator } from "../visual/RippleIndicator";
 
 export type MomentaryCardItem = FloqCardItem & {
   starts_at: string;
@@ -20,11 +22,21 @@ export function MomentaryFloqCard({ item }: { item: MomentaryCardItem }) {
 
   return (
     <div className="relative">
+      {/* Optional ripple near avatars to hint "activity" */}
+      <RippleIndicator active={item.status === "live"} className="absolute left-1 top-1 z-10" size={36} />
+
+      {/* Ambient member particles under the donut (right side) */}
+      <MemberParticles live={item.status === "live"} className="absolute right-1 top-1 z-10" size={40} />
+
+      {/* Main card layout */}
       <FloqCard item={item} kind="momentary" />
+      
+      {/* TTL arc + cohesion ring */}
       <CohesionRing cohesion={cohesion} />
       <TTLArc startsAt={item.starts_at} endsAt={item.ends_at} />
-      {/* Optional small TTL label */}
-      <div className="absolute right-3 top-[58px] rounded bg-background/70 px-1.5 py-0.5 text-[11px] text-muted-foreground">
+      
+      {/* TTL label */}
+      <div className="absolute right-3 top-[58px] rounded bg-background/70 px-1.5 py-0.5 text-[11px] text-muted-foreground z-10">
         {ttlMin}m
       </div>
     </div>
