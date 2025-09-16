@@ -12,6 +12,9 @@ import { onIdle } from "@/lib/prewarm";
 import { PrewarmProbe } from "./PrewarmProbe";
 import { useGeo } from "@/hooks/useGeo";
 import { FloqPeekSheet } from "./FloqPeekSheet";
+import { MockHotkeys } from "@/components/dev/MockHotkeys";
+import { ActiveMomentaryRail } from "./rails/ActiveMomentaryRail";
+import { PerfectTimingCard } from "./cards/PerfectTimingCard";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
@@ -84,7 +87,7 @@ export default function FloqsMainHub() {
               <section>
                 <h2 className="px-2 mt-6 text-lg font-semibold">Active Momentary</h2>
                 {hubData.momentaryLive.length > 0 ? (
-                  <MomentaryRail items={hubData.momentaryLive} />
+                  <ActiveMomentaryRail items={hubData.momentaryLive} />
                 ) : (
                   <div className="px-2 py-8 text-center text-muted-foreground">
                     No momentary floqs nearby right now
@@ -93,13 +96,9 @@ export default function FloqsMainHub() {
               </section>
               <section>
                 <h2 className="px-2 mt-8 text-lg font-semibold">Discover</h2>
-                {hubData.discover.length > 0 ? (
-                  <DiscoverRail items={hubData.discover} />
-                ) : (
-                  <div className="px-2 py-4 text-center text-muted-foreground">
-                    No recommendations available
-                  </div>
-                )}
+                <div className="px-2 mt-3">
+                  <PerfectTimingCard />
+                </div>
               </section>
             </>
           )}
@@ -153,6 +152,9 @@ export default function FloqsMainHub() {
         />
       )}
       {prewarm && <PrewarmProbe lat={coords?.lat ?? null} lng={coords?.lng ?? null} />}
+      
+      {/* Dev: keyboard mocks toggle (⌘⌥M / Ctrl+Alt+M) */}
+      {!import.meta.env.PROD && <MockHotkeys />}
       
       {/* Mount Peek Sheet once */}
       <FloqPeekSheet />

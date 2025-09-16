@@ -31,7 +31,7 @@ export function getFloqsMock(now = Date.now()) {
     }));
 
   const m1: MockFloq = {
-    id: "m-01", name: "Lo-Fi Jazz & Late Night", status: "live",
+    id: "m-01", name: "Nordic Ice Plunge", status: "live",
     starts_at: mkTime(-90), ends_at: mkTime(45),
     participants: 58, friends_in: 3, friend_faces: faces(3, "m-01"),
     recsys_score: 0.86, energy_now: 0.78, energy_peak: 0.92,

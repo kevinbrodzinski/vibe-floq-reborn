@@ -4,8 +4,7 @@ import { useMyFloqs } from "@/hooks/useMyFloqs";
 import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
 import { useGeo } from "@/hooks/useGeo";
 import { getFloqsMock } from "@/mocks/floqs.mock";
-
-const USE_MOCKS = (import.meta as any)?.env?.VITE_FLOQS_MOCKS === "1";
+import { useMockRuntimeFlag } from "@/lib/mockFlag";
 
 export type HubItem = {
   id: string;
@@ -48,8 +47,9 @@ export type ConstellationEdge = {
 };
 
 export function useFloqsHubData() {
-  if (USE_MOCKS) {
-    // DEV MOCKS — easy to remove
+  const [mockFlag] = useMockRuntimeFlag();
+
+  if (mockFlag) {
     const mock = useMemo(() => getFloqsMock(), []);
     return {
       momentaryLive: mock.momentaryLive,
