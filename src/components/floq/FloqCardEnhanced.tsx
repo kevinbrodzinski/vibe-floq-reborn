@@ -2,8 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Users, MapPin, Star } from 'lucide-react';
 import { useFloqRealtimeIntegration } from '@/hooks/useFloqRealtimeIntegration';
-import { useAdvancedFloqGestures } from '@/hooks/useAdvancedFloqGestures';
-import { useAccessibleGestures } from '@/hooks/useAccessibleGestures';
 import { usePerformanceAwareAnimations } from '@/hooks/usePerformanceAwareAnimations';
 import { resolveVibeTokens } from '@/lib/vibe/vibeColorResolver';
 import { safeVibe } from '@/lib/vibes';
@@ -35,24 +33,7 @@ export function FloqCardEnhanced({
     isFloqAlive
   } = useFloqRealtimeIntegration(floq.id, floq);
 
-  const gestureProps = useAdvancedFloqGestures({
-    floqId: floq.id,
-    onSave,
-    onJoin,
-    onPeek,
-    onContextMenu
-  });
-
-  const a11yProps = useAccessibleGestures({
-    label: `${floq.name || 'Unnamed Floq'} - ${floq.participants} participants`,
-    description: `Floq starting at ${floq.starts_at ? new Date(floq.starts_at).toLocaleTimeString() : 'unknown time'}`,
-    onActivate: onPeek,
-    onSecondaryAction: onJoin,
-    onContextMenu
-  });
-
   const { 
-    getMotionVariants, 
     getAnimationClasses, 
     shouldAnimate 
   } = usePerformanceAwareAnimations();
@@ -74,6 +55,22 @@ export function FloqCardEnhanced({
     }
   };
 
+  // Simple click handler
+  const handleClick = () => {
+    onPeek?.();
+  };
+
+  // Keyboard handler
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onPeek?.();
+    } else if (e.key === 'ArrowRight' && e.altKey) {
+      e.preventDefault();
+      onJoin?.();
+    }
+  };
+
   const cardContent = (
     <div className="space-y-3">
       {/* Header with real-time status */}
@@ -91,15 +88,6 @@ export function FloqCardEnhanced({
           <span className="text-xs" title={`Connection: ${connectionQuality}`}>
             {connectionIndicator()}
           </span>
-          {gestureProps.pressureIntensity > 0 && (
-            <div 
-              className="w-2 h-2 rounded-full bg-primary"
-              style={{ 
-                opacity: gestureProps.pressureIntensity,
-                transform: `scale(${1 + gestureProps.pressureIntensity * 0.5})`
-              }}
-            />
-          )}
         </div>
       </div>
 
@@ -161,21 +149,22 @@ export function FloqCardEnhanced({
 
   const MotionCard = shouldAnimate() ? motion.div : 'div';
   const motionProps = shouldAnimate() ? {
-    variants: getMotionVariants(),
-    initial: 'initial',
-    animate: 'animate',
-    exit: 'exit',
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
     whileHover: { scale: 1.02 },
-    whileTap: { scale: 0.98 }
+    whileTap: { scale: 0.98 },
+    transition: { duration: 0.2 }
   } : {};
-
-  const gestureHandlers = gestureProps.bind();
   
   return (
     <MotionCard
       {...motionProps}
-      {...(shouldAnimate() ? {} : gestureHandlers)}
-      {...a11yProps.getA11yProps()}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${floq.name || 'Unnamed Floq'} - ${floq.participants} participants`}
       className={cn(
         // Base styles
         "relative p-4 rounded-lg border bg-card text-card-foreground",
@@ -184,9 +173,6 @@ export function FloqCardEnhanced({
         
         // Interactive states
         getAnimationClasses().smoothTransform,
-        
-        // Gesture feedback
-        gestureProps.gestureActive && "ring-1 ring-primary/50",
         
         // Vibe styling
         vibeTokens && `border-l-4`,
@@ -201,39 +187,22 @@ export function FloqCardEnhanced({
         background: vibeTokens ? 
           `linear-gradient(135deg, ${vibeTokens.bg}08 0%, transparent 50%)` : 
           undefined,
-        transform: `scale(${gestureProps.getScaleTransform()})`,
         ...vibeTokens && {
           '--vibe-glow': vibeTokens.glow,
           '--vibe-primary': vibeTokens.bg
         }
       }}
     >
-      {/* Pressure glow effect */}
-      {gestureProps.getPressureGlow() > 0 && (
-        <div 
-          className="absolute inset-0 rounded-lg pointer-events-none"
-          style={{
-            background: `radial-gradient(circle at center, ${gestureProps.getCommitmentColor()}20 0%, transparent 70%)`,
-            opacity: gestureProps.getPressureGlow()
-          }}
-        />
-      )}
-      
       {cardContent}
       
       {/* Hidden description for screen readers */}
-      {a11yProps.getA11yProps()['aria-describedby'] && (
-        <div 
-          id={a11yProps.getA11yProps()['aria-describedby']}
-          className="sr-only"
-        >
-          Floq starting at {floq.starts_at ? new Date(floq.starts_at).toLocaleTimeString() : 'unknown time'}.
-          {enhancedFloq?.live_vibe_analysis && 
-            ` Current energy: ${Math.round(enhancedFloq.live_vibe_analysis.energy_level * 100)}%.`
-          }
-          Use Enter to view details, Alt+Right Arrow for quick join, or Context Menu key for options.
-        </div>
-      )}
+      <div className="sr-only">
+        Floq starting at {floq.starts_at ? new Date(floq.starts_at).toLocaleTimeString() : 'unknown time'}.
+        {enhancedFloq?.live_vibe_analysis && 
+          ` Current energy: ${Math.round(enhancedFloq.live_vibe_analysis.energy_level * 100)}%.`
+        }
+        Use Enter to view details, Alt+Right Arrow for quick join.
+      </div>
     </MotionCard>
   );
 }
