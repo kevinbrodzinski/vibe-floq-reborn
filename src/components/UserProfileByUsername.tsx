@@ -101,7 +101,9 @@ export const UserProfileByUsername = () => {
 
   // Always call hooks at the top level - fix for React hooks rules
   const profile = profiles?.[0];
-  const { data: vibe } = useUserVibe(profile?.id);
+  const userVibeData = useUserVibe();
+  // Only use vibe data if we have a profile and it matches the vibe system
+  const vibe = profile?.id ? userVibeData : null;
   
   // Get friend status and online presence
   const { rows: friendsWithPresence, isFriend } = useUnifiedFriends();
@@ -311,9 +313,9 @@ export const UserProfileByUsername = () => {
   };
   
   const handleNavigate = () => {
-    if (vibe?.location) {
-      openNativeMaps(vibe.location);
-    }
+    // Note: New vibe system doesn't include location data
+    // This functionality is temporarily disabled
+    console.log('Navigation to vibe location not available in new vibe system');
   };
 
   const handleAddFriend = async () => {

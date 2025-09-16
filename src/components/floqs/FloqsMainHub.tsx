@@ -27,6 +27,8 @@ export default function FloqsMainHub() {
   const [constellation, setConstellation] = React.useState(false);
   const [prewarm, setPrewarm] = React.useState(false);
   const hubData = useFloqsHubData();
+  const { coords } = useGeo();
+  const { filters } = useMomentaryFilters();
   const userVibe = useUserVibe();
 
   function dot([a,b,c]: number[], [x,y,z]: number[]) { return a*x + b*y + c*z; }
