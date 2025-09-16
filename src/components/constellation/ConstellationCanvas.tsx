@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cssHsl } from "@/lib/cssVar";
+import { cssHsl, cssHslaVar } from "@/lib/cssVar";
 
 type Node = {
   id: string;
@@ -14,7 +14,8 @@ type Edge = {
   a: string; 
   b: string; 
   w: number; 
-  kind: "time" | "friend" 
+  kind: "time" | "friend";
+  c?: number;
 };
 
 export function ConstellationCanvas({ nodes, edges = [] }: { nodes: Node[]; edges?: Edge[] }) {
@@ -28,8 +29,10 @@ export function ConstellationCanvas({ nodes, edges = [] }: { nodes: Node[]; edge
     if (!ctx) return;
 
     let raf = 0;
-    const ro = new ResizeObserver(() => layout());
-    ro.observe(canvas);
+    const ro = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => layout())
+      : null;
+    ro?.observe(canvas);
 
     const hovered = { i: -1 }; // mutable ref-like
 
@@ -69,11 +72,13 @@ export function ConstellationCanvas({ nodes, edges = [] }: { nodes: Node[]; edge
       return bestD2 <= 28*28 ? best : -1;
     }
 
-    canvas.addEventListener("mousemove", (e) => {
+    function onMove(e: MouseEvent) {
       const { x, y } = toLocal(e, canvas);
       hovered.i = nearestNodeIndex(x, y);
-    });
-    canvas.addEventListener("mouseleave", () => { hovered.i = -1; });
+    }
+    function onLeave() { hovered.i = -1; }
+    canvas.addEventListener("mousemove", onMove);
+    canvas.addEventListener("mouseleave", onLeave);
 
     layout();
 
@@ -81,6 +86,20 @@ export function ConstellationCanvas({ nodes, edges = [] }: { nodes: Node[]; edge
     const soonColor = cssHsl("--floq-soon", "262 83% 58%");   // token fallback
     const timeColor = cssHsl("--floq-edge-time", "215 16% 47%"); // fallback: slate-500-ish
     const friendColor = cssHsl("--floq-edge-friend", "222 84% 56%"); // fallback: brand ring
+    const badgeBg    = cssHslaVar("--background", "222 14% 10%", 0.70);
+    const badgeRing  = cssHsl("--ring", "222 84% 56%");
+    const badgeText  = cssHsl("--foreground", "210 40% 98%");
+
+    function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+      const rr = Math.min(r, Math.min(w, h) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x,     y + h, rr);
+      ctx.arcTo(x,     y + h, x,     y,     rr);
+      ctx.arcTo(x,     y,     x + w, y,     rr);
+      ctx.closePath();
+    }
 
     const draw = (t: number) => {
       const DPR = Math.max(1, window.devicePixelRatio || 1);
@@ -143,6 +162,56 @@ export function ConstellationCanvas({ nodes, edges = [] }: { nodes: Node[]; edge
       }
       ctx.globalAlpha = 1;
 
+      // Friend-overlap badges on hover
+      if (hovered.i >= 0) {
+        const cappedNodes = nodes.slice(0, 60);
+        const hoveredId = cappedNodes[hovered.i]?.id;
+        if (hoveredId) {
+          // collect friend edges touching hovered
+          for (let k = 0; k < edges.length; k++) {
+            const e = edges[k];
+            if (e.kind !== "friend") continue;
+            if (e.a !== hoveredId && e.b !== hoveredId) continue;
+
+            const a = pos.get(e.a), b = pos.get(e.b);
+            if (!a || !b) continue;
+
+            // badge location: midpoint, offset perpendicular to edge
+            const mx = (a.x + b.x) / 2;
+            const my = (a.y + b.y) / 2;
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const len = Math.max(1, Math.hypot(dx, dy));
+            const ox = (-dy / len) * 10; // 10px normal offset
+            const oy = ( dx / len) * 10;
+
+            const label = `${e.c ?? Math.max(1, Math.round(e.w * 3))}`;
+            ctx.font = "600 11px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+            ctx.textBaseline = "middle";
+            const padX = 6, padY = 3;
+            const tw = ctx.measureText(label).width;
+            const bw = Math.ceil(tw + padX * 2);
+            const bh = 18;
+            const bx = mx + ox - bw / 2;
+            const by = my + oy - bh / 2;
+
+            // bg
+            ctx.fillStyle = badgeBg;
+            roundRect(ctx, bx, by, bw, bh, 8);
+            ctx.fill();
+
+            // ring
+            ctx.strokeStyle = badgeRing;
+            ctx.lineWidth = 1;
+            roundRect(ctx, bx + 0.5, by + 0.5, bw - 1, bh - 1, 7.5);
+            ctx.stroke();
+
+            // text
+            ctx.fillStyle = badgeText;
+            ctx.fillText(label, mx + ox, my + oy);
+          }
+        }
+      }
+
       // Nodes (cap to 60 for perf)
       const capped = nodes.slice(0, 60);
       for (let i = 0; i < capped.length; i++) {
@@ -166,8 +235,10 @@ export function ConstellationCanvas({ nodes, edges = [] }: { nodes: Node[]; edge
     raf = requestAnimationFrame(draw);
 
     return () => {
-      ro.disconnect();
+      ro?.disconnect();
       cancelAnimationFrame(raf);
+      canvas.removeEventListener("mousemove", onMove);
+      canvas.removeEventListener("mouseleave", onLeave);
     };
   }, [nodes, edges, reduced]);
 

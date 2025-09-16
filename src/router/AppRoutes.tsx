@@ -79,7 +79,12 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<DailyRecapGate />} />
+      <Route path="/" element={
+        <RouteSuspense>
+          <FloqsMainHub />
+        </RouteSuspense>
+      } />
+      <Route path="/floqs-legacy" element={<DailyRecapGate />} />
       <Route path="/home" element={
         <RouteSuspense>
           <FieldScreen />

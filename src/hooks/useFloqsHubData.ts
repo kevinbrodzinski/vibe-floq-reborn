@@ -41,6 +41,7 @@ export type ConstellationEdge = {
   a: string; b: string;                 // node ids
   w: number;                            // 0..1 weight (controls alpha/width)
   kind: "time" | "friend";
+  c?: number;                           // friend overlap count (0..3 cap)
 };
 
 export function useFloqsHubData() {
@@ -139,7 +140,7 @@ export function useFloqsHubData() {
           for (const f of aFriends) if (setB.has(f)) { overlap++; if (overlap >= 3) break; }
           if (overlap > 0) {
             const w = Math.min(1, overlap / 3); // cap at 3 for weight = 1
-            edges.push({ a: A.id, b: B.id, w, kind: "friend" });
+            edges.push({ a: A.id, b: B.id, w, c: Math.min(3, overlap), kind: "friend" });
           }
         }
       }
