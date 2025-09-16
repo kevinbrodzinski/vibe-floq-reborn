@@ -94,7 +94,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_VENUE)) {
     map.addLayer({
       id: PT_VENUE, type:'circle', source: SID,
-      filter:['all', ['!has','point_count'], ['==',['to-string',['get','kind']],'venue']],
+      filter:['all', ['!has','point_count'], ['match',['get','kind'],['venue'],true,false]],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,6, 16,9],
         'circle-color':['coalesce',['get','vibeHex'],'#22c55e'],
@@ -107,7 +107,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_FRIEND_AV)) {
     map.addLayer({
       id: PT_FRIEND_AV, type:'symbol', source: SID,
-      filter:['all',['!has','point_count'],['==',['to-string',['get','kind']],'friend'],['has','iconId']],
+      filter:['all',['!has','point_count'],['match',['get','kind'],['friend'],true,false],['has','iconId']],
       layout:{
         'icon-image':['get','iconId'],
         'icon-size':['interpolate',['linear'],['zoom'], 12,0.38, 16,0.6, 18,0.72],
@@ -119,7 +119,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_FRIEND_FALL)) {
     map.addLayer({
       id: PT_FRIEND_FALL, type:'circle', source: SID,
-      filter:['all',['!has','point_count'],['==',['to-string',['get','kind']],'friend'],['!has','iconId']],
+      filter:['all',['!has','point_count'],['match',['get','kind'],['friend'],true,false],['!has','iconId']],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,5.5, 16,7.5],
         'circle-color':['coalesce',['get','vibeHex'],'#60a5fa'],
@@ -132,7 +132,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (includeSelfHit && !map.getLayer(PT_SELF_HIT)) {
     map.addLayer({
       id: PT_SELF_HIT, type:'circle', source: SID,
-      filter:['all',['!has','point_count'],['==',['to-string',['get','kind']],'self']],
+      filter:['all',['!has','point_count'],['match',['get','kind'],['self'],true,false]],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,12, 16,16],
         'circle-color':'rgba(0,0,0,0)',
