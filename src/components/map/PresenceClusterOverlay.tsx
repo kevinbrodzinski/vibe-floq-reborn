@@ -5,7 +5,7 @@ import { createPresenceClusterOverlay, buildPresenceFC, ensureAvatarImage } from
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useAuth } from '@/hooks/useAuth';
-import { safeSetFilter } from '@/lib/map/safeFilter';
+import { setFilterWhenReady } from '@/lib/map/safeFilter';
 
 interface PresenceData {
   friends?: Array<{
@@ -89,13 +89,13 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
         const hasAvatar   = !!map.getLayer('presence-friend-avatar');
         const hasFallback = !!map.getLayer('presence-friend-fallback');
         if (hasAvatar && hasFallback) {
-          safeSetFilter(map, 'presence-friend-avatar', [
+          setFilterWhenReady(map, 'presence-friend-avatar', [
             "all",
             ["!has","point_count"],
             ["in", ["get","kind"], "friend", "bestie"],
             ["has","iconId"]
           ]);
-          safeSetFilter(map, 'presence-friend-fallback', [
+          setFilterWhenReady(map, 'presence-friend-fallback', [
             "all",
             ["!has","point_count"],
             ["in", ["get","kind"], "friend", "bestie"],
