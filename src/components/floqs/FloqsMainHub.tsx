@@ -17,10 +17,11 @@ import { ActiveMomentaryRail } from "./rails/ActiveMomentaryRail";
 import { PerfectTimingCard } from "./cards/PerfectTimingCard";
 import { MomentaryFiltersBar } from "./filters/MomentaryFilters";
 import { useMomentaryFilters } from "@/hooks/useMomentaryFilters";
-import { useUserVibe, vibeKeyToVector } from "@/hooks/useUserVibe";
+import { useUserVibe } from "@/hooks/useUserVibe";
 import type { VibeKey } from "@/hooks/useMomentaryFilters";
 import { JoinIntentBar } from "./wcc/JoinIntentBar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { similarity } from "@/lib/vibe/similarity";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
@@ -31,32 +32,9 @@ export default function FloqsMainHub() {
   const { filters } = useMomentaryFilters();
   const userVibe = useUserVibe();
 
-  function dot([a,b,c]: number[], [x,y,z]: number[]) { return a*x + b*y + c*z; }
-  function toFloqVector(f: any): [number,number,number] {
-    // prefer explicit vector from engine; else map vibe key; else derive from energy/metadata; else neutral
-    if (Array.isArray(f.vibe_vector) && f.vibe_vector.length === 3) {
-      return normalize([+f.vibe_vector[0], +f.vibe_vector[1], +f.vibe_vector[2]]);
-    }
-    if (typeof f.vibe === "string") return vibeKeyToVector(f.vibe.toLowerCase() as VibeKey);
-    // cheap derivation: energyNow tilts to "hype"; participants/friends tilt to "social"
-    const energy = Math.max(0, Math.min(1, f.energy_now ?? 0.5));
-    const social = Math.max(0, Math.min(1, ((f.participants ?? 0) + (f.friends_in ?? 0)) / 200));
-    const chill = Math.max(0, 1 - Math.max(energy, social));
-    return normalize([chill, social, energy]);
-  }
-  function normalize(v: number[]): [number,number,number] {
-    const s = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]) || 1;
-    return [v[0]/s, v[1]/s, v[2]/s] as any;
-  }
-
-  function vibeSimilarity(uv: {vector: [number,number,number]}, f: any): number {
-    const fv = toFloqVector(f);
-    return Math.max(0, Math.min(1, dot(uv.vector, fv)));
-  }
-
   function computeSmartFlags(f: any) {
     // Matches my vibe: use real vector sim if present, else fallback to recsys / vibe_delta
-    const sim = vibeSimilarity(userVibe, f);
+    const sim = similarity(userVibe.vector, f);
     const fallback = (f.recsys_score ?? (1 - (f.vibe_delta ?? 0.3)));
     const matchVibe = sim >= 0.75 || fallback >= 0.75;
 
