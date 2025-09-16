@@ -20,15 +20,17 @@ export default function FloqsMainHub() {
   const hubData = useFloqsHubData();
   const { coords } = useGeo();
   
-  // Debug logging for data issues
+  // Debug logging for data issues (dev only)
   React.useEffect(() => {
-    console.log("[FloqsMainHub] Hub data:", {
-      momentaryLive: hubData.momentaryLive.length,
-      tribes: hubData.tribes.length,
-      publicFloqs: hubData.publicFloqs.length,
-      discover: hubData.discover.length,
-      coords
-    });
+    if (typeof window !== "undefined" && !import.meta.env.PROD) {
+      console.log("[FloqsMainHub] Hub data:", {
+        momentaryLive: hubData.momentaryLive.length,
+        tribes: hubData.tribes.length,
+        publicFloqs: hubData.publicFloqs.length,
+        discover: hubData.discover.length,
+        coords
+      });
+    }
   }, [hubData, coords]);
 
   React.useEffect(() => {
@@ -49,6 +51,7 @@ export default function FloqsMainHub() {
             variant="secondary"
             className="rounded-full bg-secondary/70 hover:bg-secondary text-secondary-foreground px-4 h-9 shadow-sm"
             onClick={() => setConstellation(true)}
+            aria-label="Open constellation view"
           >
             Constellation
           </Button>
@@ -142,7 +145,13 @@ export default function FloqsMainHub() {
         <ScrollBar orientation="vertical" />
       </ScrollArea>
 
-      {constellation && <ConstellationView onClose={() => setConstellation(false)} />}
+      {constellation && (
+        <ConstellationView
+          onClose={() => setConstellation(false)}
+          nodes={hubData.constellationNodes}
+          edges={hubData.constellationEdges}
+        />
+      )}
       {prewarm && <PrewarmProbe lat={coords?.lat ?? null} lng={coords?.lng ?? null} />}
       
       {/* Mount Peek Sheet once */}

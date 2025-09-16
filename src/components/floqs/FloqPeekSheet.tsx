@@ -1,46 +1,48 @@
 import * as React from "react";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
 
-type PeekState = { id: string | null };
+const PEEK_FALLBACK = {
+  id: "__peek_fallback__", name: "Loading", status: "live",
+  participants: 0, friends_in: 0, recsys_score: 0.5, energy_now: 0.5, energy_peak: 0.7
+} as any;
 
 export function FloqPeekSheet() {
   const [open, setOpen] = React.useState(false);
-  const [state, setState] = React.useState<PeekState>({ id: null });
+  const [id, setId] = React.useState<string | null>(null);
 
-  // Event bus: open from cards, constellation, etc.
+  // Event bus (web-safe + SSR guard)
   React.useEffect(() => {
-    function onOpen(e: any) {
-      setState({ id: e.detail?.id ?? null });
+    if (typeof window === "undefined") return;
+    const onOpen = (e: Event) => {
+      const ce = e as CustomEvent<{ id?: string }>;
+      setId(ce.detail?.id ?? null);
       setOpen(true);
-    }
+    };
     window.addEventListener("floq:peek", onOpen as any);
     return () => window.removeEventListener("floq:peek", onOpen as any);
   }, []);
 
-  // Find item from hub cache as fast path (cheap + instant UI)
+  // Fast-path fetch from hub cache
   const hub = useFloqsHubData();
   const item =
-    hub.momentaryLive.find(x => x.id === state.id) ??
-    hub.tribes.find(x => x.id === state.id) ??
-    hub.publicFloqs.find(x => x.id === state.id) ??
-    hub.discover.find(x => x.id === state.id);
+    hub.momentaryLive.find(x => x.id === id) ??
+    hub.tribes.find(x => x.id === id) ??
+    hub.publicFloqs.find(x => x.id === id) ??
+    hub.discover.find(x => x.id === id);
 
-  const scores = item ? useFloqScores(item) : null;
+  // Always call the hook; use safe fallback when item is null
+  const scores = useFloqScores((item ?? PEEK_FALLBACK) as any);
+  const frictionLabel = scores.friction < 0.25 ? "Low" : scores.friction < 0.6 ? "Moderate" : "High";
 
-  const frictionLabel =
-    scores ? (scores.friction < 0.25 ? "Low" : scores.friction < 0.6 ? "Moderate" : "High") : "";
-
-  // Actions (wire to your real hooks if available)
-  const onJoin = () => window.dispatchEvent(new CustomEvent("floq:action", { detail: { id: state.id, action: "join" }}));
-  const onFollow = () => window.dispatchEvent(new CustomEvent("floq:action", { detail: { id: state.id, action: "follow" }}));
-  const onShare = () => window.dispatchEvent(new CustomEvent("floq:action", { detail: { id: state.id, action: "share" }}));
+  // Actions (wire real implementations later)
+  const onJoin   = () => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("floq:action", { detail: { id, action: "join" } }));
+  const onFollow = () => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("floq:action", { detail: { id, action: "follow" } }));
+  const onShare  = () => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("floq:action", { detail: { id, action: "share" } }));
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) setOpen(false); }}>
@@ -55,22 +57,20 @@ export function FloqPeekSheet() {
                 </Badge>
               </DialogTitle>
               <DialogDescription>
-                {timeWindowLabel(item)} • {item.participants ?? 0} in
-                {item.friends_in ? ` • ${item.friends_in} friends` : ""}
+                {timeWindowLabel(item)} • {item.participants ?? 0} in{item.friends_in ? ` • ${item.friends_in} friends` : ""}
               </DialogDescription>
             </DialogHeader>
 
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div className="text-muted-foreground">Compatibility</div>
-              <div className="text-right font-medium">{scores ? `${Math.round(scores.compatibilityPct)}%` : "—"}</div>
+              <div className="text-right font-medium">{Math.round(scores.compatibilityPct)}%</div>
 
               <div className="text-muted-foreground">Friction</div>
-              <div className="text-right font-medium">{frictionLabel || "—"}</div>
+              <div className="text-right font-medium">{frictionLabel}</div>
 
               <div className="text-muted-foreground">Energy</div>
               <div className="text-right font-medium">
-                {scores ? `${Math.round(scores.energyNow * 100)}%` : "—"}
-                {scores?.peakRatio ? ` • peak ${Math.round(scores.peakRatio * 100)}%` : ""}
+                {Math.round(scores.energyNow * 100)}%{scores.peakRatio ? ` • peak ${Math.round(scores.peakRatio * 100)}%` : ""}
               </div>
             </div>
 
@@ -83,7 +83,7 @@ export function FloqPeekSheet() {
             </div>
           </>
         ) : (
-          <div className="p-6">Loading…</div>
+          <div className="p-6 text-sm text-muted-foreground">Loading…</div>
         )}
       </DialogContent>
     </Dialog>
