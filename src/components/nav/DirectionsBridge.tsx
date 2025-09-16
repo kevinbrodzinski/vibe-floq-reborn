@@ -4,8 +4,8 @@ import { openDirections } from '@/lib/directions/handoff';
 
 export function DirectionsBridge() {
   React.useEffect(() => {
-    return onEvent(Events.UI_OPEN_DIRECTIONS, ({ lat, lng, label, mode }) => {
-      try { openDirections({ dest: { lat, lng }, label, mode }); } catch {/* noop */ }
+    return onEvent(Events.UI_OPEN_DIRECTIONS, ({ to, mode }) => {
+      try { openDirections({ dest: { lat: to.lat, lng: to.lng }, label: to.name, mode }); } catch {/* noop */ }
     });
   }, []);
   return null;

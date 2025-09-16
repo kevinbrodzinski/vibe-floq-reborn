@@ -4,11 +4,28 @@ import { preWarmAvatarSizes, verifyTransformCDN, getAvatarUrl } from '@/lib/avat
 /**
  * Hook to preload avatars for better performance
  */
-export const useAvatarPreloader = (avatarPaths: (string | null | undefined)[], sizes: number[] = [32, 64, 128]) => {
+export const useAvatarPreloader = (
+  avatarPaths: (string | null | undefined)[], 
+  sizes: number[] = [32, 64, 128],
+  observe?: React.RefObject<HTMLElement>[] // observe elements to prewarm on viewport entry
+) => {
   useEffect(() => {
     const validPaths = avatarPaths.filter(Boolean) as string[];
-    
-    // Pre-warm all avatar sizes
+    if (!validPaths.length) return;
+
+    if (observe?.length) {
+      // Viewport-based prefetch
+      const io = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) {
+          validPaths.forEach(path => preWarmAvatarSizes(path, sizes));
+        }
+      }, { rootMargin: '120px' });
+      
+      observe.forEach(ref => ref?.current && io.observe(ref.current));
+      return () => io.disconnect();
+    }
+
+    // Fallback: prewarm immediately
     validPaths.forEach(path => {
       preWarmAvatarSizes(path, sizes);
     });
@@ -22,5 +39,5 @@ export const useAvatarPreloader = (avatarPaths: (string | null | undefined)[], s
         });
       }
     }
-  }, [avatarPaths, sizes]);
+  }, [avatarPaths.join('|'), sizes.join(','), observe]);
 };

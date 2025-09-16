@@ -165,6 +165,11 @@ export const Events = {
   FLOQ_HEAT_TOGGLE: 'floq:heatline:toggle',
   FLOQ_HEAT_SET: 'floq:heatline:set',
   FLOQ_OPEN_CONVERGENCE: 'floq:open-convergence',
+  
+  // Converge System
+  FLOQ_CONVERGE_REQUEST: 'converge:request',
+  FLOQ_CONVERGE_ACCEPT: 'converge:accept',
+  FLOQ_CONVERGE_REJECT: 'converge:reject',
 } as const;
 
 // Type definitions for common event payloads
@@ -173,7 +178,7 @@ export interface EventPayloads {
   [Events.UI_MAP_PULSE]: { lng: number; lat: number; color?: string; duration?: number };
   [Events.UI_NAV_DEST]: { lng: number; lat: number; duration?: number };
   [Events.UI_VENUE_SELECT]: { venueId: string };
-  [Events.UI_OPEN_DIRECTIONS]: { lat: number; lng: number; label?: string; mode?: 'transit'|'walk'|'bike'|'drive' };
+  [Events.UI_OPEN_DIRECTIONS]: { to: { lat: number; lng: number; name?: string }; mode?: 'transit'|'walk'|'bike'|'drive' };
 
   // Flow & Venue UI fallbacks
   [Events.UI_VENUE_JOIN]: { venueId: string };
@@ -266,6 +271,18 @@ export interface EventPayloads {
     id: 'predicted-meet' | 'flow-route' | 'breadcrumb-trail'; 
     enabled: boolean 
   };
+  
+  // Converge System
+  [Events.FLOQ_CONVERGE_REQUEST]: {
+    point: { lat: number; lng: number; name?: string; id?: string };
+    fromId?: string;
+    toId?: string;
+  };
+  [Events.FLOQ_CONVERGE_ACCEPT]: {
+    to: { lat: number; lng: number; name?: string };
+    requestId?: string;
+  };
+  [Events.FLOQ_CONVERGE_REJECT]: { requestId?: string };
 }
 
 // Typed helpers

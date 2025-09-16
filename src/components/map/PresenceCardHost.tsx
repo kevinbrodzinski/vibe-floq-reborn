@@ -1,32 +1,9 @@
 import * as React from 'react';
 import { PresenceInfoCard } from './PresenceInfoCard';
 import { ConvergeSuggestions } from './ConvergeSuggestions';
+import { AcceptRouteCard } from './AcceptRouteCard';
+import { emitEvent, onEvent, Events } from '@/services/eventBridge';
 import type { PresencePayload } from '@/types/presence';
-
-const AcceptRouteCard: React.FC<{
-  to: { lat: number; lng: number; name?: string } | null;
-  onAccept: () => void;
-  onClose: () => void;
-}> = ({ to, onAccept, onClose }) => {
-  if (!to) return null;
-  return (
-    <div role="dialog" aria-label="Converge request" className="fixed inset-x-0 bottom-0 z-[85] p-3">
-      <div className="mx-auto w-full max-w-md rounded-xl bg-black/80 backdrop-blur-md border border-white/10 text-white shadow-xl">
-        <div className="p-3 flex items-center gap-3">
-          <div className="h-9 w-9 grid place-items-center rounded-full bg-white/10">📍</div>
-          <div className="min-w-0">
-            <div className="font-semibold truncate">{to.name ?? 'Suggested rally point'}</div>
-            <div className="text-xs text-white/70">{to.lat.toFixed(5)}, {to.lng.toFixed(5)}</div>
-          </div>
-          <div className="ml-auto flex gap-2">
-            <button onClick={onClose} className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15" aria-label="Dismiss">Close</button>
-            <button onClick={onAccept} className="h-9 px-3 rounded-lg bg-white text-black font-medium hover:bg-white/90">Accept & Route</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export const PresenceCardHost: React.FC = () => {
   const [data, setData] = React.useState<PresencePayload | null>(null);
@@ -44,14 +21,19 @@ export const PresenceCardHost: React.FC = () => {
     };
   }, []);
 
-  // Show Accept & Route on converge request
+  // Legacy interop → window events to UI state
   React.useEffect(() => {
-    const onReq = (e: Event) => {
-      const p = (e as CustomEvent<{ point: { lat: number; lng: number; name?: string } }>).detail?.point;
-      if (p) setAcceptTo(p);
+    const onLegacy = (e: Event) => {
+      const point = (e as CustomEvent<{ point: { lat: number; lng: number; name?: string } }>).detail?.point;
+      if (point) setAcceptTo(point);
     };
-    window.addEventListener('converge:request', onReq as EventListener);
-    return () => window.removeEventListener('converge:request', onReq as EventListener);
+    window.addEventListener('converge:request', onLegacy as EventListener);
+    return () => window.removeEventListener('converge:request', onLegacy as EventListener);
+  }, []);
+
+  // Typed converge request → show inline accept  
+  React.useEffect(() => {
+    return onEvent(Events.FLOQ_CONVERGE_REQUEST, ({ point }) => setAcceptTo(point));
   }, []);
 
   // ESC closes open cards
@@ -67,14 +49,16 @@ export const PresenceCardHost: React.FC = () => {
     <>
       <PresenceInfoCard data={data} onClose={() => setData(null)} />
       <ConvergeSuggestions onClose={() => {}} />
-      <AcceptRouteCard
-        to={acceptTo}
-        onAccept={() => {
-          if (acceptTo) window.dispatchEvent(new CustomEvent('floq:navigate', { detail: { to: acceptTo } }));
-          setAcceptTo(null);
-        }}
-        onClose={() => setAcceptTo(null)}
-      />
+      {acceptTo && (
+        <AcceptRouteCard
+          to={acceptTo}
+          onAccept={() => { 
+            if (acceptTo) emitEvent(Events.UI_OPEN_DIRECTIONS, { to: acceptTo }); 
+            setAcceptTo(null); 
+          }}
+          onClose={() => setAcceptTo(null)}
+        />
+      )}
     </>
   );
 };
