@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MomentaryRail } from "./rails/MomentaryRail";
-import { TribesGrid } from "./rails/TribesGrid";
+import { TribesRail } from "./rails/TribesRail";
+import { PublicRail } from "./rails/PublicRail";
 import { DiscoverRail } from "./rails/DiscoverRail";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
 import { ConstellationView } from "@/components/constellation/ConstellationView";
@@ -161,21 +162,11 @@ export default function FloqsMainHub() {
             <>
               <section>
                 <h2 className="px-2 text-lg font-semibold">Your Tribes</h2>
-                {hubData.tribes.length > 0 ? (
-                  <TribesGrid items={hubData.tribes} />
+                {hubData.tribes.length ? (
+                  <TribesRail items={hubData.tribes as any} />
                 ) : (
-                  <div className="px-2 py-8 text-center text-muted-foreground">
+                  <div className="px-2 py-6 text-sm text-muted-foreground">
                     You haven't joined any tribes yet
-                  </div>
-                )}
-              </section>
-              <section>
-                <h2 className="px-2 text-lg font-semibold">Discover</h2>
-                {hubData.discover.length > 0 ? (
-                  <DiscoverRail items={hubData.discover} />
-                ) : (
-                  <div className="px-2 py-4 text-center text-muted-foreground">
-                    No recommendations available
                   </div>
                 )}
               </section>
@@ -183,16 +174,18 @@ export default function FloqsMainHub() {
           )}
 
           {tab === "public" && (
-            <section>
-              <h2 className="px-2 text-lg font-semibold">Public Floqs</h2>
-              {hubData.publicFloqs.length > 0 ? (
-                <DiscoverRail items={hubData.publicFloqs} />
-              ) : (
-                <div className="px-2 py-8 text-center text-muted-foreground">
-                  No public floqs found nearby
-                </div>
-              )}
-            </section>
+            <>
+              <section>
+                <h2 className="px-2 text-lg font-semibold">Public Floqs</h2>
+                {hubData.publicFloqs.length ? (
+                  <PublicRail items={hubData.publicFloqs as any} />
+                ) : (
+                  <div className="px-2 py-6 text-sm text-muted-foreground">
+                    No public floqs found nearby
+                  </div>
+                )}
+              </section>
+            </>
           )}
         </div>
         <ScrollBar orientation="vertical" />
