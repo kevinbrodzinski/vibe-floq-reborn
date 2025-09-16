@@ -39,6 +39,7 @@ const RouteSuspense = ({ children, fallback = <FullScreenSpinner /> }: { childre
 // Lazy load large components to reduce initial bundle size
 const FieldScreen = lazy(() => import('@/components/screens/FieldScreen').then(m => ({ default: m.FieldScreen })));
 const FlocksHome = lazy(() => import('@/components/FlocksHome').then(m => ({ default: m.FlocksHome })));
+const FloqsMainHub = lazy(() => import('@/components/floqs/FloqsMainHub'));
 const FloqRoute = lazy(() => import('@/pages/FloqRoute'));
 const FloqManage = lazy(() => import('@/pages/FloqManage'));
 const Discover = lazy(() => import('@/pages/Discover'));
@@ -89,6 +90,11 @@ export const AppRoutes = () => {
       <Route path="/floqs" element={
         <RouteSuspense>
           <FlocksHome />
+        </RouteSuspense>
+      } />
+      <Route path="/floqs-hub" element={
+        <RouteSuspense>
+          <FloqsMainHub />
         </RouteSuspense>
       } />
       <Route path="/discover" element={
