@@ -79,12 +79,12 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={
+      <Route path="/" element={<DailyRecapGate />} />
+      <Route path="/floqs-legacy" element={
         <RouteSuspense>
-          <FloqsMainHub />
+          <FlocksHome />
         </RouteSuspense>
       } />
-      <Route path="/floqs-legacy" element={<DailyRecapGate />} />
       <Route path="/home" element={
         <RouteSuspense>
           <FieldScreen />
@@ -94,7 +94,7 @@ export const AppRoutes = () => {
       <Route path="/field" element={<LegacyRedirect />} />
       <Route path="/floqs" element={
         <RouteSuspense>
-          <FlocksHome />
+          <FloqsMainHub />
         </RouteSuspense>
       } />
       <Route path="/floqs-hub" element={
