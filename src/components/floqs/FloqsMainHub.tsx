@@ -17,8 +17,19 @@ export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
   const [constellation, setConstellation] = React.useState(false);
   const [prewarm, setPrewarm] = React.useState(false);
-  const { momentaryLive, tribes, publicFloqs, discover } = useFloqsHubData();
+  const hubData = useFloqsHubData();
   const { coords } = useGeo();
+  
+  // Debug logging for data issues
+  React.useEffect(() => {
+    console.log("[FloqsMainHub] Hub data:", {
+      momentaryLive: hubData.momentaryLive.length,
+      tribes: hubData.tribes.length,
+      publicFloqs: hubData.publicFloqs.length,
+      discover: hubData.discover.length,
+      coords
+    });
+  }, [hubData, coords]);
 
   React.useEffect(() => {
     const cancel = onIdle(() => setPrewarm(true), 450);
@@ -69,11 +80,23 @@ export default function FloqsMainHub() {
             <>
               <section>
                 <h2 className="px-2 mt-6 text-lg font-semibold">Active Momentary</h2>
-                <MomentaryRail items={momentaryLive} />
+                {hubData.momentaryLive.length > 0 ? (
+                  <MomentaryRail items={hubData.momentaryLive} />
+                ) : (
+                  <div className="px-2 py-8 text-center text-muted-foreground">
+                    No momentary floqs nearby right now
+                  </div>
+                )}
               </section>
               <section>
                 <h2 className="px-2 mt-8 text-lg font-semibold">Discover</h2>
-                <DiscoverRail items={discover} />
+                {hubData.discover.length > 0 ? (
+                  <DiscoverRail items={hubData.discover} />
+                ) : (
+                  <div className="px-2 py-4 text-center text-muted-foreground">
+                    No recommendations available
+                  </div>
+                )}
               </section>
             </>
           )}
@@ -82,11 +105,23 @@ export default function FloqsMainHub() {
             <>
               <section>
                 <h2 className="px-2 text-lg font-semibold">Your Tribes</h2>
-                <TribesGrid items={tribes} />
+                {hubData.tribes.length > 0 ? (
+                  <TribesGrid items={hubData.tribes} />
+                ) : (
+                  <div className="px-2 py-8 text-center text-muted-foreground">
+                    You haven't joined any tribes yet
+                  </div>
+                )}
               </section>
               <section>
                 <h2 className="px-2 text-lg font-semibold">Discover</h2>
-                <DiscoverRail items={discover} />
+                {hubData.discover.length > 0 ? (
+                  <DiscoverRail items={hubData.discover} />
+                ) : (
+                  <div className="px-2 py-4 text-center text-muted-foreground">
+                    No recommendations available
+                  </div>
+                )}
               </section>
             </>
           )}
@@ -94,7 +129,13 @@ export default function FloqsMainHub() {
           {tab === "public" && (
             <section>
               <h2 className="px-2 text-lg font-semibold">Public Floqs</h2>
-              <DiscoverRail items={publicFloqs} />
+              {hubData.publicFloqs.length > 0 ? (
+                <DiscoverRail items={hubData.publicFloqs} />
+              ) : (
+                <div className="px-2 py-8 text-center text-muted-foreground">
+                  No public floqs found nearby
+                </div>
+              )}
             </section>
           )}
         </div>
