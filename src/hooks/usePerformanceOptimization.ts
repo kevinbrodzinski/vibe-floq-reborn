@@ -161,7 +161,8 @@ export function usePerformanceOptimization() {
     createIntersectionObserver,
     scheduleWork,
     
-    // Current performance state
+    // Performance state
+    shouldReduceMotion,
     getCurrentFPS: () => fpsRef.current.length > 0 
       ? fpsRef.current.reduce((a, b) => a + b, 0) / fpsRef.current.length 
       : 60,
