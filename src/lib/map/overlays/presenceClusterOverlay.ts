@@ -3,6 +3,7 @@ import type { OverlaySpec } from '@/lib/map/LayerManager';
 import { safeVibe } from '@/lib/vibes';
 import { vibeToHex } from '@/lib/vibe/color';
 import { safeSetFilter } from '@/lib/map/safeFilter';
+import { addLayerSafe } from '@/lib/map/safeLayer';
 
 // ---------- small helpers ----------
 const lyr = (id:string,s:string)=>`${id}-${s}`;
@@ -24,21 +25,11 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
   ids.forEach(id => { if(map.getLayer(id)) try{ map.moveLayer(id, top); }catch{} });
 }
 
-// ---------- completely flat filter definitions (no nested references) ----------
-// Flatten the filters to avoid nested array issues that cause Mapbox errors
-const FILTER_FRIEND_AVATAR = [
-  "all",
-  ["!has", "point_count"],
-  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
-  ["has", "iconId"],
-] as const;
-
-const FILTER_FRIEND_FALLBACK = [
-  "all",
-  ["!has", "point_count"],
-  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
-  ["!has", "iconId"],
-] as const;
+// ---------- shared friend-kind expressions ----------
+// Use correct "in" syntax that normalizer will convert to valid ops
+const FRIEND_KIND_FILTER = ["in", ["get","kind"], "friend", "bestie"] as const;
+const FILTER_FRIEND_FALLBACK = ["all", ["!has","point_count"], FRIEND_KIND_FILTER, ["!has","iconId"]] as const;
+const FILTER_FRIEND_AVATAR   = ["all", ["!has","point_count"], FRIEND_KIND_FILTER, ["has","iconId"]]   as const;
 
 // ---------- sprite for avatars ----------
 export async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: string, size=64): Promise<string|null> {
@@ -122,27 +113,27 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
 
   // friends (symbol avatar)
   if (!map.getLayer(PT_FRIEND_AV)) {
-    map.addLayer({
+    addLayerSafe(map, {
       id: PT_FRIEND_AV, type:'symbol', source: SID,
-      filter: FILTER_FRIEND_AVATAR as any,
+      filter: FILTER_FRIEND_AVATAR,
       layout:{
         'icon-image':['get','iconId'],
         'icon-size':['interpolate',['linear'],['zoom'], 12,0.38, 16,0.6, 18,0.72],
         'icon-allow-overlap': true,'icon-ignore-placement': true
       }
-    }, PT_VENUE);
+    } as any, PT_VENUE);
   }
   // friends fallback (small circle if icon not loaded yet)
   if (!map.getLayer(PT_FRIEND_FALL)) {
-    map.addLayer({
+    addLayerSafe(map, {
       id: PT_FRIEND_FALL, type:'circle', source: SID,
-      filter: FILTER_FRIEND_FALLBACK as any,
+      filter: FILTER_FRIEND_FALLBACK,
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,5.5, 16,7.5],
         'circle-color':['coalesce',['get','vibeHex'],'#60a5fa'],
         'circle-stroke-color':'#fff','circle-stroke-width':2
       }
-    }, PT_FRIEND_AV);
+    } as any, PT_FRIEND_AV);
   }
 
   // self (invisible hit target – aura stays in its own overlay)
