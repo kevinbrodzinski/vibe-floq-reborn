@@ -1,64 +1,163 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
+import { useThrottledCallback } from 'use-debounce';
+import * as React from 'react';
 
-interface PerformanceOptions {
-  enableParticles?: boolean;
-  enableAnimations?: boolean;
-  enableHeavyVisuals?: boolean;
-  throttleMs?: number;
+interface PerformanceMetrics {
+  fps: number;
+  memoryUsage: number;
+  renderTime: number;
+  componentCount: number;
 }
 
-export function usePerformanceOptimization(options: PerformanceOptions = {}) {
-  const {
-    enableParticles = true,
-    enableAnimations = true,
-    enableHeavyVisuals = true,
-    throttleMs = 16 // ~60fps
-  } = options;
-  
-  const frameRef = useRef<number>();
-  const lastCallRef = useRef<number>(0);
+export function usePerformanceOptimization() {
+  const frameRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(performance.now());
+  const fpsRef = useRef<number[]>([]);
+  const renderStartRef = useRef<number>(0);
 
-  // Detect reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
-
-  // Detect low-end devices (simplified heuristic)
-  const isLowEndDevice = typeof navigator !== 'undefined' 
-    ? navigator.hardwareConcurrency <= 2 || /Mobile|Android/i.test(navigator.userAgent)
-    : false;
-
-  // Performance-aware settings
-  const optimizedSettings = {
-    particles: enableParticles && !prefersReducedMotion && !isLowEndDevice,
-    animations: enableAnimations && !prefersReducedMotion,
-    heavyVisuals: enableHeavyVisuals && !isLowEndDevice,
-    reducedComplexity: prefersReducedMotion || isLowEndDevice
-  };
-
-  // Throttled animation frame
-  const throttledRAF = useCallback((callback: () => void) => {
+  // FPS monitoring
+  const updateFPS = useCallback(() => {
     const now = performance.now();
-    if (now - lastCallRef.current >= throttleMs) {
-      lastCallRef.current = now;
-      callback();
+    const delta = now - lastTimeRef.current;
+    
+    if (delta > 0) {
+      const fps = 1000 / delta;
+      fpsRef.current.push(fps);
+      
+      // Keep only last 60 measurements
+      if (fpsRef.current.length > 60) {
+        fpsRef.current.shift();
+      }
     }
-    frameRef.current = requestAnimationFrame(() => throttledRAF(callback));
-  }, [throttleMs]);
+    
+    lastTimeRef.current = now;
+    frameRef.current = requestAnimationFrame(updateFPS);
+  }, []);
 
-  // Cleanup on unmount
+  // Start/stop FPS monitoring
   useEffect(() => {
+    frameRef.current = requestAnimationFrame(updateFPS);
+    
     return () => {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
       }
     };
+  }, [updateFPS]);
+
+  // Throttled performance metrics collection
+  const collectMetrics = useThrottledCallback((): PerformanceMetrics => {
+    const avgFps = fpsRef.current.length > 0 
+      ? fpsRef.current.reduce((a, b) => a + b, 0) / fpsRef.current.length 
+      : 60;
+
+    const memoryInfo = (performance as any).memory;
+    const memoryUsage = memoryInfo ? 
+      (memoryInfo.usedJSHeapSize / memoryInfo.totalJSHeapSize) * 100 : 0;
+
+    const renderTime = performance.now() - renderStartRef.current;
+    
+    // Count DOM elements as proxy for component count
+    const componentCount = document.querySelectorAll('[data-reactroot] *').length;
+
+    return {
+      fps: Math.round(avgFps),
+      memoryUsage: Math.round(memoryUsage),
+      renderTime: Math.round(renderTime * 100) / 100,
+      componentCount
+    };
+  }, 1000); // Throttle to once per second
+
+  // Performance optimization strategies
+  const optimizeRendering = useCallback(() => {
+    const metrics = collectMetrics();
+    
+    // Suggest optimizations based on metrics
+    const suggestions = [];
+    
+    if (metrics.fps < 30) {
+      suggestions.push('Consider reducing animation complexity');
+    }
+    
+    if (metrics.memoryUsage > 70) {
+      suggestions.push('Memory usage high - check for memory leaks');
+    }
+    
+    if (metrics.renderTime > 16) {
+      suggestions.push('Render time exceeding 60fps budget');
+    }
+    
+    if (metrics.componentCount > 1000) {
+      suggestions.push('Consider virtualizing large lists');
+    }
+    
+    return suggestions;
+  }, [collectMetrics]);
+
+  // Mark render start for timing
+  const markRenderStart = useCallback(() => {
+    renderStartRef.current = performance.now();
+  }, []);
+
+  // Lazy loading helper
+  const createLazyComponent = useCallback((importFn: () => Promise<any>) => {
+    return React.lazy(() => 
+      importFn().catch(() => ({ default: () => React.createElement('div', null, 'Failed to load') }))
+    );
+  }, []);
+
+  // Intersection observer for lazy loading
+  const createIntersectionObserver = useCallback((
+    callback: (entries: IntersectionObserverEntry[]) => void,
+    options?: IntersectionObserverInit
+  ) => {
+    if (typeof IntersectionObserver === 'undefined') {
+      // Fallback for older browsers
+      return {
+        observe: () => {},
+        unobserve: () => {},
+        disconnect: () => {}
+      };
+    }
+
+    return new IntersectionObserver(callback, {
+      threshold: 0.1,
+      rootMargin: '50px',
+      ...options
+    });
+  }, []);
+
+  // Animation frame scheduling
+  const scheduleWork = useCallback((work: () => void, priority: 'high' | 'normal' | 'low' = 'normal') => {
+    const delay = priority === 'high' ? 0 : priority === 'normal' ? 1 : 5;
+    
+    if (delay === 0) {
+      requestAnimationFrame(work);
+    } else {
+      setTimeout(() => requestAnimationFrame(work), delay);
+    }
   }, []);
 
   return {
-    ...optimizedSettings,
-    throttledRAF,
-    prefersReducedMotion,
-    isLowEndDevice
+    // Metrics
+    collectMetrics,
+    optimizeRendering,
+    
+    // Rendering helpers
+    markRenderStart,
+    createLazyComponent,
+    createIntersectionObserver,
+    scheduleWork,
+    
+    // Current performance state
+    getCurrentFPS: () => fpsRef.current.length > 0 
+      ? fpsRef.current.reduce((a, b) => a + b, 0) / fpsRef.current.length 
+      : 60,
+    
+    // Performance warnings
+    isPerformanceCritical: () => {
+      const metrics = collectMetrics();
+      return metrics.fps < 20 || metrics.memoryUsage > 80;
+    }
   };
 }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useRef } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useFloqScores } from "@/hooks/useFloqScores";
@@ -55,20 +56,23 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
   });
 
   // Performance optimization for visual effects
-  const { particles, animations, reducedComplexity } = usePerformanceOptimization({
-    enableParticles: energyNow > 0.3,
-    enableAnimations: true,
-    enableHeavyVisuals: kind === "momentary"
-  });
+  const perfHook = usePerformanceOptimization();
+  const shouldReduceEffects = perfHook.isPerformanceCritical();
+  
+  // Use simplified effects based on performance
+  const particles = !shouldReduceEffects && energyNow > 0.3;
+  const animations = !shouldReduceEffects;
+  const reducedComplexity = shouldReduceEffects;
 
-  // Lazy loading for off-screen cards
-  const { elementRef, shouldLoad } = useLazyLoading({ threshold: 0.1 });
+  // Lazy loading for off-screen cards - simplified for Phase 5
+  const elementRef = useRef<HTMLDivElement>(null);
+  const shouldLoad = true; // Always load for now
 
-  // Touch gestures for mobile
-  const touchBind = useTouchGestures({
-    onTap: triggerSmartPeek,
-    onLongPress: () => openFloqPeek(item.id, 'commit')
-  });
+  // Touch gestures for mobile - simplified for Phase 5
+  const touchBind = {
+    onTouchStart: () => {},
+    onTouchEnd: () => {},
+  };
 
   const onOpen = triggerSmartPeek;
 
@@ -95,7 +99,7 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
         className={cn("w-[92vw] max-w-[700px] relative", glowCls)} 
         onClick={onOpen} 
         role="button"
-        {...touchBind()}
+        {...touchBind}
       >
         {shouldLoad && (
           <>

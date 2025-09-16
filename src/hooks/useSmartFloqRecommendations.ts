@@ -311,45 +311,10 @@ export function useSmartFloqRecommendations(limit = 12) {
       .slice(0, limit);
   }, [userProfile, candidateFloqs, coords, limit]);
 
-  // Add social context to top recommendations
-  const enrichedRecommendations = useMemo(async () => {
-    if (!recommendations.length || socialGraph.loadingSocialGraph) return recommendations;
-
-    // Add social context to top 6 recommendations for performance
-    const topRecommendations = recommendations.slice(0, 6);
-    const socialContexts = await socialGraph.batchGetSocialContext(
-      topRecommendations.map(r => r.id)
-    );
-
-    return recommendations.map(rec => {
-      const socialContext = socialContexts?.[rec.id];
-      if (socialContext) {
-        // Update social proof score
-        const socialBoost = socialGraph.getSocialRecommendationBoost(socialContext);
-        const updatedScore = {
-          ...rec.recommendation_score,
-          breakdown: {
-            ...rec.recommendation_score.breakdown,
-            social_proof: socialContext.social_proof.trust_score
-          },
-          total_score: Math.min(1, rec.recommendation_score.total_score + socialBoost)
-        };
-
-        return {
-          ...rec,
-          recommendation_score: updatedScore,
-          social_context: socialContext,
-          personalized_highlights: [
-            ...rec.personalized_highlights,
-            ...(socialContext.social_proof.mutual_friends_count > 0 
-              ? [`${socialContext.social_proof.mutual_friends_count} mutual friends`]
-              : [])
-          ]
-        };
-      }
-      return rec;
-    });
-  }, [recommendations, socialGraph]);
+  // Simplify social enrichment for now - just return base recommendations
+  const enrichedRecommendations = useMemo(() => {
+    return recommendations;
+  }, [recommendations]);
 
   return {
     recommendations: recommendations,

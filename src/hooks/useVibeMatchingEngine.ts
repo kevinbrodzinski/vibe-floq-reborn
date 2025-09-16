@@ -167,7 +167,7 @@ export function useVibeMatchingEngine() {
         average_energy: avgEnergy,
         vibe_distribution: vibeCount,
         harmony_score: energyConsistency * 0.6 + (1 - diversityScore) * 0.4, // Preference for consistent, cohesive groups
-        recommended_vibes: this.getComplementaryVibes(dominantVibe[0])
+        recommended_vibes: getComplementaryVibes(dominantVibe[0])
       };
     };
   }, []);

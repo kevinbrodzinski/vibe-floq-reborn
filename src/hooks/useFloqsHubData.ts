@@ -5,7 +5,8 @@ import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
 import { useGeo } from "@/hooks/useGeo";
 import { getFloqsMock } from "@/mocks/floqs.mock";
 import { useMockRuntimeFlag } from "@/lib/mockFlag";
-import { useSmartFloqRecommendations } from "./useSmartFloqRecommendations";
+import { useSmartFloqRecommendations } from './useSmartFloqRecommendations';
+import { usePerformanceOptimization } from './usePerformanceOptimization';
 
 export type HubItem = {
   id: string;
@@ -50,6 +51,7 @@ export type ConstellationEdge = {
 export function useFloqsHubData() {
   const [mockFlag] = useMockRuntimeFlag();
   const smartRecommendations = useSmartFloqRecommendations(12);
+  const { scheduleWork, isPerformanceCritical } = usePerformanceOptimization();
 
   if (mockFlag) {
     const mock = useMemo(() => getFloqsMock(), []);

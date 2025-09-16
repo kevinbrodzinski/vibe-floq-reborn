@@ -79,24 +79,19 @@ function AvatarBubble({
       <span>{initials}</span>
     );
 
-  const MaybeTooltip = item.name ? Tooltip : React.Fragment;
-  const maybeProps = item.name ? { delayDuration: 200 } : {};
-
   if (!clickable) {
-    return (
-      <MaybeTooltip {...(maybeProps as any)}>
-        {item.name ? (
-          <>
-            <TooltipTrigger asChild>
-              <span {...common} role="img">{content}</span>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={6} className="px-2 py-1 text-xs">{item.name}</TooltipContent>
-          </>
-        ) : (
-          <span {...common} role="img">{content}</span>
-        )}
-      </MaybeTooltip>
-    );
+    if (item.name) {
+      return (
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <span {...common} role="img">{content}</span>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="px-2 py-1 text-xs">{item.name}</TooltipContent>
+        </Tooltip>
+      );
+    } else {
+      return <span {...common} role="img">{content}</span>;
+    }
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -106,40 +101,40 @@ function AvatarBubble({
     }
   };
 
-  return (
-    <MaybeTooltip {...(maybeProps as any)}>
-      {item.name ? (
-        <>
-          <TooltipTrigger asChild>
-            <button
-              {...common}
-              type="button"
-              role="button"
-              tabIndex={0}
-              onClick={(e) => onPress?.(item, e)}
-              onKeyDown={onKeyDown}
-              className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
-            >
-              {content}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={6} className="px-2 py-1 text-xs">{item.name}</TooltipContent>
-        </>
-      ) : (
-        <button
-          {...common}
-          type="button"
-          role="button"
-          tabIndex={0}
-          onClick={(e) => onPress?.(item, e)}
-          onKeyDown={onKeyDown}
-          className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
-        >
-          {content}
-        </button>
-      )}
-    </MaybeTooltip>
-  );
+  if (item.name) {
+    return (
+      <Tooltip delayDuration={200}>
+        <TooltipTrigger asChild>
+          <button
+            {...common}
+            type="button"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => onPress?.(item, e)}
+            onKeyDown={onKeyDown}
+            className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
+          >
+            {content}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={6} className="px-2 py-1 text-xs">{item.name}</TooltipContent>
+      </Tooltip>
+    );
+  } else {
+    return (
+      <button
+        {...common}
+        type="button"
+        role="button"
+        tabIndex={0}
+        onClick={(e) => onPress?.(item, e)}
+        onKeyDown={onKeyDown}
+        className={`${baseCls} hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring`}
+      >
+        {content}
+      </button>
+    );
+  }
 }
 
 function OverflowChip({ 
