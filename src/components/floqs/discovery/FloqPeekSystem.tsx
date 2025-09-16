@@ -61,10 +61,12 @@ export function FloqPeekSystem() {
     
     // If user commits, they might want to close the peek and go to full floq
     if (newStage === "commit" && floqId) {
-      // Could dispatch navigation event or close after delay
+      // Navigate to full floq page after a short delay
       setTimeout(() => {
         setOpen(false);
-      }, 2000);
+        // Use window.location for direct navigation since useNavigate isn't available in this context
+        window.location.href = `/floqs/${floqId}`;
+      }, 1500);
     }
   };
 

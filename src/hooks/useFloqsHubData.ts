@@ -92,11 +92,24 @@ export function useFloqsHubData() {
   );
 
   const tribes = useMemo(
-    () => mine.filter((f) => 
-      f.type === "tribe" || 
-      f.privacy === "private" || 
-      f.visibility === "private"
-    ),
+    () => {
+      // Include ALL user's floqs in tribes - they created or joined them
+      const userFloqs = mine.slice();
+      
+      // Debug logging for tribes issue
+      if (import.meta.env.DEV && userFloqs.length > 0) {
+        console.log("[useFloqsHubData] User's floqs for tribes:", userFloqs.map(f => ({
+          id: f.id,
+          title: f.title,
+          name: f.name,
+          type: f.type,
+          privacy: f.privacy,
+          visibility: f.visibility
+        })));
+      }
+      
+      return userFloqs;
+    },
     [mine]
   );
 

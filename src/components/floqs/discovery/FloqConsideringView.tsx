@@ -122,10 +122,9 @@ export function FloqConsideringView({ item, onCommitmentChange, currentStage }: 
             variant="outline"
             size="sm"
             className="flex-1"
-            onClick={() => onCommitmentChange("watch")}
+            onClick={() => window.location.href = `/floqs/${item.id}`}
           >
-            <Pause className="w-3 h-3 mr-1" />
-            Later
+            Go to Floq
           </Button>
           <Button
             variant="outline"
@@ -133,8 +132,8 @@ export function FloqConsideringView({ item, onCommitmentChange, currentStage }: 
             className="flex-1"
             onClick={() => onCommitmentChange("watch")}
           >
-            <X className="w-3 h-3 mr-1" />
-            Pass
+            <Pause className="w-3 h-3 mr-1" />
+            Later
           </Button>
           <Button
             size="sm"

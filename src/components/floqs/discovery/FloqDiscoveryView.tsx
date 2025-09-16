@@ -104,6 +104,25 @@ export function FloqDiscoveryView({ item, onCommitmentChange, currentStage }: Fl
           consideringCount={consideringCount}
         />
 
+        {/* Navigation Options */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => window.location.href = `/floqs/${item.id}`}
+          >
+            Go to Floq
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1"
+            onClick={() => onCommitmentChange("consider")}
+          >
+            Learn More
+          </Button>
+        </div>
+
         {/* Privacy Notice */}
         {currentStage !== "commit" && (
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-3">
