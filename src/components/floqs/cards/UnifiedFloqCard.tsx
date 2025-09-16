@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { ProgressDonut } from "@/components/floqs/visual/ProgressDonut";
 import { AvatarStack, AvatarItem } from "@/components/floqs/visual/AvatarStack";
 import { PartialRevealAvatarStack } from "@/components/floqs/visual/PartialRevealAvatarStack";
+import { CohesionRing } from "@/components/floqs/visual/CohesionRing";
+import { MemberParticles } from "@/components/floqs/visual/MemberParticles";
+import { VibeGradient, VibeType } from "@/components/floqs/visual/VibeGradient";
+import { EnergyFlowParticles } from "@/components/floqs/visual/EnergyFlowParticles";
+import { RippleIndicator } from "@/components/floqs/visual/RippleIndicator";
+import { TTLArc } from "@/components/floqs/visual/TTLArc";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
 import { openFloqPeek } from "@/lib/peek";
@@ -30,12 +36,19 @@ export interface UnifiedFloqItem {
 
 export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
   const navigate = useNavigate();
-  const { compatibilityPct, friction, energyNow } = useFloqScores(item);
+  const { compatibilityPct, friction, energyNow, peakRatio } = useFloqScores(item);
   const intent = useJoinIntent(item.id).stage;
   
   const displayName = item.name || item.title || "Untitled";
   const live = item.status === "live";
   const frictionLabel = friction < 0.25 ? "Low" : friction < 0.6 ? "Moderate" : "High";
+  
+  // Calculate cohesion based on compatibility and energy
+  const cohesion = (compatibilityPct / 100 + energyNow) / 2;
+  
+  // Determine vibe from item or derive from energy/compatibility
+  const vibe: VibeType = (item as any).vibe || (item as any).primary_vibe || 
+    (energyNow > 0.7 ? "hype" : energyNow > 0.4 ? "social" : "chill");
 
   // Normalize friend data
   const friends: AvatarItem[] = React.useMemo(() => {
@@ -82,13 +95,51 @@ export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
       className="relative overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 bg-card/80 backdrop-blur border-border/50"
       onClick={handleCardClick}
     >
+      {/* Vibe gradient background */}
+      <VibeGradient vibe={vibe} intensity={energyNow} />
+      
+      {/* Cohesion ring */}
+      <CohesionRing cohesion={cohesion} colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"} />
+      
+      {/* Energy flow particles */}
+      <EnergyFlowParticles 
+        energy={energyNow} 
+        peakRatio={peakRatio || 0} 
+        live={live} 
+      />
+      
+      {/* TTL Arc for momentary floqs */}
+      {item.starts_at && item.ends_at && (
+        <TTLArc 
+          startsAt={item.starts_at} 
+          endsAt={item.ends_at} 
+          colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"}
+        />
+      )}
+      
+      {/* Ripple indicator for notifications/activity */}
+      <div className="absolute top-2 left-2">
+        <RippleIndicator active={live && energyNow > 0.6} size={24} />
+      </div>
+
       {/* Header */}
-      <div className="p-4 pb-3">
+      <div className="p-4 pb-3 relative z-10">
         <div className="flex items-center justify-between gap-3 mb-2">
           <h3 className="text-lg font-semibold truncate">{displayName}</h3>
-          <Badge variant={live ? "default" : "secondary"}>
-            {item.status === "live" ? "Live" : item.status === "upcoming" ? "Soon" : "Ended"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {/* Member particles for high energy floqs */}
+            {energyNow > 0.5 && (
+              <MemberParticles 
+                live={live}
+                rings={Math.ceil(energyNow * 2)}
+                dotsPerRing={2}
+                size={32}
+              />
+            )}
+            <Badge variant={live ? "default" : "secondary"}>
+              {item.status === "live" ? "Live" : item.status === "upcoming" ? "Soon" : "Ended"}
+            </Badge>
+          </div>
         </div>
         <div className="text-xs text-muted-foreground">
           {(item.participants ?? 0)} participants
@@ -96,7 +147,7 @@ export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
       </div>
 
       {/* Metrics Row */}
-      <div className="px-4 pb-3">
+      <div className="px-4 pb-3 relative z-10">
         <div className="grid grid-cols-3 gap-4">
           {/* Compatibility */}
           <div className="flex items-center gap-2">
@@ -134,7 +185,7 @@ export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
       </div>
 
       {/* Friends and Actions */}
-      <div className="px-4 pb-4 flex items-center justify-between">
+      <div className="px-4 pb-4 flex items-center justify-between relative z-10">
         <div className="min-w-0 flex-1">
           {friends.length > 0 && (
             <>

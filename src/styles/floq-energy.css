@@ -2,6 +2,26 @@
   0% { transform: translateX(-8%); opacity: .15 }
   100% { transform: translateX(8%); opacity: .15 }
 }
+
+@keyframes particle-flow {
+  0% { 
+    transform: translateX(-20px) scale(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+    transform: translateX(0px) scale(1);
+  }
+  80% {
+    opacity: 0.6;
+    transform: translateX(100px) scale(1);
+  }
+  100% { 
+    transform: translateX(120px) scale(0);
+    opacity: 0;
+  }
+}
+
 .floq-energy-flow {
   position: absolute; inset: 0; pointer-events: none; overflow: hidden;
 }
@@ -13,6 +33,45 @@
   animation: energy-flow 2.8s ease-in-out infinite alternate;
 }
 .floq-energy-flow::after { top: 60%; animation-duration: 3.4s }
+
+/* Energy particles */
+.energy-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.energy-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  left: -20px;
+  animation: particle-flow linear infinite;
+}
+
+.energy-particles.live .energy-particle {
+  background: hsl(var(--floq-gauge-live-1));
+  box-shadow: 0 0 6px hsl(var(--floq-gauge-live-2) / 0.8);
+}
+
+.energy-particles.soon .energy-particle {
+  background: hsl(var(--floq-gauge-soon-1));
+  box-shadow: 0 0 6px hsl(var(--floq-gauge-soon-2) / 0.8);
+}
+
+.energy-particles.fast .energy-particle {
+  animation-duration: 1.5s;
+}
+
+.energy-particles.normal .energy-particle {
+  animation-duration: 2.5s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .floq-energy-flow::before, .floq-energy-flow::after { animation: none }
+  .floq-energy-flow::before, 
+  .floq-energy-flow::after,
+  .energy-particle { 
+    animation: none !important;
+  }
 }

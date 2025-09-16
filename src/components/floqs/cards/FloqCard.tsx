@@ -9,6 +9,12 @@ import { MetricsGrid } from "@/components/floqs/metrics/MetricsGrid";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
 import { PartialRevealAvatarStack } from "../visual/PartialRevealAvatarStack";
 import { PeakMarker } from "../visual/PeakMarker";
+import { CohesionRing } from "../visual/CohesionRing";
+import { VibeGradient, VibeType } from "../visual/VibeGradient";
+import { EnergyFlowParticles } from "../visual/EnergyFlowParticles";
+import { MemberParticles } from "../visual/MemberParticles";
+import { TTLArc } from "../visual/TTLArc";
+import { RippleIndicator } from "../visual/RippleIndicator";
 import { cn } from "@/lib/utils";
 
 export type FloqCardItem = {
@@ -45,6 +51,12 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
     const intent = useJoinIntent(item.id).stage;
     const faces: AvatarItem[] = normalizeFaces(item);
     
+    // Calculate cohesion and determine vibe
+    const cohesion = (compatibilityPct / 100 + energyNow) / 2;
+    const vibe: VibeType = (item as any).vibe || (item as any).primary_vibe || 
+      (energyNow > 0.7 ? "hype" : energyNow > 0.4 ? "social" : "chill");
+    const live = item.status === "live";
+    
     const glowCls =
       "rounded-2xl border border-[hsl(var(--floq-card-border))] " +
       "bg-[hsl(var(--floq-card-bg)/0.5)] backdrop-blur " +
@@ -52,14 +64,50 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
       "transition-transform hover:-translate-y-[1px]";
 
     return (
-      <div className={cn("w-[92vw] max-w-[700px] p-4", glowCls)} onClick={onOpen} role="button">
-        <div className="space-y-4">
-          {/* Header */}
-          <div>
+      <div className={cn("w-[92vw] max-w-[700px] relative", glowCls)} onClick={onOpen} role="button">
+        {/* Vibe gradient background */}
+        <VibeGradient vibe={vibe} intensity={energyNow} />
+        
+        {/* Cohesion ring */}
+        <CohesionRing cohesion={cohesion} colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"} />
+        
+        {/* Energy flow particles */}
+        <EnergyFlowParticles 
+          energy={energyNow} 
+          peakRatio={peakRatio || 0} 
+          live={live} 
+        />
+        
+        {/* TTL Arc for momentary floqs */}
+        {item.starts_at && item.ends_at && (
+          <TTLArc 
+            startsAt={item.starts_at} 
+            endsAt={item.ends_at} 
+            colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"}
+          />
+        )}
+        
+        {/* Ripple indicator in corner */}
+        <div className="absolute top-3 right-3">
+          <RippleIndicator active={live && energyNow > 0.6} size={28} />
+        </div>
+        
+        <div className="p-4 space-y-4 relative z-10">
+          {/* Header with member particles */}
+          <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">{displayName}</h3>
+            {/* Member particles for high energy floqs */}
+            {energyNow > 0.5 && (
+              <MemberParticles 
+                live={live}
+                rings={Math.ceil(energyNow * 2)}
+                dotsPerRing={3}
+                size={40}
+              />
+            )}
           </div>
 
-          {/* Avatars block */}
+          {/* Avatars block with enhanced reveal logic */}
           <div className="mt-1">
             {intent === "commit" ? (
               <AvatarStack items={faces} max={4} size={24} overlap={8} onAvatarPress={(a)=>openFloqPeek(a.floqId || item.id)} />
@@ -70,13 +118,11 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
             )}
           </div>
 
-          {/* 3-card metric grid */}
+          {/* 3-card metric grid with peak marker */}
           <div className="mt-3">
             <MetricsGrid item={item} />
             <PeakMarker energyNow={energyNow} peakRatio={peakRatio} />
           </div>
-          {/* energy flow overlay */}
-          <div className="floq-energy-flow" />
         </div>
       </div>
     );
