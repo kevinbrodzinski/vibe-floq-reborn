@@ -2,7 +2,7 @@ import * as React from "react";
 import { FloqCardLarge, FloqLargeItem } from "@/components/floqs/cards/FloqCardLarge";
 import { FloqCarousel } from "./FloqCarousel";
 
-export type MomentaryCardItem = FloqLargeItem; // reuse shape
+export type MomentaryCardItem = FloqLargeItem;
 
 export function MomentaryRail({ items }: { items: MomentaryCardItem[] }) {
   if (!items?.length) return null;

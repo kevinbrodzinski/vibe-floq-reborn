@@ -3,8 +3,8 @@ import { ProgressDonut } from "@/components/floqs/visual/ProgressDonut";
 
 export function MetricChip({
   label,
-  ringValue,       // 0..1
-  text,            // "85%" | "Low" | "78%"
+  ringValue,
+  text,
   live = true,
 }: { label: string; ringValue: number; text: string; live?: boolean }) {
   return (
