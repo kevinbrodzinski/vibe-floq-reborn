@@ -79,23 +79,33 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
     layerManager.register(spec);
     layerManager.apply('presence', featureCollection);
 
-    const reapply = () => { 
-      if (map.isStyleLoaded()) {
-        spec.mount(map);
-        // Reapply data after style change to restore avatar sprites
-        layerManager.apply('presence', featureCollection);
-        // Re-assert safe friend filters to prevent bad filters from persisting
-        safeSetFilter(map, 'presence-friend-avatar', [
-          "all", ["!has", "point_count"], 
-          ["match", ["get", "kind"], ["friend", "bestie"], true, false], 
-          ["has", "iconId"]
-        ]);
-        safeSetFilter(map, 'presence-friend-fallback', [
-          "all", ["!has", "point_count"], 
-          ["match", ["get", "kind"], ["friend", "bestie"], true, false], 
-          ["!", ["has", "iconId"]]
-        ]);
-      }
+    const reapply = () => {
+      if (!map.isStyleLoaded()) { map.once('idle', reapply); return; }
+      spec.mount(map);
+      // Reapply data after style change to restore avatar sprites
+      layerManager.apply('presence', featureCollection);
+
+      // Ensure the layers exist before filtering; try a few frames if needed
+      const ensureFilters = () => {
+        const hasAvatar   = !!map.getLayer('presence-friend-avatar');
+        const hasFallback = !!map.getLayer('presence-friend-fallback');
+        if (hasAvatar && hasFallback) {
+          safeSetFilter(map, 'presence-friend-avatar', [
+            "all", ["!has","point_count"],
+            ["match", ["get","kind"], ["friend","bestie"], true, false],
+            ["has","iconId"]
+          ]);
+          safeSetFilter(map, 'presence-friend-fallback', [
+            "all", ["!has","point_count"],
+            ["match", ["get","kind"], ["friend","bestie"], true, false],
+            ["!", ["has","iconId"]]
+          ]);
+        } else {
+          // layers not there yet (style is still settling) → try next frame
+          requestAnimationFrame(ensureFilters);
+        }
+      };
+      requestAnimationFrame(ensureFilters);
     };
     
     map.on('styledata', reapply);
