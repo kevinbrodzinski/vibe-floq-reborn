@@ -124,6 +124,10 @@ export default {
 					open: "126 84% 75%",
 					curious: "280 61% 68%",
 				},
+				floq: {
+					live: 'hsl(var(--floq-live))',
+					soon: 'hsl(var(--floq-soon))',
+				},
 				neon: "var(--neon)",
 				cardBg: "rgb(var(--card-bg) / <alpha-value>)",
 				sidebar: {

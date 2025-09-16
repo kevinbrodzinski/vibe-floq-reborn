@@ -2,6 +2,7 @@ import * as React from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useFloqScores } from "@/hooks/useFloqScores";
+import { openFloqPeek } from "@/lib/peek";
 
 export type FloqCardItem = {
   id: string;
@@ -29,10 +30,7 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
   const displayName = item.name || item.title || "Untitled";
   const participantCount = item.participants ?? item.participant_count ?? 0;
 
-  const onOpen = () => {
-    // Reuse your existing peek or detail opener
-    window.dispatchEvent(new CustomEvent("floq:peek", { detail: { id: item.id } }));
-  };
+  const onOpen = () => openFloqPeek(item.id);
 
   return (
     <Card className="w-[260px] cursor-pointer transition hover:shadow-md" onClick={onOpen}>

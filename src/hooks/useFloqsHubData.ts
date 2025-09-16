@@ -41,24 +41,18 @@ export function useFloqsHubData() {
   const nearby = (nearbyQuery.nearby || []) as HubItem[];
   const mine = (myFloqsQuery.data || []) as HubItem[];
 
+  // Helper functions
+  const isLiveWindow = (s?: string, e?: string) =>
+    !!(s && e && Date.now() >= +new Date(s) && Date.now() <= +new Date(e));
+
+  const isMomentary = (f: any) =>
+    f.type === "momentary" || !!(f.starts_at && f.ends_at); // keep simple & stable
+
   const momentaryLive = useMemo(
-    () => nearby.filter((f) => {
-      // Determine if it's momentary based on various possible indicators
-      const isMomentary = f.type === "momentary" || 
-                         (f.ends_at && new Date(f.ends_at) > new Date()) ||
-                         f.title?.includes("momentary") ||
-                         false;
-      const isLive = f.status === "live" || 
-                    (f.starts_at && f.ends_at && 
-                     new Date() >= new Date(f.starts_at) && 
-                     new Date() <= new Date(f.ends_at));
-      // Ensure required fields for MomentaryCardItem
-      return isMomentary && isLive && f.starts_at && f.ends_at;
-    }).map(f => ({
-      ...f,
-      starts_at: f.starts_at!,
-      ends_at: f.ends_at!,
-    })),
+    () => nearby
+      .filter((f) => isMomentary(f) && isLiveWindow(f.starts_at, f.ends_at))
+      .slice(0, 20)
+      .map((f) => ({ ...f, starts_at: f.starts_at!, ends_at: f.ends_at! })),
     [nearby]
   );
 

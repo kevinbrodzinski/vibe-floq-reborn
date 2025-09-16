@@ -1,0 +1,11 @@
+:root {
+  /* HSL triples, no unit — shadcn style */
+  --floq-live: var(--success);      /* or define a custom scale in your theme */
+  --floq-soon: var(--accent);
+}
+
+/* Dark theme override if you have a .dark class */
+.dark {
+  --floq-live: var(--success);
+  --floq-soon: var(--accent);
+}
