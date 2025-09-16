@@ -37,7 +37,7 @@ export function MomentaryFloqCard({ item }: { item: MomentaryCardItem }) {
       
       {/* TTL label */}
       <div className="absolute right-3 top-[58px] rounded bg-background/70 px-1.5 py-0.5 text-[11px] text-muted-foreground z-10">
-        {ttlMin}m
+        {ttlMin > 0 ? `${ttlMin}m` : "<1m"}
       </div>
     </div>
   );

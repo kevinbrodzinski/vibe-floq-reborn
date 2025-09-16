@@ -42,7 +42,7 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
       "rounded-2xl border border-[hsl(var(--floq-card-border))] " +
       "bg-[hsl(var(--floq-card-bg)/0.5)] backdrop-blur " +
       "shadow-[0_0_0_1px_hsl(var(--border)),0_0_30px_hsl(var(--floq-card-glow)/0.15)] " +
-      "transition-transform hover:translate-y-[-1px]";
+      "transition-transform hover:-translate-y-[1px]";
 
     return (
       <div className={cn("w-[92vw] max-w-[700px] h-[132px] p-4", glowCls)} onClick={onOpen} role="button">

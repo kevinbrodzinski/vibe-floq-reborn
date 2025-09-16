@@ -6,19 +6,19 @@ import * as React from "react";
  */
 export function MemberParticles({
   live = true,
-  rings = 2,                  // number of orbit rings
-  dotsPerRing = 2,            // small count keeps it classy
-  size = 36,                  // px square
+  rings = 2,
+  dotsPerRing = 2,
+  size = 36,
   className = "",
 }: { live?: boolean; rings?: number; dotsPerRing?: number; size?: number; className?: string }) {
   const ringColor = live ? "var(--floq-gauge-live-1)" : "var(--floq-gauge-soon-1)";
   const edgeColor = live ? "var(--floq-gauge-live-2)" : "var(--floq-gauge-soon-2)";
-  const items: JSX.Element[] = [];
+  const children: JSX.Element[] = [];
 
   for (let r = 0; r < rings; r++) {
-    const radius = 10 + r * 7;           // inner → outer
+    const radius = 10 + r * 7;
     const speed = r === 0 ? "fast" : r === 1 ? "" : "slow";
-    items.push(
+    children.push(
       <div key={`ring-${r}`} className={`absolute inset-0 floq-orbit ${speed}`} aria-hidden>
         {Array.from({ length: dotsPerRing }).map((_, i) => (
           <span
@@ -39,7 +39,7 @@ export function MemberParticles({
 
   return (
     <div className={`relative ${className}`} style={{ width: size, height: size }}>
-      {items}
+      {children}
     </div>
   );
 }

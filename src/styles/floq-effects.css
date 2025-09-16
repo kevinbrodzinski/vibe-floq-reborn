@@ -25,5 +25,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .floq-orbit, .floq-orbit.fast, .floq-orbit.slow, .floq-ripple > span { animation: none !important }
-  .hover\:translate-y-\[-1px\]:hover { transform: none !important; }
+  .hover\:-translate-y-\[1px\]:hover { transform: none !important; }
 }
