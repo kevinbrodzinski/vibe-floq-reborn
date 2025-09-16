@@ -24,19 +24,19 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
   ids.forEach(id => { if(map.getLayer(id)) try{ map.moveLayer(id, top); }catch{} });
 }
 
-// ---------- shared friend-kind expressions ----------
-// Use correct Mapbox filter syntax with "any" and equality checks
-const FRIEND_KIND_FILTER = ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]] as const;
+// ---------- completely flat filter definitions (no nested references) ----------
+// Flatten the filters to avoid nested array issues that cause Mapbox errors
 const FILTER_FRIEND_AVATAR = [
   "all",
   ["!has", "point_count"],
-  FRIEND_KIND_FILTER,
+  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
   ["has", "iconId"],
 ] as const;
+
 const FILTER_FRIEND_FALLBACK = [
   "all",
   ["!has", "point_count"],
-  FRIEND_KIND_FILTER,
+  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
   ["!has", "iconId"],
 ] as const;
 
