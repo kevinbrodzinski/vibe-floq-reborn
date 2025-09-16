@@ -8,8 +8,6 @@ import { TTLArc } from "@/components/floqs/visual/TTLArc";
 import { CohesionRing } from "@/components/floqs/visual/CohesionRing";
 import { MetricChip } from "@/components/floqs/metrics/MetricChip";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
-import { RippleIndicator } from "@/components/floqs/visual/RippleIndicator";
-import { MemberParticles } from "@/components/floqs/visual/MemberParticles";
 import { PartialRevealAvatarStack } from "@/components/floqs/visual/PartialRevealAvatarStack";
 import type { AvatarItem } from "@/components/floqs/visual/AvatarStack";
 
@@ -54,109 +52,49 @@ export function FloqCardLarge({ item }: { item: FloqLargeItem }) {
   const revealCount = intent === "commit" ? faces.length : intent === "consider" ? 2 : 0;
 
   const onOpen = () => nav(`/floq/${item.id}`);
-  
-  // Visual effects based on floq state
-  const energyLevel = energyNow * 100;
-  const isHighEnergy = energyLevel > 70;
-  const isLive = live;
-  const glowIntensity = Math.max(0.3, energyNow);
 
   return (
-    <div className="relative group">
-      <Card className={`
-        relative cursor-pointer transition-all duration-500 overflow-hidden
-        ${isLive ? 'shadow-[var(--glow-primary)]' : 'shadow-lg'} 
-        hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1
-        ${isHighEnergy ? 'animate-glow-flow' : ''}
-      `}
+    <div className="relative">
+      <Card className="cursor-pointer transition hover:shadow-md"
             onClick={onOpen} role="button" aria-label={`Open ${item.name}`}>
-        
-        {/* Background gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-        
-        {/* Energy flow effect for high energy floqs */}
-        {isHighEnergy && (
-          <div className="floq-energy-flow" aria-hidden="true" />
-        )}
-        
-        {/* Live indicator glow */}
-        {isLive && (
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 pointer-events-none rounded-lg animate-pulse" />
-        )}
-
-        <CardHeader className="relative pb-2">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="truncate text-xl relative">
-              {item.name}
-              {/* Active floq ripple indicator */}
-              {isLive && (
-                <div className="absolute -top-1 -right-1">
-                  <RippleIndicator active={true} size={16} />
-                </div>
-              )}
-            </CardTitle>
-            <span className={`
-              text-xs rounded px-2 py-0.5 backdrop-blur-sm border transition-all duration-300
-              ${isLive 
-                ? 'bg-primary/20 text-primary-foreground border-primary/30 shadow-[0_0_8px_hsl(var(--primary)/0.4)]' 
-                : item.status === "upcoming" 
-                ? 'bg-accent/20 text-accent-foreground border-accent/30' 
-                : 'bg-secondary/60 text-secondary-foreground border-border'
-              }
-            `}>
+            <CardTitle className="truncate text-xl">{item.name}</CardTitle>
+            <span className="text-xs rounded px-2 py-0.5 bg-secondary text-secondary-foreground">
               {item.status === "live" ? "Live" : item.status === "upcoming" ? "Soon" : "Ended"}
             </span>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-3 relative">
-          {/* Chips with enhanced styling */}
+        <CardContent className="space-y-3">
+          {/* Chips */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <MetricChip label="Compatibility" ringValue={compatibilityPct/100} text={`${compatibilityPct}%`} live={live} />
-              {compatibilityPct > 80 && (
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full -z-10 animate-pulse" />
-              )}
-            </div>
-            <MetricChip label="Friction" ringValue={Math.max(0.05, 1 - friction)} text={frictionLabel} live={live} />
-            <div className="relative">
-              <MetricChip label="Energy" ringValue={energyNow} text={`${Math.round(energyNow*100)}%`} live={live} />
-              {isHighEnergy && (
-                <div className="absolute inset-0 rounded-full shadow-[0_0_12px_hsl(var(--primary)/0.6)] animate-pulse" />
-              )}
-            </div>
+            <MetricChip label="Compatibility" ringValue={compatibilityPct/100} text={`${compatibilityPct}%`} live={live} />
+            <MetricChip label="Friction"      ringValue={Math.max(0.05, 1 - friction)} text={frictionLabel} live={live} />
+            <MetricChip label="Energy"        ringValue={energyNow} text={`${Math.round(energyNow*100)}%`} live={live} />
           </div>
 
-          {/* Participants + friends with glow */}
+          {/* Participants + friends */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">{(item.participants ?? 0)} in</div>
             {faces.length > 0 && (
-              <div className="relative">
-                <PartialRevealAvatarStack
-                  items={faces}
-                  revealCount={revealCount}
-                  size={22}
-                  overlap={7}
-                  onAvatarPress={(a, e) => { e.stopPropagation(); openFloqPeek(a.floqId || item.id); }}
-                />
-                {/* Friends in floq glow */}
-                {faces.length > 2 && (
-                  <div className="absolute -inset-2 bg-gradient-radial from-accent/30 to-transparent rounded-full -z-10 opacity-60" />
-                )}
-              </div>
+              <PartialRevealAvatarStack
+                items={faces}
+                revealCount={revealCount}
+                size={22}
+                overlap={7}
+                onAvatarPress={(a, e) => { e.stopPropagation(); openFloqPeek(a.floqId || item.id); }}
+              />
             )}
           </div>
         </CardContent>
 
-        <CardFooter className="justify-end gap-2 relative">
+        <CardFooter className="justify-end gap-2">
           <Button variant="outline" size="sm"
-            className="backdrop-blur-sm border-border/50 hover:border-primary/50 hover:bg-primary/10 transition-all duration-300"
             onClick={(e)=>{ e.stopPropagation(); openFloqPeek(item.id); }}>
             Peek
           </Button>
-          <Button size="sm" 
-            className="shadow-[var(--glow-secondary)] hover:shadow-[var(--glow-primary)] transition-all duration-300 hover:scale-105"
-            onClick={(e)=>{ e.stopPropagation(); onOpen(); }}>
+          <Button size="sm" onClick={(e)=>{ e.stopPropagation(); onOpen(); }}>
             Open
           </Button>
         </CardFooter>
@@ -165,13 +103,6 @@ export function FloqCardLarge({ item }: { item: FloqLargeItem }) {
       {/* Overlays */}
       <CohesionRing cohesion={item.cohesion ?? 0.6} />
       {item.starts_at && item.ends_at && <TTLArc startsAt={item.starts_at} endsAt={item.ends_at} />}
-      
-      {/* Member particles for active floqs */}
-      {(item.participants ?? 0) > 3 && isLive && (
-        <div className="absolute top-2 right-2 pointer-events-none">
-          <MemberParticles live={isLive} rings={2} dotsPerRing={2} size={40} />
-        </div>
-      )}
     </div>
   );
 }
