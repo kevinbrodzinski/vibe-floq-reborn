@@ -24,6 +24,7 @@ import { JoinIntentBar } from "./wcc/JoinIntentBar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { similarity } from "@/lib/vibe/similarity";
 import { OrbitIndicators } from "./constellation/OrbitIndicators";
+import { LocationPermissionPrompt } from "../LocationPermissionPrompt";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
@@ -85,10 +86,17 @@ export default function FloqsMainHub() {
         tribes: hubData.tribes.length,
         publicFloqs: hubData.publicFloqs.length,
         discover: hubData.discover.length,
-        coords
+        coords,
+        hasValidLocation: (hubData as any).hasValidLocation,
+        locationError: (hubData as any).locationError
       });
     }
   }, [hubData, coords]);
+
+  // Show location prompt if no location and user is viewing location-dependent tabs
+  const showLocationPrompt = !(hubData as any).hasValidLocation && 
+                           (tab === 'momentary' || tab === 'public') && 
+                           coords && coords.lat === 0 && coords.lng === 0;
 
   React.useEffect(() => {
     const cancel = onIdle(() => setPrewarm(true), 450);
@@ -155,6 +163,14 @@ export default function FloqsMainHub() {
           <div className="relative space-y-6 py-4">
             {/* Dynamic content glow based on active tab */}
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-accent/5 pointer-events-none opacity-60" />
+            
+            {/* Location Permission Prompt */}
+            {showLocationPrompt && (
+              <LocationPermissionPrompt 
+                onLocationGranted={() => window.location.reload()}
+                onSkip={() => setTab('tribes')}
+              />
+            )}
             {tab === "momentary" && (
               <>
                 <section className="relative">
@@ -167,7 +183,10 @@ export default function FloqsMainHub() {
                     <ActiveMomentaryRail items={applyMomentaryFilters(hubData.momentaryLive)} />
                   ) : (
                     <div className="px-2 py-6 text-sm text-muted-foreground/80">
-                      No momentary floqs match your filters
+                      {!(hubData as any).hasValidLocation 
+                        ? "Enable location to discover nearby momentary floqs"
+                        : "No momentary floqs match your filters"
+                      }
                     </div>
                   )}
                 </section>
@@ -212,7 +231,10 @@ export default function FloqsMainHub() {
                     <PublicRail items={hubData.publicFloqs as any} />
                   ) : (
                     <div className="px-2 py-6 text-sm text-muted-foreground/80">
-                      No public floqs found nearby
+                      {!(hubData as any).hasValidLocation 
+                        ? "Enable location to discover public floqs nearby"
+                        : "No public floqs found nearby"
+                      }
                     </div>
                   )}
                 </section>

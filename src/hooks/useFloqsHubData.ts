@@ -66,15 +66,32 @@ export function useFloqsHubData() {
   }
 
   const { coords } = useGeo();
-  const lat = coords?.lat ?? 0;
-  const lng = coords?.lng ?? 0;
-
-  // Use your existing hooks with proper error handling
-  const nearbyQuery = useNearbyFloqs(lat, lng, { km: 5 });
+  
+  // Only query nearby floqs if we have valid coordinates
+  // Don't pass (0,0) coordinates which causes slow queries at null island
+  const hasValidLocation = coords && coords.lat !== 0 && coords.lng !== 0;
+  const nearbyQuery = useNearbyFloqs(
+    hasValidLocation ? coords.lat : undefined, 
+    hasValidLocation ? coords.lng : undefined, 
+    { km: 5 }
+  );
   const myFloqsQuery = useMyFloqs();
 
-  const nearby = (nearbyQuery.nearby || []) as HubItem[];
+  // Only use nearby data if we have valid location, otherwise empty array
+  const nearby = (hasValidLocation && nearbyQuery.nearby ? nearbyQuery.nearby : []) as HubItem[];
   const mine = (myFloqsQuery.data || []) as HubItem[];
+  
+  // Debug logging for location and data issues
+  if (import.meta.env.DEV) {
+    console.log("[useFloqsHubData] Location status:", { 
+      coords, 
+      hasValidLocation, 
+      nearbyCount: nearby.length,
+      mineCount: mine.length,
+      nearbyLoading: nearbyQuery.loading,
+      nearbyError: nearbyQuery.error
+    });
+  }
 
   // Helper functions
   const isLiveWindow = (s?: string, e?: string) =>
@@ -191,7 +208,11 @@ export function useFloqsHubData() {
     publicFloqs: publicFloqs.slice(0, 20), 
     discover: discover.slice(0, 12), 
     constellationNodes,
-    constellationEdges
+    constellationEdges,
+    // Add location status for UI to show appropriate messages
+    hasValidLocation,
+    locationError: nearbyQuery.error,
+    locationLoading: nearbyQuery.loading
   };
 }
 
