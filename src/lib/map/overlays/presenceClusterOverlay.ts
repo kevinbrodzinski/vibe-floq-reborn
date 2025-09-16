@@ -25,8 +25,8 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
 }
 
 // ---------- shared friend-kind expressions ----------
-// Use modern expression syntax; avoids invalid legacy/expr mixes like ["has", ["get","kind"]]
-const FRIEND_KIND_FILTER = ["in", ["get", "kind"], "friend", "bestie"] as const;
+// Use correct Mapbox filter syntax with "any" and equality checks
+const FRIEND_KIND_FILTER = ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]] as const;
 const FILTER_FRIEND_AVATAR = [
   "all",
   ["!has", "point_count"],
