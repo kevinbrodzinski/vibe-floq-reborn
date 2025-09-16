@@ -146,12 +146,10 @@ export default function FloqsMainHub() {
                 {(() => {
                   const filtered = applyMomentaryFilters(hubData.momentaryLive);
                   const ordered = sortFloqs(filtered, sort);
-                  return ordered.length > 0 ? (
+                  return ordered.length ? (
                     <FloqList items={ordered as any} />
                   ) : (
-                    <div className="px-2 py-6 text-sm text-muted-foreground">
-                      No momentary floqs match your filters
-                    </div>
+                    <div className="px-2 py-6 text-sm text-muted-foreground">No momentary floqs match your filters</div>
                   );
                 })()}
               </section>
@@ -172,9 +170,7 @@ export default function FloqsMainHub() {
                 {hubData.tribes.length ? (
                   <FloqList items={sortFloqs(hubData.tribes as any, sort)} />
                 ) : (
-                  <div className="px-2 py-6 text-sm text-muted-foreground">
-                    You haven't joined any tribes yet
-                  </div>
+                  <div className="px-2 py-6 text-sm text-muted-foreground">You haven't joined any tribes yet</div>
                 )}
               </section>
             </>
@@ -188,9 +184,7 @@ export default function FloqsMainHub() {
                 {hubData.publicFloqs.length ? (
                   <FloqList items={sortFloqs(hubData.publicFloqs as any, sort)} />
                 ) : (
-                  <div className="px-2 py-6 text-sm text-muted-foreground">
-                    No public floqs found nearby
-                  </div>
+                  <div className="px-2 py-6 text-sm text-muted-foreground">No public floqs found nearby</div>
                 )}
               </section>
             </>

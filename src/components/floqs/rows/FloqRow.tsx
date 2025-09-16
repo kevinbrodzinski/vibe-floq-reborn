@@ -40,16 +40,17 @@ export function FloqRow({ item }: { item: FloqRowItem }) {
   const reveal = intent === "commit" ? faces.length : intent === "consider" ? 2 : 0;
 
   const openPage = () => nav(`/floq/${item.id}`);
+  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPage(); }
+  };
 
   return (
     <Card
       className="floq-card-pro flex items-center justify-between gap-3 px-3 py-3 transition hover:shadow-lg"
-      role="button" aria-label={`Open ${item.name}`}
-      onClick={openPage}
-      onKeyDown={(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPage(); } }}
-      tabIndex={0}
+      role="button" aria-label={`Open ${item.name}`} tabIndex={0}
+      onClick={openPage} onKeyDown={onKeyDown}
     >
-      {/* Left block: title + status + avatars */}
+      {/* Left: title + status + avatars */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3 className="truncate text-lg font-semibold">{item.name}</h3>
@@ -60,8 +61,10 @@ export function FloqRow({ item }: { item: FloqRowItem }) {
         <div className="mt-1 text-xs text-muted-foreground">{(item.participants ?? 0)} in</div>
         {faces.length > 0 && (
           <div className="mt-1">
-            <PartialRevealAvatarStack items={faces} revealCount={reveal} size={20} overlap={7}
-              onAvatarPress={(a,e)=>{ e.stopPropagation(); openFloqPeek(a.floqId || item.id); }} />
+            <PartialRevealAvatarStack
+              items={faces} revealCount={reveal} size={20} overlap={7}
+              onAvatarPress={(a,e)=>{ e.stopPropagation(); openFloqPeek(a.floqId || item.id); }}
+            />
           </div>
         )}
       </div>
