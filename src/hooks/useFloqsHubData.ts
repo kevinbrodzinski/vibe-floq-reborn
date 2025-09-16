@@ -5,6 +5,7 @@ import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
 import { useGeo } from "@/hooks/useGeo";
 import { getFloqsMock } from "@/mocks/floqs.mock";
 import { useMockRuntimeFlag } from "@/lib/mockFlag";
+import { useSmartFloqRecommendations } from "./useSmartFloqRecommendations";
 
 export type HubItem = {
   id: string;
