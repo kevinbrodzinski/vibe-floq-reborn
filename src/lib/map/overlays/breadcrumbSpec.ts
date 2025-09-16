@@ -2,7 +2,7 @@
 import type { OverlaySpec } from '@/lib/map/LayerManager';
 import type { Map } from 'mapbox-gl';
 import { hslVar, onThemeChange } from '@/lib/map/themeColor';
-import { applyLayerColors } from '@/lib/map/applyLayerColors';
+import { applyLayerColors, applyLayerColorsWhenReady } from '@/lib/map/applyLayerColors';
 
 const SRC = 'breadcrumb-src';
 const LINE_LYR = 'breadcrumb-line';
@@ -113,14 +113,24 @@ export function installBreadcrumbThemeWatcher(map: Map, ids = {
   circle: VENUES_LYR,
   line: LINE_LYR,
 }) {
+  const IDS = [ids.line, ids.circle];
+  const spec = {
+    [ids.line]: {
+      paint: {
+        'line-color': hslVar('--primary', 'hsl(210 100% 50%)'),
+      }
+    },
+    [ids.circle]: {
+      paint: {
+        'circle-color': hslVar('--primary', 'hsl(210 100% 50%)'),
+        'circle-stroke-color': hslVar('--background', 'hsl(0 0% 100%)'),
+      }
+    }
+  };
+  
   const apply = () => {
-    applyLayerColors(map, ids.line, {
-      'line-color': { var: '--primary', fallback: 'hsl(210 100% 50%)' },
-    });
-    applyLayerColors(map, ids.circle, {
-      'circle-color': { var: '--primary', fallback: 'hsl(210 100% 50%)' },
-      'circle-stroke-color': { var: '--background', fallback: 'hsl(0 0% 100%)' },
-    });
+    // Use the style-safe version that waits for layers to exist
+    applyLayerColorsWhenReady(map, spec, IDS);
   };
 
   // Apply immediately and subscribe to theme changes
