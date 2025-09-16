@@ -48,6 +48,7 @@ export type ConstellationEdge = {
 
 export function useFloqsHubData() {
   const [mockFlag] = useMockRuntimeFlag();
+  const smartRecommendations = useSmartFloqRecommendations(12);
 
   if (mockFlag) {
     const mock = useMemo(() => getFloqsMock(), []);
@@ -55,7 +56,7 @@ export function useFloqsHubData() {
       momentaryLive: mock.momentaryLive,
       tribes: mock.tribes,
       publicFloqs: mock.publicFloqs,
-      discover: mock.discover,
+      discover: smartRecommendations.recommendations.slice(0, 12) || mock.discover,
       constellationNodes: mock.constellationNodes,
       constellationEdges: mock.constellationEdges,
     };
