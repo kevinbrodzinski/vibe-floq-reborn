@@ -13,6 +13,8 @@ export type MockFloq = {
   recsys_score?: number;
   energy_now?: number;
   energy_peak?: number;
+  eta_minutes?: number;
+  vibe_delta?: number;
   door_policy?: "open" | "cover" | "line" | "guest" | null;
   type?: "momentary" | "tribe" | "public";
   privacy?: "public" | "private" | "hidden";
@@ -44,6 +46,7 @@ export function getFloqsMock(now = Date.now()) {
     starts_at: mkTime(-30), ends_at: mkTime(90),
     participants: 104, friends_in: 2, friend_faces: faces(2, "m-02"),
     recsys_score: 0.73, energy_now: 0.66, energy_peak: 0.88,
+    eta_minutes: 12, vibe_delta: 0.18,
     door_policy: "line", type: "momentary", privacy: "public",
     cohesion: 0.72,
   };
@@ -53,6 +56,7 @@ export function getFloqsMock(now = Date.now()) {
     starts_at: mkTime(40), ends_at: mkTime(160),
     participants: 37, friends_in: 1, friend_faces: faces(1, "m-03"),
     recsys_score: 0.62, energy_now: 0.2, energy_peak: 0.77,
+    eta_minutes: 24, vibe_delta: 0.35,
     door_policy: "guest", type: "momentary", privacy: "public",
     cohesion: 0.58,
   };

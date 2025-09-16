@@ -5,6 +5,7 @@ import { useFloqScores } from "@/hooks/useFloqScores";
 import { openFloqPeek } from "@/lib/peek";
 import { ProgressDonut } from "../visual/ProgressDonut";
 import { AvatarStack, AvatarItem } from "../visual/AvatarStack";
+import { MetricsGrid } from "@/components/floqs/metrics/MetricsGrid";
 import { cn } from "@/lib/utils";
 
 export type FloqCardItem = {
@@ -45,45 +46,15 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
       "transition-transform hover:-translate-y-[1px]";
 
     return (
-      <div className={cn("w-[92vw] max-w-[700px] h-[132px] p-4", glowCls)} onClick={onOpen} role="button">
-        <div className="flex h-full items-center gap-4">
-          {/* Left column */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between">
-              <h3 className="truncate text-lg font-semibold">{displayName}</h3>
-            </div>
-
-            {/* Avatars */}
-            {normalizeFaces(item).length > 0 ? (
-              <div className="mt-1">
-                <AvatarStack
-                  items={normalizeFaces(item)}
-                  max={4}
-                  size={24}
-                  overlap={8}
-                  onAvatarPress={(a) => openFloqPeek(a.floqId || item.id)}
-                />
-              </div>
-            ) : null}
-
-            {/* Stats rows */}
-            <div className="mt-3 grid grid-cols-2 gap-x-4 text-sm text-muted-foreground">
-              <div>Compatibility <span className="text-foreground font-medium">{Math.round(compatibilityPct)}%</span></div>
-              <div>Friction <span className="text-foreground font-medium">{frictionLabel}</span></div>
-              <div className="col-span-2 flex items-center gap-3 mt-1">
-                <span className="whitespace-nowrap">{timeLeft(item)}</span>
-                <span className="whitespace-nowrap">{Math.round(energyNow * 100)}% of peak{peakRatio ? ` (${Math.round(peakRatio * 100)}%)` : ""}</span>
-              </div>
-            </div>
+      <div className={cn("w-[92vw] max-w-[700px] p-4", glowCls)} onClick={onOpen} role="button">
+        <div className="space-y-4">
+          {/* Header */}
+          <div>
+            <h3 className="text-lg font-semibold">{displayName}</h3>
           </div>
 
-          {/* Right circular gauge with avatar */}
-          <div className="relative mr-1">
-            <ProgressDonut value={Math.max(0.08, energyNow)} live={item.status === "live"} size={72} stroke={7} />
-            <div className="absolute inset-0 grid place-items-center">
-              <div className="h-10 w-10 rounded-full bg-background ring-2 ring-border" />
-            </div>
-          </div>
+          {/* 3-card metric grid */}
+          <MetricsGrid item={item} />
         </div>
       </div>
     );
