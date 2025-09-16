@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { OverlaySpec } from '@/lib/map/LayerManager';
-import type { Map } from 'mapbox-gl';
+import type mapboxgl from 'mapbox-gl';
 import { hslVar, onThemeChange } from '@/lib/map/themeColor';
 import { applyLayerColors, applyLayerColorsWhenReady } from '@/lib/map/applyLayerColors';
 
@@ -9,7 +9,7 @@ const LINE_LYR = 'breadcrumb-line';
 const VENUES_LYR = 'breadcrumb-venues';
 
 /** Resolve a safe 'before' layer id if the requested one doesn't exist */
-function resolveBefore(map: Map, requested?: string): string | undefined {
+function resolveBefore(map: mapboxgl.Map, requested?: string): string | undefined {
   // If requested exists, use it
   if (requested && map.getLayer(requested)) return requested;
   // Prefer inserting beneath labels if possible
@@ -109,10 +109,10 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
 /**
  * Re-apply colors if theme changes (Tailwind dark mode, data-theme, etc.)
  */
-export function installBreadcrumbThemeWatcher(map: Map, ids = {
-  circle: VENUES_LYR,
-  line: LINE_LYR,
-}) {
+export function installBreadcrumbThemeWatcher(
+  map: mapboxgl.Map,
+  ids = { circle: VENUES_LYR, line: LINE_LYR }
+) {
   const IDS = [ids.line, ids.circle];
   const spec = {
     [ids.line]: {
