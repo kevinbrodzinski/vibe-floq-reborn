@@ -5,6 +5,7 @@ import { createPresenceClusterOverlay, buildPresenceFC, ensureAvatarImage } from
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useAuth } from '@/hooks/useAuth';
+import { safeSetFilter } from '@/lib/map/safeFilter';
 
 interface PresenceData {
   friends?: Array<{
@@ -83,6 +84,17 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
         spec.mount(map);
         // Reapply data after style change to restore avatar sprites
         layerManager.apply('presence', featureCollection);
+        // Re-assert safe friend filters to prevent bad filters from persisting
+        safeSetFilter(map, 'presence-friend-avatar', [
+          "all", ["!has", "point_count"], 
+          ["match", ["get", "kind"], ["friend", "bestie"], true, false], 
+          ["has", "iconId"]
+        ]);
+        safeSetFilter(map, 'presence-friend-fallback', [
+          "all", ["!has", "point_count"], 
+          ["match", ["get", "kind"], ["friend", "bestie"], true, false], 
+          ["!", ["has", "iconId"]]
+        ]);
       }
     };
     

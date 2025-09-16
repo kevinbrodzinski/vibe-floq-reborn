@@ -2,6 +2,7 @@ import mapboxgl from 'mapbox-gl';
 import type { OverlaySpec } from '@/lib/map/LayerManager';
 import { safeVibe } from '@/lib/vibes';
 import { vibeToHex } from '@/lib/vibe/color';
+import { safeSetFilter } from '@/lib/map/safeFilter';
 
 // ---------- small helpers ----------
 const lyr = (id:string,s:string)=>`${id}-${s}`;
@@ -22,6 +23,22 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
   if (!top) return;
   ids.forEach(id => { if(map.getLayer(id)) try{ map.moveLayer(id, top); }catch{} });
 }
+
+// ---------- shared friend-kind expressions ----------
+// Use modern expression syntax; avoids invalid legacy/expr mixes like ["has", ["get","kind"]]
+const FRIEND_KIND_EXPR = ["match", ["get", "kind"], ["friend", "bestie"], true, false] as const;
+const FILTER_FRIEND_AVATAR = [
+  "all",
+  ["!has", "point_count"],
+  FRIEND_KIND_EXPR,
+  ["has", "iconId"],
+] as const;
+const FILTER_FRIEND_FALLBACK = [
+  "all",
+  ["!has", "point_count"],
+  FRIEND_KIND_EXPR,
+  ["!", ["has", "iconId"]],
+] as const;
 
 // ---------- sprite for avatars ----------
 export async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: string, size=64): Promise<string|null> {
@@ -107,7 +124,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_FRIEND_AV)) {
     map.addLayer({
       id: PT_FRIEND_AV, type:'symbol', source: SID,
-      filter:['all',['!has','point_count'],['==',['get','kind'],'friend'],['has','iconId']],
+      filter: FILTER_FRIEND_AVATAR as any,
       layout:{
         'icon-image':['get','iconId'],
         'icon-size':['interpolate',['linear'],['zoom'], 12,0.38, 16,0.6, 18,0.72],
@@ -119,7 +136,7 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
   if (!map.getLayer(PT_FRIEND_FALL)) {
     map.addLayer({
       id: PT_FRIEND_FALL, type:'circle', source: SID,
-      filter:['all',['!has','point_count'],['==',['get','kind'],'friend'],['!has','iconId']],
+      filter: FILTER_FRIEND_FALLBACK as any,
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,5.5, 16,7.5],
         'circle-color':['coalesce',['get','vibeHex'],'#60a5fa'],
@@ -187,9 +204,13 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
     });
   };
 
-  map.on('click', PT_VENUE, clickPoint('venue'));
-  map.on('click', PT_FRIEND_AV, clickPoint('friend'));
-  map.on('click', PT_FRIEND_FALL, clickPoint('friend'));
+  // capture handler refs so we can detach correctly
+  const onClickVenue    = clickPoint('venue');
+  const onClickFriendAv = clickPoint('friend');
+  const onClickFriendFb = clickPoint('friend');
+  map.on('click', PT_VENUE, onClickVenue);
+  map.on('click', PT_FRIEND_AV, onClickFriendAv);
+  map.on('click', PT_FRIEND_FALL, onClickFriendFb);
   map.on('click', PT_SELF_HIT, async (e:any)=>{
     if (dragging || map.isMoving()) return;
     const pt = e.lngLat.wrap();
@@ -211,7 +232,7 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
   });
 
   // cluster click → expand/spider
-  map.on('click', CL, async (e:any)=>{
+  const onClusterClick = async (e:any)=>{
     if (dragging || map.isMoving()) return;
     const src = map.getSource(SID) as any;
     const f = e.features?.[0]; if(!src || !f) return;
@@ -278,9 +299,15 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
       map.on('click', layerId, onSpiderClick);
       map.on('move', cleanup); map.on('zoom', cleanup); map.on('mousedown', cleanup);
     });
-  });
+  };
+  map.on('click', CL, onClusterClick);
 
   // hover previews (desktop only)
+  let enter: ((e: any) => void) | undefined;
+  let move: ((e: any) => void) | undefined; 
+  let leave: (() => void) | undefined;
+  let styleCleanup: (() => void) | undefined;
+
   if (!isTouch()) {
     const popup = new mapboxgl.Popup({ closeButton:false, closeOnClick:false, offset:10 });
     const setHTML = (title:string, hex?:string)=>popup.setHTML(
@@ -290,19 +317,19 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
        </div>`
     );
 
-    const enter = (e:any)=>{ const f = e.features?.[0]; if(!f) return;
+    enter = (e:any)=>{ const f = e.features?.[0]; if(!f) return;
       setHTML(f.properties?.name ?? 'Unknown', f.properties?.vibeHex ?? undefined);
       popup.setLngLat(e.lngLat).addTo(map);
       map.getCanvas().style.cursor='pointer';
     };
-    const move = debounce((e:any)=>{ popup.setLngLat(e.lngLat); }, 50);
-    const leave = ()=>{ try{popup.remove();}catch{} map.getCanvas().style.cursor=''; };
+    move = debounce((e:any)=>{ popup.setLngLat(e.lngLat); }, 50);
+    leave = ()=>{ try{popup.remove();}catch{} map.getCanvas().style.cursor=''; };
 
     map.on('mouseenter', PT_VENUE, enter); map.on('mousemove', PT_VENUE, move); map.on('mouseleave', PT_VENUE, leave);
     map.on('mouseenter', PT_FRIEND_AV, enter); map.on('mousemove', PT_FRIEND_AV, move); map.on('mouseleave', PT_FRIEND_AV, leave);
     map.on('mouseenter', PT_FRIEND_FALL, enter); map.on('mousemove', PT_FRIEND_FALL, move); map.on('mouseleave', PT_FRIEND_FALL, leave);
 
-    const styleCleanup = ()=>{ try{popup.remove();}catch{} };
+    styleCleanup = ()=>{ try{popup.remove();}catch{} };
     map.on('styledata', styleCleanup);
   }
 
@@ -310,12 +337,11 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
   return () => {
     try { map.off('dragstart', ds); } catch {}
     try { map.off('dragend', de); } catch {}
-    
-    // Clean up all event listeners
-    try { map.off('click', PT_VENUE, () => {}); } catch {}
-    try { map.off('click', PT_FRIEND_AV, () => {}); } catch {}
-    try { map.off('click', PT_FRIEND_FALL, () => {}); } catch {}
-    try { map.off('click', CL, () => {}); } catch {}
+    // Detach click handlers by reference
+    try { map.off('click', PT_VENUE, onClickVenue); } catch {}
+    try { map.off('click', PT_FRIEND_AV, onClickFriendAv); } catch {}
+    try { map.off('click', PT_FRIEND_FALL, onClickFriendFb); } catch {}
+    try { map.off('click', CL, onClusterClick); } catch {}
     
     if (includeSelfHit) {
       try { map.off('click', PT_SELF_HIT, () => {}); } catch {}
@@ -323,16 +349,24 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
     
     // Clean up hover events if not touch
     if (!isTouch()) {
-      try { map.off('mouseenter', PT_VENUE, () => {}); } catch {}
-      try { map.off('mousemove', PT_VENUE, () => {}); } catch {}
-      try { map.off('mouseleave', PT_VENUE, () => {}); } catch {}
-      try { map.off('mouseenter', PT_FRIEND_AV, () => {}); } catch {}
-      try { map.off('mousemove', PT_FRIEND_AV, () => {}); } catch {}
-      try { map.off('mouseleave', PT_FRIEND_AV, () => {}); } catch {}
-      try { map.off('mouseenter', PT_FRIEND_FALL, () => {}); } catch {}
-      try { map.off('mousemove', PT_FRIEND_FALL, () => {}); } catch {}
-      try { map.off('mouseleave', PT_FRIEND_FALL, () => {}); } catch {}
-      try { map.off('styledata', () => {}); } catch {}
+      if (enter) {
+        try { map.off('mouseenter', PT_VENUE, enter); } catch {}
+        try { map.off('mouseenter', PT_FRIEND_AV, enter); } catch {}
+        try { map.off('mouseenter', PT_FRIEND_FALL, enter); } catch {}
+      }
+      if (move) {
+        try { map.off('mousemove', PT_VENUE, move); } catch {}
+        try { map.off('mousemove', PT_FRIEND_AV, move); } catch {}
+        try { map.off('mousemove', PT_FRIEND_FALL, move); } catch {}
+      }
+      if (leave) {
+        try { map.off('mouseleave', PT_VENUE, leave); } catch {}
+        try { map.off('mouseleave', PT_FRIEND_AV, leave); } catch {}
+        try { map.off('mouseleave', PT_FRIEND_FALL, leave); } catch {}
+      }
+      if (styleCleanup) {
+        try { map.off('styledata', styleCleanup); } catch {}
+      }
     }
   };
 }
@@ -357,6 +391,9 @@ export function createPresenceClusterOverlay(options: {
       ensureSource(map, SID, options.initial);
       addLayers(map, id, includeSelfHit);
       disposeInteractions = wireInteractions(map, id, includeSelfHit);
+      // Assert correct friend filters (prevents invalid resurrected filters on style changes)
+      safeSetFilter(map, lyr(id,'friend-avatar'),   FILTER_FRIEND_AVATAR);
+      safeSetFilter(map, lyr(id,'friend-fallback'), FILTER_FRIEND_FALLBACK);
       const layers = includeSelfHit 
         ? [lyr(id,'self-hit'), lyr(id,'friend-avatar'), lyr(id,'friend-fallback'), lyr(id,'venue'), lyr(id,'cluster-count'), lyr(id,'cluster')]
         : [lyr(id,'friend-avatar'), lyr(id,'friend-fallback'), lyr(id,'venue'), lyr(id,'cluster-count'), lyr(id,'cluster')];
