@@ -23,6 +23,7 @@ import type { VibeKey } from "@/hooks/useMomentaryFilters";
 import { JoinIntentBar } from "./wcc/JoinIntentBar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { similarity } from "@/lib/vibe/similarity";
+import { OrbitIndicators } from "./constellation/OrbitIndicators";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
@@ -121,6 +122,13 @@ export default function FloqsMainHub() {
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300" />
             </Button>
           </div>
+
+          <OrbitIndicators 
+            activeTab={tab}
+            momentaryCount={applyMomentaryFilters(hubData.momentaryLive).length}
+            tribesCount={hubData.tribes.length}
+            publicCount={hubData.publicFloqs.length}
+          />
 
           <div className="mt-6">
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
