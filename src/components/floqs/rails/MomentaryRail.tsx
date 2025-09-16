@@ -4,13 +4,10 @@ import { MomentaryFloqCard, MomentaryCardItem } from "../cards/MomentaryFloqCard
 
 export function MomentaryRail({ items }: { items: MomentaryCardItem[] }) {
   return (
-    <ScrollArea className="w-full">
-      <div className="flex gap-3 px-2 py-3">
-        {items.map((it) => (
-          <MomentaryFloqCard key={it.id} item={it} />
-        ))}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <div className="mt-3 flex flex-col gap-3 px-2">
+      {items.map((it) => (
+        <MomentaryFloqCard key={it.id} item={it} />
+      ))}
+    </div>
   );
 }

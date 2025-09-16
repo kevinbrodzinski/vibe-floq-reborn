@@ -1,15 +1,24 @@
 :root {
-  /* HSL triples, no unit — shadcn style */
-  --floq-live: var(--success);      /* or define a custom scale in your theme */
-  --floq-soon: var(--accent);
-  --floq-edge-friend: var(--ring);               /* subtle highlight */
-  --floq-edge-time:   var(--muted-foreground);   /* low-key baseline */
+  /* Card backgrounds & glows */
+  --floq-card-bg:        var(--muted);
+  --floq-card-ink:       var(--foreground);
+  --floq-card-glow:      var(--ring);
+  --floq-card-border:    var(--border);
+
+  /* Gauges (live/upcoming flavor) */
+  --floq-gauge-live-1:   var(--primary);
+  --floq-gauge-live-2:   var(--accent);
+  --floq-gauge-soon-1:   var(--secondary);
+  --floq-gauge-soon-2:   var(--accent);
+
+  /* Stat pills */
+  --floq-pill-bg:        var(--secondary);
+  --floq-pill-ink:       var(--secondary-foreground);
 }
 
-/* Dark theme override if you have a .dark class */
-.dark {
-  --floq-live: var(--success);
-  --floq-soon: var(--accent);
-  --floq-edge-friend: var(--ring);
-  --floq-edge-time:   var(--muted-foreground);
+/* Reduced motion support for card hover effects */
+@media (prefers-reduced-motion: reduce) {
+  .hover\:translate-y-\[-1px\]:hover { 
+    transform: none !important; 
+  }
 }

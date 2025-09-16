@@ -29,24 +29,31 @@ export default function FloqsMainHub() {
       {/* Header */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center justify-between">
-          <h1
-            className="text-2xl font-bold tracking-tight hover:opacity-90 cursor-pointer"
-            aria-label="Open constellation view"
-            onClick={() => setConstellation(true)}
-          >
+          <h1 className="relative text-4xl sm:text-5xl font-extrabold tracking-tight">
+            <span className="absolute inset-0 blur-xl opacity-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--accent)/.45)_0%,transparent_60%)] -z-10" />
             Your Social Constellation
           </h1>
-          <Button variant="secondary" size="sm" onClick={() => setConstellation(true)}>
+          <Button
+            variant="secondary"
+            className="rounded-full bg-secondary/70 hover:bg-secondary text-secondary-foreground px-4 h-9 shadow-sm"
+            onClick={() => setConstellation(true)}
+          >
             Constellation
           </Button>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-6">
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
-            <TabsList className="grid grid-cols-3 gap-2 w-full">
-              <TabsTrigger value="momentary">Momentary</TabsTrigger>
-              <TabsTrigger value="tribes">Tribes</TabsTrigger>
-              <TabsTrigger value="public">Public</TabsTrigger>
+            <TabsList className="grid grid-cols-3 gap-2 rounded-full bg-secondary/50 p-1">
+              <TabsTrigger value="momentary" className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-full h-9">
+                Momentary
+              </TabsTrigger>
+              <TabsTrigger value="tribes" className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-full h-9">
+                Tribes
+              </TabsTrigger>
+              <TabsTrigger value="public" className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-full h-9">
+                Public
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -60,11 +67,11 @@ export default function FloqsMainHub() {
           {tab === "momentary" && (
             <>
               <section>
-                <h2 className="px-2 text-lg font-semibold">Active Momentary</h2>
+                <h2 className="px-2 mt-6 text-lg font-semibold">Active Momentary</h2>
                 <MomentaryRail items={momentaryLive} />
               </section>
               <section>
-                <h2 className="px-2 text-lg font-semibold">Discover</h2>
+                <h2 className="px-2 mt-8 text-lg font-semibold">Discover</h2>
                 <DiscoverRail items={discover} />
               </section>
             </>

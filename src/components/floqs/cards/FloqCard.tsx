@@ -3,6 +3,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { openFloqPeek } from "@/lib/peek";
+import { ProgressDonut } from "../visual/ProgressDonut";
+import { cn } from "@/lib/utils";
 
 export type FloqCardItem = {
   id: string;
@@ -26,12 +28,63 @@ export type FloqCardItem = {
 
 export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "discover" | "public" | "momentary" }) {
   const { compatibilityPct, friction, energyNow, peakRatio } = useFloqScores(item);
+  const frictionLabel = friction < 0.25 ? "Low" : friction < 0.6 ? "Moderate" : "High";
   
   const displayName = item.name || item.title || "Untitled";
   const participantCount = item.participants ?? item.participant_count ?? 0;
 
   const onOpen = () => openFloqPeek(item.id);
 
+  // For momentary cards, use the new layout
+  if (kind === "momentary") {
+    const glowCls =
+      "rounded-2xl border border-[hsl(var(--floq-card-border))] " +
+      "bg-[hsl(var(--floq-card-bg)/0.5)] backdrop-blur " +
+      "shadow-[0_0_0_1px_hsl(var(--border)),0_0_30px_hsl(var(--floq-card-glow)/0.15)] " +
+      "transition-transform hover:translate-y-[-1px]";
+
+    return (
+      <div className={cn("w-[92vw] max-w-[700px] h-[132px] p-4", glowCls)} onClick={onOpen} role="button">
+        <div className="flex h-full items-center gap-4">
+          {/* Left column */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="truncate text-lg font-semibold">{displayName}</h3>
+            </div>
+
+            {/* Avatars */}
+            {item.friends_in ? (
+              <div className="mt-1 flex -space-x-2">
+                <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-background" />
+                <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-background" />
+                <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-background" />
+              </div>
+            ) : null}
+
+            {/* Stats rows */}
+            <div className="mt-3 grid grid-cols-2 gap-x-4 text-sm text-muted-foreground">
+              <div>Compatibility <span className="text-foreground font-medium">{Math.round(compatibilityPct)}%</span></div>
+              <div>Friction <span className="text-foreground font-medium">{frictionLabel}</span></div>
+              <div className="col-span-2 flex items-center gap-3 mt-1">
+                <span className="whitespace-nowrap">{timeLeft(item)}</span>
+                <span className="whitespace-nowrap">{Math.round(energyNow * 100)}% of peak{peakRatio ? ` (${Math.round(peakRatio * 100)}%)` : ""}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right circular gauge with avatar */}
+          <div className="relative mr-1">
+            <ProgressDonut value={Math.max(0.08, energyNow)} live={item.status === "live"} size={72} stroke={7} />
+            <div className="absolute inset-0 grid place-items-center">
+              <div className="h-10 w-10 rounded-full bg-background ring-2 ring-border" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default card layout for other types
   return (
     <Card className="w-[260px] cursor-pointer transition hover:shadow-md" onClick={onOpen}>
       <CardHeader className="pb-2">
@@ -45,7 +98,7 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
 
       <CardContent className="space-y-1 text-sm text-muted-foreground">
         <p>Compatibility {Math.round(compatibilityPct)}%</p>
-        <p>Friction {Math.round(friction * 100) / 100}</p>
+        <p>Friction {frictionLabel}</p>
         <p>Energy {Math.round(energyNow * 100)}% {peakRatio ? `(peak ${Math.round(peakRatio * 100)}%)` : ""}</p>
       </CardContent>
 
@@ -55,4 +108,12 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
       </CardFooter>
     </Card>
   );
+}
+
+function timeLeft(item: FloqCardItem) {
+  if (!item.starts_at || !item.ends_at) return "";
+  const now = Date.now(), end = +new Date(item.ends_at);
+  const m = Math.max(0, Math.round((end - now) / 60000));
+  if (m >= 60) return `${Math.floor(m/60)} h ${m%60} m left`;
+  return `${m} m left`;
 }
