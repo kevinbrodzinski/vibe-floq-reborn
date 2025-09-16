@@ -39,5 +39,5 @@ export const useAvatarPreloader = (
         });
       }
     }
-  }, [avatarPaths.join('|'), sizes.join(','), observe]);
+  }, [avatarPaths.join('|'), sizes.join(','), observe?.length]);
 };

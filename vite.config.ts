@@ -43,6 +43,7 @@ export default defineConfig(({ mode, command }) => {
     server: {
       host: "0.0.0.0",
       port: 8080,
+      strictPort: true,
       hmr: getHMRConfig(),
     },
 
