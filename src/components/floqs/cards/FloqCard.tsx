@@ -6,6 +6,8 @@ import { openFloqPeek } from "@/lib/peek";
 import { ProgressDonut } from "../visual/ProgressDonut";
 import { AvatarStack, AvatarItem } from "../visual/AvatarStack";
 import { MetricsGrid } from "@/components/floqs/metrics/MetricsGrid";
+import { useJoinIntent } from "@/hooks/useJoinIntent";
+import { PartialRevealAvatarStack } from "../visual/PartialRevealAvatarStack";
 import { cn } from "@/lib/utils";
 
 export type FloqCardItem = {
@@ -39,6 +41,9 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
 
   // For momentary cards, use the new layout
   if (kind === "momentary") {
+    const intent = useJoinIntent(item.id).stage;
+    const faces: AvatarItem[] = normalizeFaces(item);
+    
     const glowCls =
       "rounded-2xl border border-[hsl(var(--floq-card-border))] " +
       "bg-[hsl(var(--floq-card-bg)/0.5)] backdrop-blur " +
@@ -53,8 +58,21 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
             <h3 className="text-lg font-semibold">{displayName}</h3>
           </div>
 
+          {/* Avatars block */}
+          <div className="mt-1">
+            {intent === "commit" ? (
+              <AvatarStack items={faces} max={4} size={24} overlap={8} onAvatarPress={(a)=>openFloqPeek(a.floqId || item.id)} />
+            ) : intent === "consider" ? (
+              <PartialRevealAvatarStack items={faces} revealCount={2} size={24} overlap={8} onAvatarPress={(a)=>openFloqPeek(a.floqId || item.id)} />
+            ) : (
+              <PartialRevealAvatarStack items={faces} revealCount={0} size={24} overlap={8} />
+            )}
+          </div>
+
           {/* 3-card metric grid */}
-          <MetricsGrid item={item} />
+          <div className="mt-3">
+            <MetricsGrid item={item} />
+          </div>
         </div>
       </div>
     );
