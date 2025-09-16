@@ -2,7 +2,6 @@
 @import './styles/floq-tokens.css';
 @import './styles/floq-effects.css';
 @import './styles/floq-energy.css';
-@import './styles/floq-card-glow.css';
 @import './styles/scrollbar.css';
 @import './styles/field.css';
 @tailwind base;

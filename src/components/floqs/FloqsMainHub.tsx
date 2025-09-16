@@ -3,9 +3,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FloqList } from "./rails/FloqList";
-import { SortBar, sortFloqs } from "./filters/SortBar";
-import { useListSort } from "@/hooks/useListSort";
+import { MomentaryRail } from "./rails/MomentaryRail";
+import { TribesRail } from "./rails/TribesRail";
+import { PublicRail } from "./rails/PublicRail";
 import { DiscoverRail } from "./rails/DiscoverRail";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
 import { ConstellationView } from "@/components/constellation/ConstellationView";
@@ -32,7 +32,6 @@ export default function FloqsMainHub() {
   const { coords } = useGeo();
   const { filters } = useMomentaryFilters();
   const userVibe = useUserVibe();
-  const { sort } = useListSort();
 
   function computeSmartFlags(f: any) {
     // Matches my vibe: use real vector sim if present, else fallback to recsys / vibe_delta
@@ -97,101 +96,149 @@ export default function FloqsMainHub() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex min-h-dvh flex-col bg-background">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between">
-          <h1 className="relative text-4xl sm:text-5xl font-extrabold tracking-tight">
-            <span className="absolute inset-0 blur-xl opacity-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--accent)/.45)_0%,transparent_60%)] -z-10" />
-            Your Social Constellation
-          </h1>
-          <Button
-            variant="secondary"
-            className="rounded-full bg-secondary/70 hover:bg-secondary text-secondary-foreground px-4 h-9 shadow-sm"
-            onClick={() => setConstellation(true)}
-            aria-label="Open constellation view"
-          >
-            Constellation
-          </Button>
+      <div className="relative flex min-h-dvh flex-col overflow-hidden">
+        {/* Atmospheric Background */}
+        <div className="absolute inset-0 bg-[var(--gradient-field)] -z-20" />
+        <div className="absolute inset-0 bg-[var(--gradient-vibe)] opacity-5 -z-10" />
+        
+        {/* Floating Particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+          <div className="absolute top-20 left-10 w-2 h-2 bg-primary/20 rounded-full animate-pulse" style={{ animationDelay: '0s', animationDuration: '4s' }} />
+          <div className="absolute top-32 right-20 w-1 h-1 bg-accent/30 rounded-full animate-pulse" style={{ animationDelay: '1s', animationDuration: '3s' }} />
+          <div className="absolute bottom-32 left-1/4 w-1.5 h-1.5 bg-primary/15 rounded-full animate-pulse" style={{ animationDelay: '2s', animationDuration: '5s' }} />
         </div>
 
-        <div className="mt-6">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
-            <TabsList className="grid grid-cols-3 gap-2 rounded-full bg-secondary/50 p-1">
-              <TabsTrigger value="momentary" className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-full h-9">
-                Momentary
-              </TabsTrigger>
-              <TabsTrigger value="tribes" className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-full h-9">
-                Tribes
-              </TabsTrigger>
-              <TabsTrigger value="public" className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-full h-9">
-                Public
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Body */}
-      <ScrollArea className="flex-1 px-2">
-        <div className="space-y-6 py-4">
-          {tab === "momentary" && (
-            <>
-              <section>
-                <h2 className="px-2 mt-6 text-lg font-semibold">Active Momentary</h2>
-                <MomentaryFiltersBar />
-                <SortBar />
-                {(() => {
-                  const filtered = applyMomentaryFilters(hubData.momentaryLive);
-                  const ordered = sortFloqs(filtered, sort);
-                  return ordered.length ? (
-                    <FloqList items={ordered as any} />
-                  ) : (
-                    <div className="px-2 py-6 text-sm text-muted-foreground">No momentary floqs match your filters</div>
-                  );
-                })()}
-              </section>
-              <section>
-                <h2 className="px-2 mt-8 text-lg font-semibold">Discover</h2>
-                <div className="px-2 mt-3">
-                  <PerfectTimingCard />
+        {/* Header */}
+        <div className="relative px-4 pt-4 pb-2 bg-background/30 backdrop-blur-md border-b border-border/20">
+          <div className="flex items-center justify-between">
+            <h1 className="relative text-4xl sm:text-5xl font-extrabold tracking-tight">
+              <span className="absolute inset-0 blur-2xl opacity-40 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text -z-10" />
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-ripple-wave">
+                Your Social Constellation
+              </span>
+              {/* Orbital accent */}
+              <div className="absolute -top-2 -right-2 w-3 h-3">
+                <div className="floq-orbit slow">
+                  <span className="absolute w-1 h-1 bg-accent/60 rounded-full shadow-[0_0_8px_hsl(var(--accent))]" 
+                        style={{ left: 'calc(50% - 12px)', top: '50%', transform: 'translate(-50%, -50%) rotate(0deg) translateX(12px)' }} />
                 </div>
-              </section>
-            </>
-          )}
+              </div>
+            </h1>
+            <Button
+              variant="secondary"
+              className="relative rounded-full bg-secondary/40 hover:bg-secondary/60 text-secondary-foreground px-4 h-9 backdrop-blur-sm border border-border/30 shadow-lg hover:shadow-[var(--glow-secondary)] transition-all duration-300 hover:scale-105"
+              onClick={() => setConstellation(true)}
+              aria-label="Open constellation view"
+            >
+              <span className="relative z-10">Constellation</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300" />
+            </Button>
+          </div>
 
-          {tab === "tribes" && (
-            <>
-              <section>
-                <h2 className="px-2 text-lg font-semibold">Your Tribes</h2>
-                <SortBar />
-                {hubData.tribes.length ? (
-                  <FloqList items={sortFloqs(hubData.tribes as any, sort)} />
-                ) : (
-                  <div className="px-2 py-6 text-sm text-muted-foreground">You haven't joined any tribes yet</div>
-                )}
-              </section>
-            </>
-          )}
-
-          {tab === "public" && (
-            <>
-              <section>
-                <h2 className="px-2 text-lg font-semibold">Public Floqs</h2>
-                <SortBar />
-                {hubData.publicFloqs.length ? (
-                  <FloqList items={sortFloqs(hubData.publicFloqs as any, sort)} />
-                ) : (
-                  <div className="px-2 py-6 text-sm text-muted-foreground">No public floqs found nearby</div>
-                )}
-              </section>
-            </>
-          )}
+          <div className="mt-6">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+              <TabsList className="relative grid grid-cols-3 gap-2 rounded-full bg-background/20 backdrop-blur-md border border-border/30 p-1 shadow-lg">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 opacity-60" />
+                <TabsTrigger value="momentary" className="relative data-[state=active]:bg-background/80 data-[state=active]:text-foreground data-[state=active]:shadow-[var(--glow-active)] rounded-full h-9 transition-all duration-300 hover:bg-background/40">
+                  Momentary
+                </TabsTrigger>
+                <TabsTrigger value="tribes" className="relative data-[state=active]:bg-background/80 data-[state=active]:text-foreground data-[state=active]:shadow-[var(--glow-active)] rounded-full h-9 transition-all duration-300 hover:bg-background/40">
+                  Tribes
+                </TabsTrigger>
+                <TabsTrigger value="public" className="relative data-[state=active]:bg-background/80 data-[state=active]:text-foreground data-[state=active]:shadow-[var(--glow-active)] rounded-full h-9 transition-all duration-300 hover:bg-background/40">
+                  Public
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
-        <ScrollBar orientation="vertical" />
-      </ScrollArea>
+
+        <Separator className="bg-border/30" />
+
+        {/* Body */}
+        <ScrollArea className="flex-1 px-2">
+          <div className="relative space-y-6 py-4">
+            {/* Dynamic content glow based on active tab */}
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-accent/5 pointer-events-none opacity-60" />
+            {tab === "momentary" && (
+              <>
+                <section className="relative">
+                  <h2 className="relative px-2 mt-6 text-lg font-semibold">
+                    <span className="relative z-10">Active Momentary</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent h-px bottom-0" />
+                  </h2>
+                  <MomentaryFiltersBar />
+                  {applyMomentaryFilters(hubData.momentaryLive).length > 0 ? (
+                    <div className="relative">
+                      <ActiveMomentaryRail items={applyMomentaryFilters(hubData.momentaryLive)} />
+                      {/* Energy field behind active floqs */}
+                      <div className="absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
+                    </div>
+                  ) : (
+                    <div className="px-2 py-6 text-sm text-muted-foreground/80">
+                      No momentary floqs match your filters
+                    </div>
+                  )}
+                </section>
+                <section className="relative">
+                  <h2 className="relative px-2 mt-8 text-lg font-semibold">
+                    <span className="relative z-10">Discover</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/20 to-transparent h-px bottom-0" />
+                  </h2>
+                  <div className="px-2 mt-3">
+                    <PerfectTimingCard />
+                  </div>
+                </section>
+              </>
+            )}
+
+            {tab === "tribes" && (
+              <>
+                <section className="relative">
+                  <h2 className="relative px-2 text-lg font-semibold">
+                    <span className="relative z-10">Your Tribes</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent h-px bottom-0" />
+                  </h2>
+                  {hubData.tribes.length ? (
+                    <div className="relative">
+                      <TribesRail items={hubData.tribes as any} />
+                      {/* Tribal energy field */}
+                      <div className="absolute inset-0 bg-gradient-conic from-primary/8 via-accent/4 to-primary/8 pointer-events-none opacity-60" />
+                    </div>
+                  ) : (
+                    <div className="px-2 py-6 text-sm text-muted-foreground/80">
+                      You haven't joined any tribes yet
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+
+            {tab === "public" && (
+              <>
+                <section className="relative">
+                  <h2 className="relative px-2 text-lg font-semibold">
+                    <span className="relative z-10">Public Floqs</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/20 to-transparent h-px bottom-0" />
+                  </h2>
+                  {hubData.publicFloqs.length ? (
+                    <div className="relative">
+                      <PublicRail items={hubData.publicFloqs as any} />
+                      {/* Public energy field */}
+                      <div className="absolute inset-0 bg-gradient-radial from-accent/10 via-primary/5 to-transparent pointer-events-none opacity-50" />
+                    </div>
+                  ) : (
+                    <div className="px-2 py-6 text-sm text-muted-foreground/80">
+                      No public floqs found nearby
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+          </div>
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
+      </div>
 
       {constellation && (
         <ConstellationView
@@ -205,9 +252,8 @@ export default function FloqsMainHub() {
       {/* Dev: keyboard mocks toggle (⌘⌥M / Ctrl+Alt+M) */}
       {!import.meta.env.PROD && <MockHotkeys />}
       
-        {/* Mount Peek Sheet once */}
-        <FloqPeekSheet />
-      </div>
+      {/* Mount Peek Sheet once */}
+      <FloqPeekSheet />
     </TooltipProvider>
   );
 }
