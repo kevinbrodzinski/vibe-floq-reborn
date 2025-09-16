@@ -2,10 +2,14 @@
   /* HSL triples, no unit — shadcn style */
   --floq-live: var(--success);      /* or define a custom scale in your theme */
   --floq-soon: var(--accent);
+  --floq-edge-friend: var(--ring);               /* subtle highlight */
+  --floq-edge-time:   var(--muted-foreground);   /* low-key baseline */
 }
 
 /* Dark theme override if you have a .dark class */
 .dark {
   --floq-live: var(--success);
   --floq-soon: var(--accent);
+  --floq-edge-friend: var(--ring);
+  --floq-edge-time:   var(--muted-foreground);
 }

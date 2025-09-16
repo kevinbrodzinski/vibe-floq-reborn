@@ -8,11 +8,21 @@ import { TribesGrid } from "./rails/TribesGrid";
 import { DiscoverRail } from "./rails/DiscoverRail";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
 import { ConstellationView } from "@/components/constellation/ConstellationView";
+import { onIdle } from "@/lib/prewarm";
+import { PrewarmProbe } from "./PrewarmProbe";
+import { useGeo } from "@/hooks/useGeo";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
   const [constellation, setConstellation] = React.useState(false);
+  const [prewarm, setPrewarm] = React.useState(false);
   const { momentaryLive, tribes, publicFloqs, discover } = useFloqsHubData();
+  const { coords } = useGeo();
+
+  React.useEffect(() => {
+    const cancel = onIdle(() => setPrewarm(true), 450);
+    return cancel;
+  }, []);
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -84,6 +94,7 @@ export default function FloqsMainHub() {
       </ScrollArea>
 
       {constellation && <ConstellationView onClose={() => setConstellation(false)} />}
+      {prewarm && <PrewarmProbe lat={coords?.lat ?? null} lng={coords?.lng ?? null} />}
     </div>
   );
 }
