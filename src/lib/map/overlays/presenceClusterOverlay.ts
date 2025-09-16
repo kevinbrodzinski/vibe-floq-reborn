@@ -208,10 +208,7 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
   const onClickVenue    = clickPoint('venue');
   const onClickFriendAv = clickPoint('friend');
   const onClickFriendFb = clickPoint('friend');
-  map.on('click', PT_VENUE, onClickVenue);
-  map.on('click', PT_FRIEND_AV, onClickFriendAv);
-  map.on('click', PT_FRIEND_FALL, onClickFriendFb);
-  map.on('click', PT_SELF_HIT, async (e:any)=>{
+  const onSelfHitClick = async (e:any) => {
     if (dragging || map.isMoving()) return;
     const pt = e.lngLat.wrap();
     
@@ -229,7 +226,12 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
       const { recenterAndHighlight } = await import('@/lib/map/overlays/userAuraHighlight');
       recenterAndHighlight(map, { durationMs: 900, easeMs: 350, alphaBoost: 0.2, keepZoom: true });
     } catch {}
-  });
+  };
+
+  map.on('click', PT_VENUE, onClickVenue);
+  map.on('click', PT_FRIEND_AV, onClickFriendAv);
+  map.on('click', PT_FRIEND_FALL, onClickFriendFb);
+  if (includeSelfHit) map.on('click', PT_SELF_HIT, onSelfHitClick);
 
   // cluster click → expand/spider
   const onClusterClick = async (e:any)=>{
@@ -344,7 +346,7 @@ function wireInteractions(map: mapboxgl.Map, id: string, includeSelfHit = false)
     try { map.off('click', CL, onClusterClick); } catch {}
     
     if (includeSelfHit) {
-      try { map.off('click', PT_SELF_HIT, () => {}); } catch {}
+      try { map.off('click', PT_SELF_HIT, onSelfHitClick); } catch {}
     }
     
     // Clean up hover events if not touch
