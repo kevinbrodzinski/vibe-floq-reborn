@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useThrottledCallback } from 'use-debounce';
 import * as React from 'react';
 
@@ -10,6 +10,7 @@ interface PerformanceMetrics {
 }
 
 export function usePerformanceOptimization() {
+  const [shouldReduceMotion, setShouldReduceMotion] = useState(false);
   const frameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(performance.now());
   const fpsRef = useRef<number[]>([]);
@@ -34,14 +35,25 @@ export function usePerformanceOptimization() {
     frameRef.current = requestAnimationFrame(updateFPS);
   }, []);
 
-  // Start/stop FPS monitoring
+  // Start/stop FPS monitoring  
   useEffect(() => {
     frameRef.current = requestAnimationFrame(updateFPS);
+    
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setShouldReduceMotion(mediaQuery.matches);
+    
+    const updateMotionPreference = (e: MediaQueryListEvent) => {
+      setShouldReduceMotion(e.matches);
+    };
+    
+    mediaQuery.addListener(updateMotionPreference);
     
     return () => {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
       }
+      mediaQuery.removeListener(updateMotionPreference);
     };
   }, [updateFPS]);
 
