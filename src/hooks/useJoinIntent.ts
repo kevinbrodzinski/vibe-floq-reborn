@@ -1,35 +1,35 @@
 import { useState, useEffect } from "react";
 
-type JoinStage = "idle" | "consider" | "commit";
+export type JoinStage = "watch" | "consider" | "commit";
 
 export function useJoinIntent(floqId?: string) {
-  const [stage, setStage] = useState<JoinStage>("idle");
+  const [stage, setStage] = useState<JoinStage>("watch");
 
   useEffect(() => {
-    if (!floqId) return;
-    
-    // Simple intent logic - could be enhanced with ML/analytics
-    const stored = localStorage.getItem(`join-intent:${floqId}`);
-    if (stored === "commit") {
-      setStage("commit");
-    } else if (stored === "consider") {
-      setStage("consider");
-    }
+    if (!floqId || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const p = url.searchParams.get("intent");
+    if (p === "watch" || p === "consider" || p === "commit") setStage(p);
   }, [floqId]);
 
+  const update = (s: JoinStage) => {
+    setStage(s);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("intent", s);
+      window.history.replaceState({}, "", url.toString());
+      window.dispatchEvent(new CustomEvent("floq:intent", { detail: { floqId, stage: s } }));
+    }
+  };
+
   const advance = () => {
-    if (!floqId) return;
-    
-    const next = stage === "idle" ? "consider" : stage === "consider" ? "commit" : "commit";
-    setStage(next);
-    localStorage.setItem(`join-intent:${floqId}`, next);
+    const next = stage === "watch" ? "consider" : stage === "consider" ? "commit" : "commit";
+    update(next);
   };
 
   const reset = () => {
-    if (!floqId) return;
-    setStage("idle");
-    localStorage.removeItem(`join-intent:${floqId}`);
+    update("watch");
   };
 
-  return { stage, advance, reset };
+  return { stage, setStage: update, advance, reset };
 }

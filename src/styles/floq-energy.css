@@ -1,0 +1,18 @@
+@keyframes energy-flow {
+  0% { transform: translateX(-8%); opacity: .15 }
+  100% { transform: translateX(8%); opacity: .15 }
+}
+.floq-energy-flow {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.floq-energy-flow::before,
+.floq-energy-flow::after {
+  content: "";
+  position: absolute; left: -10%; top: 40%; width: 120%; height: 2px;
+  background: linear-gradient(90deg, transparent, hsl(var(--ring) / .25), transparent);
+  animation: energy-flow 2.8s ease-in-out infinite alternate;
+}
+.floq-energy-flow::after { top: 60%; animation-duration: 3.4s }
+@media (prefers-reduced-motion: reduce) {
+  .floq-energy-flow::before, .floq-energy-flow::after { animation: none }
+}

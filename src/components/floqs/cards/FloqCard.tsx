@@ -8,6 +8,7 @@ import { AvatarStack, AvatarItem } from "../visual/AvatarStack";
 import { MetricsGrid } from "@/components/floqs/metrics/MetricsGrid";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
 import { PartialRevealAvatarStack } from "../visual/PartialRevealAvatarStack";
+import { PeakMarker } from "../visual/PeakMarker";
 import { cn } from "@/lib/utils";
 
 export type FloqCardItem = {
@@ -72,7 +73,10 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
           {/* 3-card metric grid */}
           <div className="mt-3">
             <MetricsGrid item={item} />
+            <PeakMarker energyNow={energyNow} peakRatio={peakRatio} />
           </div>
+          {/* energy flow overlay */}
+          <div className="floq-energy-flow" />
         </div>
       </div>
     );

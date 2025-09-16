@@ -1,9 +1,11 @@
 @import './styles/tokens.css';
 @import './styles/floq-tokens.css';
 @import './styles/floq-effects.css';
+@import './styles/floq-energy.css';
 @import './styles/scrollbar.css';
 @import './styles/field.css';
 
+@import "./floq-energy.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

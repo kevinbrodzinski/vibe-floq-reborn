@@ -15,6 +15,11 @@ import { FloqPeekSheet } from "./FloqPeekSheet";
 import { MockHotkeys } from "@/components/dev/MockHotkeys";
 import { ActiveMomentaryRail } from "./rails/ActiveMomentaryRail";
 import { PerfectTimingCard } from "./cards/PerfectTimingCard";
+import { MomentaryFiltersBar } from "./filters/MomentaryFilters";
+import { useMomentaryFilters } from "@/hooks/useMomentaryFilters";
+import { useUserVibe, vibeKeyToVector } from "@/hooks/useUserVibe";
+import type { VibeKey } from "@/hooks/useMomentaryFilters";
+import { JoinIntentBar } from "./wcc/JoinIntentBar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function FloqsMainHub() {
@@ -22,7 +27,73 @@ export default function FloqsMainHub() {
   const [constellation, setConstellation] = React.useState(false);
   const [prewarm, setPrewarm] = React.useState(false);
   const hubData = useFloqsHubData();
-  const { coords } = useGeo();
+  const userVibe = useUserVibe();
+
+  function dot([a,b,c]: number[], [x,y,z]: number[]) { return a*x + b*y + c*z; }
+  function toFloqVector(f: any): [number,number,number] {
+    // prefer explicit vector from engine; else map vibe key; else derive from energy/metadata; else neutral
+    if (Array.isArray(f.vibe_vector) && f.vibe_vector.length === 3) {
+      return normalize([+f.vibe_vector[0], +f.vibe_vector[1], +f.vibe_vector[2]]);
+    }
+    if (typeof f.vibe === "string") return vibeKeyToVector(f.vibe.toLowerCase() as VibeKey);
+    // cheap derivation: energyNow tilts to "hype"; participants/friends tilt to "social"
+    const energy = Math.max(0, Math.min(1, f.energy_now ?? 0.5));
+    const social = Math.max(0, Math.min(1, ((f.participants ?? 0) + (f.friends_in ?? 0)) / 200));
+    const chill = Math.max(0, 1 - Math.max(energy, social));
+    return normalize([chill, social, energy]);
+  }
+  function normalize(v: number[]): [number,number,number] {
+    const s = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]) || 1;
+    return [v[0]/s, v[1]/s, v[2]/s] as any;
+  }
+
+  function vibeSimilarity(uv: {vector: [number,number,number]}, f: any): number {
+    const fv = toFloqVector(f);
+    return Math.max(0, Math.min(1, dot(uv.vector, fv)));
+  }
+
+  function computeSmartFlags(f: any) {
+    // Matches my vibe: use real vector sim if present, else fallback to recsys / vibe_delta
+    const sim = vibeSimilarity(userVibe, f);
+    const fallback = (f.recsys_score ?? (1 - (f.vibe_delta ?? 0.3)));
+    const matchVibe = sim >= 0.75 || fallback >= 0.75;
+
+    // Low friction: same as before
+    const vibeGap = Math.max(0, Math.min(1, f.vibe_delta ?? 0.2));
+    const eta = Math.min(1, (f.eta_minutes ?? 0) / 30);
+    const door = f.door_policy === "line" ? 0.35 : f.door_policy === "cover" ? 0.25 : f.door_policy === "guest" ? 0.15 : 0;
+    const friction = Math.min(1, 0.5*eta + 0.3*door + 0.2*vibeGap);
+    const lowFriction = friction <= 0.35;
+
+    // Building energy: as before
+    const energyNow = f.energy_now ?? 0.5;
+    const peak = Math.max(energyNow, f.energy_peak ?? 0.6);
+    const peakRatio = peak > 0 ? energyNow / peak : 0.0;
+    const buildingEnergy = energyNow >= 0.5 && peakRatio >= 0.75;
+
+    return { matchVibe, lowFriction, buildingEnergy };
+  }
+
+  function applyMomentaryFilters(list: any[]) {
+    const now = Date.now();
+    const endsSoonCutoff = now + 30 * 60 * 1000;
+
+    return list.filter((f) => {
+      // vibe chips
+      const vibe: string | undefined = f.vibe?.toLowerCase?.();
+      const vibeOk = !filters.vibes.length || (vibe && filters.vibes.includes(vibe as VibeKey));
+
+      // ends soon
+      const endTs = f.ends_at ? +new Date(f.ends_at) : undefined;
+      const soonOk = !filters.endsSoon || (endTs !== undefined && endTs <= endsSoonCutoff);
+
+      // smart filters (all selected must pass)
+      const s = computeSmartFlags(f);
+      const smartOk = !filters.smart.length || filters.smart.every((k) => s[k]);
+
+      return vibeOk && soonOk && smartOk;
+    });
+  }
   
   // Debug logging for data issues (dev only)
   React.useEffect(() => {
@@ -88,11 +159,12 @@ export default function FloqsMainHub() {
             <>
               <section>
                 <h2 className="px-2 mt-6 text-lg font-semibold">Active Momentary</h2>
-                {hubData.momentaryLive.length > 0 ? (
-                  <ActiveMomentaryRail items={hubData.momentaryLive} />
+                <MomentaryFiltersBar />
+                {applyMomentaryFilters(hubData.momentaryLive).length > 0 ? (
+                  <ActiveMomentaryRail items={applyMomentaryFilters(hubData.momentaryLive)} />
                 ) : (
-                  <div className="px-2 py-8 text-center text-muted-foreground">
-                    No momentary floqs nearby right now
+                  <div className="px-2 py-6 text-sm text-muted-foreground">
+                    No momentary floqs match your filters
                   </div>
                 )}
               </section>
