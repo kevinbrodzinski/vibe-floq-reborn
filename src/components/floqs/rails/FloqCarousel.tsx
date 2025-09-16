@@ -11,7 +11,10 @@ export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
     if (!scroller) return;
     const el = scroller.children[idx] as HTMLElement | undefined;
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    
+    // Calculate scroll position manually to prevent page scrolling
+    const scrollLeft = el.offsetLeft - scroller.offsetLeft;
+    scroller.scrollTo({ left: scrollLeft, behavior: "smooth" });
     setI(idx);
   };
   const prev = () => toIndex((i - 1 + len) % len);
