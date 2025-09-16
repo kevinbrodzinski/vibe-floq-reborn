@@ -1,13 +1,48 @@
 import type mapboxgl from 'mapbox-gl';
 
-/** Normalize a Mapbox filter tree into supported-ops form */
+function isGetExpr(x: any): x is any[] {
+  return Array.isArray(x) && x[0] === 'get' && typeof x[1] === 'string';
+}
+
+/** Normalize a Mapbox filter tree into legacy-friendly ops */
 export function normalizeFilter(node: any): any {
   if (!Array.isArray(node)) return node;
   const op = node[0];
 
   // ["!", ["has","prop"]] -> ["!has","prop"]
-  if (op === '!' && Array.isArray(node[1]) && node[1][0] === 'has' && typeof node[1][1] === 'string') {
+  if (op === '!' && Array.isArray(node[1]) && node[1][0] === 'has') {
+    const key = isGetExpr(node[1][1]) ? node[1][1][1] : node[1][1];
+    return ['!has', key];
+  }
+
+  // ["has", ["get","prop"]] -> ["has","prop"]
+  if (op === 'has' && isGetExpr(node[1])) {
+    return ['has', node[1][1]];
+  }
+
+  // ["!has", ["get","prop"]] -> ["!has","prop"]
+  if (op === '!has' && isGetExpr(node[1])) {
     return ['!has', node[1][1]];
+  }
+
+  // ["==", ["get","prop"], v] -> ["==","prop", v]
+  if ((op === '==' || op === '!=') && isGetExpr(node[1])) {
+    return [op, node[1][1], normalizeFilter(node[2])];
+  }
+
+  // ["in", ["get","prop"], "a","b"] or ["in", ["get","prop"], ["literal",[...]]]
+  if ((op === 'in' || op === '!in') && isGetExpr(node[1]) && node.length > 2) {
+    const key = node[1][1];
+    const values = Array.isArray(node[2]) && node[2][0] === 'literal' && Array.isArray(node[2][1])
+      ? node[2][1]
+      : node.slice(2);
+    // legacy: ["in","prop", ...vals] ; ["!in","prop", ...vals]
+    return [op, key, ...values.map(normalizeFilter)];
+  }
+
+  // Collapse any remaining ["get","prop"] in binary comparators to "prop"
+  if ((op === '>' || op === '>=' || op === '<' || op === '<=') && isGetExpr(node[1])) {
+    return [op, node[1][1], normalizeFilter(node[2])];
   }
 
   // ["match", ["get","prop"], ["a","b"], true, false] -> ["any", ["==", ["get","prop"], "a"], ...]
@@ -21,24 +56,7 @@ export function normalizeFilter(node: any): any {
     }
   }
 
-  // ["in", ["get","prop"], "a","b", ...] -> ["any", ["==", ["get","prop"], "a"], ...]
-  if (op === 'in' && Array.isArray(node[1]) && node[1][0] === 'get' && node.length > 2) {
-    if (Array.isArray(node[2]) && node[2][0] === 'literal' && Array.isArray(node[2][1])) {
-      const values = node[2][1];
-      return ['any', ...values.map(v => ['==', normalizeFilter(node[1]), v])];
-    }
-    const values = node.slice(2);
-    return ['any', ...values.map(v => ['==', normalizeFilter(node[1]), v])];
-  }
-
-  // ["!in", ["get","prop"], ...] -> ["all", ["!=", ["get","prop"], "a"], ...]
-  if (op === '!in' && Array.isArray(node[1]) && node[1][0] === 'get' && node.length > 2) {
-    const values = (Array.isArray(node[2]) && node[2][0] === 'literal' && Array.isArray(node[2][1]))
-      ? node[2][1]
-      : node.slice(2);
-    return ['all', ...values.map(v => ['!=', normalizeFilter(node[1]), v])];
-  }
-
+  // Recurse by default
   return node.map(normalizeFilter);
 }
 

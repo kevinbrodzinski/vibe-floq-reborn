@@ -25,20 +25,22 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
   ids.forEach(id => { if(map.getLayer(id)) try{ map.moveLayer(id, top); }catch{} });
 }
 
-// ---------- completely flat filter definitions (no nested references) ----------
-// Define filters as completely flat arrays to prevent any nesting issues
+// ---------- Legacy-friendly filter definitions ----------
+// Use legacy syntax without ["get", ...] expressions to avoid grammar errors
+const FILTER_FRIEND_KIND = ["in", "kind", "friend", "bestie"] as const;
+
+const FILTER_FRIEND_AVATAR = [
+  "all",
+  ["!has", "point_count"],
+  FILTER_FRIEND_KIND,
+  ["has", "iconId"],
+] as const;
+
 const FILTER_FRIEND_FALLBACK = [
   "all",
   ["!has", "point_count"],
-  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
-  ["!has", "iconId"]
-] as const;
-
-const FILTER_FRIEND_AVATAR = [
-  "all", 
-  ["!has", "point_count"],
-  ["any", ["==", ["get", "kind"], "friend"], ["==", ["get", "kind"], "bestie"]],
-  ["has", "iconId"]
+  FILTER_FRIEND_KIND,
+  ["!has", "iconId"],
 ] as const;
 
 // ---------- sprite for avatars ----------
