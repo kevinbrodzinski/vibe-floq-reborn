@@ -19,6 +19,16 @@ export function useFloqRealtime(floqId: string) {
     recent_activity: []
   });
 
+  const [connectionState, setConnectionState] = useState<{
+    isConnected: boolean;
+    isReconnecting: boolean;
+    quality: 'excellent' | 'good' | 'fair' | 'poor';
+  }>({
+    isConnected: true,
+    isReconnecting: false,
+    quality: 'excellent'
+  });
+
   useEffect(() => {
     if (!floqId) return;
 
@@ -48,12 +58,31 @@ export function useFloqRealtime(floqId: string) {
     };
   }, [floqId]);
 
+  // Simulate dynamic connection quality and stats
+  const stats = {
+    messages: realtimeData.recent_activity.length,
+    latency: Math.floor(Math.random() * 50) + 20, // 20-70ms
+    connectedUsers: realtimeData.member_count,
+    uptime: Math.floor(Date.now() / 1000) % 86400, // seconds since midnight
+    activeChannels: 1
+  };
+
+  const getPerformanceMetrics = () => ({
+    cpu: Math.floor(Math.random() * 20) + 30, // 30-50%
+    memory: Math.floor(Math.random() * 30) + 40, // 40-70%
+    fps: 60,
+    latency: stats.latency,
+    messageRate: Math.floor(Math.random() * 10) + 5, // 5-15 msg/min
+    uptime: stats.uptime,
+    connectedUsers: stats.connectedUsers
+  });
+
   return {
     realtimeData,
-    isConnected: true,
-    isReconnecting: false,
-    connectionQuality: 'excellent' as const,
-    stats: { messages: 0, latency: 0 },
-    getPerformanceMetrics: () => ({ cpu: 0, memory: 0, fps: 60 })
+    isConnected: connectionState.isConnected,
+    isReconnecting: connectionState.isReconnecting,
+    connectionQuality: connectionState.quality,
+    stats,
+    getPerformanceMetrics
   };
 }
