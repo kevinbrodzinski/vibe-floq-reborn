@@ -3,6 +3,8 @@ import * as React from "react";
 const STORAGE_KEY = "floqs:mocks";
 
 function envDefault() {
+  // Enable mocks by default in development
+  if (!import.meta.env.PROD) return true;
   return (import.meta as any)?.env?.VITE_FLOQS_MOCKS === "1";
 }
 
