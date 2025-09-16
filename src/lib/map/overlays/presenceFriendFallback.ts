@@ -2,6 +2,6 @@
 export const FRIEND_FALLBACK_FILTER = [
   "all",
   ["!has", "point_count"],
-  ["match", ["get", "kind"], ["friend", "bestie"], true, false],
-  ["!", ["has", "iconId"]],
+  ["in", ["get", "kind"], "friend", "bestie"],
+  ["!has", "iconId"],
 ] as const;

@@ -26,18 +26,18 @@ function moveToTop(map: mapboxgl.Map, ids: string[]) {
 
 // ---------- shared friend-kind expressions ----------
 // Use modern expression syntax; avoids invalid legacy/expr mixes like ["has", ["get","kind"]]
-const FRIEND_KIND_EXPR = ["match", ["get", "kind"], ["friend", "bestie"], true, false] as const;
+const FRIEND_KIND_FILTER = ["in", ["get", "kind"], "friend", "bestie"] as const;
 const FILTER_FRIEND_AVATAR = [
   "all",
   ["!has", "point_count"],
-  FRIEND_KIND_EXPR,
+  FRIEND_KIND_FILTER,
   ["has", "iconId"],
 ] as const;
 const FILTER_FRIEND_FALLBACK = [
   "all",
   ["!has", "point_count"],
-  FRIEND_KIND_EXPR,
-  ["!", ["has", "iconId"]],
+  FRIEND_KIND_FILTER,
+  ["!has", "iconId"],
 ] as const;
 
 // ---------- sprite for avatars ----------
