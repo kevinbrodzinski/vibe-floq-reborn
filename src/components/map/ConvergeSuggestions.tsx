@@ -121,7 +121,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
-      if (e.key === 'Enter' && points.length > 0) {
+      if (e.key === 'Enter' && !loading && points.length > 0) {
         // if focus isn't inside the list, fire the first suggestion
         if (!document.activeElement || !(document.activeElement as HTMLElement).closest('[data-converge-list]')) {
           request(points[0]);
@@ -132,7 +132,7 @@ export function ConvergeSuggestions({ onClose }: Props) {
     // Focus close button for accessibility
     closeBtnRef.current?.focus();
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, close, points, request]);
+  }, [open, close, points, request, loading]);
 
   if (!open) return null;
 
@@ -176,10 +176,10 @@ export function ConvergeSuggestions({ onClose }: Props) {
         <ul className="p-2 space-y-2" data-converge-list>
           {loading ? (
             showSpinner ? (
-              <div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div>
+              <li><div className="px-3 py-8 text-sm text-white/80">Finding great spots…</div></li>
             ) : null
           ) : points.length === 0 ? (
-            <div className="px-3 py-8 text-sm text-white/80">No strong options nearby.</div>
+            <li><div className="px-3 py-8 text-sm text-white/80">No strong options nearby.</div></li>
           ) : (
             points.map((p, idx) => {
               const isPrefilledTop = prefillId !== null && p.id === prefillId && idx === 0;
