@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Clock, Users, ArrowRight, Pause, X } from "lucide-react";
 import { PartialRevealAvatarStack } from "../visual/PartialRevealAvatarStack";
-import { LiveUpdatesScroll } from "./LiveUpdatesScroll";
+import { LiveUpdatesScrollWithRealtime } from "./LiveUpdatesScrollWithRealtime";
 import { CommitmentLadder } from "./CommitmentLadder";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import type { FloqCardItem } from "../cards/FloqCard";
@@ -87,7 +87,7 @@ export function FloqConsideringView({ item, onCommitmentChange, currentStage }: 
         {/* Live activity feed */}
         <div className="space-y-2">
           <div className="text-sm font-medium">Live updates</div>
-          <LiveUpdatesScroll updates={liveUpdates} maxHeight="120px" />
+          <LiveUpdatesScrollWithRealtime floqId={item.id} maxHeight="120px" showTimestamps />
         </div>
 
         <Separator />

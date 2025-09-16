@@ -7,6 +7,10 @@ import { ProgressDonut } from "../visual/ProgressDonut";
 import { AvatarStack, AvatarItem } from "../visual/AvatarStack";
 import { MetricsGrid } from "@/components/floqs/metrics/MetricsGrid";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
+import { useSmartPeekTrigger } from "@/hooks/useSmartPeekTrigger";
+import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
+import { useLazyLoading } from "@/hooks/useLazyLoading";
+import { useTouchGestures } from "@/hooks/useTouchGestures";
 import { PartialRevealAvatarStack } from "../visual/PartialRevealAvatarStack";
 import { PeakMarker } from "../visual/PeakMarker";
 import { CohesionRing } from "../visual/CohesionRing";
@@ -44,7 +48,29 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
   const displayName = item.name || item.title || "Untitled";
   const participantCount = item.participants ?? item.participant_count ?? 0;
 
-  const onOpen = () => openFloqPeek(item.id);
+  // Enhanced peek with smart stage detection
+  const { triggerSmartPeek } = useSmartPeekTrigger(item.id, item, {
+    friendsInside: item.friends_in,
+    compatibility: compatibilityPct / 100
+  });
+
+  // Performance optimization for visual effects
+  const { particles, animations, reducedComplexity } = usePerformanceOptimization({
+    enableParticles: energyNow > 0.3,
+    enableAnimations: true,
+    enableHeavyVisuals: kind === "momentary"
+  });
+
+  // Lazy loading for off-screen cards
+  const { elementRef, shouldLoad } = useLazyLoading({ threshold: 0.1 });
+
+  // Touch gestures for mobile
+  const touchBind = useTouchGestures({
+    onTap: triggerSmartPeek,
+    onLongPress: () => openFloqPeek(item.id, 'commit')
+  });
+
+  const onOpen = triggerSmartPeek;
 
   // For momentary cards, use the new layout
   if (kind === "momentary") {
@@ -64,44 +90,56 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
       "transition-transform hover:-translate-y-[1px]";
 
     return (
-      <div className={cn("w-[92vw] max-w-[700px] relative", glowCls)} onClick={onOpen} role="button">
-        {/* Vibe gradient background */}
-        <VibeGradient vibe={vibe} intensity={energyNow} />
-        
-        {/* Cohesion ring */}
-        <CohesionRing cohesion={cohesion} colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"} />
-        
-        {/* Energy flow particles */}
-        <EnergyFlowParticles 
-          energy={energyNow} 
-          peakRatio={peakRatio || 0} 
-          live={live} 
-        />
-        
-        {/* TTL Arc for momentary floqs */}
-        {item.starts_at && item.ends_at && (
-          <TTLArc 
-            startsAt={item.starts_at} 
-            endsAt={item.ends_at} 
-            colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"}
-          />
+      <div 
+        ref={elementRef}
+        className={cn("w-[92vw] max-w-[700px] relative", glowCls)} 
+        onClick={onOpen} 
+        role="button"
+        {...touchBind()}
+      >
+        {shouldLoad && (
+          <>
+            {/* Vibe gradient background */}
+            <VibeGradient vibe={vibe} intensity={energyNow} />
+            
+            {/* Cohesion ring */}
+            <CohesionRing cohesion={cohesion} colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"} />
+            
+            {/* Energy flow particles - performance optimized */}
+            {particles && !reducedComplexity && (
+              <EnergyFlowParticles 
+                energy={energyNow} 
+                peakRatio={peakRatio || 0} 
+                live={live} 
+              />
+            )}
+            
+            {/* TTL Arc for momentary floqs */}
+            {animations && item.starts_at && item.ends_at && (
+              <TTLArc 
+                startsAt={item.starts_at} 
+                endsAt={item.ends_at} 
+                colorVar={live ? "--floq-gauge-live-1" : "--floq-gauge-soon-1"}
+              />
+            )}
+            
+            {/* Ripple indicator in corner */}
+            <div className="absolute top-3 right-3">
+              <RippleIndicator active={live && energyNow > 0.6 && animations} size={28} />
+            </div>
+          </>
         )}
-        
-        {/* Ripple indicator in corner */}
-        <div className="absolute top-3 right-3">
-          <RippleIndicator active={live && energyNow > 0.6} size={28} />
-        </div>
         
         <div className="p-4 space-y-4 relative z-10">
           {/* Header with member particles */}
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">{displayName}</h3>
-            {/* Member particles for high energy floqs */}
-            {energyNow > 0.5 && (
+            {/* Member particles for high energy floqs - performance optimized */}
+            {energyNow > 0.5 && particles && !reducedComplexity && (
               <MemberParticles 
                 live={live}
                 rings={Math.ceil(energyNow * 2)}
-                dotsPerRing={3}
+                dotsPerRing={reducedComplexity ? 2 : 3}
                 size={40}
               />
             )}
