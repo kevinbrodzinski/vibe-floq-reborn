@@ -11,6 +11,7 @@ import { ConstellationView } from "@/components/constellation/ConstellationView"
 import { onIdle } from "@/lib/prewarm";
 import { PrewarmProbe } from "./PrewarmProbe";
 import { useGeo } from "@/hooks/useGeo";
+import { FloqPeekSheet } from "./FloqPeekSheet";
 
 export default function FloqsMainHub() {
   const [tab, setTab] = React.useState<"momentary" | "tribes" | "public">("momentary");
@@ -102,6 +103,9 @@ export default function FloqsMainHub() {
 
       {constellation && <ConstellationView onClose={() => setConstellation(false)} />}
       {prewarm && <PrewarmProbe lat={coords?.lat ?? null} lng={coords?.lng ?? null} />}
+      
+      {/* Mount Peek Sheet once */}
+      <FloqPeekSheet />
     </div>
   );
 }
