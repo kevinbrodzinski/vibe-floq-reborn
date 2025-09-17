@@ -48,8 +48,12 @@ export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
       
       <div 
         ref={ref} 
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 scrollbar-hide"
-        style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 scrollbar-hide touch-pan-x"
+        style={{ 
+          scrollBehavior: "smooth", 
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x"
+        }}
         {...touchBind()}
       >
         {React.Children.map(children, (child, idx) => (

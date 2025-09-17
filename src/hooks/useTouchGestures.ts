@@ -23,15 +23,13 @@ export function useTouchGestures(options: TouchGesturesOptions = {}) {
   } = options;
 
   const bind = useGesture({
-    onDrag: ({ direction: [dx], distance, cancel }) => {
-      // Horizontal swipe detection
-      if (distance[0] > swipeThreshold) {
+    onDrag: ({ direction: [dx], distance, velocity, active }) => {
+      // Only trigger on deliberate fast swipes, not during scrolling
+      if (!active && distance[0] > swipeThreshold && Math.abs(velocity[0]) > 0.5) {
         if (dx > 0 && onSwipeRight) {
           onSwipeRight();
-          cancel();
         } else if (dx < 0 && onSwipeLeft) {
           onSwipeLeft();
-          cancel();
         }
       }
     },
@@ -48,7 +46,9 @@ export function useTouchGestures(options: TouchGesturesOptions = {}) {
   }, {
     drag: { 
       axis: 'x',
-      threshold: 10
+      threshold: 20,
+      filterTaps: true,
+      preventDefaultCondition: () => false // Allow native scrolling
     },
     pinch: { 
       threshold: 0.1
