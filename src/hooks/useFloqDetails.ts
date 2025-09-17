@@ -3,6 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from '@/integrations/supabase/types';
+import { getMockFloqDetails, MOCK_FLOQ_IDS } from "@/mocks/floqs.mock";
+import isUuid from "@/lib/utils/isUuid";
 
 import type { Vibe } from "@/types";
 
@@ -75,6 +77,20 @@ export function useFloqDetails(
     enabled: enabled && !!floqId && !!(profileId || user?.id), // Wait for session to load
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
+
+      // Check if this is a mock floq ID and return mock data
+      const mockFloqIds = Object.values(MOCK_FLOQ_IDS);
+      if (mockFloqIds.includes(floqId)) {
+        console.log('🎭 Using mock floq details for:', floqId);
+        const mockDetails = getMockFloqDetails(floqId);
+        if (mockDetails) return mockDetails as FloqDetails;
+      }
+
+      // Validate UUID format before calling database
+      if (!isUuid(floqId)) {
+        console.error('[useFloqDetails] Invalid UUID format:', floqId);
+        throw new Error('Invalid floq ID format');
+      }
 
       // Use the database function for complete details
       const { data: fullDetails, error } = await supabase
