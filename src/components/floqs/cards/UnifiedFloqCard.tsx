@@ -82,7 +82,7 @@ export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
   const revealCount = intent === "commit" ? friends.length : intent === "consider" ? 2 : 0;
 
   const handleCardClick = () => {
-    navigate(`/floq/${item.id}`);
+    navigate(`/floqs/${item.id}`);
   };
 
   const handlePeekClick = (e: React.MouseEvent) => {

@@ -75,7 +75,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
 
   const handleFloqEventTap = (floqId: string) => {
     // Navigate to floq details (stub route)
-    navigate(`/floq/${floqId}`);
+    navigate(`/floqs/${floqId}`);
     onOpenChange(false);
   };
 

@@ -126,7 +126,7 @@ export function NotificationCenter() {
         break;
       case 'floq_invite':
         if (notification.payload?.floq_id) {
-          navigate(`/floq/${notification.payload.floq_id}`);
+          navigate(`/floqs/${notification.payload.floq_id}`);
         }
         break;
       case 'serendipity_match':
