@@ -80,7 +80,6 @@ export const useHapticFeedback = () => {
 
     // Future: Web Haptics API when available
     if ('hapticActuators' in navigator) {
-      // @ts-expect-error - Future API
       const actuators = (navigator as any).hapticActuators;
       if (actuators && Array.isArray(actuators)) {
         actuators.forEach((actuator: any) => {
