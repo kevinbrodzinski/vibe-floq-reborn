@@ -1,7 +1,7 @@
 import * as React from 'react'
 import type mapboxgl from 'mapbox-gl'
 import { getCurrentMap } from '@/lib/geo/mapSingleton'
-import { fetchFlowVenues, fetchConvergence } from '@/lib/api/flow'
+import { fetchFlowVenues } from '@/lib/api/flow'
 import type { FlowFilters, TileVenue, ConvergencePoint } from '@/lib/flow/types'
 
 type Args = {
@@ -61,13 +61,10 @@ export function useFlowExplore({
 
     const t0 = performance.now()
     try {
-      const [{ venues }, { points }] = await Promise.all([
-        fetchFlowVenues({ bbox, filters }),               // ← single enriched RPC
-        fetchConvergence({ bbox, zoom, res: clusterRes }), // ← H3 res override
-      ])
+      const { venues } = await fetchFlowVenues({ bbox, filters });
       if (rid === requestIdRef.current) {
         setVenues(venues)
-        setConvergence(points)
+        setConvergence([]) // Empty for now
         onLatencyMs?.(Math.round(performance.now() - t0))
       }
     } catch (e: any) {

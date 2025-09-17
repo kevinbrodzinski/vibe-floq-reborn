@@ -1,5 +1,7 @@
 import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { FloqDiscoveryView } from "./FloqDiscoveryView";
 import { FloqConsideringView } from "./FloqConsideringView";
 import { FlockCommandCenter } from "./FlockCommandCenter";
@@ -21,6 +23,8 @@ const PEEK_FALLBACK = {
 export function FloqPeekSystem() {
   const [open, setOpen] = React.useState(false);
   const [floqId, setFloqId] = React.useState<string | null>(null);
+  const navigate = useNavigate();
+  const { triggerHaptic } = useHapticFeedback();
   
   // Get commitment stage for this floq
   const { stage, setStage } = useJoinIntent(floqId);
@@ -58,21 +62,22 @@ export function FloqPeekSystem() {
 
   const handleCommitmentChange = (newStage: "watch" | "consider" | "commit") => {
     setStage(newStage);
+    triggerHaptic('medium'); // Haptic feedback for commitment changes
     
     // If user commits, they might want to close the peek and go to full floq
     if (newStage === "commit" && floqId) {
-      // Navigate to full floq page after a short delay
+      triggerHaptic('heavy');
+      // Navigate to full floq page after a short delay for visual feedback
       setTimeout(() => {
         setOpen(false);
-        // Use window.location for direct navigation since useNavigate isn't available in this context
-        window.location.href = `/floqs/${floqId}`;
+        navigate(`/floqs/${floqId}`);
       }, 1500);
     }
   };
 
   const handleAction = (action: string, data?: any) => {
-    console.log("Flock action:", action, data);
     // Handle coordination actions like rally point, notifications, etc.
+    triggerHaptic('light');
   };
 
   const onClose = () => {

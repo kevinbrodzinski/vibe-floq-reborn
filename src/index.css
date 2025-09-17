@@ -4,6 +4,8 @@
 @import './styles/floq-energy.css';
 @import './styles/scrollbar.css';
 @import './styles/field.css';
+@import './styles/touch-targets.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

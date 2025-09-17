@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Clock, Users, ArrowRight, Pause, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { PartialRevealAvatarStack } from "../visual/PartialRevealAvatarStack";
 import { LiveUpdatesScrollWithRealtime } from "./LiveUpdatesScrollWithRealtime";
 import { CommitmentLadder } from "./CommitmentLadder";
@@ -19,6 +21,8 @@ interface FloqConsideringViewProps {
 
 export function FloqConsideringView({ item, onCommitmentChange, currentStage }: FloqConsideringViewProps) {
   const { compatibilityPct, friction, energyNow } = useFloqScores(item);
+  const navigate = useNavigate();
+  const { triggerHaptic } = useHapticFeedback();
   const [microCommitment, setMicroCommitment] = React.useState<string | null>(null);
   
   const participantCount = item.participants ?? item.participant_count ?? 0;
@@ -73,8 +77,8 @@ export function FloqConsideringView({ item, onCommitmentChange, currentStage }: 
             size={32}
             overlap={8}
             onAvatarPress={(avatar) => {
+              triggerHaptic('light');
               // Could open friend profile or friend's floq activity
-              console.log("Friend avatar pressed:", avatar);
             }}
           />
           <div className="text-xs text-muted-foreground">
@@ -102,7 +106,10 @@ export function FloqConsideringView({ item, onCommitmentChange, currentStage }: 
                 variant={microCommitment === option.id ? "default" : "ghost"}
                 size="sm"
                 className="justify-between h-auto p-2"
-                onClick={() => setMicroCommitment(option.id)}
+                onClick={() => {
+                  triggerHaptic('light');
+                  setMicroCommitment(option.id);
+                }}
               >
                 <div className="text-left">
                   <div className="font-medium">{option.label}</div>
@@ -121,24 +128,33 @@ export function FloqConsideringView({ item, onCommitmentChange, currentStage }: 
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
-            onClick={() => window.location.href = `/floqs/${item.id}`}
+            className="flex-1 touch-target"
+            onClick={() => {
+              triggerHaptic('light');
+              navigate(`/floqs/${item.id}`);
+            }}
           >
             Go to Floq
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
-            onClick={() => onCommitmentChange("watch")}
+            className="flex-1 touch-target"
+            onClick={() => {
+              triggerHaptic('light');
+              onCommitmentChange("watch");
+            }}
           >
             <Pause className="w-3 h-3 mr-1" />
             Later
           </Button>
           <Button
             size="sm"
-            className="flex-1"
-            onClick={() => onCommitmentChange("commit")}
+            className="flex-1 touch-target"
+            onClick={() => {
+              triggerHaptic('heavy');
+              onCommitmentChange("commit");
+            }}
             disabled={!microCommitment}
           >
             Commit

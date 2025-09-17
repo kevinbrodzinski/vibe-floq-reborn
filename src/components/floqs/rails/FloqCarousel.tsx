@@ -1,6 +1,8 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useTouchGestures } from "@/hooks/useTouchGestures";
+import { CarouselIndicators } from "@/components/ui/carousel-indicators";
+import { cn } from "@/lib/utils";
 
 export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -48,11 +50,12 @@ export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
       
       <div 
         ref={ref} 
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 scrollbar-hide touch-pan-x"
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 scrollbar-hide touch-pan-x scroll-optimized"
         style={{ 
           scrollBehavior: "smooth", 
           WebkitOverflowScrolling: "touch",
-          touchAction: "pan-x"
+          touchAction: "pan-x",
+          willChange: "scroll-position" // Optimize scroll performance
         }}
         {...touchBind()}
       >
@@ -66,6 +69,9 @@ export function FloqCarousel({ children }: { children: React.ReactNode[] }) {
           </div>
         ))}
       </div>
+      
+      {/* Scroll indicators */}
+      <CarouselIndicators scrollRef={ref} />
 
       {len > 1 && (
         <>

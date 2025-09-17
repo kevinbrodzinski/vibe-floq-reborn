@@ -1,0 +1,52 @@
+/* Touch target optimizations for mobile */
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  position: relative;
+}
+
+.touch-target::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  z-index: -1;
+}
+
+/* Enhanced touch targets for small buttons */
+@media (hover: none) and (pointer: coarse) {
+  .touch-target {
+    padding: 8px 12px;
+  }
+  
+  .touch-target-sm {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  
+  .touch-target-lg {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Improve scroll performance on mobile */
+.scroll-optimized {
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+/* Smooth transitions for touch interactions */
+.touch-feedback {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.touch-feedback:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}

@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Clock, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { CommitmentLadder } from "./CommitmentLadder";
 import { MemberParticles } from "../visual/MemberParticles";
 import { useFloqScores } from "@/hooks/useFloqScores";
@@ -17,6 +19,8 @@ interface FloqDiscoveryViewProps {
 
 export function FloqDiscoveryView({ item, onCommitmentChange, currentStage }: FloqDiscoveryViewProps) {
   const { compatibilityPct, friction, energyNow } = useFloqScores(item);
+  const navigate = useNavigate();
+  const { triggerHaptic } = useHapticFeedback();
   const participantCount = item.participants ?? item.participant_count ?? 0;
   const friendsCount = item.friends_in ?? 0;
   
@@ -109,15 +113,21 @@ export function FloqDiscoveryView({ item, onCommitmentChange, currentStage }: Fl
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
-            onClick={() => window.location.href = `/floqs/${item.id}`}
+            className="flex-1 touch-target"
+            onClick={() => {
+              triggerHaptic('light');
+              navigate(`/floqs/${item.id}`);
+            }}
           >
             Go to Floq
           </Button>
           <Button
             size="sm"
-            className="flex-1"
-            onClick={() => onCommitmentChange("consider")}
+            className="flex-1 touch-target"
+            onClick={() => {
+              triggerHaptic('light');
+              onCommitmentChange("consider");
+            }}
           >
             Learn More
           </Button>
