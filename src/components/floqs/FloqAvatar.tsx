@@ -6,7 +6,7 @@ import { safeVibe } from '@/lib/vibes';
 import type { MyFloq } from '@/hooks/useMyFloqs';
 
 interface FloqAvatarProps {
-  flock: MyFloq;
+  floq: MyFloq;
   size?: number; // diameter in px
   className?: string;
   onClick?: () => void;
@@ -14,15 +14,15 @@ interface FloqAvatarProps {
 }
 
 export function FloqAvatar({
-  flock,
+  floq,
   size = 104,
   className,
   onClick,
   glow = true, // default ON for new look
 }: FloqAvatarProps) {
-  const gradient = getVibeGradient('floq', safeVibe(flock.primary_vibe));
+  const gradient = getVibeGradient('floq', safeVibe(floq.primary_vibe));
   const initials =
-    flock.title
+    floq.title
       ?.split(' ')
       .slice(0, 2)
       .map(w => w[0]?.toUpperCase())
@@ -48,7 +48,7 @@ export function FloqAvatar({
       </div>
       {/* vibe chip */}
       <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-1.5 py-0.5 text-xs backdrop-blur">
-        {vibeEmoji(flock.primary_vibe)}
+        {vibeEmoji(floq.primary_vibe)}
       </span>
     </div>
   );

@@ -7,7 +7,19 @@ export const useIgnoreFloq = () => {
   const queryClient = useQueryClient();
 
   const undoIgnoreFloq = async (floqId: string) => {
-    // ... keep existing implementation
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('floq_ignored')
+      .delete()
+      .eq('floq_id', floqId)
+      .eq('profile_id', user.id);
+
+    if (error) throw error;
+
+    // Invalidate nearby floqs to show the floq again
+    queryClient.invalidateQueries({ queryKey: ['nearby-floqs'] });
   };
 
   return useMutation({
@@ -21,7 +33,7 @@ export const useIgnoreFloq = () => {
     onSuccess: (data, { floqId }) => {
       // Remove floq from all cached nearby flocks lists with more specific cache invalidation
       queryClient.removeQueries({ 
-        queryKey: ['nearby-flocks'], 
+        queryKey: ['nearby-floqs'], 
         predicate: (query) => {
           const queryData = query.state.data as WalkableFloq[] | undefined;
           return queryData?.some(f => f.id === floqId) ?? false;

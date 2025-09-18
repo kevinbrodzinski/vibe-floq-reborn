@@ -151,7 +151,7 @@ export const FloqsHome: React.FC<FloqsHomeProps> = ({
     e.preventDefault();
     // Trigger search by invalidating queries
     queryClient.invalidateQueries({
-      queryKey: ["nearby-flocks"]
+      queryKey: ["nearby-floqs"]
     });
   };
   const handleRefresh = () => {
@@ -248,7 +248,7 @@ export const FloqsHome: React.FC<FloqsHomeProps> = ({
                     </CardContent>
                   </Card>)}
               </div> : myFlocks.length > 0 ? <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-                {myFlocks.map(flock => <MyFloqCard key={flock.id} flock={flock} onOpen={() => handleFloqPress(flock.id)} />)}
+                {myFlocks.map(flock => <MyFloqCard key={flock.id} floq={flock} onOpen={() => handleFloqPress(flock.id)} />)}
               </div> : <Card onClick={handleCreatePress} className="cursor-pointer border-dashed border-2 hover:bg-accent/50 transition-colors">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="rounded-full bg-primary/10 p-4 mb-4">
