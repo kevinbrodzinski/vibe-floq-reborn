@@ -92,7 +92,7 @@ export default function FloqsDiscoverPage() {
   const { join } = useFloqJoin();
 
   const handleJoinFloq = async (floqId: string) => {
-    join.mutate({ floqId });
+    join({ floqId });
   };
 
   const filteredDiscover = discover?.filter(floq => {
