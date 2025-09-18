@@ -48,7 +48,7 @@ const VibeScreen = lazy(() => import('@/screens/VibeScreen').then(m => ({ defaul
 const AfterglowRoutes = lazy(() => import('@/routes/AfterglowRoutes'));
 const CollaborativePlanningScreen = lazy(() => import('@/components/screens/CollaborativePlanningScreen').then(m => ({ default: m.CollaborativePlanningScreen })));
 const FloqPlanExecutionScreen = lazy(() => import('@/pages/FloqPlanExecutionScreen'));
-const FloqHQ = lazy(() => import('@/pages/FloqHQ'));
+const FloqHQPage = lazy(() => import('@/pages/FloqHQPage'));
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import UserProfileByUsernameWrapper from '@/components/UserProfileByUsernameWrapper';
 import Profile from '@/pages/Profile';
@@ -129,7 +129,7 @@ export const AppRoutes = () => {
       } />
       <Route path="/floqs/:floqId/hq" element={
         <RouteSuspense>
-          <FloqHQ />
+          <FloqHQPage />
         </RouteSuspense>
       } />
       <Route path="/pulse" element={
