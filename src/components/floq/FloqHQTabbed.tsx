@@ -302,7 +302,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
 
               {digest?.summary && (
                 <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[12px] mb-5">
-                  What you missed: decisions {digest.summary.decisions?.length ?? 0}, rallies {digest.summary.rallies?.length ?? 0}
+                  What you missed: {digest.summary.total ?? 0} messages, {digest.summary.recent ?? 0} recent
                 </div>
               )}
 
@@ -310,14 +310,14 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               {messages?.slice(0, 5).map(m => (
                 <Section 
                   key={m.id} 
-                  title={m.kind === "rally" ? "📣 Rally" : m.kind === "decision" ? "✅ Decision" : "💬 Message"} 
+                  title={m.emoji ? `${m.emoji} Message` : "💬 Message"} 
                   icon={<MessageSquare className="h-4 w-4" />}
                 >
                   <div className="text-[12px] text-white/80">
-                    {m.kind === "rally" ? "📣 " : ""}{m.body}
+                    {m.body}
                   </div>
                   <div className="text-[10px] text-white/60 mt-1">
-                    {new Date(m.created_at).toLocaleDateString()} • {m.author_id}
+                    {new Date(m.created_at).toLocaleDateString()} • {m.sender_id}
                   </div>
                 </Section>
               ))}

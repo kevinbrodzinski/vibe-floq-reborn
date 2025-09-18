@@ -16,18 +16,17 @@ serve(async (req) => {
     const sinceIso = since ?? new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
     const { data: msgs, error } = await admin
-      .from("chat_messages")
-      .select("id, message_type, created_at")
-      .eq("thread_id", floq_id)
+      .from("floq_messages")
+      .select("id, created_at")
+      .eq("floq_id", floq_id)
       .gte("created_at", sinceIso)
       .order("created_at", { ascending: false });
     if (error) throw error;
 
     const summary = {
-      decisions: (msgs ?? []).filter(m => m.message_type === "decision"),
-      rallies:   (msgs ?? []).filter(m => m.message_type === "rally"),
-      moments:   (msgs ?? []).filter(m => m.message_type === "moment"),
-      plans:     (msgs ?? []).filter(m => m.message_type === "plan"),
+      total: (msgs ?? []).length,
+      recent: (msgs ?? []).filter(m => new Date(m.created_at) > new Date(Date.now() - 60*60*1000)).length,
+      messages: msgs ?? [],
     };
 
     return new Response(JSON.stringify({

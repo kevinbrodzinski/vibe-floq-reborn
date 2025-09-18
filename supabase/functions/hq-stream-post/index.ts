@@ -30,14 +30,11 @@ serve(async (req) => {
     if (!member) throw new Error("Not a member of this floq");
 
     const { data, error } = await admin
-      .from("chat_messages")
+      .from("floq_messages")
       .insert({ 
-        thread_id: floq_id, 
+        floq_id,
         sender_id: userId, 
-        profile_id: userId,
-        message_type: kind, 
-        body,
-        surface: 'floq'
+        body
       })
       .select("id")
       .single();

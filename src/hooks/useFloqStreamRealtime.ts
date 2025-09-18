@@ -11,15 +11,8 @@ export function useFloqStreamRealtime(floqId?: string) {
     const channel = supabase
       .channel(`floq:${floqId}:messages`)
       .on("postgres_changes",
-        { 
-          event: "*", 
-          schema: "public", 
-          table: "chat_messages", 
-          filter: `thread_id=eq.${floqId}` 
-        },
-        () => {
-          qc.invalidateQueries({ queryKey: ["floq", floqId, "stream"] });
-        }
+        { event: "*", schema: "public", table: "floq_messages", filter: `floq_id=eq.${floqId}` },
+        () => qc.invalidateQueries({ queryKey: ["floq", floqId, "stream"] })
       )
       .subscribe();
     
