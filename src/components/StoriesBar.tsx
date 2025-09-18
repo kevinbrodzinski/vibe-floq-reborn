@@ -3,10 +3,11 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users } from 'lucide-react';
+import { ChevronRight, Plus, Users } from 'lucide-react';
 import { VibeRing } from '@/components/VibeRing';
 import { cn } from '@/lib/utils';
-import type { MyFloq } from '@/hooks/useMyFloqs';
+import { safeVibe } from '@/lib/vibes';
+import { MyFloq } from '@/hooks/useMyFloqs';
 
 interface StoriesBarProps {
   flocks: MyFloq[];
@@ -111,7 +112,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
             >
               <div className="relative">
                 <VibeRing 
-                  vibe={floq.primary_vibe}
+                  vibe={safeVibe(floq.primary_vibe)}
                   pulse={getActivityIndicator(floq) === 'animate-pulse'}
                   className="w-16 h-16"
                 >

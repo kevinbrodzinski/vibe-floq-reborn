@@ -12,6 +12,9 @@ export interface NearbyFloqsReturn {
   count: number;
 }
 
+// Export WalkableFloq for use in other components
+export type { WalkableFloq } from '@/types/schemas/WalkableFloqSchema';
+
 interface NearbyFloqsOptions {
   km?: number;
 }

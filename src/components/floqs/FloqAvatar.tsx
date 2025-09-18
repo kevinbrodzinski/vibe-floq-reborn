@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getVibeGradient } from '@/lib/utils/getGradientClasses';
 import { vibeEmoji } from '@/utils/vibe';
+import { safeVibe } from '@/lib/vibes';
 import type { MyFloq } from '@/hooks/useMyFloqs';
 
 interface FloqAvatarProps {
@@ -19,7 +20,7 @@ export function FloqAvatar({
   onClick,
   glow = true, // default ON for new look
 }: FloqAvatarProps) {
-  const gradient = getVibeGradient('floq', flock.primary_vibe);
+  const gradient = getVibeGradient('floq', safeVibe(flock.primary_vibe));
   const initials =
     flock.title
       ?.split(' ')
