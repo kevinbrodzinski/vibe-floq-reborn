@@ -14,6 +14,14 @@ import {
   BarChart3, 
   Users 
 } from 'lucide-react';
+import Section from '../Common/Section';
+import Btn from '../Common/Btn';
+import Pill from '../Common/Pill';
+import SmartMap from '../Common/SmartMap';
+import SmartComposer from '../Common/SmartComposer';
+import { useHQProximity } from '../../hooks/useHQProximity';
+import { useHQAvailability } from '../../hooks/useHQAvailability';
+import { useHQVibes } from '../../hooks/useHQVibes';
 
 type TabKey = 'map' | 'stream' | 'plan' | 'moments' | 'pulse' | 'venues' | 'analytics' | 'wing';
 
@@ -40,41 +48,7 @@ const VENUES = [
   { name: 'Tech Hub', type: 'Coworking', distance: '0.8 km' },
 ];
 
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  active?: boolean;
-  ariaLabel?: string;
-};
-
-function Btn({ children, active, ariaLabel, className = "", ...props }: BtnProps) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active ?? undefined}
-      aria-label={ariaLabel}
-      className={`px-3 py-1.5 rounded-xl border text-[12px] transition ${active ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="text-[13px] font-medium text-white/90">{title}</h3>
-      <div>{children}</div>
-    </div>
-  );
-}
-
-function Pill({ children, active }: { children: React.ReactNode; active?: boolean }) {
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border ${active ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10"}`}>
-      {children}
-    </span>
-  );
-}
+// Using shared components - local definitions removed
 
 function Bar({ label, value, max }: { label: string; value: number; max: number }) {
   return (
@@ -93,6 +67,12 @@ function Bar({ label, value, max }: { label: string; value: number; max: number 
 export default function FloqHQTabbed() {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>('map');
+  
+  // Mock floq ID for now - will be passed as prop later
+  const floqId = "test-floq-id";
+  const { data: proximityData } = useHQProximity(floqId);
+  const { data: availabilityData } = useHQAvailability(floqId);
+  const { data: vibesData } = useHQVibes(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -157,9 +137,7 @@ export default function FloqHQTabbed() {
               className="space-y-5"
             >
               <Section title="Live Map">
-                <div className="h-64 bg-white/5 rounded-2xl border border-white/10 grid place-items-center">
-                  <p className="text-white/40">Interactive map view</p>
-                </div>
+                <SmartMap placeholder="Interactive HQ map view" />
               </Section>
               <Section title="Nearby People">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -187,14 +165,7 @@ export default function FloqHQTabbed() {
             >
               <Section title="Activity Stream">
                 <div className="space-y-3">
-                  <div className="flex gap-2 p-3 bg-white/5 rounded-xl border border-white/10">
-                    <input 
-                      aria-label="Type message" 
-                      className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" 
-                      placeholder="Type message…" 
-                    />
-                    <Btn>Send</Btn>
-                  </div>
+                  <SmartComposer placeholder="Share with floq..." />
                   <div className="space-y-2">
                     {[1,2,3].map(i => (
                       <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/10">

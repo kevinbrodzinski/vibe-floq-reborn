@@ -1,5 +1,20 @@
 project_id = "reztyrrafsmlvvlqvsqt"
 
+[functions.hq-proximity]
+verify_jwt = true
+
+[functions.hq-availability]
+verify_jwt = true
+
+[functions.hq-vibes]
+verify_jwt = true
+
+[functions.hq-stream-post]
+verify_jwt = true
+
+[functions.hq-digest]
+verify_jwt = true
+
 [functions.venues-proxy]
 verify_jwt = false
 
