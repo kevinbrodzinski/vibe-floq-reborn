@@ -19,11 +19,11 @@ export interface HQProximityData {
   center_lat: number;
   center_lng: number;
   convergence_score: number;
-  optimal_meeting_point?: {
+  meet_halfway?: {
     lat: number;
     lng: number;
     name?: string;
-  };
+  } | null;
 }
 
 export function useHQProximity(floqId: string) {
@@ -49,7 +49,8 @@ export function useHQProximity(floqId: string) {
           members: [],
           center_lat: 0,
           center_lng: 0,
-          convergence_score: 0
+          convergence_score: 0,
+          meet_halfway: null,
         };
       }
 
@@ -103,7 +104,8 @@ export function useHQProximity(floqId: string) {
           members: [],
           center_lat: 0,
           center_lng: 0,
-          convergence_score: 0
+          convergence_score: 0,
+          meet_halfway: null,
         };
       }
 
@@ -132,7 +134,8 @@ export function useHQProximity(floqId: string) {
         members: membersWithDistances,
         center_lat: center.lat,
         center_lng: center.lng,
-        convergence_score: convergenceScore
+        convergence_score: convergenceScore,
+        meet_halfway: members.length >= 2 ? { lat: center.lat, lng: center.lng, name: "Optimal Meeting Point" } : null,
       };
     },
     enabled: !!floqId,
