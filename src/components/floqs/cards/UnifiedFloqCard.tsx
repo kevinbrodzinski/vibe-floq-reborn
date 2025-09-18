@@ -90,6 +90,11 @@ export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
     openFloqPeek(item.id);
   };
 
+  const handleHQClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/floqs/${item.id}/hq`);
+  };
+
   return (
     <Card 
       className="relative overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 bg-card/80 backdrop-blur border-border/50"
@@ -212,14 +217,24 @@ export function UnifiedFloqCard({ item }: { item: UnifiedFloqItem }) {
             </>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handlePeekClick}
-          className="text-xs"
-        >
-          Peek
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePeekClick}
+            className="text-xs"
+          >
+            Peek
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleHQClick}
+            className="text-xs bg-primary/10 hover:bg-primary/20 border-primary/30"
+          >
+            HQ
+          </Button>
+        </div>
       </div>
     </Card>
   );

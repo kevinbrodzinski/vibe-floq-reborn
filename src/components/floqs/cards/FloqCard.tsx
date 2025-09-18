@@ -1,7 +1,9 @@
 import * as React from "react";
 import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { openFloqPeek } from "@/lib/peek";
 import { ProgressDonut } from "../visual/ProgressDonut";
@@ -43,6 +45,7 @@ export type FloqCardItem = {
 };
 
 export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "discover" | "public" | "momentary" }) {
+  const navigate = useNavigate();
   const { compatibilityPct, friction, energyNow, peakRatio } = useFloqScores(item);
   const frictionLabel = friction < 0.25 ? "Low" : friction < 0.6 ? "Moderate" : "High";
   
@@ -75,6 +78,11 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
   };
 
   const onOpen = triggerSmartPeek;
+
+  const handleHQClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/floqs/${item.id}/hq`);
+  };
 
   // For momentary cards, use the new layout
   if (kind === "momentary") {
@@ -165,6 +173,18 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
             <MetricsGrid item={item} />
             <PeakMarker energyNow={energyNow} peakRatio={peakRatio} />
           </div>
+
+          {/* Action buttons */}
+          <div className="flex justify-end mt-3 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleHQClick}
+              className="text-xs bg-primary/10 hover:bg-primary/20 border-primary/30"
+            >
+              HQ
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -189,8 +209,18 @@ export function FloqCard({ item, kind }: { item: FloqCardItem; kind: "tribe" | "
       </CardContent>
 
       <CardFooter className="text-xs text-muted-foreground flex items-center justify-between">
-        <span>{participantCount} in</span>
-        {item.friends_in ? <span>{item.friends_in} friends</span> : <span />}
+        <div className="flex items-center gap-4">
+          <span>{participantCount} in</span>
+          {item.friends_in ? <span>{item.friends_in} friends</span> : <span />}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleHQClick}
+          className="text-xs bg-primary/10 hover:bg-primary/20 border-primary/30"
+        >
+          HQ
+        </Button>
       </CardFooter>
     </Card>
   );

@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FloqAvatar } from './FloqAvatar';
 import type { MyFloq } from '@/hooks/useMyFloqs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Crown, Clock, MessageCircle, Zap } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
@@ -18,6 +20,7 @@ interface MyFloqCardProps {
 }
 
 export function MyFloqCard({ floq, onOpen }: MyFloqCardProps) {
+  const navigate = useNavigate();
   /* ————— dynamic data ————— */
   const { data: host, isLoading: hostLoading } = useProfile(floq.creator_id);
   const { data: plans } = useFloqPlans(floq.id);
@@ -47,6 +50,11 @@ export function MyFloqCard({ floq, onOpen }: MyFloqCardProps) {
       e.preventDefault();
       onOpen?.(floq);
     }
+  };
+
+  const handleHQClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/floqs/${floq.id}/hq`);
   };
 
   return (
@@ -149,21 +157,32 @@ export function MyFloqCard({ floq, onOpen }: MyFloqCardProps) {
             )}
           </div>
 
-          {/* Streak + unread */}
-          <div className="flex items-center gap-2">
-            {streak > 0 && (
-              <div className="flex items-center gap-1 text-xs text-orange-400">
-                <Zap className="h-3 w-3" />
-                <span>{streak} nights</span>
-              </div>
-            )}
+          {/* Streak + unread + HQ button */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {streak > 0 && (
+                <div className="flex items-center gap-1 text-xs text-orange-400">
+                  <Zap className="h-3 w-3" />
+                  <span>{streak} nights</span>
+                </div>
+              )}
 
-            {unreadCount > 0 && (
-              <div className="flex items-center gap-1 text-xs text-blue-400">
-                <MessageCircle className="h-3 w-3" />
-                <span>{unreadCount}</span>
-              </div>
-            )}
+              {unreadCount > 0 && (
+                <div className="flex items-center gap-1 text-xs text-blue-400">
+                  <MessageCircle className="h-3 w-3" />
+                  <span>{unreadCount}</span>
+                </div>
+              )}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleHQClick}
+              className="text-xs bg-primary/10 hover:bg-primary/20 border-primary/30 shrink-0"
+            >
+              HQ
+            </Button>
           </div>
         </div>
       </CardContent>
