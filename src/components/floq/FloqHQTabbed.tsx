@@ -7,6 +7,9 @@ import { useHQDigest } from "@/hooks/useHQDigest";
 import { useFloqStream } from "@/hooks/useFloqStream";
 import { usePostStream } from "@/hooks/usePostStream";
 import { useFloqStreamRealtime } from "@/hooks/useFloqStreamRealtime";
+import { Glass } from "@/components/Common/Glass";
+import { NeonPill } from "@/components/Common/NeonPill";
+import { vibeToGradientClass } from "@/components/Common/vibeTokens";
 import {
   MapPin,
   MessageSquare,
@@ -72,7 +75,7 @@ function Section({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 shadow-xl">
+    <Glass className="p-4 shadow-xl">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md bg-white/10 grid place-items-center text-white/80">{icon}</div>
@@ -81,7 +84,7 @@ function Section({
         {right}
       </div>
       {children}
-    </div>
+    </Glass>
   );
 }
 
@@ -168,9 +171,9 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
         </div>
 
         <div className="max-w-6xl mx-auto px-4 pb-2 flex flex-wrap gap-2">
-          <Pill><Trophy className="inline h-3.5 w-3.5 mr-1" /> Thursday Legends</Pill>
-          <Pill><Flame className="inline h-3.5 w-3.5 mr-1" /> 5-Week Streak</Pill>
-          <Pill><MapPin className="inline h-3.5 w-3.5 mr-1" /> Gran Regulars</Pill>
+          <NeonPill><Trophy className="inline h-3.5 w-3.5 mr-1" /> Thursday Legends</NeonPill>
+          <NeonPill><Flame className="inline h-3.5 w-3.5 mr-1" /> 5-Week Streak</NeonPill>
+          <NeonPill><MapPin className="inline h-3.5 w-3.5 mr-1" /> Gran Regulars</NeonPill>
         </div>
 
         <div className="max-w-6xl mx-auto px-2 pb-2">
@@ -330,7 +333,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               )}
 
               {/* Message Composer */}
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center gap-2">
+              <Glass className="p-3 flex items-center gap-2">
                 <input
                   aria-label="Message"
                   className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
@@ -362,7 +365,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 >
                   Send
                 </button>
-              </div>
+              </Glass>
             </motion.div>
           )}
 
@@ -381,31 +384,31 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <Btn>Wingman Help</Btn>
               </div>
 
-              <Section title="Thursday Tradition @ Gran" icon={<Check className="h-4 w-4" />} right={<Pill>Locked</Pill>}>
+              <Section title="Thursday Tradition @ Gran" icon={<Check className="h-4 w-4" />} right={<NeonPill>Locked</NeonPill>}>
                 <div className="text-[13px]">8:30pm • 6/8 confirmed • Recurring weekly</div>
                 <div className="text-[12px] text-white/70">Energy: Social-Hype • Friction: Low</div>
               </Section>
 
-              <Section title="Dinner @ Koi Sushi" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Building</Pill>}>
+              <Section title="Dinner @ Koi Sushi" icon={<CalendarCheck className="h-4 w-4" />} right={<NeonPill>Building</NeonPill>}>
                 <div className="text-[13px]">7:30pm • 5 confirmed, 2 pending · Organizer: Sarah</div>
                 <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">
                   Live Planning: 3 active • "I can pick up Tom and Alex" • "Jake is vegetarian"
                 </div>
               </Section>
 
-              <Section title="Beach Day" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Tentative</Pill>}>
+              <Section title="Beach Day" icon={<CalendarCheck className="h-4 w-4" />} right={<NeonPill>Tentative</NeonPill>}>
                 <div className="text-[13px]">All day • Flexible • Weather dependent</div>
                 <div className="text-[12px] text-white/70">Forecast: Perfect • Backup: Indoor climbing</div>
               </Section>
 
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-3 text-[13px]">
+              <Glass className="p-3 text-[13px]">
                 Suggested by Wingman: Sunday Brunch? 4 usually free
                 <div className="mt-2 flex gap-2">
                   <Btn>Create Plan</Btn>
                   <Btn>Not This Week</Btn>
                   <Btn>Never Suggest</Btn>
                 </div>
-              </div>
+              </Glass>
             </motion.div>
           )}
 

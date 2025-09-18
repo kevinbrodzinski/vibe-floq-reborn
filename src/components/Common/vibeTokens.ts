@@ -8,13 +8,13 @@ export type Vibe =
 
 export function vibeToGradientClass(vibe?: Vibe | null) {
   switch (vibe) {
-    case "Social": return "from-vibe-social-start via-vibe-social-mid to-vibe-social-end";
-    case "Chill": return "from-vibe-chill-start via-vibe-chill-mid to-vibe-chill-end";
-    case "Active": return "from-vibe-active-start via-vibe-active-mid to-vibe-active-end";
-    case "Hype": return "from-vibe-hype-start via-vibe-hype-mid to-vibe-hype-end";
-    case "Productive": return "from-vibe-productive-start via-vibe-productive-mid to-vibe-productive-end";
-    case "Quiet": return "from-vibe-quiet-start via-vibe-quiet-mid to-vibe-quiet-end";
-    default: return "from-token-surface-1 via-token-surface-2 to-token-surface-3";
+    case "Social": return "from-neon-social via-pulseA to-pulseB";
+    case "Chill": return "from-neon-chill via-pulseC to-neon-chill";
+    case "Active": return "from-neon-active via-orange-500 to-red-500";
+    case "Hype": return "from-pulseB via-pulseA to-pulseB";
+    case "Productive": return "from-neon-productive via-teal-500 to-cyan-500";
+    case "Quiet": return "from-neon-quiet via-gray-500 to-zinc-500";
+    default: return "from-pulseA via-pulseB to-pulseC";
   }
 }
 

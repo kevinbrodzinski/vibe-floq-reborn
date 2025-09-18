@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Users, MapPin, Sparkles, Radio } from "lucide-react";
+import { Glass } from "@/components/Common/Glass";
+import { vibeToGradientClass } from "@/components/Common/vibeTokens";
 
 type FloqItem = {
   id: string;
@@ -26,22 +28,15 @@ export default function UnifiedFloqCard({ item, showJoinButton = false }: Props)
   const vibe = item.primary_vibe || "social";
   const isPrivate = item.privacy === "invite";
 
-  // Simple vibe-to-gradient mapping
-  const vibeGradient = {
-    social: "from-blue-500 via-purple-500 to-pink-500",
-    chill: "from-green-400 via-teal-500 to-blue-500", 
-    active: "from-orange-500 via-red-500 to-pink-500",
-    hype: "from-fuchsia-500 via-purple-500 to-violet-500",
-    productive: "from-emerald-500 via-teal-500 to-cyan-500",
-    quiet: "from-slate-400 via-gray-500 to-zinc-500",
-  }[vibe.toLowerCase()] || "from-violet-500 via-fuchsia-500 to-rose-500";
+  // Use tokenized vibe gradient
+  const vibeGradient = vibeToGradientClass(vibe as any) || vibeToGradientClass();
 
   return (
     <Link to={`/floqs/${item.id}/hq`} className="block group">
-      <div className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 hover:bg-white/10 transition-all duration-200 group-hover:border-white/20">
+      <Glass className="p-4 hover:bg-white/10 transition-all duration-200 group-hover:border-white/20">
         <div className="flex items-start justify-between mb-3">
-          <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${vibeGradient} shadow-lg grid place-items-center`}>
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${vibeGradient} shadow-lg grid place-items-center neon-ring`}>
+            <Sparkles className="h-5 w-5 text-white drop-shadow-neon" />
           </div>
           <div className="flex items-center gap-1 text-[10px] text-white/60">
             {isPrivate && <span>🔒</span>}
@@ -78,7 +73,7 @@ export default function UnifiedFloqCard({ item, showJoinButton = false }: Props)
           <div className="mt-3 pt-3 border-t border-white/10">
             <button 
               type="button"
-              className="w-full py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] hover:bg-white/10 transition"
+              className="w-full py-1.5 rounded-lg neon-pill text-[11px] hover:bg-white/15 transition neon-ring"
               onClick={(e) => {
                 e.preventDefault();
                 // Handle join logic here
@@ -89,7 +84,7 @@ export default function UnifiedFloqCard({ item, showJoinButton = false }: Props)
             </button>
           </div>
         )}
-      </div>
+      </Glass>
     </Link>
   );
 }

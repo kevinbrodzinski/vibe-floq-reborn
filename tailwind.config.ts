@@ -48,7 +48,8 @@ export default {
 				lg: "var(--radius)",
 				md: "calc(var(--radius) - 2px)",
 				sm: "calc(var(--radius) - 4px)",
-				// Design Kit tokens
+				// Glass & Design Kit tokens
+				xl2: '1.25rem',
 				'kit-sm': 'var(--r-sm)', 
 				'kit-md': 'var(--r-md)', 
 				'kit-lg': 'var(--r-lg)', 
@@ -64,7 +65,25 @@ export default {
 				foreground: "hsl(var(--foreground))",
 				
 				// Design Kit tokens
-				bg: 'var(--bg)', 
+				bg: {
+					base: '#0B0D13',
+					surface: 'rgba(255,255,255,0.04)',
+					outline: 'rgba(255,255,255,0.10)',
+					outline2: 'rgba(255,255,255,0.18)',
+				},
+				glass: {
+					DEFAULT: 'rgba(255,255,255,0.055)',
+					border: 'rgba(255,255,255,0.10)',
+					highlight: 'rgba(255,255,255,0.06)',
+				},
+				neon: {
+					chill: '#40E0FF',
+					hype: '#FF65F9',
+					social: '#7B84FF',
+					active: '#FF8A4C',
+					productive: '#2FE0C0',
+					quiet: '#9AA0AE',
+				},
 				bgAlt: 'var(--bg-alt)',
 				ink:'var(--ink)', 
 				subInk:'var(--sub-ink)',
@@ -128,7 +147,6 @@ export default {
 					live: 'hsl(var(--floq-live))',
 					soon: 'hsl(var(--floq-soon))',
 				},
-				neon: "var(--neon)",
 				cardBg: "rgb(var(--card-bg) / <alpha-value>)",
 				sidebar: {
 					DEFAULT: "hsl(var(--sidebar-background))",
@@ -149,12 +167,28 @@ export default {
 				"gradient-vibe": "var(--gradient-vibe)",
 			},
 
+			gradientColorStops: {
+				pulseA: '#7B84FF',
+				pulseB: '#FF65F9', 
+				pulseC: '#40E0FF',
+			},
+
 			boxShadow: {
-				glass:
-					"0 0 0 0.5px rgb(255 255 255 / 0.1) inset, 0 0 24px rgb(255 255 255 / 0.06)",
+				glass: '0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)',
+				neon: '0 0 16px rgba(64,224,255,0.35), 0 0 40px rgba(64,224,255,0.20)',
 				// Design Kit tokens
 				soft: 'var(--shadow-soft)', 
 				glow: 'var(--shadow-glow)',
+			},
+
+			backdropBlur: { 
+				20: '20px', 
+				30: '30px' 
+			},
+
+			dropShadow: {
+				neon: '0 0 10px rgba(64,224,255,0.65)',
+				violet: '0 0 12px rgba(123,132,255,0.60)',
 			},
 
 			keyframes: {
