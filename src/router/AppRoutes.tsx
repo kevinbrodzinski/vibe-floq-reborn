@@ -74,6 +74,8 @@ import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
 import VenuePage from '@/pages/VenuePage';
 import VenueTestPage from '@/pages/VenueTestPage';
+import LandingPage from '@/pages/LandingPage';
+import AuthPage from '@/pages/AuthPage';
 
 import Phase34DemoRoutes from '@/routes/Phase34DemoRoutes';
 
@@ -83,6 +85,16 @@ export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<DailyRecapGate />} />
+      <Route path="/welcome" element={
+        <RouteSuspense>
+          <LandingPage />
+        </RouteSuspense>
+      } />
+      <Route path="/auth" element={
+        <RouteSuspense>
+          <AuthPage />
+        </RouteSuspense>
+      } />
       <Route path="/floqs-legacy" element={
         <RouteSuspense>
           <FloqsHome />
