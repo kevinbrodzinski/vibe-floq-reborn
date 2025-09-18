@@ -449,6 +449,14 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
               className="space-y-5"
             >
+              {/* Neon Pulse Hero Title */}
+              <div className="text-center mb-8">
+                <div className={`text-5xl font-extrabold bg-gradient-to-r ${vibeToGradientClass("Chill")} text-transparent bg-clip-text drop-shadow-neon`}>
+                  pulse
+                </div>
+                <NeonPill className="mt-2 inline-block">current vibe: "CHILL"</NeonPill>
+              </div>
+
               <Section title="Group Pulse" icon={<Gauge className="h-4 w-4" />} right={<Btn>Activate Convergence</Btn>}>
                 <div className="text-[13px]">
                   {availability 
