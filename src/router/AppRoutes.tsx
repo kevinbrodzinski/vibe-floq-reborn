@@ -49,6 +49,8 @@ const AfterglowRoutes = lazy(() => import('@/routes/AfterglowRoutes'));
 const CollaborativePlanningScreen = lazy(() => import('@/components/screens/CollaborativePlanningScreen').then(m => ({ default: m.CollaborativePlanningScreen })));
 const FloqPlanExecutionScreen = lazy(() => import('@/pages/FloqPlanExecutionScreen'));
 const FloqHQPage = lazy(() => import('@/pages/FloqHQPage'));
+const FloqCreatePage = lazy(() => import('@/pages/FloqCreatePage'));
+const FloqsDiscoverPage = lazy(() => import('@/pages/FloqsDiscoverPage'));
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import UserProfileByUsernameWrapper from '@/components/UserProfileByUsernameWrapper';
 import Profile from '@/pages/Profile';
@@ -95,7 +97,7 @@ export const AppRoutes = () => {
       <Route path="/field" element={<LegacyRedirect />} />
       <Route path="/floqs" element={
         <RouteSuspense>
-          <FloqsMainHub />
+          <FloqsDiscoverPage />
         </RouteSuspense>
       } />
       <Route path="/floqs-hub" element={
@@ -130,6 +132,11 @@ export const AppRoutes = () => {
       <Route path="/floqs/:floqId/hq" element={
         <RouteSuspense>
           <FloqHQPage />
+        </RouteSuspense>
+      } />
+      <Route path="/create/floq" element={
+        <RouteSuspense>
+          <FloqCreatePage />
         </RouteSuspense>
       } />
       <Route path="/pulse" element={
