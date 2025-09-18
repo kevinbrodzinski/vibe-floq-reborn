@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { useHQProximity } from "@/hooks/useHQProximity";
 import {
   MapPin,
   MessageSquare,
@@ -23,7 +22,7 @@ import {
   Check,
   MoreHorizontal,
   Trophy,
-  Flame
+  Flame,
 } from "lucide-react";
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -58,7 +57,7 @@ function Section({
   title,
   icon,
   right,
-  children
+  children,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -99,7 +98,7 @@ const TABS = [
   { k: "venues", l: "Venues", i: <MapPin className="h-4 w-4" /> },
   { k: "analytics", l: "Analytics", i: <BarChart3 className="h-4 w-4" /> },
   { k: "wing", l: "Wing", i: <Sparkles className="h-4 w-4" /> },
-  { k: "privacy", l: "Privacy", i: <Shield className="h-4 w-4" /> }
+  { k: "privacy", l: "Privacy", i: <Shield className="h-4 w-4" /> },
 ] as const;
 
 type TabKey = typeof TABS[number]["k"];
@@ -108,13 +107,13 @@ const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
   { n: "Tom", d: "Downtown • Hype", v: 85 },
   { n: "Alex", d: "Beach→Venice", v: 80 },
-  { n: "You", d: "Home • Neutral", v: 45 }
+  { n: "You", d: "Home • Neutral", v: 45 },
 ];
 
 const VENUES = [
   { r: 1, name: "Gran Blanco", meta: "Bar • Downtown · Last: 2 days", note: "Our unofficial headquarters", badge: "47× 👑" },
   { r: 2, name: "Café Nero", meta: "Coffee • Venice · Last: 1 week", note: "Perfect for hangover recovery", badge: "31×" },
-  { r: 3, name: "Venice Beach", meta: "Outdoor • Beach · Last: 2 weeks", note: "Beach volleyball crew", badge: "28×" }
+  { r: 3, name: "Venice Beach", meta: "Outdoor • Beach · Last: 2 weeks", note: "Beach volleyball crew", badge: "28×" },
 ];
 
 interface FloqHQTabbedProps {
@@ -124,9 +123,6 @@ interface FloqHQTabbedProps {
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
-  
-  // Real-time HQ data
-  const { data: proximityData, isLoading: proximityLoading } = useHQProximity(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -154,11 +150,13 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
             <Btn ariaLabel="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
           </div>
         </div>
+
         <div className="max-w-6xl mx-auto px-4 pb-2 flex flex-wrap gap-2">
           <Pill><Trophy className="inline h-3.5 w-3.5 mr-1" /> Thursday Legends</Pill>
           <Pill><Flame className="inline h-3.5 w-3.5 mr-1" /> 5-Week Streak</Pill>
           <Pill><MapPin className="inline h-3.5 w-3.5 mr-1" /> Gran Regulars</Pill>
         </div>
+
         <div className="max-w-6xl mx-auto px-2 pb-2">
           <div role="tablist" aria-label="Floq sections" className="flex gap-2 overflow-x-auto scrollbar-none">
             {TABS.map((t, idx) => {
@@ -197,81 +195,19 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               className="space-y-5"
             >
               <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn>Meet-Halfway</Btn>}>
-                <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">
-                  {proximityLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                      Loading member locations...
-                    </div>
-                  ) : proximityData && proximityData.members.length > 0 ? (
-                    <div className="w-full h-full p-4">
-                      <div className="text-center mb-4">
-                        <div className="text-lg font-semibold text-white">
-                          {proximityData.members.length} Members Located
-                        </div>
-                        <div className="text-sm text-white/60">
-                          Convergence: {Math.round(proximityData.convergence_score * 100)}%
-                        </div>
-                      </div>
-                      {/* Member location dots visualization */}
-                      <div className="relative w-full h-32 bg-white/5 rounded-lg border border-white/10">
-                        {proximityData.members.map((member, index) => (
-                          <div 
-                            key={member.profile_id}
-                            className="absolute w-3 h-3 rounded-full bg-primary border border-white/20"
-                            style={{
-                              left: `${20 + (index * 15) % 60}%`,
-                              top: `${30 + (index % 3) * 20}%`
-                            }}
-                            title={`${member.display_name} - ${member.vibe} (${member.status})`}
-                          />
-                        ))}
-                        {/* Center point */}
-                        <div 
-                          className="absolute w-4 h-4 rounded-full bg-accent border-2 border-white"
-                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-                          title="Meeting center"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <div className="text-white/60 mb-2">No member locations available</div>
-                      <div className="text-xs text-white/40">Members need to share their location to see the proximity map</div>
-                    </div>
-                  )}
+                <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">(Map preview)</div>
+
+                <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
+                  <div>You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%</div>
+                  <div>Meeting point: Optimal • Convergence 94%</div>
+                  <div>Social Weather: Building energy • Pressure rising</div>
                 </div>
-                
-                {/* Real member status data */}
-                {proximityData && proximityData.members.length > 0 && (
-                  <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
-                    <div>
-                      Center: {proximityData.center_lat.toFixed(4)}, {proximityData.center_lng.toFixed(4)}
-                    </div>
-                    <div>
-                      Convergence: {Math.round(proximityData.convergence_score * 100)}% • {proximityData.members.filter(m => m.status === 'online').length} online
-                    </div>
-                    <div>
-                      Avg Distance: {proximityData.members.reduce((sum, m) => sum + (m.distance_to_center || 0), 0) / proximityData.members.length / 1000 | 0} km
-                    </div>
-                  </div>
-                )}
-                
-                {/* Meeting suggestions */}
-                {proximityData?.optimal_meeting_point && (
-                  <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
-                    <div className="font-semibold mb-1">Optimal Meeting Point</div>
-                    <div className="text-white/80 mb-2">
-                      {proximityData.optimal_meeting_point.name} • Minimizes travel for all members
-                    </div>
-                    <div className="flex gap-2">
-                      <Btn>Navigate</Btn>
-                      <Btn>Suggest to Group</Btn>
-                      <Btn>Find Venue</Btn>
-                    </div>
-                  </div>
-                )}
-                
+
+                <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
+                  4 converging at Coffee District · ETA 7:45 • Alignment high • Energy cost low
+                  <div className="mt-2 flex gap-2"><Btn>Join</Btn><Btn>Suggest</Btn><Btn>Ignore</Btn></div>
+                </div>
+
                 <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
                   <div className="flex-1 h-1 rounded-full bg-white/10 mx-3" />
                   <div className="flex gap-2">
@@ -286,52 +222,28 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <Section title="Live Status" icon={<Radio className="h-4 w-4" />}>
                   <div className="space-y-3 text-[13px]">
-                    {proximityData && proximityData.members.length > 0 ? (
-                      proximityData.members.map(member => (
-                        <div key={member.profile_id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {member.avatar_url ? (
-                              <img 
-                                src={member.avatar_url} 
-                                alt={member.display_name}
-                                className="w-6 h-6 rounded-full"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-white/10" />
-                            )}
-                            <div className="text-white/90">
-                              {member.display_name} 
-                              <span className="text-white/60 ml-1">• {member.vibe}</span>
-                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
-                                member.status === 'online' ? 'bg-green-500/20 text-green-400' :
-                                member.status === 'away' ? 'bg-yellow-500/20 text-yellow-400' :
-                                'bg-gray-500/20 text-gray-400'
-                              }`}>
-                                {member.status}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-xs text-white/60">
-                            {member.distance_to_center ? `${(member.distance_to_center / 1000).toFixed(1)} km` : 'Unknown'}
-                          </div>
+                    {PEOPLE.map((p) => (
+                      <div key={p.n} className="flex items-center justify-between">
+                        <div className="text-white/90">
+                          {p.n} <span className="text-white/60">• {p.d}</span>
                         </div>
-                      ))
-                    ) : (
-                      PEOPLE.map(p=> (
-                        <div key={p.n} className="flex items-center justify-between">
-                          <div className="text-white/90">{p.n} <span className="text-white/60">• {p.d}</span></div>
-                          <div className="w-40 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" style={{width:`${p.v}%`}} />
-                          </div>
+                        <div className="w-40 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500"
+                            style={{ width: `${p.v}%` }}
+                          />
                         </div>
-                      ))
-                    )}
+                      </div>
+                    ))}
                   </div>
                 </Section>
+
                 <Section title="Smart Layers" icon={<Layers className="h-4 w-4" />}>
                   <div className="grid grid-cols-2 gap-3 text-[12px]">
-                    <div>Venues (warm/cool)</div><div>Energy fields</div>
-                    <div className="opacity-70">Friend floqs</div><div className="opacity-70">Events</div>
+                    <div>Venues (warm/cool)</div>
+                    <div>Energy fields</div>
+                    <div className="opacity-70">Friend floqs</div>
+                    <div className="opacity-70">Events</div>
                   </div>
                 </Section>
               </div>
@@ -347,31 +259,62 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               className="space-y-5"
             >
               <div className="flex items-center justify-between">
-                <div className="flex gap-2"><Btn active>Crew (2)</Btn><Btn>Plans (1)</Btn><Btn>Live</Btn><Btn>Memories</Btn></div>
-                <div className="flex gap-2"><Btn>Wing</Btn><Btn>Filter</Btn></div>
+                <div className="flex gap-2">
+                  <Btn active>Crew (2)</Btn>
+                  <Btn>Plans (1)</Btn>
+                  <Btn>Live</Btn>
+                  <Btn>Memories</Btn>
+                </div>
+                <div className="flex gap-2">
+                  <Btn>Wing</Btn>
+                  <Btn>Filter</Btn>
+                </div>
               </div>
+
               <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
                 <div className="text-sm font-medium mb-1">Tom started a Rally · 2m</div>
                 <div className="text-[13px] text-white/80 mb-2">@everyone drinks at @GranBlanco in 1 hr?</div>
                 <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-[12px]">
                   Rally: Gran Blanco @ 8:30 • Going: 3 • Deciding: 2 • No reply: 3
-                  <div className="mt-2 flex gap-2"><Btn>Join</Btn><Btn>Maybe</Btn><Btn>Can't</Btn></div>
+                  <div className="mt-2 flex gap-2">
+                    <Btn>Join</Btn>
+                    <Btn>Maybe</Btn>
+                    <Btn>Can't</Btn>
+                  </div>
                 </div>
               </Section>
+
               <Section title="Moment" icon={<Camera className="h-4 w-4" />}>
                 <div className="text-sm font-medium mb-1">Sarah shared a moment · 12m</div>
-                <div className="rounded-xl aspect-[16/9] bg-zinc-900 border border-white/10 grid place-items-center text-white/60 text-xs">photo</div>
+                <div className="rounded-xl aspect-[16/9] bg-zinc-900 border border-white/10 grid place-items-center text-white/60 text-xs">
+                  photo
+                </div>
               </Section>
+
               <Section title="Pinned Decision" icon={<Check className="h-4 w-4" />}>
                 <div className="text-sm font-semibold">Friday Dinner @ Koi Sushi · 7:30pm</div>
                 <div className="text-[12px] text-white/80">Confirmed by 5/8 • Added to calendar</div>
               </Section>
+
               <div className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center gap-2">
-                <input aria-label="Message" className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Type message…" />
+                <input
+                  aria-label="Message"
+                  className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
+                  placeholder="Type message…"
+                />
                 <Btn ariaLabel="Mention">@</Btn>
-                <Btn ariaLabel="Attach photo"><Camera className="h-4 w-4" /></Btn>
-                <Btn ariaLabel="Attach location"><MapPin className="h-4 w-4" /></Btn>
-                <button type="button" className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]">Send</button>
+                <Btn ariaLabel="Attach photo">
+                  <Camera className="h-4 w-4" />
+                </Btn>
+                <Btn ariaLabel="Attach location">
+                  <MapPin className="h-4 w-4" />
+                </Btn>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
+                >
+                  Send
+                </button>
               </div>
             </motion.div>
           )}
@@ -384,22 +327,37 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
               className="space-y-5"
             >
-              <div className="flex flex-wrap gap-2"><Btn>+ Solo Plan</Btn><Btn>+ Group Plan</Btn><Btn>View Calendar</Btn><Btn>Wingman Help</Btn></div>
+              <div className="flex flex-wrap gap-2">
+                <Btn>+ Solo Plan</Btn>
+                <Btn>+ Group Plan</Btn>
+                <Btn>View Calendar</Btn>
+                <Btn>Wingman Help</Btn>
+              </div>
+
               <Section title="Thursday Tradition @ Gran" icon={<Check className="h-4 w-4" />} right={<Pill>Locked</Pill>}>
                 <div className="text-[13px]">8:30pm • 6/8 confirmed • Recurring weekly</div>
                 <div className="text-[12px] text-white/70">Energy: Social-Hype • Friction: Low</div>
               </Section>
+
               <Section title="Dinner @ Koi Sushi" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Building</Pill>}>
                 <div className="text-[13px]">7:30pm • 5 confirmed, 2 pending · Organizer: Sarah</div>
-                <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">Live Planning: 3 active • "I can pick up Tom and Alex" • "Jake is vegetarian"</div>
+                <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">
+                  Live Planning: 3 active • "I can pick up Tom and Alex" • "Jake is vegetarian"
+                </div>
               </Section>
+
               <Section title="Beach Day" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Tentative</Pill>}>
                 <div className="text-[13px]">All day • Flexible • Weather dependent</div>
                 <div className="text-[12px] text-white/70">Forecast: Perfect • Backup: Indoor climbing</div>
               </Section>
+
               <div className="rounded-2xl bg-white/5 border border-white/10 p-3 text-[13px]">
                 Suggested by Wingman: Sunday Brunch? 4 usually free
-                <div className="mt-2 flex gap-2"><Btn>Create Plan</Btn><Btn>Not This Week</Btn><Btn>Never Suggest</Btn></div>
+                <div className="mt-2 flex gap-2">
+                  <Btn>Create Plan</Btn>
+                  <Btn>Not This Week</Btn>
+                  <Btn>Never Suggest</Btn>
+                </div>
               </div>
             </motion.div>
           )}
@@ -419,13 +377,16 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 </div>
                 <div className="text-[12px] text-white/80 mt-2">Current: Gran Blanco • Building to peak</div>
               </Section>
+
               <Section title="Last Thursday — Sept 5" icon={<Star className="h-4 w-4" />} right={<Pill>Score 5/5</Pill>}>
                 <div className="text-[13px]">"Legendary Karaoke Night" • 4h 13m</div>
                 <div className="text-[12px] text-white/80">Highlights: Rap battle win • 27 moments • Convergence 94/100</div>
               </Section>
+
               <Section title="Aug 28 — Beach Birthday Bash" icon={<Star className="h-4 w-4" />} right={<Pill>Score 4/5</Pill>}>
                 <div className="text-[13px]">8/8 attended • 6h • Perfect weather</div>
               </Section>
+
               <div className="text-[12px] text-white/80">Pattern: Thursday Tradition (5 weeks)</div>
             </motion.div>
           )}
@@ -441,10 +402,19 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               <Section title="Group Pulse" icon={<Gauge className="h-4 w-4" />} right={<Btn>Activate Convergence</Btn>}>
                 <div className="text-[13px]">High potential • 3 free now • 2 free soon • Optimal: Coffee District</div>
               </Section>
-              {PEOPLE.slice(0,3).map((p,i)=> (
-                <Section key={p.n} title={`${p.n}`} icon={<Users className="h-4 w-4" />} right={<Pill>{i===0?"Energy 92":i===1?"Energy 45":"Ghost"}</Pill>}>
+
+              {PEOPLE.slice(0, 3).map((p, i) => (
+                <Section
+                  key={p.n}
+                  title={`${p.n}`}
+                  icon={<Users className="h-4 w-4" />}
+                  right={<Pill>{i === 0 ? "Energy 92" : i === 1 ? "Energy 45" : "Ghost"}</Pill>}
+                >
                   <div className="text-[12px] text-white/80">Status details</div>
-                  <div className="mt-2 grid sm:grid-cols-2 gap-3 text-[12px] text-white/80"><div>Location info</div><div>Vibe info</div></div>
+                  <div className="mt-2 grid sm:grid-cols-2 gap-3 text-[12px] text-white/80">
+                    <div>Location info</div>
+                    <div>Vibe info</div>
+                  </div>
                 </Section>
               ))}
             </motion.div>
@@ -460,20 +430,32 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
             >
               <div className="flex items-center justify-between">
                 <div className="flex gap-2 flex-wrap">
-                  <Btn active>All</Btn><Btn>Day</Btn><Btn>Night</Btn><Btn>Food</Btn><Btn>Bars</Btn><Btn>Activities</Btn>
+                  <Btn active>All</Btn>
+                  <Btn>Day</Btn>
+                  <Btn>Night</Btn>
+                  <Btn>Food</Btn>
+                  <Btn>Bars</Btn>
+                  <Btn>Activities</Btn>
                 </div>
                 <Btn>All Time</Btn>
               </div>
+
               <Section title="Our Top Spots" icon={<MapPin className="h-4 w-4" />}>
-                {VENUES.map(v=> (
+                {VENUES.map((v) => (
                   <div key={v.r} className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold">{v.r}. {v.name}</div>
+                      <div className="text-sm font-semibold">
+                        {v.r}. {v.name}
+                      </div>
                       <Pill>{v.badge}</Pill>
                     </div>
                     <div className="text-[12px] text-white/70">{v.meta}</div>
                     <div className="text-[12px] text-white/80 mt-1 italic">"{v.note}"</div>
-                    <div className="mt-2 flex gap-2"><Btn>Navigate</Btn><Btn>Rally Here</Btn><Btn>History</Btn></div>
+                    <div className="mt-2 flex gap-2">
+                      <Btn>Navigate</Btn>
+                      <Btn>Rally Here</Btn>
+                      <Btn>History</Btn>
+                    </div>
                   </div>
                 ))}
               </Section>
@@ -488,30 +470,52 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
               className="space-y-5"
             >
-              <div className="flex flex-wrap gap-2"><Btn active>Overview</Btn><Btn>Dynamics</Btn><Btn>Patterns</Btn><Btn>Archetypes</Btn><Btn>Export</Btn></div>
+              <div className="flex flex-wrap gap-2">
+                <Btn active>Overview</Btn>
+                <Btn>Dynamics</Btn>
+                <Btn>Patterns</Btn>
+                <Btn>Archetypes</Btn>
+                <Btn>Export</Btn>
+              </div>
+
               <Section title="Tribe Health" icon={<BarChart3 className="h-4 w-4" />}>
                 <div className="text-[13px]">Score 87/100 • Momentum building • 12 convergences</div>
-                <div className="mt-2"><Bar value={87} /></div>
+                <div className="mt-2">
+                  <Bar value={87} />
+                </div>
               </Section>
+
               <div className="grid lg:grid-cols-2 gap-5">
                 <Section title="Your Role" icon={<Users className="h-4 w-4" />}>
                   <div className="text-[13px]">Catalyst • Initiate 42% • +15% vibe lift</div>
                   <div className="text-[12px] text-white/80">Strongest: You↔Sarah • Needs: You↔Jake</div>
                 </Section>
+
                 <Section title="Weekly Rhythm" icon={<Gauge className="h-4 w-4" />}>
-                  <div className="text-[12px] text-white/80">Mon recovery • Tue build • Wed social • Thu peak • Fri high • Sat var • Sun recharge</div>
-                  <div className="mt-2 h-20 rounded-xl bg-white/5 border border-white/10 grid place-items-center text-white/60 text-xs">(Heatmap)</div>
+                  <div className="text-[12px] text-white/80">
+                    Mon recovery • Tue build • Wed social • Thu peak • Fri high • Sat var • Sun recharge
+                  </div>
+                  <div className="mt-2 h-20 rounded-xl bg-white/5 border border-white/10 grid place-items-center text-white/60 text-xs">
+                    (Heatmap)
+                  </div>
                 </Section>
               </div>
+
               <Section title="Insights" icon={<Target className="h-4 w-4" />}>
                 <div className="grid md:grid-cols-2 gap-3 text-[13px]">
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                     Thu tradition at risk
-                    <div className="mt-2"><Btn>Rally the Crew</Btn></div>
+                    <div className="mt-2">
+                      <Btn>Rally the Crew</Btn>
+                    </div>
                   </div>
+
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                     Jake engagement dropping
-                    <div className="mt-2 flex gap-2"><Btn>Reach Out</Btn><Btn>View Relationship</Btn></div>
+                    <div className="mt-2 flex gap-2">
+                      <Btn>Reach Out</Btn>
+                      <Btn>View Relationship</Btn>
+                    </div>
                   </div>
                 </div>
               </Section>
@@ -530,19 +534,30 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <div className="grid md:grid-cols-2 gap-3">
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">
                     Thursday Tradition at risk
-                    <div className="mt-2 flex gap-2"><Btn>Create Rally</Btn><Btn>Send Reminder</Btn><Btn>Skip</Btn></div>
+                    <div className="mt-2 flex gap-2">
+                      <Btn>Create Rally</Btn>
+                      <Btn>Send Reminder</Btn>
+                      <Btn>Skip</Btn>
+                    </div>
                   </div>
+
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">
                     Jake needs attention
-                    <div className="mt-2 flex gap-2"><Btn>Suggest 1-on-1</Btn><Btn>Add to next plan</Btn><Btn>Let it be</Btn></div>
+                    <div className="mt-2 flex gap-2">
+                      <Btn>Suggest 1-on-1</Btn>
+                      <Btn>Add to next plan</Btn>
+                      <Btn>Let it be</Btn>
+                    </div>
                   </div>
                 </div>
               </Section>
+
               <Section title="Ask Wingman" icon={<MessageSquare className="h-4 w-4" />}>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">
                   <div className="text-[12px] text-white/60">
                     Try: find common time • best venue for 10 • who hasn't converged • chill Sunday plan
                   </div>
+
                   <div className="mt-3 flex items-center gap-2">
                     <input
                       aria-label="Ask Wingman"
@@ -558,15 +573,21 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   </div>
                 </div>
               </Section>
+
               <Section title="Chat" icon={<MessageSquare className="h-4 w-4" />}>
                 <div className="text-[13px]">You: Find us a new bar to try</div>
+
                 <div className="mt-2 rounded-xl bg-white/5 border border-white/10 p-3 text-[12px] text-white/80">
                   <ol className="list-decimal ml-5 space-y-1">
                     <li>The Brig — 0.5mi • live music</li>
                     <li>Townhouse — dive • pool tables</li>
                     <li>Rooftop at Erwin — sunset views</li>
                   </ol>
-                  <div className="mt-2 flex gap-2"><Btn>Create Poll</Btn><Btn>Directions</Btn><Btn>More</Btn></div>
+                  <div className="mt-2 flex gap-2">
+                    <Btn>Create Poll</Btn>
+                    <Btn>Directions</Btn>
+                    <Btn>More</Btn>
+                  </div>
                 </div>
               </Section>
             </motion.div>
@@ -582,8 +603,11 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
             >
               <Section title="Privacy Controls" icon={<Shield className="h-4 w-4" />}>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {["Precise","Neighborhood","Status Only","Ghost"].map(l=>(
-                    <button key={l} className="rounded-xl border border-white/10 bg-white/5 py-2 text-[12px] hover:bg-white/10">
+                  {["Precise", "Neighborhood", "Status Only", "Ghost"].map((l) => (
+                    <button
+                      key={l}
+                      className="rounded-xl border border-white/10 bg-white/5 py-2 text-[12px] hover:bg-white/10"
+                    >
                       {l}
                     </button>
                   ))}
