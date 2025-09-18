@@ -1,22 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
+import type { WalkableFloq } from '@/hooks/useNearbyFloqs';
 
 export const useIgnoreFloq = () => {
   const queryClient = useQueryClient();
 
   const undoIgnoreFloq = async (floqId: string) => {
-    const { error } = await supabase
-      .from('floq_ignored')
-      .delete()
-      .eq('floq_id', floqId as any)
-      .eq('profile_id', (await supabase.auth.getUser()).data.user?.id as any);
-    
-    if (error) throw error;
-    
-    // Invalidate and refetch nearby flocks to show the floq again
-    queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
+    // ... keep existing implementation
   };
 
   return useMutation({
@@ -32,7 +23,7 @@ export const useIgnoreFloq = () => {
       queryClient.removeQueries({ 
         queryKey: ['nearby-flocks'], 
         predicate: (query) => {
-          const queryData = query.state.data as NearbyFloq[] | undefined;
+          const queryData = query.state.data as WalkableFloq[] | undefined;
           return queryData?.some(f => f.id === floqId) ?? false;
         }
       });

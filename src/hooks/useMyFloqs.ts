@@ -13,6 +13,8 @@ export interface MyFloq {
   ends_at?: string;
   creator_id: string;
   participant_count?: number;
+  last_activity_at?: string;
+  is_creator?: boolean;
 }
 
 export function useMyFloqs() {
@@ -65,10 +67,17 @@ export function useMyFloqs() {
       if (joinedFloqs.error) throw joinedFloqs.error;
 
       const allFloqs = [
-        ...(createdFloqs.data || []).map(f => ({ ...f, participant_count: 1 })),
+        ...(createdFloqs.data || []).map(f => ({ 
+          ...f, 
+          participant_count: 1,
+          last_activity_at: f.starts_at || f.created_at,
+          is_creator: true
+        })),
         ...(joinedFloqs.data || []).map(f => ({ 
           ...f, 
           participant_count: f.floq_participants?.length || 0,
+          last_activity_at: f.starts_at || f.created_at,
+          is_creator: false,
           floq_participants: undefined 
         }))
       ];

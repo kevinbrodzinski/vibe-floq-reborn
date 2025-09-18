@@ -22,12 +22,12 @@ import { useFloqMembers } from "@/hooks/useFloqMembers";
 import type { FloqCardItem } from "../cards/FloqCard";
 import type { AvatarItem } from "../visual/AvatarStack";
 
-interface FlockCommandCenterProps {
+interface FloqCommandCenterProps {
   item: FloqCardItem;
   onAction?: (action: string, data?: any) => void;
 }
 
-export function FlockCommandCenter({ item, onAction }: FlockCommandCenterProps) {
+export function FloqCommandCenter({ item, onAction }: FloqCommandCenterProps) {
   const [activeTab, setActiveTab] = React.useState("constellation");
   const { data: members = [] } = useFloqMembers(item.id);
   

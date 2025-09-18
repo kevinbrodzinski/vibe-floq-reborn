@@ -1,6 +1,6 @@
 import React from 'react';
-import { FlockAvatar } from './FlockAvatar';
-import type { MyFloq } from '@/hooks/useMyFlocks';
+import { FloqAvatar } from './FloqAvatar';
+import type { MyFloq } from '@/hooks/useMyFloqs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Crown, Clock, MessageCircle, Zap } from 'lucide-react';
@@ -12,12 +12,12 @@ import { useFloqParticipants } from '@/hooks/useFloqParticipants';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
-interface MyFlockCardProps {
+interface MyFloqCardProps {
   flock: MyFloq;
   onOpen?: (flock: MyFloq) => void;
 }
 
-export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
+export function MyFloqCard({ flock, onOpen }: MyFloqCardProps) {
   /* ————— dynamic data ————— */
   const { data: host, isLoading: hostLoading } = useProfile(flock.creator_id);
   const { data: plans } = useFloqPlans(flock.id);
@@ -69,7 +69,7 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
         <div className="flex items-start gap-4 mb-3">
           {/* Avatar + host badge */}
           <div className="relative">
-            <FlockAvatar flock={flock} size={64} glow />
+            <FloqAvatar flock={flock} size={64} glow />
             {flock.is_creator && (
               <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1">
                 <Crown className="h-3 w-3 text-white" />

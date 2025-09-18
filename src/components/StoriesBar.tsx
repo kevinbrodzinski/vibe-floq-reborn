@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Users } from 'lucide-react';
 import { VibeRing } from '@/components/VibeRing';
 import { cn } from '@/lib/utils';
-import type { MyFloq } from '@/hooks/useMyFlocks';
+import type { MyFloq } from '@/hooks/useMyFloqs';
 
 interface StoriesBarProps {
   flocks: MyFloq[];

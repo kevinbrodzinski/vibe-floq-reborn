@@ -6,7 +6,7 @@ import { useAdvancedFloqGestures } from '@/hooks/useAdvancedFloqGestures';
 import { useFloqsHubData } from '@/hooks/useFloqsHubData';
 import { FloqDiscoveryView } from '../discovery/FloqDiscoveryView';
 import { FloqConsideringView } from '../discovery/FloqConsideringView';
-import { FlockCommandCenter } from '../discovery/FlockCommandCenter';
+import { FloqCommandCenter } from '../discovery/FlockCommandCenter';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 import type { FloqCardItem } from '../cards/FloqCard';
@@ -170,7 +170,7 @@ export function EnhancedPeekSystem({
               )}
               
               {currentStage === "commit" && (
-                <FlockCommandCenter 
+                <FloqCommandCenter 
                   item={item}
                   onAction={handleAction}
                 />

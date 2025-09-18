@@ -15,9 +15,9 @@ import { SearchBarWithTypeahead } from '@/components/SearchBarWithTypeahead';
 import { AdvancedSearchSheet } from '@/components/AdvancedSearchSheet';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { FloqCard } from '@/components/floq/FloqCard';
-import { MyFlockCard } from '@/components/flocks/MyFlockCard';
-import { useMyFlocks } from '@/hooks/useMyFlocks';
-import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
+import { MyFloqCard } from '@/components/floqs/MyFloqCard';
+import { useMyFloqs } from '@/hooks/useMyFloqs';
+import { useNearbyFloqs } from '@/hooks/useNearbyFloqs';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
 import { useFloqSearch } from '@/hooks/useFloqSearch';
 import { useGeo } from '@/hooks/useGeo';
@@ -28,7 +28,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { zIndex } from '@/constants/z';
-interface FlocksHomeProps {
+interface FloqsHomeProps {
   geo?: {
     lat: number;
     lng: number;
@@ -36,7 +36,7 @@ interface FlocksHomeProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
-export const FlocksHome: React.FC<FlocksHomeProps> = ({
+export const FloqsHome: React.FC<FloqsHomeProps> = ({
   geo: propGeo,
   onRefresh,
   isRefreshing = false
@@ -96,7 +96,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     data: myFlocks = [],
     isLoading: myFlocksLoading,
     error: myFlocksError
-  } = useMyFlocks();
+  } = useMyFloqs();
 
   // Advanced search hook
   const {
@@ -110,17 +110,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   }, useAdvancedSearch && geo !== null);
   
   const {
-    data: nearbyFlocks = [],
-    isLoading: nearbyLoading,
+    nearby: nearbyFlocks = [],
+    loading: nearbyLoading,
     error: nearbyError
-  } = useNearbyFlocks({
-    geo,
-    filters: {
-      ...filters,
-      searchQuery
-    }, // Include search query in filters
-    enabled: !!geo && !useAdvancedSearch
-  });
+  } = useNearbyFloqs(geo?.lat, geo?.lng, { km: filters.distanceKm || 1 });
 
   // Error logging for data hooks
   useEffect(() => {
@@ -255,7 +248,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                     </CardContent>
                   </Card>)}
               </div> : myFlocks.length > 0 ? <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-                {myFlocks.map(flock => <MyFlockCard key={flock.id} flock={flock} onOpen={() => handleFloqPress(flock.id)} />)}
+                {myFlocks.map(flock => <MyFloqCard key={flock.id} flock={flock} onOpen={() => handleFloqPress(flock.id)} />)}
               </div> : <Card onClick={handleCreatePress} className="cursor-pointer border-dashed border-2 hover:bg-accent/50 transition-colors">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="rounded-full bg-primary/10 p-4 mb-4">

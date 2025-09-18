@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { FloqDiscoveryView } from "./FloqDiscoveryView";
 import { FloqConsideringView } from "./FloqConsideringView";
-import { FlockCommandCenter } from "./FlockCommandCenter";
+import { FloqCommandCenter } from "./FlockCommandCenter";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
 import { useFloqsHubData } from "@/hooks/useFloqsHubData";
 import type { FloqCardItem } from "../cards/FloqCard";
@@ -106,7 +106,7 @@ export function FloqPeekSystem() {
         )}
         
         {stage === "commit" && (
-          <FlockCommandCenter 
+          <FloqCommandCenter 
             item={item}
             onAction={handleAction}
           />

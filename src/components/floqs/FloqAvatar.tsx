@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getVibeGradient } from '@/lib/utils/getGradientClasses';
 import { vibeEmoji } from '@/utils/vibe';
-import type { MyFloq } from '@/hooks/useMyFlocks';
+import type { MyFloq } from '@/hooks/useMyFloqs';
 
-interface FlockAvatarProps {
+interface FloqAvatarProps {
   flock: MyFloq;
   size?: number; // diameter in px
   className?: string;
@@ -12,13 +12,13 @@ interface FlockAvatarProps {
   glow?: boolean; // NEW → neon style
 }
 
-export function FlockAvatar({
+export function FloqAvatar({
   flock,
   size = 104,
   className,
   onClick,
   glow = true, // default ON for new look
-}: FlockAvatarProps) {
+}: FloqAvatarProps) {
   const gradient = getVibeGradient('floq', flock.primary_vibe);
   const initials =
     flock.title

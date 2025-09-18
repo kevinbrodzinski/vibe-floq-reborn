@@ -16,10 +16,10 @@ import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
 import { useAuth } from '@/hooks/useAuth';
 import { useFloqPlanDetection } from '@/hooks/useFloqPlanDetection';
 import { useFloqUnreadMessages } from '@/hooks/useFloqUnreadMessages';
-import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
+import type { WalkableFloq } from '@/hooks/useNearbyFloqs';
 
 interface FloqCardProps {
-  floq: NearbyFloq;
+  floq: WalkableFloq;
   onBoost?: (floqId: string) => void;
   onLeave?: (floqId: string) => void;
   hasUserBoosted?: boolean;
