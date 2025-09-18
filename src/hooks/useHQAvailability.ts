@@ -1,31 +1,25 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useHQAvailability(id: string) {
-  const [data, setData] = useState<{
-    availability: any[];
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+export type HQAvailability = {
+  availability: Array<{ 
+    profile_id: string; 
+    status: "free" | "soon" | "busy" | "ghost"; 
+    until_at?: string;
+  }>;
+};
 
-  useEffect(() => {
-    let active = true;
-    
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase.functions.invoke("hq-availability", {
-        body: { floq_id: id }
+export function useHQAvailability(floqId?: string) {
+  return useQuery<HQAvailability>({
+    queryKey: ["hq-availability", floqId],
+    enabled: !!floqId,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("hq-availability", { 
+        body: { floq_id: floqId }
       });
-      
-      if (active) {
-        setData(data);
-        setLoading(false);
-      }
-    })();
-    
-    return () => {
-      active = false;
-    };
-  }, [id]);
-
-  return { data, loading };
+      if (error) throw error;
+      return data as HQAvailability;
+    }
+  });
 }

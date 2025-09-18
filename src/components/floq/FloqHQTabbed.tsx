@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useHQProximity } from "@/hooks/useHQProximity";
+import { useHQAvailability } from "@/hooks/useHQAvailability";
+import { useHQVibes } from "@/hooks/useHQVibes";
+import { useHQDigest } from "@/hooks/useHQDigest";
+import { useFloqStream } from "@/hooks/useFloqStream";
+import { usePostStream } from "@/hooks/usePostStream";
 import {
   MapPin,
   MessageSquare,
@@ -125,6 +130,11 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
   const { data: proximityData, isLoading: proximityLoading } = useHQProximity(floqId);
+  const { data: availability } = useHQAvailability(floqId);
+  const { data: vibes } = useHQVibes(floqId);
+  const { data: digest } = useHQDigest(floqId, undefined);
+  const { data: messages } = useFloqStream(floqId);
+  const postStream = usePostStream(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -286,36 +296,47 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 </div>
               </div>
 
-              <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
-                <div className="text-sm font-medium mb-1">Tom started a Rally · 2m</div>
-                <div className="text-[13px] text-white/80 mb-2">@everyone drinks at @GranBlanco in 1 hr?</div>
-                <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-[12px]">
-                  Rally: Gran Blanco @ 8:30 • Going: 3 • Deciding: 2 • No reply: 3
-                  <div className="mt-2 flex gap-2">
-                    <Btn>Join</Btn>
-                    <Btn>Maybe</Btn>
-                    <Btn>Can't</Btn>
+              {digest?.summary && (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[12px] mb-5">
+                  What you missed: decisions {digest.summary.decisions?.length ?? 0}, rallies {digest.summary.rallies?.length ?? 0}
+                </div>
+              )}
+
+              {/* Message List */}
+              {messages?.slice(0, 5).map(m => (
+                <Section 
+                  key={m.id} 
+                  title={m.kind === "rally" ? "📣 Rally" : m.kind === "decision" ? "✅ Decision" : "💬 Message"} 
+                  icon={<MessageSquare className="h-4 w-4" />}
+                >
+                  <div className="text-[12px] text-white/80">
+                    {m.kind === "rally" ? "📣 " : ""}{m.body}
                   </div>
-                </div>
-              </Section>
+                  <div className="text-[10px] text-white/60 mt-1">
+                    {new Date(m.created_at).toLocaleDateString()} • {m.author_id}
+                  </div>
+                </Section>
+              ))}
 
-              <Section title="Moment" icon={<Camera className="h-4 w-4" />}>
-                <div className="text-sm font-medium mb-1">Sarah shared a moment · 12m</div>
-                <div className="rounded-xl aspect-[16/9] bg-zinc-900 border border-white/10 grid place-items-center text-white/60 text-xs">
-                  photo
-                </div>
-              </Section>
+              {(!messages || messages.length === 0) && (
+                <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
+                  <div className="text-sm font-medium mb-1">No recent activity</div>
+                  <div className="text-[13px] text-white/80 mb-2">Start a rally or send a message to get things going</div>
+                </Section>
+              )}
 
-              <Section title="Pinned Decision" icon={<Check className="h-4 w-4" />}>
-                <div className="text-sm font-semibold">Friday Dinner @ Koi Sushi · 7:30pm</div>
-                <div className="text-[12px] text-white/80">Confirmed by 5/8 • Added to calendar</div>
-              </Section>
-
+              {/* Message Composer */}
               <div className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center gap-2">
                 <input
                   aria-label="Message"
                   className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
                   placeholder="Type message…"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                      postStream.mutate({ body: e.currentTarget.value.trim() });
+                      e.currentTarget.value = "";
+                    }
+                  }}
                 />
                 <Btn ariaLabel="Mention">@</Btn>
                 <Btn ariaLabel="Attach photo">
@@ -327,6 +348,13 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <button
                   type="button"
                   className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
+                  onClick={() => {
+                    const el = document.querySelector<HTMLInputElement>('input[aria-label="Message"]');
+                    const v = el?.value.trim(); 
+                    if (!v) return;
+                    postStream.mutate({ body: v }); 
+                    if (el) el.value = "";
+                  }}
                 >
                   Send
                 </button>
@@ -415,7 +443,16 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               className="space-y-5"
             >
               <Section title="Group Pulse" icon={<Gauge className="h-4 w-4" />} right={<Btn>Activate Convergence</Btn>}>
-                <div className="text-[13px]">High potential • 3 free now • 2 free soon • Optimal: Coffee District</div>
+                <div className="text-[13px]">
+                  {availability 
+                    ? `${availability.availability.filter(a => a.status === 'free').length} free now • ${
+                        availability.availability.filter(a => a.status === 'soon').length
+                      } free soon`
+                    : "Loading availability…"}
+                  {vibes?.consensus?.vibe && (
+                    <> • Consensus: {vibes.consensus.vibe} {Math.round((vibes.consensus.match_pct ?? 0) * 100)}%</>
+                  )}
+                </div>
               </Section>
 
               {PEOPLE.slice(0, 3).map((p, i) => (

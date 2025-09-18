@@ -1,32 +1,20 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useHQVibes(id: string) {
-  const [data, setData] = useState<{
-    per_member: any[];
-    consensus: any;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase.functions.invoke("hq-vibes", {
-        body: { floq_id: id }
+export function useHQVibes(floqId?: string) {
+  return useQuery({
+    queryKey: ["hq-vibes", floqId],
+    enabled: !!floqId,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("hq-vibes", { 
+        body: { floq_id: floqId }
       });
-      
-      if (active) {
-        setData(data);
-        setLoading(false);
-      }
-    })();
-    
-    return () => {
-      active = false;
-    };
-  }, [id]);
-
-  return { data, loading };
+      if (error) throw error;
+      return data as { 
+        per_member: any[]; 
+        consensus: { vibe: string | null; match_pct: number } 
+      };
+    }
+  });
 }

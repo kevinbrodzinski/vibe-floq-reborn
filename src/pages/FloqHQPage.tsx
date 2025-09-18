@@ -23,9 +23,9 @@ function FloqHQErrorFallback({ error, resetErrorBoundary }: { error: Error; rese
 }
 
 export default function FloqHQPage() {
-  const { id } = useParams<{ id: string }>();
+  const { floqId } = useParams<{ floqId: string }>();
   
-  if (!id) {
+  if (!floqId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4 max-w-md mx-auto p-6">
@@ -40,7 +40,7 @@ export default function FloqHQPage() {
 
   return (
     <ErrorBoundary FallbackComponent={FloqHQErrorFallback}>
-      <FloqHQTabbed floqId={id} />
+      <FloqHQTabbed floqId={floqId} />
     </ErrorBoundary>
   );
 }
