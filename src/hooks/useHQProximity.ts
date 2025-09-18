@@ -26,7 +26,7 @@ export interface HQProximityData {
   } | null;
 }
 
-export function useHQProximity(floqId: string) {
+export function useHQProximity(floqId?: string) {
   return useQuery({
     queryKey: ['hq-proximity', floqId],
     queryFn: async (): Promise<HQProximityData> => {

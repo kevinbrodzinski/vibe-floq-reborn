@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useHQProximity } from "@/hooks/useHQProximity";
 import {
   MapPin,
   MessageSquare,
@@ -123,6 +124,7 @@ interface FloqHQTabbedProps {
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
+  const { data: proximityData, isLoading: proximityLoading } = useHQProximity(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -196,24 +198,30 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
             >
               <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn>Meet-Halfway</Btn>}>
                 <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">
-                  (Map preview)
+                  {proximityLoading ? "Loading member locations..." : "(Map preview)"}
                 </div>
 
-                <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
-                  <div>Center: Loading...</div>
-                  <div>Convergence: Loading...</div>
-                  <div>Online: Loading...</div>
-                </div>
+                {proximityData && proximityData.members.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
+                    <div>Center: {proximityData.center_lat.toFixed(4)}, {proximityData.center_lng.toFixed(4)}</div>
+                    <div>Convergence: {Math.round(proximityData.convergence_score * 100)}%</div>
+                    <div>Online: {proximityData.members.filter(m => m.status === "online").length}</div>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-[12px] text-white/70">No member locations available — ask members to share location</div>
+                )}
 
-                <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
-                  Optimal Meeting Point
-                  <div className="text-[12px] text-white/80">
-                    Loading location data...
+                {proximityData?.meet_halfway && (
+                  <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
+                    Optimal Meeting Point
+                    <div className="text-[12px] text-white/80">
+                      {proximityData.meet_halfway.name ?? "Center"} · {proximityData.meet_halfway.lat.toFixed(4)}, {proximityData.meet_halfway.lng.toFixed(4)}
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <Btn>Navigate</Btn><Btn>Suggest to Group</Btn><Btn>Find Venue</Btn>
+                    </div>
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <Btn>Navigate</Btn><Btn>Suggest to Group</Btn><Btn>Find Venue</Btn>
-                  </div>
-                </div>
+                )}
 
                 <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
                   <div className="flex-1 h-1 rounded-full bg-white/10 mx-3" />
