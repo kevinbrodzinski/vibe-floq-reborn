@@ -24,9 +24,6 @@ import {
   Trophy,
   Flame
 } from "lucide-react";
-import { useHQProximity } from '../../hooks/useHQProximity';
-import { useHQAvailability } from '../../hooks/useHQAvailability';
-import { useHQVibes } from '../../hooks/useHQVibes';
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -84,7 +81,10 @@ function Section({
 function Bar({ value }: { value: number }) {
   return (
     <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-      <div className="h-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-rose-500" style={{ width: `${value}%` }} />
+      <div
+        className="h-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-rose-500"
+        style={{ width: `${value}%` }}
+      />
     </div>
   );
 }
@@ -123,10 +123,6 @@ interface FloqHQTabbedProps {
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
-  
-  const { data: proximityData } = useHQProximity(floqId);
-  const { data: availabilityData } = useHQAvailability(floqId);
-  const { data: vibesData } = useHQVibes(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -447,8 +443,17 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                     Try: find common time • best venue for 10 • who hasn't converged • chill Sunday plan
                   </div>
                   <div className="mt-3 flex items-center gap-2">
-                    <input aria-label="Ask Wingman" className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Ask Wingman…" />
-                    <button type="button" className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]">Send</button>
+                    <input
+                      aria-label="Ask Wingman"
+                      className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
+                      placeholder="Ask Wingman…"
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
+                    >
+                      Send
+                    </button>
                   </div>
                 </div>
               </Section>
@@ -477,10 +482,14 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               <Section title="Privacy Controls" icon={<Shield className="h-4 w-4" />}>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {["Precise","Neighborhood","Status Only","Ghost"].map(l=>(
-                    <button key={l} className="rounded-xl border border-white/10 bg-white/5 py-2 text-[12px] hover:bg-white/10">{l}</button>
+                    <button key={l} className="rounded-xl border border-white/10 bg-white/5 py-2 text-[12px] hover:bg-white/10">
+                      {l}
+                    </button>
                   ))}
                 </div>
-                <div className="mt-2 text-[11px] text-white/60">Auto-rules: Ghost after 11pm • Precise during rallies • Status at work</div>
+                <div className="mt-2 text-[11px] text-white/60">
+                  Auto-rules: Ghost after 11pm • Precise during rallies • Status at work
+                </div>
               </Section>
             </motion.div>
           )}
