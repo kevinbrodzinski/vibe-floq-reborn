@@ -13,7 +13,7 @@ export default function SmartComposer({
         className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
         placeholder={placeholder}
       />
-      <Btn>@</Btn>
+      <Btn ariaLabel="Mention">@</Btn>
       <Btn ariaLabel="Attach photo">📷</Btn>
       <Btn ariaLabel="Attach location">📍</Btn>
       <button
