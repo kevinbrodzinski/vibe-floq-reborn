@@ -1,278 +1,184 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import UnifiedFloqCard from "@/components/Floqs/UnifiedFloqCard";
-import { useFloqsDiscovery } from "@/hooks/useFloqsDiscovery";
+import { Glass } from "@/components/Common/Glass";
+import { NeonPill } from "@/components/Common/NeonPill";
+import { Sparkles, Users, Heart, Zap, Search } from "lucide-react";
 import { useMyFloqs } from "@/hooks/useMyFloqs";
+import { useFloqsDiscovery } from "@/hooks/useFloqsDiscovery";
+import { Link } from "react-router-dom";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MapPin, 
-  Users, 
-  Clock, 
-  Sparkles,
-  Zap,
-  Heart
-} from "lucide-react";
+import UnifiedFloqCard from "@/components/Floqs/UnifiedFloqCard";
 
 const vibeFilters = [
-  { id: 'all', label: 'All', icon: Sparkles },
-  { id: 'social', label: 'Social', icon: Users },
-  { id: 'chill', label: 'Chill', icon: Heart },
-  { id: 'hype', label: 'Hype', icon: Zap }
+  { id: "all", label: "All", icon: Sparkles },
+  { id: "social", label: "Social", icon: Users },
+  { id: "chill", label: "Chill", icon: Heart },
+  { id: "hype", label: "Hype", icon: Zap },
 ];
-
-const FloqCard = ({ floq, onJoin }: { floq: any; onJoin: (id: string) => void }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 hover:bg-white/10 transition-all"
-  >
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-white">{floq.name || floq.title}</h3>
-        <Badge variant="secondary" className="text-xs">
-          {floq.privacy || 'public'}
-        </Badge>
-      </div>
-      
-      {floq.description && (
-        <p className="text-sm text-white/70 line-clamp-2">{floq.description}</p>
-      )}
-      
-      <div className="flex items-center gap-4 text-xs text-white/60">
-        <div className="flex items-center gap-1">
-          <Users className="w-3 h-3" />
-          {floq.member_count || 0}
-        </div>
-        {floq.live_count > 0 && (
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            {floq.live_count} live
-          </div>
-        )}
-        <div className="flex items-center gap-1">
-          <Sparkles className="w-3 h-3" />
-          {floq.primary_vibe || 'social'}
-        </div>
-      </div>
-      
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          onClick={() => onJoin(floq.id)}
-          className="flex-1"
-        >
-          Join
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          asChild
-        >
-          <Link to={`/floqs/${floq.id}`}>View</Link>
-        </Button>
-      </div>
-    </div>
-  </motion.div>
-);
 
 export default function FloqsDiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVibe, setSelectedVibe] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: mine } = useMyFloqs();
-  const { data: discover, isLoading } = useFloqsDiscovery();
+  const { data: mine = [] } = useMyFloqs();
+  const { data: discover = [], isLoading } = useFloqsDiscovery();
   const { join } = useFloqJoin();
 
-  const handleJoinFloq = async (floqId: string) => {
+  const handleJoinFloq = (floqId: string) => {
     join({ floqId });
   };
 
-  const filteredDiscover = discover?.filter(floq => {
+  const filteredDiscover = discover?.filter((floq: any) => {
+    const name = (floq.name || floq.title || "").toLowerCase();
+    const description = (floq.description || "").toLowerCase();
     const matchesSearch = !searchQuery || 
-      floq.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      floq.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      floq.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesVibe = selectedVibe === 'all' || floq.primary_vibe === selectedVibe;
-    
-    return matchesSearch && matchesVibe;
-  }) || [];
+      name.includes(searchQuery.toLowerCase()) || 
+      description.includes(searchQuery.toLowerCase());
+    const matchesVibe = selectedVibe === "all" || 
+      (floq.primary_vibe || "").toLowerCase() === selectedVibe;
+    const notMine = !mine.some((m: any) => m.id === floq.id);
+    return matchesSearch && matchesVibe && notMine;
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-field text-foreground">
-      <header className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-background/70">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <div>
-                <div className="text-lg font-semibold">Floqs</div>
-                <div className="text-xs text-muted-foreground">Connect with your circles</div>
-              </div>
-            </div>
-            <Link to="/create/floq">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Create Floq</span>
-              </Button>
-            </Link>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Floqs</h1>
+            <p className="text-[12px] text-white/60">Connect with your circles</p>
           </div>
-
-          {/* Search and Filters */}
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search floqs..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className={showFilters ? 'bg-white/10' : ''}
-              >
-                <Filter className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex gap-2 flex-wrap"
-                >
-                  {vibeFilters.map((filter) => (
-                    <Button
-                      key={filter.id}
-                      size="sm"
-                      variant={selectedVibe === filter.id ? "default" : "outline"}
-                      onClick={() => setSelectedVibe(filter.id)}
-                    >
-                      <filter.icon className="w-3 h-3 mr-1" />
-                      {filter.label}
-                    </Button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <Link 
+            to="/create/floq" 
+            className="px-4 py-2 rounded-xl neon-pill text-[12px] hover:bg-white/15 transition neon-ring"
+          >
+            Create Floq
+          </Link>
         </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-        {/* Your Floqs */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Your Floqs</h2>
-            {mine && mine.length > 0 && (
-              <Badge variant="secondary">{mine.length}</Badge>
+        {/* Search & Filters */}
+        <Glass className="p-3 flex items-center gap-3 mb-6">
+          <Search className="h-4 w-4 text-white/50" />
+          <input
+            aria-label="Search floqs"
+            className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
+            placeholder="Search floqs, vibes, or topics…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button 
+            type="button" 
+            className={`px-3 py-1 rounded-lg text-[11px] transition ${
+              showFilters ? "neon-pill neon-ring" : "bg-white/5 border border-white/10 hover:bg-white/10"
+            }`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            Filters
+          </button>
+        </Glass>
+
+        {/* Vibe Filters */}
+        {showFilters && (
+          <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-none">
+            {vibeFilters.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setSelectedVibe(filter.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] border transition whitespace-nowrap ${
+                  selectedVibe === filter.id 
+                    ? "bg-white/15 border-white/20" 
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                }`}
+              >
+                <filter.icon className="h-3.5 w-3.5" />
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* My Floqs Section */}
+        <section className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-[14px] font-semibold text-white/90">Your Floqs</h2>
+            {mine.length > 0 && (
+              <NeonPill className="text-[10px]">{mine.length}</NeonPill>
             )}
           </div>
-          
-          {!mine || mine.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-8 text-center"
-            >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-gradient-primary/20 flex items-center justify-center">
-                <Plus className="w-6 h-6 text-primary" />
+
+          {mine.length === 0 ? (
+            <Glass className="p-6 text-center">
+              <div className="text-[13px] text-white/70 mb-3">
+                You haven't joined any floqs yet
               </div>
-              <div className="text-muted-foreground mb-4">You haven't joined any floqs yet</div>
-              <Link to="/create/floq">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Floq
-                </Button>
+              <Link 
+                to="/create/floq" 
+                className="text-[12px] text-white/90 hover:text-white underline"
+              >
+                Create your first floq
               </Link>
-            </motion.div>
+            </Glass>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mine.map((floq) => (
-                <motion.div
-                  key={floq.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <UnifiedFloqCard item={floq} />
-                </motion.div>
+              {mine.map((floq: any) => (
+                <UnifiedFloqCard key={floq.id} item={floq} />
               ))}
             </div>
           )}
         </section>
 
-        {/* Discover */}
+        {/* Discover Section */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Discover</h2>
-            {filteredDiscover.length > 0 && (
-              <Badge variant="secondary">{filteredDiscover.length}</Badge>
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-[14px] font-semibold text-white/90">Discover</h2>
+            {filteredDiscover && filteredDiscover.length > 0 && (
+              <NeonPill className="text-[10px]">{filteredDiscover.length}</NeonPill>
             )}
           </div>
-          
+
           {isLoading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl bg-white/5 border border-white/10 p-4 animate-pulse"
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="h-32 rounded-xl glass animate-pulse"
+                />
+              ))}
+            </div>
+          ) : !filteredDiscover || filteredDiscover.length === 0 ? (
+            <Glass className="p-6 text-center">
+              <div className="text-[13px] text-white/70">
+                {searchQuery || selectedVibe !== "all" 
+                  ? "No floqs match your search criteria" 
+                  : "No discoverable floqs found"
+                }
+              </div>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedVibe("all");
+                  }}
+                  className="mt-2 text-[12px] text-white/90 hover:text-white underline"
                 >
-                  <div className="space-y-3">
-                    <div className="h-4 bg-white/10 rounded" />
-                    <div className="h-3 bg-white/10 rounded w-3/4" />
-                    <div className="flex gap-2">
-                      <div className="h-6 bg-white/10 rounded flex-1" />
-                      <div className="h-6 bg-white/10 rounded w-16" />
-                    </div>
-                  </div>
+                  Clear filters
+                </button>
+              )}
+            </Glass>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDiscover.map((floq: any) => (
+                <div key={floq.id} className="relative">
+                  <UnifiedFloqCard item={floq} showJoinButton />
                 </div>
               ))}
             </div>
-          ) : filteredDiscover.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-8 text-center"
-            >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-muted/20 flex items-center justify-center">
-                <Search className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div className="text-muted-foreground">
-                {searchQuery ? 'No floqs match your search' : 'No discoverable floqs found'}
-              </div>
-            </motion.div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDiscover.map((floq, index) => (
-                <motion.div
-                  key={floq.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <FloqCard floq={floq} onJoin={handleJoinFloq} />
-                </motion.div>
-              ))}
-            </div>
           )}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

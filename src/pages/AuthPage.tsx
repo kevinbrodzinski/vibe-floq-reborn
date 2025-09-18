@@ -25,9 +25,9 @@ export default function AuthPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users to floqs
   if (user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/floqs" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

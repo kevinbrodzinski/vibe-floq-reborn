@@ -23,9 +23,9 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; titl
 export default function LandingPage() {
   const { user, loading } = useAuth();
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users to floqs
   if (!loading && user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/floqs" replace />;
   }
 
   if (loading) {
