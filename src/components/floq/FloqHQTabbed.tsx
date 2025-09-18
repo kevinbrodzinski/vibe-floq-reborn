@@ -133,12 +133,14 @@ interface FloqHQTabbedProps {
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
-  const { data: proximityData, isLoading: proximityLoading } = useHQProximity(floqId);
+  
+  // Live HQ hooks
+  const { data: proximity, isLoading: proxLoading } = useHQProximity(floqId);
   const { data: availability } = useHQAvailability(floqId);
   const { data: vibes } = useHQVibes(floqId);
   const { data: digest } = useHQDigest(floqId, undefined);
   const { data: messages } = useFloqStream(floqId);
-  const postStream = usePostStream(floqId);
+  const post = usePostStream(floqId);
   
   // Real-time subscriptions
   useFloqStreamRealtime(floqId);
@@ -215,24 +217,42 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
             >
               <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn>Meet-Halfway</Btn>}>
                 <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">
-                  {proximityLoading ? "Loading member locations..." : "(Map preview)"}
+                  {proxLoading ? "Loading member locations..." : "(Map preview)"}
                 </div>
 
-                {proximityData && proximityData.members.length > 0 ? (
-                  <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
-                    <div>Center: {proximityData.center_lat.toFixed(4)}, {proximityData.center_lng.toFixed(4)}</div>
-                    <div>Convergence: {Math.round(proximityData.convergence_score * 100)}%</div>
-                    <div>Online: {proximityData.members.filter(m => m.status === "online").length}</div>
-                  </div>
-                ) : (
-                  <div className="mt-3 text-[12px] text-white/70">No member locations available — ask members to share location</div>
-                )}
+                <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
+                  {proxLoading ? (
+                    <>
+                      <div>Loading member locations…</div>
+                      <div>—</div>
+                      <div>—</div>
+                    </>
+                  ) : proximity && proximity.members.length ? (
+                    <>
+                      <div>
+                        Center: {proximity.center_lat.toFixed(4)}, {proximity.center_lng.toFixed(4)}
+                      </div>
+                      <div>
+                        Convergence: {Math.round(proximity.convergence_score * 100)}%
+                      </div>
+                      <div>
+                        Online: {proximity.members.filter(m => m.status === "online").length}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>No member locations yet</div>
+                      <div>Ask members to share location</div>
+                      <div>—</div>
+                    </>
+                  )}
+                </div>
 
-                {proximityData?.meet_halfway && (
+                {proximity?.meet_halfway && (
                   <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
                     Optimal Meeting Point
                     <div className="text-[12px] text-white/80">
-                      {proximityData.meet_halfway.name ?? "Center"} · {proximityData.meet_halfway.lat.toFixed(4)}, {proximityData.meet_halfway.lng.toFixed(4)}
+                      {proximity.meet_halfway.name ?? "Center"} · {proximity.meet_halfway.lat.toFixed(4)}, {proximity.meet_halfway.lng.toFixed(4)}
                     </div>
                     <div className="mt-2 flex gap-2">
                       <Btn>Navigate</Btn><Btn>Suggest to Group</Btn><Btn>Find Venue</Btn>
@@ -305,27 +325,29 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
 
               {digest?.summary && (
                 <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[12px] mb-5">
-                  What you missed: {digest.summary.total ?? 0} messages, {digest.summary.recent ?? 0} recent
+                  What you missed: decisions {digest.summary.decisions?.length ?? 0}, rallies {digest.summary.rallies?.length ?? 0}, moments {digest.summary.moments?.length ?? 0}
                 </div>
               )}
 
               {/* Message List */}
-              {messages?.slice(0, 5).map(m => (
-                <Section 
-                  key={m.id} 
-                  title={m.emoji ? `${m.emoji} Message` : "💬 Message"} 
-                  icon={<MessageSquare className="h-4 w-4" />}
-                >
-                  <div className="text-[12px] text-white/80">
-                    {m.body}
-                  </div>
-                  <div className="text-[10px] text-white/60 mt-1">
-                    {new Date(m.created_at).toLocaleDateString()} • {m.sender_id}
-                  </div>
-                </Section>
-              ))}
-
-              {(!messages || messages.length === 0) && (
+              {messages?.length ? (
+                <div className="space-y-3">
+                  {messages.slice(0, 10).map(m => (
+                    <Section 
+                      key={m.id} 
+                      title={m.emoji ? `${m.emoji} Message` : "💬 Message"} 
+                      icon={<MessageSquare className="h-4 w-4" />}
+                    >
+                      <div className="text-[12px] text-white/80">
+                        {m.body}
+                      </div>
+                      <div className="text-[10px] text-white/60 mt-1">
+                        {new Date(m.created_at).toLocaleDateString()} • {m.sender_id}
+                      </div>
+                    </Section>
+                  ))}
+                </div>
+              ) : (
                 <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
                   <div className="text-sm font-medium mb-1">No recent activity</div>
                   <div className="text-[13px] text-white/80 mb-2">Start a rally or send a message to get things going</div>
@@ -340,7 +362,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   placeholder="Type message…"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                      postStream.mutate({ body: e.currentTarget.value.trim() });
+                      post.mutate({ body: e.currentTarget.value.trim() });
                       e.currentTarget.value = "";
                     }
                   }}
@@ -359,7 +381,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                     const el = document.querySelector<HTMLInputElement>('input[aria-label="Message"]');
                     const v = el?.value.trim(); 
                     if (!v) return;
-                    postStream.mutate({ body: v }); 
+                    post.mutate({ body: v }); 
                     if (el) el.value = "";
                   }}
                 >
