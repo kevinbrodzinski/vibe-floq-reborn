@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useHQProximity } from "@/hooks/useHQProximity";
 import {
   MapPin,
   MessageSquare,
@@ -123,6 +124,9 @@ interface FloqHQTabbedProps {
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
+  
+  // Real-time HQ data
+  const { data: proximityData, isLoading: proximityLoading } = useHQProximity(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -193,16 +197,81 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               className="space-y-5"
             >
               <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn>Meet-Halfway</Btn>}>
-                <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">(Map preview)</div>
-                <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
-                  <div>You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%</div>
-                  <div>Meeting point: Optimal • Convergence 94%</div>
-                  <div>Social Weather: Building energy • Pressure rising</div>
+                <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">
+                  {proximityLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                      Loading member locations...
+                    </div>
+                  ) : proximityData && proximityData.members.length > 0 ? (
+                    <div className="w-full h-full p-4">
+                      <div className="text-center mb-4">
+                        <div className="text-lg font-semibold text-white">
+                          {proximityData.members.length} Members Located
+                        </div>
+                        <div className="text-sm text-white/60">
+                          Convergence: {Math.round(proximityData.convergence_score * 100)}%
+                        </div>
+                      </div>
+                      {/* Member location dots visualization */}
+                      <div className="relative w-full h-32 bg-white/5 rounded-lg border border-white/10">
+                        {proximityData.members.map((member, index) => (
+                          <div 
+                            key={member.profile_id}
+                            className="absolute w-3 h-3 rounded-full bg-primary border border-white/20"
+                            style={{
+                              left: `${20 + (index * 15) % 60}%`,
+                              top: `${30 + (index % 3) * 20}%`
+                            }}
+                            title={`${member.display_name} - ${member.vibe} (${member.status})`}
+                          />
+                        ))}
+                        {/* Center point */}
+                        <div 
+                          className="absolute w-4 h-4 rounded-full bg-accent border-2 border-white"
+                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                          title="Meeting center"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-white/60 mb-2">No member locations available</div>
+                      <div className="text-xs text-white/40">Members need to share their location to see the proximity map</div>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
-                  4 converging at Coffee District · ETA 7:45 • Alignment high • Energy cost low
-                  <div className="mt-2 flex gap-2"><Btn>Join</Btn><Btn>Suggest</Btn><Btn>Ignore</Btn></div>
-                </div>
+                
+                {/* Real member status data */}
+                {proximityData && proximityData.members.length > 0 && (
+                  <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
+                    <div>
+                      Center: {proximityData.center_lat.toFixed(4)}, {proximityData.center_lng.toFixed(4)}
+                    </div>
+                    <div>
+                      Convergence: {Math.round(proximityData.convergence_score * 100)}% • {proximityData.members.filter(m => m.status === 'online').length} online
+                    </div>
+                    <div>
+                      Avg Distance: {proximityData.members.reduce((sum, m) => sum + (m.distance_to_center || 0), 0) / proximityData.members.length / 1000 | 0} km
+                    </div>
+                  </div>
+                )}
+                
+                {/* Meeting suggestions */}
+                {proximityData?.optimal_meeting_point && (
+                  <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
+                    <div className="font-semibold mb-1">Optimal Meeting Point</div>
+                    <div className="text-white/80 mb-2">
+                      {proximityData.optimal_meeting_point.name} • Minimizes travel for all members
+                    </div>
+                    <div className="flex gap-2">
+                      <Btn>Navigate</Btn>
+                      <Btn>Suggest to Group</Btn>
+                      <Btn>Find Venue</Btn>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
                   <div className="flex-1 h-1 rounded-full bg-white/10 mx-3" />
                   <div className="flex gap-2">
@@ -217,14 +286,46 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <Section title="Live Status" icon={<Radio className="h-4 w-4" />}>
                   <div className="space-y-3 text-[13px]">
-                    {PEOPLE.map(p=> (
-                      <div key={p.n} className="flex items-center justify-between">
-                        <div className="text-white/90">{p.n} <span className="text-white/60">• {p.d}</span></div>
-                        <div className="w-40 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" style={{width:`${p.v}%`}} />
+                    {proximityData && proximityData.members.length > 0 ? (
+                      proximityData.members.map(member => (
+                        <div key={member.profile_id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {member.avatar_url ? (
+                              <img 
+                                src={member.avatar_url} 
+                                alt={member.display_name}
+                                className="w-6 h-6 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-white/10" />
+                            )}
+                            <div className="text-white/90">
+                              {member.display_name} 
+                              <span className="text-white/60 ml-1">• {member.vibe}</span>
+                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                                member.status === 'online' ? 'bg-green-500/20 text-green-400' :
+                                member.status === 'away' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-gray-500/20 text-gray-400'
+                              }`}>
+                                {member.status}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-xs text-white/60">
+                            {member.distance_to_center ? `${(member.distance_to_center / 1000).toFixed(1)} km` : 'Unknown'}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      PEOPLE.map(p=> (
+                        <div key={p.n} className="flex items-center justify-between">
+                          <div className="text-white/90">{p.n} <span className="text-white/60">• {p.d}</span></div>
+                          <div className="w-40 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" style={{width:`${p.v}%`}} />
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </Section>
                 <Section title="Smart Layers" icon={<Layers className="h-4 w-4" />}>
