@@ -6,6 +6,7 @@ import { useHQVibes } from "@/hooks/useHQVibes";
 import { useHQDigest } from "@/hooks/useHQDigest";
 import { useFloqStream } from "@/hooks/useFloqStream";
 import { usePostStream } from "@/hooks/usePostStream";
+import { useFloqStreamRealtime } from "@/hooks/useFloqStreamRealtime";
 import {
   MapPin,
   MessageSquare,
@@ -135,6 +136,9 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
   const { data: digest } = useHQDigest(floqId, undefined);
   const { data: messages } = useFloqStream(floqId);
   const postStream = usePostStream(floqId);
+  
+  // Real-time subscriptions
+  useFloqStreamRealtime(floqId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">

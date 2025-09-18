@@ -1,24 +1,43 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
+
+const admin = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { floq_id, since, categories } = await req.json();
-    const now = new Date().toISOString();
-    const summary = { decisions: [], rallies: [], mentions: [], plans: [] };
-    const receipt = { policy_fingerprint: "hq-digest-v1", since: since ?? null, categories: categories ?? null };
+    const { floq_id, since } = await req.json();
+    if (!floq_id) throw new Error("floq_id required");
+    const sinceIso = since ?? new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
+    const { data: msgs, error } = await admin
+      .from("chat_messages")
+      .select("id, message_type, created_at")
+      .eq("thread_id", floq_id)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+
+    const summary = {
+      decisions: (msgs ?? []).filter(m => m.message_type === "decision"),
+      rallies:   (msgs ?? []).filter(m => m.message_type === "rally"),
+      moments:   (msgs ?? []).filter(m => m.message_type === "moment"),
+      plans:     (msgs ?? []).filter(m => m.message_type === "plan"),
+    };
 
     return new Response(JSON.stringify({
       summary,
-      last_digest_at: now,
-      receipt
-    }), { headers: { "Content-Type": "application/json", ...corsHeaders }});
-  } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders }
+      last_digest_at: new Date().toISOString(),
+      receipt: { policy_fingerprint: "hq-digest-v1", since: sinceIso }
+    }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
+      status: 500, headers: { "Content-Type": "application/json", ...corsHeaders }
     });
   }
 });
