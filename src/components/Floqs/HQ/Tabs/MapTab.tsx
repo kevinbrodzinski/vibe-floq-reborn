@@ -25,52 +25,36 @@ type Props = {
 };
 
 export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice, floqId, meetOpen }: Props) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [cats, setCats] = useState<string[]>(["coffee"]); // default to coffee
-  const [sel, setSel] = useState<string|null>(null);
-  const { data: halfAPI, isLoading, refetch } = useHQMeetHalfway(floqId, cats, sheetOpen);
+  const [open, setOpen] = useState(false);
+  const [cats, setCats] = useState<string[]>(["coffee", "bar", "restaurant"]);
+  const [selected, setSelected] = useState<string | null>(null);
 
-  // Auto-select first venue when data loads
+  // fetch when sheet is open (your existing API shape)
+  const { data, isLoading } = useHQMeetHalfway(floqId, cats, open);
+
+  // default selection when data arrives
   useEffect(() => {
-    if (sheetOpen && halfAPI?.candidates?.length && !sel) {
-      setSel(halfAPI.candidates[0].id);
+    if (open && data?.candidates?.length && !selected) {
+      setSelected(data.candidates[0].id);
     }
-  }, [sheetOpen, halfAPI, sel]);
+  }, [open, data, selected]);
 
-  const handleMeetHalfway = () => {
-    setSheetOpen(true);
-    refetch();
-    onMeetHalfway?.();
-  };
-
-  const handleToggleCategory = (category: string) => {
-    setCats(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
-
-  const handleRallyHere = () => {
-    // Rally creation logic here
-    setSheetOpen(false);
-  };
+  const toggle = (c: string) =>
+    setCats(prev => (prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]));
   return (
     <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
         title="Living Proximity Map"
         icon={<MapPin className="h-4 w-4" />}
-        right={<Btn glow onClick={handleMeetHalfway}>Meet-Halfway</Btn>}
+        right={<Btn glow onClick={() => setOpen(true)}>Meet-Halfway</Btn>}
       >
-        {halfAPI
-          ? <SmartMap data={halfAPI} selectedId={sel} onSelect={setSel} height={280} />
-          : <div className="h-72 rounded-xl border border-white/10 bg-white/5 grid place-items-center text-white/50">(Map preview)</div>
-        }
-        <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
-          <div>You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%</div>
-          <div>Meeting point: Optimal • Convergence 94%</div>
-          <div>Social Weather: Building energy • Pressure rising</div>
+        <div className="rounded-xl bg-white/5 border border-white/10 h-[260px] grid place-items-center text-white/40">
+          (Map preview)
         </div>
+        <div className="text-[12px] text-white/80 mt-3">
+          You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%
+        </div>
+        <div className="text-[12px] text-white/80">Meeting point: Optimal • Convergence 94%</div>
         <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
           4 converging at Coffee District · ETA 7:45 • Alignment high • Energy cost low
           <div className="mt-2 flex gap-2">
@@ -114,16 +98,16 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         </Section>
       </div>
 
-      {/* Meet Halfway Sheet */}
+      {/* Sheet */}
       <MeetHalfwaySheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        data={halfAPI}
-        selectedId={sel}
-        onSelectVenue={setSel}
+        open={open}
+        onOpenChange={setOpen}
+        data={data}
+        selectedId={selected}
+        onSelectVenue={setSelected}
         categories={cats}
-        onToggleCategory={handleToggleCategory}
-        onRallyHere={handleRallyHere}
+        onToggleCategory={toggle}
+        onRallyHere={() => {/* Rally creation logic here */}}
         loading={isLoading}
       />
     </motion.div>

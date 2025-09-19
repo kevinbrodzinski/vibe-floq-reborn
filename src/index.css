@@ -673,6 +673,19 @@ All colors MUST be HSL.
     opacity: 0.4;
   }
 
+.neon-surface { 
+  isolation: isolate; 
+}
+
+.neon-pulse { 
+  animation: neonPulse 2.4s ease-in-out infinite; 
+}
+
+@keyframes neonPulse { 
+  0%,100% { filter: drop-shadow(0 0 0.0rem var(--c-selected)); } 
+  50%     { filter: drop-shadow(0 0 0.6rem var(--c-selected)); }
+}
+  
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;

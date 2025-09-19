@@ -10,6 +10,7 @@ export type HalfCandidate = {
   avg_eta_min: number;
   per_member: Array<{ profile_id: string; meters: number; eta_min: number }>;
   score: number;
+  category?: string;
 };
 
 export type HalfResult = {
