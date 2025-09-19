@@ -99,10 +99,20 @@ export default function FloqsDiscoverPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 text-white">
-      {/* Page header */}
-      <div className="mb-4">
-        <div className="text-lg font-semibold">Floqs</div>
-        <div className="text-[12px] text-white/60">Your living social constellation</div>
+      {/* Page header + CTA */}
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-lg font-semibold">Floqs</div>
+          <div className="text-[12px] text-white/60">Your living social constellation</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => nav("/create/floq")}
+          aria-label="Create Floq"
+          className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/6 hover:bg-white/10 text-[12px]"
+        >
+          Create Floq
+        </button>
       </div>
 
       {/* Split filters with glass dropdowns */}
@@ -136,6 +146,16 @@ export default function FloqsDiscoverPage() {
           </div>
         </details>
       )}
+
+      {/* Mobile Create Floq FAB */}
+      <button
+        type="button"
+        onClick={() => nav("/create/floq")}
+        aria-label="Create Floq"
+        className="fixed sm:hidden bottom-24 right-4 z-30 h-12 w-12 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg border border-white/10 grid place-items-center"
+      >
+        <span className="text-white text-lg leading-none">+</span>
+      </button>
 
       {/* Rally Modal */}
       {rallyModal && (
