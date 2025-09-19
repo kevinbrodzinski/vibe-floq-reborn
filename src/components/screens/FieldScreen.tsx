@@ -12,10 +12,14 @@ import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
 import { useAutoDiscoveryNotifications } from "@/hooks/useAutoDiscoveryNotifications";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { FlowMetricsProvider } from "@/contexts/FlowMetricsContext";
+import { useFieldHeartbeat } from "@/hooks/useFieldHeartbeat";
 
 export const FieldScreen = () => {
   useSyncedVisibility(); // Sync visibility across app and devices
   const { rows: friends } = useUnifiedFriends();
+  
+  // Initialize the living field heartbeat system
+  const fieldHeartbeat = useFieldHeartbeat();
   
   // Extract friend IDs for the location provider
   const friendIds = friends.map(friend => friend.id);

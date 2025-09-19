@@ -7013,6 +7013,36 @@ export type Database = {
           },
         ]
       }
+      group_predictability_log: {
+        Row: {
+          created_at: string
+          fallback: string | null
+          gate_passed: boolean
+          group_id: string
+          omega_g: number
+          p_g: number
+          ts: string
+        }
+        Insert: {
+          created_at?: string
+          fallback?: string | null
+          gate_passed: boolean
+          group_id: string
+          omega_g: number
+          p_g: number
+          ts?: string
+        }
+        Update: {
+          created_at?: string
+          fallback?: string | null
+          gate_passed?: boolean
+          group_id?: string
+          omega_g?: number
+          p_g?: number
+          ts?: string
+        }
+        Relationships: []
+      }
       group_receipts: {
         Row: {
           created_at: string
@@ -7174,6 +7204,39 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json | null
+        }
+        Relationships: []
+      }
+      learned_preferences: {
+        Row: {
+          conditions: Json
+          confidence: number
+          created_at: string
+          last_updated: string
+          preference: Json
+          preference_type: string
+          profile_id: string
+          support: number
+        }
+        Insert: {
+          conditions?: Json
+          confidence?: number
+          created_at?: string
+          last_updated?: string
+          preference?: Json
+          preference_type: string
+          profile_id: string
+          support?: number
+        }
+        Update: {
+          conditions?: Json
+          confidence?: number
+          created_at?: string
+          last_updated?: string
+          preference?: Json
+          preference_type?: string
+          profile_id?: string
+          support?: number
         }
         Relationships: []
       }
@@ -10157,6 +10220,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      preference_signals: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          signal: Json
+          ts: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          signal?: Json
+          ts?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          signal?: Json
+          ts?: string
+        }
+        Relationships: []
       }
       presence: {
         Row: {
@@ -20857,13 +20944,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -20873,8 +20953,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -20887,8 +20967,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -20901,7 +20981,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -20915,8 +20995,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -20928,13 +21008,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
