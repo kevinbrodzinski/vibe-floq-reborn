@@ -19,7 +19,7 @@ export const FieldScreen = () => {
   const { rows: friends } = useUnifiedFriends();
   
   // Initialize the living field heartbeat system
-  const fieldHeartbeat = useFieldHeartbeat();
+  useFieldHeartbeat({ envelope: 'balanced' });
   
   // Extract friend IDs for the location provider
   const friendIds = friends.map(friend => friend.id);

@@ -1,77 +1,64 @@
-import { useEffect, useRef, useState } from 'react';
-import { EnhancedVenueIntelligence } from '@/core/vibe/collectors/EnhancedVenueIntelligence';
+// Field system heartbeat - makes the organism alive
+import { useEffect, useRef } from 'react';
 import { estimateVenuePulse } from '@/core/venue/PulseEstimator';
-import { updatePersonEnergy, type PersonState, type GroupState } from '@/core/field/FieldCoupling';
+import { updatePersonEnergy, type PersonState } from '@/core/field/FieldCoupling';
 import { useEnhancedPresence } from '@/hooks/useEnhancedPresence';
-import { useVibeEngine } from '@/hooks/useVibeEngine';
+import { useGeo } from '@/hooks/useGeo';
+import { EnhancedVenueIntelligence } from '@/core/vibe/collectors/EnhancedVenueIntelligence';
+import { rankTimeGate } from '@/lib/privacy';
+import { edgeLog } from '@/lib/edgeLog';
 
-export function useFieldHeartbeat() {
-  const { currentVibe, isDetecting } = useVibeEngine();
+type Opts = { envelope?: 'strict' | 'balanced' | 'permissive' };
+
+export function useFieldHeartbeat(opts: Opts = {}) {
+  const { envelope = 'balanced' } = opts;
   const presence = useEnhancedPresence();
+  const { coords } = useGeo(); // Get location from useGeo
   const ven = useRef(new EnhancedVenueIntelligence());
+  const person = useRef<PersonState>({ energy: 0.6, slope: 0, momentum: 0 });
   const tickRef = useRef<number | null>(null);
-  const [personState, setPersonState] = useState<PersonState>({
-    energy: 0.5,
-    slope: 0,
-    momentum: 0,
-    vibe: currentVibe || 'social',
-    friendsPresent: 0
-  });
+  const lastLog = useRef(0);
 
   useEffect(() => {
-    if (!isDetecting) return;
+    let alive = true;
+    const loop = async () => {
+      const gate = await rankTimeGate({
+        envelopeId: envelope,
+        featureTimestamps: [Date.now()],
+        epsilonCost: 0.0,
+      });
 
-    function loop() {
-      // Update person state based on current vibe and presence data
-      if (currentVibe && presence.location) {
-        // Get venue intelligence for current location
-        if (presence.location.coords?.lat && presence.location.coords?.lng) {
-          const lngLat = { 
-            lat: presence.location.coords.lat, 
-            lng: presence.location.coords.lng 
-          };
-          ven.current.getVenueIntelligence(lngLat).then(venueIntel => {
-          if (venueIntel) {
-            const venuePulse = estimateVenuePulse(venueIntel);
-            
-            // Create minimal group state from presence data
-            const groupState: GroupState | undefined = presence.nearby_users?.length ? {
-              energy: 0.6, // default group energy
-              cohesion: 0.7, // assume good cohesion for friends
-              fragmentationRisk: 0.2,
-              size: presence.nearby_users.length + 1
-            } : undefined;
-
-            // Update person energy based on venue and group coupling
-            setPersonState(prev => {
-              const updated = updatePersonEnergy({
-                ...prev,
-                vibe: currentVibe,
-                friendsPresent: presence.nearby_users?.length ? 
-                  Math.min(1, presence.nearby_users.length / 5) : 0
-              }, venueIntel, groupState);
-              
-              return updated;
-            });
-          }
-          }).catch(() => {
-            // Silent fail - venue intelligence not available
-          });
-        }
+      let pulse = null;
+      if (gate.ok && coords?.lat && coords?.lng) {
+        const intel = await ven.current.getVenueIntelligence({
+          lat: coords.lat,
+          lng: coords.lng,
+        });
+        pulse = estimateVenuePulse(intel);
       }
 
+      person.current = updatePersonEnergy(person.current, pulse, null);
+
+      const now = Date.now();
+      if (now - lastLog.current > 60_000) {
+        lastLog.current = now;
+        edgeLog('field_heartbeat_tick', {
+          receiptId: gate.ok ? gate.receiptId : undefined,
+          degrade: gate.ok ? gate.degrade : 'suppress',
+          energy_bin: person.current.energy < 0.34 ? 'low' : person.current.energy < 0.67 ? 'mid' : 'high',
+        });
+      }
+
+      if (!alive) return;
       tickRef.current = self.setTimeout(loop, 1500);
-    }
+    };
 
     loop();
-    return () => { 
-      if (tickRef.current) clearTimeout(tickRef.current); 
+    return () => {
+      alive = false;
+      if (tickRef.current) clearTimeout(tickRef.current);
     };
-  }, [currentVibe, isDetecting, presence.location, presence.nearby_users]);
+  }, [envelope, coords?.lat, coords?.lng]);
 
-  return {
-    personState,
-    isActive: isDetecting,
-    location: presence.location
-  };
+  return person.current; // latest state if caller needs it
 }

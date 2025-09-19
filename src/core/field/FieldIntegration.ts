@@ -22,7 +22,6 @@ export class FieldIntegrationEngine {
         energy: 0.5,
         slope: 0,
         momentum: 0,
-        vibe: 'social',
         friendsPresent: 0
       },
       groupStates: new Map(),
@@ -33,9 +32,10 @@ export class FieldIntegrationEngine {
 
   // Integration point for vibe engine
   updatePersonVibe(vibe: Vibe, confidence: number) {
+    // Vibe information is now tracked separately from PersonState
+    // Update energy based on confidence
     this.state.personState = {
       ...this.state.personState,
-      vibe,
       energy: Math.max(this.state.personState.energy, confidence * 0.3) // confidence boosts energy
     };
     this.notifyStateChange();
@@ -46,10 +46,10 @@ export class FieldIntegrationEngine {
     const pulse = estimateVenuePulse(intelligence);
     this.state.venueEnergies.set(venueId, pulse);
     
-    // Update person energy based on current venue
+    // Update person energy based on current venue pulse
     this.state.personState = updatePersonEnergy(
       this.state.personState,
-      intelligence,
+      pulse, // Pass the converted pulse instead of raw intelligence
       this.getCurrentGroup()
     );
     
@@ -128,7 +128,7 @@ export class FieldIntegrationEngine {
     return {
       energy: person.energy,
       slope: avgSlope,
-      preferredVibes: preferredVibes.length > 0 ? preferredVibes : [person.vibe]
+      preferredVibes: preferredVibes.length > 0 ? preferredVibes : ['social'] // Default fallback
     };
   }
 

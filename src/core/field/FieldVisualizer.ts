@@ -46,10 +46,10 @@ export class FieldVisualizer {
   drawPersonState(person: PersonState, x: number, y: number) {
     if (!this.ctx) return;
     
-    // Draw energy aura
+    // Draw energy aura - use default color since vibe is handled separately
     const auraRadius = 20 + (person.energy * 30);
     const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
-    gradient.addColorStop(0, `hsla(${this.vibeToHue(person.vibe)}, 70%, 60%, ${person.energy * 0.5})`);
+    gradient.addColorStop(0, `hsla(200, 70%, 60%, ${person.energy * 0.5})`); // Default blue hue
     gradient.addColorStop(1, 'transparent');
     
     this.ctx.fillStyle = gradient;
@@ -62,7 +62,7 @@ export class FieldVisualizer {
       const vectorLength = person.momentum * 40;
       const angle = person.slope * Math.PI; // slope as directional indicator
       
-      this.ctx.strokeStyle = `hsla(${this.vibeToHue(person.vibe)}, 80%, 70%, 0.8)`;
+      this.ctx.strokeStyle = `hsla(200, 80%, 70%, 0.8)`; // Default blue color
       this.ctx.lineWidth = 2;
       this.ctx.beginPath();
       this.ctx.moveTo(x, y);
