@@ -17,20 +17,20 @@ import {
 } from "lucide-react";
 
 // Import tab components
-import MapTab from "./hq/tabs/MapTab";
-import StreamTab from "./hq/tabs/StreamTab";
-import PlanTab from "./hq/tabs/PlanTab";
-import { MomentsTab } from "./hq/tabs/MomentsTab";
-import { PulseTab } from "./hq/tabs/PulseTab";
-import { VenuesTab } from "./hq/tabs/VenuesTab";
-import { AnalyticsTab } from "./hq/tabs/AnalyticsTab";
-import { WingTab } from "./hq/tabs/WingTab";
-import { PrivacyTab } from "./hq/tabs/PrivacyTab";
+import MapTab from "../Floqs/HQ/Tabs/MapTab";
+import StreamTab from "../Floqs/HQ/Tabs/StreamTab";
+import PlanTab from "../Floqs/HQ/Tabs/PlanTab";
+import MomentsTab from "../Floqs/HQ/Tabs/MomentsTab";
+import PulseTab from "../Floqs/HQ/Tabs/PulseTab";
+import VenuesTab from "../Floqs/HQ/Tabs/VenuesTab";
+import AnalyticsTab from "../Floqs/HQ/Tabs/AnalyticsTab";
+import WingTab from "../Floqs/HQ/Tabs/WingTab";
+import PrivacyTab from "../Floqs/HQ/Tabs/PrivacyTab";
 
 // Import shared constants and components
-import { TABS, TabKey } from "./hq/shared/constants";
-import Pill from "./hq/shared/Pill";
-import Btn from "./hq/shared/Btn";
+import { TABS, TabKey } from "../Floqs/HQ/shared/constants";
+import Pill from "../Floqs/HQ/ui/Pill";
+import Btn from "../Floqs/HQ/ui/Btn";
 
 // ... keep existing code (shared components and constants moved to separate files)
 
@@ -208,10 +208,10 @@ export default function FloqHQTabbed() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <Btn ariaLabel="Settings"><Settings className="h-4 w-4" /></Btn>
-            <div className="relative"><Btn ariaLabel="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
-            <Btn ariaLabel="Invite"><UserPlus className="h-4 w-4" /></Btn>
-            <Btn ariaLabel="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+            <Btn aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
+            <div className="relative"><Btn aria-label="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
+            <Btn aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
+            <Btn aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-4 pb-2">
@@ -246,66 +246,66 @@ export default function FloqHQTabbed() {
       <div className="max-w-6xl mx-auto px-4 py-5">
         <AnimatePresence mode="wait">
           {active === "map" && (
-            <MapTab 
-              onMeetHalfway={openMeetHalfway}
-              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
-            />
+            <motion.div key="map" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <MapTab 
+                onMeetHalfway={openMeetHalfway}
+                onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
+              />
+            </motion.div>
           )}
 
           {active === "stream" && (
-            <StreamTab
-              sending={sending}
-              rallyLoading={rallyLoading}
-              onStartRally={() => handleStartRally()}
-              onSend={(text) => handleSendMessage()}
-              onRallyResponse={handleRallyResponse}
-            />
+            <motion.div key="stream" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <StreamTab
+                sending={sending}
+                rallyLoading={rallyLoading}
+                onStartRally={() => handleStartRally()}
+                onSend={(text) => handleSendMessage()}
+                onRallyResponse={handleRallyResponse}
+              />
+            </motion.div>
           )}
 
           {active === "plan" && (
-            <PlanTab />
+            <motion.div key="plan" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <PlanTab />
+            </motion.div>
           )}
 
           {active === "moments" && (
-            <MomentsTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="moments" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <MomentsTab />
+            </motion.div>
           )}
 
           {active === "pulse" && (
-            <PulseTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="pulse" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <PulseTab />
+            </motion.div>
           )}
 
           {active === "venues" && (
-            <VenuesTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="venues" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <VenuesTab />
+            </motion.div>
           )}
 
           {active === "analytics" && (
-            <AnalyticsTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="analytics" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <AnalyticsTab />
+            </motion.div>
           )}
 
           {active === "wing" && (
-            <WingTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="wing" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <WingTab />
+            </motion.div>
           )}
 
           {active === "privacy" && (
-            <PrivacyTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="privacy" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
+              <PrivacyTab />
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
