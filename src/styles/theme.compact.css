@@ -400,5 +400,51 @@ button:disabled.btn-primary-glass { opacity: .55; filter: saturate(.9); }
 /* Container: ensure the glow never gets clipped */
 .neon-surface { overflow: visible; isolation: isolate; }
 
-/* (Optional) subtle clean-up: keep background gradient from tinting the halo */
-.bg-neutral-clip { background-clip: padding-box; }
+/* === Page backdrop (subtle vignette + gradient) ========================== */
+.page-neon {
+  /* dark glass canvas with soft vignette */
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(139,92,246,.18), transparent 60%),
+    radial-gradient(900px 500px at 80% 10%,  rgba(6,182,212,.14), transparent 55%),
+    linear-gradient(#0b0d12, #0b0d12);
+  min-height: 100%;
+  isolation: isolate;
+}
+
+/* === Glass sections / inputs / chips ==================================== */
+.section-glass {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+}
+
+.input-glass {
+  background: rgba(20,22,26,.65);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  color: #fff;
+}
+.input-glass::placeholder { color: rgba(255,255,255,.45); }
+
+.input-glass:focus {
+  outline: none;
+  border-color: rgba(255,255,255,.22);
+  /* soft even neon */
+  filter: drop-shadow(0 0 6px hsla(196,92%,64%, .40))
+          drop-shadow(0 0 14px hsla(259,92%,64%, .28));
+}
+
+/* Tile buttons */
+.tile {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+.tile:hover { background: rgba(255,255,255,.07); }
+.tile[data-selected="true"] { 
+  background: rgba(255,255,255,.08); 
+  border-color: rgba(255,255,255,.18); 
+}
