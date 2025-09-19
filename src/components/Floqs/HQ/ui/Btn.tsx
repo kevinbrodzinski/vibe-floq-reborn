@@ -18,13 +18,18 @@ export default function Btn({
   className = "",
   ...rest
 }: Props) {
-  const base = "btn-compact btn-neon";
+  const base = "btn-compact";
   const sizeCls = size === "xs" ? "btn-xs" : "";
-  const skin = variant === "primary" ? "btn-compact--primary" : "btn-compact--ghost";
+  
+  // If it's a primary *and* glowing, use the glass primary skin (no white background)
+  const skin = variant === "primary" && glow
+    ? "btn-primary-glass"
+    : (variant === "primary" ? "btn-compact--primary" : "btn-compact--ghost");
+    
   const activeCls = active && variant !== "primary" ? "bg-white/10 border-white/20" : "";
   const neonCls = glow
     ? `ring-neon ${neon === "raspberry" ? "ring-neon-raspberry" : neon === "gold" ? "ring-neon-gold" : "ring-neon-cyan"}`
     : "";
   
-  return <button className={`${base} ${sizeCls} ${skin} ${activeCls} ${neonCls} ${className}`} {...rest} />;
+  return <button className={`neon-surface ${base} ${sizeCls} ${skin} ${activeCls} ${neonCls} ${className}`} {...rest} />;
 }

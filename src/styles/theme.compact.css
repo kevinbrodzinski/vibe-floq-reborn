@@ -348,5 +348,42 @@
   border-radius: 10px;
 }
 
+/* Primary glass skin for HQ (no white fill) */
+.btn-primary-glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+}
+.btn-primary-glass:hover { background: rgba(255,255,255,.10); }
+
+/* Keep disabled readable but dim */
+/* Primary glass skin for HQ (no white fill) */
+.btn-primary-glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+}
+.btn-primary-glass:hover { background: rgba(255,255,255,.10); }
+
+/* Keep disabled readable but dim */
+button:disabled.btn-primary-glass {
+  opacity: .55;
+  filter: saturate(.9);
+}
+
+/* Primary glass skin for HQ (no white fill) */
+.btn-primary-glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+}
+.btn-primary-glass:hover { background: rgba(255,255,255,.10); }
+
+/* Keep disabled readable but dim */
+button:disabled.btn-primary-glass {
+  opacity: .55;
+  filter: saturate(.9);
+}
+
 /* Prevent clipping the neon in tight containers */
 .neon-surface { overflow: visible; isolation: isolate; }
