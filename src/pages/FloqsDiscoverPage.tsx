@@ -150,9 +150,10 @@ export default function FloqsDiscoverPage() {
       {/* Desktop + Mobile FAB */}
       <Link
         to="/create/floq"
-        className="neon-surface fixed bottom-24 right-6 z-[100] ring-neon rounded-full bg-white/10 border border-white/15 backdrop-blur px-4 py-2 text-[12px] hover:bg-white/15"
+        className="neon-surface fixed bottom-24 right-4 z-[100] ring-neon h-14 w-14 rounded-full bg-white/10 border border-white/15 backdrop-blur hover:bg-white/15 transition-all duration-300 hover:scale-105 flex items-center justify-center text-xl"
+        aria-label="Create Floq"
       >
-        + Create Floq
+        +
       </Link>
 
       {/* Rally Modal */}

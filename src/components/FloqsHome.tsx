@@ -339,8 +339,11 @@ const CreateFloqFAB = () => {
   const {
     setShowCreateSheet
   } = useFloqUI();
-  return <button onClick={() => setShowCreateSheet(true)} className="neon-surface fixed bottom-24 right-4 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium ring-neon z-[100]" {...zIndex('system')}>
-      <Plus size={20} />
-      Create Floq
-    </button>;
+  return <button 
+    onClick={() => setShowCreateSheet(true)} 
+    className="neon-surface fixed bottom-24 right-4 h-14 w-14 rounded-full bg-white/10 border border-white/15 backdrop-blur hover:bg-white/15 transition-all duration-300 hover:scale-105 flex items-center justify-center ring-neon z-[100]"
+    aria-label="Create Floq"
+  >
+    <Plus size={24} />
+  </button>;
 };
