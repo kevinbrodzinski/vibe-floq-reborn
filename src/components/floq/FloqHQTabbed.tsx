@@ -16,23 +16,21 @@ import {
   Sparkles
 } from "lucide-react";
 
-// Import new UI components
-import Pill from "@/components/Floqs/HQ/ui/Pill";
-import Btn from "@/components/Floqs/HQ/ui/Btn";
+// Import tab components
+import MapTab from "./hq/tabs/MapTab";
+import StreamTab from "./hq/tabs/StreamTab";
+import PlanTab from "./hq/tabs/PlanTab";
+import { MomentsTab } from "./hq/tabs/MomentsTab";
+import { PulseTab } from "./hq/tabs/PulseTab";
+import { VenuesTab } from "./hq/tabs/VenuesTab";
+import { AnalyticsTab } from "./hq/tabs/AnalyticsTab";
+import { WingTab } from "./hq/tabs/WingTab";
+import { PrivacyTab } from "./hq/tabs/PrivacyTab";
 
-// Import new tab components
-import MapTab from "@/components/Floqs/HQ/Tabs/MapTab";
-import StreamTab from "@/components/Floqs/HQ/Tabs/StreamTab";
-import PlanTab from "@/components/Floqs/HQ/Tabs/PlanTab";
-import MomentsTab from "@/components/Floqs/HQ/Tabs/MomentsTab";
-import PulseTab from "@/components/Floqs/HQ/Tabs/PulseTab";
-import VenuesTab from "@/components/Floqs/HQ/Tabs/VenuesTab";
-import AnalyticsTab from "@/components/Floqs/HQ/Tabs/AnalyticsTab";
-import WingTab from "@/components/Floqs/HQ/Tabs/WingTab";
-import PrivacyTab from "@/components/Floqs/HQ/Tabs/PrivacyTab";
-
-// Import shared constants
-import { TABS, TabKey } from "@/components/floq/hq/shared/constants";
+// Import shared constants and components
+import { TABS, TabKey } from "./hq/shared/constants";
+import Pill from "./hq/shared/Pill";
+import Btn from "./hq/shared/Btn";
 
 // ... keep existing code (shared components and constants moved to separate files)
 
@@ -195,7 +193,7 @@ export default function FloqHQTabbed() {
       <div className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-zinc-950/70">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 avatar-glow rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg grid place-items-center"><Sparkles className="h-5 w-5" /></div>
+            <div className="h-9 w-9 avatar-glow rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 grid place-items-center"><Sparkles className="h-5 w-5" /></div>
             <div>
               <div className="text-sm font-semibold flex items-center gap-2">
                 Chaos<span className="sr-only">Private Floq</span>
@@ -210,10 +208,10 @@ export default function FloqHQTabbed() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <Btn aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
-            <div className="relative"><Btn aria-label="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
-            <Btn aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
-            <Btn aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+            <Btn ariaLabel="Settings"><Settings className="h-4 w-4" /></Btn>
+            <div className="relative"><Btn ariaLabel="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
+            <Btn ariaLabel="Invite"><UserPlus className="h-4 w-4" /></Btn>
+            <Btn ariaLabel="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-4 pb-2">
@@ -248,63 +246,66 @@ export default function FloqHQTabbed() {
       <div className="max-w-6xl mx-auto px-4 py-5">
         <AnimatePresence mode="wait">
           {active === "map" && (
-            <motion.div key="map" id="panel-map" role="tabpanel" aria-labelledby="tab-map" {...panelAnim(reduce)}>
-              <MapTab 
-                onMeetHalfway={openMeetHalfway}
-              />
-            </motion.div>
+            <MapTab 
+              onMeetHalfway={openMeetHalfway}
+              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
+            />
           )}
 
           {active === "stream" && (
-            <motion.div key="stream" id="panel-stream" role="tabpanel" aria-labelledby="tab-stream" {...panelAnim(reduce)}>
-              <StreamTab
-                sending={sending}
-                onStartRally={() => handleStartRally()}
-                onSend={(text) => handleSendMessage()}
-              />
-            </motion.div>
+            <StreamTab
+              sending={sending}
+              rallyLoading={rallyLoading}
+              onStartRally={() => handleStartRally()}
+              onSend={(text) => handleSendMessage()}
+              onRallyResponse={handleRallyResponse}
+            />
           )}
 
           {active === "plan" && (
-            <motion.div key="plan" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" {...panelAnim(reduce)}>
-              <PlanTab />
-            </motion.div>
+            <PlanTab />
           )}
 
           {active === "moments" && (
-            <motion.div key="moments" id="panel-moments" role="tabpanel" aria-labelledby="tab-moments" {...panelAnim(reduce)}>
-              <MomentsTab />
-            </motion.div>
+            <MomentsTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+            />
           )}
 
           {active === "pulse" && (
-            <motion.div key="pulse" id="panel-pulse" role="tabpanel" aria-labelledby="tab-pulse" {...panelAnim(reduce)}>
-              <PulseTab />
-            </motion.div>
+            <PulseTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+            />
           )}
 
           {active === "venues" && (
-            <motion.div key="venues" id="panel-venues" role="tabpanel" aria-labelledby="tab-venues" {...panelAnim(reduce)}>
-              <VenuesTab />
-            </motion.div>
+            <VenuesTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+            />
           )}
 
           {active === "analytics" && (
-            <motion.div key="analytics" id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" {...panelAnim(reduce)}>
-              <AnalyticsTab />
-            </motion.div>
+            <AnalyticsTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+            />
           )}
 
           {active === "wing" && (
-            <motion.div key="wing" id="panel-wing" role="tabpanel" aria-labelledby="tab-wing" {...panelAnim(reduce)}>
-              <WingTab />
-            </motion.div>
+            <WingTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+            />
           )}
 
           {active === "privacy" && (
-            <motion.div key="privacy" id="panel-privacy" role="tabpanel" aria-labelledby="tab-privacy" {...panelAnim(reduce)}>
-              <PrivacyTab />
-            </motion.div>
+            <PrivacyTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+            />
           )}
         </AnimatePresence>
       </div>
