@@ -4,6 +4,7 @@ import mapboxgl from "mapbox-gl";
 export type HalfCandidate = {
   id: string; name: string; lat: number; lng: number;
   meters_from_centroid?: number; avg_eta_min?: number;
+  category?: string;
 };
 export type HalfResult = {
   centroid: { lat: number; lng: number };
@@ -23,6 +24,14 @@ type Props = {
 if (typeof window !== "undefined" && import.meta.env?.VITE_MAPBOX_TOKEN) {
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 }
+
+// Category color mapping
+const CATEGORY_COLORS: Record<string, string> = {
+  coffee: "#22d3ee",     // cyan
+  bar: "#fb7185",        // rose  
+  restaurant: "#f59e0b", // amber
+  food: "#f59e0b"        // alias for restaurant
+};
 
 export default function SmartMap({ token, data, selectedId, onSelect, height = 280 }: Props) {
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -88,20 +97,47 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
           type: "FeatureCollection",
           features: data.candidates.map(c => ({
             type: "Feature",
-            properties: { id: c.id, name: c.name },
+            properties: { 
+              id: c.id, 
+              name: c.name,
+              category: c.category || "restaurant" 
+            },
             geometry: { type: "Point", coordinates: [c.lng, c.lat] }
           }))
         }
       });
+      
+      // Base candidate markers with category colors
       map.addLayer({
         id: "candidates-circles",
         type: "circle",
         source: "candidates",
         paint: {
-          "circle-radius": ["case", ["==", ["get","id"], selectedId ?? ""], 7, 5] as any,
-          "circle-color":  ["case", ["==", ["get","id"], selectedId ?? ""], "#22d3ee", "#7c3aed"] as any,
+          "circle-radius": 6,
+          "circle-color": [
+            "case",
+            ["==", ["get", "category"], "coffee"], CATEGORY_COLORS.coffee,
+            ["==", ["get", "category"], "bar"], CATEGORY_COLORS.bar,
+            ["==", ["get", "category"], "food"], CATEGORY_COLORS.food,
+            CATEGORY_COLORS.restaurant
+          ] as any,
           "circle-stroke-width": 1,
           "circle-stroke-color": "rgba(255,255,255,0.35)"
+        }
+      });
+
+      // Selection ring layer
+      map.addLayer({
+        id: "candidates-selected",
+        type: "circle", 
+        source: "candidates",
+        filter: ["==", ["get", "id"], selectedId ?? ""],
+        paint: {
+          "circle-radius": 10,
+          "circle-color": "transparent",
+          "circle-stroke-color": "#9d7bff", // violet neon ring
+          "circle-stroke-width": 3,
+          "circle-opacity": 0.9
         }
       });
 
@@ -138,9 +174,40 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
         paint: { "line-color": "#60a5fa", "line-width": 2, "line-opacity": 0.9 }
       });
 
+      // Interaction handlers
       map.on("click", "candidates-circles", (e) => {
         const id = e.features?.[0]?.properties?.id as string | undefined;
         if (id && onSelect) onSelect(id);
+      });
+
+      // Hover effects
+      map.on("mouseenter", "candidates-circles", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "candidates-circles", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      // Enhanced tooltip
+      const popup = new mapboxgl.Popup({ 
+        closeButton: false, 
+        closeOnClick: false,
+        className: "mapbox-tooltip"
+      });
+      
+      map.on("mousemove", "candidates-circles", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const name = f.properties?.name as string;
+        const category = f.properties?.category as string;
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(`<div class="text-xs font-medium">${name}</div><div class="text-xs text-white/60 capitalize">${category}</div>`)
+          .addTo(map);
+      });
+      
+      map.on("mouseleave", "candidates-circles", () => {
+        popup.remove();
       });
 
       updateLines(map, data, selectedId);
@@ -161,14 +228,12 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
     if (!map?.isStyleLoaded()) return;
     updateLines(map, data, selectedId);
     try {
-      map.setPaintProperty("candidates-circles", "circle-radius",
-        ["case", ["==", ["get","id"], selectedId ?? ""], 7, 5] as any);
-      map.setPaintProperty("candidates-circles", "circle-color",
-        ["case", ["==", ["get","id"], selectedId ?? ""], "#22d3ee", "#7c3aed"] as any);
+      // Update selection ring filter
+      map.setFilter("candidates-selected", ["==", ["get", "id"], selectedId ?? ""]);
     } catch {}
   }, [data, selectedId]);
 
-  return <div ref={containerRef} className="w-full rounded-xl overflow-hidden border border-white/10" style={{ height }} />;
+  return <div ref={containerRef} className="w-full rounded-xl overflow-hidden border border-white/10 neon-surface" style={{ height }} />;
 }
 
 function emptyFC(): GeoJSON.FeatureCollection { return { type: "FeatureCollection", features: [] }; }

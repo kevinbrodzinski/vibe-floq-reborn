@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
@@ -6,6 +6,7 @@ import Pill from "../ui/Pill";
 import { MapPin, Target, Thermometer, Users, Radio, Layers } from "lucide-react";
 import SmartMap from "@/components/maps/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
+import MeetHalfwaySheet from "@/components/floq/MeetHalfwaySheet";
 
 const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
@@ -24,15 +25,42 @@ type Props = {
 };
 
 export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice, floqId, meetOpen }: Props) {
-  const [cats, setCats] = React.useState<string[]>([]);
-  const [sel, setSel] = React.useState<string|null>(null);
-  const { data: halfAPI } = useHQMeetHalfway(floqId, cats, meetOpen ?? false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [cats, setCats] = useState<string[]>(["coffee"]); // default to coffee
+  const [sel, setSel] = useState<string|null>(null);
+  const { data: halfAPI, isLoading, refetch } = useHQMeetHalfway(floqId, cats, sheetOpen);
+
+  // Auto-select first venue when data loads
+  useEffect(() => {
+    if (sheetOpen && halfAPI?.candidates?.length && !sel) {
+      setSel(halfAPI.candidates[0].id);
+    }
+  }, [sheetOpen, halfAPI, sel]);
+
+  const handleMeetHalfway = () => {
+    setSheetOpen(true);
+    refetch();
+    onMeetHalfway?.();
+  };
+
+  const handleToggleCategory = (category: string) => {
+    setCats(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleRallyHere = () => {
+    // Rally creation logic here
+    setSheetOpen(false);
+  };
   return (
     <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
         title="Living Proximity Map"
         icon={<MapPin className="h-4 w-4" />}
-        right={<Btn glow onClick={onMeetHalfway}>Meet-Halfway</Btn>}
+        right={<Btn glow onClick={handleMeetHalfway}>Meet-Halfway</Btn>}
       >
         {halfAPI
           ? <SmartMap data={halfAPI} selectedId={sel} onSelect={setSel} height={280} />
@@ -85,6 +113,19 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
           </div>
         </Section>
       </div>
+
+      {/* Meet Halfway Sheet */}
+      <MeetHalfwaySheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        data={halfAPI}
+        selectedId={sel}
+        onSelectVenue={setSel}
+        categories={cats}
+        onToggleCategory={handleToggleCategory}
+        onRallyHere={handleRallyHere}
+        loading={isLoading}
+      />
     </motion.div>
   );
 }
