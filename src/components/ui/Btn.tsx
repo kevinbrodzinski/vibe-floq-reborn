@@ -1,23 +1,28 @@
 import React from "react";
 
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  active?: boolean;
   glow?: boolean;
+  active?: boolean;
+  ariaLabel?: string;
 };
 
-export default function Btn({ 
-  children, 
-  active, 
-  glow = false, 
-  className = "", 
-  ...props 
+export default function Btn({
+  glow = false,
+  active,
+  ariaLabel,
+  className = "",
+  children,
+  ...props
 }: BtnProps) {
+  const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] transition";
+  const surface = active ? "bg-white/12 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10";
+  const neon = glow ? "btn-glow" : "";
   return (
     <button
+      type="button"
+      aria-label={ariaLabel}
+      className={`${base} ${surface} ${neon} ${className}`}
       {...props}
-      className={`${glow ? "btn-glow" : "rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"} ${
-        active ? "!bg-white/15 !border-white/20" : ""
-      } px-3 py-1.5 text-[12px] ${className}`}
     >
       {children}
     </button>
