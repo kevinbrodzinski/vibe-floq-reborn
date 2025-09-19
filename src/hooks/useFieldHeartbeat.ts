@@ -5,7 +5,7 @@ import { updatePersonEnergy, type PersonState } from '@/core/field/FieldCoupling
 import { useEnhancedPresence } from '@/hooks/useEnhancedPresence';
 import { useGeo } from '@/hooks/useGeo';
 import { EnhancedVenueIntelligence } from '@/core/vibe/collectors/EnhancedVenueIntelligence';
-import { rankTimeGate } from '@/lib/privacy';
+import { rankTimeGate } from '@/core/privacy/RankTimeGate';
 import { edgeLog } from '@/lib/edgeLog';
 
 type Opts = { envelope?: 'strict' | 'balanced' | 'permissive' };
@@ -22,7 +22,7 @@ export function useFieldHeartbeat(opts: Opts = {}) {
   useEffect(() => {
     let alive = true;
     const loop = async () => {
-      const gate = await rankTimeGate({
+      const gate = rankTimeGate({
         envelopeId: envelope,
         featureTimestamps: [Date.now()],
         epsilonCost: 0.0,
