@@ -1,17 +1,16 @@
 import React from "react";
 
-export default function Pill({
-  children,
-  glow = true,
-  className = "",
-}: {
+type Props = {
   children: React.ReactNode;
   glow?: boolean;
   className?: string;
-}) {
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] bg-white/6 border border-white/12 chip ${glow ? "chip-glow" : ""} ${className}`}>
-      {children}
-    </span>
-  );
+};
+
+export default function Pill({ children, glow = true, className = "" }: Props) {
+  const base = "inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] border";
+  const surface = glow
+    ? "chip-glow bg-white/8 border-white/20"
+    : "bg-white/6 border-white/12";
+  
+  return <span className={`${base} ${surface} ${className}`}>{children}</span>;
 }
