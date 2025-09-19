@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Btn from "@/components/Common/Btn";
 import { useCreateFloq } from "@/hooks/useCreateFloq";
+import { vibeToGlow, type Vibe } from "@/components/Floqs/Create/vibeGlow";
 
 function Section({
   title,
@@ -29,7 +30,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [privacy, setPrivacy] = useState<"open"|"request"|"invite">("request");
-  const [vibe, setVibe] = useState<"Social"|"Chill"|"Active"|"Hype"|"Productive"|"Quiet">("Social");
+  const [vibe, setVibe] = useState<Vibe>("social");
   const create = useCreateFloq();
 
   const canCreate = name.trim().length > 0 && !create.isPending;
@@ -125,16 +126,23 @@ export default function FloqCreationWizard({ onCreated }: Props) {
             <div className="rounded-xl bg-white/5 border border-white/10 p-3">
               <div className="mb-2 text-[12px] text-white/80 font-medium">Primary Vibe</div>
               <div className="grid grid-cols-2 gap-1.5">
-                {(["Social","Chill","Active","Hype","Productive","Quiet"] as const).map(v => (
-                  <Btn 
-                    key={v} 
-                    active={vibe===v} 
-                    onClick={()=>setVibe(v)}
-                    className="text-[10px] py-1"
-                  >
-                    {v}
-                  </Btn>
-                ))}
+                {(["social","chill","active","hype","productive","quiet"] as Vibe[]).map(vOpt => {
+                  const isSel = vibe === vOpt;
+                  return (
+                    <button
+                      key={vOpt}
+                      type="button"
+                      onClick={()=>setVibe(vOpt)}
+                      className={[
+                        "px-3 py-1.5 rounded-xl border text-[10px] transition",
+                        "bg-white/5 border-white/10 hover:bg-white/10",
+                        isSel && "ring-2 " + vibeToGlow(vOpt) + " chip-glow"
+                      ].filter(Boolean).join(" ")}
+                    >
+                      {vOpt[0].toUpperCase()+vOpt.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
