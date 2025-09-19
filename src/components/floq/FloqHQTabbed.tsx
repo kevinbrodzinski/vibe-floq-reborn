@@ -284,7 +284,7 @@ export default function FloqHQTabbed() {
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <Btn ariaLabel="Settings"><Settings className="h-4 w-4" /></Btn>
-            <div className="relative"><Btn ariaLabel="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1">3</span></div>
+            <div className="relative"><Btn ariaLabel="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
             <Btn ariaLabel="Invite"><UserPlus className="h-4 w-4" /></Btn>
             <Btn ariaLabel="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
           </div>
@@ -554,7 +554,7 @@ export default function FloqHQTabbed() {
               <div className="flex items-center justify-between"><div className="flex gap-2 flex-wrap"><Btn active>All</Btn><Btn>Day</Btn><Btn>Night</Btn><Btn>Food</Btn><Btn>Bars</Btn><Btn>Activities</Btn></div><Btn>All Time</Btn></div>
               <Section title="Our Top Spots" icon={<MapPin className="h-4 w-4" />}>
                 {VENUES.map(v=> (
-                  <div key={v.r} className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3"><div className="flex items-center justify-between"><div className="text-sm font-semibold">{v.r}. {v.name}</div><Pill glow>{v.badge}</Pill></div><div className="text-[12px] text-white/70">{v.meta}</div><div className="text-[12px] text-white/80 mt-1 italic">"{v.note}"</div><div className="mt-2 flex gap-2"><Btn>Navigate</Btn><Btn glow>Rally Here</Btn><Btn>History</Btn></div></div>
+                  <div key={v.r} className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3"><div className="flex items-center justify-between"><div className="text-sm font-semibold">{v.r}. {v.name}</div><Pill glow>{v.badge}</Pill></div><div className="text-[12px] text-white/70">{v.meta}</div><div className="text-[12px] text-white/80 mt-1 italic">"{v.note}"</div><div className="mt-2 flex gap-2"><Btn glow>Navigate</Btn><Btn glow>Rally Here</Btn><Btn>History</Btn></div></div>
                 ))}
               </Section>
             </motion.div>
