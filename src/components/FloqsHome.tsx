@@ -329,21 +329,5 @@ export const FloqsHome: React.FC<FloqsHomeProps> = ({
     }} />
       <CreateFloqSheet />
       
-      {/* Create Floq FAB - Only on floqs page */}
-      <CreateFloqFAB />
     </div>;
-};
-
-// Create Floq FAB Component
-const CreateFloqFAB = () => {
-  const {
-    setShowCreateSheet
-  } = useFloqUI();
-  return <button 
-    onClick={() => setShowCreateSheet(true)} 
-    className="neon-surface fixed bottom-28 right-4 h-14 w-14 rounded-full bg-white/10 border border-white/15 backdrop-blur hover:bg-white/15 transition-all duration-300 hover:scale-105 flex items-center justify-center ring-neon z-[100]"
-    aria-label="Create Floq"
-  >
-    <Plus size={24} />
-  </button>;
 };
