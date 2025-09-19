@@ -160,6 +160,14 @@
     will-change: filter;
   }
 
+  /* Softer halo intended for action CTAs and small pill buttons */
+  .neon-ring-soft {
+    filter:
+      drop-shadow(0 0 3px  var(--neon-a))
+      drop-shadow(0 0 7px  var(--neon-b));
+    will-change: filter;
+  }
+
   /* --- Tile sizing and centering, consistent everywhere -------------------- */
   .tile {
     box-sizing: border-box;

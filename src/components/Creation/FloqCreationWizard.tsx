@@ -157,7 +157,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
         <div className="sticky bottom-0 z-10 mt-6 -mx-4 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]
                         bg-gradient-to-t from-[#0b0d12]/95 via-[#0b0d12]/70 to-transparent">
           <div className="flex gap-2 justify-end neon-surface">
-            <div className="neon-wrap neon-cyan neon-ring-tight">
+            <div className="neon-wrap neon-cyan neon-ring-soft">
               <Btn 
                 className="btn-primary-glass btn-xs" 
                 variant="primary" 
