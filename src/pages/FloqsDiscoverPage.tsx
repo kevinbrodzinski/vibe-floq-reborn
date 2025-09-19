@@ -13,7 +13,7 @@ export default function FloqsDiscoverPage() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<KindFilter>("all");
   const [vibe, setVibe] = useState<VibeFilter>("all");
-  const [status, setStatus] = useState<StatusFilter>("now");
+  const [status, setStatus] = useState<StatusFilter>("all");
 
   // Actions
   const open = (id: string) => nav(`/floqs/${id}/hq`);
@@ -129,8 +129,8 @@ export default function FloqsDiscoverPage() {
       {status==="all" && <Section title="Upcoming" items={sections.upcoming} />}
 
       {/* Dormant collapsible */}
-      {(sections.dormant.length > 0) && status!=="now" && status!=="today" && (
-        <details className="mt-2">
+      {(sections.dormant.length > 0) && (
+        <details open className="mt-2">
           <summary className="text-sm text-white/70 cursor-pointer">Dormant ({sections.dormant.length})</summary>
           <div className="mt-3 grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {sections.dormant.map(f => (
