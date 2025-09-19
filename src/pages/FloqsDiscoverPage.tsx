@@ -114,9 +114,9 @@ export default function FloqsDiscoverPage() {
       />
 
       {/* Sections */}
-      {status==="all" && <Section title="Converging Now" items={sections.now} />}
-      {status==="all" && <Section title="Active Today"   items={sections.today} />}
-      {status==="all" && <Section title="Upcoming"       items={sections.upcoming} />}
+      {status==="all" && <Section title="Happening Now" items={sections.now} />}
+      {status==="all" && <Section title="Your Active Floqs" items={sections.today} />}
+      {status==="all" && <Section title="Upcoming" items={sections.upcoming} />}
 
       {/* Dormant collapsible */}
       {(sections.dormant.length > 0) && status!=="now" && status!=="today" && (

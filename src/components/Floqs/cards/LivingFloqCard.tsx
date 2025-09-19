@@ -38,18 +38,21 @@ type Props = {
   onChat?: (id: string) => void;      // Chat for all floqs
 };
 
+// Helper functions with proper pluralization
+const plural = (n: number, s: string) => `${n} ${s}${n === 1 ? "" : "s"}`;
+
 function membersLine(total?: number, active?: number) {
   const t = total ?? 0, a = active ?? 0;
   if (t <= 0) return "0 members";
-  return a > 0 ? `${t} members • ${a} active` : `${t} members`;
+  return a > 0 ? `${plural(t, "member")} • ${plural(a, "active")}` : plural(t, "member");
 }
-function activityLabel(opts:{rally?:boolean; forming?:boolean; nextLabel?:string; nextWhen?:string; lastActiveAgo?:string;}) {
-  const { rally, forming, nextLabel, nextWhen, lastActiveAgo } = opts;
-  if (rally) return "Rally happening now";
+
+function statusText(rallyNow?: boolean, forming?: boolean, nextLabel?: string, nextWhen?: string, lastActiveAgo?: string) {
+  if (rallyNow) return "Rally happening now";
   if (forming) return "Rally forming";
   if (nextLabel) return nextWhen ? `${nextLabel} • ${nextWhen}` : nextLabel;
   if (lastActiveAgo) return `Last active: ${lastActiveAgo}`;
-  return "Calm";
+  return "Quiet";
 }
 
 export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }: Props) {
@@ -67,7 +70,7 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
   const showTTL = isMomentary && typeof ttlSeconds === "number";
 
   const headerLine = membersLine(totalMembers, activeMembers);
-  const subline = activityLabel({ rally: rallyNow, forming, nextLabel, nextWhen, lastActiveAgo });
+  const subline = statusText(rallyNow, forming, nextLabel, nextWhen, lastActiveAgo);
   const dormant = !rallyNow && !forming && !nextLabel && activeMembers === 0 && energy <= 0.2;
 
   return (
@@ -123,62 +126,43 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
         <div className="flex items-center justify-end gap-1.5">
           {convergenceNearby > 0 ? (
             <span>{convergenceNearby} converging{distanceLabel ? ` • ${distanceLabel}` : ""}</span>
-          ) : <span>calm</span>}
+          ) : <span>—</span>}
         </div>
       </div>
 
-      {/* Next action */}
-      <div className={`mt-3 rounded-xl border border-white/10 bg-white/5 p-3 ${rallyNow || forming ? "pulse-aura" : ""}`}>
-        {nextLabel ? (
-          <div className="flex items-center justify-between">
-            <div className="text-[12px] text-white/85">
-              <span className="font-medium">{nextLabel}</span>{nextWhen ? ` • ${nextWhen}` : ""}
-            </div>
-            <ChevronRight className="h-4 w-4 text-white/60" />
-          </div>
-        ) : (
-          <div className="text-[12px] text-white/60">{dormant ? (lastActiveAgo ? `Last active: ${lastActiveAgo}` : "Dormant") : "No upcoming plan — create one?"}</div>
-        )}
+      {/* Info chip: only show helper if idle and no plan */}
+      <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">
+        {rallyNow || forming || nextLabel 
+          ? null 
+          : (lastActiveAgo ? `Last active: ${lastActiveAgo}` : "No upcoming plan — create one?")
+        }
       </div>
 
-      {/* Quick actions - Universal Rally + Chat, conditional RSVP */}
+      {/* Actions: Rally/Chat always; RSVP only with nextPlanId */}
       <div className="mt-3 flex items-center gap-2 text-[12px]">
-        {/* Rally button - always visible except momentary */}
-        {!isMomentary && (
-          <button type="button" onClick={(e)=>{ e.stopPropagation(); onRally?.(id); }}
-            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
-            Rally
-          </button>
-        )}
-        
-        {/* RSVP button - only when plan exists */}
-        {nextPlanId && (
-          <button type="button" onClick={(e)=>{ e.stopPropagation(); onRSVP?.(id, nextPlanId); }}
-            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
+        <button type="button" onClick={(e)=>{e.stopPropagation(); onRally?.(id);}} className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">Rally</button>
+        <button type="button" onClick={(e)=>{e.stopPropagation(); onChat?.(id);}} className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">Chat</button>
+
+        {nextPlanId && nextLabel && (
+          <button
+            type="button"
+            onClick={(e)=>{
+              e.stopPropagation();
+              if (onRSVP) onRSVP(id, nextPlanId);
+              else window.location.href = `/floqs/${id}/plan/${nextPlanId}`;
+            }}
+            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon"
+          >
             RSVP
           </button>
         )}
         
-        {/* Chat button - always visible except momentary */}
-        {!isMomentary && (
-          <button type="button" onClick={(e)=>{ e.stopPropagation(); onChat?.(id); }}
-            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
-            Chat
-          </button>
-        )}
-        
-        {/* Momentary-specific actions */}
-        {isMomentary && (
-          <>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onRally?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
-              Join now
-            </button>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); /* ignore action */ }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
-              Ignore
-            </button>
-          </>
+        {/* Live beacon (calm) */}
+        {(rallyNow || (activeMembers ?? 0) > 0) && (
+          <span className="relative ml-2 inline-block align-middle" aria-label="active now">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/40 absolute inset-0 animate-ping-slow" />
+          </span>
         )}
       </div>
     </article>

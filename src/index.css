@@ -213,6 +213,16 @@ html, body, #root {
   animation: pulse-soft 3s ease-in-out infinite;
 }
 
+/* Ping slow animation for live beacon */
+@keyframes ping-slow { 
+  0%{transform:scale(1);opacity:.55} 
+  70%{transform:scale(2.2);opacity:0} 
+  100%{opacity:0} 
+}
+.animate-ping-slow { 
+  animation: ping-slow 2.8s cubic-bezier(0,0,.2,1) infinite 
+}
+
 /* Living Floq Card Animations */
 @keyframes energy-breathe {
   0%, 100% { opacity: 1; }
@@ -248,6 +258,7 @@ html, body, #root {
   .pulse { animation: none !important; }
   .energy-breathe { animation: none !important; }
   .pulse-aura { animation: none !important; }
+  .animate-ping-slow { animation: none !important; }
 }
 
 @keyframes ripple-wave {
