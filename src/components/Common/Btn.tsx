@@ -19,11 +19,9 @@ export default function Btn({
       type="button"
       aria-pressed={active ?? undefined}
       aria-label={ariaLabel}
-      className={`px-3 py-1.5 rounded-xl border text-[12px] transition ${
-        active
-          ? "bg-white/15 border-white/20"
-          : "bg-white/5 border-white/10 hover:bg-white/10"
-      } ${glow ? "neon-ring" : ""} ${className}`}
+      className={`${glow ? "btn-glow" : "px-3 py-1.5 rounded-xl border text-[12px] transition bg-white/5 border-white/10 hover:bg-white/10"} ${
+        active ? "bg-white/15 border-white/20" : ""
+      } ${className}`}
       {...props}
     >
       {children}

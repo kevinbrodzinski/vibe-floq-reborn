@@ -30,7 +30,7 @@ import {
   Flame
 } from "lucide-react";
 
-function Pill({ children, glow = false }: { children: React.ReactNode; glow?: boolean }) {
+function Pill({ children, glow = true }: { children: React.ReactNode; glow?: boolean }) {
   return (
     <span className={glow ? "chip-glow" : "px-2 py-0.5 rounded-full bg-white/10 text-[10px] text-white/80 border border-white/10"}>
       {children}

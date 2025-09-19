@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Pill({
   children, 
-  glow = false, 
+  glow = true, 
   className = "",
 }: { 
   children: React.ReactNode; 
