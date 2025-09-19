@@ -66,10 +66,10 @@ export default function FloqCreationWizard({ onCreated }: Props) {
       </div>
 
       {/* Name + Description */}
-      <Section title="Details">
+      <Section title="Details" className="mt-4">
         <div className="grid gap-4">
           <label className="block">
-            <div className="text-white font-semibold mb-2">Floq Name *</div>
+            <div className="text-[13px] font-semibold text-white/90 mb-2">Floq Name *</div>
             <Input 
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -80,7 +80,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
           </label>
 
           <label className="block">
-            <div className="text-white font-semibold mb-2">Description</div>
+            <div className="text-[13px] font-semibold text-white/90 mb-2">Description</div>
             <Textarea 
               rows={3} 
               value={description}
@@ -96,40 +96,44 @@ export default function FloqCreationWizard({ onCreated }: Props) {
       {/* Primary Vibe */}
       <Section title="Primary Vibe" className="mt-5">
         <div className="grid sm:grid-cols-2 gap-3">
-          {VIBES.map(v => (
-            <button
-              key={v.id}
-              onClick={() => setVibe(v.id as Vibe)}
-              className={`text-left glass-subtle p-3 rounded-2xl border transition ${
-                vibe === v.id 
-                  ? "border-white/20 bg-white/10" 
-                  : "border-white/10 hover:bg-white/8"
-              }`}
-            >
-              <div className="text-white font-semibold">{v.title}</div>
-              <div className="text-white/70 text-sm">{v.desc}</div>
-            </button>
-          ))}
+          {VIBES.map(v => {
+            const active = vibe === v.id;
+            return (
+              <button
+                key={v.id}
+                onClick={() => setVibe(v.id as Vibe)}
+                className={`text-left glass-subtle p-3 rounded-2xl border transition ${
+                  active ? "border-white/20 bg-white/10" : "border-white/10 hover:bg-white/8"
+                }`}
+                aria-pressed={active}
+              >
+                <div className="text-white font-semibold">{v.title}</div>
+                <div className="text-white/70 text-sm">{v.desc}</div>
+              </button>
+            );
+          })}
         </div>
       </Section>
 
       {/* Privacy */}
       <Section title="Privacy" className="mt-5">
         <div className="grid sm:grid-cols-3 gap-3">
-          {PRIVACY_OPTIONS.map(p => (
-            <button
-              key={p.id}
-              onClick={() => setPrivacy(p.id as typeof privacy)}
-              className={`text-left glass-subtle p-3 rounded-2xl border transition ${
-                privacy === p.id 
-                  ? "border-white/20 bg-white/10" 
-                  : "border-white/10 hover:bg-white/8"
-              }`}
-            >
-              <div className="text-white font-semibold">{p.title}</div>
-              <div className="text-white/70 text-sm">{p.desc}</div>
-            </button>
-          ))}
+          {PRIVACY_OPTIONS.map(p => {
+            const active = privacy === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setPrivacy(p.id as typeof privacy)}
+                className={`text-left glass-subtle p-3 rounded-2xl border transition ${
+                  active ? "border-white/20 bg-white/10" : "border-white/10 hover:bg-white/8"
+                }`}
+                aria-pressed={active}
+              >
+                <div className="text-white font-semibold">{p.title}</div>
+                <div className="text-white/70 text-sm">{p.desc}</div>
+              </button>
+            );
+          })}
         </div>
       </Section>
 
@@ -151,8 +155,8 @@ export default function FloqCreationWizard({ onCreated }: Props) {
       </div>
 
       {create.error && (
-        <div className="mt-4 glass-subtle p-3 border border-red-500/20 bg-red-500/10">
-          <div className="text-red-400 text-sm">{create.error.message}</div>
+        <div className="mt-4 glass-subtle p-3 border border-red-500/20 bg-red-500/10 text-red-400 text-sm">
+          {create.error.message}
         </div>
       )}
     </div>
