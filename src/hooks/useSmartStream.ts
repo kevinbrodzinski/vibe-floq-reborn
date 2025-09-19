@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans";
 export type SmartItem = {
   id: string;
-  kind: "rally"|"moment"|"plan"|"text";
+  kind: "rally"|"moment"|"plan"|"text"|"poll"|"venue_suggestion"|"time_picker"|"meet_halfway"|"reminder"|"recap";
   ts: string;
   priority: number;
   unread: boolean;
@@ -14,6 +14,7 @@ export type SmartItem = {
   media?: { thumb_url: string }[];
   rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number} };
   plan?:  { title: string; at: string; status:"locked"|"building"|"tentative" };
+  meta?: { card_kind?: string; payload?: any; confidence?: number };
 };
 
 export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: string | null) {

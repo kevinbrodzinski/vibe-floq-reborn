@@ -5053,6 +5053,77 @@ export type Database = {
           },
         ]
       }
+      floq_poll_votes: {
+        Row: {
+          created_at: string
+          event_id: string
+          option_idx: number
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          option_idx: number
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          option_idx?: number
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_poll_votes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "floq_stream_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_poll_votes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_poll_votes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floq_poll_votes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_poll_votes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_poll_votes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floq_poll_votes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_session_feed: {
         Row: {
           author_profile_id: string
@@ -5332,6 +5403,145 @@ export type Database = {
             foreignKeyName: "floq_settings_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: true
+            referencedRelation: "v_public_floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floq_stream_events: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          floq_id: string
+          id: string
+          kind: string
+          payload: Json
+          status: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          floq_id: string
+          id?: string
+          kind: string
+          payload: Json
+          status?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          floq_id?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_stream_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "business_floq_detail_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_peek_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs_card_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs_discovery_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs_living_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "my_floqs_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_events_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
             referencedRelation: "v_public_floqs"
             referencedColumns: ["id"]
           },

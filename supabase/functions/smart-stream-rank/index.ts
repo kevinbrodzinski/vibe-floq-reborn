@@ -11,7 +11,7 @@ const CORS = {
 type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans";
 type SmartItem = {
   id: string;
-  kind: "rally"|"moment"|"plan"|"text";
+  kind: "rally"|"moment"|"plan"|"text"|"poll"|"venue_suggestion"|"time_picker"|"meet_halfway"|"reminder"|"recap";
   ts: string;
   priority: number;
   unread: boolean;
@@ -19,6 +19,7 @@ type SmartItem = {
   media?: { thumb_url: string }[];
   rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number} };
   plan?:  { title: string; at: string; status:"locked"|"building"|"tentative" };
+  meta?: { card_kind?: string; payload?: any; confidence?: number };
 };
 
 serve(async (req) => {
@@ -111,8 +112,28 @@ serve(async (req) => {
       plan: { title: p.title, at: (p.planned_at ?? ""), status: (p.status ?? "building") as any }
     }));
 
+    // 4) AI/System cards
+    const { data: cards, error: cErr } = await supabase
+      .from("floq_stream_events")
+      .select("id, kind, payload, created_at, confidence, status")
+      .eq("floq_id", floq_id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (cErr) throw cErr;
+
+    const cardItems: SmartItem[] = (cards ?? []).map(c => ({
+      id: c.id,
+      kind: c.kind as any,
+      ts: c.created_at,
+      priority: 0, // scored below
+      unread: watermark ? c.created_at > watermark : true,
+      title: c.payload?.title || "AI Suggestion",
+      meta: { card_kind: c.kind, payload: c.payload, confidence: c.confidence }
+    }));
+
     // Merge
-    let items: SmartItem[] = [...textItems, ...momentItems, ...planItems];
+    let items: SmartItem[] = [...textItems, ...momentItems, ...planItems, ...cardItems];
 
     // Score (simple, effective)
     const now = Date.now();
@@ -132,6 +153,13 @@ serve(async (req) => {
         if (minutesTo >= 0 && minutesTo <= 180) score += 0.25; // upcoming in 3h
         if ((plans ?? []).find(p=>p.id===i.id)?.locked_at) score += 0.15;
       }
+      
+      // AI Cards scoring
+      if (i.meta?.card_kind === "poll") score += 0.18 + 0.2 * (i.meta.confidence ?? 0);
+      if (i.meta?.card_kind === "time_picker") score += 0.15;
+      if (i.meta?.card_kind === "meet_halfway") score += 0.25; // highly actionable
+      if (i.meta?.card_kind === "venue_suggestion") score += 0.20;
+      
       // Future: rally items (once you store rallies separately) → +0.4 within 90m
       return { ...i, priority: Math.min(1, Math.max(0, score)) };
     });

@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
 import { useSmartStream, useMarkStreamSeen, useStreamRealtime, SmartFilter, SmartItem } from "@/hooks/useSmartStream";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
   reduce: boolean;
@@ -132,6 +134,21 @@ function SmartItemRow({
   item: SmartItem;
   onRallyResponse?: (id: string, s: "joined" | "maybe" | "declined") => void;
 }) {
+  // AI Cards
+  if (item.kind === "poll") {
+    return <PollCard item={item} />;
+  }
+  if (item.kind === "time_picker") {
+    return <TimePickerCard item={item} />;
+  }
+  if (item.kind === "meet_halfway") {
+    return <MeetHalfwayCard item={item} />;
+  }
+  if (item.kind === "venue_suggestion") {
+    return <VenueSuggestionCard item={item} />;
+  }
+  
+  // Regular content
   if (item.kind === "rally") {
     return (
       <div className="glass-subtle p-3 rounded-xl border border-white/10">
@@ -223,5 +240,173 @@ function ComposerInput({ onSend, sending }: { onSend?: (text: string) => void; s
         {sending ? "Sending…" : "Send"}
       </Btn>
     </>
+  );
+}
+
+/* AI Card Components */
+function PollCard({ item }: { item: SmartItem }) {
+  const qc = useQueryClient();
+  const { title, options, expires_at } = item.meta?.payload || {};
+  const [voting, setVoting] = useState(false);
+
+  const vote = async (idx: number) => {
+    if (voting) return;
+    setVoting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
+      await supabase.from("floq_poll_votes").upsert({ 
+        event_id: item.id, 
+        profile_id: user.id,
+        option_idx: idx 
+      });
+      qc.invalidateQueries({ queryKey: ["smart-stream"] });
+    } catch (error) {
+      console.error("Vote failed:", error);
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  return (
+    <div className="glass-subtle p-3 rounded-xl border border-white/10">
+      <div className="text-white/90 font-medium flex items-center gap-2">
+        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Poll</span>
+        {title || "Quick poll"}
+      </div>
+      {item.meta?.confidence && (
+        <div className="text-xs text-white/50 mt-1">
+          AI detected: {Math.round(item.meta.confidence * 100)}% confidence
+        </div>
+      )}
+      <div className="mt-3 grid gap-2">
+        {(options || ["Yes", "No"]).map((opt: string, i: number) => (
+          <Btn 
+            key={i} 
+            type="button"
+            className="w-full text-left justify-start" 
+            onClick={() => vote(i)} 
+            disabled={voting}
+          >
+            {opt}
+          </Btn>
+        ))}
+      </div>
+      {expires_at && (
+        <div className="text-[11px] text-white/50 mt-2">
+          Expires {new Date(expires_at).toLocaleTimeString()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimePickerCard({ item }: { item: SmartItem }) {
+  const qc = useQueryClient();
+  const { title, slots, tz } = item.meta?.payload || {};
+  const [voting, setVoting] = useState(false);
+
+  const pickTime = async (timeSlot: string) => {
+    if (voting) return;
+    setVoting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
+      await supabase.from("floq_poll_votes").upsert({ 
+        event_id: item.id, 
+        profile_id: user.id,
+        option_idx: (slots || []).indexOf(timeSlot)
+      });
+      qc.invalidateQueries({ queryKey: ["smart-stream"] });
+    } catch (error) {
+      console.error("Time pick failed:", error);
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  return (
+    <div className="glass-subtle p-3 rounded-xl border border-white/10">
+      <div className="text-white/90 font-medium flex items-center gap-2">
+        <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Time</span>
+        {title || "When works?"}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {(slots || ["7:00", "7:30", "8:00"]).map((slot: string) => (
+          <Btn 
+            key={slot} 
+            type="button"
+            className="text-center" 
+            onClick={() => pickTime(slot)} 
+            disabled={voting}
+          >
+            {slot}
+          </Btn>
+        ))}
+      </div>
+      {tz && (
+        <div className="text-[11px] text-white/50 mt-2">
+          Times in {tz}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MeetHalfwayCard({ item }: { item: SmartItem }) {
+  const { suggested_venues, window } = item.meta?.payload || {};
+
+  return (
+    <div className="glass-subtle p-3 rounded-xl border border-white/10">
+      <div className="text-white/90 font-medium flex items-center gap-2">
+        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Meet</span>
+        Meet halfway
+      </div>
+      <div className="text-white/70 text-sm mt-1">
+        Suggested meeting spots within {window || "1h"}
+      </div>
+      <div className="mt-3 space-y-2">
+        {(suggested_venues || []).slice(0, 3).map((venue: any, i: number) => (
+          <Btn 
+            key={i} 
+            type="button"
+            className="w-full text-left justify-start" 
+            variant="primary"
+            glow
+          >
+            Rally at {venue.name}
+          </Btn>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VenueSuggestionCard({ item }: { item: SmartItem }) {
+  const { venues, context } = item.meta?.payload || {};
+
+  return (
+    <div className="glass-subtle p-3 rounded-xl border border-white/10">
+      <div className="text-white/90 font-medium flex items-center gap-2">
+        <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">Venue</span>
+        {item.title || "Venue suggestions"}
+      </div>
+      {context && (
+        <div className="text-white/70 text-sm mt-1">{context}</div>
+      )}
+      <div className="mt-3 space-y-2">
+        {(venues || []).slice(0, 2).map((venue: any, i: number) => (
+          <Btn 
+            key={i} 
+            type="button"
+            className="w-full text-left justify-start"
+          >
+            {venue.name}
+          </Btn>
+        ))}
+      </div>
+    </div>
   );
 }
