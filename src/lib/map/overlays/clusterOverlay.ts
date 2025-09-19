@@ -202,7 +202,7 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
     `;
   }
 
-  const clickUnclustered = (map: mapboxgl.Map, e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+  const clickUnclustered = (map: mapboxgl.Map, e: mapboxgl.MapMouseEvent & any) => {
     if (dragging || map.isMoving()) return;
     const f = e.features?.[0];
     if (!f) return;
@@ -220,7 +220,7 @@ export function createClusterOverlay(opts: ClusterOverlayOptions): OverlaySpec {
     window.dispatchEvent(evt);
   };
 
-  const clickCluster = async (map: mapboxgl.Map, e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+  const clickCluster = async (map: mapboxgl.Map, e: mapboxgl.MapMouseEvent & any) => {
     if (dragging || map.isMoving()) return;
     const clusterFeature = e.features?.[0];
     if (!clusterFeature) return;

@@ -20,10 +20,10 @@ export function applyLayerColors(map: mapboxgl.Map, layerId: string, paint: Pain
   for (const [prop, def] of Object.entries(paint)) {
     const color = hslVar(def.var, def.fallback) || def.fallback;
     try {
-      map.setPaintProperty(layerId, prop, color);
+      (map as any).setPaintProperty(layerId, prop, color);
     } catch {
       // last resort: white
-      map.setPaintProperty(layerId, prop, '#ffffff');
+      (map as any).setPaintProperty(layerId, prop, '#ffffff');
     }
   }
 }
@@ -54,12 +54,12 @@ export function applyLayerColorsAdvanced(
     if (!map.getLayer(id)) continue;
     if (cfg.paint) {
       for (const [k, v] of Object.entries(cfg.paint)) {
-        try { map.setPaintProperty(id, k, v); changed = true; } catch {}
+        try { (map as any).setPaintProperty(id, k, v); changed = true; } catch {}
       }
     }
     if (cfg.layout) {
       for (const [k, v] of Object.entries(cfg.layout)) {
-        try { map.setLayoutProperty(id, k, v); changed = true; } catch {}
+        try { (map as any).setLayoutProperty(id, k, v); changed = true; } catch {}
       }
     }
   }

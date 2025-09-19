@@ -477,7 +477,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         
         // Add error handling for map load
         map.on('error', (e) => {
-          const msg: string | undefined = e?.error?.message || e?.message;
+          const msg: string | undefined = (e as any)?.error?.message || (e as any)?.message;
           
           // Ignore benign "layer does not exist" styling races
           if (msg && msg.includes('does not exist in the map\'s style and cannot be styled')) {

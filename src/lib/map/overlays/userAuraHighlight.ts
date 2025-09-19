@@ -101,10 +101,10 @@ export async function recenterAndHighlight(
 
   try {
     // Apply emphasis
-    map.setPaintProperty(LAYER_ID_INNER, 'circle-radius', bumpExpr(prev.innerRadius, innerBumpPx));
-    map.setPaintProperty(LAYER_ID_OUTER, 'circle-radius', bumpExpr(prev.outerRadius, outerBumpPx));
-    if (prev.innerColor) map.setPaintProperty(LAYER_ID_INNER, 'circle-color', bumpAlpha(prev.innerColor, alphaBoost));
-    if (prev.outerColor) map.setPaintProperty(LAYER_ID_OUTER, 'circle-color', bumpAlpha(prev.outerColor, alphaBoost));
+    (map as any).setPaintProperty(LAYER_ID_INNER, 'circle-radius', bumpExpr(prev.innerRadius, innerBumpPx));
+    (map as any).setPaintProperty(LAYER_ID_OUTER, 'circle-radius', bumpExpr(prev.outerRadius, outerBumpPx));
+    if (prev.innerColor) (map as any).setPaintProperty(LAYER_ID_INNER, 'circle-color', bumpAlpha(prev.innerColor, alphaBoost));
+    if (prev.outerColor) (map as any).setPaintProperty(LAYER_ID_OUTER, 'circle-color', bumpAlpha(prev.outerColor, alphaBoost));
   } catch {
     // If anything fails (e.g., layer removed during style change), bail quietly
     return;
