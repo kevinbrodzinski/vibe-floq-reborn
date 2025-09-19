@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { FloqRallyModal } from "@/components/rally/FloqRallyModal";
 import { useHQProximity } from "@/hooks/useHQProximity";
 import { useHQAvailability } from "@/hooks/useHQAvailability";
 import { useHQVibes } from "@/hooks/useHQVibes";
@@ -133,6 +134,9 @@ interface FloqHQTabbedProps {
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState<TabKey>("map");
+  
+  // Rally modal state
+  const [rallyModal, setRallyModal] = useState<{ floqId: string; floqName: string } | null>(null);
   
   // Live HQ hooks
   const { data: proximity, isLoading: proxLoading } = useHQProximity(floqId);
@@ -320,6 +324,9 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <div className="flex gap-2">
                   <Btn>Wing</Btn>
                   <Btn>Filter</Btn>
+                  <Btn ariaLabel="Start Rally" onClick={() => setRallyModal({ floqId, floqName: "Chaos" })}>
+                    Start Rally
+                  </Btn>
                 </div>
               </div>
 
@@ -352,7 +359,13 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   <div className="text-sm font-medium mb-1">No recent activity</div>
                   <div className="text-[13px] text-white/80 mb-2">Start a rally or send a message to get things going</div>
                   <div className="mt-3 flex gap-2">
-                    <Btn className="neon-ring">+ Start Rally</Btn>
+                    <Btn 
+                      className="neon-ring" 
+                      ariaLabel="Start Rally" 
+                      onClick={() => setRallyModal({ floqId, floqName: "Chaos" })}
+                    >
+                      + Start Rally
+                    </Btn>
                     <Btn>Ask Wingman</Btn>
                   </div>
                 </Section>
@@ -713,6 +726,16 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
           )}
         </AnimatePresence>
       </main>
+
+      {/* Rally Modal */}
+      {rallyModal && (
+        <FloqRallyModal
+          isOpen={!!rallyModal}
+          onClose={() => setRallyModal(null)}
+          floqId={rallyModal.floqId}
+          floqName={rallyModal.floqName}
+        />
+      )}
     </div>
   );
 }
