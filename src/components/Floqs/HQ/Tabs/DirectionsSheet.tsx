@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import SmartMap from "@/components/maps/SmartMap";
-import { useDeviceLocation } from "@/hooks/useDeviceLocation";
+import { useOriginForDirections } from "@/hooks/useOriginForDirections";
 import { useDirections } from "@/hooks/useDirections";
 
 export default function DirectionsSheet({
@@ -14,8 +14,7 @@ export default function DirectionsSheet({
   dest: { lat:number; lng:number; name:string };
 }) {
   const [mode, setMode] = useState<"walking"|"driving">("walking");
-  const { loc } = useDeviceLocation(open);
-  const origin = loc ?? centroid;
+  const origin = useOriginForDirections(open) ?? centroid;
   const { data, isLoading } = useDirections(origin, dest, mode, open);
 
   const etaMin = data ? Math.round(data.duration_s/60) : null;
