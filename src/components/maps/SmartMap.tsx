@@ -21,7 +21,7 @@ export default function SmartMap({ data, selectedId, onSelect, height = 280, tok
   const bounds = useMemo(() => {
     const b = new mapboxgl.LngLatBounds();
     b.extend([data.centroid.lng, data.centroid.lat]);
-    data.members.forEach(m => b.extend([m.lng, m.lat]));
+    data.members?.forEach(m => b.extend([m.lng, m.lat]));
     data.candidates.forEach(c => b.extend([c.lng, c.lat]));
     return b;
   }, [data]);
@@ -41,29 +41,31 @@ export default function SmartMap({ data, selectedId, onSelect, height = 280, tok
     mapRef.current = map;
 
     map.on("load", () => {
-      // Members (white dots)
-      map.addSource("members", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: data.members.map(m => ({
-            type: "Feature",
-            properties: { profile_id: m.profile_id },
-            geometry: { type: "Point", coordinates: [m.lng, m.lat] }
-          }))
-        }
-      });
-      map.addLayer({
-        id: "members-circles",
-        type: "circle",
-        source: "members",
-        paint: {
-          "circle-radius": 5,
-          "circle-color": "#ffffff",
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "rgba(255,255,255,0.35)"
-        }
-      });
+      // Members (white dots) - only if members exist
+      if (data.members?.length) {
+        map.addSource("members", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: data.members.map(m => ({
+              type: "Feature",
+              properties: { profile_id: m.profile_id },
+              geometry: { type: "Point", coordinates: [m.lng, m.lat] }
+            }))
+          }
+        });
+        map.addLayer({
+          id: "members-circles",
+          type: "circle",
+          source: "members",
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "rgba(255,255,255,0.35)"
+          }
+        });
+      }
 
       // Candidates (category colored)
       map.addSource("candidates", {
@@ -136,21 +138,23 @@ export default function SmartMap({ data, selectedId, onSelect, height = 280, tok
         }
       });
 
-      // lines from members -> selected
-      map.addSource("member-lines", {
-        type: "geojson",
-        data: emptyFC()
-      });
-      map.addLayer({
-        id: "member-lines",
-        type: "line",
-        source: "member-lines",
-        paint: {
-          "line-color": "#60a5fa",
-          "line-width": 2,
-          "line-opacity": 0.9
-        }
-      });
+      // lines from members -> selected (only if members exist)
+      if (data.members?.length) {
+        map.addSource("member-lines", {
+          type: "geojson",
+          data: emptyFC()
+        });
+        map.addLayer({
+          id: "member-lines",
+          type: "line",
+          source: "member-lines",
+          paint: {
+            "line-color": "#60a5fa",
+            "line-width": 2,
+            "line-opacity": 0.9
+          }
+        });
+      }
 
       // tooltip-like hover (cursor)
       map.on("mouseenter", "candidates-circles", () => map.getCanvas().style.cursor = "pointer");
@@ -189,6 +193,8 @@ function emptyFC(): GeoJSON.FeatureCollection {
 }
 
 function updateLines(map: mapboxgl.Map, data: HalfResult, selectedId: string | null) {
+  if (!data.members?.length) return; // No members, no lines to draw
+  
   const cand = data.candidates.find(c => c.id === selectedId) ?? data.candidates[0];
   if (!cand) {
     (map.getSource("member-lines") as any)?.setData(emptyFC());

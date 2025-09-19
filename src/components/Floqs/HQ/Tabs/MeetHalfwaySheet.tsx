@@ -1,6 +1,7 @@
 import React from "react";
 import { Coffee, Wine, UtensilsCrossed, X } from "lucide-react";
 import SmartMap from "@/components/maps/SmartMap";
+import { openDirections } from "@/lib/nav/openDirections";
 import type { HalfResult } from "@/hooks/useHQMeetHalfway";
 
 type Props = {
@@ -151,8 +152,7 @@ export default function MeetHalfwaySheet({
                 <button 
                   className="px-4 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10 hover:bg-white/15 transition-colors text-sm"
                   onClick={() => {
-                    // TODO: Open directions
-                    console.log('Navigate to', selected.name);
+                    openDirections(selected.lat, selected.lng, selected.name);
                   }}
                 >
                   Directions
