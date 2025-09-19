@@ -6,6 +6,7 @@ import { openDirections } from '@/lib/directions/handoff';
 import { Coffee, Wine, MapPin, Clock, Users, Navigation } from 'lucide-react';
 import type { HalfResult } from '@/hooks/useHQMeetHalfway';
 import { useGroupPredictability } from '@/hooks/useGroupPredictability';
+import { useRecommendationCapture } from '@/hooks/useRecommendationCapture';
 
 interface MeetHalfwaySheetProps {
   open: boolean;
@@ -43,6 +44,7 @@ export default function MeetHalfwaySheet({
   const selectedVenue = data?.candidates.find(c => c.id === selectedId);
   const gp = useGroupPredictability(memberDists);
   const blocked = !gp.ok;
+  const capture = useRecommendationCapture('balanced');
 
   const handleNavigate = () => {
     if (!selectedVenue) return;
@@ -51,6 +53,25 @@ export default function MeetHalfwaySheet({
       label: selectedVenue.name,
       mode: 'transit'
     });
+  };
+
+  const handleRallyHere = async () => {
+    if (!selectedVenue || blocked) return;
+    
+    // Set plan context for preference learning
+    await capture.setPlanContext({
+      planId: `meethalfway-${selectedVenue.id}`,
+      participantsCount: memberDists.length || 2,
+      predictability: {
+        spread: gp.spread,
+        gain: gp.gain,
+        ok: gp.ok,
+        fallback: gp.fallback ?? null
+      }
+    });
+
+    await capture.flushNow();
+    onRallyHere();
   };
 
   return (
@@ -154,7 +175,7 @@ export default function MeetHalfwaySheet({
                     Get Directions
                   </Button>
                   <Button
-                    onClick={onRallyHere}
+                    onClick={handleRallyHere}
                     disabled={rallyLoading || blocked}
                     className="flex-1 ring-2 ring-cyan-400/50"
                   >

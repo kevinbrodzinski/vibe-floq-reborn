@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, Settings, Menu } from 'lucide-react';
+import { Bell, Search, User, Settings, Menu, Zap, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,16 +8,45 @@ import { useCurrentUserProfile } from '@/hooks/useProfile';
 import { useEventNotifications } from '@/providers/EventNotificationsProvider';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { SocialBatteryIcon } from '@/components/SocialBatteryIcon';
+import { useRallyRoom } from '@/hooks/useRallyRoom';
+import { useRecommendationCapture } from '@/hooks/useRecommendationCapture';
+import { edgeLog } from '@/lib/edgeLog';
 
 export function AppHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showCoPresenceActions, setShowCoPresenceActions] = useState(false);
   const { user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
   const { unseen } = useEventNotifications();
   const navigate = useNavigate();
   const location = useLocation();
+  const rally = useRallyRoom();
+  const capture = useRecommendationCapture('balanced');
 
   const unreadCount = unseen.length;
+
+  const handleRallyNow = async () => {
+    try {
+      const id = await rally.create();
+      await capture.setPlanContext({ 
+        planId: id, 
+        participantsCount: 1 
+      });
+      await capture.flushNow();
+      edgeLog('rally_created', { id });
+      setShowCoPresenceActions(false);
+      // TODO: Navigate to rally view or show success toast
+    } catch (error) {
+      console.error('Failed to create rally:', error);
+    }
+  };
+
+  const handleMeetHalfway = () => {
+    setShowCoPresenceActions(false);
+    // TODO: Open meet-halfway flow or navigate to HQ
+    navigate('/floqs'); // Temporary - navigate to floqs list
+  };
 
   // Don't show header on field page for full map experience
   if (location.pathname === '/field' || location.pathname === '/' || location.pathname === '/home') {
@@ -57,6 +86,8 @@ export function AppHeader() {
 
           {/* Right side - Actions */}
           <div className="flex items-center gap-2 header-badges">
+            {/* Social Battery / Co-presence Actions */}
+            <SocialBatteryIcon onPress={() => setShowCoPresenceActions(true)} />
             {/* Search button for mobile */}
             <Button
               variant="ghost"
@@ -107,6 +138,52 @@ export function AppHeader() {
 
       {/* Notification Center */}
       <NotificationCenter />
+
+      {/* Co-presence Action Sheet */}
+      {showCoPresenceActions && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          <div 
+            className="absolute inset-0 bg-black/60" 
+            onClick={() => setShowCoPresenceActions(false)} 
+          />
+          <div className="relative w-full max-w-sm bg-background/95 backdrop-blur-sm border rounded-t-xl sm:rounded-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Co-presence Actions</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowCoPresenceActions(false)}
+              >
+                ×
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <Button 
+                onClick={handleRallyNow}
+                className="w-full flex items-center gap-3 p-4 h-auto"
+                variant="outline"
+              >
+                <Zap className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">Rally Now</div>
+                  <div className="text-sm text-muted-foreground">Start an instant gathering</div>
+                </div>
+              </Button>
+              <Button 
+                onClick={handleMeetHalfway}
+                className="w-full flex items-center gap-3 p-4 h-auto"
+                variant="outline"
+              >
+                <Users className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">Meet Halfway</div>
+                  <div className="text-sm text-muted-foreground">Find optimal meeting spots</div>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

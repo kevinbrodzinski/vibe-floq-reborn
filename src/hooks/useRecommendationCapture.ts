@@ -12,7 +12,21 @@ export type PreferenceSignal = {
   ts: number;
   vibe: VibeSnapshot;
   offer: VenueOffer;
-  context: { dow: number; tod: number; weather?: string };
+  context: { 
+    dow: number; 
+    tod: number; 
+    weather?: string;
+    plan_context?: {
+      planId?: string;
+      participantsCount?: number;
+      predictability?: {
+        spread: number;
+        gain: number;
+        ok: boolean;
+        fallback: string | null;
+      };
+    };
+  };
   decision: { action: 'accept'|'decline'|'modify'|'delay'; rtMs: number };
   outcome?: { satisfaction?: number; wouldRepeat?: boolean };
 };
@@ -50,6 +64,16 @@ export function useRecommendationCapture(
 ) {
   const draining = useRef(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [planContext, setPlanContextState] = useState<{
+    planId?: string;
+    participantsCount?: number;
+    predictability?: {
+      spread: number;
+      gain: number;
+      ok: boolean;
+      fallback: string | null;
+    };
+  } | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -108,6 +132,15 @@ export function useRecommendationCapture(
     return () => clearInterval(id);
   }, [envelope, profileId]);
 
+  const setPlanContext = useCallback((context: typeof planContext) => {
+    setPlanContextState(context);
+    edgeLog('pref_context_set', { 
+      planId: context?.planId, 
+      participantsCount: context?.participantsCount,
+      predictabilityOk: context?.predictability?.ok
+    });
+  }, []);
+
   const capture = useCallback(async (payload: {
     offer: { id: string; type: string; predictedEnergy?: number; distance?: number };
     vibe:  { v: number; dvdt: number; momentum: number };
@@ -121,11 +154,14 @@ export function useRecommendationCapture(
       ts: Date.now(),
       vibe: { ...payload.vibe, ts: Date.now() },
       offer: payload.offer,
-      context: payload.context,
+      context: planContext ? {
+        ...payload.context,
+        plan_context: planContext
+      } : payload.context,
       decision: { action: payload.decision, rtMs: payload.rtMs },
     });
     edgeLog('pref_saved', { offerId: payload.offer.id, decision: payload.decision });
-  }, []);
+  }, [planContext]);
 
   const flushNow = useCallback(async () => {
     if (draining.current) {
@@ -172,5 +208,5 @@ export function useRecommendationCapture(
     }
   }, [envelope, profileId]);
 
-  return { capture, flushNow };
+  return { capture, setPlanContext, flushNow };
 }
