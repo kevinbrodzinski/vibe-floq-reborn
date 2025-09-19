@@ -357,15 +357,6 @@
 .btn-primary-glass:hover { background: rgba(255,255,255,.10); }
 
 /* Keep disabled readable but dim */
-/* Primary glass skin for HQ (no white fill) */
-.btn-primary-glass {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
-}
-.btn-primary-glass:hover { background: rgba(255,255,255,.10); }
-
-/* Keep disabled readable but dim */
 button:disabled.btn-primary-glass {
   opacity: .55;
   filter: saturate(.9);
@@ -397,13 +388,13 @@ button:disabled.btn-primary-glass {
     0 0 0 1px rgba(255,255,255,.10),              /* crisp edge */
     0 0 10px var(--neon-a),                       /* inner halo */
     0 0 20px var(--neon-b),                       /* outer halo */
-    0 0 40px color-mix(in hsl, var(--neon-b) 70%, transparent); /* falloff */
+    0 0 40px hsla(var(--neon-b-hsl), 0.7);       /* falloff - compatible */
 }
 
 /* Palettes */
-.badge-cyan      { --neon-a: hsla(196,92%,64%,.45); --neon-b: hsla(259,92%,64%,.32); }
-.badge-raspberry { --neon-a: hsla(330,95%,64%,.48); --neon-b: hsla(280,90%,64%,.30); }
-.badge-gold      { --neon-a: hsla(44,96%,62%, .50); --neon-b: hsla(18,92%,60%, .28); }
+.badge-cyan      { --neon-a: hsla(196,92%,64%,.45); --neon-b: hsla(259,92%,64%,.32); --neon-b-hsl: 259,92%,64%; }
+.badge-raspberry { --neon-a: hsla(330,95%,64%,.48); --neon-b: hsla(280,90%,64%,.30); --neon-b-hsl: 280,90%,64%; }
+.badge-gold      { --neon-a: hsla(44,96%,62%, .50); --neon-b: hsla(18,92%,60%, .28); --neon-b-hsl: 18,92%,60%; }
 
 /* Hover lift (subtle) */
 .badge-neon:hover { filter: saturate(1.06); }

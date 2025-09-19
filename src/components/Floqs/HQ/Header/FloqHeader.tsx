@@ -24,13 +24,10 @@ export function FloqHeader({
     harmony: frame?.harmony ?? 0.5 
   });
 
-  // Build badges once, deduped
+  // Build badges dynamically based on actual data
   const headerBadges = [
     { id: "members", label: `${memberCount} members`, tone: "cyan" as const },
-    { id: "energy", label: frame?.joint_energy && frame.joint_energy >= 0.7 ? "High Energy" : "Steady", tone: "gold" as const },
-    { id: "tradition", label: "Thursday Legends", tone: "cyan" as const },
-    { id: "streak", label: "5-Week Streak", tone: "raspberry" as const },
-    { id: "homebase", label: "Gran Regulars", tone: "gold" as const }
+    { id: "energy", label: frame?.joint_energy && frame.joint_energy >= 0.7 ? "High Energy" : "Steady", tone: frame?.joint_energy && frame.joint_energy >= 0.7 ? "raspberry" as const : "gold" as const },
   ];
 
   const avatarBg = `radial-gradient(45% 45% at 50% 40%, ${vibe.glowA}50, transparent 60%)`;
@@ -79,8 +76,7 @@ export function FloqHeader({
         {description && (
           <div className="text-white/75 text-[11px] mb-2 truncate">{description}</div>
         )}
-        <FloqBadges items={headerBadges.slice(0, 2)} className="mb-1" />
-        <FloqBadges items={headerBadges.slice(2)} />
+        <FloqBadges items={headerBadges} />
       </div>
 
       {/* Right: badges/actions */}
