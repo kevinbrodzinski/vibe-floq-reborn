@@ -4,6 +4,7 @@ import {
   CalendarClock, Building2, ChevronRight
 } from "lucide-react";
 import { vibeToGradient, energyToWidth } from "./vibeTokens";
+import { AvatarWithFallback } from "@/components/ui/avatar-with-fallback";
 
 export type FloqKind = "friend"|"club"|"business"|"momentary";
 
@@ -28,6 +29,7 @@ export type LivingFloq = {
   rallyNow?: boolean;
   forming?: boolean;
   lastActiveAgo?: string;
+  avatarUrl?: string;
 };
 
 type Props = {
@@ -62,7 +64,7 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
     totalMembers = 0, activeMembers = 0,
     energy = 0.35, convergenceNearby = 0, distanceLabel,
     nextPlanId, nextLabel, nextWhen, ttlSeconds, matchPct, following, streakWeeks,
-    rallyNow, forming, lastActiveAgo
+    rallyNow, forming, lastActiveAgo, avatarUrl
   } = data;
 
   const gradient = vibeToGradient(vibe);
@@ -83,9 +85,17 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
     >
       {/* Title/Badges */}
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-white/90 truncate">{name}</div>
-          {description && <div className="text-[11px] text-white/60 line-clamp-2">{description}</div>}
+        <div className="flex items-start gap-3 min-w-0">
+          <AvatarWithFallback
+            src={avatarUrl}
+            fallbackText={name}
+            profileId={id}
+            className="h-10 w-10 rounded-lg flex-shrink-0"
+          />
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-white/90 truncate">{name}</div>
+            {description && <div className="text-[11px] text-white/60 line-clamp-2">{description}</div>}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {kind === "friend" && streakWeeks ? (
