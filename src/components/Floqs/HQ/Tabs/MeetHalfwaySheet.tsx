@@ -1,6 +1,6 @@
 import React from "react";
 import { Coffee, Wine, UtensilsCrossed, X } from "lucide-react";
-import SmartMap from "@/components/maps/SmartMap";
+import SmartMap, { type MemberETA } from "@/components/maps/SmartMap";
 import DirectionsSheet from "./DirectionsSheet";
 import type { HalfResult } from "@/hooks/useHQMeetHalfway";
 import { haversineMeters, etaMinutesMeters } from "@/lib/geo";
@@ -39,12 +39,13 @@ export default function MeetHalfwaySheet({
   const selected = data?.candidates.find(c => c.id === selectedId) ?? top3[0];
 
   // build per-member ETAs for the selected venue (simple in-app calc)
-  const perMember = (selected && members.length)
-    ? members.map(m => {
-        const d = haversineMeters({lat:m.lat,lng:m.lng},{lat:selected.lat,lng:selected.lng});
-        return { id:m.profile_id, label:m.label ?? m.profile_id, meters: Math.round(d), eta_min: etaMinutesMeters(d,"walk") };
-      })
-    : [];
+  const perMember = React.useMemo(() => {
+    if (!selected || !members?.length) return [] as MemberETA[];
+    return members.map((m) => {
+      const dist = haversineMeters({ lat: m.lat, lng: m.lng }, { lat: selected.lat, lng: selected.lng });
+      return { id: m.profile_id, lat: m.lat, lng: m.lng, eta_min: etaMinutesMeters(dist, "walk") };
+    });
+  }, [selected?.id, JSON.stringify(members)]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -115,8 +116,8 @@ export default function MeetHalfwaySheet({
                 <div className="space-y-1 text-[12px] text-white/80">
                   {perMember.map(p => (
                     <div key={p.id} className="flex justify-between">
-                      <span>{p.label}</span>
-                      <span>{p.eta_min} min • {p.meters} m</span>
+                      <span>{members.find(m => m.profile_id === p.id)?.label ?? p.id}</span>
+                      <span>{p.eta_min} min</span>
                     </div>
                   ))}
                 </div>
@@ -148,7 +149,8 @@ export default function MeetHalfwaySheet({
               data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}
               selectedId={selected?.id ?? null}
               onSelect={onSelectVenue}
-              members={members.map(m => ({ id:m.profile_id, lat:m.lat, lng:m.lng, label:m.label }))}
+              members={members.map(m => ({ id: m.profile_id, lat: m.lat, lng: m.lng, label: m.label }))}
+              memberEtas={perMember}
               height={loading ? 220 : 360}
             />
           </div>
