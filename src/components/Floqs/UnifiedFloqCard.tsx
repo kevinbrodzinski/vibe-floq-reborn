@@ -29,7 +29,7 @@ export default function UnifiedFloqCard({ item, showJoinButton = false }: Props)
   const isPrivate = item.privacy === "invite";
 
   // Use tokenized vibe gradient
-  const vibeGradient = vibeToGradientClass(vibe as any) || vibeToGradientClass();
+  const vibeGradient = vibeToGradientClass[vibe] || vibeToGradientClass.social;
 
   return (
     <Link to={`/floqs/${item.id}/hq`} className="block group">

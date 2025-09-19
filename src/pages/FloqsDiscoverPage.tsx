@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useFloqsCards } from "@/hooks/useFloqsCards";
 import LivingFloqCard, { type LivingFloq } from "@/components/Floqs/cards/LivingFloqCard";
 import SplitFilters, { KindFilter, VibeFilter, StatusFilter } from "@/components/Floqs/SplitFilters";
@@ -147,16 +147,13 @@ export default function FloqsDiscoverPage() {
         </details>
       )}
 
-      {/* Mobile FAB */}
-      <button
-        type="button"
-        onClick={() => nav("/create/floq")}
-        aria-label="Create Floq"
-        className="fixed sm:hidden bottom-5 right-5 neon-ring rounded-full h-12 w-12 grid place-items-center
-                   bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-xl"
+      {/* Desktop + Mobile FAB */}
+      <Link
+        to="/create/floq"
+        className="fixed bottom-6 right-6 z-40 btn-glow rounded-full bg-white/10 border border-white/15 backdrop-blur px-4 py-2 text-[12px] hover:bg-white/15"
       >
-        +
-      </button>
+        + Create Floq
+      </Link>
 
       {/* Rally Modal */}
       {rallyModal && (

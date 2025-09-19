@@ -92,48 +92,25 @@
     pointer-events: none;
   }
 
-  @keyframes btnGlowPulse {
-    0%, 100% { 
-      box-shadow: 
-        0 0 30px rgba(56,189,248,0.7),
-        0 0 60px rgba(168,85,247,0.6),
-        0 0 90px rgba(236,72,153,0.5),
-        0 0 120px rgba(56,189,248,0.3),
-        inset 0 1px 0 rgba(255,255,255,0.2);
-    }
-    50% { 
-      box-shadow: 
-        0 0 40px rgba(56,189,248,0.9),
-        0 0 80px rgba(168,85,247,0.8),
-        0 0 120px rgba(236,72,153,0.7),
-        0 0 160px rgba(56,189,248,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.3);
-    }
-  }
-
   .btn-glow {
     border-radius: 0.75rem !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
-    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.20) !important;
+    background: rgba(255,255,255,0.10) !important;
     transition: all 0.2s ease;
-    animation: btnGlowPulse 2s ease-in-out infinite;
     box-shadow: 
-      0 0 30px rgba(56,189,248,0.7),
-      0 0 60px rgba(168,85,247,0.6),
-      0 0 90px rgba(236,72,153,0.5),
-      0 0 120px rgba(56,189,248,0.3),
-      inset 0 1px 0 rgba(255,255,255,0.2);
+      0 0 20px rgba(56,189,248,0.4),
+      0 0 40px rgba(168,85,247,0.3),
+      0 0 60px rgba(236,72,153,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.1);
   }
   .btn-glow:hover {
-    background: rgba(255,255,255,0.18) !important;
-    border-color: rgba(255,255,255,0.35) !important;
-    animation-duration: 1.5s;
+    background: rgba(255,255,255,0.15) !important;
+    border-color: rgba(255,255,255,0.25) !important;
     box-shadow: 
-      0 0 40px rgba(56,189,248,0.9),
-      0 0 80px rgba(168,85,247,0.8),
-      0 0 120px rgba(236,72,153,0.7),
-      0 0 160px rgba(56,189,248,0.4),
-      inset 0 1px 0 rgba(255,255,255,0.3);
+      0 0 25px rgba(56,189,248,0.5),
+      0 0 50px rgba(168,85,247,0.4),
+      0 0 75px rgba(236,72,153,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.15);
   }
 
   .avatar-glow {

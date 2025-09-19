@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Btn from "@/components/Common/Btn";
 import { useCreateFloq } from "@/hooks/useCreateFloq";
-import { vibeToGlow, type Vibe } from "@/components/Floqs/Create/vibeGlow";
+import { vibeRingClass, normalizeVibe } from "@/components/Common/vibeTokens";
+import { type Vibe } from "@/components/Floqs/Create/vibeGlow";
 
 function Section({
   title,
@@ -126,21 +127,19 @@ export default function FloqCreationWizard({ onCreated }: Props) {
             <div className="rounded-xl bg-white/5 border border-white/10 p-3">
               <div className="mb-2 text-[12px] text-white/80 font-medium">Primary Vibe</div>
               <div className="grid grid-cols-2 gap-1.5">
-                {(["social","chill","active","hype","productive","quiet"] as Vibe[]).map(vOpt => {
-                  const isSel = vibe === vOpt;
+                {(["Social","Chill","Active","Hype","Productive","Quiet"] as const).map(v => {
+                  const isActive = vibe === v.toLowerCase() as Vibe;
+                  const ring = isActive ? `ring-2 ${vibeRingClass[normalizeVibe(v)]} btn-glow` : "";
                   return (
-                    <button
-                      key={vOpt}
-                      type="button"
-                      onClick={()=>setVibe(vOpt)}
-                      className={[
-                        "px-3 py-1.5 rounded-xl border text-[10px] transition",
-                        "bg-white/5 border-white/10 hover:bg-white/10",
-                        isSel && "ring-2 " + vibeToGlow(vOpt) + " chip-glow"
-                      ].filter(Boolean).join(" ")}
+                    <Btn
+                      key={v}
+                      active={isActive}
+                      className={`text-[10px] py-1 ring-offset-0 ${ring}`}
+                      onClick={() => setVibe(v.toLowerCase() as Vibe)}
+                      ariaLabel={`Select ${v} vibe`}
                     >
-                      {vOpt[0].toUpperCase()+vOpt.slice(1)}
-                    </button>
+                      {v}
+                    </Btn>
                   );
                 })}
               </div>

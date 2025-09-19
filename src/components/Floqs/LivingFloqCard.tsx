@@ -103,7 +103,7 @@ function TTLRing({ seconds }: { seconds: number }) {
 
 function EnergyBar({ energy, vibe }: { energy: number; vibe: string }) {
   const width = `${Math.round(energy * 100)}%`;
-  const vibeGradient = vibeToGradientClass(vibe as any);
+  const vibeGradient = vibeToGradientClass[vibe] || vibeToGradientClass.social;
   
   return (
     <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
@@ -197,7 +197,7 @@ export default function LivingFloqCard({
   } = data;
 
   const isPrivate = privacy === "invite";
-  const vibeGradient = vibeToGradientClass(vibe as any);
+  const vibeGradient = vibeToGradientClass[vibe] || vibeToGradientClass.social;
   const KindIcon = getKindIcon(kind);
   const actions = getContextualActions(kind);
 
