@@ -4,7 +4,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 export default function Ring({
   size = 52,
   energy01,
-  accent = 'hsl(var(--primary))',
+  accent = 'var(--color-primary)',
   trackOpacity = 0.18,
   stroke = 6,
   showCrack = false,
@@ -20,27 +20,13 @@ export default function Ring({
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = `${c * e}, ${c}`;
-  
+
   return (
     <Svg width={size} height={size}>
-      <Circle 
-        cx={size/2} 
-        cy={size/2} 
-        r={r} 
-        stroke={accent} 
-        strokeOpacity={trackOpacity} 
-        strokeWidth={stroke} 
-        fill="none"
-      />
-      <Circle 
-        cx={size/2} 
-        cy={size/2} 
-        r={r}
-        stroke={accent} 
-        strokeWidth={stroke} 
-        fill="none"
-        strokeDasharray={dash} 
-        strokeLinecap="round"
+      <Circle cx={size/2} cy={size/2} r={r} stroke={accent} strokeOpacity={trackOpacity} strokeWidth={stroke} fill="none"/>
+      <Circle cx={size/2} cy={size/2} r={r}
+        stroke={accent} strokeWidth={stroke} fill="none"
+        strokeDasharray={dash} strokeLinecap="round"
         transform={`rotate(-90 ${size/2} ${size/2})`}
       />
       {showCrack && (

@@ -1,6 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import Ring from './shapes/Ring';
 import Bolt from './shapes/Bolt';
 import Droplet from './shapes/Droplet';
@@ -11,16 +10,24 @@ type Dir = 'rising'|'stable'|'falling';
 
 export default function MetamorphBattery({
   size = 52,
+  accent = 'var(--color-primary)',
+  surface = 'var(--surface-glass)',
+  onPrimary = 'var(--on-surface)',
+  border = 'var(--border-muted)',
   envelope = 'balanced',
   onPress,
 }:{
   size?: number;
+  accent?: string;
+  surface?: string;
+  onPrimary?: string;
+  border?: string;
   envelope?: 'strict'|'balanced'|'permissive';
   onPress?: () => void;
 }) {
   const hb = useFieldHeartbeat({ envelope });
   const energy = Math.max(0, Math.min(1, hb?.energy ?? 0.5));
-  const slope = hb?.slope ?? 0;
+  const slope  = hb?.slope ?? 0;
   const dir: Dir = slope > 0.02 ? 'rising' : slope < -0.02 ? 'falling' : 'stable';
   const lowPower = energy < 0.12;
 
@@ -28,19 +35,13 @@ export default function MetamorphBattery({
   const scale = useBreath(dir, energy);
   const form = useMemo(() => dir, [dir]);
 
-  // Energy-based styling
-  const energyColor = useMemo(() => {
-    if (energy > 0.7) return 'hsl(var(--primary))';
-    if (energy > 0.3) return 'hsl(45, 100%, 60%)';
-    return 'hsl(0, 70%, 60%)';
-  }, [energy]);
-
-  const TrendIcon = dir === 'rising' ? TrendingUp : dir === 'falling' ? TrendingDown : Minus;
-
   return (
     <Pressable
       onPress={onPress}
-      style={styles.container}
+      style={[
+        styles.wrap,
+        { backgroundColor: surface, borderColor: border }
+      ]}
       accessibilityRole="button"
       accessibilityLabel={`Energy ${pct} percent, ${dir}`}
     >
@@ -48,25 +49,20 @@ export default function MetamorphBattery({
         <View style={{ width:size, height:size }}>
           {form === 'rising' && (
             <>
-              <Bolt size={size} energy01={energy} accent={energyColor}/>
-              <Sparks size={size} accent={energyColor}/>
+              <Bolt size={size} energy01={energy} accent={accent}/>
+              <Sparks size={size} accent={accent}/>
             </>
           )}
-          {form === 'falling' && <Droplet size={size} energy01={energy} accent={energyColor}/>}
-          {form === 'stable' && <Ring size={size} energy01={energy} accent={energyColor} showCrack={lowPower}/>}
+          {form === 'falling' && <Droplet size={size} energy01={energy} accent={accent}/>}
+          {form === 'stable'  && <Ring size={size} energy01={energy} accent={accent} showCrack={lowPower}/>}
         </View>
       </Animated.View>
 
-      {/* Status Pills */}
-      <View style={styles.statusContainer}>
-        <View style={styles.statusRow}>
-          <Text style={[styles.percentage, { color: energyColor }]}>{pct}%</Text>
-          <TrendIcon 
-            size={12}
-            color={energyColor}
-          />
-        </View>
-        <Text style={styles.direction}>{dir}</Text>
+      <View style={styles.right}>
+        <Text style={[styles.pct, { color: accent }]}>{pct}%</Text>
+        <Text style={[styles.hint, { color: withAlpha(onPrimary, 0.85) }]} numberOfLines={1}>
+          {dir === 'rising' ? 'Good now' : dir === 'falling' ? 'Keep it short' : 'Dialed in'}
+        </Text>
       </View>
     </Pressable>
   );
@@ -88,30 +84,25 @@ function useBreath(dir: Dir, energy: number) {
   return v;
 }
 
+function withAlpha(hexOrVar: string, alpha: number) {
+  if (hexOrVar.startsWith?.('var(')) return hexOrVar;
+  const h = hexOrVar.replace('#','');
+  const n = h.length === 3 ? h.split('').map(x=>x+x).join('') : h.padEnd(6,'0').slice(0,6);
+  const a = Math.round(Math.max(0,Math.min(1,alpha))*255).toString(16).padStart(2,'0');
+  return `#${n}${a}`;
+}
+
 const styles = StyleSheet.create({
-  container: {
+  wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 8,
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  statusContainer: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 4,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  percentage: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  direction: {
-    fontSize: 12,
-    color: 'hsl(var(--muted-foreground))',
-    textTransform: 'capitalize',
-  },
+  pct: { fontSize: 12, fontWeight: '800' },
+  hint: { fontSize: 11, fontWeight: '600' },
+  right: { marginLeft: 8, minWidth: 68, flexShrink: 1 },
 });

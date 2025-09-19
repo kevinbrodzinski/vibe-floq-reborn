@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Path, Rect, ClipPath } from 'react-nat
 export default function Droplet({
   size = 52,
   energy01,
-  accent = 'hsl(var(--primary))',
+  accent = 'var(--color-primary)',
 }:{
   size?: number;
   energy01: number;
@@ -27,6 +27,7 @@ export default function Droplet({
         </ClipPath>
       </Defs>
 
+      {/* Outline */}
       <Path
         d="M50 6 C60 22 76 36 76 58 C76 77 64 92 50 92 C36 92 24 77 24 58 C24 36 40 22 50 6 Z"
         stroke={accent}
@@ -35,6 +36,7 @@ export default function Droplet({
         fill="none"
       />
 
+      {/* Fill */}
       <Path
         d="M50 6 C60 22 76 36 76 58 C76 77 64 92 50 92 C36 92 24 77 24 58 C24 36 40 22 50 6 Z"
         fill="url(#gDrop)"

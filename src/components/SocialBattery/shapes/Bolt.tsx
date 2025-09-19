@@ -4,7 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Path, Rect, ClipPath } from 'react-nat
 export default function Bolt({
   size = 52,
   energy01,
-  accent = 'hsl(var(--primary))',
+  accent = 'var(--color-primary)',
 }:{
   size?: number;
   energy01: number;
@@ -27,6 +27,7 @@ export default function Bolt({
         </ClipPath>
       </Defs>
 
+      {/* Capsule outline */}
       <Path
         d="M50 4 C73 4 90 18 90 40 V60 C90 82 73 96 50 96 C27 96 10 82 10 60 V40 C10 18 27 4 50 4 Z"
         stroke={accent}
@@ -35,6 +36,7 @@ export default function Bolt({
         fill="none"
       />
 
+      {/* Bolt body (filled via clip) */}
       <Path
         d="M58 18 L38 52 H50 L42 82 L68 46 H56 L58 18 Z"
         fill="url(#gBolt)"

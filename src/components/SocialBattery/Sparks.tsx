@@ -3,7 +3,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 export default function Sparks({
   size = 52,
-  accent = 'hsl(var(--primary))',
+  accent = 'var(--color-primary)',
   count = 5,
 }:{
   size?: number;
@@ -12,12 +12,12 @@ export default function Sparks({
 }) {
   const pts = useMemo(() => {
     const arr: {x:number;y:number;r:number;o:number}[] = [];
-    for (let i=0;i<count;i++){
+    for (let i = 0; i < count; i++) {
       const x = size*0.55 + Math.random()*size*0.25;
       const y = size*0.15 + Math.random()*size*0.25;
       const r = Math.max(0.6, Math.random()*1.4);
       const o = 0.35 + Math.random()*0.35;
-      arr.push({x,y,r,o});
+      arr.push({ x, y, r, o });
     }
     return arr;
   }, [size, count]);
