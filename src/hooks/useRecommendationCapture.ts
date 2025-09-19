@@ -1,37 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '@/integrations/supabase/client';
 import { storage } from '@/lib/storage';
 import { rankTimeGate } from '@/core/privacy/RankTimeGate';
 import { edgeLog } from '@/lib/edgeLog';
 
-/** Types mirrored from your queue module (keep them in sync) */
+type PlanContext = {
+  planId?: string;
+  participantsCount?: number;
+  predictability?: { spread:number; gain:number; ok:boolean; fallback?: 'partition'|'relax_constraints'|null };
+};
+
 type VibeSnapshot = { v: number; dvdt: number; momentum: number; ts: number };
 type VenueOffer   = { id: string; type: string; predictedEnergy?: number; distance?: number };
+
 export type PreferenceSignal = {
   id: string;
   ts: number;
   vibe: VibeSnapshot;
   offer: VenueOffer;
-  context: { 
-    dow: number; 
-    tod: number; 
-    weather?: string;
-    plan_context?: {
-      planId?: string;
-      participantsCount?: number;
-      predictability?: {
-        spread: number;
-        gain: number;
-        ok: boolean;
-        fallback: string | null;
-      };
-    };
-  };
-  decision: { action: 'accept'|'decline'|'modify'|'delay'; rtMs: number };
+  context: { dow:number; tod:number; weather?:string };
+  decision: { action:'accept'|'decline'|'modify'|'delay'; rtMs:number };
   outcome?: { satisfaction?: number; wouldRepeat?: boolean };
+  plan?: PlanContext;
 };
 
 const KEY = 'pref:signals:v1';
+const EXTRA_KEY = 'pref:signals:extra:v1';
 
 async function saveSignal(s: PreferenceSignal) {
   const raw = (await storage.getItem(KEY)) ?? '[]';
@@ -39,7 +34,6 @@ async function saveSignal(s: PreferenceSignal) {
   arr.push(s);
   await storage.setItem(KEY, JSON.stringify(arr.slice(-500)));
 }
-
 async function drainQueue(batch = 50): Promise<PreferenceSignal[]> {
   const raw = (await storage.getItem(KEY)) ?? '[]';
   const arr = JSON.parse(raw) as PreferenceSignal[];
@@ -47,166 +41,122 @@ async function drainQueue(batch = 50): Promise<PreferenceSignal[]> {
   await storage.setItem(KEY, JSON.stringify(arr));
   return take;
 }
-
-/** profiles.id === auth.uid() in your schema */
-async function getAuthProfileId(): Promise<string | null> {
+async function getAuthProfileId(): Promise<string|null> {
   const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  return data.user?.id ?? null; // profiles.id === auth.uid()
 }
+function chunkRowsBySize<T>(rows: T[], maxChars=180_000) {
+  const out:T[][]=[]; let cur:T[]=[]; let size=0;
+  for (const r of rows) {
+    const add = JSON.stringify(r).length;
+    if (size+add>maxChars && cur.length){ out.push(cur); cur=[]; size=0; }
+    cur.push(r); size+=add;
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+function isProbablyOnline(){ try{ if('onLine' in navigator) return (navigator as any).onLine!==false }catch{} return true }
 
-/**
- * Capture hook:
- * - save exposures/decisions locally for instant UX
- * - periodically drains to `preference_signals` with proper profile_id
- */
-export function useRecommendationCapture(
-  envelope: 'strict'|'balanced'|'permissive' = 'balanced'
-) {
+export function useRecommendationCapture(envelope: 'strict'|'balanced'|'permissive'='balanced') {
   const draining = useRef(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [planContext, setPlanContextState] = useState<{
-    planId?: string;
-    participantsCount?: number;
-    predictability?: {
-      spread: number;
-      gain: number;
-      ok: boolean;
-      fallback: string | null;
-    };
-  } | null>(null);
+  const [profileId, setProfileId] = useState<string|null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>|null>(null);
+  const drainNowRef = useRef<(reason:'interval'|'foreground'|'visibility'|'manual')=>Promise<void>>();
+  const extraPlanRef = useRef<PlanContext|null>(null);
 
-  useEffect(() => {
-    let mounted = true;
-    getAuthProfileId().then(pid => { if (mounted) setProfileId(pid); });
-    return () => { mounted = false; };
+  useEffect(() => { let mounted=true;
+    getAuthProfileId().then(pid=>{ if(mounted) setProfileId(pid) });
+    return ()=>{ mounted=false };
   }, []);
 
-  useEffect(() => {
-    const id = setInterval(async () => {
-      if (draining.current) return;
+  useEffect(() => { let mounted=true;
+    async function tick(reason:'interval'|'foreground'|'visibility'|'manual'){
+      if(!mounted || draining.current) return;
       draining.current = true;
-      try {
-        // Gate before any aggregate-related/drain operation
-        const gate = rankTimeGate({
-          envelopeId: envelope,
-          featureTimestamps: [Date.now()],
-          epsilonCost: 0.01,
-        });
-        if (!gate.ok) return;
+      try{
+        if(!isProbablyOnline()){ schedule(45_000,'offline'); edgeLog('pref_drain_offline',{reason}); return; }
 
-        // Ensure we have a profile_id that satisfies RLS policy
+        const gate = rankTimeGate({ envelopeId:envelope, featureTimestamps:[Date.now()], epsilonCost:0.01 });
+        if(!gate.ok){ schedule(45_000,'gate_suppress'); return; }
+
         const pid = profileId ?? await getAuthProfileId();
-        if (!pid) return;
+        if(!pid){ schedule(30_000,'no_profile'); return; }
 
         const batch = await drainQueue(25);
-        edgeLog('pref_drain', { count: batch.length, degrade: gate.degrade, receiptId: gate.receiptId });
-        if (!batch.length) return;
+        edgeLog('pref_drain',{reason,count:batch.length,degrade:gate.degrade,receiptId:gate.receiptId});
+        if(!batch.length){ schedule(45_000,'empty'); return; }
 
-        // Insert directly into preference_signals; RLS requires profile_id=get_current_profile_id()
-        const rows = batch.map(s => ({
+        if(!extraPlanRef.current){
+          const raw = await storage.getItem(EXTRA_KEY);
+          extraPlanRef.current = raw ? JSON.parse(raw) as PlanContext : null;
+        }
+        const rows = batch.map(s=>({
           profile_id: pid,
           ts: new Date(s.ts).toISOString(),
-          signal: s as any,
+          signal: { ...s, plan: s.plan ?? extraPlanRef.current ?? undefined } as any,
         }));
 
-        const { error } = await supabase.from('preference_signals').insert(rows);
-        if (error) {
-          // If a transient network/rls issue occurs, push the batch back into queue.
-          const existing = JSON.parse((await storage.getItem(KEY)) ?? '[]');
-          await storage.setItem(KEY, JSON.stringify([...rows.map((r: any) => r.signal), ...existing].slice(-500)));
-          // Swallow error—logging only
-          edgeLog('pref_drain_error', { message: error.message, code: (error as any).code });
+        for(const chunk of chunkRowsBySize(rows, 180_000)){
+          const { error } = await supabase.from('preference_signals').insert(chunk);
+          if(error){
+            const existing = JSON.parse((await storage.getItem(KEY)) ?? '[]');
+            const toRestore = chunk.map((r:any)=> r.signal);
+            await storage.setItem(KEY, JSON.stringify([...toRestore, ...existing].slice(-500)));
+            const backoff = 10_000 + Math.floor(Math.random()*1_000);
+            edgeLog('pref_drain_backoff',{ backoffMs: backoff, code:(error as any).code });
+            schedule(backoff,'insert_error');
+            return;
+          }
         }
+        schedule(batch.length>=25 ? 10_000 : 30_000,'success');
+      } finally { draining.current=false; }
+    }
+    function schedule(ms:number, reason:string){
+      edgeLog('pref_drain_schedule',{ nextDelayMs:ms, reason });
+      if(timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(()=>tick('interval'), ms);
+    }
+    schedule(15_000,'init');
 
-        // Optional RPC path (toggle this if needed later):
-        // const { error } = await supabase.rpc('record_preference_signal', {
-        //   p_signal: s as any,
-        //   p_ts: new Date(s.ts).toISOString(),
-        // });
+    const sub = AppState.addEventListener('change', s => { if(s==='active') drainNowRef.current?.('foreground') });
+    const visHandler = () => { if(document?.visibilityState==='visible') drainNowRef.current?.('visibility') };
+    document?.addEventListener?.('visibilitychange', visHandler);
+    drainNowRef.current = tick;
 
-      } finally {
-        draining.current = false;
-      }
-    }, 15_000);
-
-    return () => clearInterval(id);
+    return () => {
+      mounted=false;
+      if(timer.current) clearTimeout(timer.current);
+      sub?.remove?.();
+      document?.removeEventListener?.('visibilitychange', visHandler);
+    };
   }, [envelope, profileId]);
 
-  const setPlanContext = useCallback((context: typeof planContext) => {
-    setPlanContextState(context);
-    edgeLog('pref_context_set', { 
-      planId: context?.planId, 
-      participantsCount: context?.participantsCount,
-      predictabilityOk: context?.predictability?.ok
-    });
-  }, []);
-
-  const capture = useCallback(async (payload: {
-    offer: { id: string; type: string; predictedEnergy?: number; distance?: number };
-    vibe:  { v: number; dvdt: number; momentum: number };
-    decision: 'accept'|'decline'|'modify'|'delay';
-    rtMs: number;
-    context: { dow: number; tod: number; weather?: string };
-  }) => {
+  const capture = useCallback(async (payload:{
+    offer:{ id:string; type:string; predictedEnergy?:number; distance?:number };
+    vibe:{ v:number; dvdt:number; momentum:number };
+    decision:'accept'|'decline'|'modify'|'delay';
+    rtMs:number;
+    context:{ dow:number; tod:number; weather?:string };
+    plan?: PlanContext;
+  })=>{
     const id = `${payload.offer.id}:${Date.now()}`;
     await saveSignal({
-      id,
-      ts: Date.now(),
+      id, ts: Date.now(),
       vibe: { ...payload.vibe, ts: Date.now() },
       offer: payload.offer,
-      context: planContext ? {
-        ...payload.context,
-        plan_context: planContext
-      } : payload.context,
+      context: payload.context,
       decision: { action: payload.decision, rtMs: payload.rtMs },
+      plan: payload.plan,
     });
-    edgeLog('pref_saved', { offerId: payload.offer.id, decision: payload.decision });
-  }, [planContext]);
+    edgeLog('pref_saved',{ offerId: payload.offer.id, decision: payload.decision, planId: payload.plan?.planId });
+  },[]);
 
-  const flushNow = useCallback(async () => {
-    if (draining.current) {
-      edgeLog('pref_flush_skipped', { reason: 'already_draining' });
-      return;
-    }
-    
-    draining.current = true;
-    try {
-      const gate = rankTimeGate({
-        envelopeId: envelope,
-        featureTimestamps: [Date.now()],
-        epsilonCost: 0.01,
-      });
-      if (!gate.ok) {
-        edgeLog('pref_flush_skipped', { reason: 'gate_blocked', degrade: gate.degrade });
-        return;
-      }
+  (capture as any).flushNow = async () => { await drainNowRef.current?.('manual'); };
+  (capture as any).setPlanContext = async (ctx: PlanContext) => {
+    extraPlanRef.current = ctx ?? null;
+    await storage.setItem(EXTRA_KEY, JSON.stringify(ctx ?? null));
+    edgeLog('pref_context_set',{ planId: ctx?.planId, participantsCount: ctx?.participantsCount });
+  };
 
-      const pid = profileId ?? await getAuthProfileId();
-      if (!pid) {
-        edgeLog('pref_flush_skipped', { reason: 'no_profile' });
-        return;
-      }
-
-      const batch = await drainQueue(50); // Larger batch for manual flush
-      edgeLog('pref_flush_manual', { count: batch.length, degrade: gate.degrade, receiptId: gate.receiptId });
-      if (!batch.length) return;
-
-      const rows = batch.map(s => ({
-        profile_id: pid,
-        ts: new Date(s.ts).toISOString(),
-        signal: s as any,
-      }));
-
-      const { error } = await supabase.from('preference_signals').insert(rows);
-      if (error) {
-        const existing = JSON.parse((await storage.getItem(KEY)) ?? '[]');
-        await storage.setItem(KEY, JSON.stringify([...rows.map((r: any) => r.signal), ...existing].slice(-500)));
-        edgeLog('pref_flush_error', { message: error.message, code: (error as any).code });
-      }
-    } finally {
-      draining.current = false;
-    }
-  }, [envelope, profileId]);
-
-  return { capture, setPlanContext, flushNow };
+  return capture as typeof capture & { flushNow: () => Promise<void>; setPlanContext: (ctx: PlanContext) => Promise<void> };
 }

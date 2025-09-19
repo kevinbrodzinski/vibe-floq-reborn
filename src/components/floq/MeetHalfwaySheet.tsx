@@ -66,7 +66,7 @@ export default function MeetHalfwaySheet({
         spread: gp.spread,
         gain: gp.gain,
         ok: gp.ok,
-        fallback: gp.fallback ?? null
+        fallback: (gp.fallback === 'partition' || gp.fallback === 'relax_constraints') ? gp.fallback : null
       }
     });
 

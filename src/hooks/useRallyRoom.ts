@@ -60,16 +60,11 @@ export function useRallyRoom(rallyId?: string) {
     members,
     async create(meta?: any) {
       const rallyIdNew = crypto.randomUUID();
-      const evt: RallyEvent = { 
-        type: 'rally_created', 
-        rallyId: rallyIdNew, 
-        host: 'self', 
-        ts: Date.now(), 
-        meta 
-      };
-      
-      await supabase.channel(`rally:${rallyIdNew}`).subscribe();
-      await broadcast(evt);
+      const ch = supabase.channel(`rally:${rallyIdNew}`, { config:{ presence:{ key:'user' } }});
+      await ch.subscribe();
+      channelRef.current = ch;               // FIX: set current channel
+      await ch.send({ type:'broadcast', event:'rally_evt', payload:{ type:'rally_created', rallyId:rallyIdNew, host:'self', ts:Date.now(), meta } as RallyEvent });
+      edgeLog('rally_created', { rallyId:rallyIdNew });
       return rallyIdNew;
     },
     async join(userId: string) {
