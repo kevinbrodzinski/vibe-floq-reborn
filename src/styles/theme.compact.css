@@ -368,6 +368,8 @@
   border: 1px solid rgba(255,255,255,.10);
   border-radius: 18px;
   backdrop-filter: blur(8px);
+  overflow: visible;        /* was likely hidden in an older card-wall style */
+  position: relative;
 }
 
 /* Inputs (glass + neon focus) */
@@ -397,13 +399,17 @@
 .tile:hover { background: rgba(255,255,255,.07); }
 
 /* Wrapper for even halo around outline */
-.neon-wrap { isolation: isolate; }
+.neon-wrap { 
+  isolation: isolate;
+  display: inline-block;    /* critical for consistent drop-shadow geometry */
+}
 
 /* Even neon outline (drop-shadow) — single canonical definition */
 .neon-ring {
   filter:
     drop-shadow(0 0 6px  var(--neon-a))
     drop-shadow(0 0 14px var(--neon-b));
+  will-change: filter;      /* smooth + fast on iOS/Safari */
 }
 
 /* Fallback glow for selected tiles even if wrapper is missing */
@@ -435,6 +441,17 @@ button:disabled.btn-primary-glass { opacity:.55; }
 
 /* Compact button */
 .btn-xs { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
+
+/* Remove inherited noise/texture layers inside Create Floq */
+.page-neon .noise,
+.page-neon .grain,
+.page-neon .paper,
+.page-neon [class*="noise"],
+.page-neon [class*="grain"],
+.page-neon [class*="paper"],
+.page-neon .card-wall {
+  background-image: none !important;
+}
 
 /* Keyboard-visible focus (accessibility) */
 .tile:focus-visible {
