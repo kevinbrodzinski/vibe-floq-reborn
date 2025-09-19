@@ -28,25 +28,25 @@ export default function StreamTab({ reduce, panelAnim, onStartRally, onSend, onR
     <motion.div {...panelAnim(reduce)} className="space-y-5">
       <div className="flex items-center justify-between -mx-4 px-4">
         <div className="flex gap-2 overflow-x-auto scrollbar-none px-0">
-          <span className="chip-compact" data-active="true">Crew (2)</span>
+          <span className="chip-compact aura-sm" data-active="true">Crew (2)</span>
           <span className="chip-compact">Plans (1)</span>
           <span className="chip-compact">Live</span>
           <span className="chip-compact">Memories</span>
           <span className="chip-compact">Wing</span>
           <span className="chip-compact">Filter</span>
         </div>
-        <Btn variant="primary" glow onClick={onStartRally}>
+        <Btn variant="primary" glow className="aura-sm" onClick={onStartRally}>
           {rallyLoading ? "Starting…" : "+ Start Rally"}
         </Btn>
       </div>
 
-      <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
+      <Section className="aura" title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
         <div className="text-sm font-medium mb-1">Tom started a Rally · 2m</div>
         <div className="text-[13px] text-white/80 mb-2">@everyone drinks at @GranBlanco in 1 hr?</div>
         <div className="glass-subtle p-3 text-[12px]">
           Rally: Gran Blanco @ 8:30 • Going: 3 • Deciding: 2 • No reply: 3
           <div className="mt-2 flex gap-2">
-            <Btn variant="primary" glow onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER","joined")}>Join</Btn>
+            <Btn variant="primary" glow className="aura-sm" onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER","joined")}>Join</Btn>
             <Btn onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER","maybe")}>Maybe</Btn>
             <Btn onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER","declined")}>Can't</Btn>
           </div>

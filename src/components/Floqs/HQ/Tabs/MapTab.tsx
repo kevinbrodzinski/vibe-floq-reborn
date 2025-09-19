@@ -52,6 +52,7 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
   return (
     <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
+        className="aura"
         title="Living Proximity Map"
         icon={<MapPin className="h-4 w-4" />}
         right={<Btn glow onClick={() => { track(Events.hq_meet_half_open, { floqId }); setOpen(true); }}>Meet-Halfway</Btn>}

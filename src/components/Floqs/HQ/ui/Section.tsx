@@ -5,14 +5,16 @@ export default function Section({
   icon,
   right,
   children,
+  className = "",
 }: {
   title: string;
   icon?: React.ReactNode;
   right?: React.ReactNode;
   children?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="section-compact p-4">
+    <section className={`section-compact p-4 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {icon ?? null}
