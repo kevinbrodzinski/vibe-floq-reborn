@@ -75,7 +75,7 @@ function Section({
   children?: React.ReactNode;
 }) {
   return (
-    <Glass className="p-4 shadow-xl">
+    <div className="glass rounded-2xl p-4 shadow-glass">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md bg-white/10 grid place-items-center text-white/80">{icon}</div>
@@ -84,7 +84,7 @@ function Section({
         {right}
       </div>
       {children}
-    </Glass>
+    </div>
   );
 }
 
@@ -387,7 +387,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 >
                   Send
                 </button>
-              </Glass>
+    </div>
             </motion.div>
           )}
 
@@ -430,7 +430,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   <Btn>Not This Week</Btn>
                   <Btn>Never Suggest</Btn>
                 </div>
-              </Glass>
+              </div>
             </motion.div>
           )}
 
