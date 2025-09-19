@@ -8,14 +8,15 @@ const CORS = {
 };
 
 // Types
-type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans";
+type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans"|"wings";
 type SmartItem = {
   id: string;
-  kind: "rally"|"moment"|"plan"|"text"|"poll"|"venue_suggestion"|"time_picker"|"meet_halfway"|"reminder"|"recap";
-  ts: string;
-  priority: number;
+  kind: "rally"|"moment"|"plan"|"message"|"wings_poll"|"wings_time"|"wings_meet"|"venue_suggestion"|"reminder"|"recap";
+  created_at: string;
+  score: number;
   unread: boolean;
-  title?: string; body?: string;
+  title?: string; 
+  body?: string;
   media?: { thumb_url: string }[];
   rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number} };
   plan?:  { title: string; at: string; status:"locked"|"building"|"tentative" };
@@ -140,9 +141,9 @@ serve(async (req) => {
 
     const textItems: SmartItem[] = (msgs ?? []).map(m => ({
       id: m.id,
-      kind: "text",
-      ts: m.created_at,
-      priority: 0,        // base recency; will score below
+      kind: "message",
+      created_at: m.created_at,
+      score: 0,        // base recency; will score below
       unread: watermark ? (m.created_at > watermark && m.sender_id !== viewer) : true,
       body: m.body ?? ""
     }));
@@ -150,8 +151,8 @@ serve(async (req) => {
     const momentItems: SmartItem[] = (moments ?? []).map(a => ({
       id: a.id,
       kind: "moment",
-      ts: a.created_at ?? new Date().toISOString(),
-      priority: 0,
+      created_at: a.created_at ?? new Date().toISOString(),
+      score: 0,
       unread: watermark ? ((a.created_at ?? "") > watermark) : true,
       title: "Moment"
       // media: [] // integrate thumbs when you link assets
@@ -160,21 +161,29 @@ serve(async (req) => {
     const planItems: SmartItem[] = (plans ?? []).map(p => ({
       id: p.id,
       kind: "plan",
-      ts: (p.locked_at ?? p.created_at ?? p.planned_at ?? new Date().toISOString()),
-      priority: 0,
+      created_at: (p.locked_at ?? p.created_at ?? p.planned_at ?? new Date().toISOString()),
+      score: 0,
       unread: watermark ? (((p.locked_at ?? p.created_at ?? p.planned_at) ?? "") > watermark) : true,
       plan: { title: p.title, at: (p.planned_at ?? ""), status: (p.status ?? "building") as any }
     }));
 
-    const cardItems: SmartItem[] = (wings ?? []).map(c => ({
-      id: c.id,
-      kind: c.kind as any,
-      ts: c.created_at,
-      priority: 0, // scored below
-      unread: watermark ? c.created_at > watermark : true,
-      title: c.payload?.title || "Wings Suggestion",
-      meta: { card_kind: c.kind, payload: c.payload, confidence: c.confidence }
-    }));
+    const cardItems: SmartItem[] = (wings ?? []).map(c => {
+      // Map wings kinds to consistent naming
+      let mappedKind: any = c.kind;
+      if (c.kind === 'poll') mappedKind = 'wings_poll';
+      if (c.kind === 'time_picker') mappedKind = 'wings_time';  
+      if (c.kind === 'meet_halfway') mappedKind = 'wings_meet';
+      
+      return {
+        id: c.id,
+        kind: mappedKind,
+        created_at: c.created_at,
+        score: 0, // scored below
+        unread: watermark ? c.created_at > watermark : true,
+        title: c.payload?.title || "Wings Suggestion",
+        meta: { card_kind: c.kind, payload: c.payload, confidence: c.confidence }
+      };
+    });
 
     // Create rally items
     const rallyItems: SmartItem[] = (rallies ?? []).map(rally => {
@@ -184,8 +193,8 @@ serve(async (req) => {
       return {
         id: rally.id,
         kind: "rally" as any,
-        ts: rally.created_at,
-        priority: 0, // Will be calculated below
+        created_at: rally.created_at,
+        score: 0, // Will be calculated below
         unread: watermark ? (rally.created_at > watermark) : true,
         meta: {
           creator_id: rally.creator_id,
@@ -212,10 +221,10 @@ serve(async (req) => {
     };
 
     items = items.map(i => {
-      let score = 0.0 + 0.6 * decay(i.ts);
+      let score = 0.0 + 0.6 * decay(i.created_at);
 
-      if (i.kind === "text" && i.id && mentioned.has(i.id)) score += 0.2;
-      if (i.kind === "moment") score += 0.15 * decay(i.ts); // recent photo
+      if (i.kind === "message" && i.id && mentioned.has(i.id)) score += 0.2;
+      if (i.kind === "moment") score += 0.15 * decay(i.created_at); // recent photo
       if (i.kind === "plan" && i.plan?.at) {
         const minutesTo = (new Date(i.plan.at).getTime() - now)/60000;
         if (minutesTo >= 0 && minutesTo <= 180) score += 0.25; // upcoming in 3h
@@ -223,10 +232,10 @@ serve(async (req) => {
       }
       
       // Wings Cards scoring
-      if (i.meta?.card_kind === "poll") score += 0.18 + 0.2 * (i.meta.confidence ?? 0);
-      if (i.meta?.card_kind === "time_picker") score += 0.15;
-      if (i.meta?.card_kind === "meet_halfway") score += 0.25; // highly actionable
-      if (i.meta?.card_kind === "venue_suggestion") score += 0.20;
+      if (i.kind === "wings_poll") score += 0.18 + 0.2 * (i.meta?.confidence ?? 0);
+      if (i.kind === "wings_time") score += 0.15;
+      if (i.kind === "wings_meet") score += 0.25; // highly actionable
+      if (i.kind === "venue_suggestion") score += 0.20;
       
       // Rally scoring
       if (i.kind === "rally") {
@@ -238,24 +247,25 @@ serve(async (req) => {
         }
         
         // Recent rallies get slight boost
-        const ageHours = (now - new Date(i.ts).getTime()) / (1000 * 60 * 60);
+        const ageHours = (now - new Date(i.created_at).getTime()) / (1000 * 60 * 60);
         if (ageHours <= 2) {
           score += 0.15;
         }
       }
       
-      return { ...i, priority: Math.min(1, Math.max(0, score)) };
+      return { ...i, score: Math.min(1, Math.max(0, score)) };
     });
 
     // Filter
-    const isUnread = (i: SmartItem) => watermark ? i.ts > watermark : i.unread;
+    const isUnread = (i: SmartItem) => watermark ? i.created_at > watermark : i.unread;
     if (filter === "unread") items = items.filter(isUnread);
     if (filter === "rally")  items = items.filter(i => i.kind === "rally");
     if (filter === "photos") items = items.filter(i => i.kind === "moment");
     if (filter === "plans")  items = items.filter(i => i.kind === "plan");
+    if (filter === "wings")  items = items.filter(i => ["wings_poll", "wings_time", "wings_meet", "venue_suggestion"].includes(i.kind));
 
-    // Sort: priority desc, then ts desc
-    items.sort((a,b) => (b.priority - a.priority) || b.ts.localeCompare(a.ts));
+    // Sort: score desc, then created_at desc
+    items.sort((a,b) => (b.score - a.score) || b.created_at.localeCompare(a.created_at));
 
     const unread_count = [...textItems, ...momentItems, ...planItems].filter(isUnread).length;
 
