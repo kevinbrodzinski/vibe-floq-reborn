@@ -32,7 +32,7 @@ import {
 
 function Pill({ children, glow = false }: { children: React.ReactNode; glow?: boolean }) {
   return (
-    <span className={glow ? "chip-glow" : "px-2.5 py-1 rounded-full bg-white/10 text-[11px] text-white/80 border border-white/10"}>
+    <span className={glow ? "chip-glow" : "px-2 py-0.5 rounded-full bg-white/10 text-[10px] text-white/80 border border-white/10"}>
       {children}
     </span>
   );
@@ -268,17 +268,17 @@ export default function FloqHQTabbed() {
       <div className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-zinc-950/70">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 avatar-glow bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg grid place-items-center"><Sparkles className="h-5 w-5" /></div>
+            <div className="h-9 w-9 avatar-glow rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 grid place-items-center"><Sparkles className="h-5 w-5" /></div>
             <div>
               <div className="text-sm font-semibold flex items-center gap-2">
                 Chaos<span className="sr-only">Private Floq</span>
               </div>
               <div className="text-[11px] text-white/60">"Spontaneous convergence specialists since 2022"</div>
               <div className="text-[11px] text-white/60">8 members • Social-Hype</div>
-              <div className="flex items-center gap-2 mt-1">
-                <Pill glow><Trophy className="inline h-3.5 w-3.5 mr-1" />Thursday Legends</Pill>
-                <Pill glow><Flame className="inline h-3.5 w-3.5 mr-1" />5-Week Streak</Pill>
-                <Pill glow><MapPin className="inline h-3.5 w-3.5 mr-1" />Gran Regulars</Pill>
+              <div className="flex flex-wrap gap-1.5 max-w-[280px] mt-1">
+                <Pill glow><Trophy className="inline h-3 w-3 mr-1" />Thursday Legends</Pill>
+                <Pill glow><Flame className="inline h-3 w-3 mr-1" />5-Week Streak</Pill>
+                <Pill glow><MapPin className="inline h-3 w-3 mr-1" />Gran Regulars</Pill>
               </div>
             </div>
           </div>
