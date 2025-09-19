@@ -23,7 +23,7 @@ export default function Btn({
         type="button"
         aria-pressed={active ?? undefined}
         aria-label={ariaLabel}
-        className={`${base} btn-glow ${className}`}
+        className={`${base} ring-neon ${className}`}
         {...props}
       >
         {children}
