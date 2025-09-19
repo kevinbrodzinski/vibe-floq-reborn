@@ -195,7 +195,7 @@ export default function FloqHQTabbed() {
       <div className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-zinc-950/70">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 avatar-glow rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 grid place-items-center"><Sparkles className="h-5 w-5" /></div>
+            <div className="h-9 w-9 avatar-glow rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg grid place-items-center"><Sparkles className="h-5 w-5" /></div>
             <div>
               <div className="text-sm font-semibold flex items-center gap-2">
                 Chaos<span className="sr-only">Private Floq</span>

@@ -21,7 +21,7 @@ type Props = {
   rallyLoading?: boolean;
   toXY?: (p: { lat: number; lng: number }) => { x: number; y: number };
   onMeetHalfway?: () => void;
-  onRallyChoice?: (choice: "join" | "maybe" | "decline") => void;
+  onRallyChoice?: (choice: "join" | "maybe" | "declined") => void;
   panelAnim?: any;
 };
 
@@ -48,7 +48,7 @@ export default function MapTab({ onMeetHalfway, onRallyChoice, reduce, panelAnim
           <div className="mt-2 flex gap-2">
             <Btn glow onClick={() => onRallyChoice?.("join")}>Join</Btn>
             <Btn onClick={() => onRallyChoice?.("maybe")}>Maybe</Btn>
-            <Btn onClick={() => onRallyChoice?.("decline")}>Can't</Btn>
+            <Btn onClick={() => onRallyChoice?.("declined")}>Can't</Btn>
           </div>
         </div>
 
