@@ -31,5 +31,5 @@ export default function Btn({
     ? `ring-neon ${neon === "raspberry" ? "ring-neon-raspberry" : neon === "gold" ? "ring-neon-gold" : "ring-neon-cyan"}`
     : "";
   
-  return <button className={`neon-surface ${base} ${sizeCls} ${skin} ${activeCls} ${neonCls} ${className}`} {...rest} />;
+  return <button className={`neon-surface ${base} ${sizeCls} ${skin} ${activeCls} ${className}`} {...rest} />;
 }

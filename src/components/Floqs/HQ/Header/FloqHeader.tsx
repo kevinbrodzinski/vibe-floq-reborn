@@ -25,9 +25,15 @@ export function FloqHeader({
   });
 
   // Build badges dynamically based on actual data
-  const headerBadges = [
+  const memberBadges = [
     { id: "members", label: `${memberCount} members`, tone: "cyan" as const },
     { id: "energy", label: frame?.joint_energy && frame.joint_energy >= 0.7 ? "High Energy" : "Steady", tone: frame?.joint_energy && frame.joint_energy >= 0.7 ? "raspberry" as const : "gold" as const },
+  ];
+  
+  const awardBadges = [
+    { id: "awards-1", label: "Thursday Legends", tone: "cyan" as const },
+    { id: "awards-2", label: "5-Week Streak", tone: "cyan" as const },
+    { id: "awards-3", label: "Gran Regulars", tone: "cyan" as const }
   ];
 
   const avatarBg = `radial-gradient(45% 45% at 50% 40%, ${vibe.glowA}50, transparent 60%)`;
@@ -76,7 +82,8 @@ export function FloqHeader({
         {description && (
           <div className="text-white/75 text-[11px] mb-2 truncate">{description}</div>
         )}
-        <FloqBadges items={headerBadges} />
+        <FloqBadges items={memberBadges} className="mb-1" />
+        <FloqBadges items={awardBadges} uniformColor="cyan" />
       </div>
 
       {/* Right: badges/actions */}

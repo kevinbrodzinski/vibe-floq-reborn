@@ -362,42 +362,43 @@ button:disabled.btn-primary-glass {
   filter: saturate(.9);
 }
 
-/* === Neon badge system (uniform halo around border) === */
+/* === Uniform Neon via drop-shadow (even ring all around) ================== */
+/* Wrapper class: place it on a parent element of the pill/button/card      */
+/* This avoids clipping and gives a perfect outline halo around the border. */
+.neon-wrap { isolation: isolate; }       /* keep the glow separate */
 
-/* Size */
-.badge-xs {
-  padding: 4px 10px;           /* tighter */
-  font-size: 12px;
-  line-height: 1;
-  border-radius: 12px;          /* smaller radius looks tighter */
+/* Palettes (reuse your previous custom props or redefine here) */
+.neon-cyan      { --neon-a: hsla(196,92%,64%, .45); --neon-b: hsla(259,92%,64%, .28); }
+.neon-raspberry { --neon-a: hsla(330,95%,64%, .50); --neon-b: hsla(280,90%,64%, .26); }
+.neon-gold      { --neon-a: hsla( 44,96%,62%, .52); --neon-b: hsla( 18,92%,60%, .24); }
+
+/* Even glow: small inner + soft outer — tweak radii to taste */
+.neon-ring {
+  /* two shadows layered; purely outline-based, no center hotspot */
+  filter:
+    drop-shadow(0 0 6px  var(--neon-a))
+    drop-shadow(0 0 14px var(--neon-b));
 }
 
-/* Base skin (glass) */
-.badge {
+/* Compact pill/button skin (glass) */
+.badge, .btn-neon {
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.14);
   color: #fff;
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
 }
 
-/* Uniform neon ring via box-shadows (no center bias) */
-.badge-neon {
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.10),              /* crisp edge */
-    0 0 10px var(--neon-a),                       /* inner halo */
-    0 0 20px var(--neon-b),                       /* outer halo */
-    0 0 40px hsla(var(--neon-b-hsl), 0.7);       /* falloff - compatible */
+.badge-xs { padding: 4px 10px; font-size: 12px; line-height: 1; border-radius: 12px; }
+
+/* Primary glass for glowing buttons */
+.btn-primary-glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
 }
+button:disabled.btn-primary-glass { opacity: .55; filter: saturate(.9); }
 
-/* Palettes */
-.badge-cyan      { --neon-a: hsla(196,92%,64%,.45); --neon-b: hsla(259,92%,64%,.32); --neon-b-hsl: 259,92%,64%; }
-.badge-raspberry { --neon-a: hsla(330,95%,64%,.48); --neon-b: hsla(280,90%,64%,.30); --neon-b-hsl: 280,90%,64%; }
-.badge-gold      { --neon-a: hsla(44,96%,62%, .50); --neon-b: hsla(18,92%,60%, .28); --neon-b-hsl: 18,92%,60%; }
-
-/* Hover lift (subtle) */
-.badge-neon:hover { filter: saturate(1.06); }
-
-/* Containers should not clip the halo */
+/* Container: ensure the glow never gets clipped */
 .neon-surface { overflow: visible; isolation: isolate; }
+
+/* (Optional) subtle clean-up: keep background gradient from tinting the halo */
+.bg-neutral-clip { background-clip: padding-box; }

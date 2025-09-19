@@ -9,18 +9,22 @@ function uniqByLabel(arr: Badge[]) {
 }
 
 export function FloqBadges({
-  items, className = ""
-}: { items: Badge[]; className?: string }) {
+  items, className = "", uniformColor
+}: { items: Badge[]; className?: string; uniformColor?: "cyan" | "raspberry" | "gold" }) {
   const list = uniqByLabel(items).filter(b => b.label?.trim().length);
 
   return (
     <div className={`neon-surface flex flex-wrap gap-2 ${className}`}>
-      {list.map(b => (
-        <span key={b.id}
-              className={`badge badge-xs badge-neon ${toneClass(b.tone)}`}>
-          {b.label}
-        </span>
-      ))}
+      {list.map(b => {
+        const tone = uniformColor || b.tone;
+        return (
+          <div key={b.id} className={`neon-wrap neon-${tone} neon-ring`}>
+            <span className="badge badge-xs bg-neutral-clip">
+              {b.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
