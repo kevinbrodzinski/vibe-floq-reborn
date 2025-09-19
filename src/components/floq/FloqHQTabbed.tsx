@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { FloqRallyModal } from "@/components/rally/FloqRallyModal";
 import { useHQProximity } from "@/hooks/useHQProximity";
 import { useHQAvailability } from "@/hooks/useHQAvailability";
@@ -146,6 +147,8 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
   const reduce = useReducedMotion();
   const queryClient = useQueryClient();
   const [active, setActive] = useState<TabKey>("map");
+  const [sending, setSending] = useState(false);
+  const [rallyLoading, setRallyLoading] = useState(false);
   
   // Rally modal state
   const [rallyModal, setRallyModal] = useState<{ floqId: string; floqName: string } | null>(null);
@@ -163,28 +166,65 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
 
   // Action handlers that use floqId and invalidate proper cache keys
   const handleStartRally = async () => {
+    if (!actualFloqId) return;
     try {
-      // Placeholder for rally creation - would call edge function
-      console.log('Starting rally for floq:', actualFloqId);
-      setRallyModal({ floqId: actualFloqId, floqName: "Chaos" });
-      
-      // Invalidate relevant queries after action
+      setRallyLoading(true);
+      const { error } = await supabase.functions.invoke("rally-create", {
+        body: { floq_id: actualFloqId, note: "", ttl_min: 60 }
+      });
+      if (error) throw error;
+
+      // Refresh the bits that reflect rally state
       queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
       queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
       queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
       queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
       queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
-    } catch (error) {
-      console.error('Failed to start rally:', error);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRallyLoading(false);
     }
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async () => {
+    if (!actualFloqId) return;
+    const el = document.getElementById("hq-message") as HTMLInputElement | null;
+    const body = el?.value?.trim();
+    if (!body) return;
+
     try {
-      await post.mutateAsync({ body: message });
-      // Post mutation should handle its own cache invalidation
-    } catch (error) {
-      console.error('Failed to send message:', error);
+      setSending(true);
+      const { error } = await supabase.functions.invoke("hq-stream-post", {
+        body: { floq_id: actualFloqId, kind: "text", body }
+      });
+      if (error) throw error;
+
+      if (el) el.value = "";
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleRallyResponse = async (rallyId: string, status: "joined" | "maybe" | "declined") => {
+    if (!actualFloqId) return;
+    try {
+      const { error } = await supabase.functions.invoke("rally-join", {
+        body: { rallyId, status }
+      });
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -368,7 +408,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                     ariaLabel="Start Rally" 
                     onClick={handleStartRally}
                   >
-                    Start Rally
+                    {rallyLoading ? "Starting…" : "Start Rally"}
                   </Btn>
                 </div>
               </div>
@@ -415,37 +455,21 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               )}
 
               {/* Message Composer */}
-              <div className="p-3 flex items-center gap-2">
-                <input
-                  aria-label="Message"
-                  className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
-                  placeholder="Type message…"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                      handleSendMessage(e.currentTarget.value.trim());
-                      e.currentTarget.value = "";
-                    }
-                  }}
+              <div className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center gap-2">
+                <input 
+                  id="hq-message"
+                  className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" 
+                  placeholder="Type message…" 
                 />
                 <Btn ariaLabel="Mention">@</Btn>
-                <Btn ariaLabel="Attach photo">
-                  <Camera className="h-4 w-4" />
-                </Btn>
-                <Btn ariaLabel="Attach location">
-                  <MapPin className="h-4 w-4" />
-                </Btn>
+                <Btn ariaLabel="Attach photo"><Camera className="h-4 w-4" /></Btn>
+                <Btn ariaLabel="Attach location"><MapPin className="h-4 w-4" /></Btn>
                 <button
-                  type="button"
+                  onClick={handleSendMessage}
+                  disabled={sending}
                   className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
-                  onClick={() => {
-                    const el = document.querySelector<HTMLInputElement>('input[aria-label="Message"]');
-                    const v = el?.value.trim(); 
-                    if (!v) return;
-                    handleSendMessage(v); 
-                    if (el) el.value = "";
-                  }}
                 >
-                  Send
+                  {sending ? "Sending…" : "Send"}
                 </button>
               </div>
             </motion.div>
