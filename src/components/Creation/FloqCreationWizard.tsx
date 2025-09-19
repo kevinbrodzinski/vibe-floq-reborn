@@ -5,6 +5,7 @@ import Btn from "@/components/Floqs/HQ/ui/Btn";
 import { Input, Textarea } from "@/components/Floqs/HQ/ui/Input";
 import { useCreateFloq } from "@/hooks/useCreateFloq";
 import { type Vibe } from "@/components/Floqs/Create/vibeGlow";
+import { neonClassForVibe } from "@/lib/vibeTone";
 
 const VIBES = [
   { id: "social", title: "Social", desc: "Meeting new people and networking" },
@@ -113,17 +114,19 @@ export default function FloqCreationWizard({ onCreated }: Props) {
           <div className="grid sm:grid-cols-2 gap-3">
             {VIBES.map(v => {
               const active = vibe === v.id;
+              const tone   = neonClassForVibe(v.id as any);
               return (
-                <button
-                  key={v.id}
-                  onClick={() => setVibe(v.id as Vibe)}
-                  className="tile p-3 text-left transition"
-                  data-selected={active}
-                  data-vibe={v.id}
-                >
-                  <div className="font-semibold">{v.title}</div>
-                  <div className="text-white/70 text-sm">{v.desc}</div>
-                </button>
+                <div key={v.id} className={`neon-wrap ${active ? `${tone} neon-ring` : ""}`}>
+                  <button
+                    onClick={() => setVibe(v.id as Vibe)}
+                    className="tile p-3 text-left transition"
+                    data-selected={active}
+                    aria-pressed={active}
+                  >
+                    <div className="font-semibold">{v.title}</div>
+                    <div className="text-white/70 text-sm">{v.desc}</div>
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -138,15 +141,17 @@ export default function FloqCreationWizard({ onCreated }: Props) {
             {PRIVACY_OPTIONS.map(p => {
               const active = privacy === p.id;
               return (
-                <button
-                  key={p.id}
-                  onClick={() => setPrivacy(p.id as typeof privacy)}
-                  className="tile p-3 text-left transition"
-                  data-selected={active}
-                >
-                  <div className="font-semibold">{p.title}</div>
-                  <div className="text-white/70 text-sm">{p.desc}</div>
-                </button>
+                <div key={p.id} className={`neon-wrap ${active ? "neon-cyan neon-ring" : ""}`}>
+                  <button
+                    onClick={() => setPrivacy(p.id as typeof privacy)}
+                    className="tile p-3 text-left transition"
+                    data-selected={active}
+                    aria-pressed={active}
+                  >
+                    <div className="font-semibold">{p.title}</div>
+                    <div className="text-white/70 text-sm">{p.desc}</div>
+                  </button>
+                </div>
               );
             })}
           </div>
