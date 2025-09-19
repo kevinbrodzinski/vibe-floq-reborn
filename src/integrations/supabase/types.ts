@@ -24767,6 +24767,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      rallies_field_nearby: {
+        Args: { lat: number; lng: number; radius_m?: number }
+        Returns: {
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          note: string
+          scope: Database["public"]["Enums"]["rally_scope"]
+          status: string
+          venue_id: string
+        }[]
+      }
       rally_inbox_secure: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -27049,6 +27062,13 @@ export type Database = {
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           starts_at: string
           title: string
+        }[]
+      }
+      wings_poll_tally: {
+        Args: { p_event_id: string }
+        Returns: {
+          option_idx: number
+          votes: number
         }[]
       }
     }

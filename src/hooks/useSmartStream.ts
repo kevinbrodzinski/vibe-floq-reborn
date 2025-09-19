@@ -12,9 +12,7 @@ export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: 
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.functions.invoke<{ items: SmartItem[]; unread_count: number }>(
         "smart-stream-rank",
-        { 
-          body: { floq_id: floqId, filter, last_seen_ts: lastSeenTs, mode }
-        }
+        { body: { floq_id: floqId, filter, last_seen_ts: lastSeenTs, mode } }
       );
       
       if (error) {
@@ -33,9 +31,7 @@ export function useMarkStreamSeen(floqId: string, setLastSeenTs: (ts: string) =>
     mutationFn: async ({ signal }: { signal?: AbortSignal } = {}) => {
       const { data, error } = await supabase.functions.invoke<{ ok: boolean; last_seen_ts: string }>(
         "smart-stream-read",
-        { 
-          body: { floq_id: floqId }
-        }
+        { body: { floq_id: floqId } }
       );
       
       if (error) {

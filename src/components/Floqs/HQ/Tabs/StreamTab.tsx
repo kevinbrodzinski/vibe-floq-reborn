@@ -6,6 +6,7 @@ import { useSmartStream, useMarkStreamSeen, useStreamRealtime } from "@/hooks/us
 import { SmartFilter, SmartItem } from "@/types/stream";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { WingsPollCard } from "../Wings/WingsPollCard";
 
 type Props = {
   reduce: boolean;
@@ -115,7 +116,7 @@ export default function StreamTab({ reduce, panelAnim, floqId, onStartRally, onS
           {!isLoading && items.length === 0 && <div className="text-white/70 text-sm">Nothing new.</div>}
 
           {items.map((item: SmartItem) => (
-            <SmartItemRow key={item.id} item={item} onRallyResponse={onRallyResponse} />
+            <SmartItemRow key={item.id} item={item} floqId={floqId} onRallyResponse={onRallyResponse} />
           ))}
         </div>
 
@@ -138,23 +139,32 @@ export default function StreamTab({ reduce, panelAnim, floqId, onStartRally, onS
 /* Renders each kind using the existing card styles */
 function SmartItemRow({ 
   item, 
+  floqId,
   onRallyResponse 
 }: { 
   item: SmartItem;
+  floqId?: string;
   onRallyResponse?: (id: string, s: "joined" | "maybe" | "declined") => void;
 }) {
   // Wings Cards
   if (item.kind === "wings_poll") {
-    return <PollCard item={item} />;
+    return (
+      <WingsPollCard
+        floqId={floqId || ""}
+        eventId={item.id}
+        title={item.title}
+        payload={item.meta?.payload}
+        reason={item.meta?.reason || "Wings detected poll intent"}
+      />
+    );
   }
-  if (item.kind === "wings_time") {
-    return <TimePickerCard item={item} />;
-  }
-  if (item.kind === "wings_meet") {
-    return <MeetHalfwayCard item={item} />;
-  }
-  if (item.kind === "venue_suggestion") {
-    return <VenueSuggestionCard item={item} />;
+  if (item.kind === "wings_time" || item.kind === "wings_meet" || item.kind === "venue_suggestion") {
+    return (
+      <div className="glass-subtle p-3 rounded-xl border border-white/10">
+        <div className="text-white/85">{item.title ?? "Wings"}</div>
+        <div className="text-white/60 text-sm mt-1">Card coming soon</div>
+      </div>
+    );
   }
   
   // Rally content
@@ -273,174 +283,4 @@ function ComposerInput({ onSend, sending }: { onSend?: (text: string) => void; s
   );
 }
 
-/* AI Card Components */
-function PollCard({ item }: { item: SmartItem }) {
-  const qc = useQueryClient();
-  const { title, options, expires_at } = item.meta?.payload || {};
-  const [voting, setVoting] = useState(false);
-
-  const vote = async (idx: number) => {
-    if (voting) return;
-    setVoting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      
-      await supabase.from("floq_wings_votes").upsert({ 
-        event_id: item.id, 
-        profile_id: user.id,
-        option_idx: idx 
-      });
-      qc.invalidateQueries({ queryKey: ["smart-stream"] });
-    } catch (error) {
-      console.error("Vote failed:", error);
-    } finally {
-      setVoting(false);
-    }
-  };
-
-  return (
-    <div className="glass-subtle p-3 rounded-xl border border-white/10">
-      <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Wings</span>
-        {title || "Quick poll"}
-      </div>
-      {item.meta?.confidence && (
-        <div className="text-xs text-white/50 mt-1">
-          AI detected: {Math.round(item.meta.confidence * 100)}% confidence
-        </div>
-      )}
-      <div className="mt-3 grid gap-2">
-        {(options || ["Yes", "No"]).map((opt: string, i: number) => (
-          <Btn 
-            key={i} 
-            size="xs"
-            type="button"
-            className="w-full text-left justify-start" 
-            onClick={() => vote(i)} 
-            disabled={voting}
-          >
-            {opt}
-          </Btn>
-        ))}
-      </div>
-      {expires_at && (
-        <div className="text-[11px] text-white/50 mt-2">
-          Expires {new Date(expires_at).toLocaleTimeString()}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TimePickerCard({ item }: { item: SmartItem }) {
-  const qc = useQueryClient();
-  const { title, slots, tz } = item.meta?.payload || {};
-  const [voting, setVoting] = useState(false);
-
-  const pickTime = async (timeSlot: string) => {
-    if (voting) return;
-    setVoting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      
-      await supabase.from("floq_wings_votes").upsert({ 
-        event_id: item.id, 
-        profile_id: user.id,
-        option_idx: (slots || []).indexOf(timeSlot)
-      });
-      qc.invalidateQueries({ queryKey: ["smart-stream"] });
-    } catch (error) {
-      console.error("Time pick failed:", error);
-    } finally {
-      setVoting(false);
-    }
-  };
-
-  return (
-    <div className="glass-subtle p-3 rounded-xl border border-white/10">
-      <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Wings</span>
-        {title || "When works?"}
-      </div>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {(slots || ["7:00", "7:30", "8:00"]).map((slot: string) => (
-          <Btn 
-            key={slot} 
-            size="xs"
-            type="button"
-            className="text-center" 
-            onClick={() => pickTime(slot)} 
-            disabled={voting}
-          >
-            {slot}
-          </Btn>
-        ))}
-      </div>
-      {tz && (
-        <div className="text-[11px] text-white/50 mt-2">
-          Times in {tz}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MeetHalfwayCard({ item }: { item: SmartItem }) {
-  const { suggested_venues, window } = item.meta?.payload || {};
-
-  return (
-    <div className="glass-subtle p-3 rounded-xl border border-white/10">
-      <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Wings</span>
-        Meet halfway
-      </div>
-      <div className="text-white/70 text-sm mt-1">
-        Suggested meeting spots within {window || "1h"}
-      </div>
-      <div className="mt-3 space-y-2">
-        {(suggested_venues || []).slice(0, 3).map((venue: any, i: number) => (
-          <Btn 
-            key={i} 
-            size="xs"
-            type="button"
-            className="w-full text-left justify-start" 
-            variant="primary"
-            glow
-          >
-            Rally at {venue.name}
-          </Btn>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function VenueSuggestionCard({ item }: { item: SmartItem }) {
-  const { venues, context } = item.meta?.payload || {};
-
-  return (
-    <div className="glass-subtle p-3 rounded-xl border border-white/10">
-      <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">Wings</span>
-        {item.title ?? "Venue suggestions"}
-      </div>
-      {context && (
-        <div className="text-white/70 text-sm mt-1">{context}</div>
-      )}
-      <div className="mt-3 space-y-2">
-        {(venues || []).slice(0, 2).map((venue: any, i: number) => (
-          <Btn 
-            key={i} 
-            size="xs"
-            type="button"
-            className="w-full text-left justify-start"
-          >
-            {venue.name}
-          </Btn>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* AI Card Components - Removed in favor of Wings components */
