@@ -6,7 +6,8 @@ import { useMyFloqs } from "@/hooks/useMyFloqs";
 import { useFloqsDiscovery } from "@/hooks/useFloqsDiscovery";
 import { Link } from "react-router-dom";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
-import UnifiedFloqCard from "@/components/Floqs/UnifiedFloqCard";
+import LivingFloqCard from "@/components/Floqs/LivingFloqCard";
+import { enhanceFloqWithMockData } from "@/utils/floqTypeInference";
 
 const vibeFilters = [
   { id: "all", label: "All", icon: Sparkles },
@@ -26,6 +27,16 @@ export default function FloqsDiscoverPage() {
 
   const handleJoinFloq = (floqId: string) => {
     join({ floqId });
+  };
+
+  const handlePrimaryAction = (floqId: string) => {
+    // Handle primary actions based on floq type (Rally, RSVP, Updates, Join)
+    console.log('Primary action for floq:', floqId);
+  };
+
+  const handleSecondaryAction = (floqId: string) => {
+    // Handle secondary actions (Chat, Preview, Navigate, Remind)
+    console.log('Secondary action for floq:', floqId);
   };
 
   const filteredDiscover = discover?.filter((floq: any) => {
@@ -123,7 +134,13 @@ export default function FloqsDiscoverPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mine.map((floq: any) => (
-                <UnifiedFloqCard key={floq.id} item={floq} />
+                <LivingFloqCard 
+                  key={floq.id} 
+                  data={enhanceFloqWithMockData(floq)}
+                  onOpen={(id) => window.location.href = `/floqs/${id}/hq`}
+                  onPrimary={handlePrimaryAction}
+                  onSecondary={handleSecondaryAction}
+                />
               ))}
             </div>
           )}
@@ -171,9 +188,14 @@ export default function FloqsDiscoverPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDiscover.map((floq: any) => (
-                <div key={floq.id} className="relative">
-                  <UnifiedFloqCard item={floq} showJoinButton />
-                </div>
+                <LivingFloqCard 
+                  key={floq.id} 
+                  data={enhanceFloqWithMockData(floq)}
+                  onOpen={(id) => window.location.href = `/floqs/${id}/hq`}
+                  onPrimary={handleJoinFloq}
+                  onSecondary={handleSecondaryAction}
+                  showJoinButton
+                />
               ))}
             </div>
           )}
