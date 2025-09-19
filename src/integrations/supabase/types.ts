@@ -23437,6 +23437,10 @@ export type Database = {
           lastvenue: string
         }[]
       }
+      get_current_profile_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -26834,6 +26838,16 @@ export type Database = {
               p_signals_data: Json
             }
         Returns: string
+      }
+      upsert_learned_preference: {
+        Args: {
+          p_conditions: Json
+          p_confidence: number
+          p_preference: Json
+          p_support: number
+          p_type: string
+        }
+        Returns: undefined
       }
       upsert_live_position: {
         Args: {
