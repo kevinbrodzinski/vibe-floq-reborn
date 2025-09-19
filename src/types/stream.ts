@@ -2,7 +2,7 @@ export type SmartFilter = 'all' | 'unread' | 'rally' | 'photos' | 'plans' | 'win
 
 export type SmartItem = {
   id: string;
-  kind: 'rally' | 'moment' | 'plan' | 'message' | 'wings_poll' | 'wings_time' | 'wings_meet' | 'venue_suggestion';
+  kind: 'rally' | 'moment' | 'plan' | 'text' | 'wings_poll' | 'wings_time' | 'wings_meet' | 'venue_suggestion';
   ts: string;
   priority: number;
   unread: boolean;

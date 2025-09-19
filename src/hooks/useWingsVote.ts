@@ -19,10 +19,10 @@ export function useWingsVote(floqId: string) {
       if (error) throw error;
       return { eventId, optionIdx };
     },
-    onSuccess: () => {
+    onSuccess: ({ eventId }) => {
       // Refresh stream and optional tally
       qc.invalidateQueries({ queryKey: ["smart-stream", floqId], exact: false });
-      qc.invalidateQueries({ queryKey: ["wings-tally"], exact: false });
+      qc.invalidateQueries({ queryKey: ["wings-tally", eventId] });
     }
   });
 }

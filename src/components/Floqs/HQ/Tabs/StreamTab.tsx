@@ -240,9 +240,10 @@ function SmartItemRow({
       </div>
     );
   }
+  // Handle text messages and other types
   return (
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
-      <div className="text-white/85 text-sm">{item.body ?? "Message"}</div>
+      <div className="text-white/85 text-sm">{item.body ?? item.title ?? "Message"}</div>
     </div>
   );
 }

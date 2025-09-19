@@ -11,7 +11,7 @@ const CORS = {
 type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans"|"wings";
 type SmartItem = {
   id: string;
-  kind: "rally"|"moment"|"plan"|"message"|"wings_poll"|"wings_time"|"wings_meet"|"venue_suggestion"|"reminder"|"recap";
+  kind: "text"|"moment"|"plan"|"rally"|"wings_poll"|"wings_time"|"wings_meet"|"venue_suggestion"|"reminder"|"recap";
   ts: string;
   priority: number;
   unread: boolean;
@@ -152,7 +152,7 @@ serve(async (req) => {
 
     const textItems: SmartItem[] = (msgs ?? []).map(m => ({
       id: m.id,
-      kind: "message",
+      kind: "text",
       ts: m.created_at,
       priority: 0,        // base recency; will score below
       unread: watermark ? (m.created_at > watermark && m.sender_id !== viewer) : true,
@@ -196,6 +196,22 @@ serve(async (req) => {
       };
     });
 
+    // Get rally counts
+    const rallyIds = (rallies ?? []).map(r => r.id);
+    let countsMap = new Map<string, { going:number; maybe:number; noreply:number }>();
+    if (rallyIds.length) {
+      const { data: inv } = await supabase
+        .from("rally_invites")
+        .select("rally_id, status")
+        .in("rally_id", rallyIds);
+      for (const id of rallyIds) countsMap.set(id, { going:0, maybe:0, noreply:0 });
+      (inv ?? []).forEach(row => {
+        const c = countsMap.get(row.rally_id)!;
+        if (row.status === "joined") c.going++;
+        else if (row.status === "pending") c.noreply++;
+      });
+    }
+
     // Create rally items
     const rallyItems: SmartItem[] = (rallies ?? []).map(rally => {
       const timeUntilExpiry = new Date(rally.expires_at).getTime() - Date.now();
@@ -210,7 +226,7 @@ serve(async (req) => {
         rally: {
           venue: rally.venue_id ? `#${rally.venue_id}` : "Meet-halfway",
           at: rally.expires_at,
-          counts: { going: 0, maybe: 0, noreply: 0 }, // TODO: fetch actual counts
+          counts: countsMap.get(rally.id) ?? { going: 0, maybe: 0, noreply: 0 },
           scope: rally.scope
         },
         meta: {
@@ -233,7 +249,7 @@ serve(async (req) => {
     items = items.map(i => {
       let score = 0.6 * Math.pow(0.5, Math.max(0, (now - new Date(i.ts).getTime()) / 60000) / 360);
 
-      if (i.kind === "message" && i.id && mentioned.has(i.id)) score += 0.20;
+      if (i.kind === "text" && i.id && mentioned.has(i.id)) score += 0.20;
       if (i.kind === "moment") score += 0.15;
       if (i.kind === "plan" && i.plan?.at) {
         const minTo = (new Date(i.plan.at).getTime() - now) / 60000;
