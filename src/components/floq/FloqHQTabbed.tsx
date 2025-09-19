@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import SmartMap from "@/components/Common/SmartMap";
+import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
 import {
   MapPin,
   MessageSquare,
@@ -116,19 +117,48 @@ export default function FloqHQTabbed() {
   const [sending, setSending] = useState(false);
   const [rallyLoading, setRallyLoading] = useState(false);
 
-  // meet-halfway bottom sheet
-  type HalfVenue = { id: string; name: string; lat: number; lng: number; distance?: string; eta?: string; category?: string };
-  type HalfMember = { id: string; name: string; lat: number; lng: number };
-  type HalfData = { center: { lat: number; lng: number }; venues: HalfVenue[]; members: HalfMember[] };
-
+  // ── Meet-Halfway bottom sheet state ────────────────────────────
   const [halfOpen, setHalfOpen] = useState(false);
-  const [halfLoading, setHalfLoading] = useState(false);
-  const [halfData, setHalfData] = useState<HalfData | null>(null);
+  const [halfCats, setHalfCats] = useState<string[]>([]); // e.g., ["coffee","bar"]
   const [halfSel, setHalfSel] = useState<string | null>(null);
-  const [halfCats, setHalfCats] = useState<string[]>([]); // category filters (e.g., ["coffee","bar"])
+  
+  const { data: halfAPI, isLoading: halfLoading, refetch: refetchHalf } =
+    useHQMeetHalfway(actualFloqId, halfCats, { enabled: halfOpen });
+
+  useEffect(() => { 
+    if (halfOpen) refetchHalf(); 
+  }, [halfOpen, halfCats, refetchHalf]);
+
+  // Project lat/lng to 0..1 viewport for SVG
+  const allPts = useMemo(() => {
+    if (!halfAPI) return [];
+    const base = [halfAPI.centroid, ...halfAPI.members.map(m=>({lat:m.lat,lng:m.lng}))];
+    const cand = halfAPI.candidates.map(c=>({lat:c.lat,lng:c.lng}));
+    return [...base, ...cand];
+  }, [halfAPI]);
+
+  const toXY = useMemo(() => {
+    if (!allPts.length) return (p: {lat: number; lng: number}) => ({x: 0.5, y: 0.5});
+    const lats = allPts.map(p=>p.lat), lngs = allPts.map(p=>p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const dx = Math.max(1e-9, maxLng - minLng);
+    const dy = Math.max(1e-9, maxLat - minLat);
+    return (p: {lat: number; lng: number}) => ({
+      x: (p.lng - minLng) / dx,
+      y: 1 - (p.lat - minLat) / dy, // flip Y for screen coords
+    });
+  }, [allPts]);
 
   const toggleCat = (c: string) =>
     setHalfCats(prev => (prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]));
+
+  // Set initial selection when data loads
+  useEffect(() => {
+    if (halfAPI?.candidates?.length && !halfSel) {
+      setHalfSel(halfAPI.candidates[0].id);
+    }
+  }, [halfAPI, halfSel]);
 
   async function handleStartRally(note?: string) {
     if (!actualFloqId) return;
@@ -191,70 +221,38 @@ export default function FloqHQTabbed() {
   }
 
   async function openMeetHalfway() {
-    if (!actualFloqId) return;
     setHalfOpen(true);
-    setHalfLoading(true);
-    try {
-      // Your edge function should return:
-      // { center:{lat,lng}, members:[{id,name,lat,lng}], venues:[{id,name,lat,lng,distance,eta,category}] }
-      const { data, error } = await supabase.functions.invoke("hq-meet-halfway", {
-        body: { floq_id: actualFloqId, categories: halfCats } // supply filters
-      });
-      if (error) throw error;
-
-      const payload = data as HalfData;
-      setHalfData(payload);
-      setHalfSel(payload?.venues?.[0]?.id ?? null);
-    } catch (e) {
-      // graceful fallback — center + two venues so UX stays intact
-      console.warn("hq-meet-halfway fallback:", e);
-      const fallback: HalfData = {
-        center: { lat: 34.0002, lng: -118.4801 },
-        members: [
-          { id: "me", name: "You", lat: 34.0009, lng: -118.4815 },
-          { id: "s", name: "Sarah", lat: 34.0013, lng: -118.4772 }
-        ],
-        venues: [
-          { id: "a", name: "Candidate A", lat: 34.0002, lng: -118.4801, distance: "0.4mi", eta: "6 min", category: "coffee" },
-          { id: "b", name: "Candidate B", lat: 34.0010, lng: -118.4790, distance: "0.6mi", eta: "8 min", category: "bar" }
-        ]
-      };
-      setHalfData(fallback);
-      setHalfSel(fallback.venues[0].id);
-    } finally {
-      setHalfLoading(false);
-    }
   }
 
   async function rallyHere() {
-    if (!actualFloqId || !halfData || !halfSel) return;
-    const v = halfData.venues.find(x => x.id === halfSel);
-    if (!v) return;
+    if (!halfAPI || !halfSel) return;
+    const pick = halfAPI.candidates.find(x => x.id === halfSel);
+    if (!pick) return;
+    
     try {
-      setHalfLoading(true);
-      const { error } = await supabase.functions.invoke("rally-create", {
-        body: {
-          floq_id: actualFloqId,
-          center: { lat: v.lat, lng: v.lng },
-          venue_id: v.id,
-          note: `Meet-halfway at ${v.name}`,
-          ttl_min: 60
+      setRallyLoading(true);
+      await supabase.functions.invoke("rally-create", {
+        body: { 
+          floq_id: actualFloqId, 
+          center: { lat: pick.lat, lng: pick.lng }, 
+          venue_id: pick.id, 
+          note: `Meet-halfway at ${pick.name}`,
+          ttl_min: 60 
         }
       });
-      if (error) throw error;
-
-      // scoped refresh
+      
+      // Invalidate the same caches used by Start Rally
       queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
       queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
       queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
       queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
       queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
-
+      
       setHalfOpen(false);
     } catch (e) {
-      console.error(e);
+      console.error("Rally creation failed:", e);
     } finally {
-      setHalfLoading(false);
+      setRallyLoading(false);
     }
   }
 
@@ -311,7 +309,7 @@ export default function FloqHQTabbed() {
               <Section
                 title="Living Proximity Map"
                 icon={<MapPin className="h-4 w-4" />}
-                right={<Btn onClick={openMeetHalfway}>Meet-Halfway</Btn>}
+                right={<button className="px-3 py-1.5 rounded-xl border bg-white/5 border-white/10 hover:bg-white/10 text-[12px] neon-ring" onClick={openMeetHalfway}>Meet-Halfway</button>}
               >
                 <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">(Map preview)</div>
                 <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
@@ -364,50 +362,76 @@ export default function FloqHQTabbed() {
                     </div>
 
                     {/* map preview (in-app) */}
-                    <div className="mt-3 h-48 rounded-xl overflow-hidden border border-white/10">
-                      {halfData ? (
-                        <SmartMap placeholder="Meet-halfway map with markers and paths" />
-                      ) : (
-                        <div className="h-full grid place-items-center text-white/60 text-xs">
-                          {halfLoading ? "Computing midpoint…" : "(Map preview)"}
-                        </div>
-                      )}
+                    <div className="mt-3 h-48 rounded-xl overflow-hidden border border-white/10 p-2">
+                      <svg viewBox="0 0 100 100" className="h-full w-full">
+                        {/* soft grid */}
+                        <defs>
+                          <pattern id="g" width="10" height="10" patternUnits="userSpaceOnUse">
+                            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#ffffff10" strokeWidth="1" />
+                          </pattern>
+                        </defs>
+                        <rect x="0" y="0" width="100" height="100" fill="url(#g)" />
+                        
+                        {/* member dots */}
+                        {halfAPI?.members.map((m) => {
+                          const p = toXY({lat: m.lat, lng: m.lng});
+                          return <circle key={m.profile_id} cx={p.x * 100} cy={p.y * 100} r="3" fill="#f0f9ff" opacity="0.9" />;
+                        })}
+                        
+                        {/* centroid as green dot */}
+                        {halfAPI && (() => {
+                          const p = toXY(halfAPI.centroid);
+                          return <circle cx={p.x * 100} cy={p.y * 100} r="4" fill="#22c55e" />;
+                        })()}
+                        
+                        {/* polylines from members to selected candidate */}
+                        {halfAPI && halfSel && halfAPI.candidates.filter(c => c.id === halfSel).map(c => {
+                          const k = toXY({lat: c.lat, lng: c.lng});
+                          return (
+                            <g key={c.id}>
+                              {halfAPI.members.map(m => {
+                                const a = toXY({lat: m.lat, lng: m.lng});
+                                return <line key={m.profile_id} x1={a.x * 100} y1={a.y * 100} x2={k.x * 100} y2={k.y * 100} stroke="#60a5fa" strokeOpacity="0.8" strokeWidth="2" />;
+                              })}
+                              <circle cx={k.x * 100} cy={k.y * 100} r="4" fill="#3b82f6" />
+                            </g>
+                          );
+                        })}
+                      </svg>
                     </div>
 
                     {/* ranked venue list */}
                     <div className="mt-3 space-y-2">
-                      {halfData?.venues?.map(v => {
-                        const selected = halfSel === v.id;
+                      {halfLoading && <div className="text-[12px] text-white/70">Computing midpoint…</div>}
+                      {!halfLoading && halfAPI?.candidates.map(c => {
+                        const selected = halfSel === c.id;
                         return (
                           <button
-                            key={v.id}
-                            onClick={() => setHalfSel(v.id)}
+                            key={c.id}
+                            onClick={() => setHalfSel(c.id)}
                             className={`w-full text-left rounded-xl border p-3 text-[13px] transition ${
                               selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <div className="font-medium text-white/90">{v.name}</div>
-                              <div className="text-white/60 text-[12px]">{v.distance ?? ""}{v.eta ? ` • ${v.eta}` : ""}</div>
+                              <div className="font-medium text-white/90">{c.name}</div>
+                              <div className="text-white/60 text-[12px]">
+                                {(c.meters_from_centroid / 1000).toFixed(2)} km • {c.avg_eta_min} min
+                              </div>
                             </div>
-                            <div className="text-[11px] text-white/50 mt-0.5 capitalize">{v.category ?? ""}</div>
                           </button>
                         );
-                      }) || (halfLoading ? <div className="text-[12px] text-white/70">Loading options…</div> : null)}
+                      })}
                     </div>
 
                     {/* ETAs per member for the selected candidate */}
-                    {halfData && halfSel && (
+                    {halfAPI && halfSel && (
                       <div className="mt-3 text-[12px] text-white/80">
                         <div className="mb-1 font-medium text-white/90">Estimated time:</div>
                         <ul className="list-disc ml-5">
-                          {halfData.members.map(m => {
-                            const v = halfData.venues.find(x => x.id === halfSel)!;
-                            // naive straight-line "eta"; your edge function can return real ETAs per member if desired
-                            const km = Math.hypot(m.lat - v.lat, m.lng - v.lng) * 90; // rough scale
-                            const min = Math.max(1, Math.round((km * 1000) / 83));   // 5km/h ≈ 83m/min
-                            return <li key={m.id}>{m.name}: {min} min</li>;
-                          })}
+                          {halfAPI.candidates.find(c => c.id === halfSel)?.per_member.map(pm => (
+                            <li key={pm.profile_id}>Member: {pm.eta_min} min</li>
+                          ))}
                         </ul>
                       </div>
                     )}
