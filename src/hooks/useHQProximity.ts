@@ -1,10 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type MemberPoint = { profile_id: string; lat: number; lng: number; status?: "free"|"soon"|"busy"|"ghost" };
-export type Proximity = { centroid: { lat:number; lng:number }; members: MemberPoint[]; convergence?: number };
+export type MemberPoint = {
+  profile_id: string;
+  lat: number;
+  lng: number;
+  status?: "free" | "soon" | "busy" | "ghost";
+};
 
-export function useHQProximity(floqId: string, enabled=true) {
+export type Proximity = {
+  centroid: { lat: number; lng: number };
+  members: MemberPoint[];
+  convergence?: number; // 0..1 optional
+};
+
+export function useHQProximity(floqId: string, enabled = true) {
   return useQuery({
     queryKey: ["hq-proximity", floqId],
     enabled: Boolean(floqId) && enabled,
