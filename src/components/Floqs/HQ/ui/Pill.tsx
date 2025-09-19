@@ -1,22 +1,16 @@
 import React from "react";
 
 export default function Pill({
+  children,
   glow = true,
   className = "",
-  children,
 }: {
+  children: React.ReactNode;
   glow?: boolean;
   className?: string;
-  children: React.ReactNode;
 }) {
   return (
-    <span
-      className={[
-        "px-2.5 py-1 rounded-full bg-white/10 text-[11px] text-white/80 border border-white/10",
-        glow ? "chip-glow" : "",
-        className,
-      ].join(" ").trim()}
-    >
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] bg-white/6 border border-white/12 chip ${glow ? "chip-glow" : ""} ${className}`}>
       {children}
     </span>
   );

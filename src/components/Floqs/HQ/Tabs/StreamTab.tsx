@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
@@ -15,12 +15,13 @@ type Props = {
 };
 
 export default function StreamTab({ reduce, panelAnim, onStartRally, onSend, onRallyResponse, sending, rallyLoading }: Props) {
+  const [msg, setMsg] = useState("");
+
   const sendNow = () => {
-    const el = document.getElementById("hq-message") as HTMLInputElement | null;
-    const val = el?.value?.trim();
+    const val = msg.trim();
     if (!val) return;
     onSend?.(val);
-    if (el) el.value = "";
+    setMsg("");
   };
 
   return (
@@ -58,12 +59,17 @@ export default function StreamTab({ reduce, panelAnim, onStartRally, onSend, onR
         <div className="text-[12px] text-white/80">Confirmed by 5/8 • Added to calendar</div>
       </Section>
 
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center gap-2">
-        <input id="hq-message" className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Type message…" />
-        <Btn>@</Btn><Btn><Camera className="h-4 w-4" /></Btn><Btn><Navigation2 className="h-4 w-4" /></Btn>
-        <button onClick={sendNow} className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]">
-          {sending ? "Sending…" : "Send"}
-        </button>
+      <div className="rounded-xl border border-white/10 bg-white/5 p-2 flex items-center gap-2">
+        <span className="text-[12px] opacity-70">@</span>
+        <input
+          value={msg}
+          onChange={e => setMsg(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && sendNow()}
+          className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
+          placeholder="Write a message…"
+          aria-label="Message"
+        />
+        <Btn glow onClick={sendNow}>{sending ? "Sending…" : "Send"}</Btn>
       </div>
     </motion.div>
   );
