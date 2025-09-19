@@ -11,6 +11,10 @@ import MeetHalfwaySheet from "./MeetHalfwaySheet";
 import { track, Events } from "@/lib/analytics";
 import { openDirections } from "@/lib/nav/openDirections";
 import { supabase } from "@/integrations/supabase/client";
+import { coPresenceBus } from "@/lib/events/coPresenceBus";
+import { edgeLog } from "@/lib/edgeLog";
+import { rankTimeGate } from "@/core/privacy/RankTimeGate";
+import { useRecommendationCapture } from "@/hooks/useRecommendationCapture";
 
 const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
@@ -32,6 +36,7 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
   const [open, setOpen] = useState(false);
   const [cats, setCats] = useState<string[]>(["coffee", "bar", "food"]);
   const [selected, setSelected] = useState<string | null>(null);
+  const capture = useRecommendationCapture('balanced');
 
   // fetch when sheet is open (your existing API shape)
   const normalCats = cats.map((c) => (c === "restaurant" ? "food" : c));
@@ -46,6 +51,18 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
       setSelected(data.candidates[0].id);
     }
   }, [open, data, selected]);
+
+  // NEW: open the sheet when any launcher emits `halfway:open`
+  useEffect(() => {
+    const unsubscribe = coPresenceBus.on('halfway:open', (payload) => {
+      // If a floqId is provided, only open on the matching tab
+      if (payload?.floqId && floqId && payload.floqId !== floqId) return;
+      if (payload?.categories?.length) setCats(payload.categories);
+      edgeLog('halfway_open_from_bus', { floqId: floqId ?? null });
+      setOpen(true);
+    });
+    return unsubscribe;
+  }, [floqId]);
 
   const toggle = (c: string) =>
     setCats(prev => (prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]));
@@ -133,6 +150,19 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
           const v = data?.candidates.find(c => c.id===venueId);
           if (!v) return;
           try {
+            // Privacy gate (cohort = participants in proximity)
+            const cohort = prox?.members?.length ?? 1;
+            const gate = rankTimeGate({ 
+              envelopeId: 'balanced', 
+              featureTimestamps: [Date.now()], 
+              cohortSize: cohort, 
+              epsilonCost: 0.01 
+            });
+            if (!gate.ok) {
+              edgeLog('halfway_blocked_gate', { reason: (gate as any).reason, cohort });
+              return;
+            }
+
             // Post a rally card in-app (keeps users inside the app)
             await supabase.functions.invoke("hq-stream-post", {
               body: {
@@ -142,9 +172,28 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
                 meta: { venue: v, midpoint: data?.centroid, members: prox?.members ?? [] }
               }
             });
+
+            // Preference learning context + immediate flush
+            await capture.setPlanContext({
+              planId: floqId,
+              participantsCount: cohort,
+            });
+            await capture.flushNow();
+            edgeLog('halfway_confirm_send', { 
+              floqId, 
+              venueId, 
+              cohort, 
+              receiptId: gate.receiptId, 
+              degrade: gate.degrade 
+            });
             setOpen(false);
           } catch (e) {
             console.error("rally post failed", e);
+            edgeLog('halfway_confirm_error', { 
+              floqId, 
+              venueId, 
+              message: (e as any)?.message 
+            });
             // TODO: toast("Couldn't send rally. Try again.")
           }
         }}

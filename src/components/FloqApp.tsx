@@ -9,7 +9,7 @@ import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { AppHeader } from "@/components/layout/AppHeader";
+import AppHeader from "@/components/layout/AppHeader";
 // import { useNotifications } from "@/hooks/useNotifications"; // Removed: handled by EventNotificationsProvider
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
 import { useAmbientBackground } from "@/hooks/useAmbientBackground";
