@@ -150,6 +150,15 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
   const [sending, setSending] = useState(false);
   const [rallyLoading, setRallyLoading] = useState(false);
   
+  // Meet-halfway bottom sheet state
+  const [halfOpen, setHalfOpen] = useState(false);
+  const [halfLoading, setHalfLoading] = useState(false);
+  const [halfSel, setHalfSel] = useState<string | null>(null);
+  const [halfData, setHalfData] = useState<{
+    members: Array<{ name: string; x: number; y: number }>;
+    candidates: Array<{ id: string; name: string; x: number; y: number; distance: string; eta: string }>;
+  } | null>(null);
+  
   // Rally modal state
   const [rallyModal, setRallyModal] = useState<{ floqId: string; floqName: string } | null>(null);
   
@@ -163,6 +172,67 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
   
   // Real-time subscriptions with floqId
   useFloqStreamRealtime(actualFloqId);
+
+  // simple helpers in 0..1 SVG space
+  const avg = (a: number[]) => a.reduce((s, n) => s + n, 0) / Math.max(1, a.length);
+  const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  // pretend ETA from straight-line distance (0..1 → pixels → min)
+  function etaFor(d: number) {
+    // map unit distance to meters (fake), 1 unit ≈ 1200m; 5 km/h ≈ 83 m/min
+    const minutes = (d * 1200) / 83;
+    return `${Math.max(1, Math.round(minutes))} min`;
+  }
+
+  function openMeetHalfway() {
+    setHalfOpen(true);
+    setHalfLoading(true);
+
+    // normalize a few member points (0..1) — replace with live presence later
+    const members = [
+      { name: "You",   x: 0.20, y: 0.70 },
+      { name: "Sarah", x: 0.75, y: 0.30 },
+      { name: "Tom",   x: 0.35, y: 0.25 },
+    ];
+
+    // centroid
+    const c = { x: avg(members.map(m => m.x)), y: avg(members.map(m => m.y)) };
+
+    // create 3 candidate midpoint options (centroid + two nudges near "venues")
+    const candsRaw = [
+      { id: "mid", name: "Optimal midpoint", x: c.x, y: c.y },
+      { id: "v1",  name: VENUES[0]?.name ?? "Candidate A", x: Math.min(0.95, c.x + 0.08), y: Math.max(0.05, c.y - 0.04) },
+      { id: "v2",  name: VENUES[1]?.name ?? "Candidate B", x: Math.max(0.05, c.x - 0.06), y: Math.min(0.95, c.y + 0.07) },
+    ];
+
+    // compute group distance/eta summary to rank
+    const withMeta = candsRaw.map(k => {
+      const total = members.reduce((s, m) => s + dist(m, k), 0);
+      const avgD  = total / members.length;
+      return {
+        id: k.id,
+        name: k.name,
+        x: k.x, y: k.y,
+        distance: `${(avgD * 1.2).toFixed(2)} km`, // purely illustrative
+        eta: etaFor(avgD),
+      };
+    }).sort((a, b) => parseFloat(a.eta) - parseFloat(b.eta));
+
+    setHalfData({ members, candidates: withMeta });
+    setHalfSel(withMeta[0]?.id ?? null);
+    setHalfLoading(false);
+  }
+
+  // TODO: wire to rally-create edge function when ready
+  async function rallyHere() {
+    if (!halfData) return;
+    const pick = halfData.candidates.find(c => c.id === halfSel);
+    if (!pick) return;
+    // call your edge function rally-create here, pass pick.x/pick.y converted back to lat/lng
+    // await supabase.functions.invoke("rally-create", { body: { floq_id, center:{lat,lng}, venue_id, note, ttl_min:60 }})
+    // then close sheet and invalidate queries
+    setHalfOpen(false);
+  }
 
   // Action handlers that use floqId and invalidate proper cache keys
   const handleStartRally = async () => {
@@ -298,7 +368,11 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
               className="space-y-5"
             >
-              <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn className="neon-ring">Meet-Halfway</Btn>}>
+              <Section 
+                title="Living Proximity Map" 
+                icon={<MapPin className="h-4 w-4" />} 
+                right={<Btn className="neon-ring" onClick={openMeetHalfway}>Meet-Halfway</Btn>}
+              >
                 <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60 noise">
                   {proxLoading ? "Loading member locations..." : "(Map preview)"}
                 </div>
@@ -382,6 +456,111 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   </div>
                 </Section>
               </div>
+
+              {/* Meet-Halfway bottom sheet */}
+              {halfOpen && (
+                <div className="fixed inset-0 z-40">
+                  {/* backdrop */}
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setHalfOpen(false)} />
+                  {/* sheet */}
+                  <div className="absolute bottom-0 inset-x-0 rounded-t-2xl bg-zinc-900 border-t border-white/10 p-4 shadow-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[13px] font-semibold">Meet-Halfway</div>
+                      <button className="text-[12px] text-white/70 hover:text-white" onClick={() => setHalfOpen(false)}>Close</button>
+                    </div>
+
+                    {/* map preview as SVG (in-app) */}
+                    <div className="mt-3 h-44 rounded-xl bg-zinc-800 border border-white/10 p-2">
+                      <svg viewBox="0 0 100 100" className="h-full w-full">
+                        {/* grid */}
+                        <defs>
+                          <pattern id="g" width="10" height="10" patternUnits="userSpaceOnUse">
+                            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#ffffff10" strokeWidth="1"/>
+                          </pattern>
+                        </defs>
+                        <rect x="0" y="0" width="100" height="100" fill="url(#g)" />
+
+                        {/* candidate + paths */}
+                        {halfData && halfSel && (() => {
+                          const k = halfData.candidates.find(c => c.id === halfSel)!;
+                          return (
+                            <>
+                              {/* paths from members to candidate */}
+                              {halfData.members.map((m, i) => (
+                                <line
+                                  key={`line-${i}`}
+                                  x1={m.x * 100}
+                                  y1={(1 - m.y) * 100}
+                                  x2={k.x * 100}
+                                  y2={(1 - k.y) * 100}
+                                  stroke="#60a5fa"
+                                  strokeOpacity="0.75"
+                                  strokeWidth="1.8"
+                                />
+                              ))}
+                              {/* candidate dot */}
+                              <circle cx={k.x * 100} cy={(1 - k.y) * 100} r="3.5" fill="#22c55e" />
+                            </>
+                          );
+                        })()}
+
+                        {/* member dots */}
+                        {halfData?.members.map((m, i) => (
+                          <g key={`m-${i}`}>
+                            <circle cx={m.x * 100} cy={(1 - m.y) * 100} r="2.8" fill="#f0f9ff" />
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+
+                    {/* options list */}
+                    <div className="mt-3 space-y-2">
+                      {halfLoading && <div className="text-[12px] text-white/70">Computing midpoint…</div>}
+                      {!halfLoading && halfData?.candidates.map(c => {
+                        const selected = halfSel === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => setHalfSel(c.id)}
+                            className={`w-full text-left rounded-xl border p-3 text-[13px] transition
+                              ${selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium text-white/90">{c.name}</div>
+                              <div className="text-white/60 text-[12px]">{c.distance} • {c.eta}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* ETAs per member */}
+                    {halfData && halfSel && (
+                      <div className="mt-3 text-[12px] text-white/80">
+                        <div className="mb-1 font-medium text-white/90">Estimated time:</div>
+                        <ul className="list-disc ml-5">
+                          {halfData.members.map((m, i) => {
+                            const k = halfData.candidates.find(c => c.id === halfSel)!;
+                            const e = etaFor(dist(m, k));
+                            return <li key={`eta-${i}`}>{m.name}: {e}</li>;
+                          })}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* primary action */}
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 text-[12px]"
+                        onClick={rallyHere}
+                        disabled={halfLoading || !halfSel}
+                      >
+                        {halfLoading ? "Setting…" : "Rally Here"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
