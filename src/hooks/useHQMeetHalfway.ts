@@ -20,13 +20,15 @@ export type HalfResult = {
 };
 
 export function useHQMeetHalfway(
-  floqId: string | undefined,
+  floqId?: string,
   categories: string[] = [],
-  opts?: { enabled?: boolean }
+  enabled = true,
 ) {
-  return useQuery<HalfResult>({
-    queryKey: ["hq-meet-halfway", floqId, categories.sort().join(",")],
-    enabled: !!floqId && (opts?.enabled ?? true),
+  return useQuery({
+    queryKey: ["hq-meet-halfway", floqId, categories.slice().sort().join(",")],
+    enabled: !!floqId && enabled,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("hq-meet-halfway", {
         body: { floq_id: floqId, categories, max_km: 3, limit: 6, mode: "walk" },
@@ -34,7 +36,5 @@ export function useHQMeetHalfway(
       if (error) throw error;
       return data as HalfResult;
     },
-    staleTime: 15_000,
-    refetchOnWindowFocus: false,
   });
 }

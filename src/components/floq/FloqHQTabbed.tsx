@@ -123,7 +123,7 @@ export default function FloqHQTabbed() {
   const [halfSel, setHalfSel] = useState<string | null>(null);
   
   const { data: halfAPI, isLoading: halfLoading, refetch: refetchHalf } =
-    useHQMeetHalfway(actualFloqId, halfCats, { enabled: halfOpen });
+    useHQMeetHalfway(actualFloqId, halfCats, halfOpen);
 
   useEffect(() => { 
     if (halfOpen) refetchHalf(); 
@@ -222,12 +222,13 @@ export default function FloqHQTabbed() {
 
   async function openMeetHalfway() {
     setHalfOpen(true);
+    refetchHalf();
   }
 
   async function rallyHere() {
-    if (!halfAPI || !halfSel) return;
-    const pick = halfAPI.candidates.find(x => x.id === halfSel);
-    if (!pick) return;
+    if (!halfAPI) return;
+    const pick = halfAPI.candidates.find(x => x.id === (halfSel ?? halfAPI.candidates[0]?.id));
+    if (!pick || !actualFloqId) return;
     
     try {
       setRallyLoading(true);
@@ -236,7 +237,7 @@ export default function FloqHQTabbed() {
           floq_id: actualFloqId, 
           center: { lat: pick.lat, lng: pick.lng }, 
           venue_id: pick.id, 
-          note: `Meet-halfway at ${pick.name}`,
+          note: `Meet at ${pick.name}`,
           ttl_min: 60 
         }
       });
@@ -402,35 +403,35 @@ export default function FloqHQTabbed() {
 
                     {/* ranked venue list */}
                     <div className="mt-3 space-y-2">
-                      {halfLoading && <div className="text-[12px] text-white/70">Computing midpoint…</div>}
-                      {!halfLoading && halfAPI?.candidates.map(c => {
-                        const selected = halfSel === c.id;
-                        return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => setHalfSel(c.id)}
-                            className={`w-full text-left rounded-xl border p-3 text-[13px] transition ${
-                              selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium text-white/90">{c.name}</div>
-                              <div className="text-white/60 text-[12px]">
-                                {(c.meters_from_centroid / 1000).toFixed(2)} km • {c.avg_eta_min} min
+                        {halfLoading && <div className="text-[12px] text-white/70">Computing midpoint…</div>}
+                        {!halfLoading && halfAPI?.candidates?.map(c => {
+                          const selected = c.id === (halfSel ?? halfAPI.candidates[0]?.id);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setHalfSel(c.id)}
+                              className={`w-full text-left rounded-xl border p-3 text-[13px] transition ${
+                                selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-white/90">{c.name}</div>
+                                <div className="text-white/60 text-[12px]">
+                                  {(c.meters_from_centroid / 1000).toFixed(2)} km • {c.avg_eta_min} min
+                                </div>
                               </div>
-                            </div>
-                          </button>
-                        );
-                      })}
+                            </button>
+                          );
+                        })}
                     </div>
 
                     {/* ETAs per member for the selected candidate */}
-                    {halfAPI && halfSel && (
+                    {halfAPI && (halfSel || halfAPI.candidates[0]) && (
                       <div className="mt-3 text-[12px] text-white/80">
                         <div className="mb-1 font-medium text-white/90">Estimated time:</div>
                         <ul className="list-disc ml-5">
-                          {halfAPI.candidates.find(c => c.id === halfSel)?.per_member.map(pm => (
+                          {halfAPI.candidates.find(c => c.id === (halfSel ?? halfAPI.candidates[0]?.id))?.per_member.map(pm => (
                             <li key={pm.profile_id}>Member: {pm.eta_min} min</li>
                           ))}
                         </ul>
@@ -441,9 +442,9 @@ export default function FloqHQTabbed() {
                     <div className="mt-3 flex justify-end">
                       <Btn
                         onClick={rallyHere}
-                        disabled={halfLoading || !halfSel}
+                        disabled={halfLoading || !halfAPI?.candidates?.length}
                       >
-                        {halfLoading ? "Setting…" : "Rally Here"}
+                        {rallyLoading ? "Setting…" : "Rally Here"}
                       </Btn>
                     </div>
                   </div>
