@@ -177,11 +177,10 @@
   --neon: hsl(199 100% 60%); /* sky-400 looks good on both dark & light */
   
   /* ===== Meet-Halfway Category Colors ===== */
-  --vibe-coffee: #4DD0E1;   /* cyan */
-  --vibe-bar: #F472B6;      /* pink */
-  --vibe-food: #A78BFA;     /* violet */
-  --vibe-park: #F59E0B;     /* amber */
-  --vibe-other: #A1A1AA;    /* zinc-400 */
+  --c-coffee: #22d3ee;      /* cyan */
+  --c-bar: #f472b6;         /* pink */
+  --c-restaurant: #a78bfa;  /* violet */
+  --c-selected: #e879f9;    /* fuchsia ring */
   
   /* ===== Safe Area System ===== */
   --safe-top: max(env(safe-area-inset-top, 0px), 8px);

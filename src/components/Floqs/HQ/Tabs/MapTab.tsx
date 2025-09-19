@@ -1,117 +1,132 @@
-import React, { useMemo, useState } from "react";
-import Section from "@/components/Common/Section";
-import SmartMap from "@/components/Common/SmartMap";
-import MeetHalfwaySheet from "./MeetHalfwaySheet";
-import { useHQProximity } from "@/hooks/useHQProximity";
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Section from "../ui/Section";
+import Btn from "../ui/Btn";
+import Pill from "../ui/Pill";
+import { MapPin, Target, Thermometer, Users, Radio, Layers } from "lucide-react";
+import SmartMap from "@/components/maps/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
-import { Events, track } from "@/lib/analytics";
+import MeetHalfwaySheet from "./MeetHalfwaySheet";
+import { track, Events } from "@/lib/analytics";
 import { openDirections } from "@/lib/nav/openDirections";
 
+const PEOPLE = [
+  { n: "Sarah", d: "Café • Chill", v: 60 },
+  { n: "Tom", d: "Downtown • Hype", v: 85 },
+  { n: "Alex", d: "Beach→Venice", v: 80 },
+  { n: "You", d: "Home • Neutral", v: 45 }
+];
+
 type Props = {
-  floqId: string;
-  reduce?: boolean;
-  panelAnim?: (reduce?: boolean) => Record<string, any>;
-  onRallyChoice?: (c: "joined" | "maybe" | "declined") => void;
+  reduce: boolean;
+  panelAnim: any;
   onMeetHalfway?: () => void;
+  onRallyChoice?: (c: "joined" | "maybe" | "declined") => void;
+  floqId?: string;
   meetOpen?: boolean;
 };
 
-export default function MapTab({ floqId, reduce, panelAnim = () => ({}), onRallyChoice, onMeetHalfway, meetOpen }: Props) {
-  const [sheetOpen, setSheetOpen] = useState(false);
+export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice, floqId, meetOpen }: Props) {
+  const [open, setOpen] = useState(false);
+  const [cats, setCats] = useState<string[]>(["coffee", "bar", "restaurant"]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [cats, setCats] = useState<string[]>(["coffee", "bar", "food"]);
 
-  const { data: prox } = useHQProximity(floqId, !!floqId);
-  const { data, isLoading } = useHQMeetHalfway(
-    floqId,
-    { categories: cats, max_km: 3, limit: 8, mode: "walk" },
-    !!floqId
-  );
+  // fetch when sheet is open (your existing API shape)
+  const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: cats }, open);
 
-  const summary = useMemo(() => {
-    if (!data?.candidates?.length) return null;
-    const top = data.candidates[0];
-    return {
-      label: `${Math.min(4, data.candidates.length)} converging at ${top.name}`,
-      eta: Math.round(top.avg_eta_min ?? 0),
-      alignment: "high",
-      energy: "low",
-    };
-  }, [data]);
+  // default selection when data arrives
+  useEffect(() => {
+    if (open && data?.candidates?.length && !selected) {
+      setSelected(data.candidates[0].id);
+    }
+  }, [open, data, selected]);
 
-  function toggle(cat: string) {
-    setCats((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
-  }
-
+  const toggle = (c: string) =>
+    setCats(prev => (prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]));
   return (
-    <div {...panelAnim(reduce)} className="space-y-5">
+    <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
         title="Living Proximity Map"
-        right={
-          <button
-            onClick={() => {
-              track(Events.hq_meet_half_open, { floqId });
-              setSheetOpen(true);
-            }}
-            className="px-3 py-1.5 text-sm rounded-xl bg-white text-black font-medium shadow-[0_0_32px_rgba(129,140,248,.35)]"
-          >
-            Meet-Halfway
-          </button>
-        }
+        icon={<MapPin className="h-4 w-4" />}
+        right={<Btn glow onClick={() => { track(Events.hq_meet_half_open, { floqId }); setOpen(true); }}>Meet-Halfway</Btn>}
       >
-        <SmartMap
-          data={data ? { centroid: data.centroid, candidates: data.candidates } : prox ? { centroid: prox.centroid, candidates: [] } : undefined}
-          selectedId={selected}
-          onSelect={setSelected}
-          height={300}
-        />
-
-        {summary && (
-          <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px] text-white/90">
-            {summary.label} · ETA {summary.eta} • Alignment {summary.alignment} • Energy cost {summary.energy}
-            <div className="mt-2 flex gap-2">
-              <button
-                className="px-3 py-2 rounded-xl bg-white text-black font-medium shadow-[0_0_32px_rgba(168,85,247,.35)]"
-                onClick={() => onRallyChoice?.("joined")}
-              >
-                Join
-              </button>
-              <button className="px-3 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10" onClick={() => onRallyChoice?.("maybe")}>
-                Maybe
-              </button>
-              <button className="px-3 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10" onClick={() => onRallyChoice?.("declined")}>
-                Can't
-              </button>
-            </div>
+        {data ? (
+          <SmartMap 
+            data={data} 
+            selectedId={selected} 
+            onSelect={setSelected} 
+            height={260}
+          />
+        ) : (
+          <div className="rounded-xl bg-white/5 border border-white/10 h-[260px] flex items-center justify-center text-white/40">
+            {isLoading ? "Loading proximity map..." : "Map preview"}
           </div>
         )}
+        <div className="text-[12px] text-white/80 mt-3">
+          You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%
+        </div>
+        <div className="text-[12px] text-white/80">Meeting point: Optimal • Convergence 94%</div>
+        <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
+          4 converging at Coffee District · ETA 7:45 • Alignment high • Energy cost low
+          <div className="mt-2 flex gap-2">
+            <Btn glow onClick={() => onRallyChoice?.("joined")}>Join</Btn>
+            <Btn onClick={() => onRallyChoice?.("maybe")}>Maybe</Btn>
+            <Btn onClick={() => onRallyChoice?.("declined")}>Can't</Btn>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
+          <div className="flex-1 h-1 rounded-full bg-white/10 mx-3" />
+          <div className="flex gap-2">
+            <Btn aria-label="Targets"><Target className="h-3.5 w-3.5" /></Btn>
+            <Btn aria-label="Thermals"><Thermometer className="h-3.5 w-3.5" /></Btn>
+            <Btn aria-label="Members"><Users className="h-3.5 w-3.5" /></Btn>
+            <Btn aria-label="Pins"><MapPin className="h-3.5 w-3.5" /></Btn>
+          </div>
+        </div>
       </Section>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Section title="Live Status" icon={<Radio className="h-3.5 w-3.5" />}>
+          <div className="space-y-3 text-[13px]">
+            {PEOPLE.map(p => (
+              <div key={p.n} className="flex items-center justify-between">
+                <div className="text-white/90">{p.n} <span className="text-white/60">• {p.d}</span></div>
+                <div className="w-40 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" style={{width:`${p.v}%`}} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+        
+        <Section title="Smart Layers" icon={<Layers className="h-3.5 w-3.5" />}>
+          <div className="grid grid-cols-2 gap-3 text-[12px]">
+            <div>Venues (warm/cool)</div>
+            <div>Energy fields</div>
+            <div className="opacity-70">Friend floqs</div>
+            <div className="opacity-70">Events</div>
+          </div>
+        </Section>
+      </div>
+
+      {/* Sheet */}
       <MeetHalfwaySheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        open={open}
+        onOpenChange={setOpen}
         data={data}
         selectedId={selected}
-        onSelectVenue={(id) => {
-          setSelected(id);
-          track(Events.hq_meet_half_select, { floqId, id });
-        }}
+        onSelectVenue={(id) => { setSelected(id); track(Events.hq_meet_half_select, { floqId, id }); }}
         categories={cats}
         onToggleCategory={toggle}
-        loading={isLoading}
-        onNavigate={(id) => {
-          const v = data?.candidates.find((c) => c.id === id);
-          if (v) openDirections(v.lat, v.lng, v.name);
-        }}
         onRallyHere={() => {
-          const v = data?.candidates.find((c) => c.id === selected);
-          if (v) {
-            track(Events.hq_rally_create, { floqId, venueId: v.id, source: "meet_halfway" });
-            openDirections(v.lat, v.lng, v.name);
-            setSheetOpen(false);
+          const selected_venue = data?.candidates.find(c => c.id === selected);
+          if (selected_venue) {
+            track(Events.hq_rally_create, { floqId, venueId: selected, source: "meet_halfway" });
+            openDirections(selected_venue.lat, selected_venue.lng, selected_venue.name);
           }
         }}
+        loading={isLoading}
       />
-    </div>
+    </motion.div>
   );
 }
