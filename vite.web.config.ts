@@ -31,6 +31,16 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
+      // Fix react-native-svg + RN Web compatibility
+      'react-native$': 'react-native-web',
+      'react-native-web/Libraries/Utilities/codegenNativeComponent':
+        'react-native-web/dist/cjs/exports/codegenNativeComponent',
+      'react-native/Libraries/Utilities/codegenNativeComponent':
+        'react-native-web/dist/cjs/exports/codegenNativeComponent',
+      'react-native-web/Libraries/Utilities/codegenNativeCommands':
+        'react-native-web/dist/cjs/exports/codegenNativeCommands',
+      'react-native/Libraries/Utilities/codegenNativeCommands':
+        'react-native-web/dist/cjs/exports/codegenNativeCommands',
     },
     dedupe: ['react', 'react-dom'],
   },
