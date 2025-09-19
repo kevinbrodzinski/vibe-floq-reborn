@@ -138,33 +138,47 @@ export default function MeetHalfwaySheet({
                 </div>
               </div>
             )}
-
-            {/* Actions */}
-            <div className="mt-auto flex gap-2 pt-1 pad-safe-b">
-              <Btn onClick={()=>onOpenChange(false)}>Cancel</Btn>
-              <Btn variant="primary" glow onClick={()=> selected && onConfirmSend?.(selected.id)}>
-                Confirm & Send
-              </Btn>
-              <Btn onClick={() => selected && setDirOpen(true)}>
-                Directions
-              </Btn>
-            </div>
           </div>
 
           {/* Right: Map */}
-          <div className="glass-subtle overflow-hidden">
-            {selected ? (
+          <div className="glass-subtle overflow-hidden rounded-xl">
+            {data ? (
               <SmartMap
-                data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}
-                selectedId={selected.id}
+                data={{ centroid: data.centroid, candidates: data.candidates }}
+                selectedId={selected?.id ?? null}
                 onSelect={onSelectVenue}
                 members={members.map(m => ({ id: m.profile_id, lat: m.lat, lng: m.lng, label: m.label }))}
                 memberEtas={perMember}
-                height={loading ? 220 : 360}
+                height={360}
               />
             ) : (
-              <div className="h-[360px] grid place-items-center text-white/60 text-sm">No options found</div>
+              <div className="h-[360px] grid place-items-center text-white/60 text-sm">
+                {loading ? "Loading proximity map..." : "Map preview"}
+              </div>
             )}
+          </div>
+
+          {/* Actions: now BELOW the map, full width */}
+          <div className="col-span-full mt-1 flex items-center justify-between gap-2 pad-safe-b">
+            <div className="flex gap-2">
+              <button className="btn-compact btn-compact--ghost" onClick={() => onOpenChange(false)}>Cancel</button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="btn-compact btn-compact--ghost"
+                onClick={() => selected && setDirOpen(true)}
+                disabled={!selected}
+              >
+                Directions
+              </button>
+              <button
+                className="btn-compact btn-compact--primary neon-soft"
+                onClick={() => selected && onConfirmSend?.(selected.id)}
+                disabled={!selected}
+              >
+                Confirm &amp; Send
+              </button>
+            </div>
           </div>
         </div>
       </div>
