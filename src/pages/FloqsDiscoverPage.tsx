@@ -109,7 +109,7 @@ export default function FloqsDiscoverPage() {
           type="button"
           onClick={() => nav("/create/floq")}
           aria-label="Create Floq"
-          className="neon-ring px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
+          className="ring-neon px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
         >
           Create Floq
         </button>
@@ -150,7 +150,7 @@ export default function FloqsDiscoverPage() {
       {/* Desktop + Mobile FAB */}
       <Link
         to="/create/floq"
-        className="fixed bottom-6 right-6 z-40 btn-glow rounded-full bg-white/10 border border-white/15 backdrop-blur px-4 py-2 text-[12px] hover:bg-white/15"
+        className="fixed bottom-6 right-6 z-40 ring-neon rounded-full bg-white/10 border border-white/15 backdrop-blur px-4 py-2 text-[12px] hover:bg-white/15"
       >
         + Create Floq
       </Link>
