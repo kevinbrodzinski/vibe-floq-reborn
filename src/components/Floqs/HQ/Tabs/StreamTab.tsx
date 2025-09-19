@@ -184,6 +184,7 @@ function SmartItemRow({
         {!isExpired && (
           <div className="mt-2 flex gap-2">
             <Btn 
+              size="xs"
               type="button" 
               variant="primary" 
               glow 
@@ -192,12 +193,14 @@ function SmartItemRow({
               Join
             </Btn>
             <Btn 
+              size="xs"
               type="button" 
               onClick={() => onRallyResponse?.(item.id, "maybe")}
             >
               Maybe
             </Btn>
             <Btn 
+              size="xs"
               type="button" 
               onClick={() => onRallyResponse?.(item.id, "declined")}
             >
@@ -311,6 +314,7 @@ function PollCard({ item }: { item: SmartItem }) {
         {(options || ["Yes", "No"]).map((opt: string, i: number) => (
           <Btn 
             key={i} 
+            size="xs"
             type="button"
             className="w-full text-left justify-start" 
             onClick={() => vote(i)} 
@@ -364,6 +368,7 @@ function TimePickerCard({ item }: { item: SmartItem }) {
         {(slots || ["7:00", "7:30", "8:00"]).map((slot: string) => (
           <Btn 
             key={slot} 
+            size="xs"
             type="button"
             className="text-center" 
             onClick={() => pickTime(slot)} 
@@ -398,6 +403,7 @@ function MeetHalfwayCard({ item }: { item: SmartItem }) {
         {(suggested_venues || []).slice(0, 3).map((venue: any, i: number) => (
           <Btn 
             key={i} 
+            size="xs"
             type="button"
             className="w-full text-left justify-start" 
             variant="primary"
@@ -427,6 +433,7 @@ function VenueSuggestionCard({ item }: { item: SmartItem }) {
         {(venues || []).slice(0, 2).map((venue: any, i: number) => (
           <Btn 
             key={i} 
+            size="xs"
             type="button"
             className="w-full text-left justify-start"
           >
