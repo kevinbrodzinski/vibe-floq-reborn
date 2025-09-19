@@ -419,6 +419,16 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 </div>
               )}
 
+              {/* Active Rally Section */}
+              <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-[12px]">
+                Rally: Gran Blanco @ 8:30 • Going: 3 • Deciding: 2 • No reply: 3
+                <div className="mt-2 flex gap-2">
+                  <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "joined")}>Join</Btn>
+                  <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "maybe")}>Maybe</Btn>
+                  <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "declined")}>Can't</Btn>
+                </div>
+              </div>
+
               {/* Message List */}
               {messages?.length ? (
                 <div className="space-y-3">
