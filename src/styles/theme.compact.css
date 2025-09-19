@@ -425,6 +425,34 @@ button:disabled.btn-primary-glass { opacity:.55; }
 .page-neon    { isolation: isolate; }
 .neon-surface { overflow: visible; isolation: isolate; }
 
+/* === Vibe-specific neon colors ========================= */
+.neon-social     { --neon-a: hsla(198,100%,64%, .42); --neon-b: hsla(220,100%,72%, .26); }
+.neon-chill      { --neon-a: hsla(160,84%,58%, .44); --neon-b: hsla(175,85%,65%, .28); }
+.neon-active     { --neon-a: hsla(45,96%,64%, .48); --neon-b: hsla(25,90%,58%, .30); }
+.neon-hype       { --neon-a: hsla(320,95%,68%, .50); --neon-b: hsla(300,88%,70%, .32); }
+.neon-productive { --neon-a: hsla(188,95%,64%, .46); --neon-b: hsla(200,90%,70%, .28); }
+.neon-quiet      { --neon-a: hsla(260,75%,65%, .44); --neon-b: hsla(280,80%,70%, .26); }
+
+/* Vibe-specific tile selection glows */
+.tile[data-selected="true"][data-vibe="social"] {
+  filter: drop-shadow(0 0 6px hsla(198,100%,64%, .42)) drop-shadow(0 0 12px hsla(220,100%,72%, .26));
+}
+.tile[data-selected="true"][data-vibe="chill"] {
+  filter: drop-shadow(0 0 6px hsla(160,84%,58%, .44)) drop-shadow(0 0 12px hsla(175,85%,65%, .28));
+}
+.tile[data-selected="true"][data-vibe="active"] {
+  filter: drop-shadow(0 0 6px hsla(45,96%,64%, .48)) drop-shadow(0 0 12px hsla(25,90%,58%, .30));
+}
+.tile[data-selected="true"][data-vibe="hype"] {
+  filter: drop-shadow(0 0 6px hsla(320,95%,68%, .50)) drop-shadow(0 0 12px hsla(300,88%,70%, .32));
+}
+.tile[data-selected="true"][data-vibe="productive"] {
+  filter: drop-shadow(0 0 6px hsla(188,95%,64%, .46)) drop-shadow(0 0 12px hsla(200,90%,70%, .28));
+}
+.tile[data-selected="true"][data-vibe="quiet"] {
+  filter: drop-shadow(0 0 6px hsla(260,75%,65%, .44)) drop-shadow(0 0 12px hsla(280,80%,70%, .26));
+}
+
 /* === Glass sections ===================================== */
 .section-glass {
   background: rgba(255,255,255,.05);

@@ -119,6 +119,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
                   onClick={() => setVibe(v.id as Vibe)}
                   className="tile p-3 text-left transition"
                   data-selected={active}
+                  data-vibe={v.id}
                 >
                   <div className="font-semibold">{v.title}</div>
                   <div className="text-white/70 text-sm">{v.desc}</div>
