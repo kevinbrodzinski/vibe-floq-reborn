@@ -16,21 +16,23 @@ import {
   Sparkles
 } from "lucide-react";
 
-// Import tab components
-import MapTab from "./hq/tabs/MapTab";
-import StreamTab from "./hq/tabs/StreamTab";
-import PlanTab from "./hq/tabs/PlanTab";
-import { MomentsTab } from "./hq/tabs/MomentsTab";
-import { PulseTab } from "./hq/tabs/PulseTab";
-import { VenuesTab } from "./hq/tabs/VenuesTab";
-import { AnalyticsTab } from "./hq/tabs/AnalyticsTab";
-import { WingTab } from "./hq/tabs/WingTab";
-import { PrivacyTab } from "./hq/tabs/PrivacyTab";
+// Import new UI components
+import Pill from "@/components/Floqs/HQ/ui/Pill";
+import Btn from "@/components/Floqs/HQ/ui/Btn";
 
-// Import shared constants and components
+// Import new tab components
+import MapTab from "@/components/Floqs/HQ/Tabs/MapTab";
+import StreamTab from "@/components/Floqs/HQ/Tabs/StreamTab";
+import PlanTab from "@/components/Floqs/HQ/Tabs/PlanTab";
+import { MomentsTab } from "@/components/Floqs/HQ/Tabs/MomentsTab";
+import { PulseTab } from "@/components/Floqs/HQ/Tabs/PulseTab";
+import { VenuesTab } from "@/components/Floqs/HQ/Tabs/VenuesTab";
+import { AnalyticsTab } from "@/components/Floqs/HQ/Tabs/AnalyticsTab";
+import { WingTab } from "@/components/Floqs/HQ/Tabs/WingTab";
+import { PrivacyTab } from "@/components/Floqs/HQ/Tabs/PrivacyTab";
+
+// Import shared constants
 import { TABS, TabKey } from "./hq/shared/constants";
-import Pill from "./hq/shared/Pill";
-import Btn from "./hq/shared/Btn";
 
 // ... keep existing code (shared components and constants moved to separate files)
 
