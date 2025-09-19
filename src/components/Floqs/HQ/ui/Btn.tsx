@@ -17,11 +17,9 @@ export default function Btn({
   const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] transition";
   const surface = active ? "bg-white/12 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10";
   const neon = glow ? "btn-glow" : "";
-  
   return (
     <button
       type="button"
-      aria-pressed={active ?? false}
       aria-label={ariaLabel}
       className={`${base} ${surface} ${neon} ${className}`}
       {...props}
