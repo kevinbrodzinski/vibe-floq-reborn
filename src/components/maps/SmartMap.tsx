@@ -1,209 +1,137 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
-import type { HalfResult } from "@/hooks/useHQMeetHalfway";
 
-type Props = {
-  data: HalfResult;
-  selectedId?: string | null;
-  onSelect?: (id: string) => void;
-  height?: number;
-  token?: string;
+// Keep in sync with useHQMeetHalfway.HalfResult
+export type MapCandidate = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  meters_from_centroid?: number;
+  avg_eta_min?: number;
+  score?: number;
+  category?: "coffee" | "bar" | "food" | "park" | "other";
 };
 
-if (typeof window !== "undefined" && import.meta.env?.VITE_MAPBOX_TOKEN) {
+export type MapData = {
+  centroid: { lat: number; lng: number };
+  candidates: MapCandidate[];
+};
+
+type Props = {
+  token?: string;
+  data?: MapData | null;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
+  height?: number; // px
+};
+
+if (typeof window !== "undefined" && import.meta.env.VITE_MAPBOX_TOKEN) {
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 }
 
-export default function SmartMap({ data, selectedId, onSelect, height = 280, token }: Props) {
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+const colorVar: Record<NonNullable<MapCandidate["category"]>, string> = {
+  coffee: "var(--vibe-coffee, #4DD0E1)",
+  bar:    "var(--vibe-bar, #F472B6)",
+  food:   "var(--vibe-food, #A78BFA)",
+  park:   "var(--vibe-park, #F59E0B)",
+  other:  "var(--vibe-other, #A1A1AA)",
+};
+
+export default function SmartMap({ token, data, selectedId, onSelect, height = 280 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
 
-  const bounds = useMemo(() => {
-    const b = new mapboxgl.LngLatBounds();
-    b.extend([data.centroid.lng, data.centroid.lat]);
-    data.members?.forEach(m => b.extend([m.lng, m.lat]));
-    data.candidates.forEach(c => b.extend([c.lng, c.lat]));
-    return b;
-  }, [data]);
-
+  // init
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || mapRef.current) return;
     if (token) mapboxgl.accessToken = token;
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: "mapbox://styles/mapbox/dark-v11",
-      bounds,
-      fitBoundsOptions: { padding: 36 },
-      dragRotate: false,
-      pitchWithRotate: false,
+      center: data?.centroid ? [data.centroid.lng, data.centroid.lat] : [-118.4695, 33.9925],
+      zoom: 13.2,
+      interactive: true,
+      attributionControl: false,
     });
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "bottom-right");
     mapRef.current = map;
 
-    map.on("load", () => {
-      // Members (white dots) - only if members exist
-      if (data.members?.length) {
-        map.addSource("members", {
-          type: "geojson",
-          data: {
-            type: "FeatureCollection",
-            features: data.members.map(m => ({
-              type: "Feature",
-              properties: { profile_id: m.profile_id },
-              geometry: { type: "Point", coordinates: [m.lng, m.lat] }
-            }))
-          }
-        });
-        map.addLayer({
-          id: "members-circles",
-          type: "circle",
-          source: "members",
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#ffffff",
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "rgba(255,255,255,0.35)"
-          }
-        });
-      }
+    return () => { map.remove(); mapRef.current = null; };
+  }, []);
 
-      // Candidates (category colored)
-      map.addSource("candidates", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: data.candidates.map(c => ({
-            type: "Feature",
-            properties: { id: c.id, name: c.name, category: c.category ?? "" },
-            geometry: { type: "Point", coordinates: [c.lng, c.lat] }
-          }))
-        }
-      });
-
-      // base dots
-      map.addLayer({
-        id: "candidates-circles",
-        type: "circle",
-        source: "candidates",
-        paint: {
-          // category color
-          "circle-color": [
-            "match", ["get", "category"],
-            "coffee", "var(--c-coffee)",
-            "bar", "var(--c-bar)",
-            "restaurant", "var(--c-restaurant)",
-            /* default */ "#7c3aed"
-          ] as any,
-          "circle-radius": 6,
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "rgba(255,255,255,0.35)"
-        }
-      });
-
-      // selected ring (bigger, glowy)
-      map.addLayer({
-        id: "candidates-selected",
-        type: "circle",
-        source: "candidates",
-        filter: ["==", ["get", "id"], selectedId ?? ""],
-        paint: {
-          "circle-color": "transparent",
-          "circle-radius": 10,
-          "circle-stroke-width": 3,
-          "circle-stroke-color": "var(--c-selected)"
-        }
-      });
-
-      // centroid (green)
-      map.addSource("centroid", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            geometry: { type: "Point", coordinates: [data.centroid.lng, data.centroid.lat] },
-            properties: {}
-          }]
-        }
-      });
-      map.addLayer({
-        id: "centroid",
-        type: "circle",
-        source: "centroid",
-        paint: {
-          "circle-radius": 6,
-          "circle-color": "#22c55e",
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "rgba(255,255,255,0.35)"
-        }
-      });
-
-      // lines from members -> selected (only if members exist)
-      if (data.members?.length) {
-        map.addSource("member-lines", {
-          type: "geojson",
-          data: emptyFC()
-        });
-        map.addLayer({
-          id: "member-lines",
-          type: "line",
-          source: "member-lines",
-          paint: {
-            "line-color": "#60a5fa",
-            "line-width": 2,
-            "line-opacity": 0.9
-          }
-        });
-      }
-
-      // tooltip-like hover (cursor)
-      map.on("mouseenter", "candidates-circles", () => map.getCanvas().style.cursor = "pointer");
-      map.on("mouseleave", "candidates-circles", () => map.getCanvas().style.cursor = "");
-
-      map.on("click", "candidates-circles", (e) => {
-        const id = e.features?.[0]?.properties?.id as string | undefined;
-        if (id && onSelect) onSelect(id);
-      });
-
-      // initial lines
-      updateLines(map, data, selectedId);
-    });
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []); // mount
-
-  // when selectedId changes, update ring + lines
+  // render markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    try {
-      map.setFilter("candidates-selected", ["==", ["get", "id"], selectedId ?? ""]);
-      updateLines(map, data, selectedId ?? null);
-    } catch {}
-  }, [data, selectedId]);
 
-  return <div ref={containerRef} style={{ height }} className="rounded-xl overflow-hidden neon-surface" />;
-}
+    // clear previous
+    Object.values(markersRef.current).forEach((m) => m.remove());
+    markersRef.current = {};
 
-function emptyFC(): GeoJSON.FeatureCollection {
-  return { type: "FeatureCollection", features: [] };
-}
+    if (!data) return;
 
-function updateLines(map: mapboxgl.Map, data: HalfResult, selectedId: string | null) {
-  if (!data.members?.length) return; // No members, no lines to draw
-  
-  const cand = data.candidates.find(c => c.id === selectedId) ?? data.candidates[0];
-  if (!cand) {
-    (map.getSource("member-lines") as any)?.setData(emptyFC());
-    return;
-  }
-  const features = data.members.map(m => ({
-    type: "Feature",
-    properties: { profile_id: m.profile_id, to: cand.id },
-    geometry: { type: "LineString", coordinates: [[m.lng, m.lat], [cand.lng, cand.lat]] }
-  }));
-  (map.getSource("member-lines") as any)?.setData({ type: "FeatureCollection", features });
+    const bounds = new mapboxgl.LngLatBounds(
+      [data.centroid.lng, data.centroid.lat],
+      [data.centroid.lng, data.centroid.lat],
+    );
+
+    // centroid
+    const centerEl = document.createElement("div");
+    centerEl.style.cssText =
+      "width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 0 6px rgba(255,255,255,.15)";
+    const centerMarker = new mapboxgl.Marker({ element: centerEl })
+      .setLngLat([data.centroid.lng, data.centroid.lat]).addTo(map);
+
+    // candidates
+    data.candidates.forEach((c) => {
+      bounds.extend([c.lng, c.lat]);
+
+      const el = document.createElement("button");
+      el.type = "button";
+      el.style.width = "18px";
+      el.style.height = "18px";
+      el.style.borderRadius = "9999px";
+      el.style.background = colorVar[c.category ?? "other"];
+      el.style.border = "2px solid rgba(255,255,255,0.7)";
+      el.style.boxShadow =
+        c.id === selectedId
+          ? "0 0 0 6px rgba(255,255,255,0.18), 0 0 0 10px rgba(99,102,241,0.25)"
+          : "0 0 0 6px rgba(255,255,255,0.12)";
+      el.addEventListener("click", () => onSelect?.(c.id));
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+        .setLngLat([c.lng, c.lat]).addTo(map);
+      markersRef.current[c.id] = marker;
+
+      if (c.id === selectedId) {
+        map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 15), duration: 350 });
+        new mapboxgl.Popup({ closeButton: false, closeOnMove: true })
+          .setLngLat([c.lng, c.lat])
+          .setHTML(
+            `<div style="font:12px/1.2 system-ui;color:#fff">
+               <b>${c.name}</b><br/>
+               ~${Math.round(c.avg_eta_min ?? 0)} min • ${Math.round(c.meters_from_centroid ?? 0)}m
+             </div>`
+          )
+          .addTo(map);
+      }
+    });
+
+    if (data.candidates.length > 0) map.fitBounds(bounds, { padding: 48, duration: 420 });
+
+    return () => {
+      centerMarker.remove();
+      Object.values(markersRef.current).forEach((m) => m.remove());
+      markersRef.current = {};
+    };
+  }, [JSON.stringify(data), selectedId]);
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-white/10" style={{ height }}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+    </div>
+  );
 }

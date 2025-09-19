@@ -149,11 +149,9 @@ export default function MeetHalfwaySheet({
                 </div>
               </div>
               <div className="flex gap-2">
-                <button 
+                <button
                   className="px-4 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10 hover:bg-white/15 transition-colors text-sm"
-                  onClick={() => {
-                    openDirections(selected.lat, selected.lng, selected.name);
-                  }}
+                  onClick={() => openDirections(selected.lat, selected.lng, selected.name)}
                 >
                   Directions
                 </button>
