@@ -6,9 +6,11 @@ import Pill from "../ui/Pill";
 import { MapPin, Target, Thermometer, Users, Radio, Layers } from "lucide-react";
 import SmartMap from "@/components/maps/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
+import { useHQProximity } from "@/hooks/useHQProximity";
 import MeetHalfwaySheet from "./MeetHalfwaySheet";
 import { track, Events } from "@/lib/analytics";
 import { openDirections } from "@/lib/nav/openDirections";
+import { supabase } from "@/integrations/supabase/client";
 
 const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
@@ -33,6 +35,9 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
 
   // fetch when sheet is open (your existing API shape)
   const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: cats }, open);
+  
+  // get member proximity data
+  const { data: prox } = useHQProximity(floqId ?? "", !!floqId);
 
   // default selection when data arrives
   useEffect(() => {
@@ -118,14 +123,22 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         onSelectVenue={(id) => { setSelected(id); track(Events.hq_meet_half_select, { floqId, id }); }}
         categories={cats}
         onToggleCategory={toggle}
-        onRallyHere={() => {
-          const selected_venue = data?.candidates.find(c => c.id === selected);
-          if (selected_venue) {
-            track(Events.hq_rally_create, { floqId, venueId: selected, source: "meet_halfway" });
-            openDirections(selected_venue.lat, selected_venue.lng, selected_venue.name);
-          }
-        }}
+        members={(prox?.members ?? []).map(m => ({ profile_id: m.profile_id, lat: m.lat, lng: m.lng, label: m.profile_id }))}
         loading={isLoading}
+        onConfirmSend={async (venueId) => {
+          const v = data?.candidates.find(c => c.id===venueId);
+          if (!v) return;
+          // Post a rally card in-app (keeps users inside the app)
+          await supabase.functions.invoke("hq-stream-post", {
+            body: {
+              floq_id: floqId,
+              kind: "rally",
+              body: `Meet halfway at ${v.name}`,
+              meta: { venue: v, midpoint: data?.centroid, members: prox?.members ?? [] }
+            }
+          });
+          setOpen(false);
+        }}
       />
     </motion.div>
   );

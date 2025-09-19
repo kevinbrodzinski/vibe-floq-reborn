@@ -1,87 +1,51 @@
-import { encode, decode } from 'ngeohash';
+import * as geohash from 'ngeohash';
 
-export const stepForZoom = (z: number) => 0.03 / 2 ** Math.max(0, Math.max(3, z) - 10);
-
-export function tilesForViewport(
-  nw: [number, number], se: [number, number], zoom: number, p = 5
-) {
-  const ids = new Set<string>();
-  const step = stepForZoom(zoom);
-
-  for (let lat = se[0]; lat <= nw[0]; lat += step) {
-    for (let lng = nw[1]; lng <= se[1]; lng += step) {
-      ids.add(encode(lat, lng, p).slice(0, p));
-    }
-  }
-  return [...ids];
+export function haversineMeters(a:{lat:number; lng:number}, b:{lat:number; lng:number}) {
+  const R = 6371e3;
+  const toRad = (x:number)=>x*Math.PI/180;
+  const dLat = toRad(b.lat-a.lat);
+  const dLng = toRad(b.lng-a.lng);
+  const la1 = toRad(a.lat), la2 = toRad(b.lat);
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
 }
 
-/**
- * Get the center point of a geohash
- */
-export function geohashToCenter(geohash: string): [number, number] {
-  const { latitude, longitude } = decode(geohash);
-  return [latitude, longitude];
+// crude ETA (keeps everything in-app; we can swap to server routes later)
+export function etaMinutesMeters(distance_m:number, mode:"walk"|"drive"="walk") {
+  const mps = mode==="drive" ? 8.3 : 1.35; // ~30 km/h vs ~4.8 km/h
+  return Math.max(1, Math.round(distance_m / mps / 60));
 }
 
-/**
- * Convert HSL color object to CSS hsl string
- */
-export function hslToString(hsl: { h: number; s: number; l: number }): string {
-  return `hsl(${hsl.h}, ${Math.round(hsl.s * 100)}%, ${Math.round(hsl.l * 100)}%)`;
+// Convert geohash to center coordinates
+export function geohashToCenter(hash: string): [number, number] {
+  const decoded = geohash.decode(hash);
+  return [decoded.latitude, decoded.longitude];
 }
 
-/**
- * Converts visible bounds to a stable list of geohash-6 tile IDs.
- * Used to match the get-field-tiles edge function API contract.
- */
+// Convert crowd count to visual radius
+export function crowdCountToRadius(count: number): number {
+  // Base radius with logarithmic scaling for crowd visualization
+  const baseRadius = 8;
+  const scaleFactor = 2;
+  return baseRadius + Math.log(Math.max(1, count)) * scaleFactor;
+}
+
+// Convert viewport bounds to tile IDs for field visualization
 export function viewportToTileIds(
-  minLat: number,
-  maxLat: number,
-  minLng: number,
+  minLat: number, 
+  maxLat: number, 
+  minLng: number, 
   maxLng: number,
-  precision = 6
+  precision: number = 5
 ): string[] {
-  const ids = new Set<string>();
-  const step = 0.03; // ≈3 km at equator → safe oversample
-
+  const tiles: string[] = [];
+  const step = Math.pow(0.5, precision); // Geohash precision step size
+  
   for (let lat = minLat; lat <= maxLat; lat += step) {
     for (let lng = minLng; lng <= maxLng; lng += step) {
-      ids.add(encode(lat, lng, precision));
+      tiles.push(geohash.encode(lat, lng, precision));
     }
   }
-
-  return [...ids];
-}
-
-/**
- * Map tile_id to screen coordinates for ripple effects and heat tiles
- */
-export function tileIdToScreenCoords(
-  tileId: string,
-  viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number },
-  screenSize: { width: number; height: number }
-): { x: number; y: number; size: number } {
-  const { latitude, longitude } = decode(tileId);
   
-  const x = ((longitude - viewport.minLng) / (viewport.maxLng - viewport.minLng)) * screenSize.width;
-  const y = ((latitude - viewport.minLat) / (viewport.maxLat - viewport.minLat)) * screenSize.height;
-  
-  // Calculate tile size based on precision and viewport
-  const latRange = viewport.maxLat - viewport.minLat;
-  const lngRange = viewport.maxLng - viewport.minLng;
-  const avgRange = (latRange + lngRange) / 2;
-  const size = Math.max(20, (avgRange / Math.pow(32, tileId.length - 1)) * screenSize.width * 0.5);
-  
-  return { x, y, size };
-}
-
-/**
- * Calculate radius based on crowd count
- */
-export function crowdCountToRadius(count: number): number {
-  // Logarithmic scaling for better visual distribution
-  const baseRadius = 20;
-  const scale = Math.log(count + 1) * 8;
-  return Math.min(baseRadius + scale, 100); // Cap at 100px
+  return tiles;
 }
