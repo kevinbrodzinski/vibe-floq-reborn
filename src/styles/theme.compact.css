@@ -381,13 +381,15 @@ button:disabled.btn-primary-glass {
 }
 .tile:hover { background: rgba(255,255,255,.07); }
 
-/* Selected tile glow (no hotspots, 360° even) */
+/* Selected tile base styles */
 .tile[data-selected="true"] {
   background: rgba(255,255,255,.08);
   border-color: rgba(255,255,255,.18);
-  filter:
-    drop-shadow(0 0 6px  hsla(196,92%,64%, .35))
-    drop-shadow(0 0 12px hsla(259,92%,64%, .22));
+}
+
+/* Fallback glow for tiles without specific vibe */
+.tile[data-selected="true"]:not([data-vibe]) {
+  filter: drop-shadow(0 0 6px hsla(196,92%,64%, .35)) drop-shadow(0 0 12px hsla(259,92%,64%, .22));
 }
 
 /* Keyboard-visible focus (accessibility) */
@@ -433,24 +435,24 @@ button:disabled.btn-primary-glass { opacity:.55; }
 .neon-productive { --neon-a: hsla(188,95%,64%, .46); --neon-b: hsla(200,90%,70%, .28); }
 .neon-quiet      { --neon-a: hsla(260,75%,65%, .44); --neon-b: hsla(280,80%,70%, .26); }
 
-/* Vibe-specific tile selection glows */
+/* Vibe-specific tile selection glows - increased opacity for visibility */
 .tile[data-selected="true"][data-vibe="social"] {
-  filter: drop-shadow(0 0 6px hsla(198,100%,64%, .42)) drop-shadow(0 0 12px hsla(220,100%,72%, .26));
+  filter: drop-shadow(0 0 8px hsla(198,100%,64%, .60)) drop-shadow(0 0 16px hsla(220,100%,72%, .35));
 }
 .tile[data-selected="true"][data-vibe="chill"] {
-  filter: drop-shadow(0 0 6px hsla(160,84%,58%, .44)) drop-shadow(0 0 12px hsla(175,85%,65%, .28));
+  filter: drop-shadow(0 0 8px hsla(160,84%,58%, .62)) drop-shadow(0 0 16px hsla(175,85%,65%, .38));
 }
 .tile[data-selected="true"][data-vibe="active"] {
-  filter: drop-shadow(0 0 6px hsla(45,96%,64%, .48)) drop-shadow(0 0 12px hsla(25,90%,58%, .30));
+  filter: drop-shadow(0 0 8px hsla(45,96%,64%, .65)) drop-shadow(0 0 16px hsla(25,90%,58%, .40));
 }
 .tile[data-selected="true"][data-vibe="hype"] {
-  filter: drop-shadow(0 0 6px hsla(320,95%,68%, .50)) drop-shadow(0 0 12px hsla(300,88%,70%, .32));
+  filter: drop-shadow(0 0 8px hsla(320,95%,68%, .68)) drop-shadow(0 0 16px hsla(300,88%,70%, .42));
 }
 .tile[data-selected="true"][data-vibe="productive"] {
-  filter: drop-shadow(0 0 6px hsla(188,95%,64%, .46)) drop-shadow(0 0 12px hsla(200,90%,70%, .28));
+  filter: drop-shadow(0 0 8px hsla(188,95%,64%, .64)) drop-shadow(0 0 16px hsla(200,90%,70%, .38));
 }
 .tile[data-selected="true"][data-vibe="quiet"] {
-  filter: drop-shadow(0 0 6px hsla(260,75%,65%, .44)) drop-shadow(0 0 12px hsla(280,80%,70%, .26));
+  filter: drop-shadow(0 0 8px hsla(260,75%,65%, .62)) drop-shadow(0 0 16px hsla(280,80%,70%, .36));
 }
 
 /* === Glass sections ===================================== */
