@@ -75,6 +75,9 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               onChange={(e) => setName(e.target.value)}
               placeholder="What should we call your floq?"
               maxLength={50}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
             />
             <div className="text-[11px] text-white/45 text-right mt-1">{name.length}/50</div>
           </label>
@@ -87,6 +90,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's your floq about? What brings you together?"
               maxLength={200}
+              autoComplete="off"
             />
             <div className="text-[11px] text-white/45 text-right mt-1">{description.length}/200</div>
           </label>
@@ -102,8 +106,9 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               <button
                 key={v.id}
                 onClick={() => setVibe(v.id as Vibe)}
-                className={`text-left glass-subtle p-3 rounded-2xl border transition ${
-                  active ? "border-white/20 bg-white/10" : "border-white/10 hover:bg-white/8"
+                className={`text-left glass-subtle p-3 rounded-2xl border transition
+                           focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/30 outline-offset-2 ${
+                  active ? "border-white/20 bg-white/10 neon-soft" : "border-white/10 hover:bg-white/8"
                 }`}
                 aria-pressed={active}
               >
@@ -124,8 +129,9 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               <button
                 key={p.id}
                 onClick={() => setPrivacy(p.id as typeof privacy)}
-                className={`text-left glass-subtle p-3 rounded-2xl border transition ${
-                  active ? "border-white/20 bg-white/10" : "border-white/10 hover:bg-white/8"
+                className={`text-left glass-subtle p-3 rounded-2xl border transition
+                           focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/30 outline-offset-2 ${
+                  active ? "border-white/20 bg-white/10 neon-soft" : "border-white/10 hover:bg-white/8"
                 }`}
                 aria-pressed={active}
               >
@@ -139,7 +145,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
 
       {/* Actions */}
       <div className="sticky bottom-0 z-10 mt-6 -mx-4 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]
-                      bg-gradient-to-t from-[#0b0d12]/90 via-[#0b0d12]/70 to-transparent">
+                      bg-gradient-to-t from-[#0b0d12]/90 via-[#0b0d12]/70 to-transparent sticky-ios-fix">
         <div className="flex gap-2 justify-end">
           <Btn onClick={() => window.history.back()}>Cancel</Btn>
           <Btn 
