@@ -20,12 +20,21 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
 
+    // Get the authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Authentication required');
+    }
+
     const nowIso = new Date().toISOString();
 
-    // upsert viewer watermark
+    // Upsert the read timestamp with profile_id
     const { error } = await supabase
       .from("floq_stream_reads")
-      .upsert({ floq_id, last_seen_ts: nowIso }, { onConflict: "floq_id,profile_id" });
+      .upsert(
+        { floq_id, profile_id: user.id, last_seen_ts: nowIso },
+        { onConflict: "floq_id,profile_id" }
+      );
 
     if (error) throw error;
 

@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
-import { useSmartStream, useMarkStreamSeen, useStreamRealtime, SmartFilter, SmartItem } from "@/hooks/useSmartStream";
+import { useSmartStream, useMarkStreamSeen, useStreamRealtime } from "@/hooks/useSmartStream";
+import { SmartFilter, SmartItem } from "@/types/stream";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,10 +27,10 @@ export default function StreamTab({ reduce, panelAnim, floqId, onStartRally, onS
   useStreamRealtime(floqId ?? "");
 
   // mark seen when tab becomes visible and on mount
-  useEffect(() => { if (validId) markSeen.mutate(); }, [validId, markSeen]);
+  useEffect(() => { if (validId) markSeen.mutate({}); }, [validId, markSeen]);
   useEffect(() => {
     if (!validId) return;
-    const onFocus = () => markSeen.mutate();
+    const onFocus = () => markSeen.mutate({});
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [validId, markSeen]);
@@ -96,6 +97,14 @@ export default function StreamTab({ reduce, panelAnim, floqId, onStartRally, onS
             >
               Plans
             </button>
+            <button 
+              type="button"
+              className={`chip-compact ${filter === "wings" ? "aura-sm" : ""}`} 
+              data-active={filter === "wings"}
+              onClick={() => setFilter("wings")}
+            >
+              Wings
+            </button>
           </div>
           <button type="button" className="chip-compact">⚙︎</button>
         </div>
@@ -134,7 +143,7 @@ function SmartItemRow({
   item: SmartItem;
   onRallyResponse?: (id: string, s: "joined" | "maybe" | "declined") => void;
 }) {
-  // AI Cards
+  // Wings Cards
   if (item.kind === "poll") {
     return <PollCard item={item} />;
   }
@@ -148,36 +157,54 @@ function SmartItemRow({
     return <VenueSuggestionCard item={item} />;
   }
   
-  // Regular content
+  // Rally content
   if (item.kind === "rally") {
+    const { note, minutes_until_expiry, venue_id, scope } = item.meta || {};
+    const isExpiringSoon = minutes_until_expiry <= 90 && minutes_until_expiry > 0;
+    const isExpired = minutes_until_expiry <= 0;
+    
     return (
-      <div className="glass-subtle p-3 rounded-xl border border-white/10">
-        <div className="text-white/90 font-medium">{item.title}</div>
-        <div className="text-white/75 text-sm mt-1">
-          Rally: {item.rally?.venue} @ {item.rally?.at ? new Date(item.rally.at).toLocaleTimeString() : "TBD"}
+      <div className={`glass-subtle p-3 rounded-xl border ${isExpiringSoon ? 'border-orange-500/30' : 'border-white/10'}`}>
+        <div className="text-white/90 font-medium flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            Rally
+            <span className={`text-xs px-2 py-1 rounded ${scope === 'field' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'}`}>
+              {scope === 'field' ? 'Field' : 'Floq'}
+            </span>
+          </div>
+          {isExpiringSoon && (
+            <span className="text-xs text-orange-400">
+              {minutes_until_expiry}m left
+            </span>
+          )}
         </div>
-        <div className="mt-2 flex gap-2">
-          <Btn 
-            type="button" 
-            variant="primary" 
-            glow 
-            onClick={() => onRallyResponse?.(item.id, "joined")}
-          >
-            Join
-          </Btn>
-          <Btn 
-            type="button" 
-            onClick={() => onRallyResponse?.(item.id, "maybe")}
-          >
-            Maybe
-          </Btn>
-          <Btn 
-            type="button" 
-            onClick={() => onRallyResponse?.(item.id, "declined")}
-          >
-            Can't
-          </Btn>
-        </div>
+        {note && (
+          <div className="text-white/75 text-sm mt-1">{note}</div>
+        )}
+        {!isExpired && (
+          <div className="mt-2 flex gap-2">
+            <Btn 
+              type="button" 
+              variant="primary" 
+              glow 
+              onClick={() => onRallyResponse?.(item.id, "joined")}
+            >
+              Join
+            </Btn>
+            <Btn 
+              type="button" 
+              onClick={() => onRallyResponse?.(item.id, "maybe")}
+            >
+              Maybe
+            </Btn>
+            <Btn 
+              type="button" 
+              onClick={() => onRallyResponse?.(item.id, "declined")}
+            >
+              Can't
+            </Btn>
+          </div>
+        )}
       </div>
     );
   }
@@ -256,7 +283,7 @@ function PollCard({ item }: { item: SmartItem }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       
-      await supabase.from("floq_poll_votes").upsert({ 
+      await supabase.from("floq_wings_votes").upsert({ 
         event_id: item.id, 
         profile_id: user.id,
         option_idx: idx 
@@ -272,7 +299,7 @@ function PollCard({ item }: { item: SmartItem }) {
   return (
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
       <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Poll</span>
+        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Wings</span>
         {title || "Quick poll"}
       </div>
       {item.meta?.confidence && (
@@ -314,7 +341,7 @@ function TimePickerCard({ item }: { item: SmartItem }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       
-      await supabase.from("floq_poll_votes").upsert({ 
+      await supabase.from("floq_wings_votes").upsert({ 
         event_id: item.id, 
         profile_id: user.id,
         option_idx: (slots || []).indexOf(timeSlot)
@@ -330,7 +357,7 @@ function TimePickerCard({ item }: { item: SmartItem }) {
   return (
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
       <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Time</span>
+        <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Wings</span>
         {title || "When works?"}
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -361,7 +388,7 @@ function MeetHalfwayCard({ item }: { item: SmartItem }) {
   return (
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
       <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Meet</span>
+        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Wings</span>
         Meet halfway
       </div>
       <div className="text-white/70 text-sm mt-1">
@@ -390,7 +417,7 @@ function VenueSuggestionCard({ item }: { item: SmartItem }) {
   return (
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
       <div className="text-white/90 font-medium flex items-center gap-2">
-        <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">Venue</span>
+        <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">Wings</span>
         {item.title || "Venue suggestions"}
       </div>
       {context && (

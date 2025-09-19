@@ -25,8 +25,14 @@ type SmartItem = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   try {
-    const { floq_id, filter = "all", last_seen_ts } = await req.json() as {
-      floq_id: string; filter?: SmartFilter; last_seen_ts?: string|null;
+    type StreamMode = "floq" | "field";
+    const { floq_id, filter = "all", last_seen_ts, mode = "floq", viewer_lat, viewer_lng } = await req.json() as {
+      floq_id?: string;
+      filter?: SmartFilter;
+      last_seen_ts?: string | null;
+      mode?: StreamMode;
+      viewer_lat?: number;
+      viewer_lng?: number;
     };
     if (!floq_id) throw new Error("floq_id required");
 
@@ -42,15 +48,82 @@ serve(async (req) => {
     const viewer = user.id;
     const watermark = last_seen_ts ?? null;
 
-    // 1) Messages (text) — exclude deleted
-    const { data: msgs, error: mErr } = await supabase
-      .from("floq_messages")
-      .select("id, floq_id, sender_id, body, created_at")
-      .eq("floq_id", floq_id)
-      .neq("delivery_state", "deleted")
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (mErr) throw mErr;
+    // Fetch data based on mode
+    let fetchPromises: Promise<any>[] = [];
+    
+    if (mode === "floq" && floq_id) {
+      // Floq stream: messages, moments, plans, wings, floq rallies
+      fetchPromises = [
+        supabase
+          .from("floq_messages")
+          .select("id, floq_id, sender_id, body, created_at")
+          .eq("floq_id", floq_id)
+          .neq("delivery_state", "deleted")
+          .order("created_at", { ascending: false })
+          .limit(100),
+        
+        supabase
+          .from("floq_afterglow")
+          .select("id, created_at")
+          .eq("floq_id", floq_id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        
+        supabase
+          .from("floq_plans")
+          .select("id, title, planned_at, status, created_at, locked_at")
+          .eq("floq_id", floq_id)
+          .is("archived_at", null)
+          .order("planned_at", { ascending: false })
+          .limit(50),
+        
+        supabase
+          .from("floq_wings_events")
+          .select("id, kind, payload, created_at, confidence, status")
+          .eq("floq_id", floq_id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(30),
+        
+        supabase
+          .from("rallies")
+          .select("id, creator_id, created_at, expires_at, status, venue_id, scope, floq_id, center, note")
+          .eq("status", "active")
+          .eq("scope", "floq")
+          .eq("floq_id", floq_id)
+          .order("expires_at", { ascending: false })
+          .limit(50)
+      ];
+    } else {
+      // Field stream: only field rallies (filtered by RLS)
+      fetchPromises = [
+        Promise.resolve({ data: [], error: null }), // messages
+        Promise.resolve({ data: [], error: null }), // moments
+        Promise.resolve({ data: [], error: null }), // plans
+        Promise.resolve({ data: [], error: null }), // wings
+        supabase
+          .from("rallies")
+          .select("id, creator_id, created_at, expires_at, status, venue_id, scope, center, note")
+          .eq("status", "active")
+          .eq("scope", "field")
+          .order("expires_at", { ascending: false })
+          .limit(50)
+      ];
+    }
+
+    const [msgsRes, momentsRes, plansRes, wingsRes, ralliesRes] = await Promise.all(fetchPromises);
+    
+    if (msgsRes.error) console.error("Messages error:", msgsRes.error);
+    if (momentsRes.error) console.error("Moments error:", momentsRes.error);
+    if (plansRes.error) console.error("Plans error:", plansRes.error);
+    if (wingsRes.error) console.error("Wings error:", wingsRes.error);
+    if (ralliesRes.error) console.error("Rallies error:", ralliesRes.error);
+
+    const msgs = msgsRes.data || [];
+    const moments = momentsRes.data || [];
+    const plans = plansRes.data || [];
+    const wings = wingsRes.data || [];
+    const rallies = ralliesRes.data || [];
 
     // Mentions for nudge (only those targeting viewer)
     const msgIds = (msgs ?? []).map(m => m.id);
@@ -74,15 +147,6 @@ serve(async (req) => {
       body: m.body ?? ""
     }));
 
-    // 2) Moments/photos — from afterglow (treat as "moment")
-    const { data: moments, error: moErr } = await supabase
-      .from("floq_afterglow")
-      .select("id, created_at")
-      .eq("floq_id", floq_id)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (moErr) throw moErr;
-
     const momentItems: SmartItem[] = (moments ?? []).map(a => ({
       id: a.id,
       kind: "moment",
@@ -93,16 +157,6 @@ serve(async (req) => {
       // media: [] // integrate thumbs when you link assets
     }));
 
-    // 3) Plans — surface upcoming/locked & recently edited ones
-    const { data: plans, error: pErr } = await supabase
-      .from("floq_plans")
-      .select("id, title, planned_at, status, created_at, locked_at")
-      .eq("floq_id", floq_id)
-      .is("archived_at", null)
-      .order("planned_at", { ascending: false })
-      .limit(50);
-    if (pErr) throw pErr;
-
     const planItems: SmartItem[] = (plans ?? []).map(p => ({
       id: p.id,
       kind: "plan",
@@ -112,28 +166,42 @@ serve(async (req) => {
       plan: { title: p.title, at: (p.planned_at ?? ""), status: (p.status ?? "building") as any }
     }));
 
-    // 4) AI/System cards
-    const { data: cards, error: cErr } = await supabase
-      .from("floq_stream_events")
-      .select("id, kind, payload, created_at, confidence, status")
-      .eq("floq_id", floq_id)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(30);
-    if (cErr) throw cErr;
-
-    const cardItems: SmartItem[] = (cards ?? []).map(c => ({
+    const cardItems: SmartItem[] = (wings ?? []).map(c => ({
       id: c.id,
       kind: c.kind as any,
       ts: c.created_at,
       priority: 0, // scored below
       unread: watermark ? c.created_at > watermark : true,
-      title: c.payload?.title || "AI Suggestion",
+      title: c.payload?.title || "Wings Suggestion",
       meta: { card_kind: c.kind, payload: c.payload, confidence: c.confidence }
     }));
 
+    // Create rally items
+    const rallyItems: SmartItem[] = (rallies ?? []).map(rally => {
+      const timeUntilExpiry = new Date(rally.expires_at).getTime() - Date.now();
+      const minutesUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60));
+      
+      return {
+        id: rally.id,
+        kind: "rally" as any,
+        ts: rally.created_at,
+        priority: 0, // Will be calculated below
+        unread: watermark ? (rally.created_at > watermark) : true,
+        meta: {
+          creator_id: rally.creator_id,
+          expires_at: rally.expires_at,
+          venue_id: rally.venue_id,
+          scope: rally.scope,
+          floq_id: rally.floq_id,
+          center: rally.center,
+          note: rally.note,
+          minutes_until_expiry: minutesUntilExpiry
+        }
+      };
+    });
+
     // Merge
-    let items: SmartItem[] = [...textItems, ...momentItems, ...planItems, ...cardItems];
+    let items: SmartItem[] = [...textItems, ...momentItems, ...planItems, ...cardItems, ...rallyItems];
 
     // Score (simple, effective)
     const now = Date.now();
@@ -154,13 +222,28 @@ serve(async (req) => {
         if ((plans ?? []).find(p=>p.id===i.id)?.locked_at) score += 0.15;
       }
       
-      // AI Cards scoring
+      // Wings Cards scoring
       if (i.meta?.card_kind === "poll") score += 0.18 + 0.2 * (i.meta.confidence ?? 0);
       if (i.meta?.card_kind === "time_picker") score += 0.15;
       if (i.meta?.card_kind === "meet_halfway") score += 0.25; // highly actionable
       if (i.meta?.card_kind === "venue_suggestion") score += 0.20;
       
-      // Future: rally items (once you store rallies separately) → +0.4 within 90m
+      // Rally scoring
+      if (i.kind === "rally") {
+        const minutesUntilExpiry = i.meta?.minutes_until_expiry || 0;
+        
+        // Rally expiring in ≤ 90m gets significant boost
+        if (minutesUntilExpiry <= 90 && minutesUntilExpiry > 0) {
+          score += 0.40;
+        }
+        
+        // Recent rallies get slight boost
+        const ageHours = (now - new Date(i.ts).getTime()) / (1000 * 60 * 60);
+        if (ageHours <= 2) {
+          score += 0.15;
+        }
+      }
+      
       return { ...i, priority: Math.min(1, Math.max(0, score)) };
     });
 

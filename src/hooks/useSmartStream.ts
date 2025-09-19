@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans";
+export type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans"|"wings";
 export type SmartItem = {
   id: string;
   kind: "rally"|"moment"|"plan"|"text"|"poll"|"venue_suggestion"|"time_picker"|"meet_halfway"|"reminder"|"recap";
@@ -14,20 +14,29 @@ export type SmartItem = {
   media?: { thumb_url: string }[];
   rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number} };
   plan?:  { title: string; at: string; status:"locked"|"building"|"tentative" };
-  meta?: { card_kind?: string; payload?: any; confidence?: number };
+  meta?: { card_kind?: string; payload?: any; confidence?: number; [key: string]: any };
 };
 
-export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: string | null) {
+export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: string | null, mode: "floq" | "field" = "floq") {
   return useQuery({
-    queryKey: ["smart-stream", floqId, filter, lastSeenTs],
+    queryKey: ["smart-stream", floqId, filter, lastSeenTs, mode],
     enabled: !!floqId,
     staleTime: 15_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<{ items: SmartItem[]; unread_count:number }>(
-        "smart-stream-rank", 
-        { body: { floq_id: floqId, filter, last_seen_ts: lastSeenTs } }
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.functions.invoke<{ items: SmartItem[]; unread_count: number }>(
+        "smart-stream-rank",
+        { 
+          body: { floq_id: floqId, filter, last_seen_ts: lastSeenTs, mode },
+          signal
+        }
       );
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Stream fetch error:", error);
+        throw error;
+      }
+      
       return data!;
     },
   });
@@ -36,12 +45,19 @@ export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: 
 export function useMarkStreamSeen(floqId: string, setLastSeenTs: (ts: string) => void) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke<{ ok:boolean; last_seen_ts:string }>(
-        "smart-stream-read", 
-        { body: { floq_id: floqId } }
+    mutationFn: async ({ signal }: { signal?: AbortSignal } = {}) => {
+      const { data, error } = await supabase.functions.invoke<{ ok: boolean; last_seen_ts: string }>(
+        "smart-stream-read",
+        { 
+          body: { floq_id: floqId },
+          signal
+        }
       );
-      if (error) throw error;
+      
+      if (error) {
+        throw error;
+      }
+      
       return data!;
     },
     onSuccess: (res) => {
@@ -60,6 +76,6 @@ export function useStreamRealtime(floqId: string) {
         qc.invalidateQueries({ queryKey: ["smart-stream", floqId] });
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { ch.unsubscribe(); };
   }, [floqId, qc]);
 }
