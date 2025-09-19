@@ -1,18 +1,21 @@
 import React from "react";
 import { useFloqVibe, vibeToColors } from "@/hooks/useFloqVibe";
 import { pickIconForId } from "@/lib/iconSeed";
+import { FloqBadges } from "./FloqBadges";
 
 export function FloqHeader({
   floqId,
   name,
   description,
   avatarUrl,
+  memberCount = 12,
   rightBadges
 }: {
   floqId: string;
   name: string;
   description?: string;
   avatarUrl?: string | null;
+  memberCount?: number;
   rightBadges?: React.ReactNode;
 }) {
   const { data: frame } = useFloqVibe(floqId);
@@ -20,6 +23,15 @@ export function FloqHeader({
     joint_energy: frame?.joint_energy ?? 0.5, 
     harmony: frame?.harmony ?? 0.5 
   });
+
+  // Build badges once, deduped
+  const headerBadges = [
+    { id: "members", label: `${memberCount} members`, tone: "cyan" as const },
+    { id: "energy", label: frame?.joint_energy && frame.joint_energy >= 0.7 ? "High Energy" : "Steady", tone: "gold" as const },
+    { id: "tradition", label: "Thursday Legends", tone: "cyan" as const },
+    { id: "streak", label: "5-Week Streak", tone: "raspberry" as const },
+    { id: "homebase", label: "Gran Regulars", tone: "gold" as const }
+  ];
 
   const avatarBg = `radial-gradient(45% 45% at 50% 40%, ${vibe.glowA}50, transparent 60%)`;
   const auraBg   = `radial-gradient(35% 35% at 50% 50%, ${vibe.glowA}40, transparent 55%),
@@ -67,10 +79,8 @@ export function FloqHeader({
         {description && (
           <div className="text-white/75 text-[11px] mb-2 truncate">{description}</div>
         )}
-        <div className="flex items-center gap-2 text-[10px] text-white/60">
-          <span className="pill-neon ring-neon ring-neon-cyan">12 members</span>
-          <span className="pill-neon ring-neon ring-neon-gold">High Energy</span>
-        </div>
+        <FloqBadges items={headerBadges.slice(0, 2)} className="mb-1" />
+        <FloqBadges items={headerBadges.slice(2)} />
       </div>
 
       {/* Right: badges/actions */}
