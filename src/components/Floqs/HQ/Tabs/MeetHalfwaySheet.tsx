@@ -31,21 +31,35 @@ export default function MeetHalfwaySheet({
   categories, onToggleCategory, loading, members = [],
   onConfirmSend,
 }: Props) {
+  // 1) Hooks must be unconditional
   const [dirOpen, setDirOpen] = React.useState(false);
 
-  if (!open) return null;
+  // Top3 options (safe even when closed or data undefined)
+  const top3 = React.useMemo(
+    () => data?.candidates?.slice(0, 3) ?? [],
+    [data]
+  );
 
-  const top3 = data?.candidates?.slice(0,3) ?? [];
-  const selected = (selectedId && data?.candidates.find(c => c.id === selectedId)) ?? top3[0] ?? null;
+  // Selected venue (null-safe)
+  const selected = React.useMemo(
+    () =>
+      (selectedId && data?.candidates?.find(c => c.id === selectedId)) ??
+      top3[0] ??
+      null,
+    [selectedId, data, top3]
+  );
 
-  // build per-member ETAs for the selected venue (simple in-app calc)
-  const perMember: MemberETA[] = React.useMemo(() => {
-    if (!selected || !members?.length) return [];
+  // Per-member ETAs for map labels (empty when no selection/members)
+  const perMember = React.useMemo(() => {
+    if (!selected || members.length === 0) return [];
     return members.map((m) => {
-      const dist = haversineMeters({ lat: m.lat, lng: m.lng }, { lat: selected.lat, lng: selected.lng });
-      return { id: m.profile_id, lat: m.lat, lng: m.lng, eta_min: etaMinutesMeters(dist, "walk") };
+      const d = haversineMeters({ lat: m.lat, lng: m.lng }, { lat: selected.lat, lng: selected.lng });
+      return { id: m.profile_id, lat: m.lat, lng: m.lng, eta_min: etaMinutesMeters(d, "walk") };
     });
   }, [selected?.lat, selected?.lng, JSON.stringify(members)]);
+
+  // 2) Only now is it safe to return early
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
