@@ -108,7 +108,7 @@ export function useRecommendationCapture(
     return () => clearInterval(id);
   }, [envelope, profileId]);
 
-  return useCallback(async (payload: {
+  const capture = useCallback(async (payload: {
     offer: { id: string; type: string; predictedEnergy?: number; distance?: number };
     vibe:  { v: number; dvdt: number; momentum: number };
     decision: 'accept'|'decline'|'modify'|'delay';
@@ -126,4 +126,51 @@ export function useRecommendationCapture(
     });
     edgeLog('pref_saved', { offerId: payload.offer.id, decision: payload.decision });
   }, []);
+
+  const flushNow = useCallback(async () => {
+    if (draining.current) {
+      edgeLog('pref_flush_skipped', { reason: 'already_draining' });
+      return;
+    }
+    
+    draining.current = true;
+    try {
+      const gate = rankTimeGate({
+        envelopeId: envelope,
+        featureTimestamps: [Date.now()],
+        epsilonCost: 0.01,
+      });
+      if (!gate.ok) {
+        edgeLog('pref_flush_skipped', { reason: 'gate_blocked', degrade: gate.degrade });
+        return;
+      }
+
+      const pid = profileId ?? await getAuthProfileId();
+      if (!pid) {
+        edgeLog('pref_flush_skipped', { reason: 'no_profile' });
+        return;
+      }
+
+      const batch = await drainQueue(50); // Larger batch for manual flush
+      edgeLog('pref_flush_manual', { count: batch.length, degrade: gate.degrade, receiptId: gate.receiptId });
+      if (!batch.length) return;
+
+      const rows = batch.map(s => ({
+        profile_id: pid,
+        ts: new Date(s.ts).toISOString(),
+        signal: s as any,
+      }));
+
+      const { error } = await supabase.from('preference_signals').insert(rows);
+      if (error) {
+        const existing = JSON.parse((await storage.getItem(KEY)) ?? '[]');
+        await storage.setItem(KEY, JSON.stringify([...rows.map((r: any) => r.signal), ...existing].slice(-500)));
+        edgeLog('pref_flush_error', { message: error.message, code: (error as any).code });
+      }
+    } finally {
+      draining.current = false;
+    }
+  }, [envelope, profileId]);
+
+  return { capture, flushNow };
 }
