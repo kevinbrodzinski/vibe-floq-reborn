@@ -16,7 +16,10 @@ export function FloqHeader({
   rightBadges?: React.ReactNode;
 }) {
   const { data: frame } = useFloqVibe(floqId);
-  const vibe = vibeToColors({ joint_energy: frame?.joint_energy ?? 0.5, harmony: frame?.harmony ?? 0.5 });
+  const vibe = vibeToColors({ 
+    joint_energy: frame?.joint_energy ?? 0.5, 
+    harmony: frame?.harmony ?? 0.5 
+  });
 
   const avatarBg = `radial-gradient(65% 65% at 50% 40%, ${vibe.glowA}, transparent 70%)`;
   const auraBg   = `radial-gradient(55% 55% at 50% 50%, ${vibe.glowA}, transparent 65%),
