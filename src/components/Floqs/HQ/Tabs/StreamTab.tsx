@@ -1,32 +1,22 @@
 import React from "react";
-import { MessageSquare, Navigation2, Camera, Check, MapPin } from "lucide-react";
-import Btn from "../ui/Btn";
 import Section from "../ui/Section";
-
-type Props = {
-  reduce?: boolean;
-  sending?: boolean;
-  rallyLoading?: boolean;
-  onStartRally?: () => void;
-  onSend?: (text: string) => void;
-  onRallyResponse?: (rallyId: string, status: "joined" | "maybe" | "declined") => void;
-  panelAnim?: any;
-};
+import Btn from "../ui/Btn";
+import { Navigation2, Camera, Check, MessageSquare } from "lucide-react";
 
 export default function StreamTab({
-  onStartRally,
-  sending,
-  rallyLoading,
-  onSend,
-  onRallyResponse,
-  reduce,
-  panelAnim,
-}: Props) {
-  const sendNow = () => {
+  onStartRally, 
+  onSend, 
+  sending
+}: { 
+  onStartRally?: () => void; 
+  onSend?: (s: string) => void; 
+  sending?: boolean; 
+}) {
+  const send = () => {
     const el = document.getElementById("hq-message") as HTMLInputElement | null;
-    const val = el?.value?.trim();
-    if (!val) return;
-    onSend?.(val);
+    const v = el?.value?.trim(); 
+    if (!v) return; 
+    onSend?.(v); 
     if (el) el.value = "";
   };
 
@@ -42,7 +32,7 @@ export default function StreamTab({
         <div className="flex gap-2">
           <Btn>Wing</Btn>
           <Btn>Filter</Btn>
-          <Btn glow onClick={onStartRally}>{rallyLoading ? "Starting…" : "+ Start Rally"}</Btn>
+          <Btn glow onClick={onStartRally}>+ Start Rally</Btn>
         </div>
       </div>
 
@@ -52,9 +42,9 @@ export default function StreamTab({
         <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-[12px]">
           Rally: Gran Blanco @ 8:30 • Going: 3 • Deciding: 2 • No reply: 3
           <div className="mt-2 flex gap-2">
-            <Btn glow onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER", "joined")}>Join</Btn>
-            <Btn onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER", "maybe")}>Maybe</Btn>
-            <Btn onClick={() => onRallyResponse?.("RALLY_ID_PLACEHOLDER", "declined")}>Can't</Btn>
+            <Btn glow>Join</Btn>
+            <Btn>Maybe</Btn>
+            <Btn>Can't</Btn>
           </div>
         </div>
       </Section>
@@ -72,13 +62,13 @@ export default function StreamTab({
       </Section>
 
       <div className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center gap-2">
-        <input id="hq-message" className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Type message…" />
-        <Btn aria-label="mention">@</Btn>
-        <Btn aria-label="attach"><Camera className="h-4 w-4" /></Btn>
-        <Btn aria-label="location"><MapPin className="h-4 w-4" /></Btn>
-        <Btn glow onClick={sendNow} disabled={sending}>
-          {sending ? "Sending…" : "Send"}
-        </Btn>
+        <input 
+          id="hq-message" 
+          className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" 
+          placeholder="Type message…" 
+        />
+        <Btn><MessageSquare className="h-4 w-4" /></Btn>
+        <Btn glow onClick={send}>{sending ? "Sending…" : "Send"}</Btn>
       </div>
     </div>
   );

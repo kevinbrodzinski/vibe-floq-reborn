@@ -24,12 +24,12 @@ import Btn from "@/components/Floqs/HQ/ui/Btn";
 import MapTab from "@/components/Floqs/HQ/Tabs/MapTab";
 import StreamTab from "@/components/Floqs/HQ/Tabs/StreamTab";
 import PlanTab from "@/components/Floqs/HQ/Tabs/PlanTab";
-import { MomentsTab } from "@/components/Floqs/HQ/Tabs/MomentsTab";
-import { PulseTab } from "@/components/Floqs/HQ/Tabs/PulseTab";
-import { VenuesTab } from "@/components/Floqs/HQ/Tabs/VenuesTab";
-import { AnalyticsTab } from "@/components/Floqs/HQ/Tabs/AnalyticsTab";
-import { WingTab } from "@/components/Floqs/HQ/Tabs/WingTab";
-import { PrivacyTab } from "@/components/Floqs/HQ/Tabs/PrivacyTab";
+import MomentsTab from "@/components/Floqs/HQ/Tabs/MomentsTab";
+import PulseTab from "@/components/Floqs/HQ/Tabs/PulseTab";
+import VenuesTab from "@/components/Floqs/HQ/Tabs/VenuesTab";
+import AnalyticsTab from "@/components/Floqs/HQ/Tabs/AnalyticsTab";
+import WingTab from "@/components/Floqs/HQ/Tabs/WingTab";
+import PrivacyTab from "@/components/Floqs/HQ/Tabs/PrivacyTab";
 
 // Import shared constants
 import { TABS, TabKey } from "@/components/floq/hq/shared/constants";
@@ -210,10 +210,10 @@ export default function FloqHQTabbed() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <Btn ariaLabel="Settings"><Settings className="h-4 w-4" /></Btn>
-            <div className="relative"><Btn ariaLabel="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
-            <Btn ariaLabel="Invite"><UserPlus className="h-4 w-4" /></Btn>
-            <Btn ariaLabel="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+            <Btn aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
+            <div className="relative"><Btn aria-label="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
+            <Btn aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
+            <Btn aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-4 pb-2">
@@ -251,7 +251,6 @@ export default function FloqHQTabbed() {
             <motion.div key="map" id="panel-map" role="tabpanel" aria-labelledby="tab-map" {...panelAnim(reduce)}>
               <MapTab 
                 onMeetHalfway={openMeetHalfway}
-                onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
               />
             </motion.div>
           )}
@@ -260,10 +259,8 @@ export default function FloqHQTabbed() {
             <motion.div key="stream" id="panel-stream" role="tabpanel" aria-labelledby="tab-stream" {...panelAnim(reduce)}>
               <StreamTab
                 sending={sending}
-                rallyLoading={rallyLoading}
                 onStartRally={() => handleStartRally()}
                 onSend={(text) => handleSendMessage()}
-                onRallyResponse={handleRallyResponse}
               />
             </motion.div>
           )}
@@ -275,45 +272,39 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "moments" && (
-            <MomentsTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="moments" id="panel-moments" role="tabpanel" aria-labelledby="tab-moments" {...panelAnim(reduce)}>
+              <MomentsTab />
+            </motion.div>
           )}
 
           {active === "pulse" && (
-            <PulseTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="pulse" id="panel-pulse" role="tabpanel" aria-labelledby="tab-pulse" {...panelAnim(reduce)}>
+              <PulseTab />
+            </motion.div>
           )}
 
           {active === "venues" && (
-            <VenuesTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="venues" id="panel-venues" role="tabpanel" aria-labelledby="tab-venues" {...panelAnim(reduce)}>
+              <VenuesTab />
+            </motion.div>
           )}
 
           {active === "analytics" && (
-            <AnalyticsTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="analytics" id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" {...panelAnim(reduce)}>
+              <AnalyticsTab />
+            </motion.div>
           )}
 
           {active === "wing" && (
-            <WingTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="wing" id="panel-wing" role="tabpanel" aria-labelledby="tab-wing" {...panelAnim(reduce)}>
+              <WingTab />
+            </motion.div>
           )}
 
           {active === "privacy" && (
-            <PrivacyTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <motion.div key="privacy" id="panel-privacy" role="tabpanel" aria-labelledby="tab-privacy" {...panelAnim(reduce)}>
+              <PrivacyTab />
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

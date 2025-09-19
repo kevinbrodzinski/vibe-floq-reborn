@@ -1,41 +1,47 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { BarChart3, Users, Gauge, Target } from "lucide-react";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
 import Bar from "../ui/Bar";
+import { BarChart3, TrendingUp } from "lucide-react";
 
-interface AnalyticsTabProps {
-  reduce: boolean;
-  panelAnim: any;
-}
-
-export function AnalyticsTab({ reduce, panelAnim }: AnalyticsTabProps) {
+export default function AnalyticsTab() {
   return (
-    <motion.div key="analytics" id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" {...panelAnim(reduce)} className="space-y-5">
-      <div className="flex flex-wrap gap-2">
-        <Btn active>Overview</Btn><Btn>Dynamics</Btn><Btn>Patterns</Btn><Btn>Archetypes</Btn><Btn>Export</Btn>
+    <div className="space-y-5">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        <Btn active>Overview</Btn>
+        <Btn>Dynamics</Btn>
+        <Btn>Patterns</Btn>
+        <Btn>Insights</Btn>
+        <Btn>Reports</Btn>
       </div>
+
       <Section title="Tribe Health" icon={<BarChart3 className="h-4 w-4" />}>
-        <div className="text-[13px]">Score 87/100 • Momentum building • 12 convergences</div>
-        <div className="mt-2"><Bar value={87} /></div>
+        <div className="text-2xl font-bold">94<span className="text-lg text-white/60">/100</span></div>
+        <Bar value={94} />
+        <div className="text-[12px] text-white/70 mt-2">Excellent convergence • High energy alignment • Strong social bonds</div>
       </Section>
-      <div className="grid lg:grid-cols-2 gap-5">
-        <Section title="Your Role" icon={<Users className="h-4 w-4" />}>
-          <div className="text-[13px]">Catalyst • Initiate 42% • +15% vibe lift</div>
-          <div className="text-[12px] text-white/80">Strongest: You↔Sarah • Needs: You↔Jake</div>
-        </Section>
-        <Section title="Weekly Rhythm" icon={<Gauge className="h-4 w-4" />}>
-          <div className="text-[12px] text-white/80">Mon recovery • Tue build • Wed social • Thu peak • Fri high • Sat var • Sun recharge</div>
-          <div className="mt-2 h-20 rounded-xl bg-white/5 border border-white/10 grid place-items-center text-white/60 text-xs">(Heatmap)</div>
-        </Section>
-      </div>
-      <Section title="Insights" icon={<Target className="h-4 w-4" />}>
-        <div className="grid md:grid-cols-2 gap-3 text-[13px]">
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3">Thu tradition at risk<div className="mt-2"><Btn glow>Rally the Crew</Btn></div></div>
-          <div className="rounded-xl bg-white/5 border border-white/10 p-3">Jake engagement dropping<div className="mt-2 flex gap-2"><Btn>Reach Out</Btn><Btn>View Relationship</Btn></div></div>
+
+      <Section title="Your Role" icon={<TrendingUp className="h-4 w-4" />}>
+        <div className="text-[13px]">Social Catalyst • High influence • Connector type</div>
+        <div className="text-[12px] text-white/70">You initiate 47% of gatherings • Bridge different groups • Natural rally starter</div>
+      </Section>
+
+      <Section title="Weekly Rhythm" icon={<BarChart3 className="h-4 w-4" />}>
+        <div className="text-[12px] font-mono leading-relaxed">
+          M T W <span className="font-bold text-white">T</span> F S <span className="font-bold text-white">S</span><br />
+          . . . ███ . ██ ██<br />
+          Thu: Thursday Tradition<br />
+          Sat-Sun: Adventure time
         </div>
       </Section>
-    </motion.div>
+
+      <Section title="Insights" icon={<TrendingUp className="h-4 w-4" />}>
+        <div className="text-[13px]">Thursday streak at risk • Consider backup venue</div>
+        <div className="mt-2 flex gap-2">
+          <Btn glow>Setup Backup</Btn>
+          <Btn>Ignore</Btn>
+        </div>
+      </Section>
+    </div>
   );
 }

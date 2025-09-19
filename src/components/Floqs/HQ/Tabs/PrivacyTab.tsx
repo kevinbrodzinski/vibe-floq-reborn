@@ -1,23 +1,21 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Shield } from "lucide-react";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
+import { Shield } from "lucide-react";
 
-interface PrivacyTabProps {
-  reduce: boolean;
-  panelAnim: any;
-}
-
-export function PrivacyTab({ reduce, panelAnim }: PrivacyTabProps) {
+export default function PrivacyTab() {
   return (
-    <motion.div key="privacy" id="panel-privacy" role="tabpanel" aria-labelledby="tab-privacy" {...panelAnim(reduce)} className="space-y-5">
+    <div className="space-y-5">
       <Section title="Privacy Controls" icon={<Shield className="h-4 w-4" />}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {["Precise","Neighborhood","Status Only","Ghost"].map(l=>(<Btn key={l}>{l}</Btn>))}
+          {["Precise", "Neighborhood", "Status Only", "Ghost"].map(l => (
+            <Btn key={l}>{l}</Btn>
+          ))}
         </div>
-        <div className="mt-2 text-[11px] text-white/60">Auto-rules: Ghost after 11pm • Precise during rallies • Status at work</div>
+        <div className="mt-2 text-[11px] text-white/60">
+          Auto-rules: Ghost after 11pm • Precise during rallies • Status at work
+        </div>
       </Section>
-    </motion.div>
+    </div>
   );
 }

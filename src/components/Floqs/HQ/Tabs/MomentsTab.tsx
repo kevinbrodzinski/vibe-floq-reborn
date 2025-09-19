@@ -1,17 +1,11 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Camera, Star } from "lucide-react";
 import Section from "../ui/Section";
 import Pill from "../ui/Pill";
+import { Camera, Star } from "lucide-react";
 
-interface MomentsTabProps {
-  reduce: boolean;
-  panelAnim: any;
-}
-
-export function MomentsTab({ reduce, panelAnim }: MomentsTabProps) {
+export default function MomentsTab() {
   return (
-    <motion.div key="moments" id="panel-moments" role="tabpanel" aria-labelledby="tab-moments" {...panelAnim(reduce)} className="space-y-5">
+    <div className="space-y-5">
       <Section title="Tonight — Thu Sept 12" icon={<Camera className="h-4 w-4" />} right={<Pill glow>Live Now</Pill>}>
         <div className="text-[13px]">"Thursday Tradition #5" • Now →</div>
         <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
@@ -19,14 +13,17 @@ export function MomentsTab({ reduce, panelAnim }: MomentsTabProps) {
         </div>
         <div className="text-[12px] text-white/80 mt-2">Current: Gran Blanco • Building to peak</div>
       </Section>
+
       <Section title="Last Thursday — Sept 5" icon={<Star className="h-4 w-4" />} right={<Pill glow>Score 5/5</Pill>}>
         <div className="text-[13px]">"Legendary Karaoke Night" • 4h 13m</div>
         <div className="text-[12px] text-white/80">Highlights: Rap battle win • 27 moments • Convergence 94/100</div>
       </Section>
+
       <Section title="Aug 28 — Beach Birthday Bash" icon={<Star className="h-4 w-4" />} right={<Pill glow>Score 4/5</Pill>}>
         <div className="text-[13px]">8/8 attended • 6h • Perfect weather</div>
       </Section>
+
       <div className="text-[12px] text-white/80">Pattern: Thursday Tradition (5 weeks)</div>
-    </motion.div>
+    </div>
   );
 }
