@@ -174,6 +174,12 @@ export default defineConfig(({ mode, command }) => {
           replacement: "react-native-web/dist/vendor/react-native/Libraries/$1",
         },
 
+        /* react-native-svg fabric stubs */
+        { find: "react-native-web/Libraries/Utilities/codegenNativeComponent", replacement: path.resolve(__dirname, "src/lib/stubs/codegenNativeComponent.js") },
+        { find: "react-native/Libraries/Utilities/codegenNativeComponent", replacement: path.resolve(__dirname, "src/lib/stubs/codegenNativeComponent.js") },
+        { find: "react-native-web/Libraries/Utilities/codegenNativeCommands", replacement: path.resolve(__dirname, "src/lib/stubs/codegenNativeCommands.js") },
+        { find: "react-native/Libraries/Utilities/codegenNativeCommands", replacement: path.resolve(__dirname, "src/lib/stubs/codegenNativeCommands.js") },
+
         /* native-only libs we never want in the browser bundle */
         { find: "@rnmapbox/maps", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
         { find: "react-native-mmkv", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
