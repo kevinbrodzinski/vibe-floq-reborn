@@ -5337,6 +5337,88 @@ export type Database = {
           },
         ]
       }
+      floq_stream_reads: {
+        Row: {
+          floq_id: string
+          last_seen_ts: string
+          profile_id: string
+        }
+        Insert: {
+          floq_id: string
+          last_seen_ts?: string
+          profile_id: string
+        }
+        Update: {
+          floq_id?: string
+          last_seen_ts?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "business_floq_detail_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_peek_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floq_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs_card_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs_discovery_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs_living_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "my_floqs_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_stream_reads_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floqs: {
         Row: {
           activity_score: number
@@ -20118,13 +20200,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "leaderboard_cache"
@@ -20134,8 +20209,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -20148,8 +20223,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -20162,7 +20237,7 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -20176,8 +20251,8 @@ export type Database = {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
@@ -20189,13 +20264,20 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_user_vibe_states_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]

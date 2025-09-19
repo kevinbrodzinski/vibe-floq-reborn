@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS = {
   "Access-Control-Allow-Origin":"*",
@@ -7,15 +8,31 @@ const CORS = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null,{headers:CORS});
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
   try {
     const { floq_id } = await req.json();
     if (!floq_id) throw new Error("floq_id required");
-    // TODO: upsert into floq_stream_reads(profile_id, floq_id, last_seen_ts = now())
-    return new Response(JSON.stringify({ ok:true, last_seen_ts: new Date().toISOString() }), { 
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!, 
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+    );
+
+    const nowIso = new Date().toISOString();
+
+    // upsert viewer watermark
+    const { error } = await supabase
+      .from("floq_stream_reads")
+      .upsert({ floq_id, last_seen_ts: nowIso }, { onConflict: "floq_id,profile_id" });
+
+    if (error) throw error;
+
+    return new Response(JSON.stringify({ ok: true, last_seen_ts: nowIso }), {
       headers: { ...CORS, "Content-Type":"application/json" }
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error:String(e) }), { status:400, headers:CORS });
+    return new Response(JSON.stringify({ error: String(e) }), { status: 400, headers: CORS });
   }
 });
