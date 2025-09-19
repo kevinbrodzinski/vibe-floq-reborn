@@ -9,17 +9,18 @@ export type HalfResult = {
   centroid: { lat: number; lng: number };
   members: Array<{ profile_id: string; lat: number; lng: number }>;
   candidates: HalfCandidate[];
+  rationale?: string;
 };
 
 type Props = {
-  token?: string;            // defaults to VITE_MAPBOX_TOKEN
+  token?: string;             // defaults to VITE_MAPBOX_TOKEN
   data: HalfResult;
-  selectedId?: string|null;
-  onSelect?: (id: string)=>void;
-  height?: number;           // px
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
+  height?: number;            // px
 };
 
-if (typeof window !== "undefined" && import.meta.env.VITE_MAPBOX_TOKEN) {
+if (typeof window !== "undefined" && import.meta.env?.VITE_MAPBOX_TOKEN) {
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 }
 
@@ -49,7 +50,9 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
       style: "mapbox://styles/mapbox/dark-v11",
       bounds,
       fitBoundsOptions: { padding: 36 },
-      dragRotate: false, pitchWithRotate: false
+      dragRotate: false,
+      pitchWithRotate: false,
+      interactive: true,
     });
     mapRef.current = map;
 
@@ -67,7 +70,7 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
         }
       });
       map.addLayer({
-        id: "members",
+        id: "members-circles",
         type: "circle",
         source: "members",
         paint: {
@@ -91,12 +94,12 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
         }
       });
       map.addLayer({
-        id: "candidates",
+        id: "candidates-circles",
         type: "circle",
         source: "candidates",
         paint: {
           "circle-radius": ["case", ["==", ["get","id"], selectedId ?? ""], 7, 5] as any,
-          "circle-color": ["case", ["==", ["get","id"], selectedId ?? ""], "#22d3ee", "#7c3aed"] as any,
+          "circle-color":  ["case", ["==", ["get","id"], selectedId ?? ""], "#22d3ee", "#7c3aed"] as any,
           "circle-stroke-width": 1,
           "circle-stroke-color": "rgba(255,255,255,0.35)"
         }
@@ -107,29 +110,47 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
         type: "geojson",
         data: {
           type: "FeatureCollection",
-          features: [{ type: "Feature", properties: {}, geometry: {
-            type: "Point", coordinates: [data.centroid.lng, data.centroid.lat]
-          }}]
+          features: [{
+            type: "Feature",
+            properties: {},
+            geometry: { type: "Point", coordinates: [data.centroid.lng, data.centroid.lat] }
+          }]
         }
       });
       map.addLayer({
-        id: "centroid",
+        id: "centroid-circle",
         type: "circle",
         source: "centroid",
-        paint: { "circle-radius": 6, "circle-color": "#22c55e", "circle-stroke-width":1, "circle-stroke-color":"rgba(255,255,255,0.35)" }
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#22c55e",
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "rgba(255,255,255,0.35)"
+        }
       });
 
-      // polylines
+      // member → selected candidate lines
       map.addSource("member-lines", { type: "geojson", data: emptyFC() });
-      map.addLayer({ id: "member-lines", type: "line", source: "member-lines",
-        paint: { "line-color": "#60a5fa", "line-width": 2, "line-opacity": 0.9 } });
+      map.addLayer({
+        id: "member-lines",
+        type: "line",
+        source: "member-lines",
+        paint: { "line-color": "#60a5fa", "line-width": 2, "line-opacity": 0.9 }
+      });
 
-      map.on("click", "candidates", (e: any) => {
+      map.on("click", "candidates-circles", (e) => {
         const id = e.features?.[0]?.properties?.id as string | undefined;
         if (id && onSelect) onSelect(id);
       });
 
       updateLines(map, data, selectedId);
+    });
+
+    // soft-fail layer/style races
+    map.on("error", (evt) => {
+      const msg: string | undefined = (evt as any)?.error?.message || (evt as any)?.message;
+      if (msg && msg.includes("does not exist in the map")) return;
+      console.warn("[Mapbox] error:", evt);
     });
 
     return () => { map.remove(); mapRef.current = null; };
@@ -140,30 +161,28 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
     if (!map?.isStyleLoaded()) return;
     updateLines(map, data, selectedId);
     try {
-      map.setPaintProperty("candidates", "circle-radius",
+      map.setPaintProperty("candidates-circles", "circle-radius",
         ["case", ["==", ["get","id"], selectedId ?? ""], 7, 5] as any);
-      map.setPaintProperty("candidates", "circle-color",
+      map.setPaintProperty("candidates-circles", "circle-color",
         ["case", ["==", ["get","id"], selectedId ?? ""], "#22d3ee", "#7c3aed"] as any);
     } catch {}
   }, [data, selectedId]);
 
-  return <div ref={containerRef} style={{ height }} className="rounded-xl overflow-hidden border border-white/10" />;
+  return <div ref={containerRef} className="w-full rounded-xl overflow-hidden border border-white/10" style={{ height }} />;
 }
 
-function emptyFC() { 
-  return { 
-    type: "FeatureCollection" as const, 
-    features: [] as any[] 
-  }; 
-}
+function emptyFC() { return { type: "FeatureCollection", features: [] } as const; }
 
-function updateLines(map: mapboxgl.Map, data: HalfResult, selectedId?: string|null) {
-  const cand = data.candidates.find(c => c.id === selectedId) ?? data.candidates[0];
-  if (!cand) { (map.getSource("member-lines") as any)?.setData(emptyFC()); return; }
+function updateLines(map: mapboxgl.Map, data: HalfResult, selectedId?: string | null) {
+  const candidate = data.candidates.find(c => c.id === selectedId) ?? data.candidates[0];
+  if (!candidate) {
+    (map.getSource("member-lines") as any)?.setData(emptyFC());
+    return;
+  }
   const features = data.members.map(m => ({
     type: "Feature",
-    properties: { profile_id: m.profile_id, to: cand.id },
-    geometry: { type: "LineString", coordinates: [[m.lng, m.lat],[cand.lng, cand.lat]] }
+    properties: { to: candidate.id, profile_id: m.profile_id },
+    geometry: { type: "LineString", coordinates: [[m.lng,m.lat],[candidate.lng,candidate.lat]] }
   }));
   (map.getSource("member-lines") as any)?.setData({ type: "FeatureCollection", features });
 }
