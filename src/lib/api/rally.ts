@@ -30,6 +30,32 @@ export async function createRally(args: {
   return data as any;
 }
 
+export async function createFloqRally(args: {
+  floqId: string;
+  center: { lng: number; lat: number };
+  venueId?: string | null;
+  ttlMin?: number;
+  note?: string;
+}): Promise<{ rallyId: RallyId; expires_at: string; invited: number }> {
+  // Get all floq participants
+  const { data: participants, error: participantsError } = await supabase
+    .from('floq_participants')
+    .select('profile_id')
+    .eq('floq_id', args.floqId);
+  
+  if (participantsError) throw participantsError;
+  
+  const recipients = participants?.map(p => p.profile_id) || [];
+  
+  return createRally({
+    center: args.center,
+    venueId: args.venueId,
+    ttlMin: args.ttlMin,
+    recipients,
+    note: args.note
+  });
+}
+
 export async function joinRally(rallyId: RallyId, status: 'joined' | 'declined' = 'joined') {
   const { data, error } = await supabase.functions.invoke('join-rally', {
     body: { rallyId, status },

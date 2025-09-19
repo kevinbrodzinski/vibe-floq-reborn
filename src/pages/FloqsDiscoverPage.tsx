@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useFloqsCards } from "@/hooks/useFloqsCards";
 import LivingFloqCard, { type LivingFloq } from "@/components/Floqs/cards/LivingFloqCard";
 import SplitFilters, { KindFilter, VibeFilter, StatusFilter } from "@/components/Floqs/SplitFilters";
+import { FloqRallyModal } from "@/components/rally/FloqRallyModal";
 
 export default function FloqsDiscoverPage() {
   const nav = useNavigate();
@@ -16,7 +17,18 @@ export default function FloqsDiscoverPage() {
 
   // Actions
   const open = (id: string) => nav(`/floqs/${id}/hq`);
-  const primary = (id: string) => console.log("primary", id);
+  
+  // Rally modal state
+  const [rallyModal, setRallyModal] = React.useState<{ floqId: string; floqName: string } | null>(null);
+  
+  const primary = (id: string, floqData?: LivingFloq) => {
+    if (floqData?.kind === "friend") {
+      // Open rally modal for friend floqs
+      setRallyModal({ floqId: id, floqName: floqData.name });
+    } else {
+      console.log("primary", id);
+    }
+  };
   const secondary = (id: string) => console.log("secondary", id);
 
   const filterCard = (f: LivingFloq): boolean => {
@@ -67,7 +79,7 @@ export default function FloqsDiscoverPage() {
         <div className="text-sm font-semibold mb-2">{title}</div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
           {items.map(f => (
-            <LivingFloqCard key={f.id} data={f} onOpen={open} onPrimary={primary} onSecondary={secondary}/>
+            <LivingFloqCard key={f.id} data={f} onOpen={open} onPrimary={() => primary(f.id, f)} onSecondary={() => secondary(f.id)}/>
           ))}
         </div>
       </section>
@@ -101,10 +113,20 @@ export default function FloqsDiscoverPage() {
           <summary className="text-sm text-white/70 cursor-pointer">Dormant ({sections.dormant.length})</summary>
           <div className="mt-3 grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {sections.dormant.map(f => (
-              <LivingFloqCard key={f.id} data={f} onOpen={open} onPrimary={primary} onSecondary={secondary}/>
+              <LivingFloqCard key={f.id} data={f} onOpen={open} onPrimary={() => primary(f.id, f)} onSecondary={() => secondary(f.id)}/>
             ))}
           </div>
         </details>
+      )}
+
+      {/* Rally Modal */}
+      {rallyModal && (
+        <FloqRallyModal
+          isOpen={!!rallyModal}
+          onClose={() => setRallyModal(null)}
+          floqId={rallyModal.floqId}
+          floqName={rallyModal.floqName}
+        />
       )}
     </div>
   );
