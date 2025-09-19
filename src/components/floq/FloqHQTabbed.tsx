@@ -92,7 +92,7 @@ function Bar({ value }: { value: number }) {
   return (
     <div className="h-2 rounded-full bg-white/10 overflow-hidden">
       <div
-        className="h-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-rose-500"
+        className="h-full bg-gradient-to-r from-[#A78BFA99] via-[#60A5FA99] to-[#7DD3FC7A]"
         style={{ width: `${value}%` }}
       />
     </div>
@@ -281,7 +281,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                         </div>
                         <div className="w-40 h-1.5 rounded-full bg-white/10 overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500"
+                            className="h-full bg-gradient-to-r from-[#A78BFA99] via-[#60A5FA99] to-[#7DD3FC7A]"
                             style={{ width: `${p.v}%` }}
                           />
                         </div>
