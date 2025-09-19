@@ -73,46 +73,48 @@
   .chip-glow {
     position: relative;
     isolation: isolate;
-    background: rgba(255,255,255,0.10);
-    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.15);
     border-radius: 9999px;
     padding: 0.25rem 0.625rem;
     font-size: 0.6875rem;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255,255,255,0.9);
   }
   .chip-glow::after {
     content: "";
     position: absolute;
-    inset: -6px;
+    inset: -8px;
     border-radius: inherit;
     z-index: -1;
-    background: radial-gradient(60% 60% at 50% 50%, rgba(56,189,248,.12), transparent 60%);
-    filter: blur(10px);
+    background: radial-gradient(60% 60% at 50% 50%, rgba(56,189,248,.18), transparent 60%);
+    filter: blur(12px);
+    opacity: 1;
     pointer-events: none;
   }
 
   .btn-glow {
     border-radius: 0.75rem;
-    border: 1px solid rgba(255,255,255,0.10);
-    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
     transition: all 0.2s ease;
     position: relative;
     isolation: isolate;
   }
   .btn-glow:hover {
-    background: rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.20);
   }
   .btn-glow::after {
     content: "";
     position: absolute;
-    inset: -6px;
+    inset: -8px;
     border-radius: inherit;
     z-index: -1;
     background:
-      radial-gradient(40% 40% at 30% 30%, rgba(56,189,248,.20), transparent 60%),
-      radial-gradient(50% 50% at 70% 70%, rgba(168,85,247,.16), transparent 60%);
-    filter: blur(12px);
-    opacity: .90;
+      radial-gradient(40% 40% at 30% 30%, rgba(56,189,248,.25), transparent 60%),
+      radial-gradient(50% 50% at 70% 70%, rgba(168,85,247,.20), transparent 60%);
+    filter: blur(14px);
+    opacity: 1;
     pointer-events: none;
   }
 

@@ -206,10 +206,10 @@ export default function FloqHQTabbed() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <Btn aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
-            <div className="relative"><Btn aria-label="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
-            <Btn aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
-            <Btn aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+            <Btn glow aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
+            <div className="relative"><Btn glow aria-label="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
+            <Btn glow aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
+            <Btn glow aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-4 pb-2">
@@ -229,8 +229,8 @@ export default function FloqHQTabbed() {
                     if (e.key === "ArrowRight") setActive(TABS[(idx + 1) % TABS.length].k);
                     if (e.key === "ArrowLeft")  setActive(TABS[(idx - 1 + TABS.length) % TABS.length].k);
                   }}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] border transition ${
-                    selected ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
+                  className={`flex items-center gap-2 px-3 py-2 text-[12px] transition ${
+                    selected ? "btn-glow bg-white/15 border-white/20" : "rounded-xl bg-white/5 border border-white/10 hover:bg-white/10"
                   }`}
                 >
                   {t.i}<span>{t.l}</span>
