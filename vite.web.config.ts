@@ -41,6 +41,8 @@ export default defineConfig(({ mode, command }) => ({
         'react-native-web/dist/cjs/exports/codegenNativeCommands',
       'react-native/Libraries/Utilities/codegenNativeCommands':
         'react-native-web/dist/cjs/exports/codegenNativeCommands',
+      // Optional safeguard for svg fabric consumers
+      'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
     },
     dedupe: ['react', 'react-dom'],
   },

@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import Ring from './shapes/Ring';
 import Bolt from './shapes/Bolt';
 import Droplet from './shapes/Droplet';
@@ -40,8 +40,9 @@ export default function MetamorphBattery({
       onPress={onPress}
       style={[
         styles.wrap,
-        { backgroundColor: surface, borderColor: border }
-      ]}
+        { backgroundColor: surface, borderColor: border },
+        Platform.OS === 'web' && { backdropFilter: 'blur(8px)' },
+      ].filter(Boolean)}
       accessibilityRole="button"
       accessibilityLabel={`Energy ${pct} percent, ${dir}`}
     >
