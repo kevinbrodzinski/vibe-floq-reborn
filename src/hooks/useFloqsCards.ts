@@ -51,50 +51,17 @@ export function useFloqsCards() {
   return useQuery({
     queryKey: ["floqs-cards"],
     queryFn: async () => {
-      // Query floqs table directly for now
-      const { data: floqsData, error: floqsError } = await supabase
-        .from("floqs")
-        .select(`
-          id, name, title, description, primary_vibe, 
-          visibility, created_at
-        `)
-        .eq("visibility", "public")
-        .limit(50);
+      // Use the new floqs_card_view that provides all the columns we need
+      const { data, error } = await supabase
+        .from("floqs_card_view")
+        .select("*")
+        .limit(120);
       
-      if (floqsError) throw floqsError;
+      if (error) throw error;
       
-      // Transform basic data with minimal logic
-      const rows = (floqsData ?? []).map(f => ({
-        id: f.id,
-        name: f.name,
-        title: f.title,
-        description: f.description,
-        primary_vibe: f.primary_vibe,
-        kind: "club" as const, // Default fallback
-        member_count: Math.floor(Math.random() * 30) + 5, // Temporary mock for demo
-        active_now: Math.floor(Math.random() * 8) + 1,
-        converging_nearby: Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
-        distance_label: Math.random() > 0.6 ? `${(Math.random() * 2 + 0.2).toFixed(1)} km` : null,
-        energy: Math.random() * 0.5 + 0.3,
-        next_label: Math.random() > 0.5 ? "Weekly meetup" : null,
-        next_when: Math.random() > 0.5 ? "Thursday 7pm" : null,
-        ttl_seconds: null,
-        match_pct: Math.random() * 0.4 + 0.6,
-        following: Math.random() > 0.7,
-        streak_weeks: null,
-        last_active_ago: Math.random() > 0.8 ? "2 hours ago" : null,
-        rally_now: Math.random() > 0.9,
-        forming: Math.random() > 0.85,
-        status_bucket: (() => {
-          const rand = Math.random();
-          if (rand > 0.85) return "now" as const;
-          if (rand > 0.65) return "today" as const;
-          if (rand > 0.35) return "upcoming" as const;
-          return "dormant" as const;
-        })(),
-      })) as CardRow[];
-      
-      const list = rows.map(r => transformRowToLivingFloq(r));
+      // Transform the view data to match our expected structure
+      const rows = (data ?? []) as CardRow[];
+      const list: LivingFloq[] = rows.map(transformRowToLivingFloq);
 
       const by = (bucket: CardRow["status_bucket"]) =>
         rows
