@@ -6,7 +6,7 @@ import Pill from "../ui/Pill";
 import { MapPin, Target, Thermometer, Users, Radio, Layers } from "lucide-react";
 import SmartMap from "@/components/maps/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
-import MeetHalfwaySheet from "@/components/floq/MeetHalfwaySheet";
+import MeetHalfwaySheet from "./MeetHalfwaySheet";
 
 const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
@@ -48,9 +48,18 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         icon={<MapPin className="h-4 w-4" />}
         right={<Btn glow onClick={() => setOpen(true)}>Meet-Halfway</Btn>}
       >
-        <div className="rounded-xl bg-white/5 border border-white/10 h-[260px] grid place-items-center text-white/40">
-          (Map preview)
-        </div>
+        {data ? (
+          <SmartMap 
+            data={data} 
+            selectedId={selected} 
+            onSelect={setSelected} 
+            height={260}
+          />
+        ) : (
+          <div className="rounded-xl bg-white/5 border border-white/10 h-[260px] flex items-center justify-center text-white/40">
+            {isLoading ? "Loading proximity map..." : "Map preview"}
+          </div>
+        )}
         <div className="text-[12px] text-white/80 mt-3">
           You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%
         </div>

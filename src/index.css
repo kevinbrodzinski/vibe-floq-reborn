@@ -43,6 +43,15 @@
     isolation: isolate;
   }
   
+  .neon-pulse { 
+    animation: neonPulse 2.4s ease-in-out infinite; 
+  }
+  
+  @keyframes neonPulse { 
+    0%,100% { filter: drop-shadow(0 0 0.0rem var(--c-selected)); } 
+    50%     { filter: drop-shadow(0 0 0.6rem var(--c-selected)); }
+  }
+  
   .glass-ink {
     position: relative;
     overflow: hidden;
@@ -166,6 +175,12 @@
 
 :root {
   --neon: hsl(199 100% 60%); /* sky-400 looks good on both dark & light */
+  
+  /* ===== Meet-Halfway Category Colors ===== */
+  --c-coffee: #22d3ee;      /* cyan */
+  --c-bar: #f472b6;         /* pink */
+  --c-restaurant: #a78bfa;  /* violet */
+  --c-selected: #e879f9;    /* fuchsia ring */
   
   /* ===== Safe Area System ===== */
   --safe-top: max(env(safe-area-inset-top, 0px), 8px);
