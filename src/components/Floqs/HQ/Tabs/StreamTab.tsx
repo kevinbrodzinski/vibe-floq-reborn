@@ -18,17 +18,19 @@ type Props = {
 export default function StreamTab({ reduce, panelAnim, floqId, onStartRally, onSend, onRallyResponse, sending, rallyLoading }: Props) {
   const [filter, setFilter] = useState<SmartFilter>("all");
   const [lastSeenTs, setLastSeenTs] = useState<string | null>(null);
-  const { data, isLoading } = useSmartStream(floqId || "", filter, lastSeenTs);
-  const markSeen = useMarkStreamSeen(floqId || "", (ts) => setLastSeenTs(ts));
-  useStreamRealtime(floqId || "");
+  const validId = !!floqId;
+  const { data, isLoading } = useSmartStream(floqId ?? "", filter, lastSeenTs);
+  const markSeen = useMarkStreamSeen(floqId ?? "", (ts) => setLastSeenTs(ts));
+  useStreamRealtime(floqId ?? "");
 
   // mark seen when tab becomes visible and on mount
-  useEffect(() => { markSeen.mutate(); }, [markSeen]);
+  useEffect(() => { if (validId) markSeen.mutate(); }, [validId, markSeen]);
   useEffect(() => {
+    if (!validId) return;
     const onFocus = () => markSeen.mutate();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [markSeen]);
+  }, [validId, markSeen]);
 
   const unread = data?.unread_count ?? 0;
   const items = data?.items ?? [];

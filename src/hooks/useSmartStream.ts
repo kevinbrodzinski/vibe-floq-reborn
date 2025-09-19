@@ -37,7 +37,8 @@ export function useMarkStreamSeen(floqId: string, setLastSeenTs: (ts: string) =>
   return useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke<{ ok:boolean; last_seen_ts:string }>(
-        "smart-stream-read", { body: { floq_id: floqId } }
+        "smart-stream-read", 
+        { body: { floq_id: floqId } }
       );
       if (error) throw error;
       return data!;
