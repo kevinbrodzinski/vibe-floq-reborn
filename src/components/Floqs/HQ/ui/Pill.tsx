@@ -12,7 +12,7 @@ export default function Pill({ children, glow = true, className = "" }: Props) {
       className={[
         "px-2.5 py-1 rounded-full text-[11px] text-white/80 border",
         "bg-white/10 border-white/10",
-        glow ? "neon-ring" : "",
+        glow ? "chip-glow" : "",
         className,
       ].join(" ")}
     >

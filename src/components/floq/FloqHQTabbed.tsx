@@ -32,7 +32,7 @@ import { WingTab } from "@/components/Floqs/HQ/Tabs/WingTab";
 import { PrivacyTab } from "@/components/Floqs/HQ/Tabs/PrivacyTab";
 
 // Import shared constants
-import { TABS, TabKey } from "./hq/shared/constants";
+import { TABS, TabKey } from "@/components/floq/hq/shared/constants";
 
 // ... keep existing code (shared components and constants moved to separate files)
 
@@ -248,24 +248,30 @@ export default function FloqHQTabbed() {
       <div className="max-w-6xl mx-auto px-4 py-5">
         <AnimatePresence mode="wait">
           {active === "map" && (
-            <MapTab 
-              onMeetHalfway={openMeetHalfway}
-              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
-            />
+            <motion.div key="map" id="panel-map" role="tabpanel" aria-labelledby="tab-map" {...panelAnim(reduce)}>
+              <MapTab 
+                onMeetHalfway={openMeetHalfway}
+                onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
+              />
+            </motion.div>
           )}
 
           {active === "stream" && (
-            <StreamTab
-              sending={sending}
-              rallyLoading={rallyLoading}
-              onStartRally={() => handleStartRally()}
-              onSend={(text) => handleSendMessage()}
-              onRallyResponse={handleRallyResponse}
-            />
+            <motion.div key="stream" id="panel-stream" role="tabpanel" aria-labelledby="tab-stream" {...panelAnim(reduce)}>
+              <StreamTab
+                sending={sending}
+                rallyLoading={rallyLoading}
+                onStartRally={() => handleStartRally()}
+                onSend={(text) => handleSendMessage()}
+                onRallyResponse={handleRallyResponse}
+              />
+            </motion.div>
           )}
 
           {active === "plan" && (
-            <PlanTab />
+            <motion.div key="plan" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" {...panelAnim(reduce)}>
+              <PlanTab />
+            </motion.div>
           )}
 
           {active === "moments" && (
