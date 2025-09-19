@@ -1,16 +1,118 @@
-@import './styles/tokens.css';
-@import './styles/floq-tokens.css';
-@import './styles/floq-effects.css';
-@import './styles/floq-energy.css';
-@import './styles/scrollbar.css';
-@import './styles/field.css';
-@import './styles/touch-targets.css';
+/* Missing style imports - defining classes directly below */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer utilities {
+  /* === NEON PAGE SYSTEM === */
+  .page-neon {
+    min-height: 100vh !important;
+    background: linear-gradient(135deg, hsl(220, 30%, 5%) 0%, hsl(240, 20%, 8%) 50%, hsl(260, 25%, 4%) 100%) !important;
+    color: white !important;
+  }
+
+  .section-glass {
+    background: rgba(255,255,255,0.055) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 20px !important;
+    padding: 2rem !important;
+    box-shadow: 
+      0 10px 30px rgba(0,0,0,0.45), 
+      inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    backdrop-filter: blur(20px) saturate(120%) !important;
+  }
+
+  .input-glass {
+    width: 100% !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+    color: white !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  .input-glass::placeholder {
+    color: rgba(255,255,255,0.5) !important;
+  }
+  .input-glass:focus {
+    outline: none !important;
+    border-color: rgba(56,189,248,0.6) !important;
+    box-shadow: 0 0 0 1px rgba(56,189,248,0.3) !important;
+  }
+
+  .tile {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  .tile:hover {
+    background: rgba(255,255,255,0.12) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+  }
+  .tile[data-selected="true"] {
+    background: rgba(255,255,255,0.15) !important;
+    border-color: rgba(56,189,248,0.4) !important;
+  }
+
+  .btn-primary-glass {
+    background: rgba(56,189,248,0.15) !important;
+    border: 1px solid rgba(56,189,248,0.3) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(10px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .btn-primary-glass:hover:not(:disabled) {
+    background: rgba(56,189,248,0.25) !important;
+    border-color: rgba(56,189,248,0.5) !important;
+    box-shadow: 0 0 20px rgba(56,189,248,0.3) !important;
+  }
+  .btn-primary-glass:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important; 
+  }
+
+  /* === NEON GLOW SYSTEM === */
+  .neon-wrap {
+    position: relative;
+    isolation: isolate;
+    border-radius: 12px;
+  }
+
+  .neon-ring {
+    border-radius: 12px !important;
+  }
+  .neon-ring::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    z-index: -1;
+    background: radial-gradient(40% 60% at 50% 50%, var(--neon-color, rgba(56,189,248,0.3)), transparent 60%);
+    filter: blur(12px);
+    opacity: 1;
+    pointer-events: none;
+  }
+
+  /* Vibe-specific neon colors */
+  .neon-social::after { --neon-color: rgba(34, 197, 94, 0.4); }
+  .neon-chill::after { --neon-color: rgba(56, 189, 248, 0.4); }
+  .neon-active::after { --neon-color: rgba(249, 115, 22, 0.4); }
+  .neon-hype::after { --neon-color: rgba(236, 72, 153, 0.4); }
+  .neon-productive::after { --neon-color: rgba(168, 85, 247, 0.4); }
+  .neon-quiet::after { --neon-color: rgba(156, 163, 175, 0.4); }
+  .neon-cyan::after { --neon-color: rgba(56, 189, 248, 0.4); }
+
   .glass {
     background: rgba(255,255,255,0.055);
     border: 1px solid rgba(255,255,255,0.10);
