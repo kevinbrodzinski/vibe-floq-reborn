@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
-import Section from "@/components/Common/Section";
+import Section from "../ui/Section";
 import SmartMap from "@/components/Common/SmartMap";
 import MeetHalfwaySheet from "./MeetHalfwaySheet";
 import Btn from "@/components/Common/Btn";
+import { MapPin } from "lucide-react";
 import { useHQProximity } from "@/hooks/useHQProximity";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
 import { Events, track } from "@/lib/analytics";
@@ -46,6 +47,7 @@ export default function MapTab({ floqId, reduce, panelAnim = () => ({}), onRally
     <div {...panelAnim(reduce)} className="space-y-5">
       <Section
         title="Living Proximity Map"
+        icon={<MapPin className="h-4 w-4" />}
         right={
           <Btn glow tone="primary" size="sm"
             onClick={() => { track(Events.hq_meet_half_open, { floqId }); setSheetOpen(true); }}>
