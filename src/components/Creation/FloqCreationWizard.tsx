@@ -117,7 +117,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
                 <button
                   key={v.id}
                   onClick={() => setVibe(v.id as Vibe)}
-                  className={`tile p-3 text-left transition ${active ? 'bg-white/8 border-white/18' : ''}`}
+                  className="tile p-3 text-left transition"
                   data-selected={active}
                 >
                   <div className="font-semibold">{v.title}</div>
@@ -140,7 +140,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
                 <button
                   key={p.id}
                   onClick={() => setPrivacy(p.id as typeof privacy)}
-                  className={`tile p-3 text-left transition ${active ? 'bg-white/8 border-white/18' : ''}`}
+                  className="tile p-3 text-left transition"
                   data-selected={active}
                 >
                   <div className="font-semibold">{p.title}</div>
