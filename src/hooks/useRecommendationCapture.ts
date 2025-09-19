@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { storage } from '@/lib/storage';
 import { rankTimeGate } from '@/core/privacy/RankTimeGate';
+import { edgeLog } from '@/lib/edgeLog';
 
 /** Types mirrored from your queue module (keep them in sync) */
 type VibeSnapshot = { v: number; dvdt: number; momentum: number; ts: number };
@@ -74,6 +75,7 @@ export function useRecommendationCapture(
         if (!pid) return;
 
         const batch = await drainQueue(25);
+        edgeLog('pref_drain', { count: batch.length, degrade: gate.degrade, receiptId: gate.receiptId });
         if (!batch.length) return;
 
         // Insert directly into preference_signals; RLS requires profile_id=get_current_profile_id()
@@ -89,8 +91,7 @@ export function useRecommendationCapture(
           const existing = JSON.parse((await storage.getItem(KEY)) ?? '[]');
           await storage.setItem(KEY, JSON.stringify([...rows.map((r: any) => r.signal), ...existing].slice(-500)));
           // Swallow error—logging only
-          // eslint-disable-next-line no-console
-          console.warn('[pref-capture] insert failed:', error.message);
+          edgeLog('pref_drain_error', { message: error.message, code: (error as any).code });
         }
 
         // Optional RPC path (toggle this if needed later):
@@ -123,5 +124,6 @@ export function useRecommendationCapture(
       context: payload.context,
       decision: { action: payload.decision, rtMs: payload.rtMs },
     });
+    edgeLog('pref_saved', { offerId: payload.offer.id, decision: payload.decision });
   }, []);
 }
