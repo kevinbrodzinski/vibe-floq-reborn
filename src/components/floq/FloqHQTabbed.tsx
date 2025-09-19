@@ -217,7 +217,7 @@ export default function FloqHQTabbed() {
             {TABS.map((t, idx) => {
               const selected = active === t.k;
               return (
-                <button
+                <Btn
                   key={t.k}
                   id={`tab-${t.k}`}
                   role="tab"
@@ -229,12 +229,12 @@ export default function FloqHQTabbed() {
                     if (e.key === "ArrowRight") setActive(TABS[(idx + 1) % TABS.length].k);
                     if (e.key === "ArrowLeft")  setActive(TABS[(idx - 1 + TABS.length) % TABS.length].k);
                   }}
-                  className={`flex items-center gap-2 px-3 py-2 text-[12px] transition ${
-                    selected ? "btn-glow bg-white/15 border-white/20" : "rounded-xl bg-white/5 border border-white/10 hover:bg-white/10"
-                  }`}
+                  glow={selected}
+                  active={selected}
+                  className="flex items-center gap-2"
                 >
                   {t.i}<span>{t.l}</span>
-                </button>
+                </Btn>
               );
             })}
           </div>
