@@ -273,39 +273,37 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "moments" && (
-            <motion.div key="moments" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <MomentsTab />
-            </motion.div>
+            <MomentsTab reduce={reduce} panelAnim={panelAnim} />
           )}
 
           {active === "pulse" && (
-            <motion.div key="pulse" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <PulseTab />
-            </motion.div>
+            <PulseTab reduce={reduce} panelAnim={panelAnim} onActivateConvergence={() => handleStartRally()} />
           )}
 
           {active === "venues" && (
-            <motion.div key="venues" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <VenuesTab />
-            </motion.div>
+            <VenuesTab 
+              reduce={reduce} 
+              panelAnim={panelAnim}
+              onNavigate={(name) => console.log('Navigate to:', name)}
+              onRallyHere={(name) => handleStartRally(`Rally at ${name}`)}
+              onHistory={(name) => console.log('History for:', name)}
+            />
           )}
 
           {active === "analytics" && (
-            <motion.div key="analytics" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <AnalyticsTab />
-            </motion.div>
+            <AnalyticsTab reduce={reduce} panelAnim={panelAnim} />
           )}
 
           {active === "wing" && (
-            <motion.div key="wing" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <WingTab />
-            </motion.div>
+            <WingTab reduce={reduce} panelAnim={panelAnim} onCreateRally={() => handleStartRally()} />
           )}
 
           {active === "privacy" && (
-            <motion.div key="privacy" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <PrivacyTab />
-            </motion.div>
+            <PrivacyTab 
+              reduce={reduce} 
+              panelAnim={panelAnim}
+              onSelect={(level) => console.log('Privacy level:', level)}
+            />
           )}
         </AnimatePresence>
       </div>
