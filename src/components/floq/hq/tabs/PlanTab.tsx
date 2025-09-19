@@ -1,10 +1,15 @@
 import React from "react";
-import Section from "../ui/Section";
-import Btn from "../ui/Btn";
-import Pill from "../ui/Pill";
 import { CalendarCheck, Check } from "lucide-react";
+import Btn from "../shared/Btn";
+import Pill from "../shared/Pill";
+import Section from "../shared/Section";
 
-export default function PlanTab() {
+type Props = {
+  reduce?: boolean;
+  panelAnim?: any;
+};
+
+export default function PlanTab({ reduce, panelAnim }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-2">
