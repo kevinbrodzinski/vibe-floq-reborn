@@ -39,7 +39,7 @@ export default function FloqHQ() {
 
   return (
     <ErrorBoundary FallbackComponent={FloqHQErrorFallback}>
-      <FloqHQTabbed floqId={floqId} />
+      <FloqHQTabbed />
     </ErrorBoundary>
   );
 }
