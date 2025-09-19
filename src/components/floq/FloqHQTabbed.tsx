@@ -282,8 +282,10 @@ export default function FloqHQTabbed() {
               return (
                 <button
                   key={t.k}
+                  id={`tab-${t.k}`}
                   role="tab"
                   aria-selected={selected}
+                  aria-controls={`panel-${t.k}`}
                   tabIndex={selected ? 0 : -1}
                   onClick={() => setActive(t.k)}
                   onKeyDown={(e) => {
@@ -305,11 +307,11 @@ export default function FloqHQTabbed() {
       <div className="max-w-6xl mx-auto px-4 py-5">
         <AnimatePresence mode="wait">
           {active === "map" && (
-            <motion.div key="map" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="map" id="panel-map" role="tabpanel" aria-labelledby="tab-map" {...panelAnim(reduce)} className="space-y-5">
               <Section
                 title="Living Proximity Map"
                 icon={<MapPin className="h-4 w-4" />}
-                right={<button className="px-3 py-1.5 rounded-xl border bg-white/5 border-white/10 hover:bg-white/10 text-[12px] neon-ring" onClick={openMeetHalfway}>Meet-Halfway</button>}
+                right={<Btn onClick={openMeetHalfway}>Meet-Halfway</Btn>}
               >
                 <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">(Map preview)</div>
                 <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
@@ -337,28 +339,26 @@ export default function FloqHQTabbed() {
                   <div className="absolute bottom-0 inset-x-0 rounded-t-2xl bg-zinc-900 border-t border-white/10 p-4 shadow-2xl">
                     <div className="flex items-center justify-between">
                       <div className="text-[13px] font-semibold">Meet-Halfway</div>
-                      <button className="text-[12px] text-white/70 hover:text-white" onClick={() => setHalfOpen(false)}>Close</button>
+                      <Btn onClick={() => setHalfOpen(false)}>Close</Btn>
                     </div>
 
                     {/* category filters */}
                     <div className="mt-3 flex flex-wrap gap-2 text-[12px]">
                       {["coffee","bar","food","outdoor"].map(c => (
-                        <button
+                        <Btn
                           key={c}
+                          active={halfCats.includes(c)}
                           onClick={() => toggleCat(c)}
-                          className={`px-3 py-1.5 rounded-xl border transition ${
-                            halfCats.includes(c) ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
-                          }`}
                         >
                           {c}
-                        </button>
+                        </Btn>
                       ))}
-                      <button
+                      <Btn
                         onClick={openMeetHalfway}
-                        className="ml-auto px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10"
+                        className="ml-auto"
                       >
                         {halfLoading ? "Updating…" : "Refine"}
-                      </button>
+                      </Btn>
                     </div>
 
                     {/* map preview (in-app) */}
@@ -408,6 +408,7 @@ export default function FloqHQTabbed() {
                         return (
                           <button
                             key={c.id}
+                            type="button"
                             onClick={() => setHalfSel(c.id)}
                             className={`w-full text-left rounded-xl border p-3 text-[13px] transition ${
                               selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
@@ -438,13 +439,12 @@ export default function FloqHQTabbed() {
 
                     {/* primary action */}
                     <div className="mt-3 flex justify-end">
-                      <button
+                      <Btn
                         onClick={rallyHere}
                         disabled={halfLoading || !halfSel}
-                        className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 text-[12px]"
                       >
                         {halfLoading ? "Setting…" : "Rally Here"}
-                      </button>
+                      </Btn>
                     </div>
                   </div>
                 </div>
@@ -464,7 +464,7 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "stream" && (
-            <motion.div key="stream" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="stream" id="panel-stream" role="tabpanel" aria-labelledby="tab-stream" {...panelAnim(reduce)} className="space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex gap-2"><Btn active>Crew (2)</Btn><Btn>Plans (1)</Btn><Btn>Live</Btn><Btn>Memories</Btn></div>
                 <div className="flex gap-2">
@@ -492,15 +492,15 @@ export default function FloqHQTabbed() {
                 <Btn>@</Btn>
                 <Btn><Camera className="h-4 w-4" /></Btn>
                 <Btn><MapPin className="h-4 w-4" /></Btn>
-                <button onClick={handleSendMessage} disabled={sending} className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]">
+                <Btn onClick={handleSendMessage} disabled={sending}>
                   {sending ? "Sending…" : "Send"}
-                </button>
+                </Btn>
               </div>
             </motion.div>
           )}
 
           {active === "plan" && (
-            <motion.div key="plan" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="plan" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" {...panelAnim(reduce)} className="space-y-5">
               <div className="flex flex-wrap gap-2"><Btn>+ Solo Plan</Btn><Btn>+ Group Plan</Btn><Btn>View Calendar</Btn><Btn>Wingman Help</Btn></div>
               <Section title="Thursday Tradition @ Gran" icon={<Check className="h-4 w-4" />} right={<Pill>Locked</Pill>}><div className="text-[13px]">8:30pm • 6/8 confirmed • Recurring weekly</div><div className="text-[12px] text-white/70">Energy: Social-Hype • Friction: Low</div></Section>
               <Section title="Dinner @ Koi Sushi" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Building</Pill>}><div className="text-[13px]">7:30pm • 5 confirmed, 2 pending · Organizer: Sarah</div><div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">Live Planning: 3 active • "I can pick up Tom and Alex" • "Jake is vegetarian"</div></Section>
@@ -510,7 +510,7 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "moments" && (
-            <motion.div key="moments" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="moments" id="panel-moments" role="tabpanel" aria-labelledby="tab-moments" {...panelAnim(reduce)} className="space-y-5">
               <Section title="Tonight — Thu Sept 12" icon={<Camera className="h-4 w-4" />} right={<Pill>Live Now</Pill>}><div className="text-[13px]">"Thursday Tradition #5" • Now →</div><div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden"><div className="h-full w-2/3 bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" /></div><div className="text-[12px] text-white/80 mt-2">Current: Gran Blanco • Building to peak</div></Section>
               <Section title="Last Thursday — Sept 5" icon={<Star className="h-4 w-4" />} right={<Pill>Score 5/5</Pill>}><div className="text-[13px]">"Legendary Karaoke Night" • 4h 13m</div><div className="text-[12px] text-white/80">Highlights: Rap battle win • 27 moments • Convergence 94/100</div></Section>
               <Section title="Aug 28 — Beach Birthday Bash" icon={<Star className="h-4 w-4" />} right={<Pill>Score 4/5</Pill>}><div className="text-[13px]">8/8 attended • 6h • Perfect weather</div></Section>
@@ -519,7 +519,7 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "pulse" && (
-            <motion.div key="pulse" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="pulse" id="panel-pulse" role="tabpanel" aria-labelledby="tab-pulse" {...panelAnim(reduce)} className="space-y-5">
               <Section title="Group Pulse" icon={<Gauge className="h-4 w-4" />} right={<Btn>Activate Convergence</Btn>}><div className="text-[13px]">High potential • 3 free now • 2 free soon • Optimal: Coffee District</div></Section>
               {PEOPLE.slice(0,3).map((p,i)=> (
                 <Section key={p.n} title={`${p.n}`} icon={<Users className="h-4 w-4" />} right={<Pill>{i===0?"Energy 92":i===1?"Energy 45":"Ghost"}</Pill>}>
@@ -531,7 +531,7 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "venues" && (
-            <motion.div key="venues" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="venues" id="panel-venues" role="tabpanel" aria-labelledby="tab-venues" {...panelAnim(reduce)} className="space-y-5">
               <div className="flex items-center justify-between"><div className="flex gap-2 flex-wrap"><Btn active>All</Btn><Btn>Day</Btn><Btn>Night</Btn><Btn>Food</Btn><Btn>Bars</Btn><Btn>Activities</Btn></div><Btn>All Time</Btn></div>
               <Section title="Our Top Spots" icon={<MapPin className="h-4 w-4" />}>
                 {VENUES.map(v=> (
@@ -542,7 +542,7 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "analytics" && (
-            <motion.div key="analytics" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="analytics" id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" {...panelAnim(reduce)} className="space-y-5">
               <div className="flex flex-wrap gap-2"><Btn active>Overview</Btn><Btn>Dynamics</Btn><Btn>Patterns</Btn><Btn>Archetypes</Btn><Btn>Export</Btn></div>
               <Section title="Tribe Health" icon={<BarChart3 className="h-4 w-4" />}><div className="text-[13px]">Score 87/100 • Momentum building • 12 convergences</div><div className="mt-2"><Bar value={87} /></div></Section>
               <div className="grid lg:grid-cols-2 gap-5">
@@ -554,16 +554,16 @@ export default function FloqHQTabbed() {
           )}
 
           {active === "wing" && (
-            <motion.div key="wing" {...panelAnim(reduce)} className="space-y-5">
+            <motion.div key="wing" id="panel-wing" role="tabpanel" aria-labelledby="tab-wing" {...panelAnim(reduce)} className="space-y-5">
               <Section title="Suggestions" icon={<Sparkles className="h-4 w-4" />}><div className="grid md:grid-cols-2 gap-3"><div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">Thursday Tradition at risk<div className="mt-2 flex gap-2"><Btn>Create Rally</Btn><Btn>Send Reminder</Btn><Btn>Skip</Btn></div></div><div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">Jake needs attention<div className="mt-2 flex gap-2"><Btn>Suggest 1-on-1</Btn><Btn>Add to next plan</Btn><Btn>Let it be</Btn></div></div></div></Section>
-              <Section title="Ask Wingman" icon={<MessageSquare className="h-4 w-4" />}><div className="rounded-xl border border-white/10 bg-white/5 p-3"><div className="text-[12px] text-white/60">Try: find common time • best venue for 10 • who hasn't converged • chill Sunday plan</div><div className="mt-3 flex items-center gap-2"><input className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Ask Wingman…" /><button className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]">Send</button></div></div></Section>
+              <Section title="Ask Wingman" icon={<MessageSquare className="h-4 w-4" />}><div className="rounded-xl border border-white/10 bg-white/5 p-3"><div className="text-[12px] text-white/60">Try: find common time • best venue for 10 • who hasn't converged • chill Sunday plan</div><div className="mt-3 flex items-center gap-2"><input className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Ask Wingman…" /><Btn>Send</Btn></div></div></Section>
               <Section title="Chat" icon={<MessageSquare className="h-4 w-4" />}><div className="text-[13px]">You: Find us a new bar to try</div><div className="mt-2 rounded-xl bg-white/5 border border-white/10 p-3 text-[12px] text-white/80"><ol className="list-decimal ml-5 space-y-1"><li>The Brig — 0.5mi • live music</li><li>Townhouse — dive • pool tables</li><li>Rooftop at Erwin — sunset views</li></ol><div className="mt-2 flex gap-2"><Btn>Create Poll</Btn><Btn>Directions</Btn><Btn>More</Btn></div></div></Section>
             </motion.div>
           )}
 
           {active === "privacy" && (
-            <motion.div key="privacy" {...panelAnim(reduce)} className="space-y-5">
-              <Section title="Privacy Controls" icon={<Shield className="h-4 w-4" />}><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{["Precise","Neighborhood","Status Only","Ghost"].map(l=>(<button key={l} className="rounded-xl border border-white/10 bg-white/5 py-2 text-[12px] hover:bg-white/10">{l}</button>))}</div><div className="mt-2 text-[11px] text-white/60">Auto-rules: Ghost after 11pm • Precise during rallies • Status at work</div></Section>
+            <motion.div key="privacy" id="panel-privacy" role="tabpanel" aria-labelledby="tab-privacy" {...panelAnim(reduce)} className="space-y-5">
+              <Section title="Privacy Controls" icon={<Shield className="h-4 w-4" />}><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{["Precise","Neighborhood","Status Only","Ghost"].map(l=>(<Btn key={l}>{l}</Btn>))}</div><div className="mt-2 text-[11px] text-white/60">Auto-rules: Ghost after 11pm • Precise during rallies • Status at work</div></Section>
             </motion.div>
           )}
         </AnimatePresence>
