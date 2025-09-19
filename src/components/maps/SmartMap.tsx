@@ -171,7 +171,7 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
   return <div ref={containerRef} className="w-full rounded-xl overflow-hidden border border-white/10" style={{ height }} />;
 }
 
-function emptyFC() { return { type: "FeatureCollection", features: [] } as const; }
+function emptyFC(): GeoJSON.FeatureCollection { return { type: "FeatureCollection", features: [] }; }
 
 function updateLines(map: mapboxgl.Map, data: HalfResult, selectedId?: string | null) {
   const candidate = data.candidates.find(c => c.id === selectedId) ?? data.candidates[0];

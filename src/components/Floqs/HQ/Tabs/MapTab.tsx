@@ -4,6 +4,8 @@ import Section from "../ui/Section";
 import Btn from "../ui/Btn";
 import Pill from "../ui/Pill";
 import { MapPin, Target, Thermometer, Users, Radio, Layers } from "lucide-react";
+import SmartMap from "@/components/maps/SmartMap";
+import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
 
 const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
@@ -17,9 +19,14 @@ type Props = {
   panelAnim: any;
   onMeetHalfway?: () => void;
   onRallyChoice?: (c: "joined" | "maybe" | "declined") => void;
+  floqId?: string;
+  meetOpen?: boolean;
 };
 
-export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice }: Props) {
+export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice, floqId, meetOpen }: Props) {
+  const [cats, setCats] = React.useState<string[]>([]);
+  const [sel, setSel] = React.useState<string|null>(null);
+  const { data: halfAPI } = useHQMeetHalfway(floqId, cats, meetOpen ?? false);
   return (
     <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
@@ -27,7 +34,10 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         icon={<MapPin className="h-4 w-4" />}
         right={<Btn glow onClick={onMeetHalfway}>Meet-Halfway</Btn>}
       >
-        <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">(Map preview)</div>
+        {halfAPI
+          ? <SmartMap data={halfAPI} selectedId={sel} onSelect={setSel} height={280} />
+          : <div className="h-72 rounded-xl border border-white/10 bg-white/5 grid place-items-center text-white/50">(Map preview)</div>
+        }
         <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
           <div>You ↔ Sarah: 6 min • Café Nero (2) • Energy 88%</div>
           <div>Meeting point: Optimal • Convergence 94%</div>

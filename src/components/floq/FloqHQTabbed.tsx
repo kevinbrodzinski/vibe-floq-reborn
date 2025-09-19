@@ -249,6 +249,8 @@ export default function FloqHQTabbed() {
               panelAnim={panelAnim}
               onMeetHalfway={openMeetHalfway}
               onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice)}
+              floqId={actualFloqId}
+              meetOpen={halfOpen}
             />
           )}
 
