@@ -25043,6 +25043,10 @@ export type Database = {
           venue_id: string
         }[]
       }
+      record_preference_signal: {
+        Args: { p_signal: Json; p_ts: string }
+        Returns: undefined
+      }
       refresh_field_tiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
