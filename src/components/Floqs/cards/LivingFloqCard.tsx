@@ -1,8 +1,11 @@
 import React from "react";
-import { Users, Activity, MapPin, Timer, Rocket, MessageSquare, Navigation2, CalendarClock, Building2, ChevronRight } from "lucide-react";
+import {
+  Users, Activity, Rocket, MessageSquare, Navigation2,
+  CalendarClock, Building2, ChevronRight
+} from "lucide-react";
 import { vibeToGradient, energyToWidth } from "./vibeTokens";
 
-export type FloqKind = "friend" | "club" | "business" | "momentary";
+export type FloqKind = "friend"|"club"|"business"|"momentary";
 
 export type LivingFloq = {
   id: string;
@@ -10,37 +13,60 @@ export type LivingFloq = {
   description?: string;
   kind: FloqKind;
   vibe?: string;
-  members?: number;           // total
-  activeNow?: number;         // online/present
-  convergenceNearby?: number; // nearby count
-  distanceLabel?: string;     // e.g. "0.8 mi"
-  energy?: number;            // 0..1
-  nextLabel?: string;         // "Dinner @ 7:30"
-  nextWhen?: string;          // "Tonight", "Tomorrow 6am"
-  ttlSeconds?: number;        // momentary only
-  matchPct?: number;          // club discovery
-  following?: boolean;        // business/club
-  streakWeeks?: number;       // friend floq
+  totalMembers?: number;
+  activeMembers?: number;
+  convergenceNearby?: number;
+  distanceLabel?: string;
+  energy?: number;
+  nextLabel?: string;
+  nextWhen?: string;
+  ttlSeconds?: number;
+  matchPct?: number;
+  following?: boolean;
+  streakWeeks?: number;
+  rallyNow?: boolean;
+  forming?: boolean;
+  lastActiveAgo?: string;
 };
 
 type Props = {
   data: LivingFloq;
   onOpen: (id: string) => void;
-  onPrimary?: (id: string) => void;   // Rally / RSVP / View updates / Join now
-  onSecondary?: (id: string) => void; // Chat / Preview / Navigate / Ignore
+  onPrimary?: (id: string) => void;   // Rally / RSVP / Updates / Join
+  onSecondary?: (id: string) => void; // Chat  / Preview / Navigate / Ignore
 };
+
+function membersLine(total?: number, active?: number) {
+  const t = total ?? 0, a = active ?? 0;
+  if (t <= 0) return "0 members";
+  return a > 0 ? `${t} members • ${a} active` : `${t} members`;
+}
+function activityLabel(opts:{rally?:boolean; forming?:boolean; nextLabel?:string; nextWhen?:string; lastActiveAgo?:string;}) {
+  const { rally, forming, nextLabel, nextWhen, lastActiveAgo } = opts;
+  if (rally) return "Rally happening now";
+  if (forming) return "Rally forming";
+  if (nextLabel) return nextWhen ? `${nextLabel} • ${nextWhen}` : nextLabel;
+  if (lastActiveAgo) return `Last active: ${lastActiveAgo}`;
+  return "Calm";
+}
 
 export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }: Props) {
   const {
     id, name, description, kind,
-    vibe = "social", members = 0, activeNow = 0,
-    energy = 0, convergenceNearby = 0, distanceLabel,
-    nextLabel, nextWhen, ttlSeconds, matchPct, following, streakWeeks
+    vibe = "social",
+    totalMembers = 0, activeMembers = 0,
+    energy = 0.35, convergenceNearby = 0, distanceLabel,
+    nextLabel, nextWhen, ttlSeconds, matchPct, following, streakWeeks,
+    rallyNow, forming, lastActiveAgo
   } = data;
 
   const gradient = vibeToGradient(vibe);
   const isMomentary = kind === "momentary";
   const showTTL = isMomentary && typeof ttlSeconds === "number";
+
+  const headerLine = membersLine(totalMembers, activeMembers);
+  const subline = activityLabel({ rally: rallyNow, forming, nextLabel, nextWhen, lastActiveAgo });
+  const dormant = !rallyNow && !forming && !nextLabel && activeMembers === 0 && energy <= 0.2;
 
   return (
     <article
@@ -48,15 +74,14 @@ export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }:
       tabIndex={0}
       onClick={() => onOpen(id)}
       onKeyDown={(e)=>{ if (e.key === "Enter" || e.key === " ") onOpen(id); }}
-      className="glass rounded-2xl p-4 shadow-glass border border-white/10 hover:bg-white/8 transition group"
+      className={`glass rounded-2xl p-4 shadow-glass border border-white/10 hover:bg-white/8 transition group ${dormant ? "opacity-75" : ""}`}
     >
-      {/* Top row: name + badges */}
+      {/* Title/Badges */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-white/90 truncate">{name}</div>
           {description && <div className="text-[11px] text-white/60 line-clamp-2">{description}</div>}
         </div>
-
         <div className="flex items-center gap-2">
           {kind === "friend" && streakWeeks ? (
             <span className="neon-pill px-2 py-0.5 text-[10px]">streak {streakWeeks}w</span>
@@ -67,32 +92,33 @@ export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }:
           {kind === "business" && following ? (
             <span className="neon-pill px-2 py-0.5 text-[10px]">following</span>
           ) : null}
-          {showTTL ? (
+          {showTTL && (
             <div
-              aria-label="Time to live"
+              aria-label="time remaining"
               className="ttl-ring h-8 w-8 grid place-items-center"
-              style={{ ["--ttl-progress" as any]: `${Math.max(0, Math.min(1, ttlSeconds! / 3600)) * 360}deg` }}
+              style={{ ["--ttl-progress" as any]: `${Math.max(0, Math.min(1, ttlSeconds!/3600)) * 360}deg` }}
             >
               <span className="text-[10px] text-white/85">{Math.max(1, Math.floor(ttlSeconds!/60))}m</span>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
-      {/* energy bar */}
-      <div className="mt-3 h-1.5 w-full rounded-full bg-white/10 overflow-hidden" aria-label="Energy level">
+      {/* Members */}
+      <div className="mt-2 text-[11px] text-white/70">{headerLine}</div>
+
+      {/* Energy — calm breathing; disabled under prefers-reduced-motion */}
+      <div className="mt-3 h-1.5 w-full rounded-full bg-white/10 overflow-hidden energy-breathe" aria-label="energy">
         <div className={`h-full bg-gradient-to-r ${gradient}`} style={{ width: energyToWidth(energy) }} />
       </div>
 
-      {/* living indicators */}
+      {/* Indicators */}
       <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] text-white/75">
         <div className="flex items-center gap-1.5">
-          <Users className="h-3.5 w-3.5 text-white/60" />
-          <span>{members} members</span>
-          {activeNow > 0 && <span className="ml-1 text-white/60">• {activeNow} active</span>}
+          <Activity className="h-3.5 w-3.5 text-white/60" />
+          <span className={rallyNow || forming ? "text-white/90" : ""}>{subline}</span>
         </div>
         <div className="flex items-center justify-end gap-1.5">
-          <Activity className="h-3.5 w-3.5 text-white/60" />
           {convergenceNearby > 0 ? (
             <span>{convergenceNearby} converging{distanceLabel ? ` • ${distanceLabel}` : ""}</span>
           ) : <span>calm</span>}
@@ -100,7 +126,7 @@ export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }:
       </div>
 
       {/* Next action */}
-      <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3">
+      <div className={`mt-3 rounded-xl border border-white/10 bg-white/5 p-3 ${rallyNow || forming ? "pulse-aura" : ""}`}>
         {nextLabel ? (
           <div className="flex items-center justify-between">
             <div className="text-[12px] text-white/85">
@@ -109,59 +135,56 @@ export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }:
             <ChevronRight className="h-4 w-4 text-white/60" />
           </div>
         ) : (
-          <div className="text-[12px] text-white/60">No upcoming plan — create one?</div>
+          <div className="text-[12px] text-white/60">{dormant ? (lastActiveAgo ? `Last active: ${lastActiveAgo}` : "Dormant") : "No upcoming plan — create one?"}</div>
         )}
       </div>
 
-      {/* Quick actions by kind */}
-      <div className="mt-3 flex items-center gap-2">
+      {/* Quick actions */}
+      <div className="mt-3 flex items-center gap-2 text-[12px]">
         {kind === "friend" && (
           <>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10 ring-neon">
-              <span className="inline-flex items-center gap-1"><Rocket className="h-3.5 w-3.5"/><span>Rally</span></span>
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
+              Rally
             </button>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10">
-              <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5"/><span>Chat</span></span>
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
+              Chat
             </button>
           </>
         )}
-
         {kind === "club" && (
           <>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10 ring-neon">
-              <span className="inline-flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5"/><span>RSVP</span></span>
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
+              RSVP
             </button>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10">
-              Preview
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
+              Details
             </button>
           </>
         )}
-
         {kind === "business" && (
           <>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10 ring-neon">
-              <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5"/><span>Updates</span></span>
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
+              Updates
             </button>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10">
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
               Navigate
             </button>
           </>
         )}
-
         {isMomentary && (
           <>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10 ring-neon">
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
               Join now
             </button>
             <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border text-[12px] bg-white/6 hover:bg-white/10">
+              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
               Ignore
             </button>
           </>

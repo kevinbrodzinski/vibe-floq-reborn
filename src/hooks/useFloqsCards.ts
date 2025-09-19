@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { LivingFloq } from "@/components/Floqs/cards/LivingFloqCard";
 
-type Row = {
+export type CardRow = {
   id: string;
   name: string | null;
   title: string | null;
@@ -13,113 +12,95 @@ type Row = {
   active_now: number | null;
   converging_nearby: number | null;
   distance_label: string | null;
-  energy: number | null;
+  energy: number | null;               // 0..1
   next_label: string | null;
-  next_when: string | null;
-  ttl_seconds: number | null;
-  match_pct: number | null;
-  following: boolean | null;
-  streak_weeks: number | null;
-  status_bucket: "now" | "today" | "upcoming" | "dormant";
+  next_when: string | null;            // "Tonight", "Tomorrow 6am"
+  ttl_seconds: number | null;          // momentary only
+  match_pct: number | null;            // club discovery
+  following: boolean | null;           // business/club
+  streak_weeks: number | null;         // friend floq
+  last_active_ago: string | null;      // "2 hours ago"
+  rally_now: boolean | null;
+  forming: boolean | null;
+  status_bucket: "now"|"today"|"upcoming"|"dormant";
+};
+
+export type LivingFloq = {
+  id: string;
+  name: string;
+  description?: string;
+  kind: "friend"|"club"|"business"|"momentary";
+  vibe?: string;
+  totalMembers?: number;
+  activeMembers?: number;
+  convergenceNearby?: number;
+  distanceLabel?: string;
+  energy?: number;
+  nextLabel?: string;
+  nextWhen?: string;
+  ttlSeconds?: number;
+  matchPct?: number;
+  following?: boolean;
+  streakWeeks?: number;
+  rallyNow?: boolean;
+  forming?: boolean;
+  lastActiveAgo?: string;
 };
 
 export function useFloqsCards() {
   return useQuery({
     queryKey: ["floqs-cards"],
     queryFn: async () => {
-      // Get user's floqs first
-      const { data: userFloqs, error: userFloqsError } = await supabase
-        .from("floq_participants")
-        .select(`
-          floq_id,
-          role,
-          floqs (
-            id,
-            name,
-            title,
-            description,
-            primary_vibe,
-            created_at
-          )
-        `)
-        .eq("profile_id", (await supabase.auth.getUser()).data.user?.id);
-        
-      if (userFloqsError) throw userFloqsError;
-      
-      // Get discoverable floqs
-      const { data: discoverFloqs, error: discoverError } = await supabase
+      // Query floqs table directly for now
+      const { data: floqsData, error: floqsError } = await supabase
         .from("floqs")
-        .select("*")
+        .select(`
+          id, name, title, description, primary_vibe, 
+          visibility, created_at
+        `)
         .eq("visibility", "public")
         .limit(50);
-        
-      if (discoverError) throw discoverError;
-
-      // Mock status_bucket logic - in real app this would be computed in a view
-      const getStatusBucket = (floq: any): "now" | "today" | "upcoming" | "dormant" => {
-        const now = new Date();
-        const created = new Date(floq.created_at);
-        const daysDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-        
-        // Mock logic for demonstration
-        if (Math.random() > 0.8) return "now";
-        if (daysDiff < 1) return "today";
-        if (daysDiff < 7) return "upcoming";
-        return "dormant";
-      };
-
-      // Transform user's floqs
-      const userFloqsList: LivingFloq[] = (userFloqs ?? [])
-        .filter(p => p.floqs)
-        .map(participant => ({
-          id: participant.floqs!.id,
-          name: participant.floqs!.name || participant.floqs!.title || "Untitled Floq",
-          description: participant.floqs!.description || undefined,
-          kind: "friend" as const, // Default for user floqs
-          vibe: participant.floqs!.primary_vibe || undefined,
-          members: Math.floor(Math.random() * 20) + 3,
-          activeNow: Math.floor(Math.random() * 5),
-          convergenceNearby: Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
-          distanceLabel: Math.random() > 0.5 ? `${(Math.random() * 2 + 0.1).toFixed(1)} mi` : undefined,
-          energy: Math.random() * 0.6 + 0.2,
-          nextLabel: Math.random() > 0.6 ? "Coffee @ Blue Bottle" : undefined,
-          nextWhen: Math.random() > 0.6 ? "Tonight 7:30" : undefined,
-          following: participant.role === "member",
-          streakWeeks: Math.random() > 0.6 ? Math.floor(Math.random() * 12) + 1 : undefined,
-        }));
-
-      // Transform discover floqs
-      const discoverFloqsList: LivingFloq[] = (discoverFloqs ?? [])
-        .filter(floq => !userFloqs?.some(p => p.floq_id === floq.id))
-        .map(floq => ({
-          id: floq.id,
-          name: floq.name || floq.title || "Untitled Floq",
-          description: floq.description || undefined,
-          kind: "club" as const, // Default for discover floqs
-          vibe: floq.primary_vibe || undefined,
-          members: Math.floor(Math.random() * 50) + 10,
-          activeNow: Math.floor(Math.random() * 8) + 2,
-          convergenceNearby: Math.random() > 0.6 ? Math.floor(Math.random() * 5) + 1 : 0,
-          distanceLabel: `${(Math.random() * 3 + 0.2).toFixed(1)} mi`,
-          energy: Math.random() * 0.4 + 0.5,
-          matchPct: Math.random() * 0.4 + 0.6,
-          nextLabel: Math.random() > 0.5 ? "Weekly meetup" : undefined,
-          nextWhen: Math.random() > 0.5 ? "Thursday 7pm" : undefined,
-        }));
-
-      const allFloqs = [...userFloqsList, ...discoverFloqsList];
-
-      // Group by status buckets (mock logic)
-      const by = (bucket: "now" | "today" | "upcoming" | "dormant") =>
-        allFloqs.filter(() => {
+      
+      if (floqsError) throw floqsError;
+      
+      // Transform basic data with minimal logic
+      const rows = (floqsData ?? []).map(f => ({
+        id: f.id,
+        name: f.name,
+        title: f.title,
+        description: f.description,
+        primary_vibe: f.primary_vibe,
+        kind: "club" as const, // Default fallback
+        member_count: Math.floor(Math.random() * 30) + 5, // Temporary mock for demo
+        active_now: Math.floor(Math.random() * 8) + 1,
+        converging_nearby: Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
+        distance_label: Math.random() > 0.6 ? `${(Math.random() * 2 + 0.2).toFixed(1)} km` : null,
+        energy: Math.random() * 0.5 + 0.3,
+        next_label: Math.random() > 0.5 ? "Weekly meetup" : null,
+        next_when: Math.random() > 0.5 ? "Thursday 7pm" : null,
+        ttl_seconds: null,
+        match_pct: Math.random() * 0.4 + 0.6,
+        following: Math.random() > 0.7,
+        streak_weeks: null,
+        last_active_ago: Math.random() > 0.8 ? "2 hours ago" : null,
+        rally_now: Math.random() > 0.9,
+        forming: Math.random() > 0.85,
+        status_bucket: (() => {
           const rand = Math.random();
-          switch (bucket) {
-            case "now": return rand > 0.85;
-            case "today": return rand > 0.65 && rand <= 0.85;
-            case "upcoming": return rand > 0.35 && rand <= 0.65;
-            case "dormant": return rand <= 0.35;
-          }
-        });
+          if (rand > 0.85) return "now" as const;
+          if (rand > 0.65) return "today" as const;
+          if (rand > 0.35) return "upcoming" as const;
+          return "dormant" as const;
+        })(),
+      })) as CardRow[];
+      
+      const list = rows.map(r => transformRowToLivingFloq(r));
+
+      const by = (bucket: CardRow["status_bucket"]) =>
+        rows
+          .filter(r => r.status_bucket === bucket)
+          .map(r => list.find(x => x.id === r.id)!)
+          .filter(Boolean);
 
       return {
         now: by("now"),
@@ -129,4 +110,28 @@ export function useFloqsCards() {
       };
     }
   });
+}
+
+function transformRowToLivingFloq(r: CardRow): LivingFloq {
+  return {
+    id: r.id,
+    name: r.name || r.title || "Untitled Floq",
+    description: r.description || undefined,
+    kind: r.kind,
+    vibe: r.primary_vibe || undefined,
+    totalMembers: r.member_count ?? 0,
+    activeMembers: r.active_now ?? 0,
+    convergenceNearby: r.converging_nearby ?? 0,
+    distanceLabel: r.distance_label || undefined,
+    energy: r.energy ?? 0.35,
+    nextLabel: r.next_label || undefined,
+    nextWhen: r.next_when || undefined,
+    ttlSeconds: r.ttl_seconds ?? undefined,
+    matchPct: r.match_pct ?? undefined,
+    following: !!r.following,
+    streakWeeks: r.streak_weeks ?? undefined,
+    rallyNow: !!r.rally_now,
+    forming: !!r.forming,
+    lastActiveAgo: r.last_active_ago || undefined,
+  };
 }
