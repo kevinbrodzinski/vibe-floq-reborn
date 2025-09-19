@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import SmartMap from "@/components/Common/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
+import MeetHalfwaySheet from "./MeetHalfwaySheet";
+import { openDirections } from "@/lib/directions/handoff";
 import {
   MapPin,
   Settings,
@@ -282,7 +284,14 @@ export default function FloqHQTabbed() {
             <VenuesTab 
               reduce={reduce} 
               panelAnim={panelAnim}
-              onNavigate={(name) => console.log('Navigate to:', name)}
+              onNavigate={(name) => {
+                // For demo purposes, navigate to a sample location
+                openDirections({
+                  dest: { lat: 37.7749, lng: -122.4194 },
+                  label: name,
+                  mode: 'transit'
+                });
+              }}
               onRallyHere={(name) => handleStartRally(`Rally at ${name}`)}
               onHistory={(name) => console.log('History for:', name)}
             />
@@ -305,6 +314,20 @@ export default function FloqHQTabbed() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Meet Halfway Sheet */}
+      <MeetHalfwaySheet
+        open={halfOpen}
+        onOpenChange={setHalfOpen}
+        data={halfAPI}
+        selectedId={halfSel}
+        onSelectVenue={setHalfSel}
+        categories={halfCats}
+        onToggleCategory={toggleCat}
+        onRallyHere={rallyHere}
+        loading={halfLoading}
+        rallyLoading={rallyLoading}
+      />
     </div>
   );
 }
