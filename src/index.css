@@ -145,6 +145,33 @@
     width: 100% !important;
   }
 
+  /* --- Tight, even neon halo ------------------------------------------------ */
+  .neon-ring-tight {
+    /* smaller radii than neon-ring; perfectly even around outline */
+    filter:
+      drop-shadow(0 0 4px  var(--neon-a))
+      drop-shadow(0 0 10px var(--neon-b));
+    will-change: filter;
+  }
+
+  /* --- Tile sizing and centering, consistent everywhere -------------------- */
+  .tile {
+    box-sizing: border-box;
+    min-height: 112px;           /* same feel as HQ cards */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;     /* vertically centered text */
+    align-items: flex-start;     /* left aligned text */
+    width: 100%;
+  }
+
+  /* Tighten fallback glow for selected tiles (for keyboard nav etc.) */
+  .tile[data-selected="true"] {
+    filter:
+      drop-shadow(0 0 3px  hsla(196,92%,64%, .28))
+      drop-shadow(0 0 8px  hsla(259,92%,64%, .18));
+  }
+
   .neon-ring {
     border-radius: 12px !important;
   }

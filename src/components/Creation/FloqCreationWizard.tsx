@@ -108,18 +108,16 @@ export default function FloqCreationWizard({ onCreated }: Props) {
 
         {/* Primary Vibe Section */}
         <section className="section-glass p-4 mt-5">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="section-title">Primary Vibe</div>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+          <div className="section-title mb-3">Primary Vibe</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 justify-items-stretch items-stretch">
             {VIBES.map(v => {
               const active = vibe === v.id;
               const tone   = neonClassForVibe(v.id as any);
               return (
-                <div key={v.id} className={`neon-wrap w-full ${active ? `${tone} neon-ring` : ""}`}>
+                <div key={v.id} className={`neon-wrap ${active ? `${tone} neon-ring-tight` : ""}`}>
                   <button
                     onClick={() => setVibe(v.id as Vibe)}
-                    className="tile p-3 text-left transition w-full"
+                    className="tile p-3 text-left transition w-full h-full"
                     data-selected={active}
                     aria-pressed={active}
                   >
@@ -134,17 +132,15 @@ export default function FloqCreationWizard({ onCreated }: Props) {
 
         {/* Privacy Section */}
         <section className="section-glass p-4 mt-5">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="section-title">Privacy</div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+          <div className="section-title mb-3">Privacy</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 justify-items-stretch items-stretch">
             {PRIVACY_OPTIONS.map(p => {
               const active = privacy === p.id;
               return (
-                <div key={p.id} className={`neon-wrap w-full ${active ? "neon-cyan neon-ring" : ""}`}>
+                <div key={p.id} className={`neon-wrap ${active ? "neon-cyan neon-ring-tight" : ""}`}>
                   <button
                     onClick={() => setPrivacy(p.id as typeof privacy)}
-                    className="tile p-3 text-left transition w-full"
+                    className="tile p-3 text-left transition w-full h-full"
                     data-selected={active}
                     aria-pressed={active}
                   >
@@ -161,7 +157,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
         <div className="sticky bottom-0 z-10 mt-6 -mx-4 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]
                         bg-gradient-to-t from-[#0b0d12]/95 via-[#0b0d12]/70 to-transparent">
           <div className="flex gap-2 justify-end neon-surface">
-            <div className="neon-wrap neon-cyan neon-ring">
+            <div className="neon-wrap neon-cyan neon-ring-tight">
               <Btn 
                 className="btn-primary-glass btn-xs" 
                 variant="primary" 
