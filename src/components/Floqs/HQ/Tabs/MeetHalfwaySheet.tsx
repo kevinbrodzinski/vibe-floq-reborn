@@ -159,7 +159,7 @@ export default function MeetHalfwaySheet({
           </div>
 
           {/* Actions: now BELOW the map, full width */}
-          <div className="col-span-full mt-1 flex items-center justify-between gap-2 pad-safe-b">
+          <div className="col-span-full mt-1 flex items-center justify-between gap-2 sheet-actions-sticky pad-safe-b">
             <div className="flex gap-2">
               <button className="btn-compact btn-compact--ghost" onClick={() => onOpenChange(false)}>Cancel</button>
             </div>
@@ -168,6 +168,7 @@ export default function MeetHalfwaySheet({
                 className="btn-compact btn-compact--ghost"
                 onClick={() => selected && setDirOpen(true)}
                 disabled={!selected}
+                aria-disabled={!selected}
               >
                 Directions
               </button>
@@ -175,6 +176,7 @@ export default function MeetHalfwaySheet({
                 className="btn-compact btn-compact--primary neon-soft"
                 onClick={() => selected && onConfirmSend?.(selected.id)}
                 disabled={!selected}
+                aria-disabled={!selected}
               >
                 Confirm &amp; Send
               </button>

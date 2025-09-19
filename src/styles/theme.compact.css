@@ -207,3 +207,17 @@
     0 0 12px color-mix(in hsl, var(--neon-a) 20%, transparent),
     0 0 20px color-mix(in hsl, var(--neon-b) 16%, transparent);
 }
+
+/* Sheet actions sticky footer */
+.sheet-actions-sticky {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(11,13,18,.92), rgba(11,13,18,.65), transparent);
+}
+
+/* Enhanced disabled state */
+.btn-compact[disabled] {
+  opacity: .55;
+  cursor: not-allowed;
+  filter: none;
+}
