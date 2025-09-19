@@ -12,15 +12,15 @@ type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans"|"wings";
 type SmartItem = {
   id: string;
   kind: "rally"|"moment"|"plan"|"message"|"wings_poll"|"wings_time"|"wings_meet"|"venue_suggestion"|"reminder"|"recap";
-  created_at: string;
-  score: number;
+  ts: string;
+  priority: number;
   unread: boolean;
   title?: string; 
   body?: string;
   media?: { thumb_url: string }[];
-  rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number} };
+  rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number}; scope?: "field"|"floq" };
   plan?:  { title: string; at: string; status:"locked"|"building"|"tentative" };
-  meta?: { card_kind?: string; payload?: any; confidence?: number };
+  meta?: { card_kind?: string; payload?: any; confidence?: number; [key: string]: any };
 };
 
 serve(async (req) => {
@@ -88,7 +88,7 @@ serve(async (req) => {
         
         supabase
           .from("rallies")
-          .select("id, creator_id, created_at, expires_at, status, venue_id, scope, floq_id, center, note")
+          .select("id, creator_id, created_at, expires_at, status, venue_id, scope, floq_id, note")
           .eq("status", "active")
           .eq("scope", "floq")
           .eq("floq_id", floq_id)
@@ -104,7 +104,7 @@ serve(async (req) => {
         Promise.resolve({ data: [], error: null }), // wings
         supabase
           .from("rallies")
-          .select("id, creator_id, created_at, expires_at, status, venue_id, scope, center, note")
+          .select("id, creator_id, created_at, expires_at, status, venue_id, scope, note")
           .eq("status", "active")
           .eq("scope", "field")
           .order("expires_at", { ascending: false })
@@ -142,8 +142,8 @@ serve(async (req) => {
     const textItems: SmartItem[] = (msgs ?? []).map(m => ({
       id: m.id,
       kind: "message",
-      created_at: m.created_at,
-      score: 0,        // base recency; will score below
+      ts: m.created_at,
+      priority: 0,        // base recency; will score below
       unread: watermark ? (m.created_at > watermark && m.sender_id !== viewer) : true,
       body: m.body ?? ""
     }));
@@ -151,8 +151,8 @@ serve(async (req) => {
     const momentItems: SmartItem[] = (moments ?? []).map(a => ({
       id: a.id,
       kind: "moment",
-      created_at: a.created_at ?? new Date().toISOString(),
-      score: 0,
+      ts: a.created_at ?? new Date().toISOString(),
+      priority: 0,
       unread: watermark ? ((a.created_at ?? "") > watermark) : true,
       title: "Moment"
       // media: [] // integrate thumbs when you link assets
@@ -161,8 +161,8 @@ serve(async (req) => {
     const planItems: SmartItem[] = (plans ?? []).map(p => ({
       id: p.id,
       kind: "plan",
-      created_at: (p.locked_at ?? p.created_at ?? p.planned_at ?? new Date().toISOString()),
-      score: 0,
+      ts: (p.locked_at ?? p.created_at ?? p.planned_at ?? new Date().toISOString()),
+      priority: 0,
       unread: watermark ? (((p.locked_at ?? p.created_at ?? p.planned_at) ?? "") > watermark) : true,
       plan: { title: p.title, at: (p.planned_at ?? ""), status: (p.status ?? "building") as any }
     }));
@@ -177,8 +177,8 @@ serve(async (req) => {
       return {
         id: c.id,
         kind: mappedKind,
-        created_at: c.created_at,
-        score: 0, // scored below
+        ts: c.created_at,
+        priority: 0, // scored below
         unread: watermark ? c.created_at > watermark : true,
         title: c.payload?.title || "Wings Suggestion",
         meta: { card_kind: c.kind, payload: c.payload, confidence: c.confidence }
@@ -193,16 +193,21 @@ serve(async (req) => {
       return {
         id: rally.id,
         kind: "rally" as any,
-        created_at: rally.created_at,
-        score: 0, // Will be calculated below
+        ts: rally.created_at,
+        priority: 0, // Will be calculated below
         unread: watermark ? (rally.created_at > watermark) : true,
+        rally: {
+          venue: rally.venue_id ? `#${rally.venue_id}` : "Meet-halfway",
+          at: rally.expires_at,
+          counts: { going: 0, maybe: 0, noreply: 0 }, // TODO: fetch actual counts
+          scope: rally.scope
+        },
         meta: {
           creator_id: rally.creator_id,
           expires_at: rally.expires_at,
           venue_id: rally.venue_id,
           scope: rally.scope,
           floq_id: rally.floq_id,
-          center: rally.center,
           note: rally.note,
           minutes_until_expiry: minutesUntilExpiry
         }
@@ -214,58 +219,41 @@ serve(async (req) => {
 
     // Score (simple, effective)
     const now = Date.now();
-    const decay = (tIso: string) => {
-      const ageMin = Math.max(0, (now - new Date(tIso).getTime()) / 60000);
-      // half-life ~ 6h
-      return Math.pow(0.5, ageMin / 360);
-    };
-
     items = items.map(i => {
-      let score = 0.0 + 0.6 * decay(i.created_at);
+      let score = 0.6 * Math.pow(0.5, Math.max(0, (now - new Date(i.ts).getTime()) / 60000) / 360);
 
-      if (i.kind === "message" && i.id && mentioned.has(i.id)) score += 0.2;
-      if (i.kind === "moment") score += 0.15 * decay(i.created_at); // recent photo
+      if (i.kind === "message" && i.id && mentioned.has(i.id)) score += 0.20;
+      if (i.kind === "moment") score += 0.15;
       if (i.kind === "plan" && i.plan?.at) {
-        const minutesTo = (new Date(i.plan.at).getTime() - now)/60000;
-        if (minutesTo >= 0 && minutesTo <= 180) score += 0.25; // upcoming in 3h
-        if ((plans ?? []).find(p=>p.id===i.id)?.locked_at) score += 0.15;
+        const minTo = (new Date(i.plan.at).getTime() - now) / 60000;
+        if (minTo >= 0 && minTo <= 180) score += 0.25;
+      }
+      if (i.kind === "rally" && i.meta?.minutes_until_expiry !== undefined) {
+        const m = i.meta.minutes_until_expiry;
+        if (m >= 0 && m <= 90) score += 0.40;
+        const g = i.rally?.counts.going ?? 0; 
+        if (g >= 4) score += 0.10;
       }
       
       // Wings Cards scoring
       if (i.kind === "wings_poll") score += 0.18 + 0.2 * (i.meta?.confidence ?? 0);
       if (i.kind === "wings_time") score += 0.15;
-      if (i.kind === "wings_meet") score += 0.25; // highly actionable
+      if (i.kind === "wings_meet") score += 0.25;
       if (i.kind === "venue_suggestion") score += 0.20;
       
-      // Rally scoring
-      if (i.kind === "rally") {
-        const minutesUntilExpiry = i.meta?.minutes_until_expiry || 0;
-        
-        // Rally expiring in ≤ 90m gets significant boost
-        if (minutesUntilExpiry <= 90 && minutesUntilExpiry > 0) {
-          score += 0.40;
-        }
-        
-        // Recent rallies get slight boost
-        const ageHours = (now - new Date(i.created_at).getTime()) / (1000 * 60 * 60);
-        if (ageHours <= 2) {
-          score += 0.15;
-        }
-      }
-      
-      return { ...i, score: Math.min(1, Math.max(0, score)) };
+      return { ...i, priority: Math.min(1, Math.max(0, score)) };
     });
 
     // Filter
-    const isUnread = (i: SmartItem) => watermark ? i.created_at > watermark : i.unread;
+    const isUnread = (i: SmartItem) => watermark ? i.ts > watermark : i.unread;
     if (filter === "unread") items = items.filter(isUnread);
     if (filter === "rally")  items = items.filter(i => i.kind === "rally");
     if (filter === "photos") items = items.filter(i => i.kind === "moment");
     if (filter === "plans")  items = items.filter(i => i.kind === "plan");
     if (filter === "wings")  items = items.filter(i => ["wings_poll", "wings_time", "wings_meet", "venue_suggestion"].includes(i.kind));
 
-    // Sort: score desc, then created_at desc
-    items.sort((a,b) => (b.score - a.score) || b.created_at.localeCompare(a.created_at));
+    // Sort: priority desc, then ts desc
+    items.sort((a,b) => (b.priority - a.priority) || b.ts.localeCompare(a.ts));
 
     const unread_count = [...textItems, ...momentItems, ...planItems].filter(isUnread).length;
 

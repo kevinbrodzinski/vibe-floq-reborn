@@ -86,7 +86,7 @@ export function RallyCard({ item, floqId }: RallyCardProps) {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Started {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                Started {formatDistanceToNow(new Date(item.ts), { addSuffix: true })}
               </p>
             </div>
           </div>
