@@ -5,6 +5,7 @@ import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 type Mode = "walking" | "driving";
@@ -23,11 +24,17 @@ function fmtInstruction(m: any) {
   return name || "Continue";
 }
 
+const isFiniteCoord = (p:{lat:number;lng:number}) =>
+  Number.isFinite(p.lat) && Number.isFinite(p.lng) &&
+  Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const { origin, dest, mode = "walking" } = await req.json() as Req;
-    if (!origin || !dest) throw new Error("origin, dest required");
+    if (!isFiniteCoord(origin) || !isFiniteCoord(dest)) {
+      throw new Error("origin/dest invalid");
+    }
     const safeMode: Mode = mode === "driving" ? "driving" : "walking";
 
     const token = Deno.env.get("MAPBOX_ACCESS_TOKEN");

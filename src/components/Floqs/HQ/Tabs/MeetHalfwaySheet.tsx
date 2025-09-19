@@ -35,10 +35,12 @@ export default function MeetHalfwaySheet({
   const [dirOpen, setDirOpen] = React.useState(false);
 
   // Top3 options (safe even when closed or data undefined)
-  const top3 = React.useMemo(
-    () => data?.candidates?.slice(0, 3) ?? [],
-    [data]
-  );
+  const top3 = React.useMemo(() => 
+    (data?.candidates ?? [])
+      .slice()
+      .sort((a,b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0,3)
+  , [data]);
 
   // Selected venue (null-safe)
   const selected = React.useMemo(
@@ -150,7 +152,7 @@ export default function MeetHalfwaySheet({
               >Confirm & Send</button>
               <button
                 className="px-3 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10 hover:bg-white/15 transition-colors text-sm"
-                onClick={() => setDirOpen(true)}
+                onClick={() => selected && setDirOpen(true)}
               >
                 Directions
               </button>

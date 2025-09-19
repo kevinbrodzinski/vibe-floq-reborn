@@ -32,7 +32,11 @@ export function useDeviceLocation(enabled = false) {
       startWatching();
     }
     
-    return () => { if (id !== -1) navigator.geolocation.clearWatch(id); };
+    return () => { 
+      if (id !== -1 && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(id);
+      }
+    };
   }, [enabled]);
   return { loc, error: err };
 }
