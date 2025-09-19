@@ -31,18 +31,16 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // Fix react-native-svg + RN Web compatibility
+      // Fix react-native-svg + RN Web compatibility with stubs
       'react-native$': 'react-native-web',
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
-        'react-native-web/dist/cjs/exports/codegenNativeComponent',
+        path.resolve(__dirname, './src/lib/stubs/codegenNativeComponent.js'),
       'react-native/Libraries/Utilities/codegenNativeComponent':
-        'react-native-web/dist/cjs/exports/codegenNativeComponent',
+        path.resolve(__dirname, './src/lib/stubs/codegenNativeComponent.js'),
       'react-native-web/Libraries/Utilities/codegenNativeCommands':
-        'react-native-web/dist/cjs/exports/codegenNativeCommands',
+        path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
       'react-native/Libraries/Utilities/codegenNativeCommands':
-        'react-native-web/dist/cjs/exports/codegenNativeCommands',
-      // Optional safeguard for svg fabric consumers
-      'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
+        path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
     },
     dedupe: ['react', 'react-dom'],
   },
