@@ -13,9 +13,9 @@ export default function SmartComposer({
         className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
         placeholder={placeholder}
       />
-      <Btn ariaLabel="Mention">@</Btn>
-      <Btn ariaLabel="Attach photo">📷</Btn>
-      <Btn ariaLabel="Attach location">📍</Btn>
+      <Btn aria-label="Mention">@</Btn>
+      <Btn aria-label="Attach photo">📷</Btn>
+      <Btn aria-label="Attach location">📍</Btn>
       <button
         type="button"
         className="px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"

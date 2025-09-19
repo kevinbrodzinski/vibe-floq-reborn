@@ -1,34 +1,12 @@
 import React from "react";
 
-export default function Pill({ 
-  children, 
-  active,
-  glow = true,
-  glowColor = "gold",
-  className = ""
-}: { 
-  children: React.ReactNode;
-  active?: boolean;
-  glow?: boolean;
-  glowColor?: "cyan" | "gold" | "purple";
-  className?: string;
-}) {
-  const glowClass = glow ? (
-    glowColor === "cyan" ? "ring-neon" :
-    glowColor === "purple" ? "ring-neon-purple" : 
-    "ring-neon-gold"  // default gold
-  ) : "";
-
+export default function Pill({ children, glow=true }: { children: React.ReactNode; glow?: boolean }) {
   return (
-    <span className={`${
-      glow 
-        ? `px-2.5 py-1 rounded-full text-[11px] text-white/80 border bg-white/10 border-white/10 ${glowClass}` 
-        : `px-2.5 py-1 rounded-full text-[11px] text-white/80 border ${
-            active 
-              ? "bg-white/15 border-white/20" 
-              : "bg-white/10 border-white/10"
-          }`
-    } ${className}`}>
+    <span
+      className={`px-2.5 py-1 rounded-full text-[11px] text-white/85 border border-white/12 bg-white/6 ${
+        glow ? "ring-neon" : ""
+      }`}
+    >
       {children}
     </span>
   );

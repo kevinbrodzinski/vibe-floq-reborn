@@ -1,0 +1,40 @@
+:root{
+  /* glass */
+  --glass-bg: color-mix(in hsl, #0b0f17 75%, transparent);
+  --glass-border: rgba(255,255,255,.10);
+  --glass-inner: rgba(255,255,255,.06);
+
+  /* neon */
+  --neon-1: #8b5cf6;  /* violet */
+  --neon-2: #06b6d4;  /* cyan   */
+  --neon-3: #f59e0b;  /* amber  */
+
+  /* vibe category colors (used by SmartMap) */
+  --vibe-coffee: #4DD0E1;
+  --vibe-bar:    #F472B6;
+  --vibe-food:   #A78BFA;
+  --vibe-park:   #F59E0B;
+  --vibe-other:  #A1A1AA;
+}
+
+/* glass surface with subtle inner highlight */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 var(--glass-inner);
+  border-radius: 16px;
+}
+
+/* neon ring around elements (focus/cta) */
+.ring-neon {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.22),
+    0 0 36px color-mix(in hsl, var(--neon-1) 55%, transparent),
+    0 0 64px color-mix(in hsl, var(--neon-2) 45%, transparent);
+}
+
+/* hide web scrollbars for chip rows without forcing page X-scroll */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }

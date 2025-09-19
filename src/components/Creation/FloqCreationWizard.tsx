@@ -133,10 +133,10 @@ export default function FloqCreationWizard({ onCreated }: Props) {
                   return (
                     <Btn
                       key={v}
-                      active={isActive}
+                      tone={isActive ? "primary" : "subtle"}
                       className={`text-[10px] py-1 ring-offset-0 ${ring}`}
                       onClick={() => setVibe(v.toLowerCase() as Vibe)}
-                      ariaLabel={`Select ${v} vibe`}
+                      aria-label={`Select ${v} vibe`}
                     >
                       {v}
                     </Btn>
@@ -166,7 +166,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
             {create.isPending ? 'Creating...' : 'Create Floq'}
           </Btn>
           <Btn 
-            ariaLabel="Cancel" 
+            aria-label="Cancel" 
             onClick={() => window.history.back()}
             className="px-6"
           >

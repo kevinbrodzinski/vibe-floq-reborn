@@ -30,10 +30,10 @@ if (typeof window !== "undefined" && import.meta.env.VITE_MAPBOX_TOKEN) {
 
 const colorVar: Record<NonNullable<MapCandidate["category"]>, string> = {
   coffee: "var(--vibe-coffee, #4DD0E1)",
-  bar: "var(--vibe-bar, #F472B6)",
-  food: "var(--vibe-food, #A78BFA)",
-  park: "var(--vibe-park, #F59E0B)",
-  other: "var(--vibe-other, #A1A1AA)",
+  bar:    "var(--vibe-bar, #F472B6)",
+  food:   "var(--vibe-food, #A78BFA)",
+  park:   "var(--vibe-park, #F59E0B)",
+  other:  "var(--vibe-other, #A1A1AA)",
 };
 
 export default function SmartMap({ token, data, selectedId, onSelect, height = 280 }: Props) {
@@ -57,10 +57,7 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "bottom-right");
     mapRef.current = map;
 
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+    return () => { map.remove(); mapRef.current = null; };
   }, []);
 
   // render markers
@@ -79,11 +76,12 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
       [data.centroid.lng, data.centroid.lat],
     );
 
-    // centroid
+    // centroid marker
     const centerEl = document.createElement("div");
     centerEl.style.cssText =
       "width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 0 6px rgba(255,255,255,.15)";
-    const centerMarker = new mapboxgl.Marker({ element: centerEl }).setLngLat([data.centroid.lng, data.centroid.lat]).addTo(map);
+    const centerMarker = new mapboxgl.Marker({ element: centerEl })
+      .setLngLat([data.centroid.lng, data.centroid.lat]).addTo(map);
 
     // candidates
     data.candidates.forEach((c) => {
@@ -102,8 +100,7 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
       el.addEventListener("click", () => onSelect?.(c.id));
 
       const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
-        .setLngLat([c.lng, c.lat])
-        .addTo(map);
+        .setLngLat([c.lng, c.lat]).addTo(map);
       markersRef.current[c.id] = marker;
 
       if (c.id === selectedId) {
@@ -112,8 +109,9 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
           .setLngLat([c.lng, c.lat])
           .setHTML(
             `<div style="font:12px/1.2 system-ui;color:#fff">
-              <b>${c.name}</b><br/>~${Math.round(c.avg_eta_min ?? 0)} min • ${Math.round(c.meters_from_centroid ?? 0)}m
-            </div>`,
+               <b>${c.name}</b><br/>
+               ~${Math.round(c.avg_eta_min ?? 0)} min • ${Math.round(c.meters_from_centroid ?? 0)}m
+             </div>`
           )
           .addTo(map);
       }
@@ -129,7 +127,7 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
   }, [JSON.stringify(data), selectedId]);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/10" style={{ height }}>
+    <div className="glass rounded-2xl overflow-hidden" style={{ height }}>
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
     </div>
   );

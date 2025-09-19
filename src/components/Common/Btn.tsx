@@ -1,56 +1,21 @@
 import React from "react";
 
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  active?: boolean;
-  ariaLabel?: string;
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   glow?: boolean;
-  glowColor?: "cyan" | "gold" | "purple";
+  tone?: "default" | "primary" | "subtle";
+  size?: "sm" | "md";
 };
 
-export default function Btn({
-  children,
-  active,
-  ariaLabel,
-  glow = false,
-  glowColor = "cyan",
-  className = "",
-  ...props
-}: BtnProps) {
-  const base = "px-3 py-1.5 text-[12px] transition inline-flex items-center gap-1.5";
-  
-  if (glow) {
-    const glowClass = glowColor === "gold" ? "ring-neon-gold" :
-                     glowColor === "purple" ? "ring-neon-purple" : 
-                     "ring-neon";  // default cyan
-    
-    return (
-      <button
-        type="button"
-        aria-pressed={active ?? undefined}
-        aria-label={ariaLabel}
-        className={`${base} ${glowClass} ${className}`}
-        {...props}
-      >
-        {children}
-      </button>
-    );
-  }
-  
-  // Regular button styling when no glow
-  const surface = active 
-    ? "bg-white/15 border-white/20" 
-    : "bg-white/5 border-white/10 hover:bg-white/10";
-  const style = "rounded-xl border";
-  
-  return (
-    <button
-      type="button"
-      aria-pressed={active ?? undefined}
-      aria-label={ariaLabel}
-      className={`${base} ${style} ${surface} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  );
+export default function Btn({ glow, tone="primary", size="md", className="", ...rest }: Props) {
+  const base = "rounded-2xl font-medium transition shadow-sm";
+  const pxpy = size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2 text-sm";
+  const skin =
+    tone === "primary"
+      ? "bg-white text-black"
+      : tone === "subtle"
+      ? "bg-white/10 text-white/85 border border-white/15 hover:bg-white/14"
+      : "bg-white/6 text-white/85 border border-white/12";
+
+  const neon = glow ? "ring-neon" : "";
+  return <button className={`${base} ${pxpy} ${skin} ${neon} ${className}`} {...rest} />;
 }
