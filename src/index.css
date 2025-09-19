@@ -281,6 +281,11 @@
     box-shadow: 0 0 14px rgba(168,85,247,0.30), 0 0 36px rgba(168,85,247,0.18);
   }
 
+  /* Softer ring neon for action buttons */
+  .ring-neon-soft {
+    box-shadow: 0 0 10px rgba(64,224,255,0.20), 0 0 24px rgba(64,224,255,0.12);
+  }
+
   .neon-surface {
     position: relative;
     isolation: isolate;

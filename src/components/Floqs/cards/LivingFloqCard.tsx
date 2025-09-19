@@ -154,7 +154,7 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
 
       {/* Actions: Rally/Chat always; RSVP only with nextPlanId */}
       <div className="mt-3 flex items-center gap-2 text-[12px]">
-        <button type="button" onClick={(e)=>{e.stopPropagation(); onRally?.(id);}} className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">Rally</button>
+        <button type="button" onClick={(e)=>{e.stopPropagation(); onRally?.(id);}} className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon-soft">Rally</button>
         <button type="button" onClick={(e)=>{e.stopPropagation(); onChat?.(id);}} className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">Chat</button>
 
         {nextPlanId && nextLabel && (
@@ -165,7 +165,7 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
               if (onRSVP) onRSVP(id, nextPlanId);
               else window.location.href = `/floqs/${id}/plan/${nextPlanId}`;
             }}
-            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon"
+            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon-soft"
           >
             RSVP
           </button>
