@@ -57,14 +57,16 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         right={<Btn glow onClick={() => { track(Events.hq_meet_half_open, { floqId }); setOpen(true); }}>Meet-Halfway</Btn>}
       >
         {data ? (
-          <SmartMap 
-            data={data} 
-            selectedId={selected} 
-            onSelect={setSelected} 
-            height={260}
-          />
+          <div className="map-card glass-subtle">
+            <SmartMap 
+              data={data} 
+              selectedId={selected} 
+              onSelect={setSelected} 
+              height={260}
+            />
+          </div>
         ) : (
-          <div className="rounded-xl bg-white/5 border border-white/10 h-[260px] flex items-center justify-center text-white/40">
+          <div className="map-card glass-subtle h-[260px] flex items-center justify-center text-white/40">
             {isLoading ? "Loading proximity map..." : "Map preview"}
           </div>
         )}

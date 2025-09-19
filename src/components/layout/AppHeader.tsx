@@ -56,7 +56,7 @@ export function AppHeader() {
           </div>
 
           {/* Right side - Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 header-badges">
             {/* Search button for mobile */}
             <Button
               variant="ghost"

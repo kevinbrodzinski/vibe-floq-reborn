@@ -112,3 +112,39 @@
 .pad-safe-b {
   padding-bottom: max(env(safe-area-inset-bottom), 12px);
 }
+
+/* Sleek tune: lighter glow, tighter chips, softer borders */
+.neon-soft {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.18),
+    0 0 16px color-mix(in hsl, var(--neon-a) 28%, transparent),
+    0 0 24px color-mix(in hsl, var(--neon-b) 22%, transparent);
+}
+
+/* Chips (all tabs) */
+.chip-compact { padding: 5px 9px; font-size: 12px; border-color: rgba(255,255,255,.09); }
+.chip-compact[data-active="true"] { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
+
+/* Sections / cards */
+.section-compact, .glass-subtle {
+  border-color: rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Map container to match other cards */
+.map-card { border-radius: 14px; }
+
+/* Header badges only (keep them a hair larger but not puffy) */
+.header-badges .chip-compact { padding: 6px 11px; font-size: 13px; }
+
+/* Primary CTA glow just a notch down */
+.btn-compact--primary.neon-soft {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.20),
+    0 0 18px color-mix(in hsl, var(--neon-a) 26%, transparent);
+}
+
+/* Reduced transparency fallback */
+@media (prefers-reduced-transparency: reduce) {
+  .section-compact, .glass-subtle { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
