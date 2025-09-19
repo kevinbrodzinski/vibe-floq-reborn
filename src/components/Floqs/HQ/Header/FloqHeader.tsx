@@ -1,7 +1,7 @@
 import React from "react";
 import { useFloqVibe, vibeToColors } from "@/hooks/useFloqVibe";
 import { pickIconForId } from "@/lib/iconSeed";
-import { FloqBadges } from "./FloqBadges";
+// import { FloqBadges } from "./FloqBadges"; // header pills removed
 
 export function FloqHeader({
   floqId,
@@ -9,7 +9,8 @@ export function FloqHeader({
   description,
   avatarUrl,
   memberCount = 12,
-  rightBadges
+  rightBadges,
+  showHeroPills = false      // optional flag (default off)
 }: {
   floqId: string;
   name: string;
@@ -17,6 +18,7 @@ export function FloqHeader({
   avatarUrl?: string | null;
   memberCount?: number;
   rightBadges?: React.ReactNode;
+  showHeroPills?: boolean;
 }) {
   const { data: frame } = useFloqVibe(floqId);
   const vibe = vibeToColors({ 
@@ -82,8 +84,16 @@ export function FloqHeader({
         {description && (
           <div className="text-white/75 text-[11px] mb-2 truncate">{description}</div>
         )}
-        <FloqBadges items={memberBadges} className="mb-1" />
-        <FloqBadges items={awardBadges} uniformColor="cyan" />
+        
+        {/* Optional: allow pills again when explicitly requested (uniform style only) */}
+        {showHeroPills && (
+          <div className="header-pills mt-2 flex flex-wrap gap-2">
+            {/* keep these uniform tone if you ever show them */}
+            {/* <span className="badge badge-xs">Thursday Legends</span>
+                <span className="badge badge-xs">5-Week Streak</span>
+                <span className="badge badge-xs">Gran Regulars</span> */}
+          </div>
+        )}
       </div>
 
       {/* Right: badges/actions */}

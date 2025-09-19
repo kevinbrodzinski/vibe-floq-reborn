@@ -54,6 +54,12 @@
     background-image: none !important;
   }
 
+  /* hide legacy hero pills under title/meta */
+  .floq-hero .header-pills,
+  .floq-hero .meta-badges { 
+    display: none !important; 
+  }
+
   /* === NEON PAGE SYSTEM === */
   .page-neon {
     min-height: 100vh !important;
