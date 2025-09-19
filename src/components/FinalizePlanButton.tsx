@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGroupPredictability } from '@/hooks/useGroupPredictability';
+import { edgeLog } from '@/lib/edgeLog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,24 +20,34 @@ interface FinalizePlanButtonProps {
   canFinalize: boolean;
   onFinalize: () => Promise<void>;
   className?: string;
+  memberDists?: number[][];
 }
 
 export const FinalizePlanButton = ({
   planId,
   canFinalize,
   onFinalize,
-  className = ""
+  className = "",
+  memberDists = []
 }: FinalizePlanButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const gp = useGroupPredictability(memberDists);
+  const disabled = !gp.ok || !canFinalize;
 
   const handleFinalize = async () => {
-    setIsLoading(true);
-    try {
-      await onFinalize();
-    } catch (error) {
-      console.error('Failed to finalize plan:', error);
-    } finally {
-      setIsLoading(false);
+    edgeLog('group_predictability', {
+      spread: gp.spread, gain: gp.gain, ok: gp.ok, fallback: gp.fallback ?? null
+    });
+    
+    if (!disabled) {
+      setIsLoading(true);
+      try {
+        await onFinalize();
+      } catch (error) {
+        console.error('Failed to finalize plan:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -43,14 +55,19 @@ export const FinalizePlanButton = ({
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button
-          variant={canFinalize ? "default" : "secondary"}
-          disabled={!canFinalize || isLoading}
+          variant={!disabled ? "default" : "secondary"}
+          disabled={disabled || isLoading}
           className={className}
         >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Finalizing...
+            </>
+          ) : disabled && !gp.ok ? (
+            <>
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              {gp.label}
             </>
           ) : (
             <>
@@ -64,7 +81,7 @@ export const FinalizePlanButton = ({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            {canFinalize ? (
+            {!disabled ? (
               <CheckCircle className="w-5 h-5 text-green-400" />
             ) : (
               <AlertTriangle className="w-5 h-5 text-yellow-400" />
@@ -72,8 +89,12 @@ export const FinalizePlanButton = ({
             Finalize This Plan?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {canFinalize ? (
+            {!disabled ? (
               "This will lock the plan and notify all participants. You won't be able to make changes after finalizing."
+            ) : !gp.ok ? (
+              `Group predictability check failed: ${gp.fallback === 'partition' 
+                ? 'Preferences are too diverse. Consider splitting into smaller sub-groups.' 
+                : 'Group alignment is weak. Try relaxing time or location constraints.'}`
             ) : (
               "This plan cannot be finalized yet. Make sure all stops have sufficient votes and required details are complete."
             )}
@@ -82,7 +103,7 @@ export const FinalizePlanButton = ({
         
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          {canFinalize && (
+          {!disabled && (
             <AlertDialogAction
               onClick={handleFinalize}
               disabled={isLoading}

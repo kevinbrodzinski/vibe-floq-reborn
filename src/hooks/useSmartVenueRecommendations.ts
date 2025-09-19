@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getVenuesWithIntelligence, type VenueIntel } from '@/lib/venues/getVenuesWithIntelligence'
 import { usePlanParticipants } from '@/hooks/usePlanParticipants'
 import { addMinutes, parseISO, format } from 'date-fns'
+import { withGate } from '@/core/privacy/withGate'
+import { edgeLog } from '@/lib/edgeLog'
 
 export interface SmartVenueRecommendation {
   id: string
@@ -139,7 +141,7 @@ export function useSmartVenueRecommendations({
       JSON.stringify(preferences)
     ],
     queryFn: async (): Promise<SmartVenueRecommendation[]> => {
-      try {
+      const res = await withGate(async () => {
         const venues = await getVenuesWithIntelligence({
           lat: centerLocation.lat,
           lng: centerLocation.lng,
@@ -166,7 +168,28 @@ export function useSmartVenueRecommendations({
         return processedRecommendations
           .sort((a, b) => b.match_score - a.match_score)
           .slice(0, limitResults)
+      }, {
+        envelopeId: 'balanced',
+        featureTimestamps: [Date.now()],
+        cohortSize: participantInsights.groupSize,
+        epsilonCost: 0.02
+      });
 
+      edgeLog('recommendations_exposed', { 
+        ok: res.ok, 
+        degrade: res.degrade, 
+        receiptId: res.receiptId,
+        groupSize: participantInsights.groupSize
+      });
+
+      if (!res.ok) {
+        console.warn('[RECOMMENDATIONS] Privacy gate failed, using degraded data');
+        // Return category-level recommendations when gate fails  
+        return degradeRecommendationsToCategoryUI(participantInsights, limitResults);
+      }
+
+      try {
+        return res.data || [];
       } catch (error) {
         console.error('Error fetching smart venue recommendations:', error)
         return []
@@ -624,4 +647,43 @@ function getOptimalActivities(venue: any, hour: number): string[] {
   }
   
   return activities
+}
+
+// Fallback function for privacy gate failures - returns generic category-based recommendations
+function degradeRecommendationsToCategoryUI(participantInsights: any, limit: number): SmartVenueRecommendation[] {
+  const categories = ['coffee', 'restaurant', 'bar', 'park'];
+  return categories.slice(0, limit).map((category, idx): SmartVenueRecommendation => ({
+    id: `fallback-${category}-${idx}`,
+    name: `${category.charAt(0).toUpperCase() + category.slice(1)} venues nearby`,
+    lat: 0,
+    lng: 0,
+    address: 'Location available after privacy verification',
+    categories: [category],
+    vibe: 'neutral',
+    vibe_score: 50,
+    popularity: 50,
+    live_count: 0,
+    price_tier: 'medium',
+    match_score: 45, // Lower score for fallback
+    match_reasons: [{
+      type: 'vibe_match',
+      confidence: 45,
+      description: `Popular ${category} category for your group size`,
+      weight: 0.8
+    }],
+    optimal_time_slots: [],
+    group_suitability: 70,
+    budget_match: 70,
+    availability_windows: [],
+    participant_preferences_match: 50,
+    crowd_prediction: {
+      current_level: 'medium',
+      peak_hours: [],
+      quiet_hours: [],
+      optimal_visit_time: '12:00'
+    },
+    price_prediction: {
+      current_tier: 'medium'
+    }
+  }));
 }
