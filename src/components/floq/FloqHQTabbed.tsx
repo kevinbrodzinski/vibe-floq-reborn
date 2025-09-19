@@ -17,15 +17,15 @@ import {
 } from "lucide-react";
 
 // Import tab components
-import MapTab from "../Floqs/HQ/Tabs/MapTab";
-import StreamTab from "../Floqs/HQ/Tabs/StreamTab";
-import PlanTab from "../Floqs/HQ/Tabs/PlanTab";
-import MomentsTab from "../Floqs/HQ/Tabs/MomentsTab";
-import PulseTab from "../Floqs/HQ/Tabs/PulseTab";
-import VenuesTab from "../Floqs/HQ/Tabs/VenuesTab";
-import AnalyticsTab from "../Floqs/HQ/Tabs/AnalyticsTab";
-import WingTab from "../Floqs/HQ/Tabs/WingTab";
-import PrivacyTab from "../Floqs/HQ/Tabs/PrivacyTab";
+import MapTab from "@/components/Floqs/HQ/Tabs/MapTab";
+import StreamTab from "@/components/Floqs/HQ/Tabs/StreamTab";
+import PlanTab from "@/components/Floqs/HQ/Tabs/PlanTab";
+import MomentsTab from "@/components/Floqs/HQ/Tabs/MomentsTab";
+import PulseTab from "@/components/Floqs/HQ/Tabs/PulseTab";
+import VenuesTab from "@/components/Floqs/HQ/Tabs/VenuesTab";
+import AnalyticsTab from "@/components/Floqs/HQ/Tabs/AnalyticsTab";
+import WingTab from "@/components/Floqs/HQ/Tabs/WingTab";
+import PrivacyTab from "@/components/Floqs/HQ/Tabs/PrivacyTab";
 
 // Import shared constants and components
 import { TABS, TabKey } from "../Floqs/HQ/shared/constants";
@@ -111,10 +111,9 @@ export default function FloqHQTabbed() {
     }
   }
 
-  async function handleSendMessage() {
+  async function handleSendMessage(text: string) {
     if (!actualFloqId) return;
-    const el = document.getElementById("hq-message") as HTMLInputElement | null;
-    const body = el?.value?.trim();
+    const body = (text ?? '').trim();
     if (!body) return;
 
     try {
@@ -124,7 +123,6 @@ export default function FloqHQTabbed() {
       });
       if (error) throw error;
 
-      if (el) el.value = "";
       queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
       queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
     } catch (e) {
@@ -250,7 +248,7 @@ export default function FloqHQTabbed() {
               reduce={reduce}
               panelAnim={panelAnim}
               onMeetHalfway={openMeetHalfway}
-              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
+              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice)}
             />
           )}
 
@@ -261,7 +259,7 @@ export default function FloqHQTabbed() {
               sending={sending}
               rallyLoading={rallyLoading}
               onStartRally={() => handleStartRally()}
-              onSend={(text) => handleSendMessage()}
+              onSend={(text) => handleSendMessage(text)}
               onRallyResponse={handleRallyResponse}
             />
           )}
