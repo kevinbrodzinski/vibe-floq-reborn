@@ -96,19 +96,30 @@ serve(async (req) => {
           .limit(50)
       ];
     } else {
-      // Field stream: only field rallies (filtered by RLS)
-      fetchPromises = [
-        Promise.resolve({ data: [], error: null }), // messages
-        Promise.resolve({ data: [], error: null }), // moments
-        Promise.resolve({ data: [], error: null }), // plans
-        Promise.resolve({ data: [], error: null }), // wings
-        supabase
+      // Field stream: only field rallies (filtered by distance if lat/lng provided)
+      let fieldRalliesPromise;
+      if (typeof viewer_lat === "number" && typeof viewer_lng === "number") {
+        // Use RPC for friend+distance filtering
+        fieldRalliesPromise = supabase.rpc("rallies_field_nearby", {
+          lat: viewer_lat, lng: viewer_lng, radius_m: 4000,
+        });
+      } else {
+        // Fallback to RLS-only
+        fieldRalliesPromise = supabase
           .from("rallies")
           .select("id, creator_id, created_at, expires_at, status, venue_id, scope, note")
           .eq("status", "active")
           .eq("scope", "field")
           .order("expires_at", { ascending: false })
-          .limit(50)
+          .limit(50);
+      }
+      
+      fetchPromises = [
+        Promise.resolve({ data: [], error: null }), // messages
+        Promise.resolve({ data: [], error: null }), // moments
+        Promise.resolve({ data: [], error: null }), // plans
+        Promise.resolve({ data: [], error: null }), // wings
+        fieldRalliesPromise
       ];
     }
 
