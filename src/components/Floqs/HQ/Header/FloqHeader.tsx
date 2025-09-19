@@ -1,6 +1,6 @@
 import React from "react";
 import { useFloqVibe, vibeToColors } from "@/hooks/useFloqVibe";
-import { pickEmojiForId } from "@/lib/iconSeed";
+import { pickIconForId } from "@/lib/iconSeed";
 
 export function FloqHeader({
   floqId,
@@ -37,9 +37,16 @@ export function FloqHeader({
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span style={{ fontSize: 28 }}>{pickEmojiForId(floqId)}</span>
-          )}
+          ) : (() => {
+            const IconComponent = pickIconForId(floqId);
+            return (
+              <IconComponent 
+                size={32} 
+                className="text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]"
+                style={{ filter: `drop-shadow(0 0 8px ${vibe.glowA}) drop-shadow(0 0 16px ${vibe.glowB})` }}
+              />
+            );
+          })()}
         </div>
         {/* dynamic aura */}
         <style>{`
@@ -50,7 +57,11 @@ export function FloqHeader({
       {/* Center: title + description */}
       <div className="flex-1 min-w-0">
         <h1 className="title-neon text-[22px] sm:text-[26px] leading-tight"
-            style={{ textShadow: vibe.titleShadow }}>
+            data-text={name}
+            style={{ 
+              textShadow: `${vibe.titleShadow}, 0 0 3px rgba(255,255,255,0.8), 0 0 8px ${vibe.glowA}, 0 0 16px ${vibe.glowB}`,
+              filter: `drop-shadow(0 0 2px ${vibe.glowA})`
+            }}>
           {name}
         </h1>
         {description && (

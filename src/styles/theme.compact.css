@@ -242,10 +242,26 @@
   }
 }
 
-/* Title neon (larger, soft glow) */
+/* Enhanced title neon with border glow */
 .title-neon {
   font-weight: 800;
   letter-spacing: .2px;
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.title-neon::before {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+  -webkit-text-fill-color: transparent;
+  filter: blur(1px);
 }
 .title-neon.smallcaps { font-variant-caps: small-caps; }
 
