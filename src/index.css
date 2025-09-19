@@ -82,36 +82,64 @@
     cursor: not-allowed !important; 
   }
 
-  /* === NEON GLOW SYSTEM === */
+  /* === NEON GLOW SYSTEM - Clean Glowing Borders === */
   .neon-wrap {
     position: relative;
-    isolation: isolate;
     border-radius: 12px;
   }
 
   .neon-ring {
     border-radius: 12px !important;
   }
-  .neon-ring::after {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border-radius: inherit;
-    z-index: -1;
-    background: radial-gradient(40% 60% at 50% 50%, var(--neon-color, rgba(56,189,248,0.3)), transparent 60%);
-    filter: blur(12px);
-    opacity: 1;
-    pointer-events: none;
-  }
 
-  /* Vibe-specific neon colors */
-  .neon-social::after { --neon-color: rgba(34, 197, 94, 0.4); }
-  .neon-chill::after { --neon-color: rgba(56, 189, 248, 0.4); }
-  .neon-active::after { --neon-color: rgba(249, 115, 22, 0.4); }
-  .neon-hype::after { --neon-color: rgba(236, 72, 153, 0.4); }
-  .neon-productive::after { --neon-color: rgba(168, 85, 247, 0.4); }
-  .neon-quiet::after { --neon-color: rgba(156, 163, 175, 0.4); }
-  .neon-cyan::after { --neon-color: rgba(56, 189, 248, 0.4); }
+  /* Vibe-specific neon borders with clean glow */
+  .neon-social {
+    border: 2px solid rgba(34, 197, 94, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(34, 197, 94, 0.4),
+      0 0 20px rgba(34, 197, 94, 0.2),
+      inset 0 1px 0 rgba(34, 197, 94, 0.2) !important;
+  }
+  
+  .neon-chill {
+    border: 2px solid rgba(56, 189, 248, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(56, 189, 248, 0.4),
+      0 0 20px rgba(56, 189, 248, 0.2),
+      inset 0 1px 0 rgba(56, 189, 248, 0.2) !important;
+  }
+  
+  .neon-active {
+    border: 2px solid rgba(249, 115, 22, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(249, 115, 22, 0.4),
+      0 0 20px rgba(249, 115, 22, 0.2),
+      inset 0 1px 0 rgba(249, 115, 22, 0.2) !important;
+  }
+  
+  .neon-hype {
+    border: 2px solid rgba(236, 72, 153, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(236, 72, 153, 0.4),
+      0 0 20px rgba(236, 72, 153, 0.2),
+      inset 0 1px 0 rgba(236, 72, 153, 0.2) !important;
+  }
+  
+  .neon-productive {
+    border: 2px solid rgba(168, 85, 247, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(168, 85, 247, 0.4),
+      0 0 20px rgba(168, 85, 247, 0.2),
+      inset 0 1px 0 rgba(168, 85, 247, 0.2) !important;
+  }
+  
+  .neon-quiet {
+    border: 2px solid rgba(156, 163, 175, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(156, 163, 175, 0.4),
+      0 0 20px rgba(156, 163, 175, 0.2),
+      inset 0 1px 0 rgba(156, 163, 175, 0.2) !important;
+  }
 
   .glass {
     background: rgba(255,255,255,0.055);
