@@ -1,18 +1,20 @@
 import React from "react";
+import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
 import Pill from "../ui/Pill";
 import { MapPin, Target, Thermometer, Users } from "lucide-react";
 
-export default function MapTab({
-  onMeetHalfway,
-  onRallyChoice,
-}: {
+type Props = {
+  reduce: boolean;
+  panelAnim: any;
   onMeetHalfway?: () => void;
   onRallyChoice?: (c: "join" | "maybe" | "decline") => void;
-}) {
+};
+
+export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice }: Props) {
   return (
-    <>
+    <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
         title="Living Proximity Map"
         icon={<MapPin className="h-4 w-4" />}
@@ -42,6 +44,6 @@ export default function MapTab({
           </div>
         </div>
       </Section>
-    </>
+    </motion.div>
   );
 }

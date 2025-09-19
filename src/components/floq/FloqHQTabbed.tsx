@@ -246,30 +246,28 @@ export default function FloqHQTabbed() {
       <div className="max-w-6xl mx-auto px-4 py-5">
         <AnimatePresence mode="wait">
           {active === "map" && (
-            <motion.div key="map" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <MapTab 
-                onMeetHalfway={openMeetHalfway}
-                onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
-              />
-            </motion.div>
+            <MapTab 
+              reduce={reduce}
+              panelAnim={panelAnim}
+              onMeetHalfway={openMeetHalfway}
+              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
+            />
           )}
 
           {active === "stream" && (
-            <motion.div key="stream" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <StreamTab
-                sending={sending}
-                rallyLoading={rallyLoading}
-                onStartRally={() => handleStartRally()}
-                onSend={(text) => handleSendMessage()}
-                onRallyResponse={handleRallyResponse}
-              />
-            </motion.div>
+            <StreamTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+              sending={sending}
+              rallyLoading={rallyLoading}
+              onStartRally={() => handleStartRally()}
+              onSend={(text) => handleSendMessage()}
+              onRallyResponse={handleRallyResponse}
+            />
           )}
 
           {active === "plan" && (
-            <motion.div key="plan" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}>
-              <PlanTab />
-            </motion.div>
+            <PlanTab reduce={reduce} panelAnim={panelAnim} />
           )}
 
           {active === "moments" && (

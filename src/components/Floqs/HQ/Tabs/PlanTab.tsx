@@ -1,12 +1,18 @@
 import React from "react";
+import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
 import Pill from "../ui/Pill";
 import { Calendar, Clock, MapPin } from "lucide-react";
 
-export default function PlanTab() {
+type Props = {
+  reduce: boolean;
+  panelAnim: any;
+};
+
+export default function PlanTab({ reduce, panelAnim }: Props) {
   return (
-    <>
+    <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section title="Tonight — Thu Sept 12" icon={<Calendar className="h-4 w-4" />} right={<Pill glow>Live Now</Pill>}>
         <div className="text-[13px]">"Thursday Tradition #5" • Now →</div>
         <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
@@ -37,6 +43,6 @@ export default function PlanTab() {
           </div>
         </div>
       </Section>
-    </>
+    </motion.div>
   );
 }

@@ -1,21 +1,20 @@
 import React from "react";
+import { motion } from "framer-motion";
 import Section from "../ui/Section";
 import Btn from "../ui/Btn";
 import { Navigation2, Camera, Check } from "lucide-react";
 
-export default function StreamTab({
-  onStartRally,
-  onSend,
-  onRallyResponse,
-  sending,
-  rallyLoading,
-}: {
+type Props = {
+  reduce: boolean;
+  panelAnim: any;
   onStartRally?: () => void;
   onSend?: (text: string) => void;
   onRallyResponse?: (id: string, s: "joined" | "maybe" | "declined") => void;
   sending?: boolean;
   rallyLoading?: boolean;
-}) {
+};
+
+export default function StreamTab({ reduce, panelAnim, onStartRally, onSend, onRallyResponse, sending, rallyLoading }: Props) {
   const sendNow = () => {
     const el = document.getElementById("hq-message") as HTMLInputElement | null;
     const val = el?.value?.trim();
@@ -25,7 +24,7 @@ export default function StreamTab({
   };
 
   return (
-    <>
+    <motion.div {...panelAnim(reduce)} className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           <Btn active>Crew (2)</Btn><Btn>Plans (1)</Btn><Btn>Live</Btn><Btn>Memories</Btn>
@@ -66,6 +65,6 @@ export default function StreamTab({
           {sending ? "Sending…" : "Send"}
         </button>
       </div>
-    </>
+    </motion.div>
   );
 }
