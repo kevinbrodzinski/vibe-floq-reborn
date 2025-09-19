@@ -36,16 +36,16 @@ export default function MeetHalfwaySheet({
   if (!open) return null;
 
   const top3 = data?.candidates?.slice(0,3) ?? [];
-  const selected = data?.candidates.find(c => c.id === selectedId) ?? top3[0];
+  const selected = (selectedId && data?.candidates.find(c => c.id === selectedId)) ?? top3[0] ?? null;
 
   // build per-member ETAs for the selected venue (simple in-app calc)
-  const perMember = React.useMemo(() => {
-    if (!selected || !members?.length) return [] as MemberETA[];
+  const perMember: MemberETA[] = React.useMemo(() => {
+    if (!selected || !members?.length) return [];
     return members.map((m) => {
       const dist = haversineMeters({ lat: m.lat, lng: m.lng }, { lat: selected.lat, lng: selected.lng });
       return { id: m.profile_id, lat: m.lat, lng: m.lng, eta_min: etaMinutesMeters(dist, "walk") };
     });
-  }, [selected?.id, JSON.stringify(members)]);
+  }, [selected?.lat, selected?.lng, JSON.stringify(members)]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -125,7 +125,7 @@ export default function MeetHalfwaySheet({
             )}
 
             {/* Actions */}
-            <div className="mt-auto flex gap-2 pt-1">
+            <div className="mt-auto flex gap-2 pt-1 pb-[max(env(safe-area-inset-bottom),12px)]">
               <button
                 className="px-4 py-2 rounded-xl bg-white/10 text-white/85 border border-white/10"
                 onClick={()=>onOpenChange(false)}
@@ -145,14 +145,18 @@ export default function MeetHalfwaySheet({
 
           {/* Right: Map */}
           <div className="rounded-xl overflow-hidden border border-white/10 bg-white/5">
-            <SmartMap
-              data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}
-              selectedId={selected?.id ?? null}
-              onSelect={onSelectVenue}
-              members={members.map(m => ({ id: m.profile_id, lat: m.lat, lng: m.lng, label: m.label }))}
-              memberEtas={perMember}
-              height={loading ? 220 : 360}
-            />
+            {selected ? (
+              <SmartMap
+                data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}
+                selectedId={selected.id}
+                onSelect={onSelectVenue}
+                members={members.map(m => ({ id: m.profile_id, lat: m.lat, lng: m.lng, label: m.label }))}
+                memberEtas={perMember}
+                height={loading ? 220 : 360}
+              />
+            ) : (
+              <div className="h-[360px] grid place-items-center text-white/60 text-sm">No options found</div>
+            )}
           </div>
         </div>
       </div>

@@ -128,16 +128,21 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         onConfirmSend={async (venueId) => {
           const v = data?.candidates.find(c => c.id===venueId);
           if (!v) return;
-          // Post a rally card in-app (keeps users inside the app)
-          await supabase.functions.invoke("hq-stream-post", {
-            body: {
-              floq_id: floqId,
-              kind: "rally",
-              body: `Meet halfway at ${v.name}`,
-              meta: { venue: v, midpoint: data?.centroid, members: prox?.members ?? [] }
-            }
-          });
-          setOpen(false);
+          try {
+            // Post a rally card in-app (keeps users inside the app)
+            await supabase.functions.invoke("hq-stream-post", {
+              body: {
+                floq_id: floqId,
+                kind: "rally",
+                body: `Meet halfway at ${v.name}`,
+                meta: { venue: v, midpoint: data?.centroid, members: prox?.members ?? [] }
+              }
+            });
+            setOpen(false);
+          } catch (e) {
+            console.error("rally post failed", e);
+            // TODO: toast("Couldn't send rally. Try again.")
+          }
         }}
       />
     </motion.div>

@@ -15,8 +15,9 @@ export function useDirections(
   mode: Mode = "walking",
   enabled = true,
 ) {
+  const key = JSON.stringify({ origin, dest, mode });
   return useQuery({
-    queryKey: ["hq-directions", origin, dest, mode],
+    queryKey: ["hq-directions", key],
     enabled: Boolean(origin && dest) && enabled,
     staleTime: 60_000,
     queryFn: async () => {

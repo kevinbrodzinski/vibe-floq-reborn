@@ -28,19 +28,23 @@ serve(async (req) => {
   try {
     const { origin, dest, mode = "walking" } = await req.json() as Req;
     if (!origin || !dest) throw new Error("origin, dest required");
+    const safeMode: Mode = mode === "driving" ? "driving" : "walking";
 
     const token = Deno.env.get("MAPBOX_ACCESS_TOKEN");
     if (!token) throw new Error("Missing MAPBOX_ACCESS_TOKEN");
 
-    const profile = mode === "driving" ? "mapbox/driving" : "mapbox/walking";
+    const profile = safeMode === "driving" ? "mapbox/driving" : "mapbox/walking";
     const url =
       `https://api.mapbox.com/directions/v5/${profile}/${origin.lng},${origin.lat};${dest.lng},${dest.lat}` +
-      `?geometries=geojson&overview=full&steps=true&access_token=${token}`;
+      `?geometries=geojson&overview=full&steps=true&language=en&access_token=${token}`;
 
     const r = await fetch(url);
-    if (!r.ok) throw new Error(`Directions HTTP ${r.status}`);
-    const j = await r.json();
-
+    const text = await r.text(); // grab body either way
+    if (!r.ok) {
+      // Mapbox sends JSON errors; return them directly so the client can log
+      return new Response(text, { status: r.status, headers: { ...cors, "Content-Type": "application/json" }});
+    }
+    const j = JSON.parse(text);
     const route = j?.routes?.[0];
     if (!route) throw new Error("No route");
 
@@ -56,14 +60,8 @@ serve(async (req) => {
       duration_s: route.duration ?? 0,
       steps,
     };
-
-    return new Response(JSON.stringify(resp), {
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify(resp), { headers: { ...cors, "Content-Type": "application/json" }});
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 400,
-      headers: cors,
-    });
+    return new Response(JSON.stringify({ error: String(e) }), { status: 400, headers: cors });
   }
 });

@@ -203,7 +203,7 @@ export default function SmartMap({
       Object.values(memberMarkers.current).forEach((m) => m.remove());
       memberMarkers.current = {};
     };
-  }, [selectedId, members.length, JSON.stringify(memberEtas)]);
+  }, [selectedId, JSON.stringify(members), JSON.stringify(memberEtas)]);
 
   // add/remove route source+layer when `route` changes
   useEffect(() => {
