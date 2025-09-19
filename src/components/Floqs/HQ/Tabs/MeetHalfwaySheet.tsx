@@ -1,7 +1,7 @@
 import React from "react";
 import { Coffee, Wine, UtensilsCrossed, X } from "lucide-react";
 import SmartMap from "@/components/maps/SmartMap";
-import { openDirections } from "@/lib/nav/openDirections";
+import DirectionsSheet from "./DirectionsSheet";
 import type { HalfResult } from "@/hooks/useHQMeetHalfway";
 
 type Props = {
@@ -33,6 +33,8 @@ export default function MeetHalfwaySheet({
   loading,
   onRallyHere,
 }: Props) {
+  const [dirOpen, setDirOpen] = React.useState(false);
+  
   if (!open) return null;
 
   const selected = data?.candidates.find(c => c.id === selectedId);
@@ -151,7 +153,7 @@ export default function MeetHalfwaySheet({
               <div className="flex gap-2">
                 <button
                   className="px-4 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10 hover:bg-white/15 transition-colors text-sm"
-                  onClick={() => openDirections(selected.lat, selected.lng, selected.name)}
+                  onClick={() => setDirOpen(true)}
                 >
                   Directions
                 </button>
@@ -166,6 +168,15 @@ export default function MeetHalfwaySheet({
           )}
         </div>
       </div>
+
+      {selected && (
+        <DirectionsSheet
+          open={dirOpen}
+          onClose={() => setDirOpen(false)}
+          centroid={data?.centroid ?? { lat: 33.9925, lng: -118.4695 }}
+          dest={{ lat: selected.lat, lng: selected.lng, name: selected.name }}
+        />
+      )}
     </div>
   );
 }

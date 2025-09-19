@@ -24,6 +24,7 @@ type Props = {
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   height?: number; // px
+  route?: { type:"LineString"; coordinates:[number,number][] } | null;
 };
 
 if (typeof window !== "undefined" && import.meta.env.VITE_MAPBOX_TOKEN) {
@@ -38,7 +39,7 @@ const colorVar: Record<NonNullable<MapCandidate["category"]>, string> = {
   other:  "var(--vibe-other, #A1A1AA)",
 };
 
-export default function SmartMap({ token, data, selectedId, onSelect, height = 280 }: Props) {
+export default function SmartMap({ token, data, selectedId, onSelect, height = 280, route }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
@@ -128,6 +129,39 @@ export default function SmartMap({ token, data, selectedId, onSelect, height = 2
       markersRef.current = {};
     };
   }, [JSON.stringify(data), selectedId]);
+
+  // add/remove route source+layer when `route` changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const src = "route-src";
+    const layer = "route-layer";
+
+    // cleanup existing
+    if (map.getLayer(layer)) map.removeLayer(layer);
+    if (map.getSource(src)) map.removeSource(src);
+
+    if (route && route.coordinates?.length) {
+      map.addSource(src, {
+        type: "geojson",
+        data: { type: "Feature", geometry: route, properties: {} },
+      });
+      map.addLayer({
+        id: layer,
+        type: "line",
+        source: src,
+        paint: {
+          "line-color": "#8B5CF6",
+          "line-width": 5,
+          "line-opacity": 0.9,
+        },
+      });
+    }
+    return () => {
+      if (map.getLayer(layer)) map.removeLayer(layer);
+      if (map.getSource(src)) map.removeSource(src);
+    };
+  }, [route ? JSON.stringify(route.coordinates) : ""]);
 
   return (
     <div className="rounded-xl overflow-hidden border border-white/10" style={{ height }}>
