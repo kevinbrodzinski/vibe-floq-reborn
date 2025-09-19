@@ -322,11 +322,11 @@ export default function FloqHQTabbed() {
                 </div>
                 <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[13px]">
                   4 converging at Coffee District · ETA 7:45 • Alignment high • Energy cost low
-                  <div className="mt-2 flex gap-2">
-                    <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "joined")}>Join</Btn>
-                    <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "maybe")}>Maybe</Btn>
-                    <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "declined")}>Can't</Btn>
-                  </div>
+                   <div className="mt-2 flex gap-2">
+                     <Btn glow onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "joined")}>Join</Btn>
+                     <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "maybe")}>Maybe</Btn>
+                     <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "declined")}>Can't</Btn>
+                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[12px] text-white/70"><div className="flex-1 h-1 rounded-full bg-white/10 mx-3" /><div className="flex gap-2"><Btn ariaLabel="Target"><Target className="h-4 w-4" /></Btn><Btn ariaLabel="Thermometer"><Thermometer className="h-4 w-4" /></Btn><Btn ariaLabel="People"><Users className="h-4 w-4" /></Btn><Btn ariaLabel="Pin"><MapPin className="h-4 w-4" /></Btn></div></div>
               </Section>
@@ -484,11 +484,11 @@ export default function FloqHQTabbed() {
                 <div className="text-[13px] text-white/80 mb-2">@everyone drinks at @GranBlanco in 1 hr?</div>
                 <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-[12px]">
                   Rally: Gran Blanco @ 8:30 • Going: 3 • Deciding: 2 • No reply: 3
-                  <div className="mt-2 flex gap-2">
-                    <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "joined")}>Join</Btn>
-                    <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "maybe")}>Maybe</Btn>
-                    <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "declined")}>Can't</Btn>
-                  </div>
+                   <div className="mt-2 flex gap-2">
+                     <Btn glow onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "joined")}>Join</Btn>
+                     <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "maybe")}>Maybe</Btn>
+                     <Btn onClick={() => handleRallyResponse("RALLY_ID_PLACEHOLDER", "declined")}>Can't</Btn>
+                   </div>
                 </div>
               </Section>
               <Section title="Moment" icon={<Camera className="h-4 w-4" />}><div className="text-sm font-medium mb-1">Sarah shared a moment · 12m</div><div className="rounded-xl aspect-[16/9] bg-zinc-900 border border-white/10 grid place-items-center text-white/60 text-xs">photo</div></Section>
@@ -498,9 +498,9 @@ export default function FloqHQTabbed() {
                 <Btn>@</Btn>
                 <Btn><Camera className="h-4 w-4" /></Btn>
                 <Btn><MapPin className="h-4 w-4" /></Btn>
-                <Btn onClick={handleSendMessage} disabled={sending}>
-                  {sending ? "Sending…" : "Send"}
-                </Btn>
+                 <Btn glow onClick={handleSendMessage} disabled={sending}>
+                   {sending ? "Sending…" : "Send"}
+                 </Btn>
               </div>
             </motion.div>
           )}
@@ -555,14 +555,14 @@ export default function FloqHQTabbed() {
                 <Section title="Your Role" icon={<Users className="h-4 w-4" />}><div className="text-[13px]">Catalyst • Initiate 42% • +15% vibe lift</div><div className="text-[12px] text-white/80">Strongest: You↔Sarah • Needs: You↔Jake</div></Section>
                 <Section title="Weekly Rhythm" icon={<Gauge className="h-4 w-4" />}><div className="text-[12px] text-white/80">Mon recovery • Tue build • Wed social • Thu peak • Fri high • Sat var • Sun recharge</div><div className="mt-2 h-20 rounded-xl bg-white/5 border border-white/10 grid place-items-center text-white/60 text-xs">(Heatmap)</div></Section>
               </div>
-              <Section title="Insights" icon={<Target className="h-4 w-4" />}><div className="grid md:grid-cols-2 gap-3 text-[13px]"><div className="rounded-xl bg-white/5 border border-white/10 p-3">Thu tradition at risk<div className="mt-2"><Btn>Rally the Crew</Btn></div></div><div className="rounded-xl bg-white/5 border border-white/10 p-3">Jake engagement dropping<div className="mt-2 flex gap-2"><Btn>Reach Out</Btn><Btn>View Relationship</Btn></div></div></div></Section>
+              <Section title="Insights" icon={<Target className="h-4 w-4" />}><div className="grid md:grid-cols-2 gap-3 text-[13px]"><div className="rounded-xl bg-white/5 border border-white/10 p-3">Thu tradition at risk<div className="mt-2"><Btn glow>Rally the Crew</Btn></div></div><div className="rounded-xl bg-white/5 border border-white/10 p-3">Jake engagement dropping<div className="mt-2 flex gap-2"><Btn>Reach Out</Btn><Btn>View Relationship</Btn></div></div></div></Section>
             </motion.div>
           )}
 
           {active === "wing" && (
             <motion.div key="wing" id="panel-wing" role="tabpanel" aria-labelledby="tab-wing" {...panelAnim(reduce)} className="space-y-5">
-              <Section title="Suggestions" icon={<Sparkles className="h-4 w-4" />}><div className="grid md:grid-cols-2 gap-3"><div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">Thursday Tradition at risk<div className="mt-2 flex gap-2"><Btn>Create Rally</Btn><Btn>Send Reminder</Btn><Btn>Skip</Btn></div></div><div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">Jake needs attention<div className="mt-2 flex gap-2"><Btn>Suggest 1-on-1</Btn><Btn>Add to next plan</Btn><Btn>Let it be</Btn></div></div></div></Section>
-              <Section title="Ask Wingman" icon={<MessageSquare className="h-4 w-4" />}><div className="rounded-xl border border-white/10 bg-white/5 p-3"><div className="text-[12px] text-white/60">Try: find common time • best venue for 10 • who hasn't converged • chill Sunday plan</div><div className="mt-3 flex items-center gap-2"><input className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Ask Wingman…" /><Btn>Send</Btn></div></div></Section>
+              <Section title="Suggestions" icon={<Sparkles className="h-4 w-4" />}><div className="grid md:grid-cols-2 gap-3"><div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">Thursday Tradition at risk<div className="mt-2 flex gap-2"><Btn glow>Create Rally</Btn><Btn>Send Reminder</Btn><Btn>Skip</Btn></div></div><div className="rounded-xl bg-white/5 border border-white/10 p-3 text-[13px]">Jake needs attention<div className="mt-2 flex gap-2"><Btn>Suggest 1-on-1</Btn><Btn>Add to next plan</Btn><Btn>Let it be</Btn></div></div></div></Section>
+              <Section title="Ask Wingman" icon={<MessageSquare className="h-4 w-4" />}><div className="rounded-xl border border-white/10 bg-white/5 p-3"><div className="text-[12px] text-white/60">Try: find common time • best venue for 10 • who hasn't converged • chill Sunday plan</div><div className="mt-3 flex items-center gap-2"><input className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40" placeholder="Ask Wingman…" /><Btn glow>Send</Btn></div></div></Section>
               <Section title="Chat" icon={<MessageSquare className="h-4 w-4" />}><div className="text-[13px]">You: Find us a new bar to try</div><div className="mt-2 rounded-xl bg-white/5 border border-white/10 p-3 text-[12px] text-white/80"><ol className="list-decimal ml-5 space-y-1"><li>The Brig — 0.5mi • live music</li><li>Townhouse — dive • pool tables</li><li>Rooftop at Erwin — sunset views</li></ol><div className="mt-2 flex gap-2"><Btn>Create Poll</Btn><Btn>Directions</Btn><Btn>More</Btn></div></div></Section>
             </motion.div>
           )}
