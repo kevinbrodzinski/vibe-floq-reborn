@@ -30,9 +30,11 @@ import {
   Flame
 } from "lucide-react";
 
-function Pill({ children }: { children: React.ReactNode }) {
+function Pill({ children, glow = false }: { children: React.ReactNode; glow?: boolean }) {
   return (
-    <span className="px-2.5 py-1 rounded-full bg-white/10 text-[11px] text-white/80 border border-white/10">{children}</span>
+    <span className={glow ? "chip-glow" : "px-2.5 py-1 rounded-full bg-white/10 text-[11px] text-white/80 border border-white/10"}>
+      {children}
+    </span>
   );
 }
 
@@ -43,9 +45,13 @@ function Btn({ children, active, ariaLabel, glow = false, className = "", ...pro
       type="button"
       aria-pressed={active ?? undefined}
       aria-label={ariaLabel}
-      className={`px-3 py-1.5 rounded-xl border text-[12px] transition ${
-        active ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
-      } ${glow ? "neon-ring" : ""} ${className}`}
+      className={`${
+        glow 
+          ? "btn-glow px-3 py-1.5 text-[12px]" 
+          : `px-3 py-1.5 rounded-xl border text-[12px] transition ${
+              active ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
+            }`
+      } ${className}`}
       {...props}
     >
       {children}
@@ -262,11 +268,18 @@ export default function FloqHQTabbed() {
       <div className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-zinc-950/70">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg grid place-items-center"><Sparkles className="h-5 w-5" /></div>
+            <div className="h-9 w-9 avatar-glow bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg grid place-items-center"><Sparkles className="h-5 w-5" /></div>
             <div>
-              <div className="text-sm font-semibold flex items-center gap-2">Chaos<span className="sr-only">Private Floq</span></div>
+              <div className="text-sm font-semibold flex items-center gap-2">
+                Chaos<span className="sr-only">Private Floq</span>
+              </div>
               <div className="text-[11px] text-white/60">"Spontaneous convergence specialists since 2022"</div>
               <div className="text-[11px] text-white/60">8 members • Social-Hype</div>
+              <div className="flex items-center gap-2 mt-1">
+                <Pill glow><Trophy className="inline h-3.5 w-3.5 mr-1" />Thursday Legends</Pill>
+                <Pill glow><Flame className="inline h-3.5 w-3.5 mr-1" />5-Week Streak</Pill>
+                <Pill glow><MapPin className="inline h-3.5 w-3.5 mr-1" />Gran Regulars</Pill>
+              </div>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
@@ -507,28 +520,28 @@ export default function FloqHQTabbed() {
 
           {active === "plan" && (
             <motion.div key="plan" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" {...panelAnim(reduce)} className="space-y-5">
-              <div className="flex flex-wrap gap-2"><Btn>+ Solo Plan</Btn><Btn>+ Group Plan</Btn><Btn>View Calendar</Btn><Btn>Wingman Help</Btn></div>
-              <Section title="Thursday Tradition @ Gran" icon={<Check className="h-4 w-4" />} right={<Pill>Locked</Pill>}><div className="text-[13px]">8:30pm • 6/8 confirmed • Recurring weekly</div><div className="text-[12px] text-white/70">Energy: Social-Hype • Friction: Low</div></Section>
-              <Section title="Dinner @ Koi Sushi" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Building</Pill>}><div className="text-[13px]">7:30pm • 5 confirmed, 2 pending · Organizer: Sarah</div><div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">Live Planning: 3 active • "I can pick up Tom and Alex" • "Jake is vegetarian"</div></Section>
-              <Section title="Beach Day" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill>Tentative</Pill>}><div className="text-[13px]">All day • Flexible • Weather dependent</div><div className="text-[12px] text-white/70">Forecast: Perfect • Backup: Indoor climbing</div></Section>
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-3 text-[13px]">Suggested by Wingman: Sunday Brunch? 4 usually free<div className="mt-2 flex gap-2"><Btn>Create Plan</Btn><Btn>Not This Week</Btn><Btn>Never Suggest</Btn></div></div>
+              <div className="flex flex-wrap gap-2"><Btn glow>+ Solo Plan</Btn><Btn glow>+ Group Plan</Btn><Btn>View Calendar</Btn><Btn>Wingman Help</Btn></div>
+              <Section title="Thursday Tradition @ Gran" icon={<Check className="h-4 w-4" />} right={<Pill glow>Locked</Pill>}><div className="text-[13px]">8:30pm • 6/8 confirmed • Recurring weekly</div><div className="text-[12px] text-white/70">Energy: Social-Hype • Friction: Low</div></Section>
+              <Section title="Dinner @ Koi Sushi" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill glow>Building</Pill>}><div className="text-[13px]">7:30pm • 5 confirmed, 2 pending · Organizer: Sarah</div><div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px]">Live Planning: 3 active • "I can pick up Tom and Alex" • "Jake is vegetarian"</div></Section>
+              <Section title="Beach Day" icon={<CalendarCheck className="h-4 w-4" />} right={<Pill glow>Tentative</Pill>}><div className="text-[13px]">All day • Flexible • Weather dependent</div><div className="text-[12px] text-white/70">Forecast: Perfect • Backup: Indoor climbing</div></Section>
+              <div className="rounded-2xl bg-white/5 border border-white/10 p-3 text-[13px]">Suggested by Wingman: Sunday Brunch? 4 usually free<div className="mt-2 flex gap-2"><Btn glow>Create Plan</Btn><Btn>Not This Week</Btn><Btn>Never Suggest</Btn></div></div>
             </motion.div>
           )}
 
           {active === "moments" && (
             <motion.div key="moments" id="panel-moments" role="tabpanel" aria-labelledby="tab-moments" {...panelAnim(reduce)} className="space-y-5">
-              <Section title="Tonight — Thu Sept 12" icon={<Camera className="h-4 w-4" />} right={<Pill>Live Now</Pill>}><div className="text-[13px]">"Thursday Tradition #5" • Now →</div><div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden"><div className="h-full w-2/3 bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" /></div><div className="text-[12px] text-white/80 mt-2">Current: Gran Blanco • Building to peak</div></Section>
-              <Section title="Last Thursday — Sept 5" icon={<Star className="h-4 w-4" />} right={<Pill>Score 5/5</Pill>}><div className="text-[13px]">"Legendary Karaoke Night" • 4h 13m</div><div className="text-[12px] text-white/80">Highlights: Rap battle win • 27 moments • Convergence 94/100</div></Section>
-              <Section title="Aug 28 — Beach Birthday Bash" icon={<Star className="h-4 w-4" />} right={<Pill>Score 4/5</Pill>}><div className="text-[13px]">8/8 attended • 6h • Perfect weather</div></Section>
+              <Section title="Tonight — Thu Sept 12" icon={<Camera className="h-4 w-4" />} right={<Pill glow>Live Now</Pill>}><div className="text-[13px]">"Thursday Tradition #5" • Now →</div><div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden"><div className="h-full w-2/3 bg-gradient-to-r from-sky-500 via-violet-500 to-fuchsia-500" /></div><div className="text-[12px] text-white/80 mt-2">Current: Gran Blanco • Building to peak</div></Section>
+              <Section title="Last Thursday — Sept 5" icon={<Star className="h-4 w-4" />} right={<Pill glow>Score 5/5</Pill>}><div className="text-[13px]">"Legendary Karaoke Night" • 4h 13m</div><div className="text-[12px] text-white/80">Highlights: Rap battle win • 27 moments • Convergence 94/100</div></Section>
+              <Section title="Aug 28 — Beach Birthday Bash" icon={<Star className="h-4 w-4" />} right={<Pill glow>Score 4/5</Pill>}><div className="text-[13px]">8/8 attended • 6h • Perfect weather</div></Section>
               <div className="text-[12px] text-white/80">Pattern: Thursday Tradition (5 weeks)</div>
             </motion.div>
           )}
 
           {active === "pulse" && (
             <motion.div key="pulse" id="panel-pulse" role="tabpanel" aria-labelledby="tab-pulse" {...panelAnim(reduce)} className="space-y-5">
-              <Section title="Group Pulse" icon={<Gauge className="h-4 w-4" />} right={<Btn>Activate Convergence</Btn>}><div className="text-[13px]">High potential • 3 free now • 2 free soon • Optimal: Coffee District</div></Section>
+              <Section title="Group Pulse" icon={<Gauge className="h-4 w-4" />} right={<Btn glow>Activate Convergence</Btn>}><div className="text-[13px]">High potential • 3 free now • 2 free soon • Optimal: Coffee District</div></Section>
               {PEOPLE.slice(0,3).map((p,i)=> (
-                <Section key={p.n} title={`${p.n}`} icon={<Users className="h-4 w-4" />} right={<Pill>{i===0?"Energy 92":i===1?"Energy 45":"Ghost"}</Pill>}>
+                <Section key={p.n} title={`${p.n}`} icon={<Users className="h-4 w-4" />} right={<Pill glow>{i===0?"Energy 92":i===1?"Energy 45":"Ghost"}</Pill>}>
                   <div className="text-[12px] text-white/80">Status details</div>
                   <div className="mt-2 grid sm:grid-cols-2 gap-3 text-[12px] text-white/80"><div>Location info</div><div>Vibe info</div></div>
                 </Section>
@@ -541,7 +554,7 @@ export default function FloqHQTabbed() {
               <div className="flex items-center justify-between"><div className="flex gap-2 flex-wrap"><Btn active>All</Btn><Btn>Day</Btn><Btn>Night</Btn><Btn>Food</Btn><Btn>Bars</Btn><Btn>Activities</Btn></div><Btn>All Time</Btn></div>
               <Section title="Our Top Spots" icon={<MapPin className="h-4 w-4" />}>
                 {VENUES.map(v=> (
-                  <div key={v.r} className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3"><div className="flex items-center justify-between"><div className="text-sm font-semibold">{v.r}. {v.name}</div><Pill>{v.badge}</Pill></div><div className="text-[12px] text-white/70">{v.meta}</div><div className="text-[12px] text-white/80 mt-1 italic">"{v.note}"</div><div className="mt-2 flex gap-2"><Btn>Navigate</Btn><Btn>Rally Here</Btn><Btn>History</Btn></div></div>
+                  <div key={v.r} className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3"><div className="flex items-center justify-between"><div className="text-sm font-semibold">{v.r}. {v.name}</div><Pill glow>{v.badge}</Pill></div><div className="text-[12px] text-white/70">{v.meta}</div><div className="text-[12px] text-white/80 mt-1 italic">"{v.note}"</div><div className="mt-2 flex gap-2"><Btn>Navigate</Btn><Btn glow>Rally Here</Btn><Btn>History</Btn></div></div>
                 ))}
               </Section>
             </motion.div>
