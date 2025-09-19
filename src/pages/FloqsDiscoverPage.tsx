@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFloqsCards } from "@/hooks/useFloqsCards";
 import LivingFloqCard, { type LivingFloq } from "@/components/Floqs/cards/LivingFloqCard";
-import SearchFilters, { KindFilter, VibeFilter, StatusFilter } from "@/components/Floqs/SearchFilters";
+import SplitFilters, { KindFilter, VibeFilter, StatusFilter } from "@/components/Floqs/SplitFilters";
 
 export default function FloqsDiscoverPage() {
   const nav = useNavigate();
@@ -82,8 +82,8 @@ export default function FloqsDiscoverPage() {
         <div className="text-[12px] text-white/60">Your living social constellation</div>
       </div>
 
-      {/* Restored search + filters (glass) */}
-      <SearchFilters
+      {/* Split filters with glass dropdowns */}
+      <SplitFilters
         query={query} onQuery={setQuery}
         kind={kind} onKind={setKind}
         vibe={vibe} onVibe={setVibe}
