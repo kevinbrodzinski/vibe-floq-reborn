@@ -76,6 +76,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               placeholder="What should we call your floq?"
               maxLength={50}
             />
+            <div className="text-[11px] text-white/45 text-right mt-1">{name.length}/50</div>
           </label>
 
           <label className="block">
@@ -87,6 +88,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               placeholder="What's your floq about? What brings you together?"
               maxLength={200}
             />
+            <div className="text-[11px] text-white/45 text-right mt-1">{description.length}/200</div>
           </label>
         </div>
       </Section>
@@ -132,17 +134,20 @@ export default function FloqCreationWizard({ onCreated }: Props) {
       </Section>
 
       {/* Actions */}
-      <div className="mt-6 flex gap-2 justify-end">
-        <Btn onClick={() => window.history.back()}>Cancel</Btn>
-        <Btn 
-          variant="primary" 
-          glow 
-          onClick={handleCreate}
-          disabled={!canCreate}
-          className={!canCreate ? "opacity-50" : ""}
-        >
-          {create.isPending ? "Creating..." : "Create Floq"}
-        </Btn>
+      <div className="sticky bottom-0 z-10 mt-6 -mx-4 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]
+                      bg-gradient-to-t from-[#0b0d12]/90 via-[#0b0d12]/70 to-transparent">
+        <div className="flex gap-2 justify-end">
+          <Btn onClick={() => window.history.back()}>Cancel</Btn>
+          <Btn 
+            variant="primary" 
+            glow 
+            onClick={handleCreate}
+            disabled={!canCreate}
+            className={!canCreate ? "opacity-50 cursor-not-allowed" : ""}
+          >
+            {create.isPending ? "Creating..." : "Create Floq"}
+          </Btn>
+        </div>
       </div>
 
       {create.error && (

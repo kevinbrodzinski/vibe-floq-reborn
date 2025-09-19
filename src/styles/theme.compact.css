@@ -199,3 +199,11 @@
   opacity: .55;
   cursor: not-allowed;
 }
+
+/* Focus glow for inputs */
+.focus\:neon-soft:focus {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.20),
+    0 0 12px color-mix(in hsl, var(--neon-a) 20%, transparent),
+    0 0 20px color-mix(in hsl, var(--neon-b) 16%, transparent);
+}
