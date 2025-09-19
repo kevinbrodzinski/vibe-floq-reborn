@@ -21,7 +21,7 @@ export default function Btn({
       className={[
         "px-3 py-1.5 rounded-xl border text-[12px] transition",
         active ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10",
-        glow ? "btn-glow" : "",
+        glow ? "ring-1 ring-cyan-400/30 shadow-[0_0_24px_-6px_rgba(34,211,238,.45)]" : "",
         className,
       ].join(" ")}
     >
