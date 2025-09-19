@@ -34,7 +34,8 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
   const [selected, setSelected] = useState<string | null>(null);
 
   // fetch when sheet is open (your existing API shape)
-  const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: cats }, open);
+  const normalCats = cats.map((c) => (c === "restaurant" ? "food" : c));
+  const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: normalCats }, open);
   
   // get member proximity data
   const { data: prox } = useHQProximity(floqId ?? "", !!floqId);
