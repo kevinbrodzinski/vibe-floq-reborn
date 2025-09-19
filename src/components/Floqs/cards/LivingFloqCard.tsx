@@ -94,7 +94,11 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
           />
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white/90 truncate">{name}</div>
-            {description && <div className="text-[11px] text-white/60 line-clamp-2">{description}</div>}
+            {description && (
+              <div className="mt-0.5 text-[12px] text-white/70 leading-snug line-clamp-2">
+                {description}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

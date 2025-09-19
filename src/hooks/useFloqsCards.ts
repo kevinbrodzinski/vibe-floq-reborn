@@ -87,7 +87,7 @@ function transformRowToLivingFloq(r: CardRow): LivingFloq {
   return {
     id: r.id,
     name: r.name || r.title || "Untitled Floq",
-    description: r.description || undefined,
+    description: r.description?.trim() || undefined,
     kind: r.kind,
     vibe: r.primary_vibe || undefined,
     totalMembers: r.member_count ?? 0,

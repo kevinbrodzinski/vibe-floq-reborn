@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { FloqRallyModal } from "@/components/rally/FloqRallyModal";
 import { useHQProximity } from "@/hooks/useHQProximity";
 import { useHQAvailability } from "@/hooks/useHQAvailability";
@@ -35,6 +37,13 @@ import {
   Trophy,
   Flame,
 } from "lucide-react";
+
+// Reduced-motion aware panel animations
+const panelAnim = (reduce: boolean) => ({
+  initial: reduce ? false : { opacity: 0, y: 10 },
+  animate: reduce ? { opacity: 1 } : { opacity: 1, y: 0 },
+  exit: reduce ? { opacity: 0 } : { opacity: 0, y: -10 }
+});
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -132,22 +141,52 @@ interface FloqHQTabbedProps {
 }
 
 export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedProps) {
+  const params = useParams<{ floqId: string }>();
+  const actualFloqId = floqId || params.floqId || "test-floq-id";
   const reduce = useReducedMotion();
+  const queryClient = useQueryClient();
   const [active, setActive] = useState<TabKey>("map");
   
   // Rally modal state
   const [rallyModal, setRallyModal] = useState<{ floqId: string; floqName: string } | null>(null);
   
-  // Live HQ hooks
-  const { data: proximity, isLoading: proxLoading } = useHQProximity(floqId);
-  const { data: availability } = useHQAvailability(floqId);
-  const { data: vibes } = useHQVibes(floqId);
-  const { data: digest } = useHQDigest(floqId, undefined);
-  const { data: messages } = useFloqStream(floqId);
-  const post = usePostStream(floqId);
+  // Live HQ hooks with proper floqId
+  const { data: proximity, isLoading: proxLoading } = useHQProximity(actualFloqId);
+  const { data: availability } = useHQAvailability(actualFloqId);
+  const { data: vibes } = useHQVibes(actualFloqId);
+  const { data: digest } = useHQDigest(actualFloqId, undefined);
+  const { data: messages } = useFloqStream(actualFloqId);
+  const post = usePostStream(actualFloqId);
   
-  // Real-time subscriptions
-  useFloqStreamRealtime(floqId);
+  // Real-time subscriptions with floqId
+  useFloqStreamRealtime(actualFloqId);
+
+  // Action handlers that use floqId and invalidate proper cache keys
+  const handleStartRally = async () => {
+    try {
+      // Placeholder for rally creation - would call edge function
+      console.log('Starting rally for floq:', actualFloqId);
+      setRallyModal({ floqId: actualFloqId, floqName: "Chaos" });
+      
+      // Invalidate relevant queries after action
+      queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+    } catch (error) {
+      console.error('Failed to start rally:', error);
+    }
+  };
+
+  const handleSendMessage = async (message: string) => {
+    try {
+      await post.mutateAsync({ body: message });
+      // Post mutation should handle its own cache invalidation
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
@@ -324,7 +363,11 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <div className="flex gap-2">
                   <Btn>Wing</Btn>
                   <Btn>Filter</Btn>
-                  <Btn ariaLabel="Start Rally" onClick={() => setRallyModal({ floqId, floqName: "Chaos" })}>
+                  <Btn 
+                    className="neon-ring" 
+                    ariaLabel="Start Rally" 
+                    onClick={handleStartRally}
+                  >
                     Start Rally
                   </Btn>
                 </div>
@@ -359,13 +402,13 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   <div className="text-sm font-medium mb-1">No recent activity</div>
                   <div className="text-[13px] text-white/80 mb-2">Start a rally or send a message to get things going</div>
                   <div className="mt-3 flex gap-2">
-                    <Btn 
-                      className="neon-ring" 
-                      ariaLabel="Start Rally" 
-                      onClick={() => setRallyModal({ floqId, floqName: "Chaos" })}
-                    >
-                      + Start Rally
-                    </Btn>
+                  <Btn 
+                    className="neon-ring" 
+                    ariaLabel="Start Rally" 
+                    onClick={handleStartRally}
+                  >
+                    + Start Rally
+                  </Btn>
                     <Btn>Ask Wingman</Btn>
                   </div>
                 </Section>
@@ -379,7 +422,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   placeholder="Type message…"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                      post.mutate({ body: e.currentTarget.value.trim() });
+                      handleSendMessage(e.currentTarget.value.trim());
                       e.currentTarget.value = "";
                     }
                   }}
@@ -398,7 +441,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                     const el = document.querySelector<HTMLInputElement>('input[aria-label="Message"]');
                     const v = el?.value.trim(); 
                     if (!v) return;
-                    post.mutate({ body: v }); 
+                    handleSendMessage(v); 
                     if (el) el.value = "";
                   }}
                 >
