@@ -46,7 +46,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
   };
 
   return (
-    <div className="min-h-screen page-neon text-white neon-surface">
+    <div className="create-floq-page min-h-screen page-neon text-white neon-surface">
       <div className="mx-auto max-w-[900px] px-4 pb-28">
         {/* Header */}
         <div className="mb-6 pt-6">
@@ -72,11 +72,11 @@ export default function FloqCreationWizard({ onCreated }: Props) {
         {/* Details Section */}
         <section className="section-glass p-4 mt-4">
           <div className="flex items-center gap-2 mb-3">
-            <div className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Details</div>
+            <div className="section-title">Details</div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <label htmlFor="floq-name" className="block text-[12px] text-white/70 mb-1">Floq Name *</label>
+              <label htmlFor="floq-name" className="field-label block mb-1">Floq Name *</label>
               <input 
                 id="floq-name" 
                 className="w-full input-glass px-3 py-2 text-[13px]"
@@ -91,7 +91,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
               <div className="text-[11px] text-white/45 text-right mt-1">{name.length}/50</div>
             </div>
             <div>
-              <label htmlFor="floq-description" className="block text-[12px] text-white/70 mb-1">Description</label>
+              <label htmlFor="floq-description" className="field-label block mb-1">Description</label>
               <textarea 
                 id="floq-description" 
                 rows={3} 
@@ -109,7 +109,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
         {/* Primary Vibe Section */}
         <section className="section-glass p-4 mt-5">
           <div className="flex items-center gap-2 mb-3">
-            <div className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Primary Vibe</div>
+            <div className="section-title">Primary Vibe</div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
             {VIBES.map(v => {
@@ -135,7 +135,7 @@ export default function FloqCreationWizard({ onCreated }: Props) {
         {/* Privacy Section */}
         <section className="section-glass p-4 mt-5">
           <div className="flex items-center gap-2 mb-3">
-            <div className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Privacy</div>
+            <div className="section-title">Privacy</div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
             {PRIVACY_OPTIONS.map(p => {

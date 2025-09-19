@@ -5,6 +5,55 @@
 @tailwind utilities;
 
 @layer utilities {
+  /* === CREATE FLOQ PAGE SCOPED STYLES === */
+  .create-floq-page {
+    /* force a sane sans stack so we never fall back to a serif/mono */
+    font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Inter", "SF Pro Text", "Segoe UI", Arial, sans-serif) !important;
+  }
+
+  /* Title line under the hero */
+  .create-floq-page h1 {
+    font-size: 28px !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  /* Small section labels like "Primary Vibe" / "Privacy" */
+  .create-floq-page .section-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+    color: rgba(255,255,255,.90) !important;
+  }
+
+  /* Field labels ("Floq Name *", "Description") */
+  .create-floq-page .field-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;             /* kill global uppercase */
+    color: rgba(255,255,255,.70) !important;
+  }
+
+  /* Space rhythms */
+  .create-floq-page .section-glass { 
+    margin-top: 16px !important; 
+    overflow: visible !important; 
+    position: relative !important;
+  }
+  .create-floq-page .tile { padding: 12px !important; } /* compact tiles */
+
+  /* Kill any lingering "card-wall" background on this page */
+  .create-floq-page .noise,
+  .create-floq-page .grain,
+  .create-floq-page .paper,
+  .create-floq-page [class*="noise"],
+  .create-floq-page [class*="grain"],
+  .create-floq-page [class*="paper"] {
+    background-image: none !important;
+  }
+
   /* === NEON PAGE SYSTEM === */
   .page-neon {
     min-height: 100vh !important;
@@ -92,6 +141,8 @@
   .neon-wrap {
     position: relative;
     border-radius: 12px;
+    display: block !important;
+    width: 100% !important;
   }
 
   .neon-ring {
