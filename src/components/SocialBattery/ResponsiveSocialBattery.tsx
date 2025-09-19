@@ -18,6 +18,7 @@ type Props = {
 
   /** override: custom press handler (fallback opens Meet-Halfway via bus) */
   onPress?: () => void;
+  semiCompactAt?: number;            // hide text under this width (default 520)
 };
 
 export default function ResponsiveSocialBattery({
@@ -29,6 +30,7 @@ export default function ResponsiveSocialBattery({
   onPrimary= 'var(--on-surface)',
   border   = 'var(--border-muted)',
   onPress,
+  semiCompactAt = 520,
 }: Props) {
   const { width } = useWindowDimensions();
 
@@ -38,20 +40,22 @@ export default function ResponsiveSocialBattery({
   }, [onPress, floqId]);
 
   const useFull = width >= minFullWidth;
+  const hideText = width < semiCompactAt;     // still full morph, but without text
 
   return useFull ? (
     <MetamorphBattery
-      size={52}
+      size={hideText ? 40 : 52}
       envelope={envelope}
       accent={accent}
       surface={surface}
       onPrimary={onPrimary}
       border={border}
       onPress={handlePress}
+      showText={!hideText}
     />
   ) : (
     <SocialBatteryIcon
-      size={28}
+      size={28}                        // compact ring only
       envelope={envelope}
       accent={accent}
       surface={surface}

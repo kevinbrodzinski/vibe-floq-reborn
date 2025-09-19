@@ -16,6 +16,7 @@ export default function MetamorphBattery({
   border = 'var(--border-muted)',
   envelope = 'balanced',
   onPress,
+  showText = true,
 }:{
   size?: number;
   accent?: string;
@@ -24,6 +25,7 @@ export default function MetamorphBattery({
   border?: string;
   envelope?: 'strict'|'balanced'|'permissive';
   onPress?: () => void;
+  showText?: boolean;
 }) {
   const hb = useFieldHeartbeat({ envelope });
   const energy = Math.max(0, Math.min(1, hb?.energy ?? 0.5));
@@ -41,10 +43,10 @@ export default function MetamorphBattery({
       style={[
         styles.wrap,
         { backgroundColor: surface, borderColor: border },
-        Platform.OS === 'web' && { backdropFilter: 'blur(8px)' },
-      ].filter(Boolean)}
+      ]}
       accessibilityRole="button"
       accessibilityLabel={`Energy ${pct} percent, ${dir}`}
+      hitSlop={{ top:8, right:8, bottom:8, left:8 }}
     >
       <Animated.View style={{ transform:[{ scale }] }}>
         <View style={{ width:size, height:size }}>
@@ -59,12 +61,14 @@ export default function MetamorphBattery({
         </View>
       </Animated.View>
 
-      <View style={styles.right}>
-        <Text style={[styles.pct, { color: accent }]}>{pct}%</Text>
-        <Text style={[styles.hint, { color: withAlpha(onPrimary, 0.85) }]} numberOfLines={1}>
-          {dir === 'rising' ? 'Good now' : dir === 'falling' ? 'Keep it short' : 'Dialed in'}
-        </Text>
-      </View>
+      {showText && (
+        <View style={styles.right}>
+          <Text style={[styles.pct, { color: accent }]}>{pct}%</Text>
+          <Text style={[styles.hint, { color: withAlpha(onPrimary, 0.85) }]} numberOfLines={1}>
+            {dir === 'rising' ? 'Good now' : dir === 'falling' ? 'Keep it short' : 'Dialed in'}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
