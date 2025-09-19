@@ -7019,8 +7019,10 @@ export type Database = {
           fallback: string | null
           gate_passed: boolean
           group_id: string
+          id: string | null
           omega_g: number
           p_g: number
+          profile_id: string
           ts: string
         }
         Insert: {
@@ -7028,8 +7030,10 @@ export type Database = {
           fallback?: string | null
           gate_passed: boolean
           group_id: string
+          id?: string | null
           omega_g: number
           p_g: number
+          profile_id: string
           ts?: string
         }
         Update: {
@@ -7037,11 +7041,56 @@ export type Database = {
           fallback?: string | null
           gate_passed?: boolean
           group_id?: string
+          id?: string | null
           omega_g?: number
           p_g?: number
+          profile_id?: string
           ts?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_group_predictability_log_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_group_predictability_log_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_group_predictability_log_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_group_predictability_log_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_group_predictability_log_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_group_predictability_log_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_receipts: {
         Row: {

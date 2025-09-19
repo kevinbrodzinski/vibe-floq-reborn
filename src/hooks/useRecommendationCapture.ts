@@ -21,18 +21,11 @@ export function useRecommendationCapture(envelope: 'strict' | 'balanced' | 'perm
         
         const batch = await drainQueue(25);
         for (const s of batch) {
-          // Use existing preference_signals table if available
-          const { error } = await supabase
-            .from('preference_signals')
-            .insert({
-              profile_id: (await supabase.auth.getUser()).data.user?.id,
-              ts: new Date(s.ts).toISOString(),
-              signal: s as any
-            });
-          
-          if (error) {
-            console.warn('Failed to drain preference signal:', error);
-          }
+          const { error } = await supabase.rpc('record_preference_signal', {
+            p_signal: s as any,
+            p_ts: new Date(s.ts).toISOString(),
+          });
+          if (error) console.warn('Failed to drain preference signal:', error);
         }
       } catch (error) {
         console.warn('Error draining signals:', error);
