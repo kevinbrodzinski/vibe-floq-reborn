@@ -7,6 +7,8 @@ import { MapPin, Target, Thermometer, Users, Radio, Layers } from "lucide-react"
 import SmartMap from "@/components/maps/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
 import MeetHalfwaySheet from "./MeetHalfwaySheet";
+import { track, Events } from "@/lib/analytics";
+import { openDirections } from "@/lib/nav/openDirections";
 
 const PEOPLE = [
   { n: "Sarah", d: "Café • Chill", v: 60 },
@@ -30,7 +32,7 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
   const [selected, setSelected] = useState<string | null>(null);
 
   // fetch when sheet is open (your existing API shape)
-  const { data, isLoading } = useHQMeetHalfway(floqId, cats, open);
+  const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: cats }, open);
 
   // default selection when data arrives
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
       <Section
         title="Living Proximity Map"
         icon={<MapPin className="h-4 w-4" />}
-        right={<Btn glow onClick={() => setOpen(true)}>Meet-Halfway</Btn>}
+        right={<Btn glow onClick={() => { track(Events.hq_meet_half_open, { floqId }); setOpen(true); }}>Meet-Halfway</Btn>}
       >
         {data ? (
           <SmartMap 
@@ -113,10 +115,16 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
         onOpenChange={setOpen}
         data={data}
         selectedId={selected}
-        onSelectVenue={setSelected}
+        onSelectVenue={(id) => { setSelected(id); track(Events.hq_meet_half_select, { floqId, id }); }}
         categories={cats}
         onToggleCategory={toggle}
-        onRallyHere={() => {/* Rally creation logic here */}}
+        onRallyHere={() => {
+          const selected_venue = data?.candidates.find(c => c.id === selected);
+          if (selected_venue) {
+            track(Events.hq_rally_create, { floqId, venueId: selected, source: "meet_halfway" });
+            openDirections(selected_venue.lat, selected_venue.lng, selected_venue.name);
+          }
+        }}
         loading={isLoading}
       />
     </motion.div>

@@ -56,7 +56,7 @@ export default function FloqHQTabbed() {
   const [halfSel, setHalfSel] = useState<string | null>(null);
   
   const { data: halfAPI, isLoading: halfLoading, refetch: refetchHalf } =
-    useHQMeetHalfway(actualFloqId, halfCats, halfOpen);
+    useHQMeetHalfway(actualFloqId, { categories: halfCats }, halfOpen);
 
   useEffect(() => { 
     if (halfOpen) refetchHalf(); 

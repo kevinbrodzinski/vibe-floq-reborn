@@ -158,6 +158,16 @@ export function trackLocationPermission(...args: any[]) {
   })
 }
 
+// HQ Meet-Halfway Events
+export const Events = {
+  hq_view: "hq_view",
+  hq_meet_half_open: "hq_meet_half_open",
+  hq_meet_half_select: "hq_meet_half_select",
+  hq_rally_create: "hq_rally_create",
+  hq_rally_join: "hq_rally_join",
+  hq_stream_post: "hq_stream_post",
+} as const;
+
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
   try {
     // For Capacitor/mobile apps
