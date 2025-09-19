@@ -18,6 +18,7 @@ export type LivingFloq = {
   convergenceNearby?: number;
   distanceLabel?: string;
   energy?: number;
+  nextPlanId?: string;                 // for RSVP linking
   nextLabel?: string;
   nextWhen?: string;
   ttlSeconds?: number;
@@ -32,8 +33,9 @@ export type LivingFloq = {
 type Props = {
   data: LivingFloq;
   onOpen: (id: string) => void;
-  onPrimary?: (id: string) => void;   // Rally / RSVP / Updates / Join
-  onSecondary?: (id: string) => void; // Chat  / Preview / Navigate / Ignore
+  onRally?: (id: string) => void;     // Rally for all floqs
+  onRSVP?: (id: string, planId: string) => void; // RSVP when plan exists
+  onChat?: (id: string) => void;      // Chat for all floqs
 };
 
 function membersLine(total?: number, active?: number) {
@@ -50,13 +52,13 @@ function activityLabel(opts:{rally?:boolean; forming?:boolean; nextLabel?:string
   return "Calm";
 }
 
-export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }: Props) {
+export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }: Props) {
   const {
     id, name, description, kind,
     vibe = "social",
     totalMembers = 0, activeMembers = 0,
     energy = 0.35, convergenceNearby = 0, distanceLabel,
-    nextLabel, nextWhen, ttlSeconds, matchPct, following, streakWeeks,
+    nextPlanId, nextLabel, nextWhen, ttlSeconds, matchPct, following, streakWeeks,
     rallyNow, forming, lastActiveAgo
   } = data;
 
@@ -139,51 +141,40 @@ export default function LivingFloqCard({ data, onOpen, onPrimary, onSecondary }:
         )}
       </div>
 
-      {/* Quick actions */}
+      {/* Quick actions - Universal Rally + Chat, conditional RSVP */}
       <div className="mt-3 flex items-center gap-2 text-[12px]">
-        {kind === "friend" && (
-          <>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
-              Rally
-            </button>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
-              Chat
-            </button>
-          </>
+        {/* Rally button - always visible except momentary */}
+        {!isMomentary && (
+          <button type="button" onClick={(e)=>{ e.stopPropagation(); onRally?.(id); }}
+            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
+            Rally
+          </button>
         )}
-        {kind === "club" && (
-          <>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
-              RSVP
-            </button>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
-              Details
-            </button>
-          </>
+        
+        {/* RSVP button - only when plan exists */}
+        {nextPlanId && (
+          <button type="button" onClick={(e)=>{ e.stopPropagation(); onRSVP?.(id, nextPlanId); }}
+            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
+            RSVP
+          </button>
         )}
-        {kind === "business" && (
-          <>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
-              Updates
-            </button>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
-              className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
-              Navigate
-            </button>
-          </>
+        
+        {/* Chat button - always visible except momentary */}
+        {!isMomentary && (
+          <button type="button" onClick={(e)=>{ e.stopPropagation(); onChat?.(id); }}
+            className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
+            Chat
+          </button>
         )}
+        
+        {/* Momentary-specific actions */}
         {isMomentary && (
           <>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onPrimary?.(id); }}
+            <button type="button" onClick={(e)=>{ e.stopPropagation(); onRally?.(id); }}
               className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10 ring-neon">
               Join now
             </button>
-            <button type="button" onClick={(e)=>{ e.stopPropagation(); onSecondary?.(id); }}
+            <button type="button" onClick={(e)=>{ e.stopPropagation(); /* ignore action */ }}
               className="px-3 py-1.5 rounded-xl border bg-white/6 hover:bg-white/10">
               Ignore
             </button>

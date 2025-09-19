@@ -13,6 +13,7 @@ export type CardRow = {
   converging_nearby: number | null;
   distance_label: string | null;
   energy: number | null;               // 0..1
+  next_plan_id: string | null;         // for RSVP linking
   next_label: string | null;
   next_when: string | null;            // "Tonight", "Tomorrow 6am"
   ttl_seconds: number | null;          // momentary only
@@ -36,6 +37,7 @@ export type LivingFloq = {
   convergenceNearby?: number;
   distanceLabel?: string;
   energy?: number;
+  nextPlanId?: string;                 // for RSVP linking
   nextLabel?: string;
   nextWhen?: string;
   ttlSeconds?: number;
@@ -91,6 +93,7 @@ function transformRowToLivingFloq(r: CardRow): LivingFloq {
     convergenceNearby: r.converging_nearby ?? 0,
     distanceLabel: r.distance_label || undefined,
     energy: r.energy ?? 0.35,
+    nextPlanId: r.next_plan_id || undefined,
     nextLabel: r.next_label || undefined,
     nextWhen: r.next_when || undefined,
     ttlSeconds: r.ttl_seconds ?? undefined,

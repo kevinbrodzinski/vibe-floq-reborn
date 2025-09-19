@@ -21,15 +21,19 @@ export default function FloqsDiscoverPage() {
   // Rally modal state
   const [rallyModal, setRallyModal] = React.useState<{ floqId: string; floqName: string } | null>(null);
   
-  const primary = (id: string, floqData?: LivingFloq) => {
-    if (floqData?.kind === "friend") {
-      // Open rally modal for friend floqs
+  const handleRally = (id: string, floqData?: LivingFloq) => {
+    if (floqData) {
       setRallyModal({ floqId: id, floqName: floqData.name });
-    } else {
-      console.log("primary", id);
     }
   };
-  const secondary = (id: string) => console.log("secondary", id);
+  
+  const handleRSVP = (id: string, planId: string) => {
+    nav(`/floqs/${id}/plan/${planId}`);
+  };
+  
+  const handleChat = (id: string) => {
+    nav(`/floqs/${id}/hq?tab=chat`);
+  };
 
   const filterCard = (f: LivingFloq): boolean => {
     // search
@@ -79,7 +83,14 @@ export default function FloqsDiscoverPage() {
         <div className="text-sm font-semibold mb-2">{title}</div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
           {items.map(f => (
-            <LivingFloqCard key={f.id} data={f} onOpen={open} onPrimary={() => primary(f.id, f)} onSecondary={() => secondary(f.id)}/>
+            <LivingFloqCard 
+              key={f.id} 
+              data={f} 
+              onOpen={open} 
+              onRally={() => handleRally(f.id, f)} 
+              onRSVP={(floqId, planId) => handleRSVP(floqId, planId)}
+              onChat={() => handleChat(f.id)}
+            />
           ))}
         </div>
       </section>
@@ -113,7 +124,14 @@ export default function FloqsDiscoverPage() {
           <summary className="text-sm text-white/70 cursor-pointer">Dormant ({sections.dormant.length})</summary>
           <div className="mt-3 grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {sections.dormant.map(f => (
-              <LivingFloqCard key={f.id} data={f} onOpen={open} onPrimary={() => primary(f.id, f)} onSecondary={() => secondary(f.id)}/>
+              <LivingFloqCard 
+                key={f.id} 
+                data={f} 
+                onOpen={open} 
+                onRally={() => handleRally(f.id, f)} 
+                onRSVP={(floqId, planId) => handleRSVP(floqId, planId)}
+                onChat={() => handleChat(f.id)}
+              />
             ))}
           </div>
         </details>
