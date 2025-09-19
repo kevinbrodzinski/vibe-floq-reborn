@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { createFloqRally } from '@/lib/api/rally';
 import { MapPin, Users, Clock } from 'lucide-react';
@@ -18,6 +19,7 @@ export function FloqRallyModal({ isOpen, onClose, floqId, floqName }: FloqRallyM
   const [note, setNote] = React.useState('');
   const [isCreating, setIsCreating] = React.useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleCreateRally = async () => {
     if (isCreating) return;
@@ -42,6 +44,15 @@ export function FloqRallyModal({ isOpen, onClose, floqId, floqName }: FloqRallyM
         title: 'Rally Started!',
         description: `Notified ${invited} floq members`,
       });
+      
+      // Invalidate queries to refresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["floqs-cards"] }),
+        queryClient.invalidateQueries({ queryKey: ["hq-digest", floqId] }),
+        queryClient.invalidateQueries({ queryKey: ["hq-vibes", floqId] }),
+        queryClient.invalidateQueries({ queryKey: ["hq-availability", floqId] }),
+        queryClient.invalidateQueries({ queryKey: ["floq-stream", floqId] }),
+      ]);
       
       // Reset and close
       setNote('');
