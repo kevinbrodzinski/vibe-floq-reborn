@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersFor, handlePreflight } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 
 const admin = createClient(
@@ -8,7 +8,8 @@ const admin = createClient(
 );
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const pre = handlePreflight(req);
+  if (pre) return pre;
   
   try {
     const jwt = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
@@ -59,13 +60,13 @@ serve(async (req) => {
     console.log(`Floq created successfully: ${floq.id} by user ${userId}`);
 
     return new Response(JSON.stringify({ id: floq.id }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeadersFor(req) },
     });
   } catch (e) {
     console.error('Floq creation failed:', e);
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 400,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeadersFor(req) },
     });
   }
 });

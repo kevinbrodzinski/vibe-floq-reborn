@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersFor, handlePreflight } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 
 const admin = createClient(
@@ -10,7 +10,8 @@ const admin = createClient(
 type Av = { profile_id: string; status: "free"|"soon"|"busy"|"ghost"; until_at?: string };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const pre = handlePreflight(req);
+  if (pre) return pre;
 
   try {
     const { floq_id } = await req.json();
@@ -21,7 +22,7 @@ serve(async (req) => {
       .from("floq_participants").select("profile_id").eq("floq_id", floq_id);
     if (mErr) throw mErr;
     const ids = (members ?? []).map(m => m.profile_id);
-    if (!ids.length) return json({ availability: [] });
+    if (!ids.length) return json(req, { availability: [] });
 
     // online status + last seen
     const { data: online, error: oErr } = await admin
@@ -55,15 +56,15 @@ serve(async (req) => {
       return { profile_id: pid, status: "ghost" };
     });
 
-    return json({ availability });
+    return json(req, { availability });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    return json(req, { error: (e as Error).message }, 500);
   }
 });
 
-function json(data: unknown, status = 200) {
+function json(req: Request, data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders }
+    headers: { "Content-Type": "application/json", ...corsHeadersFor(req) }
   });
 }

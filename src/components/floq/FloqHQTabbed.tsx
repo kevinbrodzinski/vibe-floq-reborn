@@ -387,7 +387,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 >
                   Send
                 </button>
-    </div>
+              </div>
             </motion.div>
           )}
 
