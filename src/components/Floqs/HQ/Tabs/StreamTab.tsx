@@ -7,6 +7,8 @@ import { SmartFilter, SmartItem } from "@/types/stream";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WingsPollCard } from "../Wings/WingsPollCard";
+import { WingsTimeCard } from "../Wings/WingsTimeCard";
+import { WingsMeetCard } from "../Wings/WingsMeetCard";
 
 type Props = {
   reduce: boolean;
@@ -158,7 +160,28 @@ function SmartItemRow({
       />
     );
   }
-  if (item.kind === "wings_time" || item.kind === "wings_meet" || item.kind === "venue_suggestion") {
+  if (item.kind === "wings_time") {
+    return (
+      <WingsTimeCard
+        floqId={floqId || ""}
+        eventId={item.id}
+        title={item.title}
+        payload={item.meta?.payload}
+        reason={item.meta?.reason}
+      />
+    );
+  }
+  if (item.kind === "wings_meet") {
+    return (
+      <WingsMeetCard
+        floqId={floqId || ""}
+        title={item.title}
+        payload={item.meta?.payload}
+        reason={item.meta?.reason}
+      />
+    );
+  }
+  if (item.kind === "venue_suggestion") {
     return (
       <div className="glass-subtle p-3 rounded-xl border border-white/10">
         <div className="text-white/85">{item.title ?? "Wings"}</div>

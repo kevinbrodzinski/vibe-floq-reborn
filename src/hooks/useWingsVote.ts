@@ -14,14 +14,11 @@ export function useWingsVote(floqId: string, eventId: string) {
       if (error) throw error;
       return optionIdx;
     },
-    // optimistic bump in tally
     onMutate: async (optionIdx) => {
       await qc.cancelQueries({ queryKey: ["wings-tally", eventId] });
       const prev = qc.getQueryData<{ option_idx:number; votes:number }[]>(["wings-tally", eventId]);
-
       if (prev) {
         const next = prev.map(x => x.option_idx === optionIdx ? { ...x, votes: x.votes + 1 } : x);
-        // If option missing in prev (no votes yet)
         if (!next.find(x => x.option_idx === optionIdx)) next.push({ option_idx: optionIdx, votes: 1 });
         qc.setQueryData(["wings-tally", eventId], next);
       }
