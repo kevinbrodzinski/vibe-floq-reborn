@@ -3,12 +3,14 @@ import React from "react";
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   active?: boolean;
   ariaLabel?: string;
+  glow?: boolean;
 };
 
 export default function Btn({
   children,
   active,
   ariaLabel,
+  glow = false,
   className = "",
   ...props
 }: BtnProps) {
@@ -21,7 +23,7 @@ export default function Btn({
         active
           ? "bg-white/15 border-white/20"
           : "bg-white/5 border-white/10 hover:bg-white/10"
-      } ${className}`}
+      } ${glow ? "neon-ring" : ""} ${className}`}
       {...props}
     >
       {children}

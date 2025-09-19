@@ -36,8 +36,8 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean; ariaLabel?: string };
-function Btn({ children, active, ariaLabel, className = "", ...props }: BtnProps) {
+type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean; ariaLabel?: string; glow?: boolean };
+function Btn({ children, active, ariaLabel, glow = false, className = "", ...props }: BtnProps) {
   return (
     <button
       type="button"
@@ -45,7 +45,7 @@ function Btn({ children, active, ariaLabel, className = "", ...props }: BtnProps
       aria-label={ariaLabel}
       className={`px-3 py-1.5 rounded-xl border text-[12px] transition ${
         active ? "bg-white/15 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
-      } ${className}`}
+      } ${glow ? "neon-ring" : ""} ${className}`}
       {...props}
     >
       {children}
@@ -312,7 +312,7 @@ export default function FloqHQTabbed() {
               <Section
                 title="Living Proximity Map"
                 icon={<MapPin className="h-4 w-4" />}
-                right={<Btn onClick={openMeetHalfway}>Meet-Halfway</Btn>}
+                right={<Btn glow onClick={openMeetHalfway}>Meet-Halfway</Btn>}
               >
                 <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">(Map preview)</div>
                 <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-[12px] text-white/80">
@@ -401,30 +401,34 @@ export default function FloqHQTabbed() {
                       </svg>
                     </div>
 
-                    {/* ranked venue list */}
-                    <div className="mt-3 space-y-2">
-                        {halfLoading && <div className="text-[12px] text-white/70">Computing midpoint…</div>}
-                        {!halfLoading && halfAPI?.candidates?.map(c => {
-                          const selected = c.id === (halfSel ?? halfAPI.candidates[0]?.id);
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setHalfSel(c.id)}
-                              className={`w-full text-left rounded-xl border p-3 text-[13px] transition ${
-                                selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium text-white/90">{c.name}</div>
-                                <div className="text-white/60 text-[12px]">
-                                  {(c.meters_from_centroid / 1000).toFixed(2)} km • {c.avg_eta_min} min
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                    </div>
+                     {/* ranked venue list */}
+                     <div className="mt-3 space-y-2">
+                         {halfLoading && <div className="text-[12px] text-white/70">Computing midpoint…</div>}
+                         {!halfLoading && !halfAPI && <div className="text-[12px] text-white/70">No data available</div>}
+                         {!halfLoading && halfAPI?.candidates?.length === 0 && (
+                           <div className="text-[12px] text-white/70">No venues found in the area</div>
+                         )}
+                         {!halfLoading && halfAPI?.candidates?.map(c => {
+                           const selected = c.id === (halfSel ?? halfAPI.candidates[0]?.id);
+                           return (
+                             <button
+                               key={c.id}
+                               type="button"
+                               onClick={() => setHalfSel(c.id)}
+                               className={`w-full text-left rounded-xl border p-3 text-[13px] transition ${
+                                 selected ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10"
+                               }`}
+                             >
+                               <div className="flex items-center justify-between">
+                                 <div className="font-medium text-white/90">{c.name}</div>
+                                 <div className="text-white/60 text-[12px]">
+                                   {(c.meters_from_centroid / 1000).toFixed(2)} km • {c.avg_eta_min} min
+                                 </div>
+                               </div>
+                             </button>
+                           );
+                         })}
+                     </div>
 
                     {/* ETAs per member for the selected candidate */}
                     {halfAPI && (halfSel || halfAPI.candidates[0]) && (
@@ -439,14 +443,15 @@ export default function FloqHQTabbed() {
                     )}
 
                     {/* primary action */}
-                    <div className="mt-3 flex justify-end">
-                      <Btn
-                        onClick={rallyHere}
-                        disabled={halfLoading || !halfAPI?.candidates?.length}
-                      >
-                        {rallyLoading ? "Setting…" : "Rally Here"}
-                      </Btn>
-                    </div>
+                     <div className="mt-3 flex justify-end">
+                       <Btn
+                         glow
+                         onClick={rallyHere}
+                         disabled={halfLoading || !halfAPI?.candidates?.length}
+                       >
+                         {rallyLoading ? "Setting…" : "Rally Here"}
+                       </Btn>
+                     </div>
                   </div>
                 </div>
               )}
@@ -471,7 +476,7 @@ export default function FloqHQTabbed() {
                 <div className="flex gap-2">
                   <Btn>Wing</Btn>
                   <Btn>Filter</Btn>
-                  <Btn onClick={() => handleStartRally()}>{rallyLoading ? "Starting…" : "+ Start Rally"}</Btn>
+                  <Btn glow onClick={() => handleStartRally()}>{rallyLoading ? "Starting…" : "+ Start Rally"}</Btn>
                 </div>
               </div>
               <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
