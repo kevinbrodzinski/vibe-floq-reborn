@@ -1,36 +1,16 @@
 import React from "react";
 
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "ghost";
   glow?: boolean;
-  glowColor?: "cyan" | "gold" | "purple";
   active?: boolean;
-  ariaLabel?: string;
+  className?: string;
 };
 
-export default function Btn({
-  glow = false,
-  glowColor = "purple",
-  active,
-  ariaLabel,
-  className = "",
-  children,
-  ...props
-}: BtnProps) {
-  const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] transition";
-  const surface = active ? "bg-white/12 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10";
-  const neon = glow ? (
-    glowColor === "cyan" ? "ring-neon" :
-    glowColor === "gold" ? "ring-neon-gold" : 
-    "ring-neon-purple"  // default purple for header buttons
-  ) : "";
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      className={`${base} ${surface} ${neon} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  );
+export default function Btn({ variant="ghost", glow=false, active=false, className="", ...rest }: Props) {
+  const base = "btn-compact";
+  const skin = variant === "primary" ? "btn-compact--primary" : "btn-compact--ghost";
+  const neon = glow && variant === "primary" ? "neon-soft" : "";
+  const activeClass = active ? "bg-white/15 border-white/25" : "";
+  return <button className={`${base} ${skin} ${neon} ${activeClass} ${className}`} {...rest} />;
 }

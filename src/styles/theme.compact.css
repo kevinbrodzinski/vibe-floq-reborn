@@ -1,0 +1,114 @@
+:root {
+  /* Compact scale */
+  --cmp-font-xs: 12px;
+  --cmp-font-sm: 13px;
+  --cmp-radius: 12px;
+
+  /* Spacing */
+  --cmp-chip-px: 10px;   /* ~px-2.5 */
+  --cmp-chip-py: 6px;    /* ~py-1   */
+  --cmp-btn-px: 14px;    /* ~px-3.5 */
+  --cmp-btn-py: 8px;     /* ~py-2   */
+
+  /* Glass + borders */
+  --glass-bg: rgba(255,255,255,0.06);    /* bg-white/6 */
+  --glass-border: rgba(255,255,255,0.10);/* border-white/10 */
+  --glass-inner: rgba(255,255,255,0.06); /* inset line */
+
+  /* Text */
+  --text-weak: rgba(255,255,255,0.70);
+  --text-mid:  rgba(255,255,255,0.85);
+  --text-strong:#fff;
+
+  /* Neon ring */
+  --neon-a: #8B5CF6;
+  --neon-b: #06B6D4;
+
+  /* Category colors (Map) */
+  --vibe-coffee: #4DD0E1;
+  --vibe-bar:    #F472B6;
+  --vibe-food:   #A78BFA;
+  --vibe-park:   #F59E0B;
+  --vibe-other:  #A1A1AA;
+}
+
+/* Glass primitives */
+.glass-subtle {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--cmp-radius);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 var(--glass-inner);
+}
+
+/* Neon ring (soft) */
+.neon-soft {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.18),
+    0 0 24px color-mix(in hsl, var(--neon-a) 45%, transparent),
+    0 0 40px color-mix(in hsl, var(--neon-b) 35%, transparent);
+}
+
+/* Compact chip */
+.chip-compact {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: var(--cmp-chip-py) var(--cmp-chip-px);
+  font-size: var(--cmp-font-xs);
+  border-radius: var(--cmp-radius);
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  color: var(--text-weak);
+  transition: all 0.2s ease;
+}
+.chip-compact[data-active="true"] {
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.20);
+  color: var(--text-mid);
+}
+.chip-compact:hover {
+  background: rgba(255,255,255,.08);
+  color: var(--text-mid);
+}
+
+/* Compact buttons */
+.btn-compact {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: var(--cmp-btn-py) var(--cmp-btn-px);
+  border-radius: var(--cmp-radius);
+  font-size: var(--cmp-font-sm);
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.08);
+  color: var(--text-mid);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-compact:hover {
+  background: rgba(255,255,255,.12);
+}
+.btn-compact--primary {
+  background: #fff; color: #000; border-color: #fff;
+}
+.btn-compact--ghost {
+  background: rgba(255,255,255,.08); color: var(--text-mid);
+}
+.btn-compact--primary.neon-soft { /* primary CTA with soft neon */
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.22),
+    0 0 24px color-mix(in hsl, var(--neon-a) 35%, transparent);
+}
+
+/* Compact section surface */
+.section-compact {
+  border-radius: 16px;
+  background: rgba(11,13,18,0.90);
+  border: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Safe-area padding helper for bottom sheets */
+.pad-safe-b {
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}

@@ -2,6 +2,7 @@ import React from "react";
 import { Coffee, Wine, UtensilsCrossed, X } from "lucide-react";
 import SmartMap, { type MemberETA } from "@/components/maps/SmartMap";
 import DirectionsSheet from "./DirectionsSheet";
+import Btn from "../ui/Btn";
 import type { HalfResult } from "@/hooks/useHQMeetHalfway";
 import { haversineMeters, etaMinutesMeters } from "@/lib/geo";
 
@@ -69,9 +70,7 @@ export default function MeetHalfwaySheet({
 
       {/* HIGHER bottom-sheet: ~82vh on mobile, 92vh cap */}
       <div className="relative w-full sm:w-[820px] h-[82vh] sm:h-auto sm:max-h-[92vh] 
-                      bg-[#0b0d12]/90 backdrop-blur-xl 
-                      border-t border-white/10 sm:border rounded-t-2xl sm:rounded-2xl
-                      shadow-[inset_0_1px_0_rgba(255,255,255,.06)] overflow-hidden">
+                      section-compact overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -93,10 +92,7 @@ export default function MeetHalfwaySheet({
                 const active = categories.includes(id);
                 return (
                   <button key={id} onClick={() => onToggleCategory(id)}
-                    className={`px-2.5 py-1 rounded-xl border text-[12px] inline-flex items-center gap-1.5 transition ${
-                      active ? "bg-white/10 border-white/20 text-white/90"
-                             : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white/90"
-                    }`}>
+                    className="chip-compact" data-active={active ? "true" : "false"}>
                     <Icon className="w-3.5 h-3.5" />{label}
                   </button>
                 );
@@ -144,28 +140,19 @@ export default function MeetHalfwaySheet({
             )}
 
             {/* Actions */}
-            <div className="mt-auto flex gap-2 pt-1 pb-[max(env(safe-area-inset-bottom),12px)]">
-              <button
-                className="px-3.5 py-2 rounded-xl bg-white/8 text-white/85 border border-white/12 hover:bg-white/12"
-                onClick={()=>onOpenChange(false)}
-              >Cancel</button>
-              <button
-                className="px-3.5 py-2 rounded-xl bg-white text-black text-[14px] font-medium 
-                          shadow-[0_0_24px_rgba(129,140,248,.28)]"
-                onClick={()=> selected && onConfirmSend?.(selected.id)}
-              >Confirm & Send</button>
-              <button
-                className="px-3.5 py-2 rounded-xl bg-white/8 text-white/85 border border-white/12 hover:bg-white/12"
-                onClick={() => selected && setDirOpen(true)}
-              >
+            <div className="mt-auto flex gap-2 pt-1 pad-safe-b">
+              <Btn onClick={()=>onOpenChange(false)}>Cancel</Btn>
+              <Btn variant="primary" glow onClick={()=> selected && onConfirmSend?.(selected.id)}>
+                Confirm & Send
+              </Btn>
+              <Btn onClick={() => selected && setDirOpen(true)}>
                 Directions
-              </button>
+              </Btn>
             </div>
           </div>
 
           {/* Right: Map */}
-          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/6 
-                          shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
+          <div className="glass-subtle overflow-hidden">
             {selected ? (
               <SmartMap
                 data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}
