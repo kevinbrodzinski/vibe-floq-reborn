@@ -111,15 +111,15 @@ export default function FloqCreationWizard({ onCreated }: Props) {
           <div className="flex items-center gap-2 mb-3">
             <div className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Primary Vibe</div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
             {VIBES.map(v => {
               const active = vibe === v.id;
               const tone   = neonClassForVibe(v.id as any);
               return (
-                <div key={v.id} className={`neon-wrap ${active ? `${tone} neon-ring` : ""}`}>
+                <div key={v.id} className={`neon-wrap w-full ${active ? `${tone} neon-ring` : ""}`}>
                   <button
                     onClick={() => setVibe(v.id as Vibe)}
-                    className="tile p-3 text-left transition"
+                    className="tile p-3 text-left transition w-full"
                     data-selected={active}
                     aria-pressed={active}
                   >
@@ -137,14 +137,14 @@ export default function FloqCreationWizard({ onCreated }: Props) {
           <div className="flex items-center gap-2 mb-3">
             <div className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Privacy</div>
           </div>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
             {PRIVACY_OPTIONS.map(p => {
               const active = privacy === p.id;
               return (
-                <div key={p.id} className={`neon-wrap ${active ? "neon-cyan neon-ring" : ""}`}>
+                <div key={p.id} className={`neon-wrap w-full ${active ? "neon-cyan neon-ring" : ""}`}>
                   <button
                     onClick={() => setPrivacy(p.id as typeof privacy)}
-                    className="tile p-3 text-left transition"
+                    className="tile p-3 text-left transition w-full"
                     data-selected={active}
                     aria-pressed={active}
                   >

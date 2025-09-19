@@ -50,6 +50,12 @@
     color: white !important;
     transition: all 0.2s ease !important;
     backdrop-filter: blur(10px) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 80px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
   }
   .tile:hover {
     background: rgba(255,255,255,0.12) !important;
@@ -99,6 +105,7 @@
       0 0 10px rgba(34, 197, 94, 0.4),
       0 0 20px rgba(34, 197, 94, 0.2),
       inset 0 1px 0 rgba(34, 197, 94, 0.2) !important;
+    box-sizing: border-box !important;
   }
   
   .neon-chill {
@@ -107,6 +114,7 @@
       0 0 10px rgba(56, 189, 248, 0.4),
       0 0 20px rgba(56, 189, 248, 0.2),
       inset 0 1px 0 rgba(56, 189, 248, 0.2) !important;
+    box-sizing: border-box !important;
   }
   
   .neon-active {
@@ -115,6 +123,7 @@
       0 0 10px rgba(249, 115, 22, 0.4),
       0 0 20px rgba(249, 115, 22, 0.2),
       inset 0 1px 0 rgba(249, 115, 22, 0.2) !important;
+    box-sizing: border-box !important;
   }
   
   .neon-hype {
@@ -123,6 +132,7 @@
       0 0 10px rgba(236, 72, 153, 0.4),
       0 0 20px rgba(236, 72, 153, 0.2),
       inset 0 1px 0 rgba(236, 72, 153, 0.2) !important;
+    box-sizing: border-box !important;
   }
   
   .neon-productive {
@@ -131,6 +141,7 @@
       0 0 10px rgba(168, 85, 247, 0.4),
       0 0 20px rgba(168, 85, 247, 0.2),
       inset 0 1px 0 rgba(168, 85, 247, 0.2) !important;
+    box-sizing: border-box !important;
   }
   
   .neon-quiet {
@@ -139,6 +150,16 @@
       0 0 10px rgba(156, 163, 175, 0.4),
       0 0 20px rgba(156, 163, 175, 0.2),
       inset 0 1px 0 rgba(156, 163, 175, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+
+  .neon-cyan {
+    border: 2px solid rgba(56, 189, 248, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(56, 189, 248, 0.4),
+      0 0 20px rgba(56, 189, 248, 0.2),
+      inset 0 1px 0 rgba(56, 189, 248, 0.2) !important;
+    box-sizing: border-box !important;
   }
 
   .glass {
