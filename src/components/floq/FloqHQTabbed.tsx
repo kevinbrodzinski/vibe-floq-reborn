@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SmartMap from "@/components/Common/SmartMap";
 import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
 import {
+  MapPin,
   Settings,
   Bell,
   UserPlus,
