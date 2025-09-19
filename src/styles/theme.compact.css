@@ -400,7 +400,10 @@ button:disabled.btn-primary-glass {
 .tile[data-selected="true"] {
   background: rgba(255,255,255,.08);
   border-color: rgba(255,255,255,.18);
-  /* a light cyan lift even without wrapper (fallback) */
+}
+
+/* Fallback glow for tiles without neon wrapper */
+.tile[data-selected="true"]:not(.neon-ring *) {
   filter:
     drop-shadow(0 0 6px  hsla(196,92%,64%, .30))
     drop-shadow(0 0 12px hsla(259,92%,64%, .18));
