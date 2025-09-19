@@ -90,7 +90,7 @@ export default function LivingFloqCard({ data, onOpen, onRally, onRSVP, onChat }
             src={avatarUrl}
             fallbackText={name}
             profileId={id}
-            className="h-10 w-10 rounded-lg flex-shrink-0"
+            className="avatar-glow h-10 w-10 rounded-lg flex-shrink-0"
           />
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white/90 truncate">{name}</div>

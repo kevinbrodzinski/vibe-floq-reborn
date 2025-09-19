@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 
 // Import tab components
-import { MapTab } from "./hq/tabs/MapTab";
-import { StreamTab } from "./hq/tabs/StreamTab";
-import { PlanTab } from "./hq/tabs/PlanTab";
+import MapTab from "./hq/tabs/MapTab";
+import StreamTab from "./hq/tabs/StreamTab";
+import PlanTab from "./hq/tabs/PlanTab";
 import { MomentsTab } from "./hq/tabs/MomentsTab";
 import { PulseTab } from "./hq/tabs/PulseTab";
 import { VenuesTab } from "./hq/tabs/VenuesTab";
@@ -29,7 +29,8 @@ import { PrivacyTab } from "./hq/tabs/PrivacyTab";
 
 // Import shared constants and components
 import { TABS, TabKey } from "./hq/shared/constants";
-import { Pill, Btn } from "./hq/shared/components";
+import Pill from "./hq/shared/Pill";
+import Btn from "./hq/shared/Btn";
 
 // ... keep existing code (shared components and constants moved to separate files)
 
@@ -246,41 +247,23 @@ export default function FloqHQTabbed() {
         <AnimatePresence mode="wait">
           {active === "map" && (
             <MapTab 
-              reduce={reduce}
-              halfOpen={halfOpen}
-              halfCats={halfCats}
-              halfSel={halfSel}
-              halfAPI={halfAPI}
-              halfLoading={halfLoading}
-              rallyLoading={rallyLoading}
-              toXY={toXY}
-              onOpenMeetHalfway={openMeetHalfway}
-              onCloseHalfway={() => setHalfOpen(false)}
-              onToggleCat={toggleCat}
-              onSetHalfSel={setHalfSel}
-              onRallyHere={rallyHere}
-              onRallyResponse={handleRallyResponse}
-              panelAnim={panelAnim}
+              onMeetHalfway={openMeetHalfway}
+              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice === "join" ? "joined" : choice === "maybe" ? "maybe" : "declined")}
             />
           )}
 
           {active === "stream" && (
             <StreamTab
-              reduce={reduce}
               sending={sending}
               rallyLoading={rallyLoading}
               onStartRally={() => handleStartRally()}
-              onSendMessage={handleSendMessage}
+              onSend={(text) => handleSendMessage()}
               onRallyResponse={handleRallyResponse}
-              panelAnim={panelAnim}
             />
           )}
 
           {active === "plan" && (
-            <PlanTab
-              reduce={reduce}
-              panelAnim={panelAnim}
-            />
+            <PlanTab />
           )}
 
           {active === "moments" && (

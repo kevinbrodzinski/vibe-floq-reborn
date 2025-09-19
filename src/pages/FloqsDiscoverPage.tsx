@@ -98,7 +98,7 @@ export default function FloqsDiscoverPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 text-white">
+    <div className="relative max-w-6xl mx-auto px-4 py-6 text-white">
       {/* Page header + CTA */}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
@@ -109,7 +109,7 @@ export default function FloqsDiscoverPage() {
           type="button"
           onClick={() => nav("/create/floq")}
           aria-label="Create Floq"
-          className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/6 hover:bg-white/10 text-[12px]"
+          className="neon-ring px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
         >
           Create Floq
         </button>
@@ -147,14 +147,15 @@ export default function FloqsDiscoverPage() {
         </details>
       )}
 
-      {/* Mobile Create Floq FAB */}
+      {/* Mobile FAB */}
       <button
         type="button"
         onClick={() => nav("/create/floq")}
         aria-label="Create Floq"
-        className="fixed sm:hidden bottom-24 right-4 z-30 h-12 w-12 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg border border-white/10 grid place-items-center"
+        className="fixed sm:hidden bottom-5 right-5 neon-ring rounded-full h-12 w-12 grid place-items-center
+                   bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-xl"
       >
-        <span className="text-white text-lg leading-none">+</span>
+        +
       </button>
 
       {/* Rally Modal */}
