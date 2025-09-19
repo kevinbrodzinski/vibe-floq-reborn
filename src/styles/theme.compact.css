@@ -366,10 +366,25 @@ button:disabled.btn-primary-glass {
 /* Wrapper class: place it on a parent element of the pill/button/card      */
 /* This avoids clipping and gives a perfect outline halo around the border. */
 .neon-wrap { isolation: isolate; }
+
+/* Base neon palettes */
 .neon-cyan      { --neon-a: hsla(196,92%,64%, .45); --neon-b: hsla(259,92%,64%, .28); }
 .neon-raspberry { --neon-a: hsla(330,95%,64%, .50); --neon-b: hsla(280,90%,64%, .26); }
 .neon-gold      { --neon-a: hsla( 44,96%,62%, .52); --neon-b: hsla( 18,92%,60%, .24); }
-.neon-ring      { filter: drop-shadow(0 0 6px var(--neon-a)) drop-shadow(0 0 14px var(--neon-b)); }
+
+/* Vibe-specific palettes */
+.neon-social      { --neon-a: hsla(320,95%,64%, .50); --neon-b: hsla(280,90%,64%, .26); } /* pink/fuchsia */
+.neon-chill       { --neon-a: hsla(190,92%,64%, .46); --neon-b: hsla(210,90%,64%, .26); } /* cyan/teal */
+.neon-active      { --neon-a: hsla( 28,96%,60%, .52); --neon-b: hsla( 12,90%,58%, .26); } /* amber/orange */
+.neon-hype        { --neon-a: hsla(266,92%,64%, .50); --neon-b: hsla(234,86%,66%, .26); } /* violet/purple */
+.neon-productive  { --neon-a: hsla(155,65%,56%, .46); --neon-b: hsla(160,60%,46%, .24); } /* emerald/green */
+.neon-quiet       { --neon-a: hsla(220,12%,60%, .42); --neon-b: hsla(220,12%,40%, .20); } /* slate/gray */
+
+.neon-ring {
+  filter:
+    drop-shadow(0 0 6px  var(--neon-a))
+    drop-shadow(0 0 14px var(--neon-b));
+}
 
 /* Base tile (glass) — same look as HQ cards */
 .tile {
@@ -381,26 +396,6 @@ button:disabled.btn-primary-glass {
 }
 .tile:hover { background: rgba(255,255,255,.07); }
 
-/* === Even neon (outline) using drop-shadow ================================ */
-.neon-wrap { isolation: isolate; } /* wrapper, not the tile itself */
-
-/* Base neon palettes */
-.neon-cyan      { --neon-a: hsla(196,92%,64%, .45); --neon-b: hsla(259,92%,64%, .28); }
-
-/* Vibe-specific palettes */
-.neon-social      { --neon-a: hsla(320,95%,64%, .50); --neon-b: hsla(280,90%,64%, .26); } /* pink/fuchsia */
-.neon-chill       { --neon-a: hsla(190,92%,64%, .46); --neon-b: hsla(210,90%,64%, .26); } /* cyan/teal */
-.neon-active      { --neon-a: hsla( 28,96%,60%, .52); --neon-b: hsla( 12,90%,58%, .26); } /* amber/orange */
-.neon-hype        { --neon-a: hsla(266,92%,64%, .50); --neon-b: hsla(234,86%,66%, .26); } /* violet/purple */
-.neon-productive  { --neon-a: hsla(155,65%,56%, .46); --neon-b: hsla(160,60%,46%, .24); } /* emerald/green */
-.neon-quiet       { --neon-a: hsla(220,12%,60%, .42); --neon-b: hsla(220,12%,40%, .20); } /* slate/gray */
-
-.neon-ring {
-  filter:
-    drop-shadow(0 0 6px  var(--neon-a))
-    drop-shadow(0 0 14px var(--neon-b));
-}
-
 /* Selected state for tiles (adds even glow) */
 .tile[data-selected="true"] {
   background: rgba(255,255,255,.08);
@@ -411,100 +406,8 @@ button:disabled.btn-primary-glass {
     drop-shadow(0 0 12px hsla(259,92%,64%, .18));
 }
 
-/* Primary CTA (glass + neon) */
-.btn-primary-glass {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
-  border-radius: 12px;
-}
-button:disabled.btn-primary-glass { opacity:.55; }
-.btn-xs { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
-
-/* Keyboard-visible focus (accessibility) */
-.tile:focus-visible {
-  outline: 2px solid rgba(255,255,255,.30);
-  outline-offset: 2px;
-}
-
-/* Inputs consistent with tiles */
-.input-glass {
-  background: rgba(20,22,26,.65);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 18px;
-  color: #fff;
-}
-.input-glass:focus {
-  outline: none;
-  border-color: rgba(255,255,255,.22);
-  filter:
-    drop-shadow(0 0 6px  hsla(196,92%,64%, .40))
-    drop-shadow(0 0 14px hsla(259,92%,64%, .28));
-}
-
-/* Primary CTA (glass + neon) */
-.btn-primary-glass {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
-  border-radius: 12px;
-}
-button:disabled.btn-primary-glass { opacity:.55; }
-.btn-xs { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
-
+/* === Liquid Glass System ================================================== */
 /* Backdrop + surface (prevent clipping the glow) */
-.page-neon    { isolation: isolate; }
-.neon-surface { overflow: visible; isolation: isolate; }
-
-/* === Vibe-specific neon colors ========================= */
-.neon-social     { --neon-a: hsla(198,100%,64%, .42); --neon-b: hsla(220,100%,72%, .26); }
-.neon-chill      { --neon-a: hsla(160,84%,58%, .44); --neon-b: hsla(175,85%,65%, .28); }
-.neon-active     { --neon-a: hsla(45,96%,64%, .48); --neon-b: hsla(25,90%,58%, .30); }
-.neon-hype       { --neon-a: hsla(320,95%,68%, .50); --neon-b: hsla(300,88%,70%, .32); }
-.neon-productive { --neon-a: hsla(188,95%,64%, .46); --neon-b: hsla(200,90%,70%, .28); }
-.neon-quiet      { --neon-a: hsla(260,75%,65%, .44); --neon-b: hsla(280,80%,70%, .26); }
-
-/* === Even neon (outline) using drop-shadow ================================ */
-.neon-wrap { isolation: isolate; } /* wrapper, not the tile itself */
-
-/* Base neon palettes */
-.neon-cyan      { --neon-a: hsla(196,92%,64%, .45); --neon-b: hsla(259,92%,64%, .28); }
-
-/* Vibe-specific palettes */
-.neon-social      { --neon-a: hsla(320,95%,64%, .50); --neon-b: hsla(280,90%,64%, .26); } /* pink/fuchsia */
-.neon-chill       { --neon-a: hsla(190,92%,64%, .46); --neon-b: hsla(210,90%,64%, .26); } /* cyan/teal */
-.neon-active      { --neon-a: hsla( 28,96%,60%, .52); --neon-b: hsla( 12,90%,58%, .26); } /* amber/orange */
-.neon-hype        { --neon-a: hsla(266,92%,64%, .50); --neon-b: hsla(234,86%,66%, .26); } /* violet/purple */
-.neon-productive  { --neon-a: hsla(155,65%,56%, .46); --neon-b: hsla(160,60%,46%, .24); } /* emerald/green */
-.neon-quiet       { --neon-a: hsla(220,12%,60%, .42); --neon-b: hsla(220,12%,40%, .20); } /* slate/gray */
-
-.neon-ring {
-  filter:
-    drop-shadow(0 0 6px  var(--neon-a))
-    drop-shadow(0 0 14px var(--neon-b));
-}
-
-/* Selected state for tiles (adds even glow) */
-.tile[data-selected="true"] {
-  background: rgba(255,255,255,.08);
-  border-color: rgba(255,255,255,.18);
-  /* a light cyan lift even without wrapper (fallback) */
-  filter:
-    drop-shadow(0 0 6px  hsla(196,92%,64%, .30))
-    drop-shadow(0 0 12px hsla(259,92%,64%, .18));
-}
-
-/* Primary CTA (glass + neon) */
-.btn-primary-glass {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
-  border-radius: 12px;
-}
-button:disabled.btn-primary-glass { opacity:.55; }
-.btn-xs { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
-
-/* === Backdrop (HQ vibe) =================================================== */
 .page-neon {
   background:
     radial-gradient(1200px 600px at 50% -200px, rgba(139,92,246,.18), transparent 60%),
@@ -513,11 +416,9 @@ button:disabled.btn-primary-glass { opacity:.55; }
   min-height: 100%;
   isolation: isolate;
 }
-
-/* Avoid clipping the glow */
 .neon-surface { overflow: visible; isolation: isolate; }
 
-/* === Panels / Inputs / Tiles ============================================= */
+/* Sections and Inputs (liquid glass) */
 .section-glass {
   background: rgba(255,255,255,.05);
   border: 1px solid rgba(255,255,255,.10);
@@ -538,4 +439,20 @@ button:disabled.btn-primary-glass { opacity:.55; }
   filter:
     drop-shadow(0 0 6px  hsla(196,92%,64%, .40))
     drop-shadow(0 0 14px hsla(259,92%,64%, .28));
+}
+
+/* Primary CTA (glass + neon) */
+.btn-primary-glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+  border-radius: 12px;
+}
+button:disabled.btn-primary-glass { opacity:.55; }
+.btn-xs { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
+
+/* Keyboard-visible focus (accessibility) */
+.tile:focus-visible {
+  outline: 2px solid rgba(255,255,255,.30);
+  outline-offset: 2px;
 }
