@@ -2,12 +2,14 @@ import React from "react";
 
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   glow?: boolean;
+  glowColor?: "cyan" | "gold" | "purple";
   active?: boolean;
   ariaLabel?: string;
 };
 
 export default function Btn({
   glow = false,
+  glowColor = "purple",
   active,
   ariaLabel,
   className = "",
@@ -16,7 +18,11 @@ export default function Btn({
 }: BtnProps) {
   const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] transition";
   const surface = active ? "bg-white/12 border-white/20" : "bg-white/5 border-white/10 hover:bg-white/10";
-  const neon = glow ? "ring-neon" : "";
+  const neon = glow ? (
+    glowColor === "cyan" ? "ring-neon" :
+    glowColor === "gold" ? "ring-neon-gold" : 
+    "ring-neon-purple"  // default purple for header buttons
+  ) : "";
   return (
     <button
       type="button"

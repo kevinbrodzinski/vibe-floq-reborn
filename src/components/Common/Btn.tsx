@@ -4,6 +4,7 @@ type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   active?: boolean;
   ariaLabel?: string;
   glow?: boolean;
+  glowColor?: "cyan" | "gold" | "purple";
 };
 
 export default function Btn({
@@ -11,19 +12,23 @@ export default function Btn({
   active,
   ariaLabel,
   glow = false,
+  glowColor = "cyan",
   className = "",
   ...props
 }: BtnProps) {
   const base = "px-3 py-1.5 text-[12px] transition inline-flex items-center gap-1.5";
   
   if (glow) {
-    // When glow is active, use btn-glow class which handles all styling
+    const glowClass = glowColor === "gold" ? "ring-neon-gold" :
+                     glowColor === "purple" ? "ring-neon-purple" : 
+                     "ring-neon";  // default cyan
+    
     return (
       <button
         type="button"
         aria-pressed={active ?? undefined}
         aria-label={ariaLabel}
-        className={`${base} ring-neon ${className}`}
+        className={`${base} ${glowClass} ${className}`}
         {...props}
       >
         {children}
