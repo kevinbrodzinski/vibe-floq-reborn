@@ -355,7 +355,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               )}
 
               {/* Message Composer */}
-              <Glass className="p-3 flex items-center gap-2">
+              <div className="p-3 flex items-center gap-2">
                 <input
                   aria-label="Message"
                   className="flex-1 bg-transparent outline-none text-[13px] placeholder-white/40"
@@ -423,7 +423,7 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <div className="text-[12px] text-white/70">Forecast: Perfect • Backup: Indoor climbing</div>
               </Section>
 
-              <Glass className="p-3 text-[13px]">
+              <div className="p-3 text-[13px]">
                 Suggested by Wingman: Sunday Brunch? 4 usually free
                 <div className="mt-2 flex gap-2">
                   <Btn>Create Plan</Btn>
