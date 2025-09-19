@@ -34,6 +34,7 @@ export default function MeetHalfwaySheet({
 }: Props) {
   // 1) Hooks must be unconditional
   const [dirOpen, setDirOpen] = React.useState(false);
+  const [posting, setPosting] = React.useState(false);
 
   // Top3 options (safe even when closed or data undefined)
   const top3 = React.useMemo(() => 
@@ -61,6 +62,20 @@ export default function MeetHalfwaySheet({
     });
   }, [selected?.lat, selected?.lng, JSON.stringify(members)]);
 
+  // Handle confirm with posting state
+  const handleConfirm = React.useCallback(async () => {
+    if (!selected || posting) return;
+    try {
+      setPosting(true);
+      await onConfirmSend?.(selected.id);
+    } catch (e) {
+      console.error('Failed to send rally:', e);
+      // TODO: toast('Couldn't send. Try again.')
+    } finally {
+      setPosting(false);
+    }
+  }, [selected, posting, onConfirmSend]);
+
   // 2) Only now is it safe to return early
   if (!open) return null;
 
@@ -82,8 +97,8 @@ export default function MeetHalfwaySheet({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-4 grid gap-4 sm:grid-cols-2">
+        {/* Body scroll container */}
+        <div className="p-4 grid gap-4 sm:grid-cols-2 overflow-y-auto" style={{ maxHeight: 'calc(82vh - 56px)' }}>
           {/* Left: list + filters */}
           <div className="flex flex-col gap-3 min-h-0">
             {/* Category chips */}
@@ -159,12 +174,19 @@ export default function MeetHalfwaySheet({
           </div>
 
           {/* Actions: now BELOW the map, full width */}
-          <div className="col-span-full mt-1 flex items-center justify-between gap-2 sheet-actions-sticky pad-safe-b">
+          <div className="col-span-full sheet-actions-sticky pad-safe-b mt-1 flex items-center justify-between gap-2">
             <div className="flex gap-2">
-              <button className="btn-compact btn-compact--ghost" onClick={() => onOpenChange(false)}>Cancel</button>
+              <button 
+                type="button" 
+                className="btn-compact btn-compact--ghost" 
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </button>
             </div>
             <div className="flex gap-2">
               <button
+                type="button"
                 className="btn-compact btn-compact--ghost"
                 onClick={() => selected && setDirOpen(true)}
                 disabled={!selected}
@@ -173,12 +195,14 @@ export default function MeetHalfwaySheet({
                 Directions
               </button>
               <button
+                type="button"
                 className="btn-compact btn-compact--primary neon-soft"
-                onClick={() => selected && onConfirmSend?.(selected.id)}
-                disabled={!selected}
-                aria-disabled={!selected}
+                onClick={handleConfirm}
+                disabled={!selected || posting}
+                aria-disabled={!selected || posting}
+                aria-busy={posting || undefined}
               >
-                Confirm &amp; Send
+                {posting ? 'Sending…' : 'Confirm & Send'}
               </button>
             </div>
           </div>

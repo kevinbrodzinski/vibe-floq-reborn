@@ -220,4 +220,12 @@
   opacity: .55;
   cursor: not-allowed;
   filter: none;
+  pointer-events: none;   /* prevent clicks through */
+}
+
+/* Keyboard focus visibility */
+.btn-compact:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.22),
+    0 0 18px color-mix(in hsl, var(--neon-a) 26%, transparent);
 }
