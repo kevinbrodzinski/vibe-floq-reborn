@@ -33,14 +33,10 @@ async function drainQueue(batch = 50): Promise<PreferenceSignal[]> {
   return take;
 }
 
-/** Resolve current profile_id (profiles.id), not auth user id */
-async function getCurrentProfileId(): Promise<string | null> {
-  const { data: authData } = await supabase.auth.getUser();
-  const uid = authData.user?.id;
-  if (!uid) return null;
-  
-  // Use auth.uid() directly as profile_id since that's how the RLS policies work
-  return uid;
+/** profiles.id === auth.uid() in your schema */
+async function getAuthProfileId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
 }
 
 /**
@@ -56,7 +52,7 @@ export function useRecommendationCapture(
 
   useEffect(() => {
     let mounted = true;
-    getCurrentProfileId().then(pid => { if (mounted) setProfileId(pid); });
+    getAuthProfileId().then(pid => { if (mounted) setProfileId(pid); });
     return () => { mounted = false; };
   }, []);
 
@@ -74,7 +70,7 @@ export function useRecommendationCapture(
         if (!gate.ok) return;
 
         // Ensure we have a profile_id that satisfies RLS policy
-        const pid = profileId ?? await getCurrentProfileId();
+        const pid = profileId ?? await getAuthProfileId();
         if (!pid) return;
 
         const batch = await drainQueue(25);
