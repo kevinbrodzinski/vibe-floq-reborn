@@ -215,8 +215,8 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
               exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10 }}
               className="space-y-5"
             >
-              <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn>Meet-Halfway</Btn>}>
-                <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60">
+              <Section title="Living Proximity Map" icon={<MapPin className="h-4 w-4" />} right={<Btn className="neon-ring">Meet-Halfway</Btn>}>
+                <div className="relative h-72 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 grid place-items-center text-xs text-white/60 noise">
                   {proxLoading ? "Loading member locations..." : "(Map preview)"}
                 </div>
 
@@ -242,8 +242,8 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                   ) : (
                     <>
                       <div>No member locations yet</div>
-                      <div>Ask members to share location</div>
-                      <div>—</div>
+                      <div>Invite members to share location</div>
+                      <div><Btn className="text-[10px] px-2 py-1">Share Location</Btn></div>
                     </>
                   )}
                 </div>
@@ -351,6 +351,10 @@ export default function FloqHQTabbed({ floqId = "test-floq-id" }: FloqHQTabbedPr
                 <Section title="Rally" icon={<Navigation2 className="h-4 w-4" />}>
                   <div className="text-sm font-medium mb-1">No recent activity</div>
                   <div className="text-[13px] text-white/80 mb-2">Start a rally or send a message to get things going</div>
+                  <div className="mt-3 flex gap-2">
+                    <Btn className="neon-ring">+ Start Rally</Btn>
+                    <Btn>Ask Wingman</Btn>
+                  </div>
                 </Section>
               )}
 
