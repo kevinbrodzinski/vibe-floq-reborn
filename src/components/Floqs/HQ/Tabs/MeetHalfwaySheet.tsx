@@ -68,7 +68,10 @@ export default function MeetHalfwaySheet({
       <div className="absolute inset-0 bg-black/60" onClick={() => onOpenChange(false)} />
 
       {/* HIGHER bottom-sheet: ~82vh on mobile, 92vh cap */}
-      <div className="relative w-full sm:w-[820px] h-[82vh] sm:h-auto sm:max-h-[92vh] bg-zinc-950/95 border-t border-white/10 sm:border rounded-t-2xl sm:rounded-2xl backdrop-blur-xl overflow-hidden">
+      <div className="relative w-full sm:w-[820px] h-[82vh] sm:h-auto sm:max-h-[92vh] 
+                      bg-[#0b0d12]/90 backdrop-blur-xl 
+                      border-t border-white/10 sm:border rounded-t-2xl sm:rounded-2xl
+                      shadow-[inset_0_1px_0_rgba(255,255,255,.06)] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -90,7 +93,7 @@ export default function MeetHalfwaySheet({
                 const active = categories.includes(id);
                 return (
                   <button key={id} onClick={() => onToggleCategory(id)}
-                    className={`px-3 py-1.5 rounded-xl border text-xs inline-flex items-center gap-2 transition ${
+                    className={`px-2.5 py-1 rounded-xl border text-[12px] inline-flex items-center gap-1.5 transition ${
                       active ? "bg-white/10 border-white/20 text-white/90"
                              : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white/90"
                     }`}>
@@ -143,15 +146,16 @@ export default function MeetHalfwaySheet({
             {/* Actions */}
             <div className="mt-auto flex gap-2 pt-1 pb-[max(env(safe-area-inset-bottom),12px)]">
               <button
-                className="px-4 py-2 rounded-xl bg-white/10 text-white/85 border border-white/10"
+                className="px-3.5 py-2 rounded-xl bg-white/8 text-white/85 border border-white/12 hover:bg-white/12"
                 onClick={()=>onOpenChange(false)}
               >Cancel</button>
               <button
-                className="px-4 py-2 rounded-xl bg-white text-black font-medium shadow-[0_0_32px_rgba(129,140,248,.35)]"
+                className="px-3.5 py-2 rounded-xl bg-white text-black text-[14px] font-medium 
+                          shadow-[0_0_24px_rgba(129,140,248,.28)]"
                 onClick={()=> selected && onConfirmSend?.(selected.id)}
               >Confirm & Send</button>
               <button
-                className="px-3 py-2 rounded-xl bg-white/10 text-white/80 border border-white/10 hover:bg-white/15 transition-colors text-sm"
+                className="px-3.5 py-2 rounded-xl bg-white/8 text-white/85 border border-white/12 hover:bg-white/12"
                 onClick={() => selected && setDirOpen(true)}
               >
                 Directions
@@ -160,7 +164,8 @@ export default function MeetHalfwaySheet({
           </div>
 
           {/* Right: Map */}
-          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/5">
+          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/6 
+                          shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
             {selected ? (
               <SmartMap
                 data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}

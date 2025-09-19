@@ -30,7 +30,7 @@ type Props = {
 
 export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice, floqId, meetOpen }: Props) {
   const [open, setOpen] = useState(false);
-  const [cats, setCats] = useState<string[]>(["coffee", "bar", "restaurant"]);
+  const [cats, setCats] = useState<string[]>(["coffee", "bar", "food"]);
   const [selected, setSelected] = useState<string | null>(null);
 
   // fetch when sheet is open (your existing API shape)
