@@ -2,8 +2,14 @@ export type SmartFilter = 'all' | 'unread' | 'rally' | 'photos' | 'plans' | 'win
 
 export type SmartItem = {
   id: string;
-  kind: 'message' | 'moment' | 'plan' | 'wings_poll' | 'wings_time' | 'wings_meet' | 'rally';
+  kind: 'rally' | 'moment' | 'plan' | 'message' | 'wings_poll' | 'wings_time' | 'wings_meet' | 'venue_suggestion';
   created_at: string;
   score: number;
-  meta: any;
+  unread: boolean;
+  title?: string;
+  body?: string;
+  media?: { thumb_url: string }[];
+  rally?: { venue: string; at: string; counts: { going: number; maybe: number; noreply: number } };
+  plan?: { title: string; at: string; status: 'locked' | 'building' | 'tentative' };
+  meta?: { card_kind?: string; payload?: any; confidence?: number; [key: string]: any };
 };

@@ -1,21 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
-export type SmartFilter = "all"|"unread"|"rally"|"photos"|"plans"|"wings";
-export type SmartItem = {
-  id: string;
-  kind: "rally"|"moment"|"plan"|"text"|"poll"|"venue_suggestion"|"time_picker"|"meet_halfway"|"reminder"|"recap";
-  ts: string;
-  priority: number;
-  unread: boolean;
-  title?: string;
-  body?: string;
-  media?: { thumb_url: string }[];
-  rally?: { venue: string; at: string; counts:{going:number; maybe:number; noreply:number} };
-  plan?:  { title: string; at: string; status:"locked"|"building"|"tentative" };
-  meta?: { card_kind?: string; payload?: any; confidence?: number; [key: string]: any };
-};
+import { SmartFilter, SmartItem } from "@/types/stream";
 
 export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: string | null, mode: "floq" | "field" = "floq") {
   return useQuery({
@@ -27,8 +13,7 @@ export function useSmartStream(floqId: string, filter: SmartFilter, lastSeenTs: 
       const { data, error } = await supabase.functions.invoke<{ items: SmartItem[]; unread_count: number }>(
         "smart-stream-rank",
         { 
-          body: { floq_id: floqId, filter, last_seen_ts: lastSeenTs, mode },
-          signal
+          body: { floq_id: floqId, filter, last_seen_ts: lastSeenTs, mode }
         }
       );
       
@@ -49,8 +34,7 @@ export function useMarkStreamSeen(floqId: string, setLastSeenTs: (ts: string) =>
       const { data, error } = await supabase.functions.invoke<{ ok: boolean; last_seen_ts: string }>(
         "smart-stream-read",
         { 
-          body: { floq_id: floqId },
-          signal
+          body: { floq_id: floqId }
         }
       );
       

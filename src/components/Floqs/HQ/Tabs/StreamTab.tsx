@@ -144,13 +144,13 @@ function SmartItemRow({
   onRallyResponse?: (id: string, s: "joined" | "maybe" | "declined") => void;
 }) {
   // Wings Cards
-  if (item.kind === "poll") {
+  if (item.kind === "wings_poll") {
     return <PollCard item={item} />;
   }
-  if (item.kind === "time_picker") {
+  if (item.kind === "wings_time") {
     return <TimePickerCard item={item} />;
   }
-  if (item.kind === "meet_halfway") {
+  if (item.kind === "wings_meet") {
     return <MeetHalfwayCard item={item} />;
   }
   if (item.kind === "venue_suggestion") {
@@ -229,7 +229,7 @@ function SmartItemRow({
   }
   return (
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
-      <div className="text-white/85 text-sm">{item.body}</div>
+      <div className="text-white/85 text-sm">{item.body ?? "Message"}</div>
     </div>
   );
 }
@@ -418,7 +418,7 @@ function VenueSuggestionCard({ item }: { item: SmartItem }) {
     <div className="glass-subtle p-3 rounded-xl border border-white/10">
       <div className="text-white/90 font-medium flex items-center gap-2">
         <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">Wings</span>
-        {item.title || "Venue suggestions"}
+        {item.title ?? "Venue suggestions"}
       </div>
       {context && (
         <div className="text-white/70 text-sm mt-1">{context}</div>
