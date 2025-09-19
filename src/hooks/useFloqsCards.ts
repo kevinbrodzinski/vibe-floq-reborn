@@ -24,6 +24,7 @@ export type CardRow = {
   rally_now: boolean | null;
   forming: boolean | null;
   status_bucket: "now"|"today"|"upcoming"|"dormant";
+  avatar_url: string | null;           // floq brand avatar or creator avatar
 };
 
 export type LivingFloq = {
@@ -47,6 +48,7 @@ export type LivingFloq = {
   rallyNow?: boolean;
   forming?: boolean;
   lastActiveAgo?: string;
+  avatarUrl?: string;                  // floq brand avatar or creator avatar
 };
 
 export function useFloqsCards() {
@@ -103,5 +105,6 @@ function transformRowToLivingFloq(r: CardRow): LivingFloq {
     rallyNow: !!r.rally_now,
     forming: !!r.forming,
     lastActiveAgo: r.last_active_ago || undefined,
+    avatarUrl: r.avatar_url || undefined,
   };
 }
