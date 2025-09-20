@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   try {
     if (req.method !== 'POST') return badJSON('POST required', req, 405);
 
-    // Forward auth
+    // Forward auth to supabase client
     const authHeader = req.headers.get("Authorization") ?? "";
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -24,18 +24,18 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) return badJSON("Unauthorized", req, 401);
 
-    // Enhanced Rate limiting for presence updates
-    const rateLimitResult = await checkRateLimitV2(supabase, user.id, 'presence_update');
-    if (!rateLimitResult.allowed) {
-      return badJSON(rateLimitResult.error || "Rate limit exceeded", req, 429);
-    }
-
     // Body validation
     const body = await req.json().catch(() => ({}));
-    const { vibe = 'chill', lat, lng, venue_id = null, broadcast_radius = 500 } = body;
-    
+    const { vibe = 'chill', lat, lng, venue_id = null, visibility = 'public' } = body;
     if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
       return badJSON("Valid lat/lng numbers required", req, 400);
+    }
+
+    // Rate limit
+    const rl = await checkRateLimitV2(supabase, user.id, 'presence_update');
+    if (!rl.allowed) {
+      // 👇 Soft success to avoid red banners/blank preview; client will backoff
+      return okJSON({ ok:false, reason:'rate_limit', retryAfterSec: rl.retryAfter ?? 15 }, req, 200);
     }
 
     // H3 cell
@@ -43,9 +43,8 @@ Deno.serve(async (req) => {
 
     // RPC upsert
     const { error } = await supabase.rpc('upsert_presence', {
-      p_lat: lat, p_lng: lng, p_vibe: vibe, p_visibility: 'public'
+      p_lat: lat, p_lng: lng, p_vibe: vibe, p_visibility: visibility
     });
-
     if (error) {
       console.error("Presence upsert error:", error);
       return badJSON(error.message, req, 500);
@@ -54,65 +53,11 @@ Deno.serve(async (req) => {
     // Secondary: write h3_7 directly
     await supabase.from('vibes_now').update({ h3_7 }).eq('profile_id', user.id);
 
-    console.log(`Presence updated: ${user.id}${venue_id ? ` → venue ${venue_id}` : venue_id === null ? ' → left venue' : ''}`);
-
-    // Background tasks (non-blocking)
-    const backgroundTasks = [];
-
-    // Get nearby users using PostGIS function
-    const nearbyP = supabase.rpc('presence_nearby', {
-      lat: lat,
-      lng: lng,
-      metres: 1000
-    }).catch(err => console.error('presence_nearby failed', err));
-
-    // Get walkable floqs
-    const floqsP = supabase.rpc('walkable_floqs', {
-      lat: lat,
-      lng: lng,
-      metres: 1200
-    }).catch(err => console.error('walkable_floqs failed', err));
-
-    backgroundTasks.push(nearbyP, floqsP);
-
-    // Execute background tasks without blocking response
-    Promise.allSettled(backgroundTasks).then(results => {
-      const failed = results.filter(r => r.status === 'rejected').length;
-      if (failed > 0) {
-        console.warn(`${failed}/${results.length} background tasks failed`);
-      } else {
-        console.log(`All ${results.length} background tasks completed successfully`);
-      }
-    });
-
-    // ✅ Return 200 JSON so client treats as success
-    return okJSON({ ok: true, profile_id: user.id, h3_7, venue_id }, req);
+    // ✅ Always 200 JSON on success
+    return okJSON({ ok:true, profile_id: user.id, h3_7, venue_id }, req);
 
   } catch (error) {
     console.error("Presence function error:", error);
-    
-    // Track critical errors in PostHog
-    try {
-      const posthogKey = Deno.env.get("POSTHOG_PUBLIC_KEY");
-      if (posthogKey && Deno.env.get("DEV") !== "true") {
-        await fetch('https://app.posthog.com/capture/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Keep-Alive': 'timeout=5' },
-          body: JSON.stringify({
-            api_key: posthogKey,
-            event: 'presence_ws_error',
-            properties: {
-              msg: (error as Error).message,
-              code: (error as any).code ?? null,
-            },
-          }),
-          keepalive: true,
-        }).catch(() => {/* silent */});
-      }
-    } catch (analyticsError) {
-      console.debug('Analytics tracking failed:', analyticsError);
-    }
-    
     return badJSON((error as Error).message, req, 500);
   }
 });
