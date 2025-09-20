@@ -3,10 +3,10 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
 import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
-import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  const preflight = handleOptions(req);
+  const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
   try {
@@ -16,12 +16,13 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
 
+    const origin = req.headers.get('origin');
     // Verify authentication
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
       });
     }
 
@@ -38,7 +39,7 @@ serve(async (req) => {
     if (typeof lat !== 'number' || typeof lng !== 'number') {
       return new Response(JSON.stringify({ error: "Valid lat/lng numbers required" }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
       });
     }
 
@@ -65,7 +66,7 @@ serve(async (req) => {
       console.error("Presence upsert error:", error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
       });
     }
 
@@ -147,7 +148,7 @@ serve(async (req) => {
       });
     }
 
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders(origin) });
 
   } catch (error) {
     console.error("Presence function error:", error);
@@ -176,7 +177,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' }
     });
   }
 });

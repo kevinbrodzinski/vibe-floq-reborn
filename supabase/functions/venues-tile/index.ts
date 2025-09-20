@@ -2,11 +2,7 @@
 // Input: { bbox? | center+radius?, zoom }
 // Output: { venues: TileVenue[], ttlSec, attribution[] }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 type GPlace = {
   place_id: string; 
@@ -19,20 +15,20 @@ type GPlace = {
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_PLACES_KEY");
 
-function okJson(body: unknown, ttlSec = 900): Response {
+function okJson(body: unknown, ttlSec = 900, origin: string | null = null): Response {
   return new Response(JSON.stringify(body), {
     headers: {
-      ...corsHeaders,
+      ...corsHeaders(origin),
       "content-type": "application/json; charset=utf-8",
       "cache-control": `public, max-age=${ttlSec}`,
     },
   });
 }
 
-function bad(msg: string, code = 400) {
+function bad(msg: string, code = 400, origin: string | null = null) {
   return new Response(JSON.stringify({ error: msg }), { 
     status: code, 
-    headers: { ...corsHeaders, "content-type": "application/json" } 
+    headers: { ...corsHeaders(origin), "content-type": "application/json" } 
   });
 }
 
@@ -53,14 +49,14 @@ async function googleNearby(lng: number, lat: number, radius: number): Promise<G
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handlePreflight(req);
+  if (preflight) return preflight;
 
-  if (!GOOGLE_KEY) return bad('GOOGLE_PLACES_KEY missing', 500);
+  const origin = req.headers.get('origin');
+  if (!GOOGLE_KEY) return bad('GOOGLE_PLACES_KEY missing', 500, origin);
 
   try {
-    if (req.method !== "POST") return bad("POST required", 405);
+    if (req.method !== "POST") return bad("POST required", 405, origin);
     
     const input = await req.json();
     const { bbox, center, radius = 900, zoom } = input;
@@ -89,9 +85,9 @@ Deno.serve(async (req) => {
       attribution: ["Powered by Google", "© Mapbox"],
     };
     
-    return okJson(body, body.ttlSec);
+    return okJson(body, body.ttlSec, origin);
   } catch (e) {
     console.error('[venues-tile] error:', e);
-    return bad(e?.message ?? "unknown error", 500);
+    return bad(e?.message ?? "unknown error", 500, origin);
   }
 });
