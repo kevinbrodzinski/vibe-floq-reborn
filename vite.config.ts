@@ -25,6 +25,10 @@ function rnwLegacyShims() {
       }
       // normalize rare ".js" variant to module id so optimizeDeps include hits
       if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
+      // normalize stray postgrest ESM index.js requests to the real wrapper.mjs
+      if (source === '@supabase/postgrest-js/dist/esm/index.js') {
+        return '@supabase/postgrest-js/dist/esm/wrapper.mjs';
+      }
       return null;
     },
   };
@@ -122,7 +126,7 @@ export default defineConfig(({ mode, command }) => {
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
 
         // PostgREST ESM fixes - order matters: ESM first, then CJS overrides
-        '@supabase/postgrest-js': '@supabase/postgrest-js/dist/esm/index.js',
+        '@supabase/postgrest-js': '@supabase/postgrest-js/dist/esm/wrapper.mjs',
         '@supabase/postgrest-js/dist/cjs/index.js': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
         '@supabase/postgrest-js/dist/cjs/index.cjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
         '@supabase/postgrest-js/dist/cjs/index.mjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
@@ -136,7 +140,7 @@ export default defineConfig(({ mode, command }) => {
       // We control what's prebundled; don't auto-discover
       noDiscovery: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web', '@supabase/postgrest-js/dist/esm/index.js'],
+      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web', '@supabase/postgrest-js/dist/esm/wrapper.mjs'],
       // Never prebundle RN nor RNSVG (we shim them), exclude postgrest-js root to let alias take over
       exclude: ['react-native', 'react-native-svg', '@supabase/postgrest-js'],
       esbuildOptions: {
