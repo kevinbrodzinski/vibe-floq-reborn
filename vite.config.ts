@@ -23,6 +23,8 @@ function rnwLegacyShims() {
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
       }
+      // normalize rare ".js" variant to module id so optimizeDeps include hits
+      if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
       return null;
     },
   };
@@ -103,8 +105,11 @@ export default defineConfig(({ mode, command }) => {
         'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
 
-        // 3) Some libs deep-require svg/fabric — force non-fabric path
+        // Some deps deep-require svg/fabric → force non-fabric
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
+
+        // Normalize the rare ".js" specifier to the module id
+        'react/jsx-runtime.js': 'react/jsx-runtime',
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
@@ -120,12 +125,19 @@ export default defineConfig(({ mode, command }) => {
       dedupe: ['react', 'react-dom', 'react-native-web'],
     },
 
-    // 🔥 Important: Do NOT prebundle react-native-svg or react-native
+    /** 🔥 Prebundle the right things so jsx-runtime exports exist */
     optimizeDeps: {
-      noDiscovery: true,                  // Only prebundle what we say
-      include: ['react', 'react-dom', 'react-native-web'],
+      // We control what's prebundled; don't auto-discover
+      noDiscovery: true,
+      // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
+      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
+      // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
-      esbuildOptions: { mainFields: ['browser', 'module', 'main'] },
+      esbuildOptions: {
+        mainFields: ['browser', 'module', 'main'],
+        // pick the browser condition if provided by deps
+        conditions: ['browser', 'module', 'default'],
+      },
     },
   };
 });
