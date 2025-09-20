@@ -1,7 +1,4 @@
-// Minimal shim for web builds that expect RN Web's codegenNativeCommands
+// Shim for legacy RN Web deep import - fallback implementation
 export default function codegenNativeCommands(config: any) {
   return {};
 }
-
-// Named export for compatibility  
-export { codegenNativeCommands };

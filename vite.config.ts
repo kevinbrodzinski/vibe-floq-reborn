@@ -59,48 +59,41 @@ export default defineConfig(({ mode, command }) => {
 
     resolve: {
       alias: {
-        // Project roots
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // Ensure RN maps to RN Web - multiple patterns to catch all cases
+        // RN → RN Web
         'react-native$': 'react-native-web',
-        'react-native/': 'react-native-web/',
-        'react-native': 'react-native-web',
 
-        // Point legacy RN paths directly to our fallback shims for now
+        // Preferred: point legacy paths to RN Web's actual exports
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+          'react-native-web/dist/cjs/exports/codegenNativeComponent',
         'react-native/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+          'react-native-web/dist/cjs/exports/codegenNativeComponent',
 
         'react-native-web/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+          'react-native-web/dist/cjs/exports/codegenNativeCommands',
         'react-native/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+          'react-native-web/dist/cjs/exports/codegenNativeCommands',
 
-        // If some dependency hard-requires the fabric folder, force non-fabric
+        // Fallback: if a lib hard-codes the legacy path, use our shim
+        'rnw-shim/codegenNativeComponent': path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+        'rnw-shim/codegenNativeCommands': path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+
+        // Some packages reach into svg/fabric — map to non-fabric
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
 
-        // Expo shims
+        // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
         'expo-constants': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-device': 'expo-device/build/Device.web',
         'expo-asset': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-
-        // Native-only libs we never want in the browser bundle
         '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'react-native-mmkv': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
       },
-
       dedupe: ['react', 'react-dom', 'react-native-web'],
-    },
-
-    optimizeDeps: {
-      exclude: ['react-native'],
-      include: ['react-native-web'],
     },
   };
 });
