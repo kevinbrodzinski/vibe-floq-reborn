@@ -30,17 +30,6 @@ function rnwLegacyShims() {
   };
 }
 
-function postgrestCollapse() {
-  const re = /^@supabase\/postgrest-js\/dist\/.+/;
-  return {
-    name: 'postgrest-collapse',
-    enforce: 'pre' as const,
-    resolveId(id: string) {
-      if (re.test(id)) return '@supabase/postgrest-js';
-      return null;
-    },
-  };
-}
 
 /* ─────────────────────── Env helpers ─────────────────────── */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
@@ -93,7 +82,6 @@ export default defineConfig(({ mode, command }) => {
 
     plugins: [
       rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
-      postgrestCollapse(), // 👈 collapse any deep postgrest imports to root
       react(),
       mode === "development" && componentTagger(),
     ].filter(Boolean),
@@ -124,12 +112,6 @@ export default defineConfig(({ mode, command }) => {
         // Normalize the rare ".js" specifier to the module id
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
-        // PostgREST shims - make main imports and ESM wrapper resolve to our shim
-        // but leave the .cjs path unaliased so our shim can import from it
-        '@supabase/postgrest-js': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
-        '@supabase/postgrest-js/dist/esm/wrapper.mjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
-        '@supabase/postgrest-js/dist/cjs/index.js': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
-        '@supabase/postgrest-js/dist/cjs/index.mjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
