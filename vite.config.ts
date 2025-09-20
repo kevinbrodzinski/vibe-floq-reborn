@@ -120,6 +120,11 @@ export default defineConfig(({ mode, command }) => {
         'react-native-mmkv': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+
+        // PostgREST ESM fixes to prevent CJS default import errors
+        '@supabase/postgrest-js': '@supabase/postgrest-js/dist/esm/index.js',
+        '@supabase/postgrest-js/dist/cjs/index.js': '@supabase/postgrest-js/dist/esm/index.js',
+        '@supabase/postgrest-js/dist/cjs/index.cjs': '@supabase/postgrest-js/dist/esm/index.js',
       },
 
       dedupe: ['react', 'react-dom', 'react-native-web'],
@@ -130,9 +135,9 @@ export default defineConfig(({ mode, command }) => {
       // We control what's prebundled; don't auto-discover
       noDiscovery: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
-      // Never prebundle RN nor RNSVG (we shim them)
-      exclude: ['react-native', 'react-native-svg'],
+      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web', '@supabase/postgrest-js/dist/esm/index.js'],
+      // Never prebundle RN nor RNSVG (we shim them), exclude postgrest-js root to let alias take over
+      exclude: ['react-native', 'react-native-svg', '@supabase/postgrest-js'],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
         // pick the browser condition if provided by deps
