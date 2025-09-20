@@ -1,18 +1,19 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
-import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
-import { handlePreflight, okJSON, badJSON, buildCorsHeaders } from "../_shared/cors.ts";
+import { checkRateLimitV2 } from "../_shared/helpers.ts";
+import { handlePreflight, okJSON, badJSON } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
   try {
+    const authHeader = req.headers.get("Authorization") ?? "";
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+      { global: { headers: authHeader ? { Authorization: authHeader } : {} } }
     );
 
     // Verify authentication
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
     // Enhanced Rate limiting for presence updates
     const rateLimitResult = await checkRateLimitV2(supabase, user.id, 'presence_update');
     if (!rateLimitResult.allowed) {
-      return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
+      return badJSON(rateLimitResult.error || "Rate limit exceeded", req, 429);
     }
 
     const body = await req.json().catch(() => ({}));
@@ -137,8 +138,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { headers } = buildCorsHeaders(req);
-    return new Response(null, { status: 204, headers });
+    return okJSON(null, req, 204);
 
   } catch (error) {
     console.error("Presence function error:", error);

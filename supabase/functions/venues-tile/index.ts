@@ -2,7 +2,7 @@
 // Input: { bbox? | center+radius?, zoom }
 // Output: { venues: TileVenue[], ttlSec, attribution[] }
 
-import { handlePreflight, okJSON, badJSON, buildCorsHeaders } from "../_shared/cors.ts";
+import { handlePreflight, okJSONCached, badJSON } from "../_shared/cors.ts";
 
 type GPlace = {
   place_id: string; 
@@ -15,16 +15,6 @@ type GPlace = {
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_PLACES_KEY");
 
-function okJsonCached(body: unknown, req: Request, ttlSec = 900): Response {
-  const { headers } = buildCorsHeaders(req);
-  return new Response(JSON.stringify(body), {
-    headers: {
-      ...headers,
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": `public, max-age=${ttlSec}`,
-    },
-  });
-}
 
 // Google Nearby for bars/cafes/restaurants/nightlife
 async function googleNearby(lng: number, lat: number, radius: number): Promise<GPlace[]> {
@@ -78,7 +68,7 @@ Deno.serve(async (req) => {
       attribution: ["Powered by Google", "© Mapbox"],
     };
     
-    return okJsonCached(body, req, body.ttlSec);
+    return okJSONCached(body, req, body.ttlSec);
   } catch (e) {
     console.error('[venues-tile] error:', e);
     return badJSON(e?.message ?? "unknown error", req, 500);

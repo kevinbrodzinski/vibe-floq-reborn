@@ -9,16 +9,15 @@ export function buildCorsHeaders(req: Request) {
   const requested = acrh.split(',').map(h => h.trim()).filter(Boolean);
   const headerSet = Array.from(new Set([...allowHeaders, ...requested]));
 
-  return {
-    origin,
-    headers: {
-      'Access-Control-Allow-Origin': origin,
-      'Vary': 'Origin, Access-Control-Request-Headers',
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-      'Access-Control-Allow-Headers': headerSet.join(', '),
-      'Access-Control-Max-Age': '86400', // 24h
-    } as Record<string, string>,
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Origin': origin,
+    'Vary': 'Origin, Access-Control-Request-Headers',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': headerSet.join(', '),
+    'Access-Control-Max-Age': '86400', // 24h
   };
+
+  return { origin, headers };
 }
 
 export function handlePreflight(req: Request) {
@@ -33,6 +32,18 @@ export function okJSON(body: unknown, req: Request, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...headers, 'content-type': 'application/json' },
+  });
+}
+
+export function okJSONCached(body: unknown, req: Request, ttlSec = 300) {
+  const { headers } = buildCorsHeaders(req);
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: {
+      ...headers,
+      'content-type': 'application/json',
+      'cache-control': `public, max-age=${ttlSec}`,
+    },
   });
 }
 
