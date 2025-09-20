@@ -10,6 +10,7 @@ function rnwLegacyShims() {
   const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
   const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
+  const RN_ASSETS_REGISTRY = '@react-native/assets-registry/registry';
 
   return {
     name: 'rnw-legacy-shims',
@@ -20,6 +21,9 @@ function rnwLegacyShims() {
       }
       if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
         return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
+      }
+      if (source === RN_ASSETS_REGISTRY) {
+        return path.resolve(__dirname, 'src/lib/stubs/assetsRegistry.js');
       }
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
@@ -94,6 +98,8 @@ export default defineConfig(({ mode, command }) => {
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+        '@react-native/assets-registry/registry':
+          path.resolve(__dirname, 'src/lib/stubs/assetsRegistry.js'),
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
 
         // Normalize rare ".js" specifier
