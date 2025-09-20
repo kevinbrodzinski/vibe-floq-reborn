@@ -1,10 +1,10 @@
 export function buildCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') ?? '*';
   const acrh = req.headers.get('access-control-request-headers') ?? '';
-  // baseline headers we know we use, plus echo whatever the client asked for
+
   const allowHeaders = [
     'authorization', 'x-client-info', 'apikey', 'content-type',
-    'range', 'range-unit', 'cache-control', 'x-requested-with'
+    'range', 'range-unit', 'cache-control', 'x-requested-with',
   ];
   const requested = acrh.split(',').map(h => h.trim()).filter(Boolean);
   const headerSet = Array.from(new Set([...allowHeaders, ...requested]));
@@ -14,7 +14,10 @@ export function buildCorsHeaders(req: Request) {
     'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': headerSet.join(', '),
-    'Access-Control-Max-Age': '86400', // 24h
+    'Access-Control-Max-Age': '86400',
+    // Uncomment if you ever need cookies:
+    // 'Access-Control-Allow-Credentials': 'true',
+    // 'Access-Control-Expose-Headers': 'content-length, content-type, etag, x-ratelimit-remaining',
   };
 
   return { origin, headers };
@@ -26,7 +29,6 @@ export function handlePreflight(req: Request) {
   return new Response(null, { status: 204, headers });
 }
 
-// Convenience wrappers so all responses include CORS
 export function okJSON(body: unknown, req: Request, status = 200) {
   const { headers } = buildCorsHeaders(req);
   return new Response(JSON.stringify(body), {
@@ -34,7 +36,6 @@ export function okJSON(body: unknown, req: Request, status = 200) {
     headers: { ...headers, 'content-type': 'application/json' },
   });
 }
-
 export function okJSONCached(body: unknown, req: Request, ttlSec = 300) {
   const { headers } = buildCorsHeaders(req);
   return new Response(JSON.stringify(body), {
@@ -46,7 +47,6 @@ export function okJSONCached(body: unknown, req: Request, ttlSec = 300) {
     },
   });
 }
-
 export function badJSON(message: string, req: Request, status = 400) {
   const { headers } = buildCorsHeaders(req);
   return new Response(JSON.stringify({ error: message }), {
@@ -54,12 +54,10 @@ export function badJSON(message: string, req: Request, status = 400) {
     headers: { ...headers, 'content-type': 'application/json' },
   });
 }
-
 export function noContent(req: Request, status = 204) {
   const { headers } = buildCorsHeaders(req);
   return new Response(null, { status, headers });
 }
-
 export function okBinary(
   data: ArrayBuffer | Uint8Array | ReadableStream,
   req: Request,
@@ -69,20 +67,18 @@ export function okBinary(
   return new Response(data as any, { status: 200, headers: { ...headers, ...extra } });
 }
 
-// Legacy exports for backward compatibility
+// Legacy (only for old code paths)
 export function corsHeaders(origin: string | null = null) {
   const allowOrigin = origin ?? '*';
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 
+    'Access-Control-Allow-Headers':
       'authorization, x-client-info, apikey, content-type, range, range-unit, x-requested-with, cache-control',
   };
 }
-
 export function corsHeadersFor(req: Request) {
   return corsHeaders(req.headers.get('origin'));
 }
-
 export const defaultCorsHeaders = corsHeaders();
