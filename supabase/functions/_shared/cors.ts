@@ -60,7 +60,11 @@ export function noContent(req: Request, status = 204) {
   return new Response(null, { status, headers });
 }
 
-export function okBinary(data: ArrayBuffer | Uint8Array, req: Request, extra: Record<string, string> = {}) {
+export function okBinary(
+  data: ArrayBuffer | Uint8Array | ReadableStream,
+  req: Request,
+  extra: Record<string, string> = {}
+) {
   const { headers } = buildCorsHeaders(req);
   return new Response(data, { status: 200, headers: { ...headers, ...extra } });
 }
