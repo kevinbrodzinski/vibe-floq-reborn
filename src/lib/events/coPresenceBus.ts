@@ -2,6 +2,7 @@
 type CoPresenceEvents = {
   'halfway:open': { floqId?: string; categories?: string[] } | undefined;
   'rally:create': { meta?: any } | undefined;
+  'energy:open':  { floqId?: string } | undefined;   // NEW: open energy/compass modal
 };
 
 type Handler<T> = (payload: T) => void;
@@ -33,4 +34,8 @@ export function openMeetHalfway(payload?: { floqId?: string; categories?: string
 
 export function createRally(payload?: { meta?: any }) {
   coPresenceBus.emit('rally:create', payload);
+}
+
+export function openEnergyModal(payload?: { floqId?: string }) {   // NEW
+  coPresenceBus.emit('energy:open', payload);
 }

@@ -4,6 +4,7 @@ import Ring from './shapes/Ring';
 import Bolt from './shapes/Bolt';
 import Droplet from './shapes/Droplet';
 import Sparks from './Sparks';
+import SparkTrail from './SparkTrail';
 import { useFieldHeartbeat } from '@/hooks/useFieldHeartbeat';
 
 type Dir = 'rising'|'stable'|'falling';
@@ -54,6 +55,7 @@ export default function MetamorphBattery({
             <>
               <Bolt size={size} energy01={energy} accent={accent}/>
               <Sparks size={size} accent={accent}/>
+              <SparkTrail size={size} accent={accent}/>
             </>
           )}
           {form === 'falling' && <Droplet size={size} energy01={energy} accent={accent}/>}

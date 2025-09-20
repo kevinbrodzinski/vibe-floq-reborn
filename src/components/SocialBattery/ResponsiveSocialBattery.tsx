@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useWindowDimensions } from 'react-native';
 import MetamorphBattery from '@/components/SocialBattery/MetamorphBattery';
 import { SocialBatteryIcon } from '@/components/SocialBattery';
-import { openMeetHalfway } from '@/lib/events/coPresenceBus';
+import { openEnergyModal } from '@/lib/events/coPresenceBus';
 
 type Props = {
   floqId?: string;
@@ -36,7 +36,7 @@ export default function ResponsiveSocialBattery({
 
   const handlePress = useCallback(() => {
     if (onPress) return onPress();
-    openMeetHalfway({ floqId });                 // default: open your Meet-Halfway sheet
+    openEnergyModal({ floqId });                 // default: open Energy/Compass modal
   }, [onPress, floqId]);
 
   const useFull = width >= minFullWidth;
