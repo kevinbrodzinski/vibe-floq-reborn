@@ -59,28 +59,25 @@ export default defineConfig(({ mode, command }) => {
 
     resolve: {
       alias: {
+        // Project roots
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // RN → RN Web
-        'react-native$': 'react-native-web',
+        // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
+        'react-native': 'react-native-web',
 
-        // Preferred: point legacy paths to RN Web's actual exports
+        // 2) react-native-svg 🤝 RN-Web (prefer real exports if present; shims are below)
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
-          'react-native-web/dist/cjs/exports/codegenNativeComponent',
+          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
         'react-native/Libraries/Utilities/codegenNativeComponent':
-          'react-native-web/dist/cjs/exports/codegenNativeComponent',
+          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
 
         'react-native-web/Libraries/Utilities/codegenNativeCommands':
-          'react-native-web/dist/cjs/exports/codegenNativeCommands',
+          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
-          'react-native-web/dist/cjs/exports/codegenNativeCommands',
+          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
 
-        // Fallback: if a lib hard-codes the legacy path, use our shim
-        'rnw-shim/codegenNativeComponent': path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
-        'rnw-shim/codegenNativeCommands': path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
-
-        // Some packages reach into svg/fabric — map to non-fabric
+        // 3) Some libs deep-require svg/fabric — force non-fabric path
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
 
         // Expo/native-only web stubs
@@ -93,7 +90,18 @@ export default defineConfig(({ mode, command }) => {
         '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
       },
+
       dedupe: ['react', 'react-dom', 'react-native-web'],
+    },
+
+    // Prevent esbuild from trying to parse react-native's Flow/CJS
+    optimizeDeps: {
+      exclude: ['react-native'],
+      include: ['react-native-web'],
+      esbuildOptions: {
+        // Prefer browser fields during prebundle
+        mainFields: ['browser', 'module', 'main'],
+      },
     },
   };
 });
