@@ -30,6 +30,18 @@ function rnwLegacyShims() {
   };
 }
 
+function postgrestCollapse() {
+  const re = /^@supabase\/postgrest-js\/dist\/.+/;
+  return {
+    name: 'postgrest-collapse',
+    enforce: 'pre' as const,
+    resolveId(id: string) {
+      if (re.test(id)) return '@supabase/postgrest-js';
+      return null;
+    },
+  };
+}
+
 /* ─────────────────────── Env helpers ─────────────────────── */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
 const DISABLE_HMR       = process.env.VITE_DEV_SOCKET;
@@ -81,6 +93,7 @@ export default defineConfig(({ mode, command }) => {
 
     plugins: [
       rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
+      postgrestCollapse(), // 👈 collapse any deep postgrest imports to root
       react(),
       mode === "development" && componentTagger(),
     ].filter(Boolean),
@@ -131,8 +144,8 @@ export default defineConfig(({ mode, command }) => {
       noDiscovery: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
       include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
-      // Never prebundle RN nor RNSVG (we shim them)
-      exclude: ['react-native', 'react-native-svg'],
+      // Never prebundle RN nor RNSVG (we shim them), exclude postgrest-js so package resolves at runtime
+      exclude: ['react-native', 'react-native-svg', '@supabase/postgrest-js'],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
         // pick the browser condition if provided by deps
