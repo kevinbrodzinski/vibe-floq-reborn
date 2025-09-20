@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import Ring from './shapes/Ring';
 import Bolt from './shapes/Bolt';
@@ -76,7 +76,7 @@ export default function MetamorphBattery({
 }
 
 function useBreath(dir: Dir, energy: number) {
-  const v = useMemo(() => new Animated.Value(1), []);
+  const v = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     const to = dir === 'rising' ? 1.02 : dir === 'falling' ? 0.995 : (energy>0.66 ? 1.01 : 1.005);
     const loop = Animated.loop(
