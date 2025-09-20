@@ -93,6 +93,9 @@ export default defineConfig(({ mode, command }) => ({
         '@react-native/assets-registry/registry':
           path.resolve(__dirname, 'src/lib/stubs/assetsRegistry.js'),
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
+        
+        // React Native MMKV stub
+        'react-native-mmkv': path.resolve(__dirname, 'src/lib/stubs/mmkv.js'),
 
       // Normalize rare ".js" specifier
       'react/jsx-runtime.js': 'react/jsx-runtime',
