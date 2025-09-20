@@ -30,6 +30,18 @@ function rnwLegacyShims() {
   };
 }
 
+function postgrestCollapse() {
+  const re = /^@supabase\/postgrest-js\/dist\/.+/;
+  return {
+    name: 'postgrest-collapse',
+    enforce: 'pre' as const,
+    resolveId(id: string) {
+      if (re.test(id)) return '@supabase/postgrest-js';
+      return null;
+    },
+  };
+}
+
 
 /* ─────────────────────── Env helpers ─────────────────────── */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
@@ -82,6 +94,7 @@ export default defineConfig(({ mode, command }) => {
 
     plugins: [
       rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
+      postgrestCollapse(), // 👈 collapse any deep postgrest imports to root
       react(),
       mode === "development" && componentTagger(),
     ].filter(Boolean),
