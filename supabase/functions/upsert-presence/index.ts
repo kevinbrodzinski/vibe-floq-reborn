@@ -1,11 +1,10 @@
 
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
 import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
-import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { handlePreflight, okJSON, badJSON, buildCorsHeaders } from "../_shared/cors.ts";
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
@@ -16,14 +15,10 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
 
-    const origin = req.headers.get('origin');
     // Verify authentication
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
-      });
+      return badJSON("Unauthorized", req, 401);
     }
 
     // Enhanced Rate limiting for presence updates
@@ -37,10 +32,7 @@ serve(async (req) => {
 
     // Validate required parameters
     if (typeof lat !== 'number' || typeof lng !== 'number') {
-      return new Response(JSON.stringify({ error: "Valid lat/lng numbers required" }), {
-        status: 400,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
-      });
+      return badJSON("Valid lat/lng numbers required", req, 400);
     }
 
     // Calculate H3 index for the location
@@ -64,10 +56,7 @@ serve(async (req) => {
 
     if (error) {
       console.error("Presence upsert error:", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
-      });
+      return badJSON(error.message, req, 500);
     }
 
     console.log(`Presence updated: ${user.id}${venue_id ? ` → venue ${venue_id}` : venue_id === null ? ' → left venue' : ''}`);
@@ -148,7 +137,8 @@ serve(async (req) => {
       });
     }
 
-    return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    const { headers } = buildCorsHeaders(req);
+    return new Response(null, { status: 204, headers });
 
   } catch (error) {
     console.error("Presence function error:", error);
@@ -175,9 +165,6 @@ serve(async (req) => {
       console.debug('Analytics tracking failed:', analyticsError);
     }
     
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' }
-    });
+    return badJSON((error as Error).message, req, 500);
   }
 });

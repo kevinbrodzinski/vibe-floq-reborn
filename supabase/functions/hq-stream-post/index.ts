@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
-import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { handlePreflight, okJSON, badJSON } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 
 const admin = createClient(
@@ -7,13 +6,13 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
-  
-  const origin = req.headers.get('origin');
 
   try {
+    if (req.method !== 'POST') return badJSON('POST required', req, 405);
+    
     const jwt = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
     const { data: auth } = await admin.auth.getUser(jwt);
     const userId = auth.user?.id;
@@ -44,14 +43,11 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({
+    return okJSON({
       id: data.id,
       receipt: { policy_fingerprint: "hq-stream-post-v1", floq_id }
-    }), { headers: { "Content-Type": "application/json", ...corsHeaders(origin) }});
+    }, req);
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 401,
-      headers: { "Content-Type": "application/json", ...corsHeaders(origin) }
-    });
+    return badJSON((e as Error).message, req, 401);
   }
 });

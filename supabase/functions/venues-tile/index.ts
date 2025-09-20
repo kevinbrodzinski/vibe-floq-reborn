@@ -2,7 +2,7 @@
 // Input: { bbox? | center+radius?, zoom }
 // Output: { venues: TileVenue[], ttlSec, attribution[] }
 
-import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { handlePreflight, okJSON, badJSON, buildCorsHeaders } from "../_shared/cors.ts";
 
 type GPlace = {
   place_id: string; 
@@ -15,20 +15,14 @@ type GPlace = {
 
 const GOOGLE_KEY = Deno.env.get("GOOGLE_PLACES_KEY");
 
-function okJson(body: unknown, ttlSec = 900, origin: string | null = null): Response {
+function okJsonCached(body: unknown, req: Request, ttlSec = 900): Response {
+  const { headers } = buildCorsHeaders(req);
   return new Response(JSON.stringify(body), {
     headers: {
-      ...corsHeaders(origin),
+      ...headers,
       "content-type": "application/json; charset=utf-8",
       "cache-control": `public, max-age=${ttlSec}`,
     },
-  });
-}
-
-function bad(msg: string, code = 400, origin: string | null = null) {
-  return new Response(JSON.stringify({ error: msg }), { 
-    status: code, 
-    headers: { ...corsHeaders(origin), "content-type": "application/json" } 
   });
 }
 
@@ -52,11 +46,10 @@ Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
-  const origin = req.headers.get('origin');
-  if (!GOOGLE_KEY) return bad('GOOGLE_PLACES_KEY missing', 500, origin);
+  if (!GOOGLE_KEY) return badJSON('GOOGLE_PLACES_KEY missing', req, 500);
 
   try {
-    if (req.method !== "POST") return bad("POST required", 405, origin);
+    if (req.method !== "POST") return badJSON("POST required", req, 405);
     
     const input = await req.json();
     const { bbox, center, radius = 900, zoom } = input;
@@ -85,9 +78,9 @@ Deno.serve(async (req) => {
       attribution: ["Powered by Google", "© Mapbox"],
     };
     
-    return okJson(body, body.ttlSec, origin);
+    return okJsonCached(body, req, body.ttlSec);
   } catch (e) {
     console.error('[venues-tile] error:', e);
-    return bad(e?.message ?? "unknown error", 500, origin);
+    return badJSON(e?.message ?? "unknown error", req, 500);
   }
 });
