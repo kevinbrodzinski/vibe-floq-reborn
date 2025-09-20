@@ -1,6 +1,6 @@
 import { publishPresence } from '@/lib/presence/publishPresence';
 import { supabase } from '@/integrations/supabase/client';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -10,30 +10,49 @@ vi.mock('@/integrations/supabase/client', () => ({
         error: null 
       }),
     },
-    rpc: vi.fn().mockResolvedValue({ error: null }),
+    functions: {
+      invoke: vi.fn().mockResolvedValue({ data: { ok: true }, error: null }),
+    },
   },
 }));
 
 describe('publishPresence', () => {
   afterEach(() => {
-    vi.mocked(supabase.rpc).mockClear();
+    vi.mocked(supabase.functions.invoke).mockClear();
   });
 
-  it('calls upsert_presence with correct args', async () => {
-    await publishPresence(34, -118, 'excited');
+  it('calls upsert-presence edge function with correct args', async () => {
+    const result = await publishPresence(34, -118, 'excited');
 
-    expect(supabase.rpc).toHaveBeenCalledWith('upsert_presence', {
-      p_lat: 34,
-      p_lng: -118,
-      p_vibe: 'excited',
-      p_visibility: 'public',
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('upsert-presence', {
+      body: {
+        lat: 34,
+        lng: -118,
+        vibe: 'excited',
+        visibility: 'public',
+        venue_id: null,
+      },
     });
+    expect(result).toEqual({ ok: true });
   });
 
-  it('throws error when RPC fails', async () => {
-    const mockError = new Error('DB error');
-    vi.mocked(supabase.rpc).mockResolvedValueOnce({ error: mockError });
+  it('returns error result when edge function fails', async () => {
+    const mockError = { status: 500, message: 'Server error' };
+    vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({ error: mockError, data: null });
 
-    await expect(publishPresence(34, -118, 'excited')).rejects.toThrow('DB error');
+    const result = await publishPresence(34, -118, 'excited');
+    
+    expect(result).toEqual({ ok: false, reason: 'Server error' });
+  });
+
+  it('handles rate limit gracefully', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({ 
+      data: { ok: false, reason: 'rate_limit', retryAfterSec: 15 }, 
+      error: null 
+    });
+
+    const result = await publishPresence(34, -118, 'excited');
+    
+    expect(result).toEqual({ ok: false, reason: 'rate_limit', retryAfterSec: 15 });
   });
 });
