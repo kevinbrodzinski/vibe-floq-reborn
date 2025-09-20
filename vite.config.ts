@@ -63,8 +63,10 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // Ensure RN maps to RN Web
+        // Ensure RN maps to RN Web - multiple patterns to catch all cases
         'react-native$': 'react-native-web',
+        'react-native/': 'react-native-web/',
+        'react-native': 'react-native-web',
 
         // Point legacy RN paths directly to our fallback shims for now
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
@@ -94,6 +96,11 @@ export default defineConfig(({ mode, command }) => {
       },
 
       dedupe: ['react', 'react-dom', 'react-native-web'],
+    },
+
+    optimizeDeps: {
+      exclude: ['react-native'],
+      include: ['react-native-web'],
     },
   };
 });
