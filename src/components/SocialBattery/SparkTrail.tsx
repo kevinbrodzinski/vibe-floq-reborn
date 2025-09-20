@@ -30,15 +30,19 @@ export default function SparkTrail({
   }, [speedMs]);
 
   const sx = area.x * size, sy = area.y * size, w = area.w * size, h = area.h * size;
-  const dots = [];
+  const dots: JSX.Element[] = [];
   for (let i = 0; i < density; i++) {
-    const offset = (phase + i / density) % 1;      // 0..1 trail offset
+    const offset = (phase + i / Math.max(1, density)) % 1;  // 0..1 trail offset
     const x = sx + (i / Math.max(1, density - 1)) * w;
-    const y = sy + (1 - offset) * h;               // upward drift
+    const y = sy + (1 - offset) * h;                         // upward drift
     const r = 0.8 + (1 - offset) * 1.4;
     const o = 0.15 + (1 - offset) * 0.4;
     dots.push(<Circle key={i} cx={x} cy={y} r={r} fill={accent} opacity={o} />);
   }
 
-  return <Svg width={size} height={size} style={{ position:'absolute', left:0, top:0 }}>{dots}</Svg>;
+  return (
+    <Svg width={size} height={size} style={{ position:'absolute', left:0, top:0 }}>
+      {dots}
+    </Svg>
+  );
 }
