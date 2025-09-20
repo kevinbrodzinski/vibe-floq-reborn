@@ -66,7 +66,7 @@ export function okBinary(
   extra: Record<string, string> = {}
 ) {
   const { headers } = buildCorsHeaders(req);
-  return new Response(data, { status: 200, headers: { ...headers, ...extra } });
+  return new Response(data as any, { status: 200, headers: { ...headers, ...extra } });
 }
 
 // Legacy exports for backward compatibility
