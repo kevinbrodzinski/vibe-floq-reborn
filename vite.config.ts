@@ -3,6 +3,31 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 
+function rnwLegacyShims() {
+  const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
+  const LEGACY_CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
+  const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
+  const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
+  const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
+
+  return {
+    name: 'rnw-legacy-shims',
+    enforce: 'pre' as const,
+    resolveId(source: string) {
+      if (source === LEGACY_CGNC_RNWEB || source === LEGACY_CGNC_RN) {
+        return path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts');
+      }
+      if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
+        return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
+      }
+      if (RNSVG_FABRIC_NATIVE.test(source)) {
+        return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
+      }
+      return null;
+    },
+  };
+}
+
 /* ─────────────────────── Env helpers ─────────────────────── */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
 const DISABLE_HMR       = process.env.VITE_DEV_SOCKET;
@@ -53,6 +78,7 @@ export default defineConfig(({ mode, command }) => {
     },
 
     plugins: [
+      rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
       react(),
       mode === "development" && componentTagger(),
     ].filter(Boolean),
@@ -94,14 +120,12 @@ export default defineConfig(({ mode, command }) => {
       dedupe: ['react', 'react-dom', 'react-native-web'],
     },
 
-    // Prevent esbuild from trying to parse react-native's Flow/CJS
+    // 🔥 Important: Do NOT prebundle react-native-svg or react-native
     optimizeDeps: {
-      exclude: ['react-native'],
-      include: ['react-native-web'],
-      esbuildOptions: {
-        // Prefer browser fields during prebundle
-        mainFields: ['browser', 'module', 'main'],
-      },
+      noDiscovery: true,                  // Only prebundle what we say
+      include: ['react', 'react-dom', 'react-native-web'],
+      exclude: ['react-native', 'react-native-svg'],
+      esbuildOptions: { mainFields: ['browser', 'module', 'main'] },
     },
   };
 });
