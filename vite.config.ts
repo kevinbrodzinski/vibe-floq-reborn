@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 
+/** RN Web legacy deep imports used by react-native-svg (Fabric) */
 function rnwLegacyShims() {
   const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
   const LEGACY_CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
@@ -15,21 +16,22 @@ function rnwLegacyShims() {
     enforce: 'pre' as const,
     resolveId(source: string) {
       if (source === LEGACY_CGNC_RNWEB || source === LEGACY_CGNC_RN) {
-        return path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts');
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
       }
       if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
-        return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
       }
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
       }
-      // normalize rare ".js" variant to module id so optimizeDeps include hits
+      // normalize rare ".js" specifier to module id so optimizeDeps include hits
       if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
       return null;
     },
   };
 }
 
+/** Collapse any deep postgrest-js import to the package root (which we can control). */
 function postgrestCollapse() {
   const re = /^@supabase\/postgrest-js\/dist\/.+/;
   return {
@@ -42,115 +44,82 @@ function postgrestCollapse() {
   };
 }
 
-
-/* ─────────────────────── Env helpers ─────────────────────── */
+// HMR helpers for Lovable cloud
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
-const DISABLE_HMR       = process.env.VITE_DEV_SOCKET;
+const DISABLE_HMR_FLAG  = process.env.VITE_DEV_SOCKET === 'false';
 const IS_HOSTED_PREVIEW =
-  process.env.NODE_ENV === "production" ||
-  process.env.NEXT_PUBLIC_HOSTED_PREVIEW === "true";
+  process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_HOSTED_PREVIEW === 'true';
+const IS_SANDBOX =
+  process.env.VITE_SANDBOX === '1' || /sandbox\.lovable\.dev$/.test(process.env.HOST ?? '');
 
 export default defineConfig(({ mode, command }) => {
-  /* HMR logic */
-  const getHMRConfig = () => {
-    if (process.env.TARGET === "native" || command === "build") return false;
-    if (DISABLE_HMR === "false") return false;
-
-    // Detect sandbox environment and disable HMR to avoid 502s
-    const isSandbox = process.env.VITE_SANDBOX === '1'
-                   || /sandbox\.lovable\.dev$/.test(process.env.HOST ?? '')
-                   || IS_HOSTED_PREVIEW;
-
-    if (isSandbox) {
-      console.log('[Vite] Disabling HMR in sandbox environment');
-      return false;
-    }
-
-    if (PREVIEW_HMR_HOST) {
-      return { 
-        protocol: "wss", 
-        host: PREVIEW_HMR_HOST, 
-        port: 443, 
-        clientPort: 443,
-        overlay: false // silence error overlay in iframe
-      };
-    }
-    return true; // local dev
-  };
+  const hmr =
+    process.env.TARGET === 'native' || command === 'build'
+      ? false
+      : DISABLE_HMR_FLAG
+        ? false
+        : IS_SANDBOX || IS_HOSTED_PREVIEW
+          ? false
+          : PREVIEW_HMR_HOST
+            ? { protocol: 'wss', host: PREVIEW_HMR_HOST, port: 443, clientPort: 443, overlay: false }
+            : true;
 
   return {
-    server: {
-      host: "0.0.0.0",
-      port: 8080,
-      strictPort: true,
-      hmr: getHMRConfig(),
-    },
-
+    server: { host: '0.0.0.0', port: 8080, strictPort: true, hmr },
     define: {
       __DEV__: process.env.NODE_ENV !== 'production',
       global: 'globalThis',
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
-
     plugins: [
-      rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
-      postgrestCollapse(), // 👈 collapse any deep postgrest imports to root
+      rnwLegacyShims(),
+      postgrestCollapse(),
       react(),
-      mode === "development" && componentTagger(),
+      mode === 'development' && componentTagger(),
     ].filter(Boolean),
-
     resolve: {
       alias: {
-        // Project roots
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
+        // RN → RN Web in ALL cases (no $ suffix so CJS requires are caught too)
         'react-native': 'react-native-web',
 
-        // 2) react-native-svg 🤝 RN-Web (prefer real exports if present; shims are below)
+        // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
         'react-native/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
-
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
         'react-native-web/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
-
-        // Some deps deep-require svg/fabric → force non-fabric
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
 
-        // Normalize the rare ".js" specifier to the module id
+        // Normalize rare “.js” specifier
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
-
-        // Expo/native-only web stubs
-        'expo-application': 'expo-application/web',
-        'expo-constants': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        'expo-device': 'expo-device/build/Device.web',
-        'expo-asset': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        'react-native-mmkv': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+        // IMPORTANT: DO NOT ALIAS the postgrest package root to a deep path.
+        // We will intercept specific deep paths (ESM wrapper and CJS) and route them to our wrapper shim:
+        '@supabase/postgrest-js/dist/esm/wrapper.mjs':
+          path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
+        '@supabase/postgrest-js/dist/cjs/index.js':
+          path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
+        '@supabase/postgrest-js/dist/cjs/index.cjs':
+          path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
       },
-
       dedupe: ['react', 'react-dom', 'react-native-web'],
     },
-
-    /** 🔥 Prebundle the right things so jsx-runtime exports exist */
     optimizeDeps: {
-      // We control what's prebundled; don't auto-discover
       noDiscovery: true,
-      // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
       include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
-      // Never prebundle RN nor RNSVG (we shim them), exclude postgrest-js so package resolves at runtime
-      exclude: ['react-native', 'react-native-svg', '@supabase/postgrest-js'],
+      exclude: [
+        'react-native',
+        'react-native-svg',
+        '@supabase/postgrest-js', // let the package resolve at runtime; deep paths are handled by aliases above
+      ],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
-        // pick the browser condition if provided by deps
         conditions: ['browser', 'module', 'default'],
       },
     },
