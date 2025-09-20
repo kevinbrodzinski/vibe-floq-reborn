@@ -31,7 +31,7 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // Fix react-native-svg + RN Web compatibility with stubs
+      // Normalize react-native-svg + RN Web compatibility with stubs
       'react-native$': 'react-native-web',
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
         path.resolve(__dirname, './src/lib/stubs/codegenNativeComponent.js'),
@@ -41,6 +41,9 @@ export default defineConfig(({ mode, command }) => ({
         path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
       'react-native/Libraries/Utilities/codegenNativeCommands':
         path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
+      
+      // PostgREST shims - make main imports resolve to our shim but leave .cjs unaliased
+      '@supabase/postgrest-js': path.resolve(__dirname, './src/shims/postgrest-esm.js'),
     },
     dedupe: ['react', 'react-dom'],
   },

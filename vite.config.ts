@@ -124,11 +124,11 @@ export default defineConfig(({ mode, command }) => {
         // Normalize the rare ".js" specifier to the module id
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
-        // PostgREST shims - make ALL imports resolve to our safe shim
+        // PostgREST shims - make main imports and ESM wrapper resolve to our shim
+        // but leave the .cjs path unaliased so our shim can import from it
         '@supabase/postgrest-js': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
         '@supabase/postgrest-js/dist/esm/wrapper.mjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
         '@supabase/postgrest-js/dist/cjs/index.js': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
-        '@supabase/postgrest-js/dist/cjs/index.cjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
         '@supabase/postgrest-js/dist/cjs/index.mjs': path.resolve(__dirname, 'src/shims/postgrest-esm.js'),
 
         // Expo/native-only web stubs
