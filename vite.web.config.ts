@@ -3,6 +3,47 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+/** RN Web legacy deep imports used by react-native-svg (Fabric) */
+function rnwLegacyShims() {
+  const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
+  const LEGACY_CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
+  const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
+  const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
+  const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
+
+  return {
+    name: 'rnw-legacy-shims',
+    enforce: 'pre' as const,
+    resolveId(source: string) {
+      if (source === LEGACY_CGNC_RNWEB || source === LEGACY_CGNC_RN) {
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
+      }
+      if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
+      }
+      if (RNSVG_FABRIC_NATIVE.test(source)) {
+        return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
+      }
+      // normalize rare ".js" specifier to module id so optimizeDeps include hits
+      if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
+      return null;
+    },
+  };
+}
+
+/** Collapse any deep postgrest-js import to the package root (which we can control). */
+function postgrestCollapse() {
+  const re = /^@supabase\/postgrest-js\/dist\/.+/;
+  return {
+    name: 'postgrest-collapse',
+    enforce: 'pre' as const,
+    resolveId(id: string) {
+      if (re.test(id)) return '@supabase/postgrest-js';
+      return null;
+    },
+  };
+}
+
 // HMR configuration for Lovable cloud environment
 const PREVIEW_HMR_HOST = process.env.VITE_HMR_HOST;
 const DISABLE_HMR = process.env.VITE_DEV_SOCKET === 'false';
@@ -24,6 +65,8 @@ export default defineConfig(({ mode, command }) => ({
           : true,
   },
   plugins: [
+    rnwLegacyShims(),
+    postgrestCollapse(),
     react(),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
@@ -31,17 +74,45 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // Fix react-native-svg + RN Web compatibility with stubs
-      'react-native$': 'react-native-web',
+      // RN → RN Web in ALL cases (no $ suffix so CJS requires are caught too)
+      'react-native': 'react-native-web',
+      
+      // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
-        path.resolve(__dirname, './src/lib/stubs/codegenNativeComponent.js'),
+        path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
       'react-native/Libraries/Utilities/codegenNativeComponent':
-        path.resolve(__dirname, './src/lib/stubs/codegenNativeComponent.js'),
+        path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
       'react-native-web/Libraries/Utilities/codegenNativeCommands':
-        path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
+        path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
       'react-native/Libraries/Utilities/codegenNativeCommands':
-        path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
+        path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+      'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
+
+      // Normalize rare ".js" specifier
+      'react/jsx-runtime.js': 'react/jsx-runtime',
+
+      // IMPORTANT: DO NOT ALIAS the postgrest package root to a deep path.
+      // We will intercept specific deep paths (ESM wrapper and CJS) and route them to our wrapper shim:
+      '@supabase/postgrest-js/dist/esm/wrapper.mjs':
+        path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
+      '@supabase/postgrest-js/dist/cjs/index.js':
+        path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
+      '@supabase/postgrest-js/dist/cjs/index.cjs':
+        path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', 'react-native-web'],
+  },
+  optimizeDeps: {
+    noDiscovery: true,
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
+    exclude: [
+      'react-native',
+      'react-native-svg',
+      '@supabase/postgrest-js', // let the package resolve at runtime; deep paths are handled by aliases above
+    ],
+    esbuildOptions: {
+      mainFields: ['browser', 'module', 'main'],
+      conditions: ['browser', 'module', 'default'],
+    },
   },
 }));

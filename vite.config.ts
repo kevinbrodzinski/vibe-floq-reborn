@@ -96,7 +96,7 @@ export default defineConfig(({ mode, command }) => {
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
 
-        // Normalize rare “.js” specifier
+        // Normalize rare ".js" specifier
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
         // IMPORTANT: DO NOT ALIAS the postgrest package root to a deep path.
