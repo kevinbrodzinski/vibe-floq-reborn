@@ -1,20 +1,26 @@
 import path from 'path';
 
 export function rnWebSafetyPlugin() {
+  const RE_CODEGEN_NATIVE =
+    /^(react-native|react-native-web)\/Libraries\/Utilities\/codegenNativeComponent(?:\.js)?$/;
+  const RE_CODEGEN_COMMANDS =
+    /^(react-native|react-native-web)\/Libraries\/Utilities\/codegenNativeCommands(?:\.js)?$/;
+  const RE_ASSET_REGISTRY =
+    /^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/;
+  const RE_RNSVG_FABRIC_NATIVE =
+    /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
+
   return {
     name: 'rn-web-safety-plugin',
     enforce: 'pre' as const,
     resolveId(id: string) {
-      // Catch any RN codegen imports before alias resolution
-      if (id.includes('Libraries/Utilities/codegenNativeComponent')) {
+      if (RE_CODEGEN_NATIVE.test(id)) {
         return path.resolve(__dirname, '../lib/stubs/codegenNativeComponent.js');
       }
-      if (id.includes('Libraries/Utilities/codegenNativeCommands')) {
+      if (RE_CODEGEN_COMMANDS.test(id)) {
         return path.resolve(__dirname, '../lib/stubs/codegenNativeCommands.js');
       }
-      
-      // Asset registry imports
-      if (id.includes('AssetRegistry') || id.includes('@react-native/assets-registry')) {
+      if (RE_ASSET_REGISTRY.test(id)) {
         try {
           // @ts-ignore
           return require.resolve(
@@ -25,15 +31,10 @@ export function rnWebSafetyPlugin() {
           return path.resolve(__dirname, '../lib/stubs/AssetRegistry.js');
         }
       }
-
-      // SVG fabric native components
-      if (id.includes('react-native-svg/lib/module/fabric/') && id.includes('NativeComponent')) {
+      if (RE_RNSVG_FABRIC_NATIVE.test(id)) {
         return path.resolve(__dirname, '../lib/stubs/Noop.js');
       }
-
-      // Normalize rare jsx-runtime suffix
       if (id === 'react/jsx-runtime.js') return 'react/jsx-runtime';
-
       return null;
     },
   };
