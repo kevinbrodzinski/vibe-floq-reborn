@@ -1,11 +1,3 @@
-// Web stub for react-native-svg fabric native components
-// These are native-only components that don't exist in web builds
-
-export default function createNativeComponent() {
-  // Return a no-op function that matches the expected interface
-  return () => null;
-}
-
-// Also export any common fabric native component exports
-export const NativeComponent = createNativeComponent();
-export { createNativeComponent };
+// Used if any react-native-svg/lib/module/fabric/*NativeComponent.js slips through.
+// Export a Noop component so imports don't crash.
+export default function Noop(_props: any) { return null; }
