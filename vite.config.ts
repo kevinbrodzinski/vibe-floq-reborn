@@ -91,6 +91,9 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
+        // Supabase ESM resolution fix
+        '@supabase/postgrest-js': '@supabase/postgrest-js/dist/module/index.js',
+
         // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
         'react-native': 'react-native-web',
 
@@ -123,6 +126,8 @@ export default defineConfig(({ mode, command }) => {
       },
 
       dedupe: ['react', 'react-dom', 'react-native-web'],
+      conditions: ['browser', 'module', 'import', 'default'],
+      mainFields: ['browser', 'module', 'main'],
     },
 
     /** 🔥 Prebundle the right things so jsx-runtime exports exist */
@@ -130,7 +135,14 @@ export default defineConfig(({ mode, command }) => {
       // We control what's prebundled; don't auto-discover
       noDiscovery: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
+      include: [
+        'react', 
+        'react-dom', 
+        'react/jsx-runtime', 
+        'react-native-web',
+        '@supabase/supabase-js',
+        '@supabase/postgrest-js'
+      ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
       esbuildOptions: {

@@ -24,9 +24,7 @@ const baseClient = createClient<Database>(resolvedUrl, resolvedKey, {
   },
   global: {
     headers: { 
-      'X-Client-Info': 'floq-web v1.0',
-      'Accept-Profile': 'public',
-      'Range-Unit': 'items'
+      'X-Client-Info': 'floq-web v1.0'
     },
   },
   db: {

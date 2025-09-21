@@ -1,12 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { buildCors } from '../_shared/cors.ts';
 
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
+  const { preflight, json, error } = buildCors(req);
+  if (preflight) return preflight;
 
   try {
     console.log(`[clusters] ${req.method} request received`)
@@ -37,25 +34,13 @@ Deno.serve(async req => {
       bbox.some((n) => typeof n !== "number" || Number.isNaN(n))
     ) {
       console.error('[clusters] Invalid bbox:', bbox)
-      return new Response(
-        JSON.stringify({ error: "bbox must be [west,south,east,north] numbers" }),
-        {
-          status: 400,
-          headers: { ...cors, 'Content-Type': 'application/json' },
-        }
-      )
+      return error("bbox must be [west,south,east,north] numbers", 400);
     }
 
     // ✅ Validate precision
     if (typeof precision !== "number" || precision < 1 || precision > 8) {
       console.error('[clusters] Invalid precision:', precision)
-      return new Response(
-        JSON.stringify({ error: "precision must be 1–8" }),
-        {
-          status: 400,
-          headers: { ...cors, 'Content-Type': 'application/json' },
-        }
-      )
+      return error("precision must be 1–8", 400);
     }
 
     const [minLng, minLat, maxLng, maxLat] = bbox
@@ -76,27 +61,13 @@ Deno.serve(async req => {
 
     if (error) {
       console.error('[clusters] RPC error:', error)
-      return new Response(
-        JSON.stringify({ error: 'Database query failed', details: error.message }),
-        { 
-          status: 500, 
-          headers: { ...cors, 'Content-Type': 'application/json' }
-        }
-      )
+      return error('Database query failed', 500);
     }
 
     console.log(`[clusters] Successfully fetched ${data?.length || 0} clusters`)
-    return new Response(JSON.stringify(data ?? []), {
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    })
+    return json(data ?? [], 200, 300);
   } catch (err) {
     console.error('[clusters] Edge function error:', err)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: err.message }),
-      { 
-        status: 500, 
-        headers: { ...cors, 'Content-Type': 'application/json' }
-      }
-    )
+    return error('Internal server error', 500);
   }
 })
