@@ -4,26 +4,36 @@ import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 
 /** RN AssetRegistry shim - handles all import variants */
-function rnAssetRegistryShim() {
-  // Match both legacy RN deep path and the new package path
-  const RE = /^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/;
-
+function rnWebCompatibilityShim() {
   return {
-    name: 'rn-asset-registry-shim',
+    name: 'rn-web-compatibility-shim',
     enforce: 'pre' as const,
     resolveId(id: string) {
-      if (!RE.test(id)) return null;
-
-      // Try RN Web's AssetRegistry first (when present), else fallback to local stub
-      try {
-        const resolved = require.resolve(
-          'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
-          { paths: [__dirname] }
-        );
-        return resolved;
-      } catch {
-        return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+      // Handle AssetRegistry imports
+      if (/^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/.test(id)) {
+        try {
+          return require.resolve('react-native-web/dist/cjs/modules/AssetRegistry/index.js', { paths: [__dirname] });
+        } catch {
+          return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+        }
       }
+
+      // Handle react-native-svg fabric components that try to import TurboModuleRegistry
+      if (/^react-native-svg\/lib\/module\/fabric\//.test(id)) {
+        return path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js');
+      }
+
+      // Handle TurboModuleRegistry imports specifically
+      if (id.includes('TurboModuleRegistry') || id.endsWith('/TurboModuleRegistry')) {
+        return path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js');
+      }
+
+      // Handle react-native imports that might be missing exports
+      if (id === 'react-native') {
+        return path.resolve(__dirname, 'src/lib/stubs/ReactNativeWeb.js');
+      }
+
+      return null;
     },
   };
 }
@@ -97,7 +107,7 @@ export default defineConfig(({ mode, command }) => {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
     plugins: [
-      rnAssetRegistryShim(),          // 👈 add dedicated AssetRegistry shim first
+      rnWebCompatibilityShim(),       // 👈 comprehensive RN Web compatibility
       rnwLegacyShims(),
       postgrestCollapse(),
       react(),
@@ -108,8 +118,14 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // RN → RN Web in ALL cases (no $ suffix so CJS requires are caught too)
-        'react-native': 'react-native-web',
+        // RN → Enhanced RN Web (includes TurboModuleRegistry)
+        'react-native': path.resolve(__dirname, 'src/lib/stubs/ReactNativeWeb.js'),
+
+        // Direct fabric component aliases
+        'react-native-svg/lib/module/fabric/NativeSvgRenderableModule':
+          path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js'),
+        'react-native-svg/lib/module/fabric/NativeSvgViewModule': 
+          path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js'),
 
         // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
