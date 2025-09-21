@@ -31,8 +31,6 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // Supabase ESM resolution fix
-      '@supabase/postgrest-js': '@supabase/postgrest-js/dist/module/index.js',
       // Fix react-native-svg + RN Web compatibility with stubs
       'react-native$': 'react-native-web',
       'react-native-web/Libraries/Utilities/codegenNativeComponent':

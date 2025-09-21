@@ -91,9 +91,6 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // Supabase ESM resolution fix
-        '@supabase/postgrest-js': '@supabase/postgrest-js/dist/module/index.js',
-
         // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
         'react-native': 'react-native-web',
 
