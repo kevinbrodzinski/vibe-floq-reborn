@@ -54,19 +54,6 @@ function rnWebCompatibilityShim() {
 
       return null;
     },
-    load(id: string) {
-      // Intercept react-native-web to add TurboModuleRegistry export
-      if (id === 'react-native-web' || id.endsWith('/react-native-web/dist/index.js')) {
-        return `
-          export * from 'react-native-web';
-          export const TurboModuleRegistry = {
-            get(name) { return null; },
-            getEnforcing(name) { return { getConstants() { return {}; } }; }
-          };
-        `;
-      }
-      return null;
-    },
   };
 }
 
@@ -142,8 +129,8 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // RN → RN Web with TurboModuleRegistry export added via plugin
-      'react-native': 'react-native-web',
+      // RN → Enhanced RN Web with TurboModuleRegistry support
+      'react-native': path.resolve(__dirname, 'src/lib/stubs/ReactNativeWebEnhanced.js'),
       
       // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
