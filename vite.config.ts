@@ -4,27 +4,18 @@ import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 import { postgrestFixPlugin } from './src/vite/postgrest-fix-plugin';
 
-/** Intercept RN deep imports (codegen & rns-svg fabric) BEFORE Vite resolves them. */
+/** Intercept RN deep imports (rns-svg fabric) BEFORE Vite resolves them. */
 function rnWebSafetyPlugin() {
-  const CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
-  const CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
-  const CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
-  const CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
-
   return {
     name: 'rn-web-safety-plugin',
     enforce: 'pre' as const,
     resolveId(source: string) {
-      if (source === CGNC_RNWEB || source === CGNC_RN) {
-        return path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts');
-      }
-      if (source === CMDS_RNWEB || source === CMDS_RN) {
-        return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
-      }
+      // Any Fabric-native component file → Noop on web
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
       }
+      // Normalize rare ".js" variant of jsx-runtime
       if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
       return null;
     },
@@ -80,11 +71,9 @@ export default defineConfig(({ mode, command }) => {
         'react-native/index.js': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
         'react-native/index':    path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
 
-        // RN codegen stubs (belt & suspenders)
-        'react-native/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
-        'react-native/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+        // Fabric folder prefix → Noop (belt & suspenders)
+        'react-native-svg/lib/module/fabric':
+          path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts'),
 
         // RNW vendor TurboModuleRegistry callsites → stub
         'react-native-web/dist/vendor/react-native/Utilities/TurboModuleRegistry':
