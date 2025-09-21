@@ -125,14 +125,24 @@ export default defineConfig(({ mode, command }) => {
       dedupe: ['react', 'react-dom', 'react-native-web'],
     },
 
-    /** 🔥 Prebundle the right things so jsx-runtime exports exist */
     optimizeDeps: {
       // We control what's prebundled; don't auto-discover
       noDiscovery: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web', '@supabase/postgrest-js', 'lodash.throttle'],
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react-native-web',
+        '@supabase/postgrest-js',
+        'lodash.throttle',                // 👈 add this
+      ],
       // Never prebundle RN nor RNSVG (we shim them)
-      exclude: ['react-native', 'react-native-svg'],
+      exclude: [
+        'react-native',
+        'react-native-svg',
+        '@react-native/assets-registry',
+      ],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
         // pick the browser condition if provided by deps
