@@ -3,6 +3,31 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 
+// NEW: catch codegen native imports early
+function rnCodegenShim() {
+  const CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
+  const CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
+  const CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
+  const CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
+
+  return {
+    name: 'rn-codegen-shim',
+    enforce: 'pre' as const,
+    resolveId(id: string) {
+      if (id === CGNC_RN || id === CGNC_RNWEB) {
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
+      }
+      if (id === CMDS_RN || id === CMDS_RNWEB) {
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
+      }
+      // Some packages normalize .js explicitly
+      if (id === `${CGNC_RN}.js`)    return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
+      if (id === `${CMDS_RN}.js`)    return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
+      return null;
+    },
+  };
+}
+
 /** RN AssetRegistry shim - handles all import variants */
 function postgrestFix() {
   const CJS = /^@supabase\/postgrest-js\/dist\/cjs\/index\.(js|cjs|mjs)$/;
@@ -131,6 +156,7 @@ export default defineConfig(({ mode, command }) => {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
     plugins: [
+      rnCodegenShim(),                 // 👈 add this first to catch codegen imports
       rnwLegacyShims(),
       postgrestFix(),                  // 👈 fix postgrest deep imports
       react(),
@@ -188,7 +214,7 @@ export default defineConfig(({ mode, command }) => {
       ],
       exclude: [
         'react-native',                              // ✅ handled by our shim
-        'react-native-svg',
+        'react-native-svg',                          // ✅ let plugin/aliases handle deep RN paths
         '@react-native/assets-registry',             // ✅ handled by alias
       ],
       esbuildOptions: {
