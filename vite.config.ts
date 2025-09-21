@@ -6,36 +6,59 @@ import { componentTagger } from 'lovable-tagger';
 import { postgrestFixPlugin } from './src/vite/postgrest-fix-plugin';
 
 /**
- * Intercept problematic RN deep imports (codegen & rns-svg fabric) before Vite resolves them.
- * Point to local stubs that are web-safe.
+ * Catch React-Native deep imports that break web builds and route them
+ * to web-safe stubs BEFORE Vite tries to resolve/transform them.
  */
-function rnwLegacyShims() {
+function rnWebSafetyPlugin() {
   const CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
   const CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
   const CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
   const CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
+
+  // Flow-based AssetRegistry & the RN package version
+  const ASSET_REG_RN   = 'react-native/Libraries/Image/AssetRegistry';
+  const ASSET_REG_PKG  = '@react-native/assets-registry/registry';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
 
   return {
-    name: 'rnw-legacy-shims',
+    name: 'rn-web-safety-plugin',
     enforce: 'pre' as const,
     resolveId(source: string) {
+      // RN codegen (native components / commands) → local stubs
       if (source === CGNC_RNWEB || source === CGNC_RN) {
         return path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts');
       }
       if (source === CMDS_RNWEB || source === CMDS_RN) {
         return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
       }
+
+      // RN svg fabric native components → no-op (do not attempt codegen in web)
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
       }
+
+      // AssetRegistry → prefer RNW CJS impl, else fall back to local stub
+      if (source === ASSET_REG_RN || source === `${ASSET_REG_RN}.js` || source === ASSET_REG_PKG) {
+        try {
+          // @ts-ignore - resolve from project root
+          return require.resolve(
+            'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
+            { paths: [process.cwd()] }
+          );
+        } catch {
+          return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+        }
+      }
+
+      // Normalize rare ".js" variant of jsx-runtime
       if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
+
       return null;
     },
   };
 }
 
-/* ─────────────────────── Env helpers ─────────────────────── */
+/* ─────────────────────── Env / HMR helpers ─────────────────────── */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
 const DISABLE_HMR       = process.env.VITE_DEV_SOCKET;
 const IS_HOSTED_PREVIEW =
@@ -53,7 +76,7 @@ export default defineConfig(({ mode, command }) => {
       IS_HOSTED_PREVIEW;
 
     if (isSandbox) {
-      console.log('[Vite] Disabling HMR in sandbox environment');
+      console.log('[Vite] Disabling HMR in sandbox/hosted preview');
       return false;
     }
 
@@ -66,7 +89,7 @@ export default defineConfig(({ mode, command }) => {
         overlay: false,
       };
     }
-    return true;
+    return true; // local dev
   };
 
   return {
@@ -85,7 +108,7 @@ export default defineConfig(({ mode, command }) => {
 
     plugins: [
       postgrestFixPlugin(), // collapse deep postgrest imports → package root
-      rnwLegacyShims(),     // intercept RN deep codegen + rns-svg fabric
+      rnWebSafetyPlugin(),  // intercept RN deep imports (codegen, AssetRegistry, rns-svg fabric)
       react(),
       mode === 'development' && componentTagger(),
     ].filter(Boolean),
@@ -97,11 +120,14 @@ export default defineConfig(({ mode, command }) => {
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
         /**
-         * IMPORTANT: exact match only.
-         * Bare 'react-native' resolves to our shim which re-exports RN Web + named TurboModuleRegistry,
-         * but deep imports like 'react-native/Libraries/*' are left alone and handled by the pre-plugin.
+         * IMPORTANT:
+         *  - Exact-match 'react-native' → shim that re-exports RN Web and adds a named TurboModuleRegistry.
+         *  - Also catch explicit entry imports ('react-native/index'|'.js').
+         *  - Do NOT rewrite deep RN subpaths here; the pre-plugin handles those.
          */
         'react-native$': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
+        'react-native/index.js': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
+        'react-native/index':    path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
 
         // RN codegen stubs (belt & suspenders; pre-plugin already handles these)
         'react-native/Libraries/Utilities/codegenNativeComponent':
@@ -109,7 +135,7 @@ export default defineConfig(({ mode, command }) => {
         'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
 
-        // RNW vendor TurboModuleRegistry callsites → stub
+        // RNW vendor TurboModuleRegistry callsites → stub (used by Animated & sometimes rns-svg)
         'react-native-web/dist/vendor/react-native/Utilities/TurboModuleRegistry':
           path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
         'react-native-web/dist/vendor/react-native/Animated/TurboModuleRegistry':
@@ -118,7 +144,7 @@ export default defineConfig(({ mode, command }) => {
         // Normalize rare ".js" specifier for jsx-runtime
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
-        // Expo/native-only web stubs
+        // Expo/native-only web stubs (keep as needed)
         'expo-application': 'expo-application/web',
         'expo-constants': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-device': 'expo-device/build/Device.web',
@@ -132,6 +158,7 @@ export default defineConfig(({ mode, command }) => {
       dedupe: ['react', 'react-dom', 'react-native-web', 'use-sync-external-store'],
     },
 
+    /** Prebundle the right things so jsx-runtime + postgrest interop exist in dev */
     optimizeDeps: {
       noDiscovery: true,
       include: [
@@ -139,7 +166,9 @@ export default defineConfig(({ mode, command }) => {
         'react-dom',
         'react/jsx-runtime',
         'react-native-web',
-        '@supabase/postgrest-js', // prebundle root for CJS interop
+        '@supabase/postgrest-js',   // prebundle PACKAGE ROOT (not deep files)
+        // add other CJS micro-libs here if needed:
+        // 'lodash.throttle',
       ],
       exclude: [
         'react-native',
@@ -152,6 +181,7 @@ export default defineConfig(({ mode, command }) => {
       },
     },
 
+    /** Ensure CJS default interop in prod build */
     build: {
       commonjsOptions: {
         defaultIsModuleExports: true,
