@@ -2,7 +2,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
 import { checkRateLimitV2 } from "../_shared/helpers.ts";
-import { handlePreflight, noContent, badJSON } from "../_shared/cors.ts";
+import { handlePreflight, okJSON, badJSON } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return noContent(req);
+    return okJSON(null, req, 204);
 
   } catch (error) {
     console.error("Presence function error:", error);
