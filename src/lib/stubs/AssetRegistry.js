@@ -18,4 +18,7 @@ const AssetRegistry = {
   },
 };
 
+// Named exports for compatibility with different import patterns
+export const { registerAsset, getAssetByID, getAssetByIDForJS } = AssetRegistry;
+
 export default AssetRegistry;

@@ -18,5 +18,5 @@ export const TurboModuleRegistry = {
   },
 };
 
-// Ensure default export is preserved
-export default RNWeb.default || RNWeb;
+// Export react-native-web as default (it doesn't have its own default export)
+export default RNWeb;

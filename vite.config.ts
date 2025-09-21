@@ -137,10 +137,13 @@ export default defineConfig(({ mode, command }) => {
       react(),
       mode === 'development' && componentTagger(),
     ].filter(Boolean),
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, 'src'),
-        '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, 'src'),
+          '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
+
+          // Asset registry alias for expo-asset compatibility
+          '@react-native/assets-registry/registry': path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js'),
 
 
         // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
@@ -154,8 +157,6 @@ export default defineConfig(({ mode, command }) => {
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native/Libraries/Image/AssetRegistry':
           'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
-        '@react-native/assets-registry/registry':
-          path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js'),
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
         
         // React Native MMKV stub
