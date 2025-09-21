@@ -2,11 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
-import * as throttleMod from 'lodash.throttle';
-const throttle: (fn: (...args: any[]) => any, wait?: number, options?: any) =>
-  ((...args: any[]) => any) =
-  // prefer default when available, otherwise use the module itself (CJS export)
-  ( (throttleMod as any).default ?? (throttleMod as any) );
+import throttle from 'lodash.throttle';
 
 interface EventNotification {
   id: string;

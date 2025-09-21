@@ -2,10 +2,6 @@
 // This entry point is used for web development and deployment
 // DO NOT import this in native code - use src/main.native.tsx instead
 
-import '@/lib/analytics/preview-guard';
-import '@/lib/security/preview-message-firewall';
-import '@/lib/dev/preview-console-filter';
-
 // 🔧 CRITICAL: Apply DataCloneError fix FIRST before any other code
 import './lib/debug/consoleGuard';
 
