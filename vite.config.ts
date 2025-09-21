@@ -122,7 +122,7 @@ export default defineConfig(({ mode, command }) => {
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
       },
 
-      dedupe: ['react', 'react-dom', 'react-native-web'],
+      dedupe: ['react', 'react-dom', 'react-native-web', 'use-sync-external-store'],
     },
 
     optimizeDeps: {
