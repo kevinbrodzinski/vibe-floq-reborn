@@ -4,6 +4,19 @@ import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 
 /** RN AssetRegistry shim - handles all import variants */
+function postgrestFix() {
+  const CJS = /^@supabase\/postgrest-js\/dist\/cjs\/index\.(js|cjs|mjs)$/;
+  const WRAP = '@supabase/postgrest-js/dist/esm/wrapper.mjs';
+  return {
+    name: 'postgrest-fix',
+    enforce: 'pre' as const,
+    resolveId(id: string) {
+      if (id === WRAP || CJS.test(id)) return '@supabase/postgrest-js';
+      return null;
+    },
+  };
+}
+
 function rnWebCompatibilityShim() {
   return {
     name: 'rn-web-compatibility-shim',
@@ -110,7 +123,7 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       rnWebCompatibilityShim(),       // 👈 comprehensive RN Web compatibility
       rnwLegacyShims(),
-      postgrestCollapse(),
+      postgrestFix(),                  // 👈 fix postgrest deep imports
       react(),
       mode === 'development' && componentTagger(),
     ].filter(Boolean),

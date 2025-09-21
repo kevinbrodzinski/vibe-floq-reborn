@@ -2,7 +2,21 @@
 // Handles missing exports that react-native-svg and other RN packages expect
 
 import * as RNWeb from 'react-native-web';
-import { TurboModuleRegistry } from './TurboModuleRegistry.js';
+
+// Export everything from react-native-web first
+export * from 'react-native-web';
+
+// Add TurboModuleRegistry for react-native-svg fabric components
+export const TurboModuleRegistry = {
+  get(name) {
+    return null;
+  },
+  getEnforcing(name) {
+    return {
+      getConstants() { return {}; },
+    };
+  },
+};
 
 // Create a comprehensive React Native Web export that includes missing pieces
 const ReactNativeWebEnhanced = {
@@ -32,7 +46,4 @@ const ReactNativeWebEnhanced = {
   },
 };
 
-// Export everything
-export * from 'react-native-web';
-export { TurboModuleRegistry };
 export default ReactNativeWebEnhanced;

@@ -17,5 +17,8 @@ const TurboModuleRegistry = {
   },
 };
 
+// Export both named and default to satisfy different import patterns
 export { TurboModuleRegistry };
+export const get = TurboModuleRegistry.get;
+export const getEnforcing = TurboModuleRegistry.getEnforcing;
 export default TurboModuleRegistry;
