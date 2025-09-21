@@ -11,7 +11,7 @@ export function buildCorsHeaders(req: Request) {
 
   const headers: Record<string, string> = {
     'Access-Control-Allow-Origin': origin,
-    'Vary': 'Origin, Access-Control-Request-Headers',
+    'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': headerSet.join(', '),
     'Access-Control-Max-Age': '86400', // 24h
@@ -53,6 +53,16 @@ export function badJSON(message: string, req: Request, status = 400) {
     status,
     headers: { ...headers, 'content-type': 'application/json' },
   });
+}
+
+export function noContent(req: Request, status = 204) {
+  const { headers } = buildCorsHeaders(req);
+  return new Response(null, { status, headers });
+}
+
+export function okBinary(data: ArrayBuffer | Uint8Array, req: Request, extra: Record<string, string> = {}) {
+  const { headers } = buildCorsHeaders(req);
+  return new Response(data, { status: 200, headers: { ...headers, ...extra } });
 }
 
 // Legacy exports for backward compatibility
