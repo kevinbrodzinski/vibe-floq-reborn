@@ -124,29 +124,31 @@ export default defineConfig(({ mode, command }) => ({
       // Normalize rare ".js" specifier
       'react/jsx-runtime.js': 'react/jsx-runtime',
 
-      // IMPORTANT: DO NOT ALIAS the postgrest package root to a deep path.
-      // We will intercept specific deep paths (ESM wrapper and CJS) and route them to our wrapper shim:
-      '@supabase/postgrest-js/dist/esm/wrapper.mjs':
-        path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
-      '@supabase/postgrest-js/dist/cjs/index.js':
-        path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
-      '@supabase/postgrest-js/dist/cjs/index.cjs':
-        path.resolve(__dirname, 'src/shims/postgrest-wrapper-shim.js'),
+      // IMPORTANT: REMOVE postgrest deep path aliases - let prebundling handle it
     },
     dedupe: ['react', 'react-dom', 'react-native-web'],
   },
-  optimizeDeps: {
-    noDiscovery: true,
-    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
-    exclude: [
-      'react-native',
-      'react-native-svg',
-      '@react-native/assets-registry', // do not prebundle this, let the shim resolve it
-      '@supabase/postgrest-js', // let the package resolve at runtime; deep paths are handled by aliases above
-    ],
-    esbuildOptions: {
-      mainFields: ['browser', 'module', 'main'],
-      conditions: ['browser', 'module', 'default'],
+    optimizeDeps: {
+      noDiscovery: true,
+      include: [
+        'react', 'react-dom', 'react/jsx-runtime', 'react-native-web',
+        '@supabase/postgrest-js',                 // ✅ let esbuild wrap CJS → ESM
+      ],
+      exclude: [
+        'react-native',
+        'react-native-svg',
+        '@react-native/assets-registry', // do not prebundle this, let the shim resolve it
+      ],
+      esbuildOptions: {
+        mainFields: ['browser', 'module', 'main'],
+        conditions: ['browser', 'module', 'default'],
+      },
     },
-  },
+    build: {
+      // Ensure commonjs default interop in the production bundle
+      commonjsOptions: {
+        defaultIsModuleExports: true,
+        transformMixedEsModules: true,
+      },
+    },
 }));
