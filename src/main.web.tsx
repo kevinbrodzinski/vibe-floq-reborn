@@ -2,9 +2,6 @@
 // This entry point is used for web development and deployment
 // DO NOT import this in native code - use src/main.native.tsx instead
 
-// 🔧 CRITICAL: Analytics preview guard FIRST to avoid device-mode timeouts
-import '@/lib/analytics/preview-guard';
-
 // 🔧 CRITICAL: Apply DataCloneError fix FIRST before any other code
 import './lib/debug/consoleGuard';
 

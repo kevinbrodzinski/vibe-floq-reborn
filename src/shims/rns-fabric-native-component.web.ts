@@ -1,11 +1,3 @@
-// React Native SVG Fabric native component stub for web
-// Prevents errors when RN SVG tries to import Fabric components in web environment
-
-function createNativeComponent() {
-  // Return a minimal stub that satisfies the import
-  return null;
-}
-
-// Export as both default and named export
-export default createNativeComponent;
-export { createNativeComponent };
+// Used if any react-native-svg/lib/module/fabric/*NativeComponent.js slips through.
+// Export a Noop component so imports don't crash.
+export default function Noop(_props: any) { return null; }

@@ -1,38 +1,62 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Vibe } from '@/lib/vibes';
 
-export type PresenceResult = { ok: boolean; reason?: string; retryAfterSec?: number };
-
 export async function publishPresence(
   lat: number,
   lng: number,
   vibe: Vibe,
   visibility: 'public' | 'friends' = 'public',
-): Promise<PresenceResult> {
+) {
+  // Check authentication
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    console.warn('[publishPresence] not authenticated');
-    return { ok:false, reason:'unauthorized' };
+    console.error('[publishPresence] User not authenticated');
+    throw new Error('User must be authenticated to update presence');
   }
 
-  if (!Number.isFinite(lat) || lat < -90 || lat > 90)  return { ok:false, reason:'invalid_lat' };
-  if (!Number.isFinite(lng) || lng < -180 || lng > 180) return { ok:false, reason:'invalid_lng' };
+  // Validate parameters
+  if (typeof lat !== 'number' || isNaN(lat) || lat < -90 || lat > 90) {
+    console.error('[publishPresence] Invalid latitude:', lat);
+    throw new Error('Invalid latitude provided');
+  }
+  
+  if (typeof lng !== 'number' || isNaN(lng) || lng < -180 || lng > 180) {
+    console.error('[publishPresence] Invalid longitude:', lng);
+    throw new Error('Invalid longitude provided');
+  }
+  
+  if (!vibe || typeof vibe !== 'string') {
+    console.error('[publishPresence] Invalid vibe:', vibe);
+    throw new Error('Vibe must be a non-empty string');
+  }
+  
+  if (!['public', 'friends'].includes(visibility)) {
+    console.error('[publishPresence] Invalid visibility:', visibility);
+    throw new Error('Visibility must be either "public" or "friends"');
+  }
 
-  const { data, error } = await supabase.functions.invoke('upsert-presence', {
-    body: { lat, lng, vibe, visibility, venue_id: null }
+  // Log parameters being sent
+  console.log('[publishPresence] Calling upsert_presence with:', {
+    profile_id: user.id,
+    p_venue_id: null,
+    p_lat: lat,
+    p_lng: lng,
+    p_vibe: vibe,
+    p_visibility: visibility,
+  });
+
+  const { error } = await supabase.rpc('upsert_presence', {
+    p_lat: lat,
+    p_lng: lng,
+    p_vibe: vibe,
+    p_visibility: visibility,
   });
 
   if (error) {
-    // Treat 429 like soft fail; caller will backoff
-    const status = (error as any)?.status;
-    if (status === 429) return { ok:false, reason:'rate_limit', retryAfterSec: 15 };
-    console.warn('[publishPresence] edge error:', error);
-    return { ok:false, reason:(error as any)?.message ?? 'edge_error' };
+    console.error('[publishPresence] RPC error:', error);
+    // TODO: add exponential back-off + Sentry breadcrumb
+    throw error;
   }
 
-  if (data?.ok === false) {
-    return { ok:false, reason: data.reason, retryAfterSec: data.retryAfterSec };
-  }
-
-  return { ok:true };
+  console.log('[publishPresence] Successfully updated presence');
 }
