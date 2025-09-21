@@ -22,13 +22,29 @@ function rnWebCompatibilityShim() {
     name: 'rn-web-compatibility-shim',
     enforce: 'pre' as const,
     resolveId(id: string) {
-      // Handle AssetRegistry imports
-      if (/^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/.test(id)) {
-        try {
-          return require.resolve('react-native-web/dist/cjs/modules/AssetRegistry/index.js', { paths: [__dirname] });
-        } catch {
-          return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+      // Handle ALL react-native deep imports that don't exist in react-native-web
+      if (id.startsWith('react-native/Libraries/')) {
+        // Specific deep imports we have stubs for
+        if (id === 'react-native/Libraries/Utilities/codegenNativeComponent') {
+          return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
         }
+        if (id === 'react-native/Libraries/Utilities/codegenNativeCommands') {
+          return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
+        }
+        if (id === 'react-native/Libraries/Image/AssetRegistry') {
+          try {
+            return require.resolve('react-native-web/dist/cjs/modules/AssetRegistry/index.js', { paths: [__dirname] });
+          } catch {
+            return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+          }
+        }
+        // For any other deep imports, return null to let other plugins/aliases handle
+        return null;
+      }
+
+      // Handle AssetRegistry imports
+      if (/^@react-native\/assets-registry\/registry(?:\.js)?$/.test(id)) {
+        return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
       }
 
       // Handle react-native-svg fabric components that try to import TurboModuleRegistry
@@ -36,13 +52,19 @@ function rnWebCompatibilityShim() {
         return path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js');
       }
 
-      // Handle specific deep imports that don't exist in react-native-web
-      if (id === 'react-native/Libraries/Utilities/codegenNativeComponent') {
-        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
+      return null;
+    },
+    load(id: string) {
+      // Intercept react-native-web to add TurboModuleRegistry export
+      if (id === 'react-native-web' || id.endsWith('/react-native-web/dist/index.js')) {
+        return `
+          export * from 'react-native-web';
+          export const TurboModuleRegistry = {
+            get(name) { return null; },
+            getEnforcing(name) { return { getConstants() { return {}; } }; }
+          };
+        `;
       }
-
-      // TurboModuleRegistry is now handled by the enhanced ReactNativeWeb module
-
       return null;
     },
   };
@@ -120,8 +142,8 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // RN → Enhanced RN Web (with TurboModuleRegistry and other missing exports)
-      'react-native': path.resolve(__dirname, 'src/lib/stubs/ReactNativeWebEnhanced.js'),
+      // RN → RN Web with TurboModuleRegistry export added via plugin
+      'react-native': 'react-native-web',
       
       // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
