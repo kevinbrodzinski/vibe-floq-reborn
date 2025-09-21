@@ -2,76 +2,59 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
+import { postgrestFixPlugin } from './src/vite/postgrest-fix-plugin';
 
-function rnwLegacyShims() {
-  const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
-  const LEGACY_CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
-  const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
-  const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
+/** Intercept RN deep imports (codegen & rns-svg fabric) BEFORE Vite resolves them. */
+function rnWebSafetyPlugin() {
+  const CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
+  const CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
+  const CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
+  const CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
 
   return {
-    name: 'rnw-legacy-shims',
+    name: 'rn-web-safety-plugin',
     enforce: 'pre' as const,
     resolveId(source: string) {
-      if (source === LEGACY_CGNC_RNWEB || source === LEGACY_CGNC_RN) {
+      if (source === CGNC_RNWEB || source === CGNC_RN) {
         return path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts');
       }
-      if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
+      if (source === CMDS_RNWEB || source === CMDS_RN) {
         return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
       }
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
       }
-      // normalize rare ".js" variant to module id so optimizeDeps include hits
       if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
       return null;
     },
   };
 }
 
-/* ─────────────────────── Env helpers ─────────────────────── */
+/* HMR helpers */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
 const DISABLE_HMR       = process.env.VITE_DEV_SOCKET;
 const IS_HOSTED_PREVIEW =
-  process.env.NODE_ENV === "production" ||
-  process.env.NEXT_PUBLIC_HOSTED_PREVIEW === "true";
+  process.env.NODE_ENV === 'production' ||
+  process.env.NEXT_PUBLIC_HOSTED_PREVIEW === 'true';
 
 export default defineConfig(({ mode, command }) => {
-  /* HMR logic */
-  const getHMRConfig = () => {
-    if (process.env.TARGET === "native" || command === "build") return false;
-    if (DISABLE_HMR === "false") return false;
-
-    // Detect sandbox environment and disable HMR to avoid 502s
-    const isSandbox = process.env.VITE_SANDBOX === '1'
-                   || /sandbox\.lovable\.dev$/.test(process.env.HOST ?? '')
-                   || IS_HOSTED_PREVIEW;
-
-    if (isSandbox) {
-      console.log('[Vite] Disabling HMR in sandbox environment');
-      return false;
-    }
-
+  const getHMR = () => {
+    if (process.env.TARGET === 'native' || command === 'build') return false;
+    if (DISABLE_HMR === 'false') return false;
+    const isSandbox =
+      process.env.VITE_SANDBOX === '1' ||
+      /sandbox\.lovable\.dev$/.test(process.env.HOST ?? '') ||
+      IS_HOSTED_PREVIEW;
+    if (isSandbox) return false;
     if (PREVIEW_HMR_HOST) {
-      return { 
-        protocol: "wss", 
-        host: PREVIEW_HMR_HOST, 
-        port: 443, 
-        clientPort: 443,
-        overlay: false // silence error overlay in iframe
-      };
+      return { protocol: 'wss', host: PREVIEW_HMR_HOST, port: 443, clientPort: 443, overlay: false };
     }
-    return true; // local dev
+    return true;
   };
 
   return {
-    server: {
-      host: "0.0.0.0",
-      port: 8080,
-      strictPort: true,
-      hmr: getHMRConfig(),
-    },
+    server: { host: '0.0.0.0', port: 8080, strictPort: true, hmr: getHMR() },
 
     define: {
       __DEV__: process.env.NODE_ENV !== 'production',
@@ -80,38 +63,38 @@ export default defineConfig(({ mode, command }) => {
     },
 
     plugins: [
-      rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
+      postgrestFixPlugin(), // collapse deep postgrest imports → package root
+      rnWebSafetyPlugin(),  // intercept RN deep imports
       react(),
-      mode === "development" && componentTagger(),
+      mode === 'development' && componentTagger(),
     ].filter(Boolean),
 
     resolve: {
       alias: {
-        // Project roots
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
-        'react-native': 'react-native-web',
+        // Exact-match 'react-native' → RNW shim (adds TurboModuleRegistry)
+        'react-native$': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
+        // Catch explicit entry imports too
+        'react-native/index.js': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
+        'react-native/index':    path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
 
-        // 2) react-native-svg 🤝 RN-Web (prefer real exports if present; shims are below)
-        'react-native-web/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+        // RN codegen stubs (belt & suspenders)
         'react-native/Libraries/Utilities/codegenNativeComponent':
           path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
-
-        'react-native-web/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
 
-        // Some deps deep-require svg/fabric → force non-fabric
-        'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
+        // RNW vendor TurboModuleRegistry callsites → stub
+        'react-native-web/dist/vendor/react-native/Utilities/TurboModuleRegistry':
+          path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
+        'react-native-web/dist/vendor/react-native/Animated/TurboModuleRegistry':
+          path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
 
-        // Normalize the rare ".js" specifier to the module id
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
-        // Expo/native-only web stubs
+        // Optional native stubs you already had
         'expo-application': 'expo-application/web',
         'expo-constants': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-device': 'expo-device/build/Device.web',
@@ -121,22 +104,26 @@ export default defineConfig(({ mode, command }) => {
         '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
       },
-
-      dedupe: ['react', 'react-dom', 'react-native-web'],
+      dedupe: ['react', 'react-dom', 'react-native-web', 'use-sync-external-store'],
     },
 
-    /** 🔥 Prebundle the right things so jsx-runtime exports exist */
     optimizeDeps: {
-      // We control what's prebundled; don't auto-discover
       noDiscovery: true,
-      // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
-      // Never prebundle RN nor RNSVG (we shim them)
-      exclude: ['react-native', 'react-native-svg'],
+      include: [
+        'react', 'react-dom', 'react/jsx-runtime', 'react-native-web',
+        '@supabase/postgrest-js',
+      ],
+      exclude: ['react-native', 'react-native-svg', '@react-native/assets-registry'],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
-        // pick the browser condition if provided by deps
         conditions: ['browser', 'module', 'default'],
+      },
+    },
+
+    build: {
+      commonjsOptions: {
+        defaultIsModuleExports: true,
+        transformMixedEsModules: true,
       },
     },
   };
