@@ -25,16 +25,29 @@ export default defineConfig(({ mode, command }) => {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
     plugins: [
-      rnWebSafetyPlugin(), // intercept RN deep imports
-      postgrestFix(),      // collapse deep postgrest → package root
+      rnWebSafetyPlugin(),   // RN deep import interposer (codegen, AssetRegistry, rns-svg fabric)
+      postgrestFix(),        // collapse deep postgrest → root
       react(),
     ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
+
+        // RN → RN Web (+ TurboModuleRegistry)
         'react-native': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
-        'react/jsx-runtime.js': 'react/jsx-runtime',
+
+        // Belt-and-suspenders for RN codegen (plugin will also catch these)
+        'react-native/Libraries/Utilities/codegenNativeComponent':
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
+        'react-native/Libraries/Utilities/codegenNativeCommands':
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+
+        // RNW vendor TurboModuleRegistry callsites → stub
+        'react-native-web/dist/vendor/react-native/Utilities/TurboModuleRegistry':
+          path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
+        'react-native-web/dist/vendor/react-native/Animated/TurboModuleRegistry':
+          path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
       },
       dedupe: ['react', 'react-dom', 'react-native-web'],
     },

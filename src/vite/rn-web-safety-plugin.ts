@@ -1,7 +1,6 @@
 import path from 'path';
 
 export function rnWebSafetyPlugin() {
-  // match common RN deep imports that break web builds
   const RE_CODEGEN_NATIVE =
     /^(react-native|react-native-web)\/Libraries\/Utilities\/codegenNativeComponent(?:\.js)?$/;
   const RE_CODEGEN_COMMANDS =
@@ -15,7 +14,7 @@ export function rnWebSafetyPlugin() {
     name: 'rn-web-safety-plugin',
     enforce: 'pre' as const,
     resolveId(id: string) {
-      // codegen stubs
+      // 1) RN codegen shims
       if (RE_CODEGEN_NATIVE.test(id)) {
         return path.resolve(__dirname, '../lib/stubs/codegenNativeComponent.js');
       }
@@ -23,23 +22,25 @@ export function rnWebSafetyPlugin() {
         return path.resolve(__dirname, '../lib/stubs/codegenNativeCommands.js');
       }
 
-      // asset registry: try RN-web's CJS, else local stub
+      // 2) AssetRegistry — prefer RN Web CJS, else local stub
       if (RE_ASSET_REGISTRY.test(id)) {
         try {
-          // prefer RN-web impl if present
           // @ts-ignore
-          return require.resolve('react-native-web/dist/cjs/modules/AssetRegistry/index.js', { paths: [process.cwd()] });
+          return require.resolve(
+            'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
+            { paths: [process.cwd()] }
+          );
         } catch {
           return path.resolve(__dirname, '../lib/stubs/AssetRegistry.js');
         }
       }
 
-      // svg fabric native comps → noop so fabric codegen doesn't run in web
+      // 3) react-native-svg fabric native components → Noop
       if (RE_RNSVG_FABRIC_NATIVE.test(id)) {
         return path.resolve(__dirname, '../lib/stubs/Noop.js');
       }
 
-      // normalize rare ".js" for jsx-runtime
+      // Normalize rare jsx-runtime suffix
       if (id === 'react/jsx-runtime.js') return 'react/jsx-runtime';
 
       return null;
@@ -47,7 +48,7 @@ export function rnWebSafetyPlugin() {
   };
 }
 
-// optional: collapse any deep postgrest import to the package root
+// Collapse any deep postgrest import back to the package root
 export function postgrestFix() {
   const CJS = /^@supabase\/postgrest-js\/dist\/cjs\/index\.(js|cjs|mjs)$/;
   const WRAP = '@supabase/postgrest-js/dist/esm/wrapper.mjs';
