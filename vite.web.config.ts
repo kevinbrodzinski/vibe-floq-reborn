@@ -23,14 +23,15 @@ function rnWebCompatibilityShim() {
         return path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js');
       }
 
-      // Handle TurboModuleRegistry imports specifically
-      if (id.includes('TurboModuleRegistry') || id.endsWith('/TurboModuleRegistry')) {
-        return path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js');
+      // Handle specific deep imports that don't exist in react-native-web
+      if (id === 'react-native/Libraries/Utilities/codegenNativeComponent') {
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
       }
 
-      // Handle react-native imports that might be missing exports
-      if (id === 'react-native') {
-        return path.resolve(__dirname, 'src/lib/stubs/ReactNativeWeb.js');
+      // Handle TurboModuleRegistry imports specifically  
+      if (id === 'react-native/Libraries/TurboModule/TurboModuleRegistry' || 
+          id.endsWith('/TurboModuleRegistry')) {
+        return path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js');
       }
 
       return null;
@@ -110,14 +111,8 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // RN → Enhanced RN Web (includes TurboModuleRegistry)
-      'react-native': path.resolve(__dirname, 'src/lib/stubs/ReactNativeWeb.js'),
-
-      // Direct fabric component aliases  
-      'react-native-svg/lib/module/fabric/NativeSvgRenderableModule':
-        path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js'),
-      'react-native-svg/lib/module/fabric/NativeSvgViewModule': 
-        path.resolve(__dirname, 'src/shims/react-native-svg-fabric.js'),
+      // RN → RN Web (let react-native-web handle the main package)
+      'react-native': 'react-native-web',
       
       // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
