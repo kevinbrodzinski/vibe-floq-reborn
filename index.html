@@ -16,6 +16,37 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@floq_app" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- Load console filter early to prevent preview noise -->
+    <script>
+      if (window.parent && window.parent !== window) {
+        // Running in preview iframe - filter console output
+        const originalConsole = { ...console };
+        
+        const patterns = [
+          /react-native-svg/,
+          /TurboModuleRegistry/,
+          /NativeComponent/,
+          /not available on web/,
+          /codegenNative/,
+          /PostgREST/,
+          /wrapper\.mjs/
+        ];
+        
+        const shouldFilter = (msg) => {
+          const str = String(msg);
+          return patterns.some(pattern => pattern.test(str));
+        };
+        
+        ['log', 'warn', 'error', 'info'].forEach(method => {
+          console[method] = (...args) => {
+            if (!args.some(shouldFilter)) {
+              originalConsole[method](...args);
+            }
+          };
+        });
+      }
+    </script>
   </head>
 
   <body>

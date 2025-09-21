@@ -1,9 +1,9 @@
-// Minimal web shim for RN Web's codegenNativeComponent.
-// We don't need native codegen on web; return a no-op component factory.
-export default function codegenNativeComponent<T extends string>(_name: T) {
-  // Return a noop component that renders nothing on web.
-  // Consumers (e.g., react-native-svg fabric) won't crash.
-  return function Noop(_props: any) {
-    return null;
-  };
+// Web shim for React Native's codegenNativeComponent
+// Used by react-native packages that try to create native components
+
+export default function codegenNativeComponent<T = any>(componentName: string): T {
+  // Return a simple div-based component for web
+  return function WebComponent(props: any) {
+    return null; // Or return a simple div if needed
+  } as T;
 }
