@@ -10,6 +10,7 @@ function rnwLegacyShims() {
   const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
   const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
+  const RNSVG_FABRIC_MODULE = /^react-native-svg\/lib\/module\/fabric\/.*Module\.js$/;
 
   return {
     name: 'rnw-legacy-shims',
@@ -21,7 +22,7 @@ function rnwLegacyShims() {
       if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
         return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
       }
-      if (RNSVG_FABRIC_NATIVE.test(source)) {
+      if (RNSVG_FABRIC_NATIVE.test(source) || RNSVG_FABRIC_MODULE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
       }
       // normalize rare ".js" variant to module id so optimizeDeps include hits
@@ -112,6 +113,9 @@ export default defineConfig(({ mode, command }) => {
 
         // Normalize the rare ".js" specifier to the module id
         'react/jsx-runtime.js': 'react/jsx-runtime',
+
+        // React Native TurboModuleRegistry shim for react-native-svg fabric
+        'react-native/Libraries/TurboModule/TurboModuleRegistry': path.resolve(__dirname, 'src/shims/TurboModuleRegistry.web.ts'),
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
