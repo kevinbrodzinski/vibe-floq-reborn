@@ -1,29 +1,20 @@
 import path from 'path';
 
 export function rnWebSafetyPlugin() {
-  const RE_CODEGEN_NATIVE =
-    /^(react-native|react-native-web)\/Libraries\/Utilities\/codegenNativeComponent(?:\.js)?$/;
-  const RE_CODEGEN_COMMANDS =
-    /^(react-native|react-native-web)\/Libraries\/Utilities\/codegenNativeCommands(?:\.js)?$/;
-  const RE_ASSET_REGISTRY =
-    /^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/;
-  const RE_RNSVG_FABRIC_NATIVE =
-    /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
-
   return {
     name: 'rn-web-safety-plugin',
     enforce: 'pre' as const,
     resolveId(id: string) {
-      // 1) RN codegen shims
-      if (RE_CODEGEN_NATIVE.test(id)) {
+      // Catch any RN codegen imports before alias resolution
+      if (id.includes('Libraries/Utilities/codegenNativeComponent')) {
         return path.resolve(__dirname, '../lib/stubs/codegenNativeComponent.js');
       }
-      if (RE_CODEGEN_COMMANDS.test(id)) {
+      if (id.includes('Libraries/Utilities/codegenNativeCommands')) {
         return path.resolve(__dirname, '../lib/stubs/codegenNativeCommands.js');
       }
-
-      // 2) AssetRegistry — prefer RN Web CJS, else local stub
-      if (RE_ASSET_REGISTRY.test(id)) {
+      
+      // Asset registry imports
+      if (id.includes('AssetRegistry') || id.includes('@react-native/assets-registry')) {
         try {
           // @ts-ignore
           return require.resolve(
@@ -35,8 +26,8 @@ export function rnWebSafetyPlugin() {
         }
       }
 
-      // 3) react-native-svg fabric native components → Noop
-      if (RE_RNSVG_FABRIC_NATIVE.test(id)) {
+      // SVG fabric native components
+      if (id.includes('react-native-svg/lib/module/fabric/') && id.includes('NativeComponent')) {
         return path.resolve(__dirname, '../lib/stubs/Noop.js');
       }
 
