@@ -4,8 +4,8 @@
 // Re-export everything from react-native-web
 export * from 'react-native-web';
 
-// Import and re-export TurboModuleRegistry from our shim
-import { TurboModuleRegistry } from './TurboModuleRegistry.web.ts';
+// Import and re-export TurboModuleRegistry from our lib stub
+import { TurboModuleRegistry } from '../lib/stubs/TurboModuleRegistry.js';
 
 // Export TurboModuleRegistry as a named export
 export { TurboModuleRegistry };

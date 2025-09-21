@@ -1,8 +1,11 @@
-// Used if any react-native-svg/lib/module/fabric/*NativeComponent.js or *Module.js slips through.
-// Export a Noop component for NativeComponent files and empty objects for Module files
-export default function Noop(_props: any) { return null; }
+// Web stub for react-native-svg fabric native components
+// These are native-only components that don't exist in web builds
 
-// For Module files that export named exports
-export const RNSVGRenderableModule = {};
-export const RNSVGViewManager = {};
-export const RNSVGNodeManager = {};
+export default function createNativeComponent() {
+  // Return a no-op function that matches the expected interface
+  return () => null;
+}
+
+// Also export any common fabric native component exports
+export const NativeComponent = createNativeComponent();
+export { createNativeComponent };

@@ -172,12 +172,15 @@ export default defineConfig(({ mode, command }) => {
       ],
       exclude: [
         'react-native',
+        'react-native/**',
         'react-native-svg',
         '@react-native/assets-registry',
+        '@react-native/**',
       ],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
         conditions: ['browser', 'module', 'default'],
+        external: ['react-native'],
       },
     },
 
@@ -186,6 +189,15 @@ export default defineConfig(({ mode, command }) => {
       commonjsOptions: {
         defaultIsModuleExports: true,
         transformMixedEsModules: true,
+      },
+      rollupOptions: {
+        external: (id) => {
+          // Never try to bundle the actual react-native package
+          if (id === 'react-native' || id.startsWith('react-native/')) {
+            return false; // Let our alias handle it
+          }
+          return false;
+        },
       },
     },
   };
