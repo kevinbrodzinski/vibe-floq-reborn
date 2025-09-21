@@ -4,7 +4,7 @@ import { useCurrentVibe } from '@/lib/store/useVibe';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useVibe } from '@/lib/store/useVibe';
 import { useAuth } from '@/hooks/useAuth';
-import ngeohash from 'ngeohash';
+import * as ngeohash from 'ngeohash';
 
 export const usePresenceChannel = () => {
   const vibe = useCurrentVibe();
