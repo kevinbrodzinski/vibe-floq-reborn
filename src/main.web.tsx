@@ -2,14 +2,15 @@
 // This entry point is used for web development and deployment
 // DO NOT import this in native code - use src/main.native.tsx instead
 
-// 🔧 CRITICAL: Apply DataCloneError fix FIRST before any other code
-import './lib/debug/consoleGuard';
+// 🔒 SECURITY: Load postMessage guard first (preview only)
+import '@/lib/security/postMessage-guard';
 
-// 🔧 DEBUG: Import coordinate flow testing utility
-import './lib/debug/coordinateFlowTest';
-
-// 🔧 DEBUG: Import environment configuration helper
-import './lib/debug/environmentHelper';
+// Load debug utilities conditionally
+if (import.meta.env.DEV) {
+  import('./lib/debug/consoleGuard');
+  import('./lib/debug/coordinateFlowTest');
+  import('./lib/debug/environmentHelper');
+}
 
 // Import ResizeObserver polyfill FIRST
 import 'resize-observer-polyfill/dist/ResizeObserver.global';
@@ -64,38 +65,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 );
 
-// Dev-only HMR guard for sandbox stability
+// Load all dev-only features after React renders
 if (import.meta.env.DEV) {
-  import('./lib/dev/hmrGuard');
-  // Silence analytics in sandbox
-  import('./lib/debug/sandboxAnalyticsGuard');
+  // Load debug features
+  Promise.all([
+    import('./lib/dev/hmrGuard'),
+    import('./lib/debug/sandboxAnalyticsGuard'),
+    import('./lib/debug/mapDiagnostics'),
+    import('./lib/debug/mapDebugHelpers'),
+    import('./lib/debug/mapHealthCheck'),
+    import('./lib/performance').then(({ initPerformanceMonitoring }) => {
+      initPerformanceMonitoring();
+    })
+  ]).catch(console.warn);
 }
 
-// Initialize performance monitoring after React is loaded
-if (import.meta.env.DEV) {
-  // Map diagnostics helper
-  import('./lib/debug/mapDiagnostics');
-  
-  // Map debugging helpers
-  import('./lib/debug/mapDebugHelpers');
-  
-  // Map health monitoring
-  import('./lib/debug/mapHealthCheck');
-  
-  import('./lib/performance').then(({ initPerformanceMonitoring }) => {
-    initPerformanceMonitoring();
+// Register service worker for production
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
   });
-
-  // Register service worker for venue caching (disabled in development)
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('SW registered: ', registration);
-        })
-        .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
-        });
-    });
-  }
 }
