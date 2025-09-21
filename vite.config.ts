@@ -22,6 +22,11 @@ function rnWebCompatibilityShim() {
     name: 'rn-web-compatibility-shim',
     enforce: 'pre' as const,
     resolveId(id: string) {
+      // Handle direct react-native imports
+      if (id === 'react-native') {
+        return path.resolve(__dirname, 'src/lib/stubs/ReactNativeWebEnhanced.js');
+      }
+      
       // Handle ALL react-native deep imports that don't exist in react-native-web
       if (id.startsWith('react-native/Libraries/')) {
         // Specific deep imports we have stubs for
@@ -137,8 +142,6 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // RN → Enhanced RN Web with TurboModuleRegistry support
-        'react-native': path.resolve(__dirname, 'src/lib/stubs/ReactNativeWebEnhanced.js'),
 
         // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
