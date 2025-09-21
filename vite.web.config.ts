@@ -3,6 +3,31 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+/** RN AssetRegistry shim - handles all import variants */
+function rnAssetRegistryShim() {
+  // Match both legacy RN deep path and the new package path
+  const RE = /^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/;
+
+  return {
+    name: 'rn-asset-registry-shim',
+    enforce: 'pre' as const,
+    resolveId(id: string) {
+      if (!RE.test(id)) return null;
+
+      // Try RN Web's AssetRegistry first (when present), else fallback to local stub
+      try {
+        const resolved = require.resolve(
+          'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
+          { paths: [__dirname] }
+        );
+        return resolved;
+      } catch {
+        return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+      }
+    },
+  };
+}
+
 /** RN Web legacy deep imports used by react-native-svg (Fabric) */
 function rnwLegacyShims() {
   const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
@@ -10,9 +35,6 @@ function rnwLegacyShims() {
   const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';  
   const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
-  
-  // Match both legacy RN deep path and the new package path
-  const ASSET_REGISTRY_RE = /^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/;
 
   return {
     name: 'rnw-legacy-shims',
@@ -23,18 +45,6 @@ function rnwLegacyShims() {
       }
       if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
         return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
-      }
-      if (ASSET_REGISTRY_RE.test(source)) {
-        // Try RN Web's AssetRegistry first (when present), else fallback to local stub
-        try {
-          const resolved = require.resolve(
-            'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
-            { paths: [__dirname] }
-          );
-          return resolved;
-        } catch {
-          return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
-        }
       }
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
@@ -80,6 +90,7 @@ export default defineConfig(({ mode, command }) => ({
           : true,
   },
   plugins: [
+    rnAssetRegistryShim(),          // 👈 add dedicated AssetRegistry shim first
     rnwLegacyShims(),
     postgrestCollapse(),
     react(),
