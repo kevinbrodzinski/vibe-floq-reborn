@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
+import { postgrestFixPlugin } from './src/vite/postgrest-fix-plugin';
 
 function rnwLegacyShims() {
   const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
@@ -80,6 +81,7 @@ export default defineConfig(({ mode, command }) => {
     },
 
     plugins: [
+      postgrestFixPlugin(),
       rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
       react(),
       mode === "development" && componentTagger(),
@@ -122,7 +124,7 @@ export default defineConfig(({ mode, command }) => {
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
       },
 
-      dedupe: ['react', 'react-dom', 'react-native-web'],
+      dedupe: ['react', 'react-dom', 'react-native-web', 'use-sync-external-store'],
     },
 
     /** 🔥 Prebundle the right things so jsx-runtime exports exist */
@@ -130,13 +132,24 @@ export default defineConfig(({ mode, command }) => {
       // We control what's prebundled; don't auto-discover
       noDiscovery: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: ['react', 'react-dom', 'react/jsx-runtime', 'react-native-web'],
+      include: [
+        'react', 'react-dom', 'react/jsx-runtime', 'react-native-web',
+        '@supabase/postgrest-js',                 // ✅ prebundle root
+      ],
       // Never prebundle RN nor RNSVG (we shim them)
-      exclude: ['react-native', 'react-native-svg'],
+      exclude: [
+        'react-native', 'react-native-svg', '@react-native/assets-registry',
+      ],
       esbuildOptions: {
-        mainFields: ['browser', 'module', 'main'],
-        // pick the browser condition if provided by deps
-        conditions: ['browser', 'module', 'default'],
+        mainFields: ['browser','module','main'],
+        conditions: ['browser','module','default'],
+      },
+    },
+
+    build: {
+      commonjsOptions: {
+        defaultIsModuleExports: true,
+        transformMixedEsModules: true,
       },
     },
   };

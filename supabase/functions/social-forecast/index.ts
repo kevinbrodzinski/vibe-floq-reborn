@@ -2,18 +2,7 @@
 // POST { t: 'now' | 'p30' | 'p120' | 'historic', range?: 'LastThursday'|'LastMonth'|'LastYear', center? | bbox? | zoom }
 // -> { cells:[{key,center,pressure,temperature,humidity,wind}], ttlSec:number }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const okJson = (body: unknown, ttlSec = 300) =>
-  new Response(JSON.stringify(body), {
-    headers: { ...corsHeaders, 'content-type': 'application/json; charset=utf-8', 'cache-control': `public, max-age=${ttlSec}` }
-  });
-const bad = (msg: string, code = 400) =>
-  new Response(JSON.stringify({ error: msg }), { status: code, headers: { ...corsHeaders, 'content-type': 'application/json' } });
+import { handlePreflight, okJSON, badJSON, okJSONCached } from "../_shared/cors.ts";
 
 type Req = { t: 'now'|'p30'|'p120'|'historic'; range?: string; center?: [number,number]; bbox?: [number,number,number,number]; zoom?: number };
 
@@ -35,8 +24,10 @@ function synthCells(center: [number, number], zoom = 14, bias = 0) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  if (req.method !== 'POST')    return bad('POST required', 405);
+  const pre = handlePreflight(req);
+  if (pre) return pre;
+  
+  if (req.method !== 'POST') return badJSON('POST required', req, 405);
   try {
     const j = await req.json() as Req;
     const zoom = j.zoom ?? 14;
@@ -66,8 +57,8 @@ Deno.serve(async (req) => {
     const momentum = Math.min(1, cells.reduce((s: number, c: any) => s + c.pressure, 0) / Math.max(1, cells.length));
     const confidence = Math.max(0.2, 0.6 + 0.4 * momentum); // 0.2..1 range
     
-    return okJson({ cells, insights, confidence, ttlSec: 300 }, 300);
+    return okJSONCached({ cells, insights, confidence, ttlSec: 300 }, req, 300);
   } catch (e) {
-    return bad(e?.message ?? 'error', 500);
+    return badJSON((e as Error).message ?? 'error', req, 500);
   }
 });
