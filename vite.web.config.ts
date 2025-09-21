@@ -134,19 +134,31 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      
+
+      // IMPORTANT: react-native → our shim that re-exports RN Web + TurboModuleRegistry
+      'react-native': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
+
+      // Vendor Animated modules look up TurboModuleRegistry via RN Web vendor path → send to stub
+      'react-native-web/dist/vendor/react-native/Utilities/TurboModuleRegistry':
+        path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
+
+      // Some bundles reference this alt vendor path; include both:
+      'react-native-web/dist/vendor/react-native/Animated/TurboModuleRegistry':
+        path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
+
       // Asset registry alias for expo-asset compatibility
       '@react-native/assets-registry/registry': path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js'),
       
-      // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
+      // Keep your other RN-web/svg/AssetRegistry shims:
       'react-native-web/Libraries/Utilities/codegenNativeComponent':
         path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
       'react-native/Libraries/Utilities/codegenNativeComponent':
         path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
-        'react-native-web/Libraries/Utilities/codegenNativeCommands':
+      'react-native-web/Libraries/Utilities/codegenNativeCommands':
+        path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+      'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
-        'react-native/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+        // AssetRegistry direct alias (plugin also covers this)
         'react-native/Libraries/Image/AssetRegistry':
           'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',

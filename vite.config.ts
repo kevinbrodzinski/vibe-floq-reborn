@@ -131,22 +131,32 @@ export default defineConfig(({ mode, command }) => {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
     plugins: [
-      rnWebCompatibilityShim(),       // 👈 comprehensive RN Web compatibility
       rnwLegacyShims(),
       postgrestFix(),                  // 👈 fix postgrest deep imports
       react(),
       mode === 'development' && componentTagger(),
     ].filter(Boolean),
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, 'src'),
-          '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+        '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-          // Asset registry alias for expo-asset compatibility
-          '@react-native/assets-registry/registry': path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js'),
+        // IMPORTANT: react-native → our shim that re-exports RN Web + TurboModuleRegistry
+        'react-native': path.resolve(__dirname, 'src/shims/react-native-web-plus.js'),
 
+        // Vendor Animated modules look up TurboModuleRegistry via RN Web vendor path → send to stub
+        'react-native-web/dist/vendor/react-native/Utilities/TurboModuleRegistry':
+          path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
 
-        // react-native-svg fabric → non-fabric handled by the plugin above; also keep direct aliases
+        // Some bundles reference this alt vendor path; include both:
+        'react-native-web/dist/vendor/react-native/Animated/TurboModuleRegistry':
+          path.resolve(__dirname, 'src/lib/stubs/TurboModuleRegistry.js'),
+
+        // Asset registry alias for expo-asset compatibility
+        '@react-native/assets-registry/registry': path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js'),
+
+        // Keep your other RN-web/svg/AssetRegistry shims:
+        'react/jsx-runtime.js': 'react/jsx-runtime',
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
         'react-native/Libraries/Utilities/codegenNativeComponent':
@@ -155,6 +165,7 @@ export default defineConfig(({ mode, command }) => {
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+        // AssetRegistry direct alias (plugin also covers this)
         'react-native/Libraries/Image/AssetRegistry':
           'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
@@ -163,7 +174,7 @@ export default defineConfig(({ mode, command }) => {
         'react-native-mmkv': path.resolve(__dirname, 'src/lib/stubs/mmkv.js'),
 
         // Normalize rare ".js" specifier
-        'react/jsx-runtime.js': 'react/jsx-runtime',
+        // 'react/jsx-runtime.js': 'react/jsx-runtime', // Already handled above
 
         // IMPORTANT: REMOVE postgrest deep path aliases - let prebundling handle it
       },
@@ -176,9 +187,9 @@ export default defineConfig(({ mode, command }) => {
         '@supabase/postgrest-js',                 // ✅ let esbuild wrap CJS → ESM
       ],
       exclude: [
-        'react-native',
+        'react-native',                              // ✅ handled by our shim
         'react-native-svg',
-        '@react-native/assets-registry', // do not prebundle this, let the shim resolve it
+        '@react-native/assets-registry',             // ✅ handled by alias
       ],
       esbuildOptions: {
         mainFields: ['browser', 'module', 'main'],
