@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Load preview guard before any analytics to prevent RS SDK / GTM noise in Lovable preview -->
+    <script type="module">
+      import '/src/lib/analytics/preview-guard.ts';
+      import '/src/lib/security/preview-message-firewall.ts';
+      import '/src/lib/dev/preview-console-filter.ts';
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>floq - Presence-Native Human Connection</title>
