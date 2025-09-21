@@ -10,7 +10,9 @@ function rnwLegacyShims() {
   const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';  
   const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
   const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
-  const RN_ASSETS_REGISTRY = '@react-native/assets-registry/registry';
+  
+  // Match both legacy RN deep path and the new package path
+  const ASSET_REGISTRY_RE = /^(react-native\/Libraries\/Image\/AssetRegistry|@react-native\/assets-registry\/registry(?:\.js)?)$/;
 
   return {
     name: 'rnw-legacy-shims',
@@ -22,8 +24,17 @@ function rnwLegacyShims() {
       if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
         return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
       }
-      if (source === RN_ASSETS_REGISTRY) {
-        return path.resolve(__dirname, 'src/lib/stubs/assetsRegistry.js');
+      if (ASSET_REGISTRY_RE.test(source)) {
+        // Try RN Web's AssetRegistry first (when present), else fallback to local stub
+        try {
+          const resolved = require.resolve(
+            'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
+            { paths: [__dirname] }
+          );
+          return resolved;
+        } catch {
+          return path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js');
+        }
       }
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
@@ -90,8 +101,10 @@ export default defineConfig(({ mode, command }) => ({
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
           path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
+        'react-native/Libraries/Image/AssetRegistry':
+          'react-native-web/dist/cjs/modules/AssetRegistry/index.js',
         '@react-native/assets-registry/registry':
-          path.resolve(__dirname, 'src/lib/stubs/assetsRegistry.js'),
+          path.resolve(__dirname, 'src/lib/stubs/AssetRegistry.js'),
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
         
         // React Native MMKV stub
@@ -117,6 +130,7 @@ export default defineConfig(({ mode, command }) => ({
     exclude: [
       'react-native',
       'react-native-svg',
+      '@react-native/assets-registry', // do not prebundle this, let the shim resolve it
       '@supabase/postgrest-js', // let the package resolve at runtime; deep paths are handled by aliases above
     ],
     esbuildOptions: {
