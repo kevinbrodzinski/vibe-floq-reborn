@@ -35,6 +35,7 @@ export function buildCors(req: Request, defaultTtlSec = 300): CorsKit {
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': Array.from(allow).join(', '),
     'Access-Control-Max-Age': '86400',
+    'Access-Control-Expose-Headers': 'content-range, range-unit', // lets clients/readers see Content-Range
     // So proxies/CDNs don't collapse different origins/headers
     'Vary': 'Origin, Access-Control-Request-Headers',
   };

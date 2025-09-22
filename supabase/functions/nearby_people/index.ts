@@ -1,5 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { buildCors } from '../_shared/cors.ts';
+import { userClient } from '../_shared/supabase.ts';
 
 Deno.serve(async req => {
   const { preflight, json, error } = buildCors(req);
@@ -15,11 +15,8 @@ Deno.serve(async req => {
   if (!Number.isFinite(lat) || !Number.isFinite(lng))
     return error('lat,lng required', 400)
 
-  // Supabase service client
-  const sb = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  )
+  // Use user client for RLS enforcement
+  const sb = userClient(req);
 
   const { data, error } = await sb
     .rpc('rank_nearby_people', { p_lat: lat, p_lng: lng, p_limit: limit })

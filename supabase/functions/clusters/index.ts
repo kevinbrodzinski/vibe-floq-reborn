@@ -1,5 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { buildCors } from '../_shared/cors.ts';
+import { userClient } from '../_shared/supabase.ts';
 
 Deno.serve(async req => {
   const { preflight, json, error } = buildCors(req);
@@ -46,10 +46,7 @@ Deno.serve(async req => {
     const [minLng, minLat, maxLng, maxLat] = bbox
     console.log(`[clusters] Querying bbox: [${minLng}, ${minLat}, ${maxLng}, ${maxLat}], precision: ${precision}`)
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    const supabase = userClient(req);
 
     const { data, error } = await supabase.rpc('get_vibe_clusters', {
       min_lng: minLng,
