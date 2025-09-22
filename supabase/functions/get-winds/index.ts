@@ -1,9 +1,9 @@
-import { corsHeadersFor, handlePreflight } from '../_shared/cors.ts';
+import { buildCors } from '../_shared/cors.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 Deno.serve(async (req) => {
-  const pf = handlePreflight(req); if (pf) return pf;
-  const headers = { ...corsHeadersFor(req), 'Cache-Control': 'public, max-age=60' };
+  const { preflight, json, error } = buildCors(req);
+  if (preflight) return preflight;
 
   // user-JWT + anon key (no service role)
   const supabase = createClient(
@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     const { cityId, hour, dow, limit = 48 } = await req.json().catch(() => ({}));
     if (!cityId || hour == null || dow == null) {
-      return new Response(JSON.stringify({ error: 'bad_payload' }), { status: 400, headers });
+      return error('bad_payload', 400);
     }
 
     const { data, error } = await supabase
@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
       .limit(Math.min(200, limit));
 
     if (error) throw error;
-    return new Response(JSON.stringify({ ok: true, paths: data ?? [] }), { status: 200, headers });
+    return json({ ok: true, paths: data ?? [] });
   } catch (e) {
     console.error('[get-winds] error:', e);
-    return new Response(JSON.stringify({ ok: false, paths: [] }), { status: 200, headers });
+    return json({ ok: false, paths: [] });
   }
 });
