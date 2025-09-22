@@ -91,7 +91,11 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
         '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
 
-        // Note: Removed specific dist aliases - let module resolution handle it
+        // Force pure-ESM entrypoints for supabase subpackages (prevents CJS default-export wrapper issues)
+        '@supabase/postgrest-js': '@supabase/postgrest-js/dist/esm/index.js',
+        '@supabase/storage-js': '@supabase/storage-js/dist/esm/index.js',
+        '@supabase/functions-js': '@supabase/functions-js/dist/esm/index.js',
+        '@supabase/realtime-js': '@supabase/realtime-js/dist/esm/index.js',
 
         // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
         'react-native': 'react-native-web',
