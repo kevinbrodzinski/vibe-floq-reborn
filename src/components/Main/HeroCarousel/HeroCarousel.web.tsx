@@ -55,18 +55,20 @@ export function HeroCarousel({
       </div>
 
       <div className="mt-2 flex items-center justify-center gap-2">
-        <Dot active />
-        <Dot />
-        <Dot />
-        <Dot />
+        <Dot active color={color} />
+        <Dot color={color} />
+        <Dot color={color} />
+        <Dot color={color} />
       </div>
     </>
   );
 }
 
-function Dot({ active }: { active?: boolean }) {
+function Dot({ active, color }: { active?: boolean; color?: string }) {
+  const style = active && color ? { backgroundColor: color } : undefined;
   return (
     <div
+      style={style}
       className={
         active
           ? 'h-2 w-6 rounded bg-[hsl(var(--primary))]'

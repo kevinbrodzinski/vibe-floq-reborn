@@ -4,7 +4,7 @@ import { VibePill } from '@/components/floq/VibePill';
 import { HeroCarousel } from '@/components/Main/HeroCarousel/HeroCarousel.web';
 import { SectionRow } from '@/components/Main/SectionRow';
 import { FloatingActionButton } from '@/components/fab/FloatingActionButton.web';
-import { AvatarDropdown } from '@/components/AvatarDropdown';
+import { AvatarWithGlow } from '@/components/Main/AvatarWithGlow';
 import { vibeToHex, vibeToHue } from '@/lib/vibe/hsl';
 import type { Vibe } from '@/lib/vibes';
 
@@ -42,7 +42,7 @@ export function FloqMainPage({
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-2 pb-1">
         <h1 className="text-2xl font-bold tracking-tight select-none">floq</h1>
-        <AvatarDropdown />
+        <AvatarWithGlow color={vibeColor} />
       </header>
 
       {/* Tagline + Vibe */}

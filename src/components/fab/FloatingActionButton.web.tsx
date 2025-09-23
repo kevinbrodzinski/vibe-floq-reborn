@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Zap, Calendar, Building } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface FabOptionButtonProps {
   label: string;
@@ -11,19 +10,17 @@ interface FabOptionButtonProps {
 
 function FabOptionButton({ label, icon: Icon, onPress }: FabOptionButtonProps) {
   return (
-    <Button
+    <button
       onClick={onPress}
-      size="sm"
-      variant="secondary"
-      className="h-11 w-11 rounded-full bg-[color:var(--background)]/90 backdrop-blur border border-[color:var(--border)] hover:bg-[color:var(--muted)] transition shadow-lg group relative"
+      className="group relative h-11 w-11 rounded-full border border-white/15 bg-black/60 backdrop-blur pointer-events-auto transition hover:scale-110 hover:shadow-xl"
       title={label}
       aria-label={label}
     >
       <Icon className="h-4 w-4" />
-      <span className="absolute right-14 text-xs font-medium px-2 py-1 rounded bg-[color:var(--background)]/95 border border-[color:var(--border)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+      <span className="absolute right-12 rounded bg-black/95 border border-white/10 px-2 py-1 text-[11px] opacity-0 translate-x-2 transition group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none">
         {label}
       </span>
-    </Button>
+    </button>
   );
 }
 
@@ -40,8 +37,19 @@ export function FloatingActionButton({
   onSelect, 
   badgeCount = 0 
 }: FloatingActionButtonProps) {
+  const [ripple, setRipple] = React.useState<{ x: number; y: number; size: number } | null>(null);
+
   return (
     <>
+      {/* Backdrop blur overlay when expanded */}
+      {open && (
+        <div
+          onClick={onToggle}
+          className="fixed inset-0 z-[54] bg-black/20 backdrop-blur-sm"
+          aria-hidden
+        />
+      )}
+
       {/* Halo effect */}
       <div className="pointer-events-none fixed bottom-20 right-4 z-[50]">
         <motion.div 
@@ -52,6 +60,37 @@ export function FloatingActionButton({
           }}
           transition={{ duration: 0.3 }}
         />
+      </div>
+
+      {/* Ambient floaters */}
+      <div className="pointer-events-none fixed bottom-20 right-2 z-[59] w-[100px] h-[100px]">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <span
+            key={i}
+            className="absolute block w-[2px] h-[2px] rounded-full opacity-0"
+            style={{
+              left: 35 + (i * 5),
+              background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))',
+              boxShadow: '0 0 4px rgba(102,126,234,0.7)',
+              animation: `floatUp 4s linear ${i * 0.4}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Orbiters */}
+      <div className="pointer-events-none fixed bottom-[88px] right-[22px] z-[59] w-[48px] h-[48px]">
+        {[0, 2, 4].map((delay) => (
+          <span
+            key={delay}
+            className="absolute top-1/2 left-1/2 block w-[3px] h-[3px] rounded-full"
+            style={{
+              background: 'rgba(102,126,234,0.6)',
+              boxShadow: '0 0 6px rgba(102,126,234,0.8)',
+              animation: `orbit 6s linear -${delay}s infinite`,
+            }}
+          />
+        ))}
       </div>
 
       {/* Options */}
@@ -103,27 +142,79 @@ export function FloatingActionButton({
         )}
       </AnimatePresence>
 
-      {/* Main FAB */}
-      <Button
-        onClick={onToggle}
-        size="lg"
-        className="fixed bottom-16 right-4 z-[60] h-12 w-12 rounded-full bg-[color:var(--primary)] text-[color:var(--primary-foreground)] shadow-lg border border-[color:var(--border)]/50 hover:scale-105 transition-transform"
+      {/* Main FAB - Liquid Glass */}
+      <button
         aria-expanded={open}
         aria-label="Create"
+        onClick={(e) => {
+          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          setRipple({ 
+            x: e.clientX - rect.left - size / 2, 
+            y: e.clientY - rect.top - size / 2, 
+            size 
+          });
+          onToggle();
+          setTimeout(() => setRipple(null), 600);
+        }}
+        className="fixed bottom-16 right-4 z-[60] h-12 w-12 rounded-full text-primary-foreground border border-white/10 shadow-lg transition hover:scale-105"
+        style={{
+          background: 'linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15))',
+          backdropFilter: 'blur(20px) saturate(180%)',
+        }}
       >
-        <motion.div
+        <motion.span 
+          className="relative z-10 block transition text-xl font-light"
           animate={{ rotate: open ? 45 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <Plus className="h-5 w-5" />
-        </motion.div>
+          +
+        </motion.span>
+
+        {/* rotating conic glow */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-full"
+          style={{
+            background: 'conic-gradient(from 180deg, rgba(102,126,234,0.0) 0deg, rgba(102,126,234,0.35) 90deg, rgba(118,75,162,0.35) 180deg, rgba(102,126,234,0.35) 270deg, rgba(102,126,234,0.0) 360deg)',
+            filter: 'blur(8px)',
+            animation: 'spin 3s linear infinite',
+          }}
+        />
+
+        {/* shimmer */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-full"
+          style={{
+            background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.25) 40%, transparent 100%)',
+            animation: 'shimmer 3s linear infinite',
+          }}
+        />
+
+        {/* ripple */}
+        {ripple && (
+          <span
+            aria-hidden
+            className="absolute rounded-full"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              width: ripple.size,
+              height: ripple.size,
+              background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)',
+              transform: 'scale(0)',
+              animation: 'ripple 0.6s ease-out forwards',
+            }}
+          />
+        )}
         
         {badgeCount > 0 && (
           <span className="absolute -top-1 -right-1 h-5 min-w-5 rounded-full bg-[color:var(--destructive)] text-[color:var(--destructive-foreground)] text-[10px] grid place-items-center px-1 font-medium">
             {badgeCount}
           </span>
         )}
-      </Button>
+      </button>
     </>
   );
 }
