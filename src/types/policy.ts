@@ -25,7 +25,7 @@ export const PolicyInputSchema = z.object({
   class: PolicyClassSchema,
   lastChangeAt: z.date().optional(),
   venueSafety: VenueSafetySchema.optional(),
-  userId: z.string().optional(),
+  profileId: z.string().optional(),
 });
 
 export type PolicyInput = z.infer<typeof PolicyInputSchema>;
