@@ -62,6 +62,41 @@ export function FloatingActionButton({
         />
       </div>
 
+      {/* Ambient floaters (pause when open by not rendering) */}
+      {!open && (
+        <div className="pointer-events-none fixed bottom-20 right-2 z-[59] h-[100px] w-[100px]">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <span
+              key={i}
+              className="absolute block h-[2px] w-[2px] rounded-full opacity-0 will-change-transform"
+              style={{
+                left: 35 + i * 5,
+                background: 'hsl(var(--primary))',
+                boxShadow: '0 0 4px rgba(102,126,234,0.7)',
+                animation: `floatUp 4s linear ${i * 0.4}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Orbiters */}
+      {!open && (
+        <div className="pointer-events-none fixed bottom-[88px] right-[22px] z-[59] h-[48px] w-[48px]">
+          {[0, 2, 4].map((delay) => (
+            <span
+              key={delay}
+              className="absolute left-1/2 top-1/2 block h-[3px] w-[3px] rounded-full will-change-transform"
+              style={{
+                background: 'rgba(102,126,234,0.6)',
+                boxShadow: '0 0 6px rgba(102,126,234,0.8)',
+                animation: `orbit 6s linear -${delay}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Options */}
       <AnimatePresence>
         {open && (
@@ -132,13 +167,9 @@ export function FloatingActionButton({
           backdropFilter: 'blur(20px) saturate(180%)',
         }}
       >
-        <motion.span 
-          className="relative z-10 block transition text-xl font-light"
-          animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          +
-        </motion.span>
+        <span className={`relative z-10 block transition ${open ? 'rotate-45' : ''}`}>
+          <Plus className="h-5 w-5" />
+        </span>
 
         {/* rotating conic glow */}
         <span
