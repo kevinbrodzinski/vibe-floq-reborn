@@ -5,9 +5,11 @@ import { ParticleField } from '@/components/effects/ParticleField/ParticleField.
 export function HeroCarousel({
   onOpen,
   color,
+  hue,
 }: {
   onOpen: (key: 'momentary' | 'mine' | 'clubs' | 'business') => void;
-  color?: string; // VIBE token color
+  color?: string; // VIBE token color for UI accents
+  hue?: number; // VIBE hue for atmospheric effects
 }) {
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -28,7 +30,7 @@ export function HeroCarousel({
               { v: '47', l: 'People' },
             ]}
             onPress={() => onOpen('momentary')}
-            particleField={<ParticleField color={color} />}
+            particleField={<ParticleField color={color} hue={hue} drift />}
           />
         </div>
         <div style={{ scrollSnapAlign: 'start' }}>

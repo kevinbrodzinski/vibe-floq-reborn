@@ -4,7 +4,15 @@ import { HeroCard } from '../HeroCard';
 import { ParticleField } from '@/components/effects/ParticleField/ParticleField.native';
 import { colors } from '@/lib/theme-tokens.native';
 
-export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void }) {
+export function HeroCarousel({ 
+  onOpen,
+  color,
+  hue,
+}: { 
+  onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void;
+  color?: string; // VIBE token color for UI accents
+  hue?: number; // VIBE hue for atmospheric effects 
+}) {
   const [index, setIndex] = React.useState(0);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / 316);
@@ -28,7 +36,7 @@ export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clu
           subtitle="Live momentary floqs forming"
           stats={[{ v: '12', l: 'Active' }, { v: '3', l: 'Near You' }, { v: '47', l: 'People' }]}
           onPress={() => onOpen('momentary')}
-          particleField={<ParticleField />}
+          particleField={<ParticleField color={color} hue={hue} drift />}
         />
         <HeroCard title="My Floqs" subtitle="Your persistent groups" stats={[{ v: '5', l: 'Groups' }]} onPress={() => onOpen('mine')} peek />
         <HeroCard title="Clubs" subtitle="Crews & scenes" onPress={() => onOpen('clubs')} peek />

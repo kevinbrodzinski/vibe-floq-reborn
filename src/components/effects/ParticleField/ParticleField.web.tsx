@@ -4,11 +4,12 @@ import { colors } from '@/lib/theme-tokens.web';
 type Props = {
   count?: number;
   hue?: number;
-  color?: string;   // token color wins over hue
+  color?: string;   // token color wins over hue  
+  drift?: boolean;  // enable subtle hue drift for "living" effect
   className?: string;
 };
 
-export function ParticleField({ count = 14, hue, color, className }: Props) {
+export function ParticleField({ count = 14, hue, color, drift = false, className }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -45,10 +46,16 @@ export function ParticleField({ count = 14, hue, color, className }: Props) {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        
+        // Apply subtle drift to hue for "living" particles
+        const useHue = hue != null && drift 
+          ? hue + (Math.sin(performance.now() * 0.001) * 6) // ±6° drift
+          : hue;
+          
         const fill =
           color ??
-          (hue != null
-            ? `hsla(${hue}, 75%, 65%, .7)`
+          (useHue != null
+            ? `hsla(${useHue}, 75%, 65%, .7)`
             : `color-mix(in oklab, ${colors.primary} 80%, white 20%)`);
         ctx.fillStyle = fill;
         ctx.shadowColor = fill;

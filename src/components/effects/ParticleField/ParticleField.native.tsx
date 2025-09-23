@@ -9,9 +9,11 @@ const ACircle = Animated.createAnimatedComponent(Circle);
 type Props = {
   count?: number;
   hue?: number; // if provided, we synthesize hsla; else use primary
+  color?: string; // token color wins over hue
+  drift?: boolean; // enable subtle hue drift for "living" effect
 };
 
-export function ParticleField({ count = 12, hue }: Props) {
+export function ParticleField({ count = 12, hue, color, drift = false }: Props) {
   const seeds = React.useMemo(() => Array.from({ length: count }).map((_, i) => i), [count]);
 
   return (
@@ -19,14 +21,14 @@ export function ParticleField({ count = 12, hue }: Props) {
       {/* Fixed viewBox keeps math easy; render inside hero card bounds */}
       <Svg width="100%" height="100%" viewBox="0 0 320 200">
         {seeds.map((i) => (
-          <Particle key={i} hue={hue} />
+          <Particle key={i} hue={hue} color={color} drift={drift} />
         ))}
       </Svg>
     </View>
   );
 }
 
-function Particle({ hue }: { hue?: number }) {
+function Particle({ hue, color, drift = false }: { hue?: number; color?: string; drift?: boolean }) {
   const cx = useSharedValue(Math.random() * 320);
   const cy = useSharedValue(Math.random() * 200);
   const durX = 7000 + Math.random() * 4000;
@@ -42,7 +44,12 @@ function Particle({ hue }: { hue?: number }) {
     cy: cy.value,
   }));
 
-  const fill = hue != null ? `hsla(${hue}, 75%, 65%, 0.7)` : colors.primary;
+  // Apply subtle drift to hue for "living" particles
+  const useHue = hue != null && drift 
+    ? hue + (Math.sin(Date.now() * 0.001) * 6) // ±6° drift
+    : hue;
+    
+  const fill = color ?? (useHue != null ? `hsla(${useHue}, 75%, 65%, 0.7)` : colors.primary);
 
   return <ACircle animatedProps={animated} r={1 + Math.random() * 1.6} fill={fill} />;
 }

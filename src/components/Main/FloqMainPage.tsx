@@ -5,10 +5,8 @@ import { HeroCarousel } from '@/components/Main/HeroCarousel/HeroCarousel.web';
 import { SectionRow } from '@/components/Main/SectionRow';
 import { FloatingActionButton } from '@/components/fab/FloatingActionButton.web';
 import { AvatarDropdown } from '@/components/AvatarDropdown';
-
-// If you already have a vibe→color util, import that instead.
-// Web can read CSS var directly as a string.
-const vibeToCssVar = (vibe: string) => `hsl(var(--vibe-${vibe}))`;
+import { vibeToHex, vibeToHue } from '@/lib/vibe/hsl';
+import type { Vibe } from '@/lib/vibes';
 
 type Perk = { id: string; title: string; value: string; label: string };
 type FriendIn = { id: string; title: string; count: number; label: string };
@@ -19,7 +17,7 @@ export function FloqMainPage({
   friendsIn = [],
   branchOut = [],
 }: {
-  vibe?: string;
+  vibe?: Vibe | string;
   topPerks?: Perk[];
   friendsIn?: FriendIn[];
   branchOut?: Perk[];
@@ -27,7 +25,10 @@ export function FloqMainPage({
   const navigate = useNavigate();
   const [fabOpen, setFabOpen] = React.useState(false);
 
-  const vibeColor = vibeToCssVar(vibe);
+  // Token-driven colors: hex for UI accents, hue for atmospheric effects
+  const safeVibe = (vibe && typeof vibe === 'string' ? vibe : 'chill') as Vibe;
+  const vibeColor = vibeToHex(safeVibe);  // Brand-consistent token color
+  const vibeHue = vibeToHue(safeVibe);    // Derived hue for atmospheric effects
 
   const handleHeroOpen = (key: 'momentary' | 'mine' | 'clubs' | 'business') => {
     if (key === 'momentary') navigate('/momentary-nearby');
@@ -56,7 +57,11 @@ export function FloqMainPage({
 
       {/* Hero carousel (Version 1: Particle Field) */}
       <div className="mt-2 px-4">
-        <HeroCarousel color={vibeColor} onOpen={handleHeroOpen} />
+        <HeroCarousel 
+          color={vibeColor} 
+          hue={vibeHue}
+          onOpen={handleHeroOpen} 
+        />
       </div>
 
       {/* Sections */}
