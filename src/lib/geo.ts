@@ -1,4 +1,4 @@
-import * as geohash from 'ngeohash';
+import ngeohash from 'ngeohash';
 
 export function haversineMeters(a:{lat:number; lng:number}, b:{lat:number; lng:number}) {
   const R = 6371e3;
@@ -18,7 +18,7 @@ export function etaMinutesMeters(distance_m:number, mode:"walk"|"drive"="walk") 
 
 // Convert geohash to center coordinates
 export function geohashToCenter(hash: string): [number, number] {
-  const decoded = geohash.decode(hash);
+  const decoded = ngeohash.decode(hash);
   return [decoded.latitude, decoded.longitude];
 }
 
@@ -43,7 +43,7 @@ export function viewportToTileIds(
   
   for (let lat = minLat; lat <= maxLat; lat += step) {
     for (let lng = minLng; lng <= maxLng; lng += step) {
-      tiles.push(geohash.encode(lat, lng, precision));
+      tiles.push(ngeohash.encode(lat, lng, precision));
     }
   }
   
