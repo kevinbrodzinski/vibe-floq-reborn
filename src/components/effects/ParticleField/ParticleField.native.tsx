@@ -88,16 +88,11 @@ export const ParticleField = ({
       {particles.map((particle, index) => {
         const values = animatedValues[index];
         
-        const animatedStyle = useAnimatedStyle(() => {
-          const tx = values.translateX.value;
-          const ty = values.translateY.value;
-          const op = values.opacity.value;
-          
-          return {
-            transform: [{ translateX: tx }, { translateY: ty }],
-            opacity: op,
-          };
-        });
+        const animatedStyle = useAnimatedStyle(() => ({
+          translateX: values.translateX.value,
+          translateY: values.translateY.value,
+          opacity: values.opacity.value,
+        }));
 
         return (
           <Animated.View
