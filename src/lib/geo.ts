@@ -1,5 +1,37 @@
 
-import ngeohash from 'ngeohash';
+import { encodeGeohash } from '@/lib/geohash';
+
+// Decode geohash to center coordinates (fallback implementation)
+function decodeGeohash(hash: string): { latitude: number; longitude: number } {
+  const base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+  let even = true;
+  let lat = [-90, 90];
+  let lon = [-180, 180];
+
+  for (let i = 0; i < hash.length; i++) {
+    const char = hash[i];
+    const cd = base32.indexOf(char);
+    if (cd === -1) throw new Error(`Invalid geohash character: ${char}`);
+
+    for (let mask = 16; mask >= 1; mask >>= 1) {
+      if (even) {
+        const mid = (lon[0] + lon[1]) / 2;
+        if (cd & mask) lon[0] = mid;
+        else lon[1] = mid;
+      } else {
+        const mid = (lat[0] + lat[1]) / 2;
+        if (cd & mask) lat[0] = mid;
+        else lat[1] = mid;
+      }
+      even = !even;
+    }
+  }
+
+  return {
+    latitude: (lat[0] + lat[1]) / 2,
+    longitude: (lon[0] + lon[1]) / 2
+  };
+}
 
 export function haversineMeters(a:{lat:number; lng:number}, b:{lat:number; lng:number}) {
   const R = 6371e3;
@@ -19,7 +51,7 @@ export function etaMinutesMeters(distance_m:number, mode:"walk"|"drive"="walk") 
 
 // Convert geohash to center coordinates
 export function geohashToCenter(hash: string): [number, number] {
-  const decoded = ngeohash.decode(hash);
+  const decoded = decodeGeohash(hash);
   return [decoded.latitude, decoded.longitude];
 }
 
@@ -44,7 +76,7 @@ export function viewportToTileIds(
   
   for (let lat = minLat; lat <= maxLat; lat += step) {
     for (let lng = minLng; lng <= maxLng; lng += step) {
-      tiles.push(ngeohash.encode(lat, lng, precision));
+      tiles.push(encodeGeohash(lat, lng, precision));
     }
   }
   
