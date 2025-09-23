@@ -7,17 +7,7 @@
 // }
 // → { nodes:[{id,pos:[0..1,0..1],mass,vibe}], edges:[...], ttlSec }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const okJson = (body: unknown, ttlSec = 120) =>
-  new Response(JSON.stringify(body), {
-    headers: { ...corsHeaders, 'content-type': 'application/json; charset=utf-8', 'cache-control': `public, max-age=${ttlSec}` },
-  });
-const bad = (msg: string, code = 400) =>
-  new Response(JSON.stringify({ error: msg }), { status: code, headers: { ...corsHeaders, 'content-type': 'application/json' } });
+import { buildCors } from '../_shared/cors.ts';
 
 type Party = { id: string; mass?: number; vibe?: string };
 type Edge  = { a: string; b: string; strength: number; lastSync?: string };
@@ -78,8 +68,9 @@ function oneAttractionStep(nodes: Node[], edges: Edge[]) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  if (req.method !== 'POST')    return bad('POST required', 405);
+  const { preflight, json, error } = buildCors(req);
+  if (preflight) return preflight;
+  if (req.method !== 'POST') return error('POST required', 405);
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -87,14 +78,14 @@ Deno.serve(async (req) => {
     const edges = Array.isArray(body?.edges) ? (body.edges as Edge[])   : [];
     const seed  = typeof body?.seed === 'string' ? body.seed : 'floq';
 
-    if (!party.length) return okJson({ nodes: [], edges: [], ttlSec: 60 }, 60);
+    if (!party.length) return json({ nodes: [], edges: [], ttlSec: 60 }, 200, 60);
 
     const nodes = initialLayout(party, seed);
     // One light attraction step to tighten strong bonds
     oneAttractionStep(nodes, edges.filter(e => e.strength >= 0.3));
 
-    return okJson({ nodes, edges, ttlSec: 120 }, 120);
+    return json({ nodes, edges, ttlSec: 120 }, 200, 120);
   } catch (e) {
-    return bad(e?.message ?? 'error', 500);
+    return error(e?.message ?? 'error', 500);
   }
 });

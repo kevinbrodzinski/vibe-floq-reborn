@@ -1,120 +1,87 @@
 import React, { useEffect, useRef } from 'react';
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-}
+type Props = {
+  count?: number;
+  color?: string;   // brand token hex; if present it takes precedence
+  hue?: number;     // 0..360 base hue for atmospheric effects
+  drift?: boolean;  // enable subtle "living" drift (±6°)
+  className?: string;
+};
 
-interface ParticleFieldProps {
-  particleCount?: number;
-  color?: string;
-}
-
-export const ParticleField: React.FC<ParticleFieldProps> = ({
-  particleCount = 12,
-  color = 'hsl(var(--primary))'
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const particlesRef = useRef<Particle[]>([]);
+export function ParticleField({ count = 14, color, hue, drift = false, className }: Props) {
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const prefersReduced =
+      typeof matchMedia !== 'undefined' &&
+      matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (prefersReduced) return;
+    const canvas = ref.current!;
+    const ctx = canvas.getContext('2d')!;
+    let raf = 0;
 
-    // Set canvas size
-    const updateCanvasSize = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const resize = () => {
+      const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
+    resize();
+    const ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(resize) : null;
+    ro?.observe(canvas);
 
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
+    // Static seeds (avoid per-frame alloc) + tiny per-particle hue jitter
+    const seeds = Array.from({ length: count }).map(() => ({
+      x: Math.random() * canvas.clientWidth,
+      y: Math.random() * canvas.clientHeight,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: 1 + Math.random() * 1.5,
+      hueJitter: (Math.random() - 0.5) * 4, // ±2°
+    }));
 
-    // Initialize particles
-    const initParticles = () => {
-      particlesRef.current = [];
-      for (let i = 0; i < particleCount; i++) {
-        particlesRef.current.push({
-          x: Math.random() * canvas.clientWidth,
-          y: Math.random() * canvas.clientHeight,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          life: Math.random() * 100,
-          maxLife: 100 + Math.random() * 50
-        });
-      }
-    };
-
-    initParticles();
-
-    // Animation loop
-    const animate = () => {
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
-      particlesRef.current.forEach((particle, index) => {
-        // Update position
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.life++;
+      // Compute animated drift once per frame (UI-thread friendly)
+      const t = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const driftDeg = drift ? Math.sin(t * 0.001) * 6 : 0; // ±6°
+      const baseHue = typeof hue === 'number' ? hue : undefined;
 
-        // Reset particle if it goes off screen or dies
-        if (
-          particle.x < 0 || 
-          particle.x > canvas.clientWidth || 
-          particle.y < 0 || 
-          particle.y > canvas.clientHeight ||
-          particle.life > particle.maxLife
-        ) {
-          particle.x = Math.random() * canvas.clientWidth;
-          particle.y = Math.random() * canvas.clientHeight;
-          particle.life = 0;
-        }
+      for (const p of seeds) {
+        // integrate
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.clientWidth) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.clientHeight) p.vy *= -1;
 
-        // Draw particle
-        const alpha = 1 - (particle.life / particle.maxLife);
-        const size = 1 + Math.sin(particle.life * 0.1) * 0.5;
-        
-        ctx.save();
-        ctx.globalAlpha = alpha * 0.6;
-        ctx.fillStyle = color;
+        // draw
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+
+        // Precedence: color (hex) → hsla(hue+drift+jitter) → fallback
+        const effectiveFill = color
+          ? color
+          : `hsla(${(((baseHue ?? 255) + driftDeg + p.hueJitter) % 360 + 360) % 360}, 75%, 65%, 0.7)`;
+
+        ctx.fillStyle = effectiveFill;
+        ctx.shadowColor = effectiveFill;
+        ctx.shadowBlur = 8;
         ctx.fill();
-        ctx.restore();
-      });
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!prefersReducedMotion) {
-      animate();
-    }
-
-    return () => {
-      window.removeEventListener('resize', updateCanvasSize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
       }
+
+      raf = requestAnimationFrame(draw);
     };
-  }, [particleCount, color]);
+
+    raf = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(raf); ro?.disconnect(); };
+  }, [count, color, hue, drift]);
 
   return (
     <canvas
-      ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{ width: '100%', height: '100%' }}
+      ref={ref}
+      className={['pointer-events-none absolute inset-0', className].filter(Boolean).join(' ')}
+      style={{ mixBlendMode: 'screen' }}
     />
   );
-};
+}

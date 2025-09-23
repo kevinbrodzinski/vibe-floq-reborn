@@ -96,6 +96,11 @@ export function handlePreflight(req: Request) {
   return new Response(null, { status: 204, headers });
 }
 
+// Alias used by some functions
+export function handleOptions(req: Request) {
+  return handlePreflight(req);
+}
+
 // Convenience wrappers so all responses include CORS
 export function okJSON(body: unknown, req: Request, status = 200) {
   const { headers } = buildCorsHeaders(req);
@@ -161,8 +166,22 @@ export function corsHeaders(origin: string | null = null) {
   };
 }
 
-export function corsHeadersFor(req: Request) {
-  return corsHeaders(req.headers.get('origin'));
+export function respondWithCorsOptions() {
+  return new Response(null, { status: 204, headers: defaultCorsHeaders });
 }
 
-export const defaultCorsHeaders = corsHeaders();
+// Legacy exports for backward compatibility
+// Stable default headers object for simple use-sites
+export const defaultCorsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Vary': 'Origin',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range, range-unit, x-requested-with, cache-control',
+};
+
+// Backwards-compatible name: many functions import `corsHeaders` as an object
+export const corsHeaders = defaultCorsHeaders;
+
+export function corsHeadersFor(req: Request) {
+  return buildCorsHeaders(req).headers;
+}

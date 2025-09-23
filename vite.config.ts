@@ -109,8 +109,11 @@ export default defineConfig(({ mode, command }) => {
         // Some deps deep-require svg/fabric → force non-fabric
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
 
-        // Normalize the rare ".js" specifier to the module id
+        // React legacy subpaths used by some bundles (e.g., SWR, older libs)
+        'react/index.js': 'react',
         'react/jsx-runtime.js': 'react/jsx-runtime',
+        'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
+
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
