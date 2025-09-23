@@ -15,10 +15,10 @@ function rnwLegacyShims() {
     enforce: 'pre' as const,
     resolveId(source: string) {
       if (source === LEGACY_CGNC_RNWEB || source === LEGACY_CGNC_RN) {
-        return path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts');
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
       }
       if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
-        return path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts');
+        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
       }
       if (RNSVG_FABRIC_NATIVE.test(source)) {
         return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
@@ -97,14 +97,14 @@ export default defineConfig(({ mode, command }) => {
 
         // 2) react-native-svg 🤝 RN-Web (prefer real exports if present; shims are below)
         'react-native-web/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
         'react-native/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/shims/codegenNativeComponent.web.ts'),
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
 
         'react-native-web/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
         'react-native/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/shims/codegenNativeCommands.web.ts'),
+          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
 
         // Some deps deep-require svg/fabric → force non-fabric
         'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
