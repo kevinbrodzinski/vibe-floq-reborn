@@ -23,6 +23,12 @@ export default defineConfig(({ mode, command }) => ({
           ? { protocol: 'wss', host: PREVIEW_HMR_HOST, port: 443 }
           : true,
   },
+  optimizeDeps: {
+    include: [
+      '@supabase/supabase-js',
+      '@supabase/postgrest-js',
+    ],
+  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),

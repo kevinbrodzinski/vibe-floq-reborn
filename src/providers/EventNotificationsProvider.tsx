@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
-import throttle from 'lodash.throttle';
+import { throttle } from 'lodash-es';
 
 interface EventNotification {
   id: string;

@@ -140,6 +140,7 @@ export default defineConfig(({ mode, command }) => {
         'react-native-web',
         // Let Vite auto-discover and prebundle Supabase packages naturally
         '@supabase/supabase-js',
+        '@supabase/postgrest-js',
       ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
