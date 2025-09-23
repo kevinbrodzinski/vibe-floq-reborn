@@ -1,86 +1,108 @@
+// src/hooks/usePresenceChannel.ts
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentVibe } from '@/lib/store/useVibe';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useVibe } from '@/lib/store/useVibe';
 import { useAuth } from '@/hooks/useAuth';
-import ngeohash from 'ngeohash';
+import { encode as geohashEncode } from 'ngeohash'; // <-- FIX: named import (no default export)
 
 export const usePresenceChannel = () => {
-  const vibe = useCurrentVibe();
-  const locationHook = useUnifiedLocation({
-    enableTracking: false, // Don't need server tracking for presence
-    enablePresence: false, // We handle presence manually here
-    hookId: 'presence-channel'
-  });
-  const { visibility } = useVibe();
+  const vibe = useCurrentVibe(); // string-like vibe token
+  const { visibility } = useVibe(); // 'on' | 'friends' | 'off' (etc.)
   const { user, loading: authLoading } = useAuth();
 
-  // Start location tracking when we have required data
+  // Location – presence does not need server tracking here
+  const locationHook = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'presence-channel',
+  });
+
+  // Start/stop device location tracking when we have auth + vibe (avoid adding method refs to deps)
   useEffect(() => {
     if (!authLoading && vibe && user?.id) {
       locationHook.startTracking();
     } else {
       locationHook.stopTracking();
     }
-  }, [authLoading, vibe, user?.id, locationHook.startTracking, locationHook.stopTracking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, vibe, user?.id]);
 
-  // Memoize gh5 to ensure stable value across effects
+  // Geohash (precision 5) is memoized by latitude/longitude only
   const gh5 = useMemo(() => {
-    if (!locationHook.coords) return null;
-    return ngeohash.encode(locationHook.coords.lat, locationHook.coords.lng, 5);
-  }, [locationHook.coords]);
+    const c = locationHook.coords;
+    if (!c) return null;
+    try {
+      return geohashEncode(c.lat, c.lng, 5);
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('geohash encode failed', e, c);
+      }
+      return null;
+    }
+    // only recompute if lat/lng change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationHook.coords?.lat, locationHook.coords?.lng]);
 
+  // Subscribe + track presence when ready
   useEffect(() => {
-    // Wait for auth to complete and ensure we have required data
+    // wait for requisites
     if (authLoading || !vibe || !gh5 || !user?.id) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('⏳ usePresenceChannel waiting for:', { authLoading, vibe: !!vibe, gh5: !!gh5, profileId: !!user?.id });
+        console.log('⏳ usePresenceChannel waiting for:', {
+          authLoading,
+          vibe: !!vibe,
+          gh5: !!gh5,
+          profileId: !!user?.id,
+        });
       }
       return;
     }
 
     const channelName = `vibe-${vibe}-${gh5}`;
-    
+
     try {
-      const ch = supabase.channel(channelName, { 
-        config: { 
-          presence: { key: channelName } 
-        } 
+      // Presence key should uniquely identify this member in the channel
+      const ch = supabase.channel(channelName, {
+        config: { presence: { key: user.id } },
       });
 
-      ch
-        .on('presence', { event: 'sync' }, () => {
-          // Presence state is available via ch.presenceState() if needed
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ Presence sync for channel:', channelName);
-          }
-        })
-        .subscribe(async (status) => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('📡 Channel status:', status, 'for:', channelName);
-          }
-          
-          if (status === 'SUBSCRIBED') {
-            try {
-              await ch.track({ 
-                profileId: user.id,
-                name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
-                avatar: user.user_metadata?.avatar_url,
-                online_at: new Date().toISOString(),
-                vibe,
-                gh5,
-                visible: visibility !== 'off'
-              });
-            } catch (trackError) {
-              console.warn('Failed to track presence:', trackError);
-            }
-          } else if (status === 'CHANNEL_ERROR') {
-            console.warn('Channel connection failed:', channelName);
-          }
-        });
+      ch.on('presence', { event: 'sync' }, () => {
+        if (process.env.NODE_ENV === 'development') {
+          // ch.presenceState() available here if needed
+          console.log('✅ Presence sync for channel:', channelName);
+        }
+      });
 
-      // Clean-up on vibe / location change
+      ch.subscribe(async (status) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📡 Channel status:', status, 'for:', channelName);
+        }
+
+        if (status === 'SUBSCRIBED') {
+          try {
+            await ch.track({
+              profileId: user.id,
+              name:
+                user.user_metadata?.username ||
+                user.email?.split('@')[0] ||
+                'Unknown',
+              avatar: user.user_metadata?.avatar_url,
+              online_at: new Date().toISOString(),
+              vibe,
+              gh5,
+              visible: visibility !== 'off',
+            });
+          } catch (trackError) {
+            console.warn('Failed to track presence:', trackError);
+          }
+        } else if (status === 'CHANNEL_ERROR') {
+          console.warn('Channel connection failed:', channelName);
+        }
+      });
+
+      // Cleanup on vibe / location change / unmount
       return () => {
         try {
           ch.unsubscribe().catch(console.error);
@@ -91,36 +113,38 @@ export const usePresenceChannel = () => {
     } catch (channelError) {
       console.error('Failed to create presence channel:', channelError);
     }
-  }, [authLoading, vibe, gh5, user?.id]);
+  }, [authLoading, vibe, gh5, user?.id, visibility]); // include visibility so initial track uses correct state
 
-  // Separate effect for visibility updates
+  // Separate effect: update visibility if it changes while subscribed
   useEffect(() => {
     if (authLoading || !vibe || !gh5 || !user?.id) return;
 
     const channelName = `vibe-${vibe}-${gh5}`;
-    
     try {
-      // Get existing channel and update visibility
       const channels = supabase.getChannels();
-      const existingChannel = channels.find(ch => ch.topic === channelName);
-      
-      if (existingChannel && existingChannel.state === 'joined') {
-        // Note: update method doesn't exist on RealtimeChannel, 
-        // would need to track again with new state
-        existingChannel.track({
-          profileId: user.id,
-          name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
-          avatar: user.user_metadata?.avatar_url,
-          online_at: new Date().toISOString(),
-          vibe,
-          gh5,
-          visible: visibility !== 'off'
-        }).catch(error => {
-          console.warn('Failed to update visibility:', error);
-        });
+      const existing = channels.find((ch) => ch.topic === channelName);
+
+      // RealtimeChannel doesn't expose an "update" presence; call track() again with new state
+      if (existing && existing.state === 'joined') {
+        existing
+          .track({
+            profileId: user.id,
+            name:
+              user.user_metadata?.username ||
+              user.email?.split('@')[0] ||
+              'Unknown',
+            avatar: user.user_metadata?.avatar_url,
+            online_at: new Date().toISOString(),
+            vibe,
+            gh5,
+            visible: visibility !== 'off',
+          })
+          .catch((err) => {
+            console.warn('Failed to update visibility:', err);
+          });
       }
-    } catch (error) {
-      console.warn('Failed to update presence visibility:', error);
+    } catch (err) {
+      console.warn('Failed to update presence visibility:', err);
     }
-  }, [authLoading, visibility]);
+  }, [authLoading, visibility, vibe, gh5, user?.id]);
 };
