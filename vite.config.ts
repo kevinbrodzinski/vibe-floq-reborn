@@ -115,11 +115,11 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
         // use-sync-external-store: Use custom shim that provides proper API
-        'use-sync-external-store/shim': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
-        'use-sync-external-store/shim/index': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
-        'use-sync-external-store/shim/index.js': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
-        'use-sync-external-store/shim/with-selector': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
-        'use-sync-external-store/shim/with-selector.js': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
+        'use-sync-external-store/shim': path.resolve(__dirname, './src/shims/use-sync-external-store/index.ts'),
+        'use-sync-external-store/shim/index': path.resolve(__dirname, './src/shims/use-sync-external-store/index.ts'),
+        'use-sync-external-store/shim/index.js': path.resolve(__dirname, './src/shims/use-sync-external-store/index.ts'),
+        'use-sync-external-store/shim/with-selector': path.resolve(__dirname, './src/shims/use-sync-external-store/with-selector.ts'),
+        'use-sync-external-store/shim/with-selector.js': path.resolve(__dirname, './src/shims/use-sync-external-store/with-selector.ts'),
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
