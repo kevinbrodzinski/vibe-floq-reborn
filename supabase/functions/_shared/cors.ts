@@ -96,6 +96,11 @@ export function handlePreflight(req: Request) {
   return new Response(null, { status: 204, headers });
 }
 
+// Alias used by some functions
+export function handleOptions(req: Request) {
+  return handlePreflight(req);
+}
+
 // Convenience wrappers so all responses include CORS
 export function okJSON(body: unknown, req: Request, status = 200) {
   const { headers } = buildCorsHeaders(req);
@@ -125,20 +130,34 @@ export function badJSON(message: string, req: Request, status = 400) {
   });
 }
 
-// Legacy exports for backward compatibility
-export function corsHeaders(origin: string | null = null) {
-  const allowOrigin = origin ?? '*';
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Vary': 'Origin',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 
-      'authorization, x-client-info, apikey, content-type, range, range-unit, x-requested-with, cache-control',
-  };
+// Simple helpers that do not require the Request object (use wildcard origin)
+export function respondWithCors(body: unknown, status = 200, extraHeaders?: Record<string, string>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...defaultCorsHeaders,
+      'content-type': 'application/json; charset=utf-8',
+      ...extraHeaders,
+    },
+  });
 }
+
+export function respondWithCorsOptions() {
+  return new Response(null, { status: 204, headers: defaultCorsHeaders });
+}
+
+// Legacy exports for backward compatibility
+// Stable default headers object for simple use-sites
+export const defaultCorsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Vary': 'Origin',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range, range-unit, x-requested-with, cache-control',
+};
+
+// Backwards-compatible name: many functions import `corsHeaders` as an object
+export const corsHeaders = defaultCorsHeaders;
 
 export function corsHeadersFor(req: Request) {
-  return corsHeaders(req.headers.get('origin'));
+  return buildCorsHeaders(req).headers;
 }
-
-export const defaultCorsHeaders = corsHeaders();
