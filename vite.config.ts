@@ -114,12 +114,13 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
-        // use-sync-external-store: Use custom shim that provides proper API
-        'use-sync-external-store/shim': path.resolve(__dirname, './src/shims/use-sync-external-store/index.ts'),
-        'use-sync-external-store/shim/index': path.resolve(__dirname, './src/shims/use-sync-external-store/index.ts'),
-        'use-sync-external-store/shim/index.js': path.resolve(__dirname, './src/shims/use-sync-external-store/index.ts'),
-        'use-sync-external-store/shim/with-selector': path.resolve(__dirname, './src/shims/use-sync-external-store/with-selector.ts'),
-        'use-sync-external-store/shim/with-selector.js': path.resolve(__dirname, './src/shims/use-sync-external-store/with-selector.ts'),
+        // use-sync-external-store: Point to native package exports
+        'use-sync-external-store/shim': 'use-sync-external-store/shim/index.mjs',
+        'use-sync-external-store/shim/index': 'use-sync-external-store/shim/index.mjs',
+        'use-sync-external-store/shim/index.js': 'use-sync-external-store/shim/index.mjs',
+        'use-sync-external-store/shim/index.mjs': 'use-sync-external-store/shim/index.mjs',
+        'use-sync-external-store/shim/with-selector': 'use-sync-external-store/shim/with-selector.mjs',
+        'use-sync-external-store/shim/with-selector.js': 'use-sync-external-store/shim/with-selector.mjs',
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
