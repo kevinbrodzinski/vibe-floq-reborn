@@ -1,15 +1,27 @@
-// src/hooks/usePresenceChannel.ts
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentVibe } from '@/lib/store/useVibe';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useVibe } from '@/lib/store/useVibe';
 import { useAuth } from '@/hooks/useAuth';
-import { encode as geohashEncode } from 'ngeohash'; // <-- FIX: named import (no default export)
+// Robust import: handle CJS/ESM/default/object export shapes
+import * as ngeohashMod from 'ngeohash';
+
+/** Resolve a geohash encoder function from 'ngeohash' regardless of export shape. */
+function resolveGeohashEncode(): ((lat: number, lng: number, precision?: number) => string) | undefined {
+  const mod: any = ngeohashMod;
+  const candidate =
+    mod?.encode ||
+    mod?.default?.encode ||
+    (typeof mod?.default === 'function' ? mod.default : undefined);
+  return typeof candidate === 'function' ? candidate : undefined;
+}
+
+const geohashEncode = resolveGeohashEncode();
 
 export const usePresenceChannel = () => {
   const vibe = useCurrentVibe(); // string-like vibe token
-  const { visibility } = useVibe(); // 'on' | 'friends' | 'off' (etc.)
+  const { visibility } = useVibe(); // 'on' | 'friends' | 'off' etc.
   const { user, loading: authLoading } = useAuth();
 
   // Location – presence does not need server tracking here
@@ -19,7 +31,7 @@ export const usePresenceChannel = () => {
     hookId: 'presence-channel',
   });
 
-  // Start/stop device location tracking when we have auth + vibe (avoid adding method refs to deps)
+  // Start/stop device location tracking when we have auth + vibe
   useEffect(() => {
     if (!authLoading && vibe && user?.id) {
       locationHook.startTracking();
@@ -29,10 +41,23 @@ export const usePresenceChannel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, vibe, user?.id]);
 
-  // Geohash (precision 5) is memoized by latitude/longitude only
+  // Geohash (precision 5) memoized by lat/lng only
   const gh5 = useMemo(() => {
     const c = locationHook.coords;
     if (!c) return null;
+
+    if (!geohashEncode) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          '[presence] ngeohash encoder not found. Check library export shape. Falling back to coarse key.'
+        );
+      }
+      // Fallback: coarse cell key (not a true geohash, but stable)
+      const lat = Math.round(c.lat * 10) / 10;
+      const lng = Math.round(c.lng * 10) / 10;
+      return `approx-${lat}-${lng}`;
+    }
+
     try {
       return geohashEncode(c.lat, c.lng, 5);
     } catch (e) {
@@ -47,7 +72,6 @@ export const usePresenceChannel = () => {
 
   // Subscribe + track presence when ready
   useEffect(() => {
-    // wait for requisites
     if (authLoading || !vibe || !gh5 || !user?.id) {
       if (process.env.NODE_ENV === 'development') {
         console.log('⏳ usePresenceChannel waiting for:', {
@@ -63,14 +87,13 @@ export const usePresenceChannel = () => {
     const channelName = `vibe-${vibe}-${gh5}`;
 
     try {
-      // Presence key should uniquely identify this member in the channel
+      // Use a stable, user-unique presence key (profile id)
       const ch = supabase.channel(channelName, {
         config: { presence: { key: user.id } },
       });
 
       ch.on('presence', { event: 'sync' }, () => {
         if (process.env.NODE_ENV === 'development') {
-          // ch.presenceState() available here if needed
           console.log('✅ Presence sync for channel:', channelName);
         }
       });
@@ -113,7 +136,7 @@ export const usePresenceChannel = () => {
     } catch (channelError) {
       console.error('Failed to create presence channel:', channelError);
     }
-  }, [authLoading, vibe, gh5, user?.id, visibility]); // include visibility so initial track uses correct state
+  }, [authLoading, vibe, gh5, user?.id, visibility]);
 
   // Separate effect: update visibility if it changes while subscribed
   useEffect(() => {
@@ -124,7 +147,6 @@ export const usePresenceChannel = () => {
       const channels = supabase.getChannels();
       const existing = channels.find((ch) => ch.topic === channelName);
 
-      // RealtimeChannel doesn't expose an "update" presence; call track() again with new state
       if (existing && existing.state === 'joined') {
         existing
           .track({
