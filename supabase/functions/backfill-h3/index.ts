@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { geoToH3 } from 'https://esm.sh/h3-js@4';
+import { latLngToCell } from 'https://esm.sh/h3-js@4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
               return null;
             }
 
-            const h3_7 = geoToH3(lat, lng, 7);
+            const h3_7 = latLngToCell(lat, lng, 7);
             return { id: row.id, h3_7 };
           } catch (err) {
             console.warn(`Error processing row ${row.id}:`, err);
