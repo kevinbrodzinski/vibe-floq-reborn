@@ -3,14 +3,17 @@ import { colors } from '@/lib/theme-tokens.web';
 
 type Props = {
   count?: number;
-  hue?: number; // optional override; if omitted we use primary color with screen blend
+  hue?: number;
+  color?: string;   // token color wins over hue
   className?: string;
 };
 
-export function ParticleField({ count = 14, hue, className }: Props) {
+export function ParticleField({ count = 14, hue, color, className }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    const prefersReduced = matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    if (prefersReduced) return;
     const canvas = ref.current!;
     const ctx = canvas.getContext('2d')!;
     let raf = 0;
@@ -42,9 +45,11 @@ export function ParticleField({ count = 14, hue, className }: Props) {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        const fill = hue != null
-          ? `hsla(${hue}, 75%, 65%, .7)`
-          : `color-mix(in oklab, ${colors.primary} 80%, white 20%)`;
+        const fill =
+          color ??
+          (hue != null
+            ? `hsla(${hue}, 75%, 65%, .7)`
+            : `color-mix(in oklab, ${colors.primary} 80%, white 20%)`);
         ctx.fillStyle = fill;
         ctx.shadowColor = fill;
         ctx.shadowBlur = 8;
@@ -58,7 +63,7 @@ export function ParticleField({ count = 14, hue, className }: Props) {
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [count, hue]);
+  }, [count, hue, color]);
 
   return (
     <canvas

@@ -2,7 +2,13 @@ import React, { useRef } from 'react';
 import { HeroCard } from '../HeroCard';
 import { ParticleField } from '@/components/effects/ParticleField/ParticleField.web';
 
-export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void }) {
+export function HeroCarousel({
+  onOpen,
+  color,
+}: {
+  onOpen: (key: 'momentary' | 'mine' | 'clubs' | 'business') => void;
+  color?: string; // VIBE token color
+}) {
   const scroller = useRef<HTMLDivElement>(null);
 
   return (
@@ -16,9 +22,13 @@ export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clu
           <HeroCard
             title="Happening Now"
             subtitle="Live momentary floqs forming"
-            stats={[{ v: '12', l: 'Active' }, { v: '3', l: 'Near You' }, { v: '47', l: 'People' }]}
+            stats={[
+              { v: '12', l: 'Active' },
+              { v: '3', l: 'Near You' },
+              { v: '47', l: 'People' },
+            ]}
             onPress={() => onOpen('momentary')}
-            particleField={<ParticleField />}
+            particleField={<ParticleField color={color} />}
           />
         </div>
         <div style={{ scrollSnapAlign: 'start' }}>
@@ -32,7 +42,7 @@ export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clu
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 mt-2">
+      <div className="mt-2 flex items-center justify-center gap-2">
         <Dot active />
         <Dot />
         <Dot />
@@ -45,7 +55,11 @@ export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clu
 function Dot({ active }: { active?: boolean }) {
   return (
     <div
-      className={active ? 'w-6 h-2 rounded bg-[hsl(var(--primary))]' : 'w-2 h-2 rounded-full bg-[hsl(var(--muted-foreground)/.25)]'}
+      className={
+        active
+          ? 'h-2 w-6 rounded bg-[hsl(var(--primary))]'
+          : 'h-2 w-2 rounded-full bg-[hsl(var(--muted-foreground)/.25)]'
+      }
     />
   );
 }

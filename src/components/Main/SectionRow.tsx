@@ -10,15 +10,17 @@ interface SectionItem {
 
 interface SectionRowProps {
   title: string;
+  meta?: string;  // Added meta prop
   items: SectionItem[];
-  onItemPress?: (item: SectionItem) => void;
+  onPressItem?: (id: string) => void;  // Changed to match usage
   emptyMessage?: string;
 }
 
 export const SectionRow = ({ 
   title, 
+  meta,
   items, 
-  onItemPress,
+  onPressItem,
   emptyMessage = "Nothing here yet" 
 }: SectionRowProps) => {
   if (!items || items.length === 0) {
@@ -46,7 +48,10 @@ export const SectionRow = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
     >
-      <h3 className="text-lg font-semibold text-foreground px-4">{title}</h3>
+      <div className="flex justify-between items-end px-4">
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+        {meta && <span className="text-xs text-muted-foreground">{meta}</span>}
+      </div>
       
       <div className="space-y-2">
         {items.map((item, index) => (
@@ -55,7 +60,7 @@ export const SectionRow = ({
             className="mx-4 p-4 bg-card border border-border rounded-lg cursor-pointer hover:bg-card/80 transition-colors"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => onItemPress?.(item)}
+            onClick={() => onPressItem?.(item.id)}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { HeroCard } from '../HeroCard';
-import { ParticleField } from '@/src/components/effects/ParticleField/ParticleField.native';
-import { colors } from '@/src/lib/theme-tokens.native';
+import { ParticleField } from '@/components/effects/ParticleField/ParticleField.native';
+import { colors } from '@/lib/theme-tokens.native';
 
 export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void }) {
   const [index, setIndex] = React.useState(0);
