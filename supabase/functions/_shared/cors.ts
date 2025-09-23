@@ -144,15 +144,6 @@ export function respondWithCors(body: unknown, status = 200, req?: Request) {
   });
 }
 
-/**
- * Back-compat helper expected by multiple functions.
- * Returns a preflight Response for OPTIONS or null otherwise.
- */
-export function handleOptions(req: Request) {
-  if (req.method !== 'OPTIONS') return null;
-  const { headers } = buildCorsHeaders(req);
-  return new Response(null, { status: 204, headers });
-}
 
 // Legacy exports for backward compatibility
 export function corsHeaders(origin: string | null = null) {
