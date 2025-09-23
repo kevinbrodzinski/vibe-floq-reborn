@@ -72,25 +72,33 @@ export function vibeToHue(vibe: Vibe): number {
 /**
  * Generate living hue with subtle drift for atmospheric effects
  */
-export function vibeToDriftedHue(vibe: Vibe, time = performance.now()): number {
+export function vibeToDriftedHue(vibe: Vibe, time = (typeof performance !== 'undefined' ? performance.now() : Date.now())): number {
   const baseHue = vibeToHue(vibe);
   const drift = Math.sin(time * 0.001) * 6; // ±6° drift
-  return baseHue + drift;
+  // Keep hue inside 0..360
+  const h = (baseHue + drift) % 360;
+  return h < 0 ? h + 360 : h;
 }
+
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
 /**
  * Create HSL string with optional drift for particles and atmospheric effects
  */
 export function vibeToHsl(vibe: Vibe, options?: {
-  saturation?: number;
-  lightness?: number;
-  alpha?: number;
+  saturation?: number;  // 0..100
+  lightness?: number;   // 0..100
+  alpha?: number;       // 0..1
   drift?: boolean;
 }): string {
   const { saturation = 75, lightness = 65, alpha = 0.7, drift = false } = options || {};
-  const hue = drift ? vibeToDriftedHue(vibe) : vibeToHue(vibe);
+  const rawHue = drift ? vibeToDriftedHue(vibe) : vibeToHue(vibe);
+  const h = ((rawHue % 360) + 360) % 360;
+  const s = clamp(saturation, 0, 100);
+  const l = clamp(lightness, 0, 100);
+  const a = clamp(alpha, 0, 1);
   
-  return alpha < 1 
-    ? `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
-    : `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  return a < 1 
+    ? `hsla(${h}, ${s}%, ${l}%, ${a})`
+    : `hsl(${h}, ${s}%, ${l}%)`;
 }

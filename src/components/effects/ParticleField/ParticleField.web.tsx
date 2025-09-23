@@ -29,17 +29,25 @@ export function ParticleField({ count = 14, hue, color, drift = false, className
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    const particles = Array.from({ length: count }).map(() => ({
+    // static seeds (avoid per-frame alloc) with per-particle hue jitter
+    const seeds = Array.from({ length: count }).map(() => ({
       x: Math.random() * canvas.clientWidth,
       y: Math.random() * canvas.clientHeight,
       vx: (Math.random() - 0.5) * 0.3,
       vy: (Math.random() - 0.5) * 0.3,
       r: 1 + Math.random() * 1.5,
+      hueJitter: (Math.random() - 0.5) * 4, // ±2° per particle
     }));
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      for (const p of particles) {
+      
+      // compute animated hue only once per frame
+      const t = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const driftDeg = drift ? Math.sin(t * 0.001) * 6 : 0; // ±6°
+      const baseHue = typeof hue === 'number' ? hue : undefined;
+      
+      for (const p of seeds) {
         p.x += p.vx; p.y += p.vy;
         if (p.x < 0 || p.x > canvas.clientWidth) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.clientHeight) p.vy *= -1;
@@ -47,16 +55,10 @@ export function ParticleField({ count = 14, hue, color, drift = false, className
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         
-        // Apply subtle drift to hue for "living" particles
-        const useHue = hue != null && drift 
-          ? hue + (Math.sin(performance.now() * 0.001) * 6) // ±6° drift
-          : hue;
-          
-        const fill =
-          color ??
-          (useHue != null
-            ? `hsla(${useHue}, 75%, 65%, .7)`
-            : `color-mix(in oklab, ${colors.primary} 80%, white 20%)`);
+        const fill = color
+          ? color
+          : `hsla(${(((baseHue ?? 255) + driftDeg + p.hueJitter) % 360 + 360) % 360}, 75%, 65%, 0.7)`;
+
         ctx.fillStyle = fill;
         ctx.shadowColor = fill;
         ctx.shadowBlur = 8;
@@ -70,7 +72,7 @@ export function ParticleField({ count = 14, hue, color, drift = false, className
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [count, hue, color]);
+  }, [count, hue, color, drift]);
 
   return (
     <canvas
