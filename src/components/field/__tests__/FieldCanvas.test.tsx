@@ -5,7 +5,18 @@ import React from 'react';
 
 // Mock HTMLCanvasElement.getContext for jsdom
 beforeEach(() => {
-	vi.spyOn(HTMLCanvasElement.prototype as any, 'getContext').mockImplementation(() => ({}) as any);
+	vi.spyOn(HTMLCanvasElement.prototype as any, 'getContext').mockImplementation((type: string) => {
+		if (type === 'webgl' || type === 'webgl2') {
+			return {
+				RENDERER: 37445,
+				getParameter: vi.fn((param: number) => {
+					if (param === 37445) return 'WebGL Mock Renderer';
+					return null;
+				})
+			} as any;
+		}
+		return {} as any;
+	});
 });
 
 // Provide SocialWeather context wrapper
