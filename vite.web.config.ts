@@ -46,7 +46,4 @@ export default defineConfig(({ mode, command }) => ({
     conditions: ['browser', 'module', 'import', 'default'],
     mainFields: ['browser', 'module', 'main'],
   },
-  optimizeDeps: {
-    include: ['@supabase/supabase-js', '@supabase/postgrest-js'],
-  },
 }));

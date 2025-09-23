@@ -51,6 +51,7 @@ const FloqPlanExecutionScreen = lazy(() => import('@/pages/FloqPlanExecutionScre
 const FloqHQPage = lazy(() => import('@/pages/FloqHQPage'));
 const FloqCreatePage = lazy(() => import('@/pages/FloqCreatePage'));
 const FloqsDiscoverPage = lazy(() => import('@/pages/FloqsDiscoverPage'));
+const FloqMainPage = lazy(() => import('@/components/Main/FloqMainPage').then(m => ({ default: m.FloqMainPage })));
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import UserProfileByUsernameWrapper from '@/components/UserProfileByUsernameWrapper';
 import Profile from '@/pages/Profile';
@@ -81,6 +82,7 @@ import Phase34DemoRoutes from '@/routes/Phase34DemoRoutes';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
+  const floqMainV2 = useFeatureFlag('FLOQ_MAIN_V2');
 
   return (
     <Routes>
@@ -108,6 +110,20 @@ export const AppRoutes = () => {
       <Route path="/recap-actions" element={<RecapActionSheet />} />
       <Route path="/field" element={<LegacyRedirect />} />
       <Route path="/floqs" element={
+        <RouteSuspense>
+          {floqMainV2 ? (
+            <FloqMainPage 
+              vibe="chill"
+              topPerks={[]}
+              friendsIn={[]}
+              branchOut={[]}
+            />
+          ) : (
+            <FloqsDiscoverPage />
+          )}
+        </RouteSuspense>
+      } />
+      <Route path="/floqs/discover" element={
         <RouteSuspense>
           <FloqsDiscoverPage />
         </RouteSuspense>
