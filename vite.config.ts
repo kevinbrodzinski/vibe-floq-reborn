@@ -114,6 +114,10 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
+        // Stabilize use-sync-external-store selector shim to existing file
+        'use-sync-external-store/shim/with-selector': 'use-sync-external-store/shim/with-selector.js',
+        'use-sync-external-store/shim/with-selector.js': 'use-sync-external-store/shim/with-selector.js',
+
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
