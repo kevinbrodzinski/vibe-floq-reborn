@@ -47,13 +47,6 @@ export default defineConfig(({ mode, command }) => ({
         path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
       'react-native/Libraries/Utilities/codegenNativeCommands':
         path.resolve(__dirname, './src/lib/stubs/codegenNativeCommands.js'),
-      // Fix use-sync-external-store shim imports
-      'use-sync-external-store/shim': 'use-sync-external-store/shim/index.mjs',
-      'use-sync-external-store/shim/index': 'use-sync-external-store/shim/index.mjs',
-      'use-sync-external-store/shim/index.js': 'use-sync-external-store/shim/index.mjs',
-      'use-sync-external-store/shim/index.mjs': 'use-sync-external-store/shim/index.mjs',
-      'use-sync-external-store/shim/with-selector': 'use-sync-external-store/shim/with-selector.mjs',
-      'use-sync-external-store/shim/with-selector.js': 'use-sync-external-store/shim/with-selector.mjs',
     },
     dedupe: ['react', 'react-dom'],
     conditions: ['browser', 'module', 'import', 'default'],
