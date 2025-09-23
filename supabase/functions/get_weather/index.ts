@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as geohash from "https://esm.sh/ngeohash@0.6.3";
+import { encodeGeohash } from "../_shared/geohash.ts";
 import { corsHeadersFor, handlePreflight } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -55,7 +55,7 @@ serve(async req => {
     }
 
     // 1. Generate geohash6 for this location (≈ 1 km²)
-    const geohash6 = geohash.encode(lat, lng, 6);
+    const geohash6 = encodeGeohash(lat, lng, 6);
     console.log(`[weather] Checking cache for geohash6: ${geohash6}`);
 
     // 2. Try cache first (10-minute TTL)

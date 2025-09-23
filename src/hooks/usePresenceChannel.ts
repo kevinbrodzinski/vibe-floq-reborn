@@ -4,20 +4,7 @@ import { useCurrentVibe } from '@/lib/store/useVibe';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useVibe } from '@/lib/store/useVibe';
 import { useAuth } from '@/hooks/useAuth';
-// Robust import: handle CJS/ESM/default/object export shapes
-import * as ngeohashMod from 'ngeohash';
-
-/** Resolve a geohash encoder function from 'ngeohash' regardless of export shape. */
-function resolveGeohashEncode(): ((lat: number, lng: number, precision?: number) => string) | undefined {
-  const mod: any = ngeohashMod;
-  const candidate =
-    mod?.encode ||
-    mod?.default?.encode ||
-    (typeof mod?.default === 'function' ? mod.default : undefined);
-  return typeof candidate === 'function' ? candidate : undefined;
-}
-
-const geohashEncode = resolveGeohashEncode();
+import { encodeGeohash } from '@/lib/geohash';
 
 export const usePresenceChannel = () => {
   const vibe = useCurrentVibe(); // string-like vibe token
@@ -46,20 +33,8 @@ export const usePresenceChannel = () => {
     const c = locationHook.coords;
     if (!c) return null;
 
-    if (!geohashEncode) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(
-          '[presence] ngeohash encoder not found. Check library export shape. Falling back to coarse key.'
-        );
-      }
-      // Fallback: coarse cell key (not a true geohash, but stable)
-      const lat = Math.round(c.lat * 10) / 10;
-      const lng = Math.round(c.lng * 10) / 10;
-      return `approx-${lat}-${lng}`;
-    }
-
     try {
-      return geohashEncode(c.lat, c.lng, 5);
+      return encodeGeohash(c.lat, c.lng, 5);
     } catch (e) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('geohash encode failed', e, c);
