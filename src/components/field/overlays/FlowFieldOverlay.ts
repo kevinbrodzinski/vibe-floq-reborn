@@ -23,7 +23,9 @@ export class FlowFieldOverlay {
       s.blendMode = ADD_BLEND;
       s.visible = false;
       this.sprites.push(s);
-      this.container.addChild(s);
+      const anyContainer = this.container as any;
+      if (typeof anyContainer.addParticle === 'function') anyContainer.addParticle(s);
+      else this.container.addChild(s);
     }
   }
 

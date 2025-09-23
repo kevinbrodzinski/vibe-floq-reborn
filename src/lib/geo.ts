@@ -1,34 +1,5 @@
-import { encodeGeohash } from '@/lib/geohash';
 
-export { encodeGeohash };
-
-// Simple geohash decode function for geo.ts compatibility
-function decodeGeohash(hash: string): { latitude: number; longitude: number } {
-  const base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
-  let lat = [-90, 90];
-  let lng = [-180, 180];
-  let even = true;
-  
-  for (const c of hash) {
-    const idx = base32.indexOf(c);
-    for (let bit = 4; bit >= 0; bit--) {
-      const bitValue = (idx >> bit) & 1;
-      if (even) {
-        const mid = (lng[0] + lng[1]) / 2;
-        lng[bitValue] = mid;
-      } else {
-        const mid = (lat[0] + lat[1]) / 2;
-        lat[bitValue] = mid;
-      }
-      even = !even;
-    }
-  }
-  
-  return {
-    latitude: (lat[0] + lat[1]) / 2,
-    longitude: (lng[0] + lng[1]) / 2
-  };
-}
+import ngeohash from 'ngeohash';
 
 export function haversineMeters(a:{lat:number; lng:number}, b:{lat:number; lng:number}) {
   const R = 6371e3;
@@ -48,7 +19,7 @@ export function etaMinutesMeters(distance_m:number, mode:"walk"|"drive"="walk") 
 
 // Convert geohash to center coordinates
 export function geohashToCenter(hash: string): [number, number] {
-  const decoded = decodeGeohash(hash);
+  const decoded = ngeohash.decode(hash);
   return [decoded.latitude, decoded.longitude];
 }
 
@@ -73,7 +44,7 @@ export function viewportToTileIds(
   
   for (let lat = minLat; lat <= maxLat; lat += step) {
     for (let lng = minLng; lng <= maxLng; lng += step) {
-      tiles.push(encodeGeohash(lat, lng, precision));
+      tiles.push(ngeohash.encode(lat, lng, precision));
     }
   }
   

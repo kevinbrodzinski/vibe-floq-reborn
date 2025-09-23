@@ -67,7 +67,9 @@ export class ParticleFlowSystem {
     sprite.tint = vibeToTint(vibe);
     sprite.width = PARTICLE.SIZE_SM;
     sprite.height = PARTICLE.SIZE_SM;
-    this.container.addChild(sprite);
+    const anyContainer = this.container as any;
+    if (typeof anyContainer.addParticle === 'function') anyContainer.addParticle(sprite);
+    else this.container.addChild(sprite);
 
     segments.push({ sprite, timestamp: performance.now() });
 

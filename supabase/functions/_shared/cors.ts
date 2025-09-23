@@ -130,16 +130,40 @@ export function badJSON(message: string, req: Request, status = 400) {
   });
 }
 
-// Simple helpers that do not require the Request object (use wildcard origin)
-export function respondWithCors(body: unknown, status = 200, extraHeaders?: Record<string, string>) {
-  return new Response(JSON.stringify(body), {
+/**
+ * Minimal compatibility wrapper used by several functions.
+ * Adds CORS headers and optional status.
+ */
+export function respondWithCors(body: unknown, status = 200, req?: Request) {
+  const headers = req ? buildCorsHeaders(req).headers : corsHeaders();
+  const responseBody = typeof body === 'string' ? body : JSON.stringify(body);
+  const contentType = typeof body === 'string' ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8';
+  return new Response(responseBody, {
     status,
-    headers: {
-      ...defaultCorsHeaders,
-      'content-type': 'application/json; charset=utf-8',
-      ...extraHeaders,
-    },
+    headers: { ...headers, 'content-type': contentType },
   });
+}
+
+/**
+ * Back-compat helper expected by multiple functions.
+ * Returns a preflight Response for OPTIONS or null otherwise.
+ */
+export function handleOptions(req: Request) {
+  if (req.method !== 'OPTIONS') return null;
+  const { headers } = buildCorsHeaders(req);
+  return new Response(null, { status: 204, headers });
+}
+
+// Legacy exports for backward compatibility
+export function corsHeaders(origin: string | null = null) {
+  const allowOrigin = origin ?? '*';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 
+      'authorization, x-client-info, apikey, content-type, range, range-unit, x-requested-with, cache-control',
+  };
 }
 
 export function respondWithCorsOptions() {
