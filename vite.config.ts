@@ -112,6 +112,9 @@ export default defineConfig(({ mode, command }) => {
         // Normalize the rare ".js" specifier to the module id
         'react/jsx-runtime.js': 'react/jsx-runtime',
 
+        // React 18 useSyncExternalStore fix - use built-in instead of shim
+        'use-sync-external-store/shim': 'react',
+
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
         'expo-constants': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
