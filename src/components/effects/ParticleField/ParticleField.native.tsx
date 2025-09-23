@@ -1,86 +1,122 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Animated, Dimensions } from 'react-native';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import { useEffect } from 'react';
+import { View, Dimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 interface ParticleFieldProps {
-  particleCount?: number;
-  color?: string;
+  count?: number;
+  hue?: number;
 }
 
-export const ParticleField: React.FC<ParticleFieldProps> = ({
-  particleCount = 12,
-  color = '#007AFF' // var(--primary) equivalent
-}) => {
-  const particles = useRef<Animated.Value[]>([]);
-  const animations = useRef<Animated.CompositeAnimation[]>([]);
+export const ParticleField = ({ 
+  count = 12, 
+  hue = 280 
+}: ParticleFieldProps) => {
+  const { width, height } = Dimensions.get('window');
+  
+  // Create particle data
+  const particles = Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.random() * 6 + 2,
+    opacity: Math.random() * 0.6 + 0.3,
+    hue: hue + (Math.random() - 0.5) * 60,
+    duration: Math.random() * 8000 + 4000, // 4-12 seconds
+  }));
+
+  const animatedValues = particles.map(() => ({
+    translateX: useSharedValue(0),
+    translateY: useSharedValue(0),
+    opacity: useSharedValue(0),
+  }));
 
   useEffect(() => {
-    // Initialize particles
-    particles.current = [];
-    animations.current = [];
-
-    for (let i = 0; i < particleCount; i++) {
-      const animatedValue = new Animated.Value(0);
-      particles.current.push(animatedValue);
-
-      const animation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(animatedValue, {
-            toValue: 1,
-            duration: 3000 + Math.random() * 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(animatedValue, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
+    particles.forEach((particle, index) => {
+      const values = animatedValues[index];
+      
+      // Start with fade in
+      values.opacity.value = withTiming(particle.opacity, {
+        duration: 1000,
+        easing: Easing.ease,
+      });
+      
+      // Animate movement
+      values.translateX.value = withRepeat(
+        withTiming(
+          Math.random() * 100 - 50, 
+          { 
+            duration: particle.duration,
+            easing: Easing.inOut(Easing.ease) 
+          }
+        ),
+        -1,
+        true
       );
-
-      animations.current.push(animation);
-      animation.start();
-    }
-
-    return () => {
-      animations.current.forEach(animation => animation.stop());
-    };
-  }, [particleCount]);
+      
+      values.translateY.value = withRepeat(
+        withTiming(
+          Math.random() * 100 - 50,
+          { 
+            duration: particle.duration * 1.1,
+            easing: Easing.inOut(Easing.ease) 
+          }
+        ),
+        -1,
+        true
+      );
+    });
+  }, []);
 
   return (
-    <View style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      pointerEvents: 'none'
-    }}>
-      {particles.current.map((particle, index) => (
-        <Animated.View
-          key={index}
-          style={{
-            position: 'absolute',
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: color,
-            left: Math.random() * screenWidth,
-            top: Math.random() * screenHeight,
-            opacity: particle.interpolate({
-              inputRange: [0, 0.5, 1],
-              outputRange: [0, 0.6, 0]
-            }),
-            transform: [{
-              scale: particle.interpolate({
-                inputRange: [0, 0.5, 1],
-                outputRange: [0.5, 1.5, 0.5]
-              })
-            }]
-          }}
-        />
-      ))}
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width,
+        height,
+        opacity: 0.7,
+        zIndex: -1,
+      }}
+    >
+      {particles.map((particle, index) => {
+        const values = animatedValues[index];
+        
+        const animatedStyle = useAnimatedStyle(() => {
+          const tx = values.translateX.value;
+          const ty = values.translateY.value;
+          const op = values.opacity.value;
+          
+          return {
+            transform: [{ translateX: tx }, { translateY: ty }],
+            opacity: op,
+          };
+        });
+
+        return (
+          <Animated.View
+            key={particle.id}
+            style={[
+              {
+                position: 'absolute',
+                left: particle.x - particle.size,
+                top: particle.y - particle.size,
+                width: particle.size * 2,
+                height: particle.size * 2,
+                borderRadius: particle.size,
+                backgroundColor: `hsl(${particle.hue}, 70%, 60%)`,
+              },
+              animatedStyle,
+            ]}
+          />
+        );
+      })}
     </View>
   );
 };

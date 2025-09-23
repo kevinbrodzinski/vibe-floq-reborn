@@ -1,55 +1,77 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import { ParticleField } from '@/components/effects/ParticleField/ParticleField.web';
 
 interface HeroCardProps {
   title: string;
-  subtitle: string;
+  vibe?: string;
+  onPress?: () => void;
   isActive?: boolean;
-  onPress: () => void;
   showParticles?: boolean;
 }
 
-export const HeroCard: React.FC<HeroCardProps> = ({
-  title,
-  subtitle,
+export const HeroCard = ({ 
+  title, 
+  vibe = "chill", 
+  onPress, 
   isActive = false,
-  onPress,
-  showParticles = false
-}) => {
+  showParticles = false 
+}: HeroCardProps) => {
+  // Map vibe to particle hue
+  const getVibeHue = (vibe: string) => {
+    const vibeHues: Record<string, number> = {
+      chill: 280,     // Purple
+      energetic: 120, // Green
+      focused: 200,   // Blue
+      creative: 60,   // Yellow
+      social: 300,    // Magenta
+      default: 280,
+    };
+    return vibeHues[vibe] || vibeHues.default;
+  };
+
   return (
     <motion.div
-      className={`
-        relative h-64 rounded-2xl overflow-hidden cursor-pointer
-        bg-[color:var(--card)] border border-[color:var(--border)]
-        ${isActive ? 'ring-2 ring-[color:var(--primary)]/30' : ''}
-        ${showParticles ? 'bg-gradient-to-br from-[color:var(--card)] to-[color:var(--card)]/80' : ''}
-      `}
-      onClick={onPress}
+      className="h-96 cursor-pointer select-none"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
+      onClick={onPress}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
     >
-      {/* Glow effect for active card */}
-      {isActive && (
-        <div className="absolute inset-0 bg-gradient-to-br from-[color:var(--primary)]/5 to-transparent" />
-      )}
-      
-      {/* Content */}
-      <div className="absolute inset-0 flex flex-col justify-end p-6">
-        <div className="space-y-2">
-          <h3 className="text-2xl font-bold text-[color:var(--foreground)]">
-            {title}
-          </h3>
-          <p className="text-[color:var(--muted-foreground)]">
-            {subtitle}
-          </p>
+      <div className="relative h-full bg-card border border-border rounded-lg overflow-hidden">
+        {showParticles && (
+          <ParticleField 
+            count={14} 
+            hue={getVibeHue(vibe)}
+            className="z-0"
+          />
+        )}
+        
+        <div className="relative z-10 h-full flex flex-col justify-between p-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">
+                <div 
+                  className="w-2 h-2 rounded-full mr-2"
+                  style={{ backgroundColor: `hsl(${getVibeHue(vibe)}, 70%, 60%)` }}
+                />
+                {vibe}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-end justify-between">
+            <div className="text-sm text-muted-foreground">
+              Tap to explore
+            </div>
+            <div className="w-8 h-8 rounded-full border-2 border-primary/20 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Active indicator */}
-      {isActive && (
-        <div className="absolute top-4 right-4 w-3 h-3 bg-[color:var(--primary)] rounded-full animate-pulse" />
-      )}
     </motion.div>
   );
 };

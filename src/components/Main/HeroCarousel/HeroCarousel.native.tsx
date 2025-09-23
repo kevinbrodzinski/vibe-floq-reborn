@@ -1,76 +1,125 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
-import { HeroCard } from '../HeroCard';
+import { useState } from 'react';
+import { ScrollView, Dimensions, View } from 'react-native';
+import Animated, { 
+  useAnimatedStyle, 
+  interpolate, 
+  useSharedValue 
+} from 'react-native-reanimated';
+import { HeroCard } from '@/components/Main/HeroCard';
 
-const { width: screenWidth } = Dimensions.get('window');
-const cardWidth = screenWidth - 48; // Account for padding
-
-interface HeroCard {
+interface HeroItem {
   id: string;
   title: string;
-  subtitle: string;
-  action: () => void;
+  vibe: string;
+  onPress: () => void;
   showParticles?: boolean;
 }
 
 interface HeroCarouselProps {
-  cards: HeroCard[];
+  items: HeroItem[];
 }
 
-export const HeroCarousel: React.FC<HeroCarouselProps> = ({ cards }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+const { width: screenWidth } = Dimensions.get('window');
+const CARD_WIDTH = screenWidth - 32; // Account for padding
+
+export const HeroCarousel = ({ items }: HeroCarouselProps) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollX = useSharedValue(0);
 
   const handleScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollPosition / cardWidth);
-    setActiveIndex(index);
+    const offsetX = event.nativeEvent.contentOffset.x;
+    scrollX.value = offsetX;
+    
+    const newIndex = Math.round(offsetX / CARD_WIDTH);
+    if (newIndex !== currentIndex) {
+      setCurrentIndex(newIndex);
+    }
   };
 
   return (
-    <View style={{ paddingHorizontal: 24, paddingVertical: 32 }}>
-      {/* Main Carousel */}
+    <View>
+      {/* Carousel */}
       <ScrollView
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
-        contentContainerStyle={{ paddingHorizontal: 8 }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+        snapToInterval={CARD_WIDTH + 16} // Card width + gap
+        decelerationRate="fast"
       >
-        {cards.map((card, index) => (
-          <View key={card.id} style={{ width: cardWidth, paddingHorizontal: 8 }}>
+        {items.map((item, index) => (
+          <View 
+            key={item.id}
+            style={{ 
+              width: CARD_WIDTH,
+              marginRight: index < items.length - 1 ? 16 : 0 
+            }}
+          >
             <HeroCard
-              title={card.title}
-              subtitle={card.subtitle}
-              isActive={index === activeIndex}
-              onPress={card.action}
-              showParticles={card.showParticles && index === activeIndex}
+              title={item.title}
+              vibe={item.vibe}
+              onPress={item.onPress}
+              isActive={index === currentIndex}
+              showParticles={item.showParticles && index === currentIndex}
             />
           </View>
         ))}
       </ScrollView>
 
-      {/* Pager Dots */}
-      {cards.length > 1 && (
+      {/* Page Indicators */}
+      {items.length > 1 && (
         <View style={{ 
           flexDirection: 'row', 
           justifyContent: 'center', 
-          marginTop: 24, 
-          gap: 8 
+          marginTop: 16,
+          paddingHorizontal: 8 
         }}>
-          {cards.map((_, index) => (
-            <Pressable
-              key={index}
-              onPress={() => setActiveIndex(index)}
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: index === activeIndex 
-                  ? '#007AFF' // var(--primary) equivalent
-                  : 'rgba(128, 128, 128, 0.3)' // var(--muted-foreground)/30 equivalent
-              }}
-            />
-          ))}
+          {items.map((_, index) => {
+            const animatedStyle = useAnimatedStyle(() => {
+              const inputRange = [
+                (index - 1) * CARD_WIDTH,
+                index * CARD_WIDTH,
+                (index + 1) * CARD_WIDTH,
+              ];
+
+              const scale = interpolate(
+                scrollX.value,
+                inputRange,
+                [0.8, 1.2, 0.8],
+                'clamp'
+              );
+
+              const opacity = interpolate(
+                scrollX.value,
+                inputRange,
+                [0.3, 1, 0.3],
+                'clamp'
+              );
+
+              return {
+                transform: [{ scale }],
+                opacity,
+              };
+            });
+
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  {
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: index === currentIndex ? '#FFFFFF' : '#71717A',
+                    marginHorizontal: 4,
+                  },
+                  animatedStyle,
+                ]}
+              />
+            );
+          })}
         </View>
       )}
     </View>

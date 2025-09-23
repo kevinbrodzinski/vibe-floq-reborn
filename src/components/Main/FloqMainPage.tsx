@@ -25,27 +25,27 @@ export const FloqMainPage: React.FC<FloqMainPageProps> = ({
     {
       id: 'happening-now',
       title: 'Happening Now',
-      subtitle: 'Live moments near you',
-      action: () => navigate('/floqs-hub?tab=momentary'),
+      vibe: 'energetic',
+      onPress: () => navigate('/floqs-hub?tab=momentary'),
       showParticles: true
     },
     {
       id: 'my-floqs',
       title: 'My Floqs',
-      subtitle: 'Your saved events',
-      action: () => navigate('/floqs/discover')
+      vibe: 'chill',
+      onPress: () => navigate('/floqs/discover')
     },
     {
       id: 'clubs',
       title: 'Clubs & Tribes',
-      subtitle: 'Join communities',
-      action: () => navigate('/floqs-hub?tab=tribes')
+      vibe: 'social',
+      onPress: () => navigate('/floqs-hub?tab=tribes')
     },
     {
       id: 'business',
       title: 'Business Events',
-      subtitle: 'Professional networking',
-      action: () => navigate('/business-floqs')
+      vibe: 'focused',
+      onPress: () => navigate('/business-floqs')
     }
   ];
 
@@ -79,7 +79,7 @@ export const FloqMainPage: React.FC<FloqMainPageProps> = ({
         transition={{ duration: 0.6, delay: 0.1 }}
       >
         <ParticleField />
-        <HeroCarousel cards={heroCards} />
+        <HeroCarousel items={heroCards} />
       </motion.div>
 
       {/* Data Sections */}
@@ -101,11 +101,23 @@ export const FloqMainPage: React.FC<FloqMainPageProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
+          {/* Transform friendsIn data to match SectionItem interface */}
+          {(() => {
+            const friendsInData = friendsIn?.map(item => ({
+              id: item.id,
+              title: item.title,
+              value: item.count,
+              label: item.label
+            })) || [];
+            
+            return (
           <SectionRow
             title="Friends Are In"
-            items={friendsIn}
+            items={friendsInData}
             onItemPress={(item) => navigate(`/floq/${item.id}`)}
           />
+            );
+          })()}
         </motion.div>
 
         <motion.div
