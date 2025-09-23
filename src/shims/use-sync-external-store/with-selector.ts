@@ -1,13 +1,6 @@
-// Custom shim for use-sync-external-store that uses React 18's built-in implementation
+// with-selector variant that libraries like recharts expect
 import { useSyncExternalStore } from 'react';
 
-// Main hook export
-export { useSyncExternalStore };
-
-// Default export for compatibility
-export default useSyncExternalStore;
-
-// with-selector variant that SWR and other libraries expect
 export function useSyncExternalStoreWithSelector<Snapshot, Selection>(
   subscribe: (onStoreChange: () => void) => () => void,
   getSnapshot: () => Snapshot,
@@ -25,3 +18,6 @@ export function useSyncExternalStoreWithSelector<Snapshot, Selection>(
   // React 18's useSyncExternalStore is efficient enough for most use cases
   return selection;
 }
+
+// Default export for compatibility
+export default useSyncExternalStoreWithSelector;
