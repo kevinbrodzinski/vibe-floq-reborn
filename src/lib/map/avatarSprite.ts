@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type mapboxgl from 'mapbox-gl';
 
 // Cache to avoid re-downloading the same avatar
@@ -8,18 +7,18 @@ const loadingPromises = new Map<string, Promise<string | null>>();
 /**
  * Ensure an avatar image is loaded into the map sprite and return the iconId
  * @param map Mapbox map instance
- * @param userId Unique user identifier
+ * @param profileId Unique user identifier
  * @param photoUrl URL of the avatar image
  * @param size Desired size (default 64px)
  * @returns Promise resolving to iconId or null if failed
  */
 export async function ensureAvatarImage(
-  map: mapboxgl.Map, 
-  userId: string, 
-  photoUrl: string, 
+  map: mapboxgl.Map,
+  profileId: string,
+  photoUrl: string,
   size = 64
 ): Promise<string | null> {
-  const iconId = `avatar:${userId}:${size}`;
+  const iconId = `avatar:${profileId}:${size}`;
   
   // Already in sprite
   if (map.hasImage(iconId)) {
