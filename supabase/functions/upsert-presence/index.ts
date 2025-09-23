@@ -1,6 +1,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { geoToH3 } from "https://esm.sh/h3-js@4";
+import { latLngToCell } from "https://esm.sh/h3-js@4";
 import { checkRateLimitV2 } from "../_shared/helpers.ts";
 import { handlePreflight, okJSON, badJSON } from "../_shared/cors.ts";
 
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     }
 
     // Calculate H3 index for the location
-    const h3_7 = geoToH3(lat, lng, 7);
+    const h3_7 = latLngToCell(lat, lng, 7);
 
     // Use the new canonical upsert_presence function
     const { error } = await supabase.rpc('upsert_presence', {
