@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 import { deterministicRandom } from '@/lib/geo/random';
-import { latLngToCell as geoToH3 } from 'h3-js'; // Use consistent naming
+import { encodeGeohash } from '@/lib/geohash';
 import { VIBES } from '@/lib/vibes';
 import mockFriends from '@/data/mockFriends.json';
 
@@ -91,9 +91,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
     // Production mode: Try to connect to real presence data
     const setupPresence = async () => {
       try {
-        // Use H3 for precise channel addressing at resolution 7 (~1.2km hexagons)
-        const h3Index = geoToH3(lat, lng, 7);
-        const channel = supabase.channel(`presence-${h3Index}`);
+        // Use geohash for precise channel addressing (~1.2km precision)
+        const spatialHash = encodeGeohash(lat, lng, 6);
+        const channel = supabase.channel(`presence-${spatialHash}`);
         
         let hasSocketData = false;
         
@@ -184,7 +184,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
           
           try {
             if (process.env.NODE_ENV === 'development') {
-              console.log('[BucketedPresence] Socket timeout, fetching from vibes_now table for tile:', h3Index);
+              console.log('[BucketedPresence] Socket timeout, fetching from vibes_now table for tile:', spatialHash);
             }
             
             // Simplified query to avoid TypeScript deep inference issues
@@ -263,8 +263,8 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
           return;
         }
 
-        const h3Index = geoToH3(lat, lng, 7);
-        const channelName = `presence-${h3Index}`;
+        const spatialHash = encodeGeohash(lat, lng, 6);
+        const channelName = `presence-${spatialHash}`;
         
         // Create channel only once
         if (!channelRef.current) {
