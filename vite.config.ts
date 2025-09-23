@@ -114,9 +114,12 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
-        // use-sync-external-store: force ESM shims (pair with @radix fix)
-        'use-sync-external-store/shim/index.js': 'use-sync-external-store/shim/index.mjs',
-        'use-sync-external-store/shim/with-selector.js': 'use-sync-external-store/shim/with-selector.mjs',
+        // use-sync-external-store: Use React 18's built-in implementation (no shim needed)
+        'use-sync-external-store/shim': 'react',
+        'use-sync-external-store/shim/index': 'react',
+        'use-sync-external-store/shim/index.js': 'react',
+        'use-sync-external-store/shim/with-selector': 'react',
+        'use-sync-external-store/shim/with-selector.js': 'react',
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
