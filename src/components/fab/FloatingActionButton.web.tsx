@@ -62,37 +62,6 @@ export function FloatingActionButton({
         />
       </div>
 
-      {/* Ambient floaters */}
-      <div className="pointer-events-none fixed bottom-20 right-2 z-[59] w-[100px] h-[100px]">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <span
-            key={i}
-            className="absolute block w-[2px] h-[2px] rounded-full opacity-0"
-            style={{
-              left: 35 + (i * 5),
-              background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))',
-              boxShadow: '0 0 4px rgba(102,126,234,0.7)',
-              animation: `floatUp 4s linear ${i * 0.4}s infinite`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Orbiters */}
-      <div className="pointer-events-none fixed bottom-[88px] right-[22px] z-[59] w-[48px] h-[48px]">
-        {[0, 2, 4].map((delay) => (
-          <span
-            key={delay}
-            className="absolute top-1/2 left-1/2 block w-[3px] h-[3px] rounded-full"
-            style={{
-              background: 'rgba(102,126,234,0.6)',
-              boxShadow: '0 0 6px rgba(102,126,234,0.8)',
-              animation: `orbit 6s linear -${delay}s infinite`,
-            }}
-          />
-        ))}
-      </div>
-
       {/* Options */}
       <AnimatePresence>
         {open && (

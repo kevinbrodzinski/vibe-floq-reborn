@@ -5,6 +5,8 @@ import { HeroCarousel } from '@/components/Main/HeroCarousel/HeroCarousel.web';
 import { SectionRow } from '@/components/Main/SectionRow';
 import { FloatingActionButton } from '@/components/fab/FloatingActionButton.web';
 import { AvatarWithGlow } from '@/components/Main/AvatarWithGlow';
+import { FabAmbientParticles } from '@/components/fab/FabAmbientParticles.web';
+import { FabOrbitParticles } from '@/components/fab/FabOrbitParticles.web';
 import { vibeToHex, vibeToHue } from '@/lib/vibe/hsl';
 import type { Vibe } from '@/lib/vibes';
 
@@ -90,6 +92,10 @@ export function FloqMainPage({
         items={branchOut}
         onPressItem={(id) => navigate(`/discovery?targetId=${id}`)}
       />
+
+      {/* Ambient & Orbit Particles - Pause when FAB is open */}
+      <FabAmbientParticles color={vibeColor} enabled={!fabOpen} />
+      <FabOrbitParticles color={vibeColor} enabled={!fabOpen} />
 
       {/* FAB */}
       <FloatingActionButton
