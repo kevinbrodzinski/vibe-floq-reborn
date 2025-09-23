@@ -1,207 +1,90 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { HeroCarousel } from './HeroCarousel/HeroCarousel.web';
-import { SectionRow } from './SectionRow';
-import { ParticleField } from '../effects/ParticleField/ParticleField.web';
+import { VibePill } from '@/components/vibe/VibePill';
+import { HeroCarousel } from '@/components/Main/HeroCarousel/HeroCarousel.web';
+import { SectionRow } from '@/components/Main/SectionRow';
 import { FloatingActionButton } from '@/components/fab/FloatingActionButton.web';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-interface FloqMainPageProps {
-  vibe?: string;
-  onOpenVibe?: () => void;
-  topPerks?: Array<{id: string; title: string; value: string; label: string}>;
-  friendsIn?: Array<{id: string; title: string; count: number; label: string}>;
-  branchOut?: Array<{id: string; title: string; value: string; label: string}>;
-}
+type Perk = { id: string; title: string; value: string; label: string };
+type FriendIn = { id: string; title: string; count: number; label: string };
 
-export const FloqMainPage: React.FC<FloqMainPageProps> = ({
-  vibe = 'chill',
-  onOpenVibe,
+export function FloqMainPage({
+  vibe = "chill",
   topPerks = [],
   friendsIn = [],
-  branchOut = []
-}) => {
+  branchOut = [],
+}: {
+  vibe?: string;
+  topPerks?: Perk[];
+  friendsIn?: FriendIn[];
+  branchOut?: Perk[];
+}) {
   const navigate = useNavigate();
-  const [fabOpen, setFabOpen] = useState(false);
-
-  const heroCards = [
-    {
-      id: 'happening-now',
-      title: 'Happening Now',
-      vibe: 'energetic',
-      onPress: () => navigate('/momentary-nearby'),
-      showParticles: true
-    },
-    {
-      id: 'my-floqs',
-      title: 'My Floqs',
-      vibe: 'chill',
-      onPress: () => navigate('/my-floqs')
-    },
-    {
-      id: 'clubs',
-      title: 'Clubs',
-      vibe: 'social',
-      onPress: () => navigate('/clubs')
-    },
-    {
-      id: 'business',
-      title: 'Business',
-      vibe: 'focused',
-      onPress: () => navigate('/business-floqs')
-    }
-  ];
-
-  const handleFabSelect = (key: 'moment' | 'plan' | 'business') => {
-    setFabOpen(false);
-    switch (key) {
-      case 'moment':
-        navigate('/create/moment');
-        break;
-      case 'plan':
-        navigate('/create/plan');
-        break;
-      case 'business':
-        navigate('/create/business');
-        break;
-    }
-  };
-
-  const handleSectionItemPress = (sectionType: string, item: any) => {
-    switch (sectionType) {
-      case 'perks':
-        navigate(`/business-floqs?perkId=${item.id}`);
-        break;
-      case 'friends':
-        navigate(`/momentary-nearby?venueId=${item.id}`);
-        break;
-      case 'discovery':
-        navigate(`/discovery?targetId=${item.id}`);
-        break;
-    }
-  };
+  const [fabOpen, setFabOpen] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] relative">
+    <div className="flex-1 min-h-screen bg-background">
       {/* Header */}
-      <motion.div 
-        className="sticky top-0 z-50 bg-[color:var(--background)]/80 backdrop-blur-sm"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h1 className="text-2xl font-bold text-[color:var(--foreground)] select-none">
-            floq
-          </h1>
-          
-          {/* Avatar with glow effect */}
-          <button 
-            onClick={() => navigate('/profile')}
-            className="relative group"
-            aria-label="Open profile"
-          >
-            <div className="absolute inset-0 -m-2 rounded-full bg-[color:var(--primary)]/35 blur-md pointer-events-none group-hover:bg-[color:var(--primary)]/50 transition-colors" />
-            <Avatar className="h-10 w-10 border border-[color:var(--border)] relative z-10">
-              <AvatarImage src="/placeholder.svg" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Vibe pill section */}
-      <motion.div 
-        className="text-center pb-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <p className="text-xs text-[color:var(--muted-foreground)] mb-2">
-          discovering around you
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-full border-[color:var(--primary)] bg-[color:var(--background)]/70 backdrop-blur hover:shadow"
-          onClick={onOpenVibe}
-        >
-          <span className="text-xs text-[color:var(--muted-foreground)] mr-2">vibe</span>
-          <span className="text-xs font-semibold text-[color:var(--primary)]">{vibe}</span>
-        </Button>
-      </motion.div>
-
-      {/* Hero Carousel with Particle Field */}
-      <motion.div 
-        className="relative px-6 mb-6"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <ParticleField />
-        <HeroCarousel items={heroCards} />
-      </motion.div>
-
-      {/* Data Sections */}
-      <div className="px-6 py-4 space-y-6 pb-24">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <SectionRow
-            title="Top Perks Near You"
-            items={topPerks}
-            onItemPress={(item) => handleSectionItemPress('perks', item)}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          {/* Transform friendsIn data to match SectionItem interface */}
-          {(() => {
-            const friendsInData = friendsIn?.map(item => ({
-              id: item.id,
-              title: item.title,
-              value: String(item.count),
-              label: item.label
-            })) || [];
-            
-            return (
-              <SectionRow
-                title="Friends Are In"
-                items={friendsInData}
-                onItemPress={(item) => handleSectionItemPress('friends', item)}
-              />
-            );
-          })()}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-        >
-          <SectionRow
-            title="Branch Out"
-            items={branchOut}
-            onItemPress={(item) => handleSectionItemPress('discovery', item)}
-          />
-        </motion.div>
+      <div className="flex items-center justify-between px-4 pt-2 pb-1">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">floq</h1>
+        <button 
+          className="w-10 h-10 rounded-full bg-muted"
+          onClick={() => navigate('/profile')}
+          aria-label="Open profile"
+        />
       </div>
+
+      {/* Tagline + Vibe */}
+      <div className="text-center pb-1">
+        <p className="text-xs text-muted-foreground">discovering around you</p>
+        <div className="mt-2">
+          <VibePill vibe={vibe as any} />
+        </div>
+      </div>
+
+      {/* Hero carousel */}
+      <div className="mt-2 px-4">
+        <HeroCarousel
+          onOpen={(key) => {
+            if (key === 'momentary') navigate('/momentary-nearby');
+            if (key === 'mine') navigate('/my-floqs');
+            if (key === 'clubs') navigate('/clubs');
+            if (key === 'business') navigate('/business-floqs');
+          }}
+        />
+      </div>
+
+      {/* Sections */}
+      <SectionRow
+        title="Top Perks Near You"
+        items={topPerks}
+        onItemPress={(id) => navigate(`/business-floqs?perk=${id}`)}
+      />
+
+      <SectionRow
+        title="Friends Are In"
+        items={friendsIn.map((x) => ({ id: x.id, title: x.title, value: String(x.count), label: x.label }))}
+        onItemPress={(id) => navigate(`/momentary-nearby?venue=${id}`)}
+      />
+
+      <SectionRow
+        title="Branch Out"
+        items={branchOut}
+        onItemPress={(id) => navigate(`/discovery?target=${id}`)}
+      />
 
       {/* FAB */}
       <FloatingActionButton
         open={fabOpen}
-        onToggle={() => setFabOpen(!fabOpen)}
-        onSelect={handleFabSelect}
+        onToggle={() => setFabOpen((o: boolean) => !o)}
+        onSelect={(k) => {
+          setFabOpen(false);
+          if (k === 'moment') navigate('/create-moment');
+          if (k === 'plan') navigate('/new-plan');
+          if (k === 'business') navigate('/business-post');
+        }}
         badgeCount={3}
       />
     </div>
   );
-};
+}

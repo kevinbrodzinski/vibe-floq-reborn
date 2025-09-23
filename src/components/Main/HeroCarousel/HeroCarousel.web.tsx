@@ -1,110 +1,51 @@
-import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { HeroCard } from '@/components/Main/HeroCard';
+import React, { useRef } from 'react';
+import { HeroCard } from '../HeroCard';
+import { ParticleField } from '@/components/effects/ParticleField/ParticleField.web';
 
-interface HeroItem {
-  id: string;
-  title: string;
-  vibe: string;
-  onPress: () => void;
-  showParticles?: boolean;
-}
-
-interface HeroCarouselProps {
-  items: HeroItem[];
-}
-
-export const HeroCarousel = ({ items }: HeroCarouselProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    
-    const { scrollLeft, clientWidth } = scrollRef.current;
-    const newIndex = Math.round(scrollLeft / clientWidth);
-    if (newIndex !== currentIndex) {
-      setCurrentIndex(newIndex);
-    }
-  };
+export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void }) {
+  const scroller = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative">
-      {/* Carousel Container */}
-      <div 
-        ref={scrollRef}
-        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 scrollbar-hide"
-        style={{ 
-          scrollSnapType: 'x mandatory',
-          WebkitOverflowScrolling: 'touch',
-        }}
-        onScroll={handleScroll}
+    <>
+      <div
+        ref={scroller}
+        className="flex gap-4 overflow-x-auto no-scrollbar pr-10"
+        style={{ scrollSnapType: 'x mandatory', height: 300 }}
       >
-        {items.map((item, index) => (
-          <div 
-            key={item.id}
-            className="min-w-full snap-center snap-always"
-            style={{ scrollSnapAlign: 'center' }}
-          >
-            <div className="px-4">
-              <HeroCard
-                title={item.title}
-                vibe={item.vibe}
-                onPress={item.onPress}
-                isActive={index === currentIndex}
-                showParticles={item.showParticles && index === currentIndex}
-              />
-            </div>
-          </div>
-        ))}
-        
-        {/* Peek card (15% of next card visible) */}
-        {items.length > 1 && currentIndex < items.length - 1 && (
-          <div 
-            className="min-w-[15%] snap-center opacity-60"
-            style={{ marginLeft: '-85%' }}
-          >
-            <div className="px-4">
-              <HeroCard
-                title={items[currentIndex + 1]?.title || ''}
-                vibe={items[currentIndex + 1]?.vibe || 'chill'}
-                onPress={() => {}}
-                isActive={false}
-                showParticles={false}
-              />
-            </div>
-          </div>
-        )}
+        <div style={{ scrollSnapAlign: 'start' }}>
+          <HeroCard
+            title="Happening Now"
+            subtitle="Live momentary floqs forming"
+            stats={[{ v: '12', l: 'Active' }, { v: '3', l: 'Near You' }, { v: '47', l: 'People' }]}
+            onPress={() => onOpen('momentary')}
+            particleField={<ParticleField />}
+          />
+        </div>
+        <div style={{ scrollSnapAlign: 'start' }}>
+          <HeroCard title="My Floqs" subtitle="Your persistent groups" stats={[{ v: '5', l: 'Groups' }]} onPress={() => onOpen('mine')} peek />
+        </div>
+        <div style={{ scrollSnapAlign: 'start' }}>
+          <HeroCard title="Clubs" subtitle="Crews & scenes" onPress={() => onOpen('clubs')} peek />
+        </div>
+        <div style={{ scrollSnapAlign: 'start' }}>
+          <HeroCard title="Business" subtitle="Venue perks & posts" onPress={() => onOpen('business')} peek />
+        </div>
       </div>
 
-      {/* Page Indicators */}
-      {items.length > 1 && (
-        <div className="flex justify-center mt-4 space-x-2">
-          {items.map((_, index) => (
-            <motion.div
-              key={index}
-              className={`w-2 h-2 rounded-full cursor-pointer ${
-                index === currentIndex 
-                  ? 'bg-primary' 
-                  : 'bg-muted-foreground/30'
-              }`}
-              animate={{
-                scale: index === currentIndex ? 1.2 : 1,
-                opacity: index === currentIndex ? 1 : 0.5,
-              }}
-              transition={{ duration: 0.2 }}
-              onClick={() => {
-                if (scrollRef.current) {
-                  scrollRef.current.scrollTo({
-                    left: index * scrollRef.current.clientWidth,
-                    behavior: 'smooth'
-                  });
-                }
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      <div className="flex items-center justify-center gap-2 mt-2">
+        <Dot active />
+        <Dot />
+        <Dot />
+        <Dot />
+      </div>
+    </>
   );
-};
+}
+
+function Dot({ active }: { active?: boolean }) {
+  return (
+    <div
+      className={active ? 'w-6 h-2 rounded bg-[hsl(var(--primary))]' : 'w-2 h-2 rounded-full bg-[hsl(var(--muted-foreground)/.25)]'}
+    />
+  );
+}

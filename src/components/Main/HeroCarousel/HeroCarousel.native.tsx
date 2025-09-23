@@ -1,127 +1,59 @@
-import { useState } from 'react';
-import { ScrollView, Dimensions, View } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  interpolate, 
-  useSharedValue 
-} from 'react-native-reanimated';
-import { HeroCard } from '@/components/Main/HeroCard';
+import React from 'react';
+import { View, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { HeroCard } from '../HeroCard';
+import { ParticleField } from '@/src/components/effects/ParticleField/ParticleField.native';
+import { colors } from '@/src/lib/theme-tokens.native';
 
-interface HeroItem {
-  id: string;
-  title: string;
-  vibe: string;
-  onPress: () => void;
-  showParticles?: boolean;
-}
-
-interface HeroCarouselProps {
-  items: HeroItem[];
-}
-
-const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth - 32; // Account for padding
-
-export const HeroCarousel = ({ items }: HeroCarouselProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useSharedValue(0);
-
-  const handleScroll = (event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    scrollX.value = offsetX;
-    
-    const newIndex = Math.round(offsetX / CARD_WIDTH);
-    if (newIndex !== currentIndex) {
-      setCurrentIndex(newIndex);
-    }
+export function HeroCarousel({ onOpen }: { onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void }) {
+  const [index, setIndex] = React.useState(0);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / 316);
+    if (i !== index) setIndex(i);
   };
 
   return (
-    <View>
-      {/* Carousel */}
+    <>
       <ScrollView
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        snapToInterval={CARD_WIDTH + 16} // Card width + gap
+        snapToInterval={316}
         decelerationRate="fast"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingHorizontal: 16, columnGap: 16 }}
+        style={{ height: 300 }}
       >
-        {items.map((item, index) => (
-          <View 
-            key={item.id}
-            style={{ 
-              width: CARD_WIDTH,
-              marginRight: index < items.length - 1 ? 16 : 0 
-            }}
-          >
-            <HeroCard
-              title={item.title}
-              vibe={item.vibe}
-              onPress={item.onPress}
-              isActive={index === currentIndex}
-              showParticles={item.showParticles && index === currentIndex}
-            />
-          </View>
-        ))}
+        <HeroCard
+          title="Happening Now"
+          subtitle="Live momentary floqs forming"
+          stats={[{ v: '12', l: 'Active' }, { v: '3', l: 'Near You' }, { v: '47', l: 'People' }]}
+          onPress={() => onOpen('momentary')}
+          particleField={<ParticleField />}
+        />
+        <HeroCard title="My Floqs" subtitle="Your persistent groups" stats={[{ v: '5', l: 'Groups' }]} onPress={() => onOpen('mine')} peek />
+        <HeroCard title="Clubs" subtitle="Crews & scenes" onPress={() => onOpen('clubs')} peek />
+        <HeroCard title="Business" subtitle="Venue perks & posts" onPress={() => onOpen('business')} peek />
       </ScrollView>
 
-      {/* Page Indicators */}
-      {items.length > 1 && (
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'center', 
-          marginTop: 16,
-          paddingHorizontal: 8 
-        }}>
-          {items.map((_, index) => {
-            const animatedStyle = useAnimatedStyle(() => {
-              const inputRange = [
-                (index - 1) * CARD_WIDTH,
-                index * CARD_WIDTH,
-                (index + 1) * CARD_WIDTH,
-              ];
-
-              const scale = interpolate(
-                scrollX.value,
-                inputRange,
-                [0.8, 1.2, 0.8],
-                'clamp'
-              );
-
-              const opacity = interpolate(
-                scrollX.value,
-                inputRange,
-                [0.3, 1, 0.3],
-                'clamp'
-              );
-
-              return {
-                transform: [{ scale }],
-                opacity,
-              };
-            });
-
-            return (
-              <Animated.View
-                key={index}
-                style={[
-                  {
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: index === currentIndex ? '#FFFFFF' : '#71717A',
-                    marginHorizontal: 4,
-                  },
-                  animatedStyle,
-                ]}
-              />
-            );
-          })}
-        </View>
-      )}
-    </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+        <Dot active={index === 0} />
+        <Dot active={index === 1} />
+        <Dot active={index === 2} />
+        <Dot active={index === 3} />
+      </View>
+    </>
   );
-};
+}
+
+function Dot({ active }: { active?: boolean }) {
+  return (
+    <View
+      style={{
+        width: active ? 20 : 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: active ? colors.primary : 'rgba(255,255,255,0.25)',
+      }}
+    />
+  );
+}

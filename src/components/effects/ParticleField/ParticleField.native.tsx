@@ -1,117 +1,48 @@
-import { useEffect } from 'react';
-import { View, Dimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import React from 'react';
+import { View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import Animated, { useSharedValue, withRepeat, withTiming, useAnimatedProps } from 'react-native-reanimated';
+import { colors } from '@/lib/theme-tokens.native';
 
-interface ParticleFieldProps {
+const ACircle = Animated.createAnimatedComponent(Circle);
+
+type Props = {
   count?: number;
-  hue?: number;
-}
+  hue?: number; // if provided, we synthesize hsla; else use primary
+};
 
-export const ParticleField = ({ 
-  count = 12, 
-  hue = 280 
-}: ParticleFieldProps) => {
-  const { width, height } = Dimensions.get('window');
-  
-  // Create particle data
-  const particles = Array.from({ length: count }, (_, i) => ({
-    id: i,
-    x: Math.random() * width,
-    y: Math.random() * height,
-    size: Math.random() * 6 + 2,
-    opacity: Math.random() * 0.6 + 0.3,
-    hue: hue + (Math.random() - 0.5) * 60,
-    duration: Math.random() * 8000 + 4000, // 4-12 seconds
-  }));
-
-  const animatedValues = particles.map(() => ({
-    translateX: useSharedValue(0),
-    translateY: useSharedValue(0),
-    opacity: useSharedValue(0),
-  }));
-
-  useEffect(() => {
-    particles.forEach((particle, index) => {
-      const values = animatedValues[index];
-      
-      // Start with fade in
-      values.opacity.value = withTiming(particle.opacity, {
-        duration: 1000,
-        easing: Easing.ease,
-      });
-      
-      // Animate movement
-      values.translateX.value = withRepeat(
-        withTiming(
-          Math.random() * 100 - 50, 
-          { 
-            duration: particle.duration,
-            easing: Easing.inOut(Easing.ease) 
-          }
-        ),
-        -1,
-        true
-      );
-      
-      values.translateY.value = withRepeat(
-        withTiming(
-          Math.random() * 100 - 50,
-          { 
-            duration: particle.duration * 1.1,
-            easing: Easing.inOut(Easing.ease) 
-          }
-        ),
-        -1,
-        true
-      );
-    });
-  }, []);
+export function ParticleField({ count = 12, hue }: Props) {
+  const seeds = React.useMemo(() => Array.from({ length: count }).map((_, i) => i), [count]);
 
   return (
-    <View
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width,
-        height,
-        opacity: 0.7,
-        zIndex: -1,
-      }}
-    >
-      {particles.map((particle, index) => {
-        const values = animatedValues[index];
-        
-        const animatedStyle = useAnimatedStyle(() => ({
-          translateX: values.translateX.value,
-          translateY: values.translateY.value,
-          opacity: values.opacity.value,
-        }));
-
-        return (
-          <Animated.View
-            key={particle.id}
-            style={[
-              {
-                position: 'absolute',
-                left: particle.x - particle.size,
-                top: particle.y - particle.size,
-                width: particle.size * 2,
-                height: particle.size * 2,
-                borderRadius: particle.size,
-                backgroundColor: `hsl(${particle.hue}, 70%, 60%)`,
-              },
-              animatedStyle,
-            ]}
-          />
-        );
-      })}
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+      {/* Fixed viewBox keeps math easy; render inside hero card bounds */}
+      <Svg width="100%" height="100%" viewBox="0 0 320 200">
+        {seeds.map((i) => (
+          <Particle key={i} hue={hue} />
+        ))}
+      </Svg>
     </View>
   );
-};
+}
+
+function Particle({ hue }: { hue?: number }) {
+  const cx = useSharedValue(Math.random() * 320);
+  const cy = useSharedValue(Math.random() * 200);
+  const durX = 7000 + Math.random() * 4000;
+  const durY = 7000 + Math.random() * 4000;
+
+  React.useEffect(() => {
+    cx.value = withRepeat(withTiming(Math.random() * 320, { duration: durX }), -1, true);
+    cy.value = withRepeat(withTiming(Math.random() * 200, { duration: durY }), -1, true);
+  }, []);
+
+  const animated = useAnimatedProps(() => ({
+    cx: cx.value,
+    cy: cy.value,
+  }));
+
+  const fill = hue != null ? `hsla(${hue}, 75%, 65%, 0.7)` : colors.primary;
+
+  return <ACircle animatedProps={animated} r={1 + Math.random() * 1.6} fill={fill} />;
+}

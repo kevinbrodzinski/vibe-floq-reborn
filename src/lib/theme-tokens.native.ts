@@ -1,27 +1,24 @@
-/**
- * Design system token mappings for React Native platform
- * Maps to platform-appropriate values
- */
+// Token shim for native: map design tokens once, then use everywhere.
+// If you already expose Tamagui tokens, swap these values to read from there.
+export const colors = {
+  background: '#0a0a0f',
+  card: '#10121a',
+  border: 'rgba(255,255,255,0.12)',
+  primary: '#667eea',
+  primaryFg: '#ffffff',
+  muted: '#141824',
+  mutedFg: 'rgba(255,255,255,0.6)',
+  destructive: '#ef4444',
+};
 
-export const getTokens = () => ({
-  colors: {
-    background: '#000000',
-    card: '#0A0A0A', 
-    border: '#27272A',
-    primary: '#FFFFFF',
-    muted: '#18181B',
-    mutedForeground: '#71717A',
-  },
-  spacing: {
-    xs: 8,
-    sm: 16,
-    md: 24, 
-    lg: 32,
-    xl: 48,
-  },
-  borderRadius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-  }
-});
+export const shadows = {
+  lg: 'rgba(102,126,234,0.15)', // used only where RN supports shadowColor, see platform checks
+};
+
+export const radius = {
+  xl: 22,
+};
+
+export const spacing = {
+  pageX: 16,
+};
