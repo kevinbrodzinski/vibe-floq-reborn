@@ -114,12 +114,12 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
-        // use-sync-external-store: Use React 18's built-in implementation (no shim needed)
-        'use-sync-external-store/shim': 'react',
-        'use-sync-external-store/shim/index': 'react',
-        'use-sync-external-store/shim/index.js': 'react',
-        'use-sync-external-store/shim/with-selector': 'react',
-        'use-sync-external-store/shim/with-selector.js': 'react',
+        // use-sync-external-store: Use custom shim that provides proper API
+        'use-sync-external-store/shim': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
+        'use-sync-external-store/shim/index': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
+        'use-sync-external-store/shim/index.js': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
+        'use-sync-external-store/shim/with-selector': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
+        'use-sync-external-store/shim/with-selector.js': path.resolve(__dirname, './src/shims/use-sync-external-store.ts'),
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',

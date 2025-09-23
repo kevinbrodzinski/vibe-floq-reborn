@@ -2,6 +2,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildCors } from '../_shared/cors.ts';
 
 type Req = {
   center: { lat: number; lng: number };
@@ -15,15 +16,10 @@ type Req = {
 
 const PRICE_MAX = { "$":1, "$$":2, "$$$":3, "$$$$":4 } as const;
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return new Response("Method Not Allowed", { status:405, headers: corsHeaders });
+  const { preflight, json, error } = buildCors(req);
+  if (preflight) return preflight;
+  if (req.method !== "POST") return error("POST required", 405);
 
   const t0 = performance.now();
   try {
@@ -104,7 +100,7 @@ serve(async (req) => {
       const ms = Math.round(performance.now() - t0);
       console.log(`[ai-suggest-venues] fallback took ${ms}ms for ${fallbackScored.length} venues`);
 
-      return new Response(JSON.stringify({
+      return json({
         venues: fallbackScored.map((v:any) => ({
           id: v.id, name: v.name, photo_url: v.photo_url,
           vibe_score: v.vibe_score, score: Number(v.score?.toFixed(3) ?? 0),
@@ -114,13 +110,13 @@ serve(async (req) => {
             v.dist_m ? `${v.dist_m}m away` : undefined
           ].filter(Boolean)
         }))
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      });
     }
 
     const ms = Math.round(performance.now() - t0);
     console.log(`[ai-suggest-venues] RPC took ${ms}ms for ${scored?.length || 0} venues`);
 
-    return new Response(JSON.stringify({
+    return json({
       venues: (scored || []).map((v:any) => ({
         id: v.id, name: v.name, photo_url: v.photo_url,
         vibe_score: v.vibe_score, score: Number(v.score?.toFixed(3) ?? 0),
@@ -130,12 +126,10 @@ serve(async (req) => {
           v.dist_m ? `${Math.round(v.dist_m)}m away` : undefined
         ].filter(Boolean)
       }))
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    });
   } catch (e) {
     const ms = Math.round(performance.now() - t0);
     console.error(`[ai-suggest-venues] error after ${ms}ms:`, e);
-    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), { 
-      status:500, headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    });
+    return error(String(e?.message ?? e), 500);
   }
 });
