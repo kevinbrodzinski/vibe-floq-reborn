@@ -7,9 +7,9 @@ export function HeroCarousel({
   color,
   hue,
 }: {
-  onOpen: (key: 'momentary' | 'mine' | 'clubs' | 'business') => void;
-  color?: string; // VIBE token color for UI accents
-  hue?: number; // VIBE hue for atmospheric effects
+  onOpen: (key: 'momentary'|'mine'|'clubs'|'business') => void;
+  color?: string; // brand token hex for accents
+  hue?: number;   // derived vibe hue for FX
 }) {
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -30,15 +30,25 @@ export function HeroCarousel({
               { v: '47', l: 'People' },
             ]}
             onPress={() => onOpen('momentary')}
+            // Mirror native precedence: color (exact) > hue (with drift)
             particleField={<ParticleField color={color} hue={hue} drift />}
           />
         </div>
+
         <div style={{ scrollSnapAlign: 'start' }}>
-          <HeroCard title="My Floqs" subtitle="Your persistent groups" stats={[{ v: '5', l: 'Groups' }]} onPress={() => onOpen('mine')} peek />
+          <HeroCard
+            title="My Floqs"
+            subtitle="Your persistent groups"
+            stats={[{ v: '5', l: 'Groups' }]}
+            onPress={() => onOpen('mine')}
+            peek
+          />
         </div>
+
         <div style={{ scrollSnapAlign: 'start' }}>
           <HeroCard title="Clubs" subtitle="Crews & scenes" onPress={() => onOpen('clubs')} peek />
         </div>
+
         <div style={{ scrollSnapAlign: 'start' }}>
           <HeroCard title="Business" subtitle="Venue perks & posts" onPress={() => onOpen('business')} peek />
         </div>
