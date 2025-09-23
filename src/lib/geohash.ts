@@ -4,19 +4,23 @@
 
 let _externalEncode:
   | ((lat: number, lon: number, precision?: number) => string)
-  | undefined;
+  | null
+  | undefined = undefined;
 
-try {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore — tolerate any export shape at runtime
-  const mod = await (async () => import('ngeohash'))().catch(() => null) as any;
-  const candidate =
-    mod?.encode ||
-    mod?.default?.encode ||
-    (typeof mod?.default === 'function' ? mod.default : undefined);
-  if (typeof candidate === 'function') _externalEncode = candidate;
-} catch {
-  // ignore; we'll fall back
+async function tryLoadExternal(): Promise<void> {
+  if (_externalEncode !== undefined) return; // already tried
+  try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — tolerate any export shape at runtime
+    const mod = (await import('ngeohash')) as any;
+    const candidate =
+      mod?.encode ||
+      mod?.default?.encode ||
+      (typeof mod?.default === 'function' ? mod.default : undefined);
+    _externalEncode = typeof candidate === 'function' ? candidate : null;
+  } catch {
+    _externalEncode = null;
+  }
 }
 
 /** Local pure-TS encoder (no deps). */
@@ -59,13 +63,20 @@ function localEncode(lat: number, lon: number, precision = 5): string {
   return geohash;
 }
 
-/** Canonical API: use this everywhere. */
-export function encodeGeohash(lat: number, lon: number, precision = 5): string {
+/** Async version that attempts to load external package */
+export async function encodeGeohashAsync(lat: number, lon: number, precision = 5): Promise<string> {
   if (Number.isNaN(lat) || Number.isNaN(lon)) throw new Error('Invalid lat/lon');
-  // external first (if present), else local
+  await tryLoadExternal();
   try {
     return _externalEncode ? _externalEncode(lat, lon, precision) : localEncode(lat, lon, precision);
   } catch {
     return localEncode(lat, lon, precision);
   }
+}
+
+/** Canonical API: use this everywhere (sync fallback to local encoder) */
+export function encodeGeohash(lat: number, lon: number, precision = 5): string {
+  if (Number.isNaN(lat) || Number.isNaN(lon)) throw new Error('Invalid lat/lon');
+  // Safe immediate fallback to local encoder
+  return localEncode(lat, lon, precision);
 }
