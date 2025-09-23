@@ -1,11 +1,12 @@
 import { saveSignal, readQueue, drainQueue } from '@/core/preferences/PreferenceSignals';
+import { vi } from 'vitest';
 
 // Mock storage for testing
 const mockStorage = new Map<string, string>();
-jest.mock('@/lib/storage', () => ({
+vi.mock('@/lib/storage', () => ({
   storage: {
-    getItem: jest.fn((key: string) => Promise.resolve(mockStorage.get(key) || null)),
-    setItem: jest.fn((key: string, value: string) => {
+    getItem: vi.fn((key: string) => Promise.resolve(mockStorage.get(key) || null)),
+    setItem: vi.fn((key: string, value: string) => {
       mockStorage.set(key, value);
       return Promise.resolve();
     }),

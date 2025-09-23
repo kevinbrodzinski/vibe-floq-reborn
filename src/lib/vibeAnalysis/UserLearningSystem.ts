@@ -895,3 +895,26 @@ export class UserLearningSystem {
     return { hourlyPreferences, dayOfWeekPreferences, seasonalTrends };
   }
 }
+
+// Lightweight analysis helper for tests
+export function analyzeUserPatterns(corrections: Array<{ context: AnalysisContext; userChoice: Vibe }>) {
+	// Build hourly distribution from corrections
+	const hourly: Record<number, Partial<Record<Vibe, number>>> = {};
+	for (const c of corrections) {
+		const h = c.context?.hourOfDay ?? 0;
+		hourly[h] ??= {};
+		hourly[h]![c.userChoice] = (hourly[h]![c.userChoice] ?? 0) + 1;
+	}
+	const chrono = chronotypeFromHourly(hourly);
+	// Energy/social summaries
+	const energyCount = corrections.filter(c => ['hype','flowing','open','energetic','excited'].includes(c.userChoice)).length;
+	const lowEnergyCount = corrections.filter(c => ['chill','down'].includes(c.userChoice)).length;
+	const socialCount = corrections.filter(c => ['social','open','romantic','curious'].includes(c.userChoice)).length;
+	const soloCount = corrections.filter(c => ['solo','weird','down','chill'].includes(c.userChoice)).length;
+	return {
+		chronotype: chrono,
+		hasEnoughData: corrections.length >= 6,
+		energyType: energyCount > lowEnergyCount ? 'high-energy' : (lowEnergyCount > energyCount ? 'low-energy' : 'balanced'),
+		socialType: socialCount > soloCount ? 'social' : (soloCount > socialCount ? 'solo' : 'balanced'),
+	};
+}
