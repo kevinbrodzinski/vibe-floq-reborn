@@ -135,7 +135,7 @@ export function badJSON(message: string, req: Request, status = 400) {
  * Adds CORS headers and optional status.
  */
 export function respondWithCors(body: unknown, status = 200, req?: Request) {
-  const headers = req ? buildCorsHeaders(req).headers : corsHeaders();
+  const headers = req ? buildCorsHeaders(req).headers : defaultCorsHeaders;
   const responseBody = typeof body === 'string' ? body : JSON.stringify(body);
   const contentType = typeof body === 'string' ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8';
   return new Response(responseBody, {
@@ -144,18 +144,6 @@ export function respondWithCors(body: unknown, status = 200, req?: Request) {
   });
 }
 
-
-// Legacy exports for backward compatibility
-export function corsHeaders(origin: string | null = null) {
-  const allowOrigin = origin ?? '*';
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Vary': 'Origin',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 
-      'authorization, x-client-info, apikey, content-type, range, range-unit, x-requested-with, cache-control',
-  };
-}
 
 export function respondWithCorsOptions() {
   return new Response(null, { status: 204, headers: defaultCorsHeaders });
