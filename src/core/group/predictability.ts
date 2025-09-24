@@ -1,8 +1,8 @@
 export function omegaSpread(probabilities: number[]): number {
   if (!probabilities.length) return 1;
-  const s = [...probabilities].sort((a, b) => a - b);
-  const pick = (p: number) => s[Math.min(s.length - 1, Math.max(0, Math.floor(p * (s.length - 1))))];
-  return clamp01(pick(0.9) - pick(0.1));
+  const min = Math.min(...probabilities);
+  const max = Math.max(...probabilities);
+  return clamp01(max - min);
 }
 
 export function infoGainEntropy(before: number[], after: number[]): number {
@@ -18,7 +18,7 @@ export function infoGainEntropy(before: number[], after: number[]): number {
 }
 
 /** groupPreds: per-member probability distribution over actions */
-export function predictabilityGate(groupPreds: number[][], omegaStar = 0.35, tau = 0.15) {
+export function predictabilityGate(groupPreds: number[][], omegaStar = 0.7, tau = 0.01) {
   if (!groupPreds.length || !groupPreds[0]?.length)
     return { ok: false, spread: 1, gain: 0, fallback: 'relax_constraints' };
 
