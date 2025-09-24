@@ -107,7 +107,7 @@ export function RallyFromInviteBar({
             onClick={start}
             disabled={busy || (!centroid && !mapCenter)}
             className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-            aria-label={heads.length ? 'Start Rally with nearby friends' : 'Start a solo Rally'}
+            aria-label={heads.length ? 'Start Rally with nearby friends' : 'Start Rally'}
           >
             {busy ? 'Starting…' : 'Start Rally'}
           </button>

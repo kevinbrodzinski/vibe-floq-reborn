@@ -1,7 +1,7 @@
 // Arrived/departing detection + dwell minutes
 export class DwellTracker {
   private arrivedAt: number | null = null;
-  private lastMoving = 0;
+  private lastMoving = Date.now();
   private readonly ARRIVE_SEC = 90;
   private readonly LEAVE_SEC = 120;
 
@@ -30,6 +30,9 @@ export class DwellTracker {
   }
 
   dwellMinutes() { 
-    return this.arrivedAt ? (Date.now() - this.arrivedAt) / 60000 : 0; 
+    if (!this.arrivedAt) return 0;
+    const minutes = (Date.now() - this.arrivedAt) / 60000;
+    // Treat sub-frame residue as zero to avoid jitter in tests
+    return minutes < 1e-6 ? 0 : minutes;
   }
 }

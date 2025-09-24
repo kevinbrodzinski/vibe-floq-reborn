@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',        // DOM globals for React tests
     setupFiles: ['./vitest.setup.ts'],
+    alias: {
+      'pixi.js': resolve(__dirname, 'tests/setup/pixi.module-mock.ts'),
+    },
     deps: {
       inline: ['lodash-es'],   // 👈 add this line
     },

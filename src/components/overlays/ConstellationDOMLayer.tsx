@@ -125,7 +125,7 @@ export function ConstellationDOMLayer({
   }, [active, dragging, nodes, box.w, box.h, hoverRadiusPx])
 
   // Click to pin or invite
-  const onClick = React.useCallback((ev: React.MouseEvent) => {
+  const onClick = React.useCallback((_ev: React.MouseEvent) => {
     if (!active) return
     // Ignore click immediately after lasso completes
     if (lasso.ready) { setLasso({ path: [], ready: false }); return }
@@ -201,7 +201,7 @@ export function ConstellationDOMLayer({
           else picked.forEach(id => set.add(id))
           return Array.from(set)
         })
-        try { el.releasePointerCapture(ev.pointerId) } catch {}
+        try { el.releasePointerCapture(ev.pointerId) } catch (e) { void e }
       }
 
     el.addEventListener('pointerdown', onDown)
@@ -269,8 +269,8 @@ export function ConstellationDOMLayer({
     });
   };
 
-  const hoverVibe = hoverId ? (nodes.find(n => n.id === hoverId)?.vibe as any) : null
-  const ht = getVibeToken(hoverVibe || 'calm')
+  const hoverVibe = hoverId ? (nodes.find(n => n.id === hoverId)?.vibe) : null
+  const ht = getVibeToken((hoverVibe as any) ?? 'calm')
   const showGroupBar = active && selectedIds.length >= 2
 
   // Compute ordered selection for display
@@ -315,7 +315,7 @@ export function ConstellationDOMLayer({
       {/* Pinned tooltips (draggable) */}
       {active && pinned.map(p => {
         const n = nodes.find(n => n.id === p.id); if (!n) return null
-        const t = getVibeToken((n.vibe as any) || 'calm')
+        const t = getVibeToken((n.vibe as any) ?? 'calm')
         const base = getNodePx(p.id, nodes, box)
         const off = pinOffsets[p.id] ?? { dx: 0, dy: 0 }
         const x = base.x + off.dx, y = base.y + off.dy
@@ -534,8 +534,7 @@ function GroupAvatarStrip({
               style={{ outline: `1px solid ${ring}`, outlineOffset: -1, background: bg }}
             >
               {avatar ? (
-                // eslint-disable-next-line jsx-a11y/alt-text
-                <img src={avatar} className="w-full h-full object-cover" />
+                <img src={avatar} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[10px] text-white/90">
                   {initial}

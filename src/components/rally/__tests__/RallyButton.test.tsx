@@ -8,13 +8,13 @@ import { RallyButton } from '../RallyButton'
 
 // --- mocks ---
 const createRallyMock = vi.fn().mockResolvedValue({ rallyId: 'r_solo', invited: 0 })
-const toastMock = vi.fn()
+const toastMock = vi.fn(() => ({ dismiss: vi.fn(), update: vi.fn() }))
 
 vi.mock('@/lib/api/rally', () => ({
   createRally: (...args: any[]) => createRallyMock(...args),
 }))
 vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({ toast: toastMock }),
+  useToast: () => ({ toast: (...args: any[]) => { toastMock(...args); return undefined; } }),
 }))
 vi.mock('@/lib/geo/mapSingleton', () => ({
   getCurrentMap: () => ({
@@ -68,8 +68,8 @@ describe('RallyButton', () => {
     fireEvent.click(btn) // second click ignored because busy
 
     await waitFor(() => expect(createRallyMock).toHaveBeenCalledTimes(1))
-    expect(toastMock).toHaveBeenCalledWith(
+    await waitFor(() => expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Rally created' }),
-    )
+    ))
   })
 })

@@ -13,6 +13,12 @@ const toastMock = vi.fn()
 
 vi.mock('@/lib/api/rally', () => ({
   createRally: (...args: any[]) => createRallyMock(...args),
+  headsCentroid: vi.fn((heads: Array<{ lng:number; lat:number }>) => {
+    if (!heads?.length) return null
+    const lng = heads.reduce((s, h) => s + h.lng, 0) / heads.length
+    const lat = heads.reduce((s, h) => s + h.lat, 0) / heads.length
+    return { lng, lat }
+  }),
 }))
 vi.mock('@/lib/api/rallyInbox', () => ({
   createRallyInboxThread: (...args: any[]) => createThreadMock(...args),

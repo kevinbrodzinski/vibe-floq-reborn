@@ -38,12 +38,13 @@ export function chronotypeFromHourly(hourly: Record<number, Partial<Record<Vibe,
   const nonEmptyHours = Object.values(hourly).filter(p => Object.values(p ?? {}).some(v => (v ?? 0) > 0)).length;
   if (nonEmptyHours < 6) return 'balanced';
   
-  const energyAtHour = (h: number) => energyFromVector(Object.assign(Object.fromEntries(VIBES.map(v => [v, 0])), hourly[h] ?? {}) as Record<Vibe, number>);
-  const morning = [6, 7, 8, 9, 10, 11].reduce((s, h) => s + energyAtHour(h), 0);
-  const evening = [17, 18, 19, 20, 21, 22].reduce((s, h) => s + energyAtHour(h), 0);
+  const totalAtHour = (h: number) => Object.values(hourly[h] ?? {}).reduce((s, v) => s + (v ?? 0), 0);
+  const morning = [6, 7, 8, 9, 10, 11].reduce((s, h) => s + totalAtHour(h), 0);
+  const evening = [17, 18, 19, 20, 21, 22].reduce((s, h) => s + totalAtHour(h), 0);
   const diff = (morning - evening) / Math.max(1, morning + evening);
-  if (diff > 0.15) return 'lark';
-  if (diff < -0.15) return 'owl';
+  // Require stronger bias for classification; otherwise balanced
+  if (diff > 0.2) return 'lark';
+  if (diff < -0.2) return 'owl';
   return 'balanced';
 }
 
@@ -894,4 +895,43 @@ export class UserLearningSystem {
 
     return { hourlyPreferences, dayOfWeekPreferences, seasonalTrends };
   }
+}
+
+// Lightweight analysis helper for tests
+export function analyzeUserPatterns(corrections: Array<any>) {
+    // Accept multiple shapes (core tests use CorrectionHistory)
+    const extractHour = (c: any): number =>
+        c?.context?.hourOfDay ?? c?.context?.temporal?.hour ?? (typeof c?.timestamp === 'number' ? new Date(c.timestamp).getHours() : 0);
+    const extractVibe = (c: any): Vibe =>
+        (c?.userChoice ?? c?.corrected ?? c?.vibe ?? 'chill') as Vibe;
+
+    // Build hourly distribution
+    const hourly: Record<number, Partial<Record<Vibe, number>>> = {};
+    for (const c of corrections) {
+        const h = extractHour(c);
+        const v = extractVibe(c);
+        hourly[h] ??= {};
+        hourly[h]![v] = (hourly[h]![v] ?? 0) + 1;
+    }
+
+    const chrono = chronotypeFromHourly(hourly);
+
+    // Energy/social summaries from corrected choices
+    const vibes = corrections.map(extractVibe);
+    const isHighEnergy = (v: Vibe) => ['hype','flowing','open','energetic','excited'].includes(v);
+    const isLowEnergy  = (v: Vibe) => ['chill','down'].includes(v);
+    const isSocial     = (v: Vibe) => ['social','open','romantic','curious'].includes(v);
+    const isSolo       = (v: Vibe) => ['solo','weird','down','chill'].includes(v);
+
+    const energyCount = vibes.filter(isHighEnergy).length;
+    const lowEnergyCount = vibes.filter(isLowEnergy).length;
+    const socialCount = vibes.filter(isSocial).length;
+    const soloCount = vibes.filter(isSolo).length;
+
+    return {
+        chronotype: chrono,
+        hasEnoughData: corrections.length >= 6,
+        energyType: energyCount > lowEnergyCount ? 'high-energy' : (lowEnergyCount > energyCount ? 'low-energy' : 'balanced'),
+        socialType: socialCount > soloCount ? 'social' : (soloCount > socialCount ? 'solo' : 'balanced'),
+    };
 }

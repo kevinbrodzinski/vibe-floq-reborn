@@ -98,7 +98,7 @@ export function ConstellationController({
       />
       {showInvite && selectedId && (
         <QuickInvitePopover
-          userId={selectedId}
+          profileId={selectedId}
           onClose={closePopover}
           onInvite={sendInvite}
           onRetryVenue={handleRetryVenue}
