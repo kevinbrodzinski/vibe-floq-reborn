@@ -29,6 +29,7 @@ export default defineConfig(({ mode, command }) => ({
       '@supabase/postgrest-js',
       'use-sync-external-store',
       'use-sync-external-store/shim',
+      'dayjs',
     ],
   },
   plugins: [
@@ -52,6 +53,6 @@ export default defineConfig(({ mode, command }) => ({
     },
     dedupe: ['react', 'react-dom'],
     conditions: ['browser', 'module', 'import', 'default'],
-    mainFields: ['browser', 'module', 'main'],
+    mainFields: ['module', 'browser', 'main'],
   },
 }));

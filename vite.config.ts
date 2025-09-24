@@ -128,7 +128,7 @@ export default defineConfig(({ mode, command }) => {
 
       dedupe: ['react', 'react-dom', 'react-native-web'],
       conditions: ['browser', 'module', 'import', 'default'],
-      mainFields: ['browser', 'module', 'main'],
+      mainFields: ['module', 'browser', 'main'],
     },
 
     /** 🔥 Prebundle the right things so jsx-runtime exports exist */
@@ -148,6 +148,8 @@ export default defineConfig(({ mode, command }) => {
         // Let Vite auto-discover and prebundle Supabase packages naturally
         '@supabase/supabase-js',
         '@supabase/postgrest-js',
+        // Ensure ESM entry is used for dayjs in dev
+        'dayjs',
       ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
