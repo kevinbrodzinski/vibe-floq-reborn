@@ -31,8 +31,8 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
   const sumAgg = agg.reduce((a, b) => a + b, 0) || 1;
   const aggNorm = agg.map(v => v / sumAgg);
   
-  // Measure disagreement: 1 - max consensus over actions
-  const spread = 1 - Math.max(...aggNorm);
+  // Measure spread as max-min over normalized aggregate
+  const spread = omegaSpread(aggNorm);
   const gain = infoGainEntropy(groupPreds[0], aggNorm);
   const ok = (spread <= omegaStar) && (gain >= tau);
   
@@ -40,8 +40,8 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
     ok, 
     spread, 
     gain, 
-    // If gain is too low, prefer relaxing constraints even if spread is high
-    fallback: ok ? null : (gain < tau ? 'relax_constraints' : (spread > omegaStar ? 'partition' : 'relax_constraints'))
+    // If spread is high, suggest partition; otherwise relax constraints on low gain
+    fallback: ok ? null : (spread > omegaStar ? 'partition' : 'relax_constraints')
   };
 }
 

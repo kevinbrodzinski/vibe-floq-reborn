@@ -68,8 +68,8 @@ describe('RallyButton', () => {
     fireEvent.click(btn) // second click ignored because busy
 
     await waitFor(() => expect(createRallyMock).toHaveBeenCalledTimes(1))
-    expect(toastMock).toHaveBeenCalledWith(
+    await waitFor(() => expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Rally created' }),
-    )
+    ))
   })
 })
