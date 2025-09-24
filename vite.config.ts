@@ -114,10 +114,9 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
-        // Force SWR to use React 18's native useSyncExternalStore
-        'use-sync-external-store/shim': 'react',
-        'use-sync-external-store/shim/index.js': 'react',
-        'use-sync-external-store/shim/with-selector': 'use-sync-external-store/with-selector',
+        // Force SWR and related libraries to use correct useSyncExternalStore
+        'use-sync-external-store/shim/index.js': 'use-sync-external-store',
+        'use-sync-external-store/shim/with-selector.js': 'use-sync-external-store/with-selector',
 
 
         // Expo/native-only web stubs
