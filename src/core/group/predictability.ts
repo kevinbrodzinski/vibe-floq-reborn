@@ -50,7 +50,8 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
     const maxCount = Math.max(...Array.from(counts.values()));
     return maxCount / winners.length;
   })();
-  const polarizationSpread = 1 - consensus; // 0 when all agree, 1 - 1/k when evenly split among k
+  // Scale polarization contribution slightly to avoid over-penalizing mild disagreement
+  const polarizationSpread = 0.8 * (1 - consensus); // 0 when all agree, ~0.8*(1-1/k) when evenly split
   const spread = Math.max(aggregateSpread, polarizationSpread);
   // Normalize the baseline (first member) to avoid scale effects
   const baseRow = groupPreds[0] ?? [];
