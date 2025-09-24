@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { FieldCanvas } from '../FieldCanvas';
+import * as Pixi from 'pixi.js';
 import React from 'react';
 
 // Mock HTMLCanvasElement.getContext for jsdom
@@ -29,50 +30,14 @@ vi.mock('@/components/field/contexts/SocialWeatherContext', async (importOrigina
 	};
 });
 
-// Mock PIXI Application and its init method
-const mockPixiApp = {
-	init: vi.fn().mockResolvedValue(undefined),
-	stage: {
-		addChild: vi.fn(),
-		removeAllListeners: vi.fn(),
-		removeChildren: vi.fn(),
-		on: vi.fn(),
-		off: vi.fn(),
-		eventMode: 'auto',
-		interactive: true,
-		children: []
-	},
-	ticker: { stop: vi.fn() },
-	destroy: vi.fn(),
-	renderer: { gl: { isContextLost: () => false } },
-	canvas: document.createElement('canvas')
-};
-
-// Add canvas class for tests
-mockPixiApp.canvas.className = 'absolute inset-0';
-
-// Mock PIXI Application constructor
-vi.mock('pixi.js', () => ({
-	Application: vi.fn(() => mockPixiApp),
-	Container: vi.fn(() => ({
-		addChild: vi.fn(),
-		removeChild: vi.fn(),
-		removeChildren: vi.fn(),
-		children: []
-	})),
-	Graphics: vi.fn(() => ({
-		clear: vi.fn(),
-		beginFill: vi.fn(),
-		drawCircle: vi.fn(),
-		endFill: vi.fn(),
-		lineStyle: vi.fn(),
-		position: { set: vi.fn() },
-		visible: true
-	})),
-	Sprite: vi.fn(),
-	Texture: vi.fn(),
-	Text: vi.fn()
-}));
+// Using module-level alias for 'pixi.js' mock via Vite config. No local vi.mock here.
+// Spy on the aliased Application prototype so tests can assert calls
+const mockPixiApp: any = new (Pixi as any).Application();
+vi.spyOn((Pixi as any).Application.prototype as any, 'init').mockResolvedValue(undefined);
+// Some builds may not have destroy on prototype in our mock; guard the spy
+if (typeof (Pixi as any).Application.prototype.destroy === 'function') {
+    vi.spyOn((Pixi as any).Application.prototype as any, 'destroy').mockImplementation(() => {});
+}
 
 // Mock all the dependencies
 const mockManager = {
