@@ -69,7 +69,7 @@ import FloqPlan from '@/pages/FloqPlan';
 import SharedPlan from '@/pages/SharedPlan';
 import { PlanDetailsView } from '@/components/plans/PlanDetailsView';
 import { LocationSharingScreen } from '@/components/screens/LocationSharingScreen';
-import DailyRecapGate from '@/pages/DailyRecapGate';
+const DailyRecapGate = lazy(() => import('@/pages/DailyRecapGate'));
 import RecapActionSheet from '@/pages/RecapActionSheet';
 import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
@@ -86,7 +86,11 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<DailyRecapGate />} />
+      <Route path="/" element={
+        <RouteSuspense>
+          <DailyRecapGate />
+        </RouteSuspense>
+      } />
       <Route path="/welcome" element={
         <RouteSuspense>
           <LandingPage />
