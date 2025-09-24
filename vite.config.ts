@@ -141,6 +141,10 @@ export default defineConfig(({ mode, command }) => {
         'react-dom', 
         'react/jsx-runtime', 
         'react-native-web',
+        // Ensure CJS shim is wrapped to ESM so named export exists
+        'use-sync-external-store',
+        'use-sync-external-store/shim',
+        'use-sync-external-store/shim/with-selector',
         // Let Vite auto-discover and prebundle Supabase packages naturally
         '@supabase/supabase-js',
         '@supabase/postgrest-js',
