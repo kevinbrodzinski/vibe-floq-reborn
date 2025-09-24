@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ProgressDonut } from "@/components/floqs/visual/ProgressDonut";
+import { ProgressDonut } from "@/components/Floqs/visual/ProgressDonut";
 
 export function MetricChip({
   label,

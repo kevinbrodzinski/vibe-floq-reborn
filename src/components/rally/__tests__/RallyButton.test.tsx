@@ -14,7 +14,7 @@ vi.mock('@/lib/api/rally', () => ({
   createRally: (...args: any[]) => createRallyMock(...args),
 }))
 vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({ toast: (...args: any[]) => { toastMock(...args); return undefined; } }),
+  useToast: () => ({ toast: vi.fn().mockReturnValue({ dismiss: vi.fn(), update: vi.fn() }) }),
 }))
 vi.mock('@/lib/geo/mapSingleton', () => ({
   getCurrentMap: () => ({

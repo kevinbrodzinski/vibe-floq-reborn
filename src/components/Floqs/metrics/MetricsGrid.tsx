@@ -1,8 +1,8 @@
 import * as React from "react";
 import { MetricCard } from "./MetricCard";
 import { useFloqScores } from "@/hooks/useFloqScores";
-import type { FloqCardItem } from "@/components/floqs/cards/FloqCard";
-import type { AvatarItem } from "@/components/floqs/visual/AvatarStack";
+import type { FloqCardItem } from "@/components/Floqs/cards/FloqCard";
+import type { AvatarItem } from "@/components/Floqs/visual/AvatarStack";
 import { openFloqPeek } from "@/lib/peek";
 
 export function MetricsGrid({ item }: { item: FloqCardItem }) {

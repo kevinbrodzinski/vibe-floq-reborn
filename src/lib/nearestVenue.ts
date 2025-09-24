@@ -19,23 +19,23 @@ export async function fetchNearestVenue(latOrParams: number | { lat: number; lng
   const lngValue = typeof latOrParams === 'number' ? lng! : latOrParams.lng;
   const maxDistance = typeof latOrParams === 'number' ? maxM : (latOrParams.maxDistanceM ?? 150);
   const { supabase } = await import('@/integrations/supabase/client');
-  const { data, error } = await supabase.rpc('rpc_nearest_venue', {
-    in_lat: lat,
-    in_lng: lngValue,
-    in_max_distance_m: maxDistance,
+  const { data, error } = await supabase.rpc('get_nearest_venue', {
+    p_lat: lat,
+    p_lng: lngValue,
+    p_radius: maxDistance,
   });
   
-  if (error) throw { message: 'RPC failed' } as any;
+  if (error) throw error;
   
-  // rpc can return a single row or array depending on implementation; normalize
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return null;
+  // rpc returns an array or null
+  if (!data || data.length === 0) return null;
   
+  const venue = data[0]; // Get first result
   return {
-    venue_id: row.venue_id ?? row.id,
-    name: row.name,
-    distance_m: row.distance_m,
-    lat: row.lat ?? null,
-    lng: row.lng ?? null,
+    venue_id: venue.venue_id,
+    name: 'Unknown Venue', // name not available in RPC response
+    distance_m: venue.distance_m,
+    lat: lat, // use original coordinates as fallback
+    lng: lngValue,
   };
 }

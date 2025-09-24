@@ -8,7 +8,7 @@ import { useFloqScores } from "@/hooks/useFloqScores";
 import { openFloqPeek } from "@/lib/peek";
 import { ProgressDonut } from "../visual/ProgressDonut";
 import { AvatarStack, AvatarItem } from "../visual/AvatarStack";
-import { MetricsGrid } from "@/components/floqs/metrics/MetricsGrid";
+import { MetricsGrid } from "@/components/Floqs/metrics/MetricsGrid";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
 import { useSmartPeekTrigger } from "@/hooks/useSmartPeekTrigger";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";

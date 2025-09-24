@@ -150,6 +150,8 @@ export default defineConfig(({ mode, command }) => {
         '@supabase/postgrest-js',
         // Ensure ESM entry is used for dayjs in dev
         'dayjs',
+        // Fix for h3-js CommonJS issues
+        'h3-js',
       ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],

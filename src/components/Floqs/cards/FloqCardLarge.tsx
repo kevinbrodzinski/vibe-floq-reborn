@@ -4,14 +4,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { useFloqScores } from "@/hooks/useFloqScores";
 import { openFloqPeek } from "@/lib/peek";
-import { TTLArc } from "@/components/floqs/visual/TTLArc";
-import { CohesionRing } from "@/components/floqs/visual/CohesionRing";
-import { MetricChip } from "@/components/floqs/metrics/MetricChip";
+import { TTLArc } from "@/components/Floqs/visual/TTLArc";
+import { CohesionRing } from "@/components/Floqs/visual/CohesionRing";
+import { MetricChip } from "@/components/Floqs/metrics/MetricChip";
 import { useJoinIntent } from "@/hooks/useJoinIntent";
-import { RippleIndicator } from "@/components/floqs/visual/RippleIndicator";
-import { MemberParticles } from "@/components/floqs/visual/MemberParticles";
-import { PartialRevealAvatarStack } from "@/components/floqs/visual/PartialRevealAvatarStack";
-import type { AvatarItem } from "@/components/floqs/visual/AvatarStack";
+import { RippleIndicator } from "@/components/Floqs/visual/RippleIndicator";
+import { MemberParticles } from "@/components/Floqs/visual/MemberParticles";
+import { PartialRevealAvatarStack } from "@/components/Floqs/visual/PartialRevealAvatarStack";
+import type { AvatarItem } from "@/components/Floqs/visual/AvatarStack";
 
 export type FloqLargeItem = {
   id: string;

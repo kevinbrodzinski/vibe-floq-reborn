@@ -1,5 +1,5 @@
 import * as React from "react";
-import { UnifiedFloqCard, UnifiedFloqItem } from "@/components/floqs/cards/UnifiedFloqCard";
+import { UnifiedFloqCard, UnifiedFloqItem } from "@/components/Floqs/cards/UnifiedFloqCard";
 import { FloqCarousel } from "./FloqCarousel";
 
 export type MomentaryCardItem = UnifiedFloqItem;

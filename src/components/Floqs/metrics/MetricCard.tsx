@@ -1,6 +1,6 @@
 import * as React from "react";
-import { ProgressDonut } from "@/components/floqs/visual/ProgressDonut";
-import { AvatarStack, AvatarItem } from "@/components/floqs/visual/AvatarStack";
+import { ProgressDonut } from "@/components/Floqs/visual/ProgressDonut";
+import { AvatarStack, AvatarItem } from "@/components/Floqs/visual/AvatarStack";
 
 type MetricCardProps = {
   floqId?: string;
