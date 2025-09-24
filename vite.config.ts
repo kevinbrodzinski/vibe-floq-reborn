@@ -124,6 +124,9 @@ export default defineConfig(({ mode, command }) => {
         'react-native-mmkv': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+
+        // Fix es-toolkit default export issue
+        'es-toolkit/compat/get': 'es-toolkit/compat/get.js',
       },
 
       dedupe: ['react', 'react-dom', 'react-native-web'],
@@ -135,6 +138,8 @@ export default defineConfig(({ mode, command }) => {
     optimizeDeps: {
       // We control what's prebundled; don't auto-discover
       noDiscovery: true,
+      // Force full rebuild to pick up es-toolkit changes
+      force: true,
       // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
       include: [
         'react', 
@@ -155,6 +160,7 @@ export default defineConfig(({ mode, command }) => {
         // Fix for es-toolkit ESM import issues in recharts
         'es-toolkit',
         'es-toolkit/compat',
+        'es-toolkit/compat/get',
       ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
