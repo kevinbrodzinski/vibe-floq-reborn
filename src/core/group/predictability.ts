@@ -52,7 +52,11 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
   })();
   const polarizationSpread = 1 - consensus; // 0 when all agree, 1 - 1/k when evenly split among k
   const spread = Math.max(aggregateSpread, polarizationSpread);
-  const gain = infoGainEntropy(groupPreds[0], aggNorm);
+  // Normalize the baseline (first member) to avoid scale effects
+  const baseRow = groupPreds[0] ?? [];
+  const baseSum = baseRow.reduce((a, b) => a + (b ?? 0), 0) || 1;
+  const beforeNorm = baseRow.map(v => (v ?? 0) / baseSum);
+  const gain = infoGainEntropy(beforeNorm, aggNorm);
   const ok = (spread <= omegaStar) && (gain >= tau);
   
   return { 
