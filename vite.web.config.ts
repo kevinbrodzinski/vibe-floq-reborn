@@ -27,6 +27,8 @@ export default defineConfig(({ mode, command }) => ({
     include: [
       '@supabase/supabase-js',
       '@supabase/postgrest-js',
+      'use-sync-external-store',
+      'use-sync-external-store/shim',
     ],
   },
   plugins: [
