@@ -1,0 +1,196 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type mapboxgl from 'mapbox-gl';
+
+export type OverlaySpec = {
+  /** unique, stable id for the overlay */
+  id: string;
+  /** optional target to place this layer before (keeps order stable) */
+  beforeId?: string;
+  /** add sources/layers once (style-safe; LayerManager calls this after style.load) */
+  mount: (map: mapboxgl.Map) => void;
+  /** update data only (never create sources/layers here) */
+  update: (map: mapboxgl.Map, data: any) => void;
+  /** remove layers/sources added by mount */
+  unmount: (map: mapboxgl.Map) => void;
+};
+
+export type ApplyEvent = {
+  id: string;
+  bytes: number;
+  features: number;
+  dt: number;              // ms spent in this apply() call
+  skipped: boolean;        // true if deduped/no-op
+  ts: number;              // performance.now() timestamp
+};
+
+type ApplyListener = (ev: ApplyEvent) => void;
+
+type Mounted = {
+  spec: OverlaySpec;
+  mounted: boolean;
+  prevHash?: string;
+  setDataCount: number;
+};
+
+const hashJSON = (v: any) => {
+  try { return JSON.stringify(v); } catch { return String(Math.random()); }
+};
+
+export class LayerManager {
+  private map: mapboxgl.Map | null = null;
+  private overlays = new Map<string, Mounted>();
+  private order: string[] = [];
+  private pending = new Map<string, any>();
+  private raf = 0;
+  private lowPower = false;
+  private applyListeners = new Set<ApplyListener>();
+
+  bindMap(map: mapboxgl.Map) {
+    if (this.map === map) return;
+    this.unbind();
+    this.map = map;
+    const onStyle = () => this.remountAll();
+    map.on('style.load', onStyle);
+    (map as any)._lm_onStyle = onStyle;
+    if (map.isStyleLoaded?.()) this.remountAll();
+  }
+
+  unbind() {
+    if (!this.map) return;
+    this.cancelPending();
+    try {
+      const onStyle = (this.map as any)._lm_onStyle;
+      if (onStyle) this.map.off('style.load', onStyle);
+    } catch {}
+    this.unmountAll();
+    this.map = null;
+    // Clear listeners to prevent memory leaks
+    this.applyListeners.clear();
+  }
+
+  private cancelPending() {
+    if (this.raf) {
+      cancelAnimationFrame(this.raf);
+      this.raf = 0;
+    }
+    this.pending.clear();
+  }
+
+  setOrder(ids: string[]) { this.order = ids.slice(); }
+
+  /** Enable/disable low-power mode (batches updates when backgrounded) */
+  setLowPower(enabled: boolean) {
+    this.lowPower = enabled;
+  }
+
+  register(spec: OverlaySpec) {
+    // Idempotent register - avoid duplicate order entries
+    if (this.overlays.has(spec.id)) return;
+    
+    this.overlays.set(spec.id, { spec, mounted: false, setDataCount: 0 });
+    // Keep order deterministic
+    if (!this.order.includes(spec.id)) this.order.push(spec.id);
+    if (this.map && typeof window !== 'undefined') this.tryMount(spec.id);
+  }
+
+  unregister(id: string) {
+    const ent = this.overlays.get(id);
+    if (!ent || !this.map) { this.overlays.delete(id); return; }
+    this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
+    this.overlays.delete(id);
+    this.pending.delete(id);
+  }
+
+  // Alias for backward compatibility
+  remove(id: string) {
+    this.unregister(id);
+  }
+
+  apply(id: string, data: any) {
+    if (!this.overlays.has(id)) return;
+    this.pending.set(id, data);
+    if (!this.raf) this.raf = requestAnimationFrame(() => this.flush());
+  }
+
+  getStats() {
+    const out: Record<string, number> = {};
+    this.overlays.forEach((o, id) => out[id] = o.setDataCount);
+    return out;
+  }
+
+  /** Subscribe to apply() events; returns an unsubscribe fn */
+  onApply(listener: ApplyListener): () => void {
+    this.applyListeners.add(listener);
+    return () => this.applyListeners.delete(listener);
+  }
+
+  // ——— internals ———
+  private remountAll() {
+    if (!this.map) return;
+    // mount in declared order
+    this.order.forEach(id => this.tryMount(id));
+    // flush any pending data
+    if (this.pending.size) this.flush();
+  }
+
+  private tryMount(id: string) {
+    const ent = this.overlays.get(id); 
+    if (!ent || !this.map || typeof window === 'undefined') return;
+    if (ent.mounted || !this.map.isStyleLoaded?.()) return;
+    
+    this.safe(() => ent.spec.mount(this.map!));
+    ent.mounted = true;
+  }
+
+  private flush() {
+    this.raf = 0;
+    if (!this.map || !this.map.isStyleLoaded?.()) return;
+    const batch = this.lowPower ? [...this.pending.entries()].slice(0, 1) : [...this.pending.entries()];
+    this.pending.clear();
+    for (const [id, data] of batch) {
+      const ent = this.overlays.get(id); if (!ent) continue;
+      if (!ent.mounted) this.tryMount(id);
+      if (!ent.mounted) continue;
+      
+      const t0 = performance.now();
+      const json = hashJSON(data);
+      const skipped = json === ent.prevHash;
+      
+      if (!skipped) {
+        ent.prevHash = json;
+        this.safe(() => { ent.spec.update(this.map!, data); ent.setDataCount++; });
+      }
+      
+      const dt = performance.now() - t0;
+      this.emitApply({
+        id,
+        bytes: json.length,
+        features: Array.isArray(data?.features) ? data.features.length : 0,
+        dt: Math.round(dt),
+        skipped,
+        ts: t0
+      });
+    }
+  }
+
+  private unmountAll() {
+    if (!this.map) return;
+    [...this.overlays.values()].forEach(ent => {
+      this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
+      ent.mounted = false;
+    });
+  }
+
+  private emitApply(ev: ApplyEvent) {
+    if (this.applyListeners.size === 0) return;
+    this.applyListeners.forEach(fn => {
+      try { fn(ev); } catch {}
+    });
+  }
+
+  private safe(fn: () => void) {
+    try { fn(); } catch (e) { console.warn('[LayerManager]', e); }
+  }
+}
+
+export const layerManager = new LayerManager();

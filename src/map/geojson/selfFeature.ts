@@ -1,0 +1,11 @@
+/** Build a GeoJSON feature for the current user ("YOU" pin) */
+export function buildSelfFeature(
+  lngLat: [number, number],
+  profileId: string,
+): GeoJSON.Feature<GeoJSON.Point, { self: true; id: string }> {
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: lngLat },
+    properties: { self: true, id: profileId },
+  };
+}

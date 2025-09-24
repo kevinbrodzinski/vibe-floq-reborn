@@ -1,0 +1,59 @@
+-- Fix rally_last_seen schema to match requirements
+
+-- Add thread_id column 
+ALTER TABLE rally_last_seen 
+  ADD COLUMN IF NOT EXISTS thread_id uuid;
+
+-- Populate thread_id from existing rally_id
+UPDATE rally_last_seen rls
+SET thread_id = rt.id
+FROM rally_threads rt
+WHERE rt.rally_id = rls.rally_id;
+
+-- Add last_seen column (rename from last_seen_at for consistency)
+ALTER TABLE rally_last_seen 
+  ADD COLUMN IF NOT EXISTS last_seen timestamptz;
+
+-- Populate last_seen from existing last_seen_at
+UPDATE rally_last_seen 
+SET last_seen = last_seen_at
+WHERE last_seen IS NULL;
+
+-- Create new unique constraint on (profile_id, thread_id)
+DROP INDEX IF EXISTS rally_last_seen_pkey;
+ALTER TABLE rally_last_seen DROP CONSTRAINT IF EXISTS rally_last_seen_pkey;
+
+-- Remove old constraint if exists
+ALTER TABLE rally_last_seen DROP CONSTRAINT IF EXISTS rally_last_seen_profile_id_rally_id_key;
+
+-- Add new primary key
+ALTER TABLE rally_last_seen 
+  ADD CONSTRAINT rally_last_seen_pkey PRIMARY KEY (profile_id, thread_id);
+
+-- Now create the functions that work with thread_id
+CREATE OR REPLACE FUNCTION rally_mark_seen(_thread_id uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER 
+SET search_path TO 'public'
+AS $$
+  INSERT INTO rally_last_seen (profile_id, thread_id, last_seen)
+  VALUES (auth.uid(), _thread_id, now())
+  ON CONFLICT (profile_id, thread_id)
+  DO UPDATE SET last_seen = EXCLUDED.last_seen;
+$$;
+
+CREATE OR REPLACE FUNCTION rally_mark_all_seen()
+RETURNS void LANGUAGE sql SECURITY DEFINER 
+SET search_path TO 'public'
+AS $$
+  INSERT INTO rally_last_seen (profile_id, thread_id, last_seen)
+  SELECT auth.uid(), t.id, now()
+  FROM rally_threads t
+  JOIN rally_invites i ON i.rally_id = t.rally_id
+  WHERE i.to_profile = auth.uid()
+  ON CONFLICT (profile_id, thread_id)
+  DO UPDATE SET last_seen = EXCLUDED.last_seen;
+$$;
+
+-- Grant permissions
+GRANT EXECUTE ON FUNCTION rally_mark_seen(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION rally_mark_all_seen() TO authenticated;

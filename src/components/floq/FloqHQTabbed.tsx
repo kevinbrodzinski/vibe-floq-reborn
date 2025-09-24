@@ -1,0 +1,338 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import SmartMap from "@/components/Common/SmartMap";
+import { useHQMeetHalfway } from "@/hooks/useHQMeetHalfway";
+import MeetHalfwaySheet from "./MeetHalfwaySheet";
+import { openDirections } from "@/lib/directions/handoff";
+import {
+  MapPin,
+  Settings,
+  Bell,
+  UserPlus,
+  MoreHorizontal,
+  Trophy,
+  Flame,
+  Sparkles
+} from "lucide-react";
+
+// Import tab components
+import MapTab from "@/components/Floqs/HQ/Tabs/MapTab";
+import StreamTab from "@/components/Floqs/HQ/Tabs/StreamTab";
+import PlanTab from "@/components/Floqs/HQ/Tabs/PlanTab";
+import MomentsTab from "@/components/Floqs/HQ/Tabs/MomentsTab";
+import PulseTab from "@/components/Floqs/HQ/Tabs/PulseTab";
+import VenuesTab from "@/components/Floqs/HQ/Tabs/VenuesTab";
+import AnalyticsTab from "@/components/Floqs/HQ/Tabs/AnalyticsTab";
+import WingTab from "@/components/Floqs/HQ/Tabs/WingTab";
+import PrivacyTab from "@/components/Floqs/HQ/Tabs/PrivacyTab";
+
+// Import shared constants and components
+import { TABS, TabKey } from "../Floqs/HQ/shared/constants";
+import Pill from "../Floqs/HQ/ui/Pill";
+import Btn from "../Floqs/HQ/ui/Btn";
+import { FloqHeader } from "../Floqs/HQ/Header/FloqHeader";
+
+// ... keep existing code (shared components and constants moved to separate files)
+
+const panelAnim = (reduce: boolean) => ({
+  initial: reduce ? false : { opacity: 0, y: 10 },
+  animate: reduce ? { opacity: 1 } : { opacity: 1, y: 0 },
+  exit: reduce ? { opacity: 0 } : { opacity: 0, y: -10 }
+});
+
+export default function FloqHQTabbed() {
+  const [active, setActive] = useState<TabKey>("map");
+  const reduce = useReducedMotion();
+  const { floqId: actualFloqId } = useParams<{ floqId: string }>();
+  const queryClient = useQueryClient();
+  const [sending, setSending] = useState(false);
+  const [rallyLoading, setRallyLoading] = useState(false);
+
+  // ── Meet-Halfway bottom sheet state ────────────────────────────
+  const [halfOpen, setHalfOpen] = useState(false);
+  const [halfCats, setHalfCats] = useState<string[]>([]); // e.g., ["coffee","bar"]
+  const [halfSel, setHalfSel] = useState<string | null>(null);
+  
+  const { data: halfAPI, isLoading: halfLoading, refetch: refetchHalf } =
+    useHQMeetHalfway(actualFloqId, { categories: halfCats }, halfOpen);
+
+  useEffect(() => { 
+    if (halfOpen) refetchHalf(); 
+  }, [halfOpen, halfCats, refetchHalf]);
+
+  // Project lat/lng to 0..1 viewport for SVG
+  const allPts = useMemo(() => {
+    if (!halfAPI) return [];
+    const base = [halfAPI.centroid, ...halfAPI.members.map(m=>({lat:m.lat,lng:m.lng}))];
+    const cand = halfAPI.candidates.map(c=>({lat:c.lat,lng:c.lng}));
+    return [...base, ...cand];
+  }, [halfAPI]);
+
+  const toXY = useMemo(() => {
+    if (!allPts.length) return (p: {lat: number; lng: number}) => ({x: 0.5, y: 0.5});
+    const lats = allPts.map(p=>p.lat), lngs = allPts.map(p=>p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const dx = Math.max(1e-9, maxLng - minLng);
+    const dy = Math.max(1e-9, maxLat - minLat);
+    return (p: {lat: number; lng: number}) => ({
+      x: (p.lng - minLng) / dx,
+      y: 1 - (p.lat - minLat) / dy, // flip Y for screen coords
+    });
+  }, [allPts]);
+
+  const toggleCat = (c: string) =>
+    setHalfCats(prev => (prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]));
+
+  // Set initial selection when data loads
+  useEffect(() => {
+    if (halfAPI?.candidates?.length && !halfSel) {
+      setHalfSel(halfAPI.candidates[0].id);
+    }
+  }, [halfAPI, halfSel]);
+
+  async function handleStartRally(note?: string) {
+    if (!actualFloqId) return;
+    try {
+      setRallyLoading(true);
+      const { error } = await supabase.functions.invoke("rally-create", {
+        body: { floq_id: actualFloqId, note: note ?? "", ttl_min: 60 }
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRallyLoading(false);
+    }
+  }
+
+  async function handleSendMessage(text: string) {
+    if (!actualFloqId) return;
+    const body = (text ?? '').trim();
+    if (!body) return;
+
+    try {
+      setSending(true);
+      const { error } = await supabase.functions.invoke("hq-stream-post", {
+        body: { floq_id: actualFloqId, kind: "text", body }
+      });
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleRallyResponse(rallyId: string, status: "joined" | "maybe" | "declined") {
+    if (!actualFloqId) return;
+    try {
+      const { error } = await supabase.functions.invoke("rally-join", {
+        body: { rallyId, status }
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function openMeetHalfway() {
+    setHalfOpen(true);
+    refetchHalf();
+  }
+
+  async function rallyHere() {
+    if (!halfAPI) return;
+    const pick = halfAPI.candidates.find(x => x.id === (halfSel ?? halfAPI.candidates[0]?.id));
+    if (!pick || !actualFloqId) return;
+    
+    try {
+      setRallyLoading(true);
+      await supabase.functions.invoke("rally-create", {
+        body: { 
+          floq_id: actualFloqId, 
+          center: { lat: pick.lat, lng: pick.lng }, 
+          venue_id: pick.id, 
+          note: `Meet at ${pick.name}`,
+          ttl_min: 60 
+        }
+      });
+      
+      // Invalidate the same caches used by Start Rally
+      queryClient.invalidateQueries({ queryKey: ["floqs-cards"] });
+      queryClient.invalidateQueries({ queryKey: ["hq-digest", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-vibes", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["hq-availability", actualFloqId] });
+      queryClient.invalidateQueries({ queryKey: ["floq", actualFloqId, "stream"] });
+      
+      setHalfOpen(false);
+    } catch (e) {
+      console.error("Rally creation failed:", e);
+    } finally {
+      setRallyLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
+      <div className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-zinc-950/70">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <FloqHeader
+            floqId={actualFloqId || ""}
+            name="Chaos"
+            description="8 members • Social-Hype • Spontaneous convergence specialists since 2022"
+            avatarUrl={null}
+            rightBadges={
+              <>
+                <div className="hidden sm:flex items-center gap-2">
+                  <Btn glow aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
+                  <div className="relative">
+                    <Btn glow aria-label="Notifications"><Bell className="h-4 w-4" /></Btn>
+                    <span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span>
+                  </div>
+                  <Btn glow aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
+                  <Btn glow aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+                </div>
+              </>
+            }
+          />
+          <div className="flex flex-wrap gap-1.5 max-w-[400px] mt-3">
+            <Pill glow><Trophy className="inline h-3 w-3 mr-1" />Thursday Legends</Pill>
+            <Pill glow><Flame className="inline h-3 w-3 mr-1" />5-Week Streak</Pill>
+            <Pill glow><MapPin className="inline h-3 w-3 mr-1" />Gran Regulars</Pill>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 pb-2">
+          <div role="tablist" aria-label="Floq sections" className="flex gap-2 overflow-x-auto no-scrollbar">
+            {TABS.map((t, idx) => {
+              const selected = active === t.k;
+              return (
+                <Btn
+                  key={t.k}
+                  id={`tab-${t.k}`}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`panel-${t.k}`}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActive(t.k)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowRight") setActive(TABS[(idx + 1) % TABS.length].k);
+                    if (e.key === "ArrowLeft")  setActive(TABS[(idx - 1 + TABS.length) % TABS.length].k);
+                  }}
+                  glow={selected}
+                  active={selected}
+                  className="flex items-center gap-2"
+                >
+                  {t.i}<span>{t.l}</span>
+                </Btn>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-5">
+        <AnimatePresence mode="wait">
+          {active === "map" && (
+            <MapTab 
+              reduce={reduce}
+              panelAnim={panelAnim}
+              onMeetHalfway={openMeetHalfway}
+              onRallyChoice={(choice) => handleRallyResponse("RALLY_ID_PLACEHOLDER", choice)}
+              floqId={actualFloqId}
+              meetOpen={halfOpen}
+            />
+          )}
+
+          {active === "stream" && (
+            <StreamTab
+              reduce={reduce}
+              panelAnim={panelAnim}
+              floqId={actualFloqId}
+              sending={sending}
+              rallyLoading={rallyLoading}
+              onStartRally={() => handleStartRally()}
+              onSend={(text) => handleSendMessage(text)}
+              onRallyResponse={handleRallyResponse}
+            />
+          )}
+
+          {active === "plan" && (
+            <PlanTab reduce={reduce} panelAnim={panelAnim} />
+          )}
+
+          {active === "moments" && (
+            <MomentsTab reduce={reduce} panelAnim={panelAnim} />
+          )}
+
+          {active === "pulse" && (
+            <PulseTab reduce={reduce} panelAnim={panelAnim} onActivateConvergence={() => handleStartRally()} />
+          )}
+
+          {active === "venues" && (
+            <VenuesTab 
+              reduce={reduce} 
+              panelAnim={panelAnim}
+              onNavigate={(name) => {
+                // For demo purposes, navigate to a sample location
+                openDirections({
+                  dest: { lat: 37.7749, lng: -122.4194 },
+                  label: name,
+                  mode: 'transit'
+                });
+              }}
+              onRallyHere={(name) => handleStartRally(`Rally at ${name}`)}
+              onHistory={(name) => console.log('History for:', name)}
+            />
+          )}
+
+          {active === "analytics" && (
+            <AnalyticsTab reduce={reduce} panelAnim={panelAnim} />
+          )}
+
+          {active === "wing" && (
+            <WingTab reduce={reduce} panelAnim={panelAnim} onCreateRally={() => handleStartRally()} />
+          )}
+
+          {active === "privacy" && (
+            <PrivacyTab 
+              reduce={reduce} 
+              panelAnim={panelAnim}
+              onSelect={(level) => console.log('Privacy level:', level)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Meet Halfway Sheet */}
+      <MeetHalfwaySheet
+        open={halfOpen}
+        onOpenChange={setHalfOpen}
+        data={halfAPI}
+        selectedId={halfSel}
+        onSelectVenue={setHalfSel}
+        categories={halfCats}
+        onToggleCategory={toggleCat}
+        onRallyHere={rallyHere}
+        loading={halfLoading}
+        rallyLoading={rallyLoading}
+      />
+    </div>
+  );
+}

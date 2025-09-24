@@ -1,0 +1,408 @@
+import React from 'react';
+import { useFlow } from '@/hooks/useFlow';
+import { useFlowSegments } from '@/hooks/useFlowSegments';
+import { FlowEnergyPanel } from './FlowEnergyPanel';
+import { computeFlowMetrics } from '@/lib/flow/computeFlowMetrics';
+import { analyzeVibeJourney } from '@/lib/vibe/analyzeVibeJourney';
+import { generatePostcardClient } from '@/lib/share/generatePostcardClient';
+import { useConvergenceStories } from '@/lib/flow/reflection/useConvergenceStories';
+import { ConvergenceStories } from '@/components/flow/ConvergenceStories';
+import { computeSmartNudge } from '@/lib/flow/reflection/smartNudges';
+import { SmartNudgeChip } from '@/components/flow/SmartNudgeChip';
+import { computeRippleInfluence } from '@/lib/flow/reflection/rippleHeatline';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Download, Share2, RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useEnvPermissions } from '@/lib/vibe/permissions/useEnvPermissions';
+import { ImproveAccuracyChip } from '@/components/vibe/ImproveAccuracyChip';
+
+export default function FlowReflectionPage({ flowId }: { flowId: string }) {
+  const { data: flow, isLoading: loadingFlow, error: flowError } = useFlow(flowId);
+  const { data: segments = [], isLoading: loadingSegments, error: segmentsError } = useFlowSegments(flowId);
+  const [sharing, setSharing] = React.useState(false);
+
+  const loading = loadingFlow || loadingSegments;
+  const error = flowError || segmentsError;
+
+  // Compute metrics and vibe analysis
+  const metrics = React.useMemo(() => {
+    if (!flow || !segments.length) return null;
+    return computeFlowMetrics(
+      {
+        started_at: flow.started_at,
+        ended_at: flow.ended_at,
+        sun_exposed_min: flow.sun_exposed_min
+      },
+      segments.map(seg => ({
+        idx: seg.idx,
+        arrived_at: seg.arrived_at,
+        departed_at: seg.departed_at,
+        center: seg.center ? {
+          lng: (seg.center as any).coordinates[0],
+          lat: (seg.center as any).coordinates[1]
+        } : null,
+        venue_id: seg.venue_id,
+        vibe_vector: seg.vibe_vector as { energy?: number; valence?: number } | null
+      })),
+      { maxTopVenues: 5 }
+    );
+  }, [flow, segments]);
+
+  const vibeAnalysis = React.useMemo(() => {
+    if (!metrics?.energySamples.length) return null;
+    return analyzeVibeJourney(metrics.energySamples, {
+      smoothWindow: 3,
+      minPeakProminence: 0.08,
+      minTransitionDelta: 0.12
+    });
+  }, [metrics]);
+
+  // Prepare segments for energy panel (time + center)
+  const segmentsForEnergy = React.useMemo(() => {
+    return segments
+      .filter(seg => !!seg.center)
+      .map(seg => ({
+        t: seg.arrived_at ?? seg.departed_at, // Safer fallback chain
+        center: {
+          lng: (seg.center as any).coordinates[0],
+          lat: (seg.center as any).coordinates[1]
+        }
+      }));
+  }, [segments]);
+
+  // Convergence Stories
+  const { stories, onViewMap } = useConvergenceStories({
+    peaks: vibeAnalysis?.arc?.peaks ?? [],
+    segments: segmentsForEnergy,
+    venues: [], // Add real venues if available
+    maxStories: 4,
+  });
+
+  // Environmental Permissions
+  const { envEnabled, requestEnvPermissions } = useEnvPermissions();
+
+  // Derive low confidence from vibe analysis
+  const consistency = vibeAnalysis?.patterns?.consistency ?? (metrics?.energySamples.length > 3 ? 0.6 : 0.4);
+  const lowConfidence = consistency < 0.55;
+  const showImproveChip = !envEnabled && lowConfidence;
+
+  // Smart Nudge
+  const nudge = React.useMemo(() => {
+    const firstCenter = segmentsForEnergy[0]?.center;
+    return computeSmartNudge({
+      lat: firstCenter?.lat,
+      lng: firstCenter?.lng,
+      metrics: {
+        elapsedMin: metrics?.elapsedMin ?? 0,
+        suiPct: metrics?.suiPct ?? null,
+        distanceM: metrics?.distanceM ?? 0
+      },
+      vibe: { type: vibeAnalysis?.patterns?.type }
+    });
+  }, [metrics, vibeAnalysis, segmentsForEnergy]);
+
+  // Heatline Toggle
+  const [heatOn, setHeatOn] = React.useState(false);
+  React.useEffect(() => {
+    if (!heatOn || !metrics) {
+      window.dispatchEvent(new CustomEvent('floq:heatline:toggle', { detail: { on: false } }));
+      return;
+    }
+    
+    const edges = computeRippleInfluence({
+      path: metrics.path,
+      energy: metrics.energySamples,
+      venues: []
+    });
+    
+    window.dispatchEvent(new CustomEvent('floq:heatline:set', { detail: { edges } }));
+    window.dispatchEvent(new CustomEvent('floq:heatline:toggle', { detail: { on: true } }));
+  }, [heatOn, metrics]);
+
+  const handleDownloadPostcard = async () => {
+    if (!flow || !metrics) return;
+    
+    try {
+      const blob = await generatePostcardClient({
+        title: 'My Flow Reflection',
+        subtitle: new Date(flow.started_at).toLocaleDateString(),
+        date: new Date(flow.started_at),
+        path: metrics.path,
+        stats: {
+          distanceM: metrics.distanceM,
+          elapsedMin: metrics.elapsedMin,
+          suiPct: metrics.suiPct ?? undefined,
+          venues: metrics.venues.count
+        },
+        energySamples: metrics.energySamples,
+        branding: 'subtle'
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `flow-postcard-${flowId}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Postcard downloaded!',
+        description: 'Your flow postcard has been saved'
+      });
+    } catch (error) {
+      console.error('Failed to download postcard:', error);
+      toast({
+        title: 'Failed to download postcard',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    if (!flow || !metrics) return;
+    
+    setSharing(true);
+    try {
+      const shareText = `Just completed a ${Math.round(metrics.elapsedMin)}min flow covering ${(metrics.distanceM / 1000).toFixed(1)}km! ${vibeAnalysis ? `Energy pattern: ${vibeAnalysis.patterns?.type || 'unknown'}` : ''}`;
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: 'My Flow Reflection',
+          text: shareText,
+          url: window.location.href
+        });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        toast({
+          title: 'Reflection copied to clipboard!',
+          description: 'Share your flow with others'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to share:', error);
+      toast({
+        title: 'Failed to share reflection',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive'
+      });
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center gap-2 text-white/80">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Preparing your reflection…
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !flow) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-red-300 mb-4">Failed to load flow: {error?.message || 'no data'}</div>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-white/60">No flow data available</div>
+      </div>
+    );
+  }
+
+  const elapsedMin = Math.round(metrics.elapsedMin);
+  const distanceKm = metrics.distanceM / 1000;
+  const suiPct = metrics.suiPct;
+
+  return (
+    <div className="p-4 text-white/90 space-y-6 max-w-4xl mx-auto">
+      {/* Hero */}
+      <Card className="bg-white/[0.04] border-white/[0.06]">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">Your Flow Reflection</CardTitle>
+          <p className="text-white/70">
+            {new Date(flow.started_at).toLocaleString()} → {flow.ended_at ? new Date(flow.ended_at).toLocaleString() : 'Ongoing'}
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <MetricCard label="Duration" value={`${elapsedMin} min`} />
+            <MetricCard label="Distance" value={`${distanceKm.toFixed(2)} km`} />
+            <MetricCard label="Sun Score" value={suiPct != null ? `${suiPct}%` : '—'} />
+            <MetricCard label="Venues" value={`${metrics.venues.count}`} />
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <ImproveAccuracyChip
+              show={showImproveChip}
+              request={requestEnvPermissions}
+              onRequested={({ motionOk, micOk }) => {
+                const ok = motionOk || micOk;
+                toast({
+                  title: ok ? 'Accuracy improved' : 'No changes',
+                  description: ok ? 'Environmental signals enabled for future flows.' : 'You can enable later from settings.'
+                });
+              }}
+              className="mr-1"
+            />
+            
+            <Button
+              onClick={handleDownloadPostcard}
+              className="bg-white/10 hover:bg-white/15 border border-white/15"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download postcard
+            </Button>
+            
+            <Button
+              onClick={handleShare}
+              disabled={sharing}
+              variant="outline"
+              size="sm"
+            >
+              {sharing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4 mr-2" />
+              )}
+              Share
+            </Button>
+
+            <Button
+              onClick={() => setHeatOn(v => !v)}
+              variant="outline"
+              size="sm"
+              className={heatOn ? 'bg-primary/20 border-primary/40' : ''}
+            >
+              {heatOn ? 'Heatline: On' : 'Heatline: Off'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Energy Journey */}
+      {metrics.energySamples.length > 1 && (
+        <Card className="bg-white/[0.04] border-white/[0.06]">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Energy Journey</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FlowEnergyPanel
+              samples={metrics.energySamples}
+              segments={segmentsForEnergy}
+              className="mt-2"
+              height={160}
+              minLabelGapPx={typeof window !== 'undefined' && window.innerWidth < 520 ? 48 : 32}
+            />
+            {vibeAnalysis && (
+              <div className="flex flex-wrap gap-2 text-xs mt-4">
+                <Badge variant="secondary">
+                  Pattern: {vibeAnalysis.patterns?.type || 'unknown'}
+                </Badge>
+                <Badge variant="secondary">
+                  Consistency: {Math.round((vibeAnalysis.patterns?.consistency || 0) * 100)}%
+                </Badge>
+                <Badge variant="secondary">
+                  Peaks: {vibeAnalysis.arc?.peaks?.length || 0}
+                </Badge>
+                <Badge variant="secondary">
+                  Transitions: {vibeAnalysis.arc?.transitions?.length || 0}
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Convergence Stories */}
+      {!!stories.length && (
+        <ConvergenceStories stories={stories} onViewMap={onViewMap} />
+      )}
+
+      {/* Smart Nudge */}
+      <SmartNudgeChip 
+        nudge={nudge} 
+        onAct={(n) => {
+          if (n.cta.kind === 'reminder') {
+            toast({
+              title: 'Reminder set!',
+              description: 'Your flow nudge has been saved'
+            });
+          }
+        }} 
+      />
+
+      {/* Top Venues */}
+      <Card className="bg-white/[0.04] border-white/[0.06]">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Top Venues</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!metrics.venues.top.length ? (
+            <div className="text-white/60">No venues detected this flow.</div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {metrics.venues.top.map((venue) => (
+                <div key={venue.venue_id} className="rounded-lg px-4 py-3 bg-white/[0.03] border border-white/[0.05]">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">#{venue.rank} • Venue {venue.venue_id?.slice(0, 8)}</div>
+                    <div className="text-white/70">{Math.round(venue.totalMin)}m</div>
+                  </div>
+                  <div className="text-white/60 text-sm">{venue.visits} visit{venue.visits === 1 ? '' : 's'}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Flow Statistics */}
+      <Card className="bg-white/[0.04] border-white/[0.06]">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Flow Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Avg Pace</div>
+              <div className="font-semibold">
+                {metrics.pace.avgMPerMin ? `${Math.round(metrics.pace.avgMPerMin)} m/min` : '—'}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Segments</div>
+              <div className="font-semibold">{metrics.segments.length}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Discovered</div>
+              <div className="font-semibold">{metrics.venues.discovered}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-white/60 text-sm">Path Points</div>
+              <div className="font-semibold">{metrics.path.length}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+      <div className="text-white/60 text-sm">{label}</div>
+      <div className="text-white/90 text-lg font-semibold mt-1">{value}</div>
+    </div>
+  );
+}

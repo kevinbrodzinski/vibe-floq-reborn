@@ -1,0 +1,70 @@
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DailyInsightsTab from '@/components/afterglow/DailyInsightsTab';
+import WeeklyTrendsTab from '@/components/afterglow/WeeklyTrendsTab';
+import WeeklyAITest from '@/components/debug/WeeklyAITest';
+
+interface AfterglowInsightsModalProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  afterglowId?: string;
+  aiSummary?: string | null;
+}
+
+export default function AfterglowInsightsModal({ 
+  open, 
+  onOpenChange, 
+  afterglowId,
+  aiSummary 
+}: AfterglowInsightsModalProps) {
+  const [tab, setTab] = useState('weekly');
+
+  // Close dialog on Esc key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    if (open) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [open, onOpenChange]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogTitle>Insights</DialogTitle>
+        <DialogDescription>
+          View detailed analytics and AI-powered insights about your activities and trends.
+        </DialogDescription>
+
+        <Tabs value={tab} onValueChange={setTab} className="mt-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="weekly">7-day Trends</TabsTrigger>
+            <TabsTrigger value="daily" disabled={!afterglowId}>Daily AI</TabsTrigger>
+            <TabsTrigger value="debug">🧪 Test</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="weekly">
+            <WeeklyTrendsTab />
+          </TabsContent>
+          
+          <TabsContent value="daily">
+            {afterglowId ? (
+              <DailyInsightsTab afterglowId={afterglowId} aiSummary={aiSummary} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No afterglow data available for AI insights.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="debug">
+            <WeeklyAITest />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

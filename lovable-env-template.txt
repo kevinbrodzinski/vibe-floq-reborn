@@ -1,0 +1,51 @@
+# Lovable Environment Variables Template
+# Copy these variables to your Lovable environment settings
+
+# ===========================================
+# REQUIRED - Core Supabase Configuration
+# ===========================================
+
+# Supabase Project URL (required)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+
+# Supabase Anonymous Key (required for client-side)
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# ===========================================
+# OPTIONAL - Enhanced Features
+# ===========================================
+
+# Mapbox Access Token (for maps)
+VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGV0dGVyIn0...
+
+# OpenAI API Key (for AI features)
+VITE_OPENAI_API_KEY=sk-abc123...
+
+# ===========================================
+# LOVABLE-SPECIFIC
+# ===========================================
+
+# Lovable environment flag (automatically set)
+LOVABLE=true
+
+# Hosted preview flag (automatically set)
+NEXT_PUBLIC_HOSTED_PREVIEW=true
+
+# ===========================================
+# DEVELOPMENT FLAGS
+# ===========================================
+
+# Enable debug mode (optional)
+VITE_DEBUG_MODE=false
+
+# Enable mock data (optional)
+VITE_USE_MOCK_DATA=false
+
+# ===========================================
+# NOTES
+# ===========================================
+
+# 1. Variables starting with VITE_ are accessible in the browser
+# 2. Never put sensitive server keys (service_role) in VITE_ variables
+# 3. Lovable automatically sets LOVABLE and NEXT_PUBLIC_HOSTED_PREVIEW
+# 4. Test your setup with: npm run lovable:validate

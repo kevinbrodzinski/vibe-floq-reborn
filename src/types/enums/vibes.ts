@@ -1,0 +1,20 @@
+import { z } from 'zod'
+import { VIBES, type Vibe } from '@/lib/vibes'
+
+export const VibeEnum = z.enum(VIBES)
+
+export type { Vibe } from '@/lib/vibes'
+
+// Since we've unified the vibe types, VibeState is now the same as Vibe
+export type VibeState = Vibe
+export const VibeStateEnum = VibeEnum
+
+export const safeVibe = (input: unknown): Vibe => {
+  const parsed = VibeEnum.safeParse(input)
+  return parsed.success ? parsed.data : 'chill'
+}
+
+export const safeVibeState = (input: unknown): VibeState => {
+  const parsed = VibeStateEnum.safeParse(input)
+  return parsed.success ? parsed.data : 'chill'
+}

@@ -1,0 +1,14 @@
+BEGIN;
+SET LOCAL role authenticated;
+
+SELECT plan(1);
+SELECT upsert_presence(34,-118,'excited','public') AS ok;
+SELECT ok(
+  EXISTS(
+    SELECT 1 FROM vibes_now
+    WHERE profile_id = auth.uid()
+  ),
+  'row inserted for current profile'
+);
+SELECT * FROM finish();
+ROLLBACK;

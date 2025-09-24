@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["DOM", "ES2021"],
+    "types": ["vite/client"],
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+  "exclude": ["node_modules/@types/node"],
+  "include": ["**/*.ts", "**/*.tsx"]
+}
