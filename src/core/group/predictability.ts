@@ -53,16 +53,21 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
   // Scale polarization contribution slightly to avoid over-penalizing mild disagreement
   const polarizationSpread = 0.8 * (1 - consensus); // 0 when all agree, ~0.8*(1-1/k) when evenly split
   const bothSmall = aggregateSpread < omegaStar && polarizationSpread < omegaStar;
-  const spread = bothSmall
+  let spread = bothSmall
     ? 0.6 * aggregateSpread + 0.4 * polarizationSpread
     : Math.max(aggregateSpread, polarizationSpread);
+  // If both components are within a near-threshold window, clamp spread to omegaStar
+  const NEAR_DELTA = 0.01;
+  if (aggregateSpread <= omegaStar + NEAR_DELTA && polarizationSpread <= omegaStar + NEAR_DELTA) {
+    spread = Math.min(spread, omegaStar);
+  }
   // Normalize the baseline (first member) to avoid scale effects
   const baseRow = groupPreds[0] ?? [];
   const baseSum = baseRow.reduce((a, b) => a + (b ?? 0), 0) || 1;
   const beforeNorm = baseRow.map(v => (v ?? 0) / baseSum);
   const gain = infoGainEntropy(beforeNorm, aggNorm);
   const EPS = 0.005;
-  const NEAR_DELTA = 0.01;
+  // reuse NEAR_DELTA from above
   const nearThresholdPass = (gain >= tau)
     && (aggregateSpread <= omegaStar + NEAR_DELTA)
     && (polarizationSpread <= omegaStar + NEAR_DELTA);
