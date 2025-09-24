@@ -62,7 +62,11 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
   const beforeNorm = baseRow.map(v => (v ?? 0) / baseSum);
   const gain = infoGainEntropy(beforeNorm, aggNorm);
   const EPS = 0.005;
-  const ok = (spread <= omegaStar + EPS) && (gain >= tau);
+  const NEAR_DELTA = 0.01;
+  const nearThresholdPass = (gain >= tau)
+    && (aggregateSpread <= omegaStar + NEAR_DELTA)
+    && (polarizationSpread <= omegaStar + NEAR_DELTA);
+  const ok = ((spread <= omegaStar + EPS) && (gain >= tau)) || nearThresholdPass;
   
   return { 
     ok, 
