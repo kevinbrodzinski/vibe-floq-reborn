@@ -152,6 +152,9 @@ export default defineConfig(({ mode, command }) => {
         'dayjs',
         // Fix for h3-js CommonJS issues
         'h3-js',
+        // Fix for es-toolkit ESM import issues in recharts
+        'es-toolkit',
+        'es-toolkit/compat',
       ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
