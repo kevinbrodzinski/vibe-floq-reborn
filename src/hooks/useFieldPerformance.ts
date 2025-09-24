@@ -87,7 +87,7 @@ export function useFieldPerformance(app: PIXI.Application | null) {
   // Single ticker registration
   useEffect(() => {
     // bail if app not ready or ticker missing
-    if (!app || !(app as any).ticker) return;
+  if (!app || !(app as any).ticker || typeof (app as any).ticker.add !== 'function') return;
 
     const bound = () => onTickRef.current?.();
     app.ticker.add(bound);
@@ -101,7 +101,7 @@ export function useFieldPerformance(app: PIXI.Application | null) {
     return () => {
       window.removeEventListener('field-worker-perf', handleWorkerPerf as EventListener);
       // guard on cleanup too
-      try { (app as any)?.ticker?.remove(bound); } catch {}
+      try { if ((app as any)?.ticker && typeof (app as any).ticker.remove === 'function') (app as any).ticker.remove(bound); } catch {}
     };
   }, [app]);
   

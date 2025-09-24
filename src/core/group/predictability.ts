@@ -16,7 +16,8 @@ export function infoGainEntropy(before: number[], after: number[]): number {
       return acc + p * Math.log2(p);
     }, 0);
   };
-  return Math.max(0, H(before) - H(after));
+  // Positive when the aggregate (after) is more certain than the baseline (before)
+  return Math.max(0, H(after) - H(before));
 }
 
 /** groupPreds: per-member probability distribution over actions */
