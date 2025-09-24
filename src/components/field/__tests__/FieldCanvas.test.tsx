@@ -156,7 +156,8 @@ vi.mock('@/lib/geo', () => ({
 vi.mock('@/lib/clusterWorker', () => ({
 	clusterWorker: {
 		cluster: vi.fn().mockResolvedValue([])
-	}
+	},
+	isWorkerFallback: () => true,
 }));
 
 vi.mock('@/utils/timing', () => ({
