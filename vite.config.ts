@@ -124,9 +124,6 @@ export default defineConfig(({ mode, command }) => {
         'react-native-mmkv': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
         'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-
-        // Fix es-toolkit default export issue
-        'es-toolkit/compat/get': 'es-toolkit/compat/get.js',
       },
 
       dedupe: ['react', 'react-dom', 'react-native-web'],
@@ -157,10 +154,11 @@ export default defineConfig(({ mode, command }) => {
         'dayjs',
         // Fix for h3-js CommonJS issues
         'h3-js',
-        // Fix for es-toolkit ESM import issues in recharts
+        // Fix for recharts dependencies
+        'recharts',
+        'react-is',
         'es-toolkit',
         'es-toolkit/compat',
-        'es-toolkit/compat/get',
       ],
       // Never prebundle RN nor RNSVG (we shim them)
       exclude: ['react-native', 'react-native-svg'],
