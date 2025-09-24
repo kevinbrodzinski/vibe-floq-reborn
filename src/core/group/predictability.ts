@@ -58,7 +58,8 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
   const baseSum = baseRow.reduce((a, b) => a + (b ?? 0), 0) || 1;
   const beforeNorm = baseRow.map(v => (v ?? 0) / baseSum);
   const gain = infoGainEntropy(beforeNorm, aggNorm);
-  const ok = (spread <= omegaStar) && (gain >= tau);
+  const EPS = 0.005;
+  const ok = (spread <= omegaStar + EPS) && (gain >= tau);
   
   return { 
     ok, 
