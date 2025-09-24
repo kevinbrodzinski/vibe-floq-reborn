@@ -16,10 +16,9 @@ export function infoGainEntropy(before: number[], after: number[]): number {
       return acc + p * Math.log2(p);
     }, 0);
   };
-  // Positive when the aggregate (after) is more certain than the baseline (before)
-  const gain = H(after) - H(before);
-  // Add tiny epsilon to avoid -0 and strict 0 from floating-point underflow in tests
-  return Math.max(0, gain + 1e-6);
+  // Define gain as reduction in entropy: positive when the aggregate is more certain
+  const gain = H(before) - H(after);
+  return Math.max(0, gain);
 }
 
 /** groupPreds: per-member probability distribution over actions */
