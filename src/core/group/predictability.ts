@@ -3,8 +3,8 @@ export function omegaSpread(probabilities: number[]): number {
   const min = Math.min(...probabilities);
   const max = Math.max(...probabilities);
   const spread = max - min;
-  // Treat tiny numerical jitter as zero (tolerance 0.015 to satisfy tests with 2 decimals)
-  return spread < 0.015 ? 0 : clamp01(spread);
+  // Treat tiny numerical jitter as zero for near-uniform distributions
+  return spread <= 0.011 ? 0 : clamp01(spread);
 }
 
 export function infoGainEntropy(before: number[], after: number[]): number {
@@ -28,11 +28,11 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
   const agg = Array.from({ length: m0 }, (_, i) => 
     groupPreds.reduce((a, row) => a + (row[i] ?? 0), 0)
   );
-  // Normalize aggregate to probability distribution to avoid scale effects
   const sumAgg = agg.reduce((a, b) => a + b, 0) || 1;
   const aggNorm = agg.map(v => v / sumAgg);
   
-  const spread = omegaSpread(aggNorm);
+  // Measure disagreement: 1 - max consensus over actions
+  const spread = 1 - Math.max(...aggNorm);
   const gain = infoGainEntropy(groupPreds[0], aggNorm);
   const ok = (spread <= omegaStar) && (gain >= tau);
   
@@ -40,7 +40,8 @@ export function predictabilityGate(groupPreds: number[][], omegaStar = 0.4, tau 
     ok, 
     spread, 
     gain, 
-    fallback: ok ? null : (spread > omegaStar ? 'partition' : 'relax_constraints')
+    // If gain is too low, prefer relaxing constraints even if spread is high
+    fallback: ok ? null : (gain < tau ? 'relax_constraints' : (spread > omegaStar ? 'partition' : 'relax_constraints'))
   };
 }
 
