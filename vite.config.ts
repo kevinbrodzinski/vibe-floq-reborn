@@ -114,6 +114,10 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
+        // Force SWR to use React 18's native useSyncExternalStore
+        'use-sync-external-store/shim': 'react',
+        'use-sync-external-store/shim/index.js': 'react',
+
 
         // Expo/native-only web stubs
         'expo-application': 'expo-application/web',
@@ -145,8 +149,6 @@ export default defineConfig(({ mode, command }) => {
         'react-native-web',
         // Ensure CJS shim is wrapped to ESM so named export exists
         'use-sync-external-store',
-        'use-sync-external-store/shim',
-        'use-sync-external-store/shim/with-selector',
         // Let Vite auto-discover and prebundle Supabase packages naturally
         '@supabase/supabase-js',
         '@supabase/postgrest-js',
