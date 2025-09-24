@@ -23,8 +23,8 @@ function useDeviceTier(): 'low' | 'mid' | 'high' {
     const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
     let gpu: 'low' | 'mid' | 'high' = 'mid';
     
-    if (gl) {
-      const renderer = gl.getParameter(gl.RENDERER)?.toLowerCase() || '';
+    if (gl && typeof (gl as any).getParameter === 'function') {
+      const renderer = (gl as any).getParameter((gl as any).RENDERER)?.toLowerCase() || '';
       if (renderer.includes('adreno') && renderer.includes('3')) gpu = 'low';
       else if (renderer.includes('mali') && !renderer.includes('g7')) gpu = 'low';
       else if (renderer.includes('intel') && renderer.includes('hd')) gpu = 'low';
