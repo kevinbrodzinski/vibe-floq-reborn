@@ -11,7 +11,6 @@ interface VibeDistributionData {
   name: string;
   value: number;
   color: string;
-  [key: string]: any; // Index signature for Recharts compatibility
 }
 
 interface PersistentVibeDistributionProps {
