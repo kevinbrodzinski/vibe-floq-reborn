@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+// Supabase is imported dynamically inside the function to allow tests to mock it
 
 export type NearestVenue = {
   venue_id: string;
@@ -18,7 +18,8 @@ export async function fetchNearestVenue(latOrParams: number | { lat: number; lng
   const lat = typeof latOrParams === 'number' ? latOrParams : latOrParams.lat;
   const lngValue = typeof latOrParams === 'number' ? lng! : latOrParams.lng;
   const maxDistance = typeof latOrParams === 'number' ? maxM : (latOrParams.maxDistanceM ?? 150);
-  const { data, error } = await supabase.rpc('get_nearest_venue', {
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data, error } = await supabase.rpc('rpc_nearest_venue', {
     in_lat: lat,
     in_lng: lngValue,
     in_max_distance_m: maxDistance,

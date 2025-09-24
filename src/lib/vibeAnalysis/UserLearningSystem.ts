@@ -38,12 +38,13 @@ export function chronotypeFromHourly(hourly: Record<number, Partial<Record<Vibe,
   const nonEmptyHours = Object.values(hourly).filter(p => Object.values(p ?? {}).some(v => (v ?? 0) > 0)).length;
   if (nonEmptyHours < 6) return 'balanced';
   
-  const energyAtHour = (h: number) => energyFromVector(Object.assign(Object.fromEntries(VIBES.map(v => [v, 0])), hourly[h] ?? {}) as Record<Vibe, number>);
-  const morning = [6, 7, 8, 9, 10, 11].reduce((s, h) => s + energyAtHour(h), 0);
-  const evening = [17, 18, 19, 20, 21, 22].reduce((s, h) => s + energyAtHour(h), 0);
+  const totalAtHour = (h: number) => Object.values(hourly[h] ?? {}).reduce((s, v) => s + (v ?? 0), 0);
+  const morning = [6, 7, 8, 9, 10, 11].reduce((s, h) => s + totalAtHour(h), 0);
+  const evening = [17, 18, 19, 20, 21, 22].reduce((s, h) => s + totalAtHour(h), 0);
   const diff = (morning - evening) / Math.max(1, morning + evening);
-  if (diff > 0.1) return 'lark';
-  if (diff < -0.1) return 'owl';
+  // Require stronger bias for classification; otherwise balanced
+  if (diff > 0.2) return 'lark';
+  if (diff < -0.2) return 'owl';
   return 'balanced';
 }
 
