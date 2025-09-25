@@ -114,8 +114,7 @@ export default defineConfig(({ mode, command }) => {
         'react/jsx-runtime.js': 'react/jsx-runtime',
         'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
 
-        // Ensure correct React shim handling
-        'use-sync-external-store/shim': 'use-sync-external-store/shim/index.js',
+        // Let use-sync-external-store resolve naturally
 
 
         // Expo/native-only web stubs
