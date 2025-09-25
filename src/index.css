@@ -1,16 +1,259 @@
-@import './styles/tokens.css';
-@import './styles/floq-tokens.css';
-@import './styles/floq-effects.css';
-@import './styles/floq-energy.css';
-@import './styles/scrollbar.css';
-@import './styles/field.css';
-@import './styles/touch-targets.css';
+/* Missing style imports - defining classes directly below */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer utilities {
+  /* === CREATE FLOQ PAGE SCOPED STYLES === */
+  .create-floq-page {
+    /* force a sane sans stack so we never fall back to a serif/mono */
+    font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Inter", "SF Pro Text", "Segoe UI", Arial, sans-serif) !important;
+  }
+
+  /* Title line under the hero */
+  .create-floq-page h1 {
+    font-size: 28px !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  /* Small section labels like "Primary Vibe" / "Privacy" */
+  .create-floq-page .section-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+    color: rgba(255,255,255,.90) !important;
+  }
+
+  /* Field labels ("Floq Name *", "Description") */
+  .create-floq-page .field-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;             /* kill global uppercase */
+    color: rgba(255,255,255,.70) !important;
+  }
+
+  /* Space rhythms */
+  .create-floq-page .section-glass { 
+    margin-top: 16px !important; 
+    overflow: visible !important; 
+    position: relative !important;
+  }
+  .create-floq-page .tile { padding: 12px !important; } /* compact tiles */
+
+  /* Kill any lingering "card-wall" background on this page */
+  .create-floq-page .noise,
+  .create-floq-page .grain,
+  .create-floq-page .paper,
+  .create-floq-page [class*="noise"],
+  .create-floq-page [class*="grain"],
+  .create-floq-page [class*="paper"] {
+    background-image: none !important;
+  }
+
+  /* hide legacy hero pills under title/meta */
+  .floq-hero .header-pills,
+  .floq-hero .meta-badges { 
+    display: none !important; 
+  }
+
+  /* === NEON PAGE SYSTEM === */
+  .page-neon {
+    min-height: 100vh !important;
+    background: linear-gradient(135deg, hsl(220, 30%, 5%) 0%, hsl(240, 20%, 8%) 50%, hsl(260, 25%, 4%) 100%) !important;
+    color: white !important;
+  }
+
+  .section-glass {
+    background: rgba(255,255,255,0.055) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 20px !important;
+    padding: 2rem !important;
+    box-shadow: 
+      0 10px 30px rgba(0,0,0,0.45), 
+      inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    backdrop-filter: blur(20px) saturate(120%) !important;
+  }
+
+  .input-glass {
+    width: 100% !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+    color: white !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  .input-glass::placeholder {
+    color: rgba(255,255,255,0.5) !important;
+  }
+  .input-glass:focus {
+    outline: none !important;
+    border-color: rgba(56,189,248,0.6) !important;
+    box-shadow: 0 0 0 1px rgba(56,189,248,0.3) !important;
+  }
+
+  .tile {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(10px) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 80px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .tile:hover {
+    background: rgba(255,255,255,0.12) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+  }
+  .tile[data-selected="true"] {
+    background: rgba(255,255,255,0.15) !important;
+    border-color: rgba(56,189,248,0.4) !important;
+  }
+
+  .btn-primary-glass {
+    background: rgba(56,189,248,0.15) !important;
+    border: 1px solid rgba(56,189,248,0.3) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(10px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .btn-primary-glass:hover:not(:disabled) {
+    background: rgba(56,189,248,0.25) !important;
+    border-color: rgba(56,189,248,0.5) !important;
+    box-shadow: 0 0 20px rgba(56,189,248,0.3) !important;
+  }
+  .btn-primary-glass:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important; 
+  }
+
+  /* === NEON GLOW SYSTEM - Clean Glowing Borders === */
+  .neon-wrap {
+    position: relative;
+    border-radius: 12px;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* --- Tight, even neon halo ------------------------------------------------ */
+  .neon-ring-tight {
+    /* smaller radii than neon-ring; perfectly even around outline */
+    filter:
+      drop-shadow(0 0 4px  var(--neon-a))
+      drop-shadow(0 0 10px var(--neon-b));
+    will-change: filter;
+  }
+
+  /* Softer halo intended for action CTAs and small pill buttons */
+  .neon-ring-soft {
+    filter:
+      drop-shadow(0 0 3px  var(--neon-a))
+      drop-shadow(0 0 7px  var(--neon-b));
+    will-change: filter;
+  }
+
+  /* --- Tile sizing and centering, consistent everywhere -------------------- */
+  .tile {
+    box-sizing: border-box;
+    min-height: 112px;           /* same feel as HQ cards */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;     /* vertically centered text */
+    align-items: flex-start;     /* left aligned text */
+    width: 100%;
+  }
+
+  /* Tighten fallback glow for selected tiles (for keyboard nav etc.) */
+  .tile[data-selected="true"] {
+    filter:
+      drop-shadow(0 0 3px  hsla(196,92%,64%, .28))
+      drop-shadow(0 0 8px  hsla(259,92%,64%, .18));
+  }
+
+  .neon-ring {
+    border-radius: 12px !important;
+  }
+
+  /* Vibe-specific neon borders with clean glow */
+  .neon-social {
+    border: 2px solid rgba(34, 197, 94, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(34, 197, 94, 0.4),
+      0 0 20px rgba(34, 197, 94, 0.2),
+      inset 0 1px 0 rgba(34, 197, 94, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+  
+  .neon-chill {
+    border: 2px solid rgba(56, 189, 248, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(56, 189, 248, 0.4),
+      0 0 20px rgba(56, 189, 248, 0.2),
+      inset 0 1px 0 rgba(56, 189, 248, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+  
+  .neon-active {
+    border: 2px solid rgba(249, 115, 22, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(249, 115, 22, 0.4),
+      0 0 20px rgba(249, 115, 22, 0.2),
+      inset 0 1px 0 rgba(249, 115, 22, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+  
+  .neon-hype {
+    border: 2px solid rgba(236, 72, 153, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(236, 72, 153, 0.4),
+      0 0 20px rgba(236, 72, 153, 0.2),
+      inset 0 1px 0 rgba(236, 72, 153, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+  
+  .neon-productive {
+    border: 2px solid rgba(168, 85, 247, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(168, 85, 247, 0.4),
+      0 0 20px rgba(168, 85, 247, 0.2),
+      inset 0 1px 0 rgba(168, 85, 247, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+  
+  .neon-quiet {
+    border: 2px solid rgba(156, 163, 175, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(156, 163, 175, 0.4),
+      0 0 20px rgba(156, 163, 175, 0.2),
+      inset 0 1px 0 rgba(156, 163, 175, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+
+  .neon-cyan {
+    border: 2px solid rgba(56, 189, 248, 0.8) !important;
+    box-shadow: 
+      0 0 10px rgba(56, 189, 248, 0.4),
+      0 0 20px rgba(56, 189, 248, 0.2),
+      inset 0 1px 0 rgba(56, 189, 248, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+
   .glass {
     background: rgba(255,255,255,0.055);
     border: 1px solid rgba(255,255,255,0.10);
@@ -36,6 +279,11 @@
 
   .ring-neon-purple {
     box-shadow: 0 0 14px rgba(168,85,247,0.30), 0 0 36px rgba(168,85,247,0.18);
+  }
+
+  /* Softer ring neon for action buttons */
+  .ring-neon-soft {
+    box-shadow: 0 0 10px rgba(64,224,255,0.20), 0 0 24px rgba(64,224,255,0.12);
   }
 
   .neon-surface {
@@ -1491,6 +1739,49 @@ All colors MUST be HSL.
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Compact button variants */
+.btn-compact {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--cmp-radius);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
+}
+
+/* XS button: shorter height, same radius; keeps glow */
+.btn-xs {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: var(--cmp-radius);
+}
+
+.btn-xs.btn-compact--primary.neon-soft {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.20),
+    0 0 16px color-mix(in hsl, var(--neon-a) 24%, transparent);
+}
+
+.btn-compact--primary {
+  background: var(--gradient-primary);
+  color: white;
+  border-color: rgba(255,255,255,0.2);
+}
+
+.btn-compact--ghost {
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.btn-compact--ghost:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
 
 /* Hide flow FAB when explore drawer is open */
 body.floq-explore-open [data-flow-fab] {

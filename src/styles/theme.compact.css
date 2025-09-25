@@ -1,0 +1,460 @@
+:root {
+  /* Compact scale */
+  --cmp-font-xs: 12px;
+  --cmp-font-sm: 13px;
+  --cmp-radius: 12px;
+
+  /* Spacing */
+  --cmp-chip-px: 10px;   /* ~px-2.5 */
+  --cmp-chip-py: 6px;    /* ~py-1   */
+  --cmp-btn-px: 14px;    /* ~px-3.5 */
+  --cmp-btn-py: 8px;     /* ~py-2   */
+
+  /* Glass + borders */
+  --glass-bg: rgba(255,255,255,0.06);    /* bg-white/6 */
+  --glass-border: rgba(255,255,255,0.10);/* border-white/10 */
+  --glass-inner: rgba(255,255,255,0.06); /* inset line */
+
+  /* Text */
+  --text-weak: rgba(255,255,255,0.70);
+  --text-mid:  rgba(255,255,255,0.85);
+  --text-strong:#fff;
+
+  /* Neon ring */
+  --neon-a: #8B5CF6;
+  --neon-b: #06B6D4;
+
+  /* Category colors (Map) */
+  --vibe-coffee: #4DD0E1;
+  --vibe-bar:    #F472B6;
+  --vibe-food:   #A78BFA;
+  --vibe-park:   #F59E0B;
+  --vibe-other:  #A1A1AA;
+}
+
+/* Glass primitives */
+.glass-subtle {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--cmp-radius);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 var(--glass-inner);
+}
+
+/* Neon ring (soft) */
+.neon-soft {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.18),
+    0 0 24px color-mix(in hsl, var(--neon-a) 45%, transparent),
+    0 0 40px color-mix(in hsl, var(--neon-b) 35%, transparent);
+}
+
+/* Compact chip */
+.chip-compact {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: var(--cmp-chip-py) var(--cmp-chip-px);
+  font-size: var(--cmp-font-xs);
+  border-radius: var(--cmp-radius);
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  color: var(--text-weak);
+  transition: all 0.2s ease;
+}
+.chip-compact[data-active="true"] {
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.20);
+  color: var(--text-mid);
+}
+.chip-compact:hover {
+  background: rgba(255,255,255,.08);
+  color: var(--text-mid);
+}
+
+/* Compact buttons */
+.btn-compact {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: var(--cmp-btn-py) var(--cmp-btn-px);
+  border-radius: var(--cmp-radius);
+  font-size: var(--cmp-font-sm);
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.08);
+  color: var(--text-mid);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-xs { 
+  padding: 6px 12px; 
+  font-size: 12px; 
+  border-radius: var(--cmp-radius); 
+}
+.btn-compact:hover {
+  background: rgba(255,255,255,.12);
+}
+.btn-compact--primary {
+  background: #fff; color: #000; border-color: #fff;
+}
+.btn-compact--ghost {
+  background: rgba(255,255,255,.08); color: var(--text-mid);
+}
+.btn-compact--primary.neon-soft { /* primary CTA with soft neon */
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.22),
+    0 0 24px color-mix(in hsl, var(--neon-a) 35%, transparent);
+}
+
+/* Compact section surface */
+.section-compact {
+  border-radius: 16px;
+  background: rgba(11,13,18,0.90);
+  border: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Safe-area padding helper for bottom sheets */
+.pad-safe-b {
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}
+
+/* Sleek tune: lighter glow, tighter chips, softer borders */
+.neon-soft {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.18),
+    0 0 16px color-mix(in hsl, var(--neon-a) 28%, transparent),
+    0 0 24px color-mix(in hsl, var(--neon-b) 22%, transparent);
+}
+
+/* Chips (all tabs) */
+.chip-compact { padding: 5px 9px; font-size: 12px; border-color: rgba(255,255,255,.09); }
+.chip-compact[data-active="true"] { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
+
+/* Sections / cards */
+.section-compact, .glass-subtle {
+  border-color: rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Map container to match other cards */
+.map-card { border-radius: 14px; }
+
+/* Header badges only (keep them a hair larger but not puffy) */
+.header-badges .chip-compact { padding: 6px 11px; font-size: 13px; }
+
+/* Primary CTA glow just a notch down */
+.btn-compact--primary.neon-soft {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.20),
+    0 0 18px color-mix(in hsl, var(--neon-a) 26%, transparent);
+}
+
+/* Reduced transparency fallback */
+@media (prefers-reduced-transparency: reduce) {
+  .section-compact, .glass-subtle { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* Card aura (soft outer bloom that survives overflow) */
+.aura {
+  position: relative;
+  isolation: isolate;            /* keep the glow with the card */
+}
+.aura::after {
+  content: "";
+  position: absolute;
+  inset: -10px;                  /* aura extent */
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(60% 60% at 50% 50%, rgba(139,92,246,.28), transparent 65%),
+    radial-gradient(60% 60% at 50% 50%, rgba(6,182,212,.20), transparent 70%);
+  filter: blur(18px);
+  opacity: .85;
+}
+
+/* Smaller aura for compact chips / small CTAs */
+.aura-sm { position: relative; }
+.aura-sm::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(55% 55% at 50% 50%, rgba(139,92,246,.22), transparent 65%),
+    radial-gradient(55% 55% at 50% 50%, rgba(6,182,212,.16), transparent 70%);
+  filter: blur(12px);
+  opacity: .75;
+}
+
+/* Create floq hero icon enhancement */
+.create-hero .icon { border-radius: 16px; }
+.create-hero .icon::after {
+  content:""; position:absolute; inset:-12px; border-radius:inherit;
+  z-index:-1; pointer-events:none; filter:blur(22px);
+  background:
+    radial-gradient(60% 60% at 50% 50%, rgba(139,92,246,.32), transparent 65%),
+    radial-gradient(60% 60% at 50% 50%, rgba(6,182,212,.24), transparent 70%);
+}
+
+/* Disabled button state */
+.btn-compact[disabled] {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Focus glow for inputs */
+.focus\:neon-soft:focus {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.20),
+    0 0 12px color-mix(in hsl, var(--neon-a) 20%, transparent),
+    0 0 20px color-mix(in hsl, var(--neon-b) 16%, transparent);
+}
+
+/* Sheet actions sticky footer */
+.sheet-actions-sticky {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(11,13,18,.92), rgba(11,13,18,.65), transparent);
+}
+
+/* Enhanced disabled state */
+.btn-compact[disabled] {
+  opacity: .55;
+  cursor: not-allowed;
+  filter: none;
+  pointer-events: none;   /* prevent clicks through */
+}
+
+/* Keyboard focus visibility */
+.btn-compact:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.22),
+    0 0 18px color-mix(in hsl, var(--neon-a) 26%, transparent);
+}
+
+/* iOS Safari sticky fix */
+@supports (-webkit-touch-callout: none) {
+  .sticky-ios-fix { 
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px); 
+  }
+}
+
+/* Enhanced title neon with border glow */
+.title-neon {
+  font-weight: 800;
+  letter-spacing: .2px;
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.title-neon::before {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+  -webkit-text-fill-color: transparent;
+  filter: blur(1px);
+}
+.title-neon.smallcaps { font-variant-caps: small-caps; }
+
+/* Avatar aura ring container (glow rendered by inline style) */
+.aura-ring {
+  position: relative;
+  border-radius: 50%;  /* Make it circular */
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+}
+.aura-ring::after {
+  content: "";
+  position: absolute;
+  inset: -8px;  /* Reduced from -10px for subtler glow */
+  border-radius: inherit;
+  filter: blur(16px);  /* Reduced from 20px */
+  z-index: -1;
+  pointer-events: none;
+  /* background is set inline for dynamic vibe colors */
+}
+
+/* XS button glow that doesn't overflow */
+.btn-compact--primary.neon-soft.btn-xs {
+  box-shadow: 0 0 0 1px rgba(255,255,255,.20),
+              0 0 16px color-mix(in hsl, var(--neon-a) 24%, transparent);
+}
+
+/* ---------- Neon tokens ---------- */
+:root {
+  /* Cyan primary (HQ) */
+  --neon-cyan-a: hsla(196, 92%, 64%, .38);
+  --neon-cyan-b: hsla(259, 92%, 64%, .32);
+
+  /* Raspberry secondary */
+  --neon-rasp-a: hsla(330, 95%, 64%, .40);
+  --neon-rasp-b: hsla(280, 90%, 64%, .30);
+
+  /* Gold secondary */
+  --neon-gold-a: hsla(44, 96%, 62%, .42);
+  --neon-gold-b: hsla(18, 92%, 60%, .28);
+}
+
+/* ---------- Base neon ring ---------- */
+/* Uses --neon-a / --neon-b provided by color variants */
+.ring-neon {
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.12),
+    0 0 24px var(--neon-a),
+    0 0 46px var(--neon-b);
+}
+.ring-neon:hover { filter: saturate(1.06); }
+
+/* Non-clipping pseudo glow (works on buttons, pills, cards) */
+.ring-neon::after {
+  content: "";
+  position: absolute;
+  inset: -10px;              /* push glow outside */
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(20px);
+  background:
+    radial-gradient(55% 55% at 50% 50%, var(--neon-a), transparent 65%),
+    radial-gradient(60% 60% at 50% 50%, var(--neon-b), transparent 70%);
+}
+
+/* ---------- Color variants ---------- */
+.ring-neon-cyan      { --neon-a: var(--neon-cyan-a);  --neon-b: var(--neon-cyan-b); }
+.ring-neon-raspberry { --neon-a: var(--neon-rasp-a);  --neon-b: var(--neon-rasp-b); }
+.ring-neon-gold      { --neon-a: var(--neon-gold-a);  --neon-b: var(--neon-gold-b); }
+
+/* ---------- Button + pill skins (compact) ---------- */
+.btn-neon {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.btn-neon:hover { background: rgba(255,255,255,.10); }
+
+.pill-neon {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 4px 8px;
+  font-size: 10px;
+  border-radius: 10px;
+}
+
+/* ======================= Floq — Neon & Glass (canonical) ================== */
+/* Backdrop (page) */
+.page-neon {
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(139,92,246,.18), transparent 60%),
+    radial-gradient(900px 500px  at 80% 10%,   rgba(6,182,212,.14),  transparent 55%),
+    linear-gradient(#0b0d12, #0b0d12);
+  min-height: 100%;
+  isolation: isolate;
+}
+
+/* Prevent clipping */
+.neon-surface { overflow: visible; isolation: isolate; }
+
+/* Glass panels */
+.section-glass {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  overflow: visible;        /* was likely hidden in an older card-wall style */
+  position: relative;
+}
+
+/* Inputs (glass + neon focus) */
+.input-glass {
+  background: rgba(20,22,26,.65);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  color: #fff;
+}
+.input-glass::placeholder { color: rgba(255,255,255,.45); }
+.input-glass:focus {
+  outline: none;
+  border-color: rgba(255,255,255,.22);
+  filter:
+    drop-shadow(0 0 6px  hsla(196,92%,64%, .40))
+    drop-shadow(0 0 14px hsla(259,92%,64%, .28));
+}
+
+/* Tiles (buttons-as-cards) */
+.tile {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  color: #fff;
+  transition: background .15s ease, border-color .15s ease;
+}
+.tile:hover { background: rgba(255,255,255,.07); }
+
+/* Wrapper for even halo around outline */
+.neon-wrap { 
+  isolation: isolate;
+  display: inline-block;    /* critical for consistent drop-shadow geometry */
+}
+
+/* Even neon outline (drop-shadow) — single canonical definition */
+.neon-ring {
+  filter:
+    drop-shadow(0 0 6px  var(--neon-a))
+    drop-shadow(0 0 14px var(--neon-b));
+  will-change: filter;      /* smooth + fast on iOS/Safari */
+}
+
+/* Fallback glow for selected tiles even if wrapper is missing */
+.tile[data-selected="true"] {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.18);
+  filter:
+    drop-shadow(0 0 6px  hsla(196,92%,64%, .30))
+    drop-shadow(0 0 12px hsla(259,92%,64%, .18));
+}
+
+/* Canonical vibe palettes — keep only this set */
+.neon-cyan      { --neon-a: hsla(196,92%,64%, .45); --neon-b: hsla(259,92%,64%, .28); } /* Default cyan */
+.neon-social    { --neon-a: hsla(320,95%,64%, .50); --neon-b: hsla(280,90%,64%, .26); } /* pink/fuchsia */
+.neon-chill     { --neon-a: hsla(190,92%,64%, .46); --neon-b: hsla(210,90%,64%, .26); } /* cyan/teal */
+.neon-active    { --neon-a: hsla( 28,96%,60%, .52); --neon-b: hsla( 12,90%,58%, .26); } /* amber/orange */
+.neon-hype      { --neon-a: hsla(266,92%,64%, .50); --neon-b: hsla(234,86%,66%, .26); } /* violet/purple */
+.neon-productive{ --neon-a: hsla(155,65%,56%, .46); --neon-b: hsla(160,60%,46%, .24); } /* emerald/green */
+.neon-quiet     { --neon-a: hsla(220,12%,60%, .42); --neon-b: hsla(220,12%,40%, .20); } /* slate/gray */
+
+/* Primary CTA (glass) — single canonical definition */
+.btn-primary-glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+  border-radius: 12px;
+}
+button:disabled.btn-primary-glass { opacity:.55; }
+
+/* Compact button */
+.btn-xs { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
+
+/* Remove inherited noise/texture layers inside Create Floq */
+.page-neon .noise,
+.page-neon .grain,
+.page-neon .paper,
+.page-neon [class*="noise"],
+.page-neon [class*="grain"],
+.page-neon [class*="paper"],
+.page-neon .card-wall {
+  background-image: none !important;
+}
+
+/* Keyboard-visible focus (accessibility) */
+.tile:focus-visible {
+  outline: 2px solid rgba(255,255,255,.30);
+  outline-offset: 2px;
+}

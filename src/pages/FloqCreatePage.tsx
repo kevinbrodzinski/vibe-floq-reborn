@@ -2,15 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateFloq } from '@/hooks/useCreateFloq';
 import { Sparkles, ArrowLeft, Users, Lock, Globe } from 'lucide-react';
-import { Glass } from '@/components/Common/Glass';
-import { NeonPill } from '@/components/Common/NeonPill';
+import { neonClassForVibe } from '@/lib/vibeTone';
+import type { Vibe } from '@/lib/vibes';
 
 const vibeOptions = [
   { id: 'social', label: 'Social', description: 'Meeting new people and networking' },
@@ -75,7 +72,7 @@ export default function FloqCreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
+    <div className="page-neon">
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -99,14 +96,15 @@ export default function FloqCreatePage() {
         </div>
 
         {/* Form */}
-        <Glass className="p-6">
+        <section className="section-glass">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Info */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Floq Name *</Label>
-                <Input
+                <label htmlFor="name" className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Floq Name *</label>
+                <input
                   id="name"
+                  className="input-glass"
                   placeholder="What should we call your floq?"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -115,9 +113,10 @@ export default function FloqCreatePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
+                <label htmlFor="description" className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Description</label>
+                <textarea
                   id="description"
+                  className="input-glass resize-none"
                   placeholder="What's your floq about? What brings you together?"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -128,91 +127,95 @@ export default function FloqCreatePage() {
 
             {/* Primary Vibe */}
             <div className="space-y-3">
-              <Label>Primary Vibe</Label>
+              <label className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Primary Vibe</label>
               <div className="grid grid-cols-2 gap-3">
-                {vibeOptions.map((vibe) => (
-                  <button
-                    key={vibe.id}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, primary_vibe: vibe.id }))}
-                    className={`p-3 rounded-xl border text-left transition ${
-                      formData.primary_vibe === vibe.id
-                        ? "bg-white/15 border-white/20"
-                        : "bg-white/5 border-white/10 hover:bg-white/10"
-                    }`}
-                  >
-                    <div className="font-medium text-[13px] capitalize">{vibe.label}</div>
-                    <div className="text-[11px] text-white/60 mt-1">{vibe.description}</div>
-                  </button>
-                ))}
+                {vibeOptions.map((vibe) => {
+                  const isActive = formData.primary_vibe === vibe.id;
+                  return (
+                    <div key={vibe.id} className={`neon-wrap ${isActive ? `${neonClassForVibe(vibe.id as any)} neon-ring` : ""}`}>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, primary_vibe: vibe.id }))}
+                        className="tile p-3 text-left transition w-full"
+                        data-selected={isActive}
+                        aria-pressed={isActive}
+                      >
+                        <div className="font-semibold text-[13px] capitalize">{vibe.label}</div>
+                        <div className="text-white/70 text-[11px] mt-1">{vibe.description}</div>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Privacy Settings */}
             <div className="space-y-3">
-              <Label>Privacy</Label>
+              <label className="text-[13px] tracking-wide font-semibold text-white/90 uppercase">Privacy</label>
               <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, privacy: 'open' }))}
-                  className={`w-full p-3 rounded-xl border text-left transition ${
-                    formData.privacy === 'open'
-                      ? "bg-white/15 border-white/20"
-                      : "bg-white/5 border-white/10 hover:bg-white/10"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    <span className="font-medium text-[13px]">Open</span>
-                  </div>
-                  <div className="text-[11px] text-white/60 mt-1">
-                    Anyone can discover and join this floq
-                  </div>
-                </button>
+                <div className={`neon-wrap ${formData.privacy === 'open' ? "neon-cyan neon-ring" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, privacy: 'open' }))}
+                    className="tile w-full p-3 text-left transition"
+                    data-selected={formData.privacy === 'open'}
+                    aria-pressed={formData.privacy === 'open'}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span className="font-semibold text-[13px]">Open</span>
+                    </div>
+                    <div className="text-[11px] text-white/70 mt-1">
+                      Anyone can discover and join this floq
+                    </div>
+                  </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, privacy: 'invite' }))}
-                  className={`w-full p-3 rounded-xl border text-left transition ${
-                    formData.privacy === 'invite'
-                      ? "bg-white/15 border-white/20"
-                      : "bg-white/5 border-white/10 hover:bg-white/10"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Lock className="h-4 w-4" />
-                    <span className="font-medium text-[13px]">Invite Only</span>
-                  </div>
-                  <div className="text-[11px] text-white/60 mt-1">
-                    Only people you invite can join this floq
-                  </div>
-                </button>
+                <div className={`neon-wrap ${formData.privacy === 'invite' ? "neon-cyan neon-ring" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, privacy: 'invite' }))}
+                    className="tile w-full p-3 text-left transition"
+                    data-selected={formData.privacy === 'invite'}
+                    aria-pressed={formData.privacy === 'invite'}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      <span className="font-semibold text-[13px]">Invite Only</span>
+                    </div>
+                    <div className="text-[11px] text-white/70 mt-1">
+                      Only people you invite can join this floq
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Submit */}
             <div className="pt-4">
-              <Button 
-                type="submit" 
-                className="w-full neon-pill neon-ring py-3"
-                disabled={isPending || !formData.name.trim()}
-              >
-                {isPending ? (
-                  'Creating Floq...'
-                ) : (
-                  <>
-                    <Users className="mr-2 h-4 w-4" />
-                    Create Floq
-                  </>
-                )}
-              </Button>
+              <div className="neon-wrap neon-cyan neon-ring">
+                <button
+                  type="submit" 
+                  className="btn-primary-glass w-full py-3"
+                  disabled={isPending || !formData.name.trim()}
+                >
+                  {isPending ? (
+                    'Creating Floq...'
+                  ) : (
+                    <>
+                      <Users className="mr-2 h-4 w-4" />
+                      Create Floq
+                    </>
+                  )}
+                </button>
+              </div>
               
               <p className="text-[11px] text-white/60 text-center mt-3">
                 You'll be able to invite friends and customize settings after creation
               </p>
             </div>
           </form>
-        </Glass>
+        </section>
       </div>
     </div>
   );

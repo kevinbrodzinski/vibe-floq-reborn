@@ -33,6 +33,7 @@ import PrivacyTab from "@/components/Floqs/HQ/Tabs/PrivacyTab";
 import { TABS, TabKey } from "../Floqs/HQ/shared/constants";
 import Pill from "../Floqs/HQ/ui/Pill";
 import Btn from "../Floqs/HQ/ui/Btn";
+import { FloqHeader } from "../Floqs/HQ/Header/FloqHeader";
 
 // ... keep existing code (shared components and constants moved to separate files)
 
@@ -191,27 +192,30 @@ export default function FloqHQTabbed() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-white">
       <div className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl bg-zinc-950/70">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 avatar-glow rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 grid place-items-center"><Sparkles className="h-5 w-5" /></div>
-            <div>
-              <div className="text-sm font-semibold flex items-center gap-2">
-                Chaos<span className="sr-only">Private Floq</span>
-              </div>
-              <div className="text-[11px] text-white/60">"Spontaneous convergence specialists since 2022"</div>
-              <div className="text-[11px] text-white/60">8 members • Social-Hype</div>
-              <div className="flex flex-wrap gap-1.5 max-w-[280px] mt-1">
-                <Pill glow><Trophy className="inline h-3 w-3 mr-1" />Thursday Legends</Pill>
-                <Pill glow><Flame className="inline h-3 w-3 mr-1" />5-Week Streak</Pill>
-                <Pill glow><MapPin className="inline h-3 w-3 mr-1" />Gran Regulars</Pill>
-              </div>
-            </div>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <Btn glow aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
-            <div className="relative"><Btn glow aria-label="Notifications"><Bell className="h-4 w-4" /></Btn><span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span></div>
-            <Btn glow aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
-            <Btn glow aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <FloqHeader
+            floqId={actualFloqId || ""}
+            name="Chaos"
+            description="8 members • Social-Hype • Spontaneous convergence specialists since 2022"
+            avatarUrl={null}
+            rightBadges={
+              <>
+                <div className="hidden sm:flex items-center gap-2">
+                  <Btn glow aria-label="Settings"><Settings className="h-4 w-4" /></Btn>
+                  <div className="relative">
+                    <Btn glow aria-label="Notifications"><Bell className="h-4 w-4" /></Btn>
+                    <span className="absolute -top-1 -right-1 text-[10px] bg-rose-500 text-white rounded-full px-1.5 py-0.5 shadow-[0_0_12px_rgba(239,68,68,0.6)]">3</span>
+                  </div>
+                  <Btn glow aria-label="Invite"><UserPlus className="h-4 w-4" /></Btn>
+                  <Btn glow aria-label="More options"><MoreHorizontal className="h-4 w-4" /></Btn>
+                </div>
+              </>
+            }
+          />
+          <div className="flex flex-wrap gap-1.5 max-w-[400px] mt-3">
+            <Pill glow><Trophy className="inline h-3 w-3 mr-1" />Thursday Legends</Pill>
+            <Pill glow><Flame className="inline h-3 w-3 mr-1" />5-Week Streak</Pill>
+            <Pill glow><MapPin className="inline h-3 w-3 mr-1" />Gran Regulars</Pill>
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-4 pb-2">
@@ -260,6 +264,7 @@ export default function FloqHQTabbed() {
             <StreamTab
               reduce={reduce}
               panelAnim={panelAnim}
+              floqId={actualFloqId}
               sending={sending}
               rallyLoading={rallyLoading}
               onStartRally={() => handleStartRally()}

@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { supaFn } from '@/lib/supaFn';
 import { viewportToTileIds } from '@/lib/geo';
 import { deterministicRandom } from '@/lib/geo/random';
+import { withGate } from '@/core/privacy/withGate';
+import { edgeLog } from '@/lib/edgeLog';
 import type { FieldTile } from '@/types/field';
 
 interface TileBounds {
@@ -29,24 +31,53 @@ export function useFieldTiles(bounds?: TileBounds) {
     queryFn: async (): Promise<FieldTile[]> => {
       if (!tileIds.length) return [];
       
-      try {
-        // Function is now public, no auth needed
-        const res = await supaFn('get_field_tiles', null, { 
+      const res = await withGate(async () => {
+        const supaRes = await supaFn('get_field_tiles', null, { 
           tile_ids: tileIds 
         });
 
-        if (!res.ok) {
-          const errorText = await res.text();
+        if (!supaRes.ok) {
+          const errorText = await supaRes.text();
           console.error('[FIELD_TILES] invoke err', {
             message: errorText,
-            status: res.status,
+            status: supaRes.status,
           });
           throw new Error('field_tiles invoke failed');
         }
         
-        const data = await res.json();
-        // Handle the response structure from the edge function
-        const tiles = data?.tiles || [];
+        const data = await supaRes.json();
+        return data?.tiles || [];
+      }, {
+        envelopeId: 'strict',
+        cohortSize: 20,
+        epsilonCost: 0.0
+      });
+
+      edgeLog('field_tiles_exposed', { 
+        ok: res.ok, 
+        degrade: res.degrade, 
+        receiptId: res.receiptId,
+        tileCount: tileIds.length
+      });
+
+      if (!res.ok) {
+        console.warn('[FIELD_TILES] Privacy gate failed, using degraded data');
+        // Return simplified mock data when privacy gate fails
+        return tileIds.map((tileId): FieldTile => ({
+          tile_id: tileId,
+          crowd_count: Math.floor(Math.random() * 3) + 1, // Low resolution: 1-3 people
+          avg_vibe: {
+            h: Math.floor(Math.random() * 3) * 120, // Simplified colors: red, green, blue
+            s: 0.5,
+            l: 0.5
+          },
+          active_floq_ids: [],
+          updated_at: new Date().toISOString()
+        }));
+      }
+      
+      try {
+        const tiles = res.data || [];
         
         // Transform the data to match our FieldTile interface
         return tiles.map((tile: any): FieldTile => ({
@@ -55,7 +86,7 @@ export function useFieldTiles(bounds?: TileBounds) {
           avg_vibe: tile.avg_vibe || { h: 0, s: 0, l: 0 },
           active_floq_ids: tile.active_floq_ids || [],
           updated_at: tile.updated_at
-        }))
+        }));
       } catch (error) {
         console.warn('[FIELD_TILES] Failed to fetch real tiles, using mock data', error);
         

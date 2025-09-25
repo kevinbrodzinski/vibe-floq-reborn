@@ -109,7 +109,7 @@ export default function FloqsDiscoverPage() {
           type="button"
           onClick={() => nav("/create/floq")}
           aria-label="Create Floq"
-          className="neon-surface ring-neon px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
+          className="neon-surface ring-neon-soft px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 text-[12px]"
         >
           Create Floq
         </button>

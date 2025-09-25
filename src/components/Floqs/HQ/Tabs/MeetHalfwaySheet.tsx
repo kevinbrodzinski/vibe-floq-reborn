@@ -2,6 +2,7 @@ import React from "react";
 import { Coffee, Wine, UtensilsCrossed, X } from "lucide-react";
 import SmartMap, { type MemberETA } from "@/components/maps/SmartMap";
 import DirectionsSheet from "./DirectionsSheet";
+import Btn from "../ui/Btn";
 import type { HalfResult } from "@/hooks/useHQMeetHalfway";
 import { haversineMeters, etaMinutesMeters } from "@/lib/geo";
 
@@ -33,6 +34,7 @@ export default function MeetHalfwaySheet({
 }: Props) {
   // 1) Hooks must be unconditional
   const [dirOpen, setDirOpen] = React.useState(false);
+  const [posting, setPosting] = React.useState(false);
 
   // Top3 options (safe even when closed or data undefined)
   const top3 = React.useMemo(() => 
@@ -60,6 +62,20 @@ export default function MeetHalfwaySheet({
     });
   }, [selected?.lat, selected?.lng, JSON.stringify(members)]);
 
+  // Handle confirm with posting state
+  const handleConfirm = React.useCallback(async () => {
+    if (!selected || posting) return;
+    try {
+      setPosting(true);
+      await onConfirmSend?.(selected.id);
+    } catch (e) {
+      console.error('Failed to send rally:', e);
+      // TODO: toast('Couldn't send. Try again.')
+    } finally {
+      setPosting(false);
+    }
+  }, [selected, posting, onConfirmSend]);
+
   // 2) Only now is it safe to return early
   if (!open) return null;
 
@@ -69,9 +85,7 @@ export default function MeetHalfwaySheet({
 
       {/* HIGHER bottom-sheet: ~82vh on mobile, 92vh cap */}
       <div className="relative w-full sm:w-[820px] h-[82vh] sm:h-auto sm:max-h-[92vh] 
-                      bg-[#0b0d12]/90 backdrop-blur-xl 
-                      border-t border-white/10 sm:border rounded-t-2xl sm:rounded-2xl
-                      shadow-[inset_0_1px_0_rgba(255,255,255,.06)] overflow-hidden">
+                      section-compact overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -83,8 +97,8 @@ export default function MeetHalfwaySheet({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-4 grid gap-4 sm:grid-cols-2">
+        {/* Body scroll container */}
+        <div className="p-4 grid gap-4 sm:grid-cols-2 overflow-y-auto" style={{ maxHeight: 'calc(82vh - 56px)' }}>
           {/* Left: list + filters */}
           <div className="flex flex-col gap-3 min-h-0">
             {/* Category chips */}
@@ -93,10 +107,7 @@ export default function MeetHalfwaySheet({
                 const active = categories.includes(id);
                 return (
                   <button key={id} onClick={() => onToggleCategory(id)}
-                    className={`px-2.5 py-1 rounded-xl border text-[12px] inline-flex items-center gap-1.5 transition ${
-                      active ? "bg-white/10 border-white/20 text-white/90"
-                             : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white/90"
-                    }`}>
+                    className="chip-compact" data-active={active ? "true" : "false"}>
                     <Icon className="w-3.5 h-3.5" />{label}
                   </button>
                 );
@@ -142,42 +153,58 @@ export default function MeetHalfwaySheet({
                 </div>
               </div>
             )}
-
-            {/* Actions */}
-            <div className="mt-auto flex gap-2 pt-1 pb-[max(env(safe-area-inset-bottom),12px)]">
-              <button
-                className="px-3.5 py-2 rounded-xl bg-white/8 text-white/85 border border-white/12 hover:bg-white/12"
-                onClick={()=>onOpenChange(false)}
-              >Cancel</button>
-              <button
-                className="px-3.5 py-2 rounded-xl bg-white text-black text-[14px] font-medium 
-                          shadow-[0_0_24px_rgba(129,140,248,.28)]"
-                onClick={()=> selected && onConfirmSend?.(selected.id)}
-              >Confirm & Send</button>
-              <button
-                className="px-3.5 py-2 rounded-xl bg-white/8 text-white/85 border border-white/12 hover:bg-white/12"
-                onClick={() => selected && setDirOpen(true)}
-              >
-                Directions
-              </button>
-            </div>
           </div>
 
           {/* Right: Map */}
-          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/6 
-                          shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
-            {selected ? (
+          <div className="glass-subtle overflow-hidden rounded-xl">
+            {data ? (
               <SmartMap
-                data={data ? { centroid: data.centroid, candidates: data.candidates } : undefined}
-                selectedId={selected.id}
+                data={{ centroid: data.centroid, candidates: data.candidates }}
+                selectedId={selected?.id ?? null}
                 onSelect={onSelectVenue}
                 members={members.map(m => ({ id: m.profile_id, lat: m.lat, lng: m.lng, label: m.label }))}
                 memberEtas={perMember}
-                height={loading ? 220 : 360}
+                height={360}
               />
             ) : (
-              <div className="h-[360px] grid place-items-center text-white/60 text-sm">No options found</div>
+              <div className="h-[360px] grid place-items-center text-white/60 text-sm">
+                {loading ? "Loading proximity map..." : "Map preview"}
+              </div>
             )}
+          </div>
+
+          {/* Actions: now BELOW the map, full width */}
+          <div className="col-span-full sheet-actions-sticky pad-safe-b mt-1 flex items-center justify-between gap-2">
+            <div className="flex gap-2">
+              <button 
+                type="button" 
+                className="btn-compact btn-compact--ghost" 
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn-compact btn-compact--ghost"
+                onClick={() => selected && setDirOpen(true)}
+                disabled={!selected}
+                aria-disabled={!selected}
+              >
+                Directions
+              </button>
+              <button
+                type="button"
+                className="btn-compact btn-compact--primary neon-soft"
+                onClick={handleConfirm}
+                disabled={!selected || posting}
+                aria-disabled={!selected || posting}
+                aria-busy={posting || undefined}
+              >
+                {posting ? 'Sending…' : 'Confirm & Send'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

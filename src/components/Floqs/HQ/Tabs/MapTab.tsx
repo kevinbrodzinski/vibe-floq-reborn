@@ -34,7 +34,8 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
   const [selected, setSelected] = useState<string | null>(null);
 
   // fetch when sheet is open (your existing API shape)
-  const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: cats }, open);
+  const normalCats = cats.map((c) => (c === "restaurant" ? "food" : c));
+  const { data, isLoading } = useHQMeetHalfway(floqId || "", { categories: normalCats }, open);
   
   // get member proximity data
   const { data: prox } = useHQProximity(floqId ?? "", !!floqId);
@@ -51,19 +52,22 @@ export default function MapTab({ reduce, panelAnim, onMeetHalfway, onRallyChoice
   return (
     <motion.div {...panelAnim(reduce)} className="space-y-5">
       <Section
+        className="aura"
         title="Living Proximity Map"
         icon={<MapPin className="h-4 w-4" />}
         right={<Btn glow onClick={() => { track(Events.hq_meet_half_open, { floqId }); setOpen(true); }}>Meet-Halfway</Btn>}
       >
         {data ? (
-          <SmartMap 
-            data={data} 
-            selectedId={selected} 
-            onSelect={setSelected} 
-            height={260}
-          />
+          <div className="map-card glass-subtle">
+            <SmartMap 
+              data={data} 
+              selectedId={selected} 
+              onSelect={setSelected} 
+              height={260}
+            />
+          </div>
         ) : (
-          <div className="rounded-xl bg-white/5 border border-white/10 h-[260px] flex items-center justify-center text-white/40">
+          <div className="map-card glass-subtle h-[260px] flex items-center justify-center text-white/40">
             {isLoading ? "Loading proximity map..." : "Map preview"}
           </div>
         )}
