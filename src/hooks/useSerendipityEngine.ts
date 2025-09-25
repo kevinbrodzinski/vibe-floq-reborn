@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ResonanceMatch {
-  profileId: string;
+  userId: string;
   partnerId: string;
   resonanceScore: number;
   factors: {

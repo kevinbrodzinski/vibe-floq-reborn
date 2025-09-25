@@ -20,26 +20,10 @@ interface UseEnhancedFieldTilesOptions {
   updateInterval?: number;
 }
 
-// Dynamic H3 import for browser compatibility
-let h3: any | null = null;
-async function ensureH3() {
-  if (h3) return h3;
+function getBoundsTileIds(bounds: TileBounds): string[] {
   try {
-    h3 = await import('h3-js');
-  } catch (error) {
-    console.warn('[ensureH3] H3 not available, using fallback:', error);
-    h3 = null;
-  }
-  return h3;
-}
-
-async function getBoundsTileIds(bounds: TileBounds): Promise<string[]> {
-  try {
-    const H3 = await ensureH3();
-    if (!H3?.polygonToCells) {
-      console.warn('[getBoundsTileIds] H3 polygonToCells not available');
-      return [];
-    }
+    // Use dynamic import to avoid build issues if h3-js isn't available
+    const h3 = require('h3-js');
     
     // Build bbox polygon (lng,lat order for H3)
     const poly = [[
@@ -51,7 +35,7 @@ async function getBoundsTileIds(bounds: TileBounds): Promise<string[]> {
     ]];
     
     const resolution = bounds.precision ?? 7;
-    return H3.polygonToCells({ type: 'Polygon', coordinates: poly }, resolution);
+    return h3.polygonToCells({ type: 'Polygon', coordinates: poly }, resolution);
   } catch (error) {
     console.warn('[getBoundsTileIds] H3 not available, falling back to empty array:', error);
     return []; // Fallback to tileIds path
@@ -65,18 +49,8 @@ export function useEnhancedFieldTiles(options: UseEnhancedFieldTilesOptions = {}
   const tileHistoryRef = useRef<Map<string, any>>(new Map());
   const previousTilesRef = useRef<Map<string, EnhancedFieldTile>>(new Map());
 
-  // Handle async tile ID resolution
-  const tileIdsQuery = useQuery({
-    queryKey: ['tile-ids', options.bounds, options.tileIds],
-    queryFn: async () => {
-      if (options.tileIds) return options.tileIds;
-      if (options.bounds) return await getBoundsTileIds(options.bounds);
-      return [];
-    },
-    staleTime: 60_000, // Cache tile IDs for 1 minute
-  });
-
-  const resolvedTileIds = tileIdsQuery.data || [];
+  // Determine tile IDs from either direct input or bounds
+  const resolvedTileIds = options.tileIds ?? getBoundsTileIds(options.bounds || { minLat: 0, maxLat: 0, minLng: 0, maxLng: 0 });
 
   const query = useQuery({
     queryKey: ['enhanced-field-tiles', resolvedTileIds],

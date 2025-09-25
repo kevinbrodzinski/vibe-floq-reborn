@@ -39,7 +39,7 @@ const RouteSuspense = ({ children, fallback = <FullScreenSpinner /> }: { childre
 // Lazy load large components to reduce initial bundle size
 const FieldScreen = lazy(() => import('@/components/screens/FieldScreen').then(m => ({ default: m.FieldScreen })));
 const FloqsHome = lazy(() => import('@/components/FloqsHome').then(m => ({ default: m.FloqsHome })));
-const FloqsMainHub = lazy(() => import('@/components/Floqs/FloqsMainHub'));
+const FloqsMainHub = lazy(() => import('@/components/floqs/FloqsMainHub'));
 const FloqRoute = lazy(() => import('@/pages/FloqRoute'));
 const FloqManage = lazy(() => import('@/pages/FloqManage'));
 const Discover = lazy(() => import('@/pages/Discover'));
@@ -51,7 +51,6 @@ const FloqPlanExecutionScreen = lazy(() => import('@/pages/FloqPlanExecutionScre
 const FloqHQPage = lazy(() => import('@/pages/FloqHQPage'));
 const FloqCreatePage = lazy(() => import('@/pages/FloqCreatePage'));
 const FloqsDiscoverPage = lazy(() => import('@/pages/FloqsDiscoverPage'));
-const FloqMainPage = lazy(() => import('@/components/Main/FloqMainPage').then(m => ({ default: m.FloqMainPage })));
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import UserProfileByUsernameWrapper from '@/components/UserProfileByUsernameWrapper';
 import Profile from '@/pages/Profile';
@@ -69,7 +68,7 @@ import FloqPlan from '@/pages/FloqPlan';
 import SharedPlan from '@/pages/SharedPlan';
 import { PlanDetailsView } from '@/components/plans/PlanDetailsView';
 import { LocationSharingScreen } from '@/components/screens/LocationSharingScreen';
-const DailyRecapGate = lazy(() => import('@/pages/DailyRecapGate'));
+import DailyRecapGate from '@/pages/DailyRecapGate';
 import RecapActionSheet from '@/pages/RecapActionSheet';
 import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
@@ -82,15 +81,10 @@ import Phase34DemoRoutes from '@/routes/Phase34DemoRoutes';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
-  const floqMainV2 = useFeatureFlag('FLOQ_MAIN_V2');
 
   return (
     <Routes>
-      <Route path="/" element={
-        <RouteSuspense>
-          <DailyRecapGate />
-        </RouteSuspense>
-      } />
+      <Route path="/" element={<DailyRecapGate />} />
       <Route path="/welcome" element={
         <RouteSuspense>
           <LandingPage />
@@ -114,20 +108,6 @@ export const AppRoutes = () => {
       <Route path="/recap-actions" element={<RecapActionSheet />} />
       <Route path="/field" element={<LegacyRedirect />} />
       <Route path="/floqs" element={
-        <RouteSuspense>
-          {floqMainV2 ? (
-            <FloqMainPage 
-              vibe="chill"
-              topPerks={[]}
-              friendsIn={[]}
-              branchOut={[]}
-            />
-          ) : (
-            <FloqsDiscoverPage />
-          )}
-        </RouteSuspense>
-      } />
-      <Route path="/floqs/discover" element={
         <RouteSuspense>
           <FloqsDiscoverPage />
         </RouteSuspense>

@@ -1,16 +1,16 @@
 import React from "react";
 
 export default function Pill({
-  children,
-  active = false,
+  children, 
+  glow = true, 
   className = "",
-}: {
-  children: React.ReactNode;
-  active?: boolean;
+}: { 
+  children: React.ReactNode; 
+  glow?: boolean; 
   className?: string;
 }) {
   return (
-    <span className={`chip-compact ${className}`} data-active={active ? "true" : "false"}>
+    <span className={`${glow ? "chip-glow" : "chip"} ${className}`}>
       {children}
     </span>
   );

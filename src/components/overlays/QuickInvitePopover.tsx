@@ -5,7 +5,7 @@ import { applyVenue } from '@/lib/social/applyVenue'
 import type { InviteOption } from '@/lib/social/inviteEngine'
 
 export function QuickInvitePopover({
-  profileId, onClose, onInvite, onDM, onAddToPlan,
+  userId, onClose, onInvite, onDM, onAddToPlan,
   invites,        // InviteOption[] (already decorated with venue via decorator)
   venues,         // VenueLite[] for chooser
   focus,          // [lng,lat] centroid for distance calc (optional)
@@ -13,7 +13,7 @@ export function QuickInvitePopover({
   horizonLabel,   // 'Now' | '+30m' | '+2h' (optional)
   onRetryVenue,   // () => Promise<InviteOption[]> (optional)
 }: {
-  profileId: string
+  userId: string
   onClose: () => void
   onInvite: (id: string) => void
   onDM?: (id: string) => void
@@ -42,20 +42,20 @@ export function QuickInvitePopover({
         <div className="text-white/90 text-sm">Invite this friend?</div>
 
         <button
-          onClick={() => { onInvite(profileId); onClose() }}
+          onClick={() => { onInvite(userId); onClose() }}
           className="px-12 py-8 rounded-xl text-sm bg-white/20 text-white hover:bg-white/30"
         >
           Invite to Tonight
         </button>
 
         {onDM && (
-          <button onClick={() => { onDM(profileId); onClose() }} className="px-12 py-8 rounded-xl text-sm bg-white/10 text-white/80">
+          <button onClick={() => { onDM(userId); onClose() }} className="px-12 py-8 rounded-xl text-sm bg-white/10 text-white/80">
             DM
           </button>
         )}
 
         {onAddToPlan && (
-          <button onClick={() => { onAddToPlan(profileId); onClose() }} className="px-12 py-8 rounded-xl text-sm bg-white/10 text-white/80">
+          <button onClick={() => { onAddToPlan(userId); onClose() }} className="px-12 py-8 rounded-xl text-sm bg-white/10 text-white/80">
             Add to Plan
           </button>
         )}
@@ -81,13 +81,13 @@ export function QuickInvitePopover({
 
   // Primary action dispatch
   const handlePrimary = (opt: InviteOption) => {
-    onInvite(profileId)
+    onInvite(userId)
     onClose()
   }
 
   const handleSecondary = (opt: InviteOption) => {
     // If it's a planned suggestion, you may want to open a planner UI here.
-    onInvite(profileId)
+    onInvite(userId)
     onClose()
   }
 
@@ -131,13 +131,13 @@ export function QuickInvitePopover({
       {/* Footer actions (optional): DM / Add to plan / Cancel */}
       <div className="mt-4 flex items-center gap-2">
         {onDM && (
-          <button onClick={() => { onDM(profileId); onClose() }}
+          <button onClick={() => { onDM(userId); onClose() }}
                   className="px-3 py-2 rounded-md bg-white/10 text-white/85 text-xs">
             DM
           </button>
         )}
         {onAddToPlan && (
-          <button onClick={() => { onAddToPlan(profileId); onClose() }}
+          <button onClick={() => { onAddToPlan(userId); onClose() }}
                   className="px-3 py-2 rounded-md bg-white/10 text-white/85 text-xs">
             Add to Plan
           </button>

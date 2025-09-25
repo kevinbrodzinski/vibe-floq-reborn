@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { debounce } from 'lodash-es';
+import debounce from 'lodash.debounce';
 import { Search, X, MapPin, Clock, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -41,8 +41,8 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
   value: controlledValue,
   onChange,
   onSelect,
-  onSearch = (_query: string) => {},
-  onResultSelect = (_result: SearchResult) => {},
+  onSearch = () => {},
+  onResultSelect = () => {},
   results = [],
   placeholder = "Search venues, events, people...",
   className = "",

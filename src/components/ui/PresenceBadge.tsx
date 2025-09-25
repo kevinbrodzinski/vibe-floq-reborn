@@ -1,5 +1,7 @@
 import dayjs from '@/lib/dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { Badge } from '@/components/ui/badge';
+dayjs.extend(relativeTime);
 
 type Props =
   | { kind: 'arrived' }

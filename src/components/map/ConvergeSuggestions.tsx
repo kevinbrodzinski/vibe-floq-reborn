@@ -100,8 +100,8 @@ export function ConvergeSuggestions({ onClose }: Props) {
         setPrefillId(null);
         setPoints([]);
       } finally {
-        // Always clear loading; stale-guard inside setState to avoid unsafe return
-        if (mySeq === seqRef.current) setLoading(false);
+        if (mySeq !== seqRef.current) return;
+        setLoading(false);
       }
     };
 

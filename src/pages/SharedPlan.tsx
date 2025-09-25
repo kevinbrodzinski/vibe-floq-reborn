@@ -187,7 +187,7 @@ export default function SharedPlan() {
     );
   }
 
-  const isParticipant = user && plan.plan_participants?.some((p: any) => p.profile_id === user.id);
+  const isParticipant = user && plan.plan_participants?.some((p: any) => p.user_id === user.id);
   const isGuestParticipant = !user && guestSession.guestName && plan.plan_participants?.some((p: any) => p.is_guest && p.guest_name === guestSession.guestName);
   const participantCount = plan.plan_participants?.length || 0;
 

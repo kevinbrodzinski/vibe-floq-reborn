@@ -10,20 +10,19 @@ const lyr = (id:string,s:string)=>`${id}-${s}`;
 const srcId = (id:string)=>`${id}-src`;
 const isTouch = () =>
   typeof window !== 'undefined' &&
-  ('ontouchstart' in window || ('maxTouchPoints' in navigator && (navigator as Navigator & { maxTouchPoints: number }).maxTouchPoints > 0));
+  ('ontouchstart' in window || (navigator as any).maxTouchPoints > 0);
 
-function debounce<F extends (...a: unknown[]) => void>(fn: F, ms = 120) {
-  let t: ReturnType<typeof setTimeout> | undefined;
-  return (...args: Parameters<F>) => {
-    if (t) clearTimeout(t);
-    t = setTimeout(() => fn(...args), ms);
+function debounce<F extends (...a:any[])=>void>(fn:F, ms=120){
+  let t = 0 as any;
+  return (...args:Parameters<F>)=>{
+    clearTimeout(t); t=setTimeout(()=>fn(...args), ms) as any;
   };
 }
 function moveToTop(map: mapboxgl.Map, ids: string[]) {
   const all = map.getStyle()?.layers?.map(l=>l.id) ?? [];
   const top = all[all.length-1];
   if (!top) return;
-  ids.forEach(id => { if (map.getLayer(id)) try { map.moveLayer(id, top); } catch { void 0; } });
+  ids.forEach(id => { if(map.getLayer(id)) try{ map.moveLayer(id, top); }catch{} });
 }
 
 // ---------- Legacy-friendly filter definitions ----------
@@ -45,8 +44,8 @@ const FILTER_FRIEND_FALLBACK = [
 ] as const;
 
 // ---------- sprite for avatars ----------
-export async function ensureAvatarImage(map: mapboxgl.Map, profileId: string, url: string, size=64): Promise<string|null> {
-  const id = `avatar:${profileId}:${size}`;
+export async function ensureAvatarImage(map: mapboxgl.Map, userId: string, url: string, size=64): Promise<string|null> {
+  const id = `avatar:${userId}:${size}`;
   if (map.hasImage(id)) return id;
   try {
     const img = await new Promise<HTMLImageElement>((res,rej)=>{

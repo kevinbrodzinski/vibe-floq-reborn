@@ -95,7 +95,7 @@ export default function AfterglowDetailPage() {
       const momentUsers = moment.metadata?.encountered_users || [];
       const mUsers = m.metadata?.encountered_users || [];
       const hasSharedUsers = momentUsers.some((u: any) => 
-        mUsers.some((mu: any) => mu.profile_id === u.profile_id)
+        mUsers.some((mu: any) => mu.user_id === u.user_id)
       );
       
       return hasSharedUsers;

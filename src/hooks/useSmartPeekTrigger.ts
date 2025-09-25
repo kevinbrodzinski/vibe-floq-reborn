@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useJoinIntent } from './useJoinIntent';
 import { openFloqPeek } from '@/lib/peek';
-import type { FloqCardItem } from '@/components/Floqs/cards/FloqCard';
+import type { FloqCardItem } from '@/components/floqs/cards/FloqCard';
 
 interface SmartPeekOptions {
   userBehavior?: 'curious' | 'decisive' | 'social';

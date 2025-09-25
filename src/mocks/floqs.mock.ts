@@ -1,4 +1,4 @@
-import type { AvatarItem } from "@/components/Floqs/visual/AvatarStack";
+import type { AvatarItem } from "@/components/floqs/visual/AvatarStack";
 import type { ConstellationNode, ConstellationEdge } from "@/hooks/useFloqsHubData";
 
 export type MockFloq = {

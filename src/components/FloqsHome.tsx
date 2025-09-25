@@ -15,7 +15,7 @@ import { SearchBarWithTypeahead } from '@/components/SearchBarWithTypeahead';
 import { AdvancedSearchSheet } from '@/components/AdvancedSearchSheet';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { FloqCard } from '@/components/floq/FloqCard';
-import { MyFloqCard } from '@/components/Floqs/MyFloqCard';
+import { MyFloqCard } from '@/components/floqs/MyFloqCard';
 import { useMyFloqs } from '@/hooks/useMyFloqs';
 import { useNearbyFloqs } from '@/hooks/useNearbyFloqs';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';

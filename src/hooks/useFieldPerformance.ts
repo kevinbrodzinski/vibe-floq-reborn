@@ -23,8 +23,8 @@ function useDeviceTier(): 'low' | 'mid' | 'high' {
     const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
     let gpu: 'low' | 'mid' | 'high' = 'mid';
     
-    if (gl && typeof (gl as any).getParameter === 'function') {
-      const renderer = (gl as any).getParameter((gl as any).RENDERER)?.toLowerCase() || '';
+    if (gl) {
+      const renderer = gl.getParameter(gl.RENDERER)?.toLowerCase() || '';
       if (renderer.includes('adreno') && renderer.includes('3')) gpu = 'low';
       else if (renderer.includes('mali') && !renderer.includes('g7')) gpu = 'low';
       else if (renderer.includes('intel') && renderer.includes('hd')) gpu = 'low';
@@ -87,7 +87,7 @@ export function useFieldPerformance(app: PIXI.Application | null) {
   // Single ticker registration
   useEffect(() => {
     // bail if app not ready or ticker missing
-  if (!app || !(app as any).ticker || typeof (app as any).ticker.add !== 'function') return;
+    if (!app || !(app as any).ticker) return;
 
     const bound = () => onTickRef.current?.();
     app.ticker.add(bound);
@@ -101,7 +101,7 @@ export function useFieldPerformance(app: PIXI.Application | null) {
     return () => {
       window.removeEventListener('field-worker-perf', handleWorkerPerf as EventListener);
       // guard on cleanup too
-      try { if ((app as any)?.ticker && typeof (app as any).ticker.remove === 'function') (app as any).ticker.remove(bound); } catch {}
+      try { (app as any)?.ticker?.remove(bound); } catch {}
     };
   }, [app]);
   

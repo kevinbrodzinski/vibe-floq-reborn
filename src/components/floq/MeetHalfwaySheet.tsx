@@ -5,8 +5,6 @@ import SmartMap from '@/components/maps/SmartMap';
 import { openDirections } from '@/lib/directions/handoff';
 import { Coffee, Wine, MapPin, Clock, Users, Navigation } from 'lucide-react';
 import type { HalfResult } from '@/hooks/useHQMeetHalfway';
-import { useGroupPredictability } from '@/hooks/useGroupPredictability';
-import { useRecommendationCapture } from '@/hooks/useRecommendationCapture';
 
 interface MeetHalfwaySheetProps {
   open: boolean;
@@ -19,7 +17,6 @@ interface MeetHalfwaySheetProps {
   onRallyHere: () => void;
   loading?: boolean;
   rallyLoading?: boolean;
-  memberDists?: number[][];
 }
 
 const CATEGORIES = [
@@ -39,12 +36,8 @@ export default function MeetHalfwaySheet({
   onRallyHere,
   loading = false,
   rallyLoading = false,
-  memberDists = [],
 }: MeetHalfwaySheetProps) {
   const selectedVenue = data?.candidates.find(c => c.id === selectedId);
-  const gp = useGroupPredictability(memberDists);
-  const blocked = !gp.ok;
-  const capture = useRecommendationCapture('balanced');
 
   const handleNavigate = () => {
     if (!selectedVenue) return;
@@ -53,25 +46,6 @@ export default function MeetHalfwaySheet({
       label: selectedVenue.name,
       mode: 'transit'
     });
-  };
-
-  const handleRallyHere = async () => {
-    if (!selectedVenue || blocked) return;
-    
-    // Set plan context for preference learning
-    await capture.setPlanContext({
-      planId: `meethalfway-${selectedVenue.id}`,
-      participantsCount: memberDists.length || 2,
-      predictability: {
-        spread: gp.spread,
-        gain: gp.gain,
-        ok: gp.ok,
-        fallback: (gp.fallback === 'partition' || gp.fallback === 'relax_constraints') ? gp.fallback : null
-      }
-    });
-
-    await capture.flushNow();
-    onRallyHere();
   };
 
   return (
@@ -108,17 +82,6 @@ export default function MeetHalfwaySheet({
               })}
             </div>
           </div>
-
-          {/* Predictability Warning */}
-          {!gp.ok && (
-            <div className="p-4 border-b border-white/10">
-              <div className="text-xs opacity-80">
-                {gp.fallback === 'partition'
-                  ? 'Preferences are diverse. Consider splitting into smaller subgroups.'
-                  : 'Alignment is weak. Try relaxing time or location constraints.'}
-              </div>
-            </div>
-          )}
 
           {/* Map */}
           <div className="flex-1 p-4 overflow-hidden">
@@ -175,8 +138,8 @@ export default function MeetHalfwaySheet({
                     Get Directions
                   </Button>
                   <Button
-                    onClick={handleRallyHere}
-                    disabled={rallyLoading || blocked}
+                    onClick={onRallyHere}
+                    disabled={rallyLoading}
                     className="flex-1 ring-2 ring-cyan-400/50"
                   >
                     {rallyLoading ? (
@@ -184,8 +147,6 @@ export default function MeetHalfwaySheet({
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                         Creating Rally...
                       </>
-                    ) : blocked ? (
-                      gp.label
                     ) : (
                       'Rally Here'
                     )}

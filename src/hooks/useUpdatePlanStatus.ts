@@ -4,8 +4,6 @@ import { useToast } from '@/hooks/use-toast'
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
 import { celebrationEffects } from '@/lib/celebration'
 import { useFinalizePlan } from '@/hooks/useFinalizePlan'
-import { useRecommendationCapture } from '@/hooks/useRecommendationCapture'
-import { edgeLog } from '@/lib/edgeLog'
 
 type PlanStatus = 'draft' | 'finalized' | 'executing' | 'completed' | 'cancelled'
 
@@ -27,7 +25,6 @@ export function useUpdatePlanStatus() {
   const { toast } = useToast()
   const { contextualHaptics, heavy } = useAdvancedHaptics()
   const finalizePlan = useFinalizePlan()
-  const { flushNow } = useRecommendationCapture('balanced')
 
   // Define valid status transitions
   const statusTransitions: PlanStatusTransition[] = [
@@ -59,15 +56,9 @@ export function useUpdatePlanStatus() {
             plan_id: planId, 
             force_finalize: forceFinalize 
           })
-
-          // Flush preference signals after successful finalization
-          await flushNow()
-          edgeLog('pref_flush_after_finalize', { planId, result: 'ok' })
-          
           return // Return void to match mutation type
         } catch (error) {
           console.error('Plan finalization via RPC failed:', error)
-          edgeLog('pref_flush_after_finalize', { planId, result: 'error', message: (error as any)?.message })
           throw error
         }
       }
@@ -87,14 +78,7 @@ export function useUpdatePlanStatus() {
 
       if (error) {
         console.error('Plan status update error:', error)
-        edgeLog('pref_flush_after_status', { planId, status, result: 'error', message: error.message })
         throw error
-      }
-
-      // Flush preference signals after successful status changes to executing
-      if (status === 'executing') {
-        await flushNow()
-        edgeLog('pref_flush_after_status', { planId, status, result: 'ok' })
       }
     },
     onSuccess: (_, { planId, status }) => {

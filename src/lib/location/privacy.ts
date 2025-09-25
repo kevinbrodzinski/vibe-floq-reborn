@@ -32,7 +32,7 @@ export function snapToGrid(
   switch (privacyLevel) {
     case 'exact':
       // No filtering, return original coordinates with preserved accuracy
-      return { lat, lng, accuracy: originalAccuracy ?? 30 };
+      return { lat, lng, accuracy: originalAccuracy ?? 10 };
       
     case 'street':
       // Snap to ~50m grid (good for street-level privacy)

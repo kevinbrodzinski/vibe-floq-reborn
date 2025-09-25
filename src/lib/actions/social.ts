@@ -1,9 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export async function inviteToTonight(profileId: string) {
+export async function inviteToTonight(userId: string) {
   // Try a known edge function if present; otherwise log a warning.
   try {
-    const { data, error } = await supabase.functions.invoke('invite-to-tonight', { body: { profileId } });
+    const { data, error } = await supabase.functions.invoke('invite-to-tonight', { body: { userId } });
     if (error) throw error;
     return data;
   } catch {
@@ -11,9 +11,9 @@ export async function inviteToTonight(profileId: string) {
   }
 }
 
-export async function dmUser(profileId: string, text = 'Want to link up tonight?') {
+export async function dmUser(userId: string, text = 'Want to link up tonight?') {
   try {
-    const { data, error } = await supabase.functions.invoke('create-dm', { body: { to: profileId, text } });
+    const { data, error } = await supabase.functions.invoke('create-dm', { body: { to: userId, text } });
     if (error) throw error;
     return data;
   } catch {
@@ -21,9 +21,9 @@ export async function dmUser(profileId: string, text = 'Want to link up tonight?
   }
 }
 
-export async function addToCurrentPlan(profileId: string) {
+export async function addToCurrentPlan(userId: string) {
   try {
-    const { data, error } = await supabase.functions.invoke('plan-add-participant', { body: { profileId } });
+    const { data, error } = await supabase.functions.invoke('plan-add-participant', { body: { userId } });
     if (error) throw error;
     return data;
   } catch {

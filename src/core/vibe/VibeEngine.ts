@@ -99,7 +99,7 @@ export function evaluate(inp: EngineInputs): VibeReading {
     
     // Temporal confidence boost when chronotype aligns with hour
     if (chronotype === 'lark' && inp.hour >= 6 && inp.hour <= 11) {
-      components.circadian = Math.min(1, components.circadian + 0.101);
+      components.circadian = Math.min(1, components.circadian + 0.1);
       nudges.push(`chronotype-lark-boost(+0.1-circadian)`);
     } else if (chronotype === 'owl' && inp.hour >= 17 && inp.hour <= 22) {
       components.circadian = Math.min(1, components.circadian + 0.1);

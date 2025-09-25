@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
-import { encodeGeohash } from "./geohash.ts";
+import ngeohash from "https://esm.sh/ngeohash@0.6.3";
 
 /* 1.  Shared service-role client  ---------------------------------- */
 const sb = createClient(
@@ -82,7 +82,7 @@ export function mapToVenue(p: RawPlace) {
       price_level: typeof r.price_level === 'number' ? r.price_level : null,
       hours: r.opening_hours ?? r.hours ?? null,
       vibe: vibeFrom(categories),
-      geohash5: encodeGeohash(lat, lng, 5),
+      geohash5: ngeohash.encode(lat, lng, 5),
       description: null,
       profile_id: null,
     };
@@ -128,7 +128,7 @@ export function mapToVenue(p: RawPlace) {
     price_level: typeof r.price_level === 'number' ? r.price_level : null,
     hours: r.opening_hours ?? r.hours ?? null,
     vibe: vibeFrom(categories),
-    geohash5: encodeGeohash(lat, lng, 5),
+    geohash5: ngeohash.encode(lat, lng, 5),
     description: null,
     profile_id: null,
   };

@@ -2,7 +2,17 @@
 // POST { friends:[{lng,lat,weight?}], center?, bbox?, zoom:number }
 // -> { zones:[{ polygon:[ [lng,lat]... ], prob:number, vibe:string }], ttlSec:number }
 
-import { buildCors } from '../_shared/cors.ts';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+const okJson = (body: unknown, ttlSec = 120) =>
+  new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, 'content-type': 'application/json; charset=utf-8', 'cache-control': `public, max-age=${ttlSec}` }
+  });
+const bad = (msg: string, code = 400) =>
+  new Response(JSON.stringify({ error: msg }), { status: code, headers: { ...corsHeaders, 'content-type': 'application/json' } });
 
 type Friend = { lng: number; lat: number; weight?: number };
 
@@ -46,16 +56,15 @@ function ring(c: [number, number], radiusMeters: number, atLatDeg: number, n = 3
 }
 
 Deno.serve(async (req) => {
-  const { preflight, json, error } = buildCors(req);
-  if (preflight) return preflight;
-  if (req.method !== 'POST') return error('POST required', 405);
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method !== 'POST')    return bad('POST required', 405);
 
   try {
     const body = await req.json();
     const friends: Friend[] = Array.isArray(body?.friends) ? body.friends : [];
     const zoom: number = Number(body?.zoom ?? 14);
 
-    if (!friends.length) return json({ zones: [], ttlSec: 60 }, 200, 60);
+    if (!friends.length) return okJson({ zones: [], ttlSec: 60 }, 60);
 
     const c = centroid(friends);
     const radiusMeters = avgRadiusMeters(friends, c) * (zoom >= 15 ? 0.9 : 1.1);
@@ -63,8 +72,8 @@ Deno.serve(async (req) => {
     const prob = Math.max(0.25, Math.min(0.9, 0.3 + 0.1 * Math.log2(1 + friends.length)));
     const vibe = 'mixed';
 
-    return json({ zones: [{ polygon: poly, prob, vibe, centroid: c }], ttlSec: 120 }, 200, 120);
+    return okJson({ zones: [{ polygon: poly, prob, vibe, centroid: c }], ttlSec: 120 }, 120);
   } catch (e) {
-    return error(e?.message ?? 'error', 500);
+    return bad(e?.message ?? 'error', 500);
   }
 });

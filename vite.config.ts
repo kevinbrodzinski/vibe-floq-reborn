@@ -1,34 +1,7 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc';
-import path from 'path';
-import { componentTagger } from 'lovable-tagger';
-
-function rnwLegacyShims() {
-  const LEGACY_CGNC_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeComponent';
-  const LEGACY_CGNC_RN    = 'react-native/Libraries/Utilities/codegenNativeComponent';
-  const LEGACY_CMDS_RNWEB = 'react-native-web/Libraries/Utilities/codegenNativeCommands';
-  const LEGACY_CMDS_RN    = 'react-native/Libraries/Utilities/codegenNativeCommands';
-  const RNSVG_FABRIC_NATIVE = /^react-native-svg\/lib\/module\/fabric\/.*NativeComponent\.js$/;
-
-  return {
-    name: 'rnw-legacy-shims',
-    enforce: 'pre' as const,
-    resolveId(source: string) {
-      if (source === LEGACY_CGNC_RNWEB || source === LEGACY_CGNC_RN) {
-        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js');
-      }
-      if (source === LEGACY_CMDS_RNWEB || source === LEGACY_CMDS_RN) {
-        return path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js');
-      }
-      if (RNSVG_FABRIC_NATIVE.test(source)) {
-        return path.resolve(__dirname, 'src/shims/rns-fabric-native-component.web.ts');
-      }
-      // normalize rare ".js" variant to module id so optimizeDeps include hits
-      if (source === 'react/jsx-runtime.js') return 'react/jsx-runtime';
-      return null;
-    },
-  };
-}
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
 
 /* ─────────────────────── Env helpers ─────────────────────── */
 const PREVIEW_HMR_HOST  = process.env.VITE_HMR_HOST;
@@ -37,6 +10,7 @@ const IS_HOSTED_PREVIEW =
   process.env.NODE_ENV === "production" ||
   process.env.NEXT_PUBLIC_HOSTED_PREVIEW === "true";
 
+/* ───────────────────── Main export ───────────────────────── */
 export default defineConfig(({ mode, command }) => {
   /* HMR logic */
   const getHMRConfig = () => {
@@ -73,103 +47,142 @@ export default defineConfig(({ mode, command }) => {
       hmr: getHMRConfig(),
     },
 
+    /* --------------- define globals --------------- */
     define: {
+      // Expose the flag exactly like Metro does for React Native
       __DEV__: process.env.NODE_ENV !== 'production',
+      // Polyfill global for Expo packages
       global: 'globalThis',
+      // Polyfill process for Expo packages
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
 
     plugins: [
-      rnwLegacyShims(), // 👈 intercept legacy ids before Vite resolves
       react(),
       mode === "development" && componentTagger(),
     ].filter(Boolean),
 
-    resolve: {
-      alias: {
-        // Project roots
-        '@': path.resolve(__dirname, 'src'),
-        '@entry': path.resolve(__dirname, 'src/main.web.tsx'),
-
-
-        // 1) Force RN → RN Web in ALL cases (no `$` suffix; works for CJS too)
-        'react-native': 'react-native-web',
-
-        // 2) react-native-svg 🤝 RN-Web (prefer real exports if present; shims are below)
-        'react-native-web/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
-        'react-native/Libraries/Utilities/codegenNativeComponent':
-          path.resolve(__dirname, 'src/lib/stubs/codegenNativeComponent.js'),
-
-        'react-native-web/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
-        'react-native/Libraries/Utilities/codegenNativeCommands':
-          path.resolve(__dirname, 'src/lib/stubs/codegenNativeCommands.js'),
-
-        // Some deps deep-require svg/fabric → force non-fabric
-        'react-native-svg/lib/module/fabric': 'react-native-svg/lib/module',
-
-        // React legacy subpaths used by some bundles (e.g., SWR, older libs)
-        'react/index.js': 'react',
-        'react/jsx-runtime.js': 'react/jsx-runtime',
-        'react/jsx-dev-runtime.js': 'react/jsx-dev-runtime',
-
-        // Let use-sync-external-store resolve naturally
-
-
-        // Expo/native-only web stubs
-        'expo-application': 'expo-application/web',
-        'expo-constants': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        'expo-device': 'expo-device/build/Device.web',
-        'expo-asset': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        'react-native-mmkv': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
-        'expo-haptics': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+    /* --------------- build optimizations --------------- */
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Core React libraries
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            
+            // UI Libraries (Radix UI components)
+            'ui-vendor': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-popover',
+              '@radix-ui/react-tooltip',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-accordion',
+              '@radix-ui/react-checkbox',
+              '@radix-ui/react-radio-group',
+              '@radix-ui/react-switch',
+              '@radix-ui/react-slider',
+              '@radix-ui/react-progress',
+              '@radix-ui/react-avatar',
+              '@radix-ui/react-separator',
+              '@radix-ui/react-scroll-area'
+            ],
+            
+            // Map and visualization libraries
+            'maps-vendor': [
+              'mapbox-gl',
+              'deck.gl',
+              '@deck.gl/layers',
+              '@deck.gl/react',
+              '@deck.gl/aggregation-layers'
+            ],
+            
+            // Data libraries
+            'data-vendor': [
+              '@tanstack/react-query',
+              '@supabase/supabase-js',
+              'swr',
+              'zustand'
+            ],
+            
+            // Animation and interaction libraries
+            'animation-vendor': [
+              'framer-motion',
+              '@use-gesture/react',
+              'react-use-gesture'
+            ],
+            
+            // Utility libraries
+            'utils-vendor': [
+              'date-fns',
+              'dayjs',
+              'lodash-es',
+              'lodash.debounce',
+              'lodash.throttle',
+              'uuid',
+              'nanoid',
+              'zod',
+              'clsx',
+              'class-variance-authority',
+              'tailwind-merge'
+            ],
+            
+            // Graphics and rendering libraries
+            'graphics-vendor': [
+              'pixi.js',
+              'canvas-confetti',
+              'chroma-js',
+              'd3-scale',
+              'd3-scale-chromatic',
+              'stats.js'
+            ],
+            
+            // Development and debugging
+            'dev-vendor': [
+              '@tanstack/react-query-devtools',
+              'comlink'
+            ]
+          }
+        }
       },
-
-      dedupe: ['react', 'react-dom', 'react-native-web'],
-      conditions: ['browser', 'module', 'import', 'default'],
-      mainFields: ['module', 'browser', 'main'],
+      // Increase chunk size warning limit since we're splitting manually
+      chunkSizeWarningLimit: 1000
     },
 
-    /** 🔥 Prebundle the right things so jsx-runtime exports exist */
-    optimizeDeps: {
-      // We control what's prebundled; don't auto-discover
-      noDiscovery: true,
-      // Force full rebuild to pick up es-toolkit changes
-      force: true,
-      // MUST include jsx-runtime so esbuild wraps CJS → ESM with named exports 'jsx'/'jsxs'
-      include: [
-        'react', 
-        'react-dom', 
-        'react/jsx-runtime', 
-        'react-native-web',
-        // Ensure CJS shim is wrapped to ESM so named export exists
-        'use-sync-external-store',
-        'use-sync-external-store/with-selector',
-        'use-sync-external-store/shim',
-        'use-sync-external-store/shim/with-selector',
-        // Let Vite auto-discover and prebundle Supabase packages naturally
-        '@supabase/supabase-js',
-        '@supabase/postgrest-js',
-        // Ensure ESM entry is used for dayjs in dev
-        'dayjs',
-        // Fix for h3-js CommonJS issues
-        'h3-js',
-        // Fix for recharts dependencies
-        'recharts',
-        'react-is',
-        'es-toolkit',
-        'es-toolkit/compat',
+    /* --------------- alias rules --------------- */
+    resolve: {
+      alias: [
+        /* project roots (string-to-string) */
+        { find: "@",      replacement: path.resolve(__dirname, "src") },
+        { find: "@entry", replacement: path.resolve(__dirname, "src/main.web.tsx") },
+
+        /* RN core shim */
+        { find: "react-native", replacement: "react-native-web" },
+
+        /* expo shims used by sentry-expo & friends */
+        { find: "expo-application", replacement: "expo-application/web" },
+        { find: "expo-constants",   replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "expo-device",      replacement: "expo-device/build/Device.web" },
+        { find: "expo-asset",       replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+
+/* sentry-expo removed for better Lovable compatibility */
+
+        /* regex: deep RN → vendor copies in RN-web */
+        {
+          find: /^react-native\/Libraries\/(.*)$/,
+          replacement: "react-native-web/dist/vendor/react-native/Libraries/$1",
+        },
+
+        /* native-only libs we never want in the browser bundle */
+        { find: "@rnmapbox/maps", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "react-native-mmkv", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "@react-native-async-storage/async-storage", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "expo-haptics", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
       ],
-      // Never prebundle RN nor RNSVG (we shim them)
-      exclude: ['react-native', 'react-native-svg'],
-      esbuildOptions: {
-        // Prefer ESM and the browser condition
-        mainFields: ['module', 'browser', 'main'],
-        conditions: ['module', 'browser', 'default'],
-      },
+
+      // ensure singletons
+      dedupe: ["react", "react-dom", "react-native-web"],
     },
   };
 });

@@ -26,9 +26,7 @@ export class DriftOverlay extends OverlayBase {
       s.alpha = 0.08; 
       s.width = 2; 
       s.height = 2;
-      const anyPc = this.pc as any;
-      if (typeof anyPc.addParticle === 'function') anyPc.addParticle(s);
-      else this.pc.addChild(s);
+      this.pc.addChild(s);
       this.sprites.push({ s, x: 0, y: 0, vx: 0, vy: 0 });
     }
   }

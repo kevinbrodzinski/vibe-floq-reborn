@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
-import * as utc from 'dayjs/plugin/utc';
-import * as relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
-dayjs.extend((utc as any).default || (utc as any));
-dayjs.extend((relativeTime as any).default || (relativeTime as any));
+dayjs.extend(utc);
+dayjs.extend(relativeTime);
 
 export default dayjs; 

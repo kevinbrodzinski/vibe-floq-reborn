@@ -2,19 +2,23 @@
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
-// Use modern CORS pattern
-import { handlePreflight, okJSON, badJSON } from "../_shared/cors.ts";
+// Use shared CORS helper with full allowed headers
+import { corsHeaders, respondWithCorsOptions } from "../_shared/cors.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Edge entry point                                                  */
 /* ------------------------------------------------------------------ */
 serve(async req => {
   /* CORS pre-flight ------------------------------------------------- */
-  const preflight = handlePreflight(req);
-  if (preflight) return preflight;
+  if (req.method === "OPTIONS") {
+    return respondWithCorsOptions();
+  }
 
   if (req.method !== "POST") {
-    return badJSON("POST only", 405);
+    return new Response(JSON.stringify({ error: "POST only" }), {
+      status : 405,
+      headers: corsHeaders
+    });
   }
 
   try {
@@ -39,7 +43,13 @@ serve(async req => {
 
     // Validate required parameters
     if (!lat || !lng) {
-      return badJSON("lat and lng are required parameters", 400);
+      return new Response(
+        JSON.stringify({ error: "lat and lng are required parameters" }), 
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      );
     }
 
     /* ----------------------------------------------------------------
@@ -82,12 +92,21 @@ serve(async req => {
 
     if (error) {
       console.error("[get-social-suggestions] RPC error", error);
-      return badJSON(error.message, 500);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status : 500,
+        headers: corsHeaders
+      });
     }
 
-    return okJSON(data, { "Cache-Control": "max-age=10" });
+    return new Response(JSON.stringify(data), {
+      status : 200,
+      headers: { ...corsHeaders, "Cache-Control": "max-age=10", "Content-Type": "application/json" }
+    });
   } catch (e) {
     console.error("[get-social-suggestions] fatal", e);
-    return badJSON("internal", 500);
+    return new Response(JSON.stringify({ error: "internal" }), {
+      status : 500,
+      headers: corsHeaders
+    });
   }
 });

@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { SimpleFloq } from "@/types/simplified";
 
 export type CreateFloqParams = {
   name?: string;

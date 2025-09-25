@@ -143,14 +143,14 @@ export async function rpc_markThreadRead(
 ) {
   // current user
   const { data: auth } = await supabase.auth.getUser()
-  const profileId = auth.user?.id
-  if (!profileId) throw new Error('User not authenticated')
+  const userId = auth.user?.id
+  if (!userId) throw new Error('User not authenticated')
 
   // 1) Preferred: typed RPC
   const { error: rpcError } = await supabase
     .rpc('mark_thread_read_enhanced', {
       p_thread_id: threadId,
-      p_profile_id: profileId,
+      p_profile_id: userId,
     } satisfies MarkThreadReadArgs)
     .returns<MarkThreadReadRet>()
   if (!rpcError) return
@@ -163,7 +163,7 @@ export async function rpc_markThreadRead(
       const result = await supaFn('mark-thread-read', token, {
         surface,
         thread_id: threadId,
-        profile_id: profileId,
+        profile_id: userId,
       })
       if (result.ok) return
     }
@@ -181,7 +181,7 @@ export async function rpc_markThreadRead(
 
   if (fetchError) throw new Error(`Failed to fetch thread: ${fetchError.message}`)
 
-  const isMemberA = thread.member_a_profile_id === profileId
+  const isMemberA = thread.member_a_profile_id === userId
 
   const patch: Partial<ThreadUpdate> = isMemberA
     ? {

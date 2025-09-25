@@ -76,11 +76,3 @@ export async function endRally(rallyId: RallyId) {
   }
   return { success: true, afterglowCreated: !finalizeError };
 }
-
-export default {
-  headsCentroid,
-  createRally,
-  createFloqRally,
-  joinRally,
-  endRally,
-};

@@ -5,7 +5,7 @@ import type {
 } from '@/types/location';
 import type { ProximityEventRecord } from './proximityEventRecorder';
 import { calculateDistance } from '@/lib/location/standardGeo';
-import { encodeGeohash } from '@/lib/geohash';
+import { latLngToCell, gridDisk } from 'h3-js';
 
 // Extend the existing MovementContext interface
 interface MovementContext extends ImportedMovementContext {
@@ -69,23 +69,17 @@ export class LocationBus {
     }
   };
 
-  // Enhanced geohash neighbor calculation (TLA-free alternative to H3)
+  // Enhanced H3 neighbor calculation
   getH3Neighbors = (lat: number, lng: number, ringSize = 1): bigint[] => {
     try {
-      // Use geohash for spatial neighbor calculation  
-      const centerHash = encodeGeohash(lat, lng, 8);
-      const hashAsNum = centerHash.slice(0, 8).split('').reduce((acc, char) => acc * 32 + '0123456789bcdefghjkmnpqrstuvwxyz'.indexOf(char), 0);
+      // Use proper H3 library for neighbor calculation
+      const centerH3 = latLngToCell(lat, lng, 8); // Resolution 8
+      const neighbors = gridDisk(centerH3, ringSize);
       
-      // Simple neighbor approximation - return center + offset values
-      const neighbors: bigint[] = [BigInt(hashAsNum)];
-      for (let i = 1; i <= ringSize; i++) {
-        neighbors.push(BigInt(hashAsNum + i));
-        neighbors.push(BigInt(hashAsNum - i));
-      }
-      
-      return neighbors;
+      // Convert to bigint array
+      return neighbors.map(h3Index => BigInt(h3Index));
     } catch (error) {
-      console.error('[LocationBus] Geohash neighbor calculation failed:', error);
+      console.error('[LocationBus] H3 neighbor calculation failed:', error);
       return [];
     }
   };

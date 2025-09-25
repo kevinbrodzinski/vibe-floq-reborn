@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, Settings, Menu, Zap, Users } from 'lucide-react';
+import { Bell, Search, User, Settings, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,46 +8,16 @@ import { useCurrentUserProfile } from '@/hooks/useProfile';
 import { useEventNotifications } from '@/providers/EventNotificationsProvider';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { SocialBattery } from '@/components/SocialBattery';
-import { useRallyRoom } from '@/hooks/useRallyRoom';
-import { useRecommendationCapture } from '@/hooks/useRecommendationCapture';
-import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
-import { openMeetHalfway } from '@/lib/events/coPresenceBus';
-import { edgeLog } from '@/lib/edgeLog';
 
-export default function AppHeader() {
+export function AppHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const { user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
   const { unseen } = useEventNotifications();
   const navigate = useNavigate();
   const location = useLocation();
-  const rally = useRallyRoom();
-  const capture = useRecommendationCapture('balanced');
-  const { rows: friends = [] } = useUnifiedFriends();
 
   const unreadCount = unseen.length;
-  const participantsCount = (friends?.length ?? 0) + 1;
-
-  const handleRallyNow = async () => {
-    try {
-      const id = await rally.create();
-      await capture.setPlanContext({ 
-        planId: id, 
-        participantsCount 
-      });
-      await capture.flushNow();
-      edgeLog('rally_created', { id, participantsCount });
-      // TODO: Navigate to rally view or show success toast
-    } catch (error) {
-      console.error('Failed to create rally:', error);
-    }
-  };
-
-  const handleMeetHalfway = () => {
-    openMeetHalfway();
-    edgeLog('halfway_launch', {});
-  };
 
   // Don't show header on field page for full map experience
   if (location.pathname === '/field' || location.pathname === '/' || location.pathname === '/home') {
@@ -86,14 +56,7 @@ export default function AppHeader() {
           </div>
 
           {/* Right side - Actions */}
-          <div className="flex items-center gap-2 header-badges">
-            {/* Social Battery / Co-presence Actions */}
-            <SocialBattery 
-              envelope="balanced"
-              onRallyNow={handleRallyNow}
-              onMeetHalfway={handleMeetHalfway}
-            />
-
+          <div className="flex items-center gap-2">
             {/* Search button for mobile */}
             <Button
               variant="ghost"

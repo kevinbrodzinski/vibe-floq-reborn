@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
-import { encodeGeohash } from '@/lib/geohash';
+import { latLngToCell } from 'h3-js';
 import { useGlobalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { locationBus } from '@/lib/location/LocationBus';
 import { useLocationStore, useLocationActions, useRawLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
@@ -216,8 +216,8 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     try {
       await executeWithCircuitBreaker(
         async () => {
-          // V2: Compute geohash for spatial indexing (TLA-free alternative to H3)
-          const spatialHash = encodeGeohash(locationCoords.lat, locationCoords.lng, 8);
+          // V2: Compute H3 index client-side for presence
+          const h3Idx = BigInt('0x' + latLngToCell(locationCoords.lat, locationCoords.lng, 8));   // ▶️ BigInt always
 
           // Use V2 presence function with spatial indexing
           const { data, error } = await supabase.rpc('upsert_presence_realtime_v2', {
@@ -225,7 +225,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
             p_lng: locationCoords.lng,
             p_vibe: 'active', // Default vibe for presence
             p_accuracy: locationCoords.accuracy,
-            p_h3_idx: spatialHash.slice(0, 8).split('').reduce((acc, char) => acc * 32 + '0123456789bcdefghjkmnpqrstuvwxyz'.indexOf(char), 0) // Convert geohash to numeric index
+            p_h3_idx: Number(h3Idx)
           });
 
           if (error) {
@@ -236,7 +236,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
           if (import.meta.env.MODE === 'development' && data && typeof data === 'object' && 'spatial_strategy' in data) {
            console.debug('[useUnifiedLocation] V2 presence updated:', {
              spatial_strategy: (data as any).spatial_strategy,
-             h3_idx: spatialHash.slice(0, 8).split('').reduce((acc, char) => acc * 32 + '0123456789bcdefghjkmnpqrstuvwxyz'.indexOf(char), 0),
+             h3_idx: h3Idx,
              duration_ms: (data as any).duration_ms
            });
           }
@@ -508,18 +508,15 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     }
   }, [coords]);
 
-  // V2 ENHANCEMENT: Get geohash neighbors for current location  
+  // V2 ENHANCEMENT: Get H3 neighbors for current location
   const getH3Neighbors = useCallback((ringSize: number = 1): bigint[] => {
     if (!coords) return [];
-    // Simple geohash neighbor approximation - convert to bigint for compatibility
-    const baseHash = encodeGeohash(coords.lat, coords.lng, 6);
-    const hashAsNum = baseHash.slice(0, 8).split('').reduce((acc, char) => acc * 32 + '0123456789bcdefghjkmnpqrstuvwxyz'.indexOf(char), 0);
-    return [BigInt(hashAsNum)]; // Return as bigint array for compatibility
+    return locationBus.getH3Neighbors(coords.lat, coords.lng, ringSize);
   }, [coords]);
 
-  // V2 ENHANCEMENT: Compute geohash for current location (TLA-free alternative)
+  // V2 ENHANCEMENT: Compute H3 index for current location (moved before return)
   const h3Index = useMemo(
-    () => coords ? encodeGeohash(coords.lat, coords.lng, 8) : null,
+    () => coords ? latLngToCell(coords.lat, coords.lng, 8) : null,
     [coords?.lat, coords?.lng]
   );
 

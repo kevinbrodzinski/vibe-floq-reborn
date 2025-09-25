@@ -214,8 +214,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const pressureForecastRef = useRef<PressureForecast | null>(null);
   const lastWeatherUpdateRef = useRef<number>(0);
   const [socialWeatherPhrase, setSocialWeatherPhrase] = useState<SocialWeatherPhrase | null>(null);
-  const { updatePhrase: updatePhraseFromCtx } = useSocialWeather();
-  const updatePhrase = updatePhraseFromCtx ?? (() => {});
+  const { updatePhrase } = useSocialWeather();
   
   // Update context with phrase changes
   useEffect(() => {

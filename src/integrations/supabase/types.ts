@@ -5337,298 +5337,6 @@ export type Database = {
           },
         ]
       }
-      floq_stream_reads: {
-        Row: {
-          floq_id: string
-          last_seen_ts: string
-          profile_id: string
-        }
-        Insert: {
-          floq_id: string
-          last_seen_ts?: string
-          profile_id: string
-        }
-        Update: {
-          floq_id?: string
-          last_seen_ts?: string
-          profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "business_floq_detail_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_peek_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_card_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_discovery_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_living_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "my_floqs_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_reads_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      floq_wings_events: {
-        Row: {
-          confidence: number | null
-          created_at: string
-          created_by: string | null
-          floq_id: string
-          id: string
-          kind: string
-          payload: Json
-          status: string
-        }
-        Insert: {
-          confidence?: number | null
-          created_at?: string
-          created_by?: string | null
-          floq_id: string
-          id?: string
-          kind: string
-          payload: Json
-          status?: string
-        }
-        Update: {
-          confidence?: number | null
-          created_at?: string
-          created_by?: string | null
-          floq_id?: string
-          id?: string
-          kind?: string
-          payload?: Json
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "floq_stream_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "business_floq_detail_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_peek_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_card_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_discovery_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_living_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "my_floqs_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_stream_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      floq_wings_votes: {
-        Row: {
-          created_at: string
-          event_id: string
-          option_idx: number
-          profile_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_id: string
-          option_idx: number
-          profile_id: string
-        }
-        Update: {
-          created_at?: string
-          event_id?: string
-          option_idx?: number
-          profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "floq_poll_votes_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "floq_wings_events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_poll_votes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_poll_votes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "floq_poll_votes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_poll_votes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_poll_votes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "floq_poll_votes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       floqs: {
         Row: {
           activity_score: number
@@ -7013,85 +6721,6 @@ export type Database = {
           },
         ]
       }
-      group_predictability_log: {
-        Row: {
-          created_at: string
-          fallback: string | null
-          gate_passed: boolean
-          group_id: string
-          id: string | null
-          omega_g: number
-          p_g: number
-          profile_id: string
-          ts: string
-        }
-        Insert: {
-          created_at?: string
-          fallback?: string | null
-          gate_passed: boolean
-          group_id: string
-          id?: string | null
-          omega_g: number
-          p_g: number
-          profile_id: string
-          ts?: string
-        }
-        Update: {
-          created_at?: string
-          fallback?: string | null
-          gate_passed?: boolean
-          group_id?: string
-          id?: string | null
-          omega_g?: number
-          p_g?: number
-          profile_id?: string
-          ts?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_group_predictability_log_profile"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_group_predictability_log_profile"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "fk_group_predictability_log_profile"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_group_predictability_log_profile"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_group_predictability_log_profile"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "fk_group_predictability_log_profile"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       group_receipts: {
         Row: {
           created_at: string
@@ -7253,39 +6882,6 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json | null
-        }
-        Relationships: []
-      }
-      learned_preferences: {
-        Row: {
-          conditions: Json
-          confidence: number
-          created_at: string
-          last_updated: string
-          preference: Json
-          preference_type: string
-          profile_id: string
-          support: number
-        }
-        Insert: {
-          conditions?: Json
-          confidence?: number
-          created_at?: string
-          last_updated?: string
-          preference?: Json
-          preference_type: string
-          profile_id: string
-          support?: number
-        }
-        Update: {
-          conditions?: Json
-          confidence?: number
-          created_at?: string
-          last_updated?: string
-          preference?: Json
-          preference_type?: string
-          profile_id?: string
-          support?: number
         }
         Relationships: []
       }
@@ -10270,30 +9866,6 @@ export type Database = {
           },
         ]
       }
-      preference_signals: {
-        Row: {
-          created_at: string
-          id: string
-          profile_id: string
-          signal: Json
-          ts: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          profile_id: string
-          signal?: Json
-          ts?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          profile_id?: string
-          signal?: Json
-          ts?: string
-        }
-        Relationships: []
-      }
       presence: {
         Row: {
           accuracy_m: number | null
@@ -11194,10 +10766,8 @@ export type Database = {
           created_at: string
           creator_id: string
           expires_at: string
-          floq_id: string | null
           id: string
           note: string | null
-          scope: Database["public"]["Enums"]["rally_scope"]
           status: string
           venue_id: string | null
         }
@@ -11206,10 +10776,8 @@ export type Database = {
           created_at?: string
           creator_id: string
           expires_at: string
-          floq_id?: string | null
           id?: string
           note?: string | null
-          scope?: Database["public"]["Enums"]["rally_scope"]
           status?: string
           venue_id?: string | null
         }
@@ -11218,10 +10786,8 @@ export type Database = {
           created_at?: string
           creator_id?: string
           expires_at?: string
-          floq_id?: string | null
           id?: string
           note?: string | null
-          scope?: Database["public"]["Enums"]["rally_scope"]
           status?: string
           venue_id?: string | null
         }
@@ -11266,69 +10832,6 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "business_floq_detail_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_peek_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_card_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_discovery_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_living_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "my_floqs_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rallies_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
             referencedColumns: ["id"]
           },
           {
@@ -15488,77 +14991,6 @@ export type Database = {
           },
         ]
       }
-      venue_heartbeat: {
-        Row: {
-          avg_energy: number
-          foot_traffic: number
-          frame_start: string
-          venue_id: string
-        }
-        Insert: {
-          avg_energy: number
-          foot_traffic: number
-          frame_start: string
-          venue_id: string
-        }
-        Update: {
-          avg_energy?: number
-          foot_traffic?: number
-          frame_start?: string
-          venue_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_signal_vibe"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venue_open_state"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venue_rec_scores"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venues_ll"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_is_outdoor"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_social_metrics"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "venue_heartbeat_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       venue_hours: {
         Row: {
           close: string
@@ -16966,100 +16398,6 @@ export type Database = {
           },
         ]
       }
-      vibe_frames_floq: {
-        Row: {
-          floq_id: string
-          frame_end: string
-          frame_start: string
-          harmony: number
-          joint_energy: number
-          sample_n: number
-          tension: number
-        }
-        Insert: {
-          floq_id: string
-          frame_end: string
-          frame_start: string
-          harmony: number
-          joint_energy: number
-          sample_n: number
-          tension: number
-        }
-        Update: {
-          floq_id?: string
-          frame_end?: string
-          frame_start?: string
-          harmony?: number
-          joint_energy?: number
-          sample_n?: number
-          tension?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "business_floq_detail_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_peek_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_card_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_discovery_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_living_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "my_floqs_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_frames_floq_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       vibe_pairing_patterns: {
         Row: {
           created_at: string | null
@@ -17244,210 +16582,6 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      vibe_snapshots: {
-        Row: {
-          confidence: number | null
-          context: string
-          features: Json | null
-          floq_id: string | null
-          id: string
-          profile_id: string
-          rally_id: string | null
-          recorded_at: string
-          source: string
-          vec: Json
-          venue_id: string | null
-        }
-        Insert: {
-          confidence?: number | null
-          context: string
-          features?: Json | null
-          floq_id?: string | null
-          id?: string
-          profile_id: string
-          rally_id?: string | null
-          recorded_at?: string
-          source?: string
-          vec: Json
-          venue_id?: string | null
-        }
-        Update: {
-          confidence?: number | null
-          context?: string
-          features?: Json | null
-          floq_id?: string | null
-          id?: string
-          profile_id?: string
-          rally_id?: string | null
-          recorded_at?: string
-          source?: string
-          vec?: Json
-          venue_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "business_floq_detail_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_peek_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floq_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_card_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_discovery_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs_living_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "my_floqs_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_rally_id_fkey"
-            columns: ["rally_id"]
-            isOneToOne: false
-            referencedRelation: "rallies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_signal_vibe"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venue_open_state"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venue_rec_scores"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "v_venues_ll"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_is_outdoor"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_social_metrics"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "vibe_snapshots_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
@@ -18324,15 +17458,6 @@ export type Database = {
           f_table_schema?: unknown | null
           srid?: number | null
           type?: string | null
-        }
-        Relationships: []
-      }
-      last_known_points: {
-        Row: {
-          accuracy: number | null
-          last_seen_at: string | null
-          point: unknown | null
-          profile_id: string | null
         }
         Relationships: []
       }
@@ -19531,13 +18656,6 @@ export type Database = {
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id_norm"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -19547,8 +18665,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -19561,8 +18679,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -19575,7 +18693,7 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -19589,8 +18707,8 @@ export type Database = {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
             isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
@@ -19602,13 +18720,20 @@ export type Database = {
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id_norm"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "floq_participants_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -21309,13 +20434,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
@@ -21325,8 +20443,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -21339,8 +20457,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -21353,7 +20471,7 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_discover_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -21367,8 +20485,8 @@ export type Database = {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_me"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
@@ -21380,13 +20498,20 @@ export type Database = {
           {
             foreignKeyName: "fk_venue_visits_profile_id"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_me"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_venue_visits_profile_id"
+            columns: ["profile_id_norm"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id_norm"]
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -22770,13 +21895,14 @@ export type Database = {
         }[]
       }
       friends_nearby: {
-        Args:
-          | { radius_km: number; user_lat: number; user_lng: number }
-          | { radius_m?: number }
+        Args: { radius_km: number; user_lat: number; user_lng: number }
         Returns: {
-          friend_id: string
-          last_seen_at: string
-          point: unknown
+          avatar_url: string
+          display_name: string
+          distance_m: number
+          lat: number
+          lng: number
+          profile_id: string
         }[]
       }
       friends_recent_at_venue: {
@@ -23485,10 +22611,6 @@ export type Database = {
           lastat: string
           lastvenue: string
         }[]
-      }
-      get_current_profile_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
@@ -24907,19 +24029,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      rallies_field_nearby: {
-        Args: { lat: number; lng: number; radius_m?: number }
-        Returns: {
-          created_at: string
-          creator_id: string
-          expires_at: string
-          id: string
-          note: string
-          scope: Database["public"]["Enums"]["rally_scope"]
-          status: string
-          venue_id: string
-        }[]
-      }
       rally_inbox_secure: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -25042,10 +24151,6 @@ export type Database = {
           friend_count: number
           venue_id: string
         }[]
-      }
-      record_preference_signal: {
-        Args: { p_signal: Json; p_ts: string }
-        Returns: string
       }
       refresh_field_tiles: {
         Args: Record<PropertyKey, never>
@@ -26892,16 +25997,6 @@ export type Database = {
             }
         Returns: string
       }
-      upsert_learned_preference: {
-        Args: {
-          p_conditions: Json
-          p_confidence: number
-          p_preference: Json
-          p_support: number
-          p_type: string
-        }
-        Returns: undefined
-      }
       upsert_live_position: {
         Args: {
           p_accuracy?: number
@@ -27195,18 +26290,6 @@ export type Database = {
           venue_id: string
         }[]
       }
-      viewer_in_floq: {
-        Args: { fid: string }
-        Returns: boolean
-      }
-      viewer_is_friend: {
-        Args: { other_profile_id: string }
-        Returns: boolean
-      }
-      viewer_point: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown
-      }
       walkable_floqs: {
         Args: { p_lat: number; p_lng: number; p_metres?: number }
         Returns: {
@@ -27216,13 +26299,6 @@ export type Database = {
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           starts_at: string
           title: string
-        }[]
-      }
-      wings_poll_tally: {
-        Args: { p_event_id: string }
-        Returns: {
-          option_idx: number
-          votes: number
         }[]
       }
     }
@@ -27346,7 +26422,6 @@ export type Database = {
         | "vibe_leave"
         | "floq_join"
         | "floq_leave"
-      rally_scope: "field" | "floq"
       rsvp_status_enum: "attending" | "maybe" | "not_attending" | "pending"
       scope_enum: "friends" | "mutuals" | "none"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
@@ -27664,7 +26739,6 @@ export const Constants = {
         "floq_join",
         "floq_leave",
       ],
-      rally_scope: ["field", "floq"],
       rsvp_status_enum: ["attending", "maybe", "not_attending", "pending"],
       scope_enum: ["friends", "mutuals", "none"],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],

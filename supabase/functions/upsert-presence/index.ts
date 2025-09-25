@@ -1,31 +1,34 @@
 
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { latLngToCell } from "https://esm.sh/h3-js@4";
-import { checkRateLimitV2 } from "../_shared/helpers.ts";
-import { handlePreflight, okJSON, badJSON } from "../_shared/cors.ts";
+import { geoToH3 } from "https://esm.sh/h3-js@4";
+import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
-Deno.serve(async (req) => {
-  const preflight = handlePreflight(req);
+serve(async (req) => {
+  const preflight = handleOptions(req);
   if (preflight) return preflight;
 
   try {
-    const authHeader = req.headers.get("Authorization") ?? "";
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: authHeader ? { Authorization: authHeader } : {} } }
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
 
     // Verify authentication
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) {
-      return badJSON("Unauthorized", req, 401);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Enhanced Rate limiting for presence updates
     const rateLimitResult = await checkRateLimitV2(supabase, user.id, 'presence_update');
     if (!rateLimitResult.allowed) {
-      return badJSON(rateLimitResult.error || "Rate limit exceeded", req, 429);
+      return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
     const body = await req.json().catch(() => ({}));
@@ -33,11 +36,14 @@ Deno.serve(async (req) => {
 
     // Validate required parameters
     if (typeof lat !== 'number' || typeof lng !== 'number') {
-      return badJSON("Valid lat/lng numbers required", req, 400);
+      return new Response(JSON.stringify({ error: "Valid lat/lng numbers required" }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Calculate H3 index for the location
-    const h3_7 = latLngToCell(lat, lng, 7);
+    const h3_7 = geoToH3(lat, lng, 7);
 
     // Use the new canonical upsert_presence function
     const { error } = await supabase.rpc('upsert_presence', {
@@ -57,7 +63,10 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error("Presence upsert error:", error);
-      return badJSON(error.message, req, 500);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log(`Presence updated: ${user.id}${venue_id ? ` → venue ${venue_id}` : venue_id === null ? ' → left venue' : ''}`);
@@ -138,7 +147,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return okJSON(null, req, 204);
+    return new Response(null, { status: 204, headers: corsHeaders });
 
   } catch (error) {
     console.error("Presence function error:", error);
@@ -165,6 +174,9 @@ Deno.serve(async (req) => {
       console.debug('Analytics tracking failed:', analyticsError);
     }
     
-    return badJSON((error as Error).message, req, 500);
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

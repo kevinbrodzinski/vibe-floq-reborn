@@ -1,9 +1,13 @@
-import { buildCors } from '../_shared/cors.ts';
-import { userClient } from '../_shared/supabase.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type',
+}
 
 Deno.serve(async req => {
-  const { preflight, json, error } = buildCors(req);
-  if (preflight) return preflight;
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
   // query-params
   const url = new URL(req.url)
@@ -13,16 +17,24 @@ Deno.serve(async req => {
   const version = url.searchParams.get('v') || '2' // Add version for cache busting
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng))
-    return error('lat,lng required', 400)
+    return new Response(JSON.stringify({ error: 'lat,lng required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }})
 
-  // Use user client for RLS enforcement
-  const sb = userClient(req);
+  // Supabase service client
+  const sb = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  )
 
   const { data, error } = await sb
     .rpc('rank_nearby_people', { p_lat: lat, p_lng: lng, p_limit: limit })
 
-  if (error) {
-    return json({ error: error.message }, 500);
-  }
-  return json(data, 200, 30); // 30 second cache
+  return new Response(JSON.stringify(error ?? data), {
+    status: error ? 500 : 200,
+    headers: { 
+      ...corsHeaders, 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'max-age=30' // Short cache to flush stale responses
+    },
+  })
 })

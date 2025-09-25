@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { FloqCardItem } from "@/components/Floqs/cards/FloqCard";
+import type { FloqCardItem } from "@/components/floqs/cards/FloqCard";
 
 /**
  * Compatibility: vibe-weighted recsys score (0..1)

@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { latLngToCell, cellToLatLng } from 'https://esm.sh/h3-js@4';
+import * as h3 from 'npm:h3-js';
 
 // Temporarily use coordinate-based hashing until H3 extension is available
 const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
@@ -10,7 +10,7 @@ const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
 
 const RES = 7; // ~1.2km hexagons for social venue mapping
 
-import { handlePreflight, okJSON, badJSON } from '../_shared/cors.ts';
+import { corsHeaders, respondWithCors } from '../_shared/cors.ts';
 
 interface FieldTileRequest {
   tile_ids: string[]
@@ -78,7 +78,7 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
 const latLngToH3 = (lat: number, lng: number): string => {
   try {
     // Use real H3 API when available
-    return latLngToCell(lat, lng, RES);
+    return h3.latLngToCell(lat, lng, RES);
   } catch {
     // Fallback to mock for development
     return geoToH3(lat, lng, RES);
@@ -87,8 +87,9 @@ const latLngToH3 = (lat: number, lng: number): string => {
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests FIRST
-  const preflight = handlePreflight(req);
-  if (preflight) return preflight;
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   // Create authenticated client
   const supabase = createClient(
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
     }
 
     if (!tile_ids || !Array.isArray(tile_ids)) {
-      return badJSON('Invalid tile_ids parameter', req, 400)
+      return respondWithCors({ error: 'Invalid tile_ids parameter' }, 400)
     }
 
     // Build H3 tile filter for efficient querying
@@ -139,7 +140,10 @@ Deno.serve(async (req) => {
 
     if (presenceError) {
       console.error('[GET_FIELD_TILES] Error fetching presence data:', presenceError)
-      return badJSON(`Database error: ${presenceError.message}`, req, 500)
+      return respondWithCors({ 
+        error: 'Database error', 
+        details: presenceError.message 
+      }, 500)
     }
 
     // Get active floq data filtered by H3 tiles (no redundant location parsing)
@@ -150,7 +154,10 @@ Deno.serve(async (req) => {
 
     if (floqError) {
       console.error('[GET_FIELD_TILES] Error fetching floq data:', floqError)
-      return badJSON(`Database error: ${floqError.message}`, req, 500)
+      return respondWithCors({ 
+        error: 'Database error', 
+        details: floqError.message 
+      }, 500)
     }
 
     // Process each requested tile using existing H3 indices (no redundant parsing)
@@ -178,7 +185,7 @@ Deno.serve(async (req) => {
           }
         } else {
           // Use H3 v4 API for real H3 indices
-          const [lat, lng] = cellToLatLng(tileId);
+          const [lat, lng] = h3.cellToLatLng(tileId);
           center = [lng, lat];
         }
       } catch (error) {
@@ -202,10 +209,10 @@ Deno.serve(async (req) => {
     })
 
     const response: FieldTileResponse = { tiles }
-    return okJSON(response, req)
+    return respondWithCors(response)
 
   } catch (error) {
     console.error('[GET_FIELD_TILES] Error:', error)
-    return badJSON('Internal server error', req, 500)
+    return respondWithCors({ error: 'Internal server error' }, 500)
   }
 })

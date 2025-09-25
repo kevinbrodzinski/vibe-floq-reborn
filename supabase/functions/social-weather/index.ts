@@ -2,7 +2,28 @@
 // Input: { bbox|center+radius, zoom }
 // Output: { cells: PressureCell[], ttlSec }
 
-import { buildCors } from '../_shared/cors.ts';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function okJson(body: unknown, ttlSec = 300) {
+  return new Response(JSON.stringify(body), {
+    headers: { 
+      ...corsHeaders,
+      "content-type": "application/json", 
+      "cache-control": `public, max-age=${ttlSec}` 
+    }
+  });
+}
+
+function bad(msg: string, code = 400) {
+  return new Response(JSON.stringify({ error: msg }), { 
+    status: code, 
+    headers: { ...corsHeaders, "content-type": "application/json" } 
+  });
+}
 
 // Simple grid sampler (replace with H3 & your DB)
 function cellsFor(center: [number, number], zoom: number) {
@@ -33,11 +54,12 @@ function cellsFor(center: [number, number], zoom: number) {
 }
 
 Deno.serve(async (req) => {
-  const { preflight, json, error } = buildCors(req);
-  if (preflight) return preflight;
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    if (req.method !== "POST") return error("POST required", 405);
+    if (req.method !== "POST") return bad("POST required", 405);
     
     const { bbox, center, radius, zoom = 14 } = await req.json();
     const ctr = center ?? (bbox ? [ (bbox[0]+bbox[2])/2, (bbox[1]+bbox[3])/2 ] as [number,number] : [-118.4695,33.9855] as [number,number]);
@@ -45,9 +67,9 @@ Deno.serve(async (req) => {
     const cells = cellsFor(ctr, zoom);
     const body = { cells, ttlSec: 300 };
     
-    return json(body, 200, body.ttlSec);
+    return okJson(body, body.ttlSec);
   } catch (e) {
     console.error('[social-weather] error:', e);
-    return error(e?.message ?? "unknown error", 500);
+    return bad(e?.message ?? "unknown error", 500);
   }
 });

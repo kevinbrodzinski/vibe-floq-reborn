@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { encodeGeohash } from '@/lib/geohash';
+import * as geohash from 'ngeohash';
 
 export interface PlaceBanner {
   id: string;
@@ -23,7 +23,7 @@ export function usePlaceBanners(lat?: number, lng?: number) {
   const prevHash = useRef<string | null>(null);
   
   // Generate geohash4 channel for this location
-  const geohash4 = lat && lng ? encodeGeohash(lat, lng, 4) : null;
+  const geohash4 = lat && lng ? geohash.encode(lat, lng, 4) : null;
   
   // Query initial banners for this channel
   const { data: initialBanners } = useQuery({
