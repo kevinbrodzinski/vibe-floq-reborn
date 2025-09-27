@@ -15,3 +15,20 @@ export function edgeLog(event: string, props: Record<string, unknown> = {}) {
     }).catch(() => {});
   } catch {}
 }
+
+/**
+ * Privacy gate observability helper for rollout metrics
+ */
+export function logPrivacyGate(
+  event: 'ok' | 'degrade' | 'suppress' | 'bypass' | 'error', 
+  ctx: { 
+    feature: string; 
+    envelope?: string; 
+    mode?: string; 
+    receiptId?: string; 
+    reason?: string;
+    error?: string;
+  }
+) {
+  edgeLog('privacy_gate', { event, ...ctx });
+}

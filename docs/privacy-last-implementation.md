@@ -2,120 +2,140 @@
 
 ## Overview
 
-This framework ensures that privacy features are implemented as **optional enhancements** rather than foundational requirements. Core functionality works without privacy, and privacy gates can be enabled selectively.
+The Privacy-Last framework ensures core features work independently of privacy controls, making privacy an optional enhancement rather than a foundational requirement. This approach maximizes reliability while enabling gradual privacy feature rollout.
 
 ## Architecture
 
-### 1. Core Hooks (No Privacy)
-- `useRecommendationCaptureCore` - Basic preference capture
-- `useRallyRoomCore` - Basic realtime rally coordination  
-- `useHQMeetHalfwayCore` - Basic meet-halfway functionality
+### Core → Privacy-Optional → Enhanced Pattern
 
-### 2. Privacy-Enhanced Hooks  
-- `useRecommendationCaptureWithPrivacy` - Adds optional privacy gates
-- `useRallyRoomWithPrivacy` - Adds optional privacy controls
-- `useHQMeetHalfwayWithPrivacy` - Adds optional privacy validation
+1. **Core Hook**: Implements base functionality without privacy considerations
+2. **Privacy-Enhanced Hook**: Wraps core functionality with optional privacy gates
+3. **Default Export**: Privacy-enhanced version for backward compatibility
 
-### 3. Feature Flags
+## Feature Flags
+
+Control privacy activation per environment and per feature:
+
 ```typescript
-PRIVACY_GATES_ENABLED: false,           // Master privacy flag
-EPSILON_TRACKING_ENABLED: false,        // ε-differential privacy
-RECOMMENDATION_PRIVACY_ENABLED: false,  // Preference capture privacy
-REALTIME_PRIVACY_ENABLED: false,       // Real-time privacy controls
+PRIVACY_GATES_ENABLED: process.env.NODE_ENV !== 'production', // Master switch
+PRIVACY_CONTEXT_COLLECTION: false,  // Context-aware features  
+PRIVACY_PREDICTABILITY_GATES: false // Predictability-heavy flows
 ```
 
 ## Implementation Guidelines
 
-### ✅ DO - Privacy-Last Pattern
-```typescript
-// 1. Create core functionality first
-const useFeatureCore = () => {
-  // Core logic without privacy
-  const doSomething = () => { /* works always */ };
-  return { doSomething };
-};
+### DO: Privacy-Last Pattern
 
-// 2. Add privacy as optional enhancement
-const useFeatureWithPrivacy = () => {
+```typescript
+// 1. Core hook (no privacy)
+export function useFeatureCore() {
+  return useQuery({ /* core implementation */ });
+}
+
+// 2. Privacy-enhanced wrapper
+export function useFeatureWithPrivacy() {
   const core = useFeatureCore();
-  const { checkGate } = usePrivacyOptional();
+  const privacyEnabled = useFeatureFlag('PRIVACY_GATES_ENABLED');
   
-  const doSomethingWithPrivacy = async () => {
+  const enhancedAction = useCallback(async () => {
     if (!privacyEnabled) {
-      return core.doSomething(); // Fallback to core
+      return await coreAction(); // Direct execution
     }
     
-    const gate = await checkGate();
-    if (!gate.ok) return; // Block if privacy fails
+    const { result, degrade } = await runWithPrivacyOptional(
+      coreAction,
+      { envelopeId: 'balanced', epsilonCost: 0.01 },
+      'feature_name'
+    );
     
-    return core.doSomething();
-  };
+    if (degrade === 'suppress') return { error: 'blocked' };
+    if (degrade === 'category') return { data: fallbackData };
+    
+    return { data: result };
+  }, [privacyEnabled]);
   
-  return { ...core, doSomething: doSomethingWithPrivacy };
-};
+  return { ...core, enhancedAction };
+}
+
+// 3. Default export (privacy-enhanced)
+export const useFeature = useFeatureWithPrivacy;
 ```
 
-### ❌ DON'T - Privacy-First Anti-Pattern  
+### DON'T: Privacy-First Antipattern
+
 ```typescript
-// DON'T: Make privacy foundational
-const useFeature = () => {
-  const gate = rankTimeGate(); // Always required
-  if (!gate.ok) throw new Error(); // Breaks without privacy
+// ❌ WRONG: Privacy as foundation
+export function useFeature() {
+  const gate = rankTimeGate(/* ... */);
+  if (!gate.ok) throw new Error('Privacy gate failed'); // Breaks core functionality
   
-  // Core logic buried behind privacy
-};
+  return useQuery({ /* core blocked by privacy */ });
+}
 ```
 
 ## Testing Strategy
 
 ### Phase 1: Core Functionality
-1. Test all core hooks work independently
-2. Verify database operations succeed  
-3. Confirm realtime channels connect
-4. Validate user interactions flow
+- Test core hooks independently
+- Verify UI works without privacy flags
+- Validate all user flows function normally
 
-### Phase 2: Privacy Integration
-1. Enable privacy flags one by one
-2. Test fallback behavior when gates fail
-3. Verify core functionality still works
-4. Monitor performance impact
+### Phase 2: Privacy Integration  
+- Test privacy-enhanced hooks with flags OFF (should work identically to core)
+- Test degradation modes return usable fallback objects
+- Verify suppress mode doesn't break UI
 
 ### Phase 3: Production Rollout
-1. Deploy with privacy flags OFF
-2. Monitor core functionality stability  
-3. Gradually enable privacy features
-4. Roll back individual flags if issues occur
+- Enable `PRIVACY_GATES_ENABLED` in staging
+- Monitor `privacy_gate` metrics for each feature
+- Gradually enable per-feature flags based on metrics
 
 ## Code Review Checklist
 
-- [ ] Core functionality works without privacy imports
-- [ ] Privacy is imported lazily (dynamic imports when possible)
-- [ ] Feature flags control privacy activation
-- [ ] Fallback behavior is tested and documented
-- [ ] No privacy dependencies in critical user flows
-- [ ] Performance impact is measured and acceptable
+- [ ] Core functionality works without privacy flags
+- [ ] Privacy wrapper uses `runWithPrivacyOptional()` 
+- [ ] All degradation modes return UI-compatible objects
+- [ ] Feature flag controls privacy activation
+- [ ] Observability logging included
+- [ ] Tests cover both privacy-on and privacy-off scenarios
+- [ ] Backward compatibility maintained
 
-## Migration Path
+## Migration Paths
 
-### Existing Privacy Code
-1. **Extract Core**: Create privacy-free version of existing hooks
-2. **Wrap Privacy**: Move privacy logic to wrapper hooks
-3. **Add Flags**: Control privacy activation with feature flags
-4. **Test Fallbacks**: Ensure disabled privacy doesn't break features
-5. **Update Imports**: Change imports to use new wrapper hooks
+### Existing Features
+1. Extract core functionality to `*Core` hook
+2. Wrap with privacy-optional pattern
+3. Update default export to privacy-enhanced version
+4. Add feature flag control
 
-### New Features  
-1. **Build Core First**: Implement basic functionality
-2. **Test Core**: Ensure reliability without privacy
-3. **Add Privacy Layer**: Create privacy-enhanced version
-4. **Flag Control**: Use feature flags for activation
-5. **Document**: Add to privacy implementation docs
+### New Features
+1. Implement core hook first
+2. Add privacy wrapper as separate task
+3. Ship core functionality before privacy integration
+4. Enable privacy flags after core validation
 
 ## Benefits
 
-- **Reliability**: Core features work regardless of privacy system status
-- **Performance**: Privacy overhead only when needed  
-- **Debugging**: Easier to isolate privacy vs core issues
-- **Rollout**: Incremental privacy feature activation
-- **Maintenance**: Clear separation of concerns
-- **Testing**: Independent testing of core vs privacy features
+- **Reliability**: Core features never break due to privacy system issues
+- **Performance**: Privacy overhead only when explicitly enabled
+- **Gradual Rollout**: Per-feature privacy activation based on metrics
+- **Debugging**: Clear separation between core and privacy logic
+- **Testing**: Independent validation of core vs privacy-enhanced paths
+- **Maintainability**: Privacy concerns isolated from business logic
+
+## Observability
+
+Monitor these metrics during rollout:
+
+- `privacy_gate: {ok, degrade, suppress}` by feature
+- UI error rates before/after privacy activation  
+- Feature latency impact
+- Percentage of fallback vs full responses rendered
+- User experience impact per degradation mode
+
+## Key Files
+
+- `src/core/privacy/privacyOptional.ts` - Core privacy-optional utility
+- `src/constants/featureFlags.ts` - Privacy feature flags
+- `src/lib/edgeLog.ts` - Privacy gate observability
+- `tests/core/privacy/privacyOptional.test.ts` - Core framework tests

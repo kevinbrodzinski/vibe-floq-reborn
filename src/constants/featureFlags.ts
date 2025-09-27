@@ -17,8 +17,10 @@ export const FEATURE_FLAGS = {
   OPTIMIZED_QUERIES: true,
   CACHING_ENABLED: true,
   
-  // Privacy & Security Flags - OFF by default (privacy-last approach)
-  PRIVACY_GATES_ENABLED: false,
+  // Privacy Integration Flags (default off in prod, staged rollout)
+  PRIVACY_GATES_ENABLED: process.env.NODE_ENV !== 'production', // staged rollout
+  PRIVACY_CONTEXT_COLLECTION: false,  // turn on envelope-aware context features
+  PRIVACY_PREDICTABILITY_GATES: false, // enable gates on predictability-heavy flows
   EPSILON_TRACKING_ENABLED: false,
   RECOMMENDATION_PRIVACY_ENABLED: false,
   REALTIME_PRIVACY_ENABLED: false,
