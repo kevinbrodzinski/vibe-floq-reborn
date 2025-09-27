@@ -11,7 +11,6 @@ import { calculateDistance as calculateDistanceMeters } from '@/lib/location/sta
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { incrAura } from '@/lib/telemetry';
 import type { LayerManager } from '@/lib/map/LayerManager';
-import { moveLayerSafe } from '@/lib/map/layers/utils';
 import { AURA_BEFORE } from '@/lib/map/ids';
 
 type Props = {
@@ -76,11 +75,6 @@ export function UserAuraOverlay({
       
       try {
         spec.mount(map);
-        // Use safe layer movement with stable anchor
-        const auraLayerIds = ['user-aura-outer', 'user-aura-inner', 'user-aura-dot'];
-        auraLayerIds.forEach(id => {
-          moveLayerSafe(map, id, beforeId);
-        });
         incrAura('reapplies');
       } catch (e) {
         console.warn('[UserAuraOverlay] Reapply failed:', e);
