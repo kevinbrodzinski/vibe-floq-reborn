@@ -1,54 +1,47 @@
 {
   "compilerOptions": {
+    /* Targets & libs */
     "target": "ES2020",
-    "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    /* Modules & resolution */
     "module": "ESNext",
-    "skipLibCheck": true,
-    
-    /* Enable proper type resolution for React 18 */
-    "types": ["node", "react", "react-dom"],
-    "typeRoots": ["./node_modules/@types"],
-    "jsx": "react-jsx",
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
-    "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,           // better with "bundler" in TS ≥5
+    "customConditions": ["react-native"],   // prefer RN export conditions when present
 
-    /* Linting */
+    /* JSX / React */
+    "jsx": "react-jsx",                     // React 18 JSX transform (works for web & RN)
+    "types": ["node", "react", "react-dom", "react-native"],
+
+    /* Interop & convenience */
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Strictness (tune upward later) */
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
 
+    /* Paths */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/hooks/*": ["src/hooks/*"],
-      "@/lib/*": ["src/lib/*"],
-      "@/integrations/*": ["src/integrations/*"]
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/integrations/*": ["./src/integrations/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.json"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build"
-  ]
+  "include": ["src/**/*", "src/**/*.ts", "src/**/*.tsx", "src/**/*.json"],
+  "exclude": ["node_modules", "dist", "build"]
 }
