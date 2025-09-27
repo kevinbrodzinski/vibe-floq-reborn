@@ -1,4 +1,5 @@
 import mapboxgl from 'mapbox-gl';
+import { recordFilterNormalized } from '@/lib/observability/pixiMetrics';
 
 // Metrics for observability
 let mapFilterNormalizedCount = 0;
@@ -15,6 +16,7 @@ export function addLayerSafe(
   // Track filter normalizations for observability
   if ((layer as any).filter && Array.isArray((layer as any).filter)) {
     mapFilterNormalizedCount++;
+    recordFilterNormalized();
     if (process.env.NODE_ENV !== 'production') {
       console.debug(`[addLayerSafe] Filter normalized for layer ${layer.id} (total: ${mapFilterNormalizedCount})`);
     }

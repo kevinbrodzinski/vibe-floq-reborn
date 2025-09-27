@@ -3,28 +3,32 @@
 
 set -e
 
-echo "🚀 FLOQ Ship Check Starting..."
-echo "================================"
+echo "🚀 FLOQ Ship-Readiness Check"
+echo "=============================="
 
-# 1. TypeScript compilation
-echo "📝 Running TypeScript check..."
-npm run typecheck
-echo "✅ TypeScript compilation passed"
-
-# 2. ESLint with enhanced rules
-echo "🔍 Running ESLint with protection rules..."
-npm run lint
-echo "✅ ESLint checks passed"
-
-# 3. Mapbox filter regression check
-echo "🗺️  Checking Mapbox filter integrity..."
-if grep -r --include="*.ts" --include="*.tsx" "\['(==|!=|>|>=|<|<=|in|!in|has|!has)'\s*,\s*\['get'," src/; then
-  echo "❌ Expression-style filters detected"
+# Event naming consistency
+echo "🏷️  Event naming consistency..."
+BRACKETED_EVENTS=$(rg -n "'\\[Events\\.(FLOQ_LAYER_TOGGLE|FLOQ_LAYER_SET)\\]'" src | grep -v "src/services/eventBridge.ts" || true)
+if [ -n "$BRACKETED_EVENTS" ]; then
+  echo "❌ Found bracketed event labels outside eventBridge.ts:"
+  echo "$BRACKETED_EVENTS"
   exit 1
 fi
-echo "✅ Mapbox filters clean"
+echo "✅ Event naming consistent"
 
-# 4. Event system duplicates check
+# TypeScript compilation
+echo "📝 TypeScript compilation..."
+npm run typecheck
+
+# ESLint checks
+echo "🔍 ESLint validation..."
+npm run lint
+
+# Mapbox filter validation
+echo "🗺️  Mapbox filter patterns..."
+./scripts/check-mapbox-filters.sh
+
+# Event system duplicates check
 echo "📡 Checking event system duplicates..."
 duplicates=$(grep -r "export const.*FLOQ_LAYER_\(TOGGLE\|SET\)" src/ | grep -v "src/services/eventBridge.ts" || true)
 if [ -n "$duplicates" ]; then
@@ -34,7 +38,7 @@ if [ -n "$duplicates" ]; then
 fi
 echo "✅ Event system clean"
 
-# 5. PIXI lifecycle validation
+# PIXI lifecycle validation
 echo "🎮 Validating PIXI lifecycle patterns..."
 if ! grep -q "private ready = false" src/lib/pixi/systems/TimeCrystal.ts; then
   echo "❌ TimeCrystal missing ready flag"
@@ -46,15 +50,19 @@ if ! grep -q "private pending: any\[\] = \[\]" src/lib/pixi/systems/TimeCrystal.
 fi
 echo "✅ PIXI lifecycle patterns validated"
 
-# 6. Run tests if available
-echo "🧪 Running targeted tests..."
-if npm test -- --run tests/lib/pixi/timeCrystal.lifecycle.test.ts tests/services/eventBridge.guard.test.ts tests/services/eventBridge.uniqueness.test.ts 2>/dev/null; then
-  echo "✅ Regression tests passed"
-else
-  echo "⚠️  Some tests failed or missing (non-blocking)"
+# Memory leak check (quick)
+echo "🧠 Memory pattern validation..."
+DIRECT_ADDLAYER=$(rg -n "map\.addLayer\(" src | rg -v "addLayerSafe" || true)
+if [ -n "$DIRECT_ADDLAYER" ]; then
+  echo "⚠️  Direct addLayer calls found (prefer addLayerSafe):"
+  echo "$DIRECT_ADDLAYER"
 fi
 
-# 7. Build verification
+# Testing
+echo "🧪 Running regression tests..."
+npm test
+
+# Build verification
 echo "🔨 Running production build..."
 npm run build
 echo "✅ Production build successful"

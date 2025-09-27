@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import mapboxgl from 'mapbox-gl';
+import { recordTimecrystalReady, recordQueueDepth } from '@/lib/observability/pixiMetrics';
 
 type Horizon = 'now' | 'p30' | 'p60' | 'p120'
 

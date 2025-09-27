@@ -133,6 +133,10 @@ export function createPixiCustomLayer(opts: PixiAtmoOptions = {}): CustomLayerWi
     onAdd(map: mapboxgl.Map, gl: WebGLRenderingContext) {
       mapRef = map
       renderer = new PIXI.WebGLRenderer()
+      // Configure for crisp rendering
+      if (renderer.resolution !== undefined) {
+        renderer.resolution = Math.min(window.devicePixelRatio ?? 1, 2)
+      }
       stage.sortableChildren = false
       ensurePool(48)
       // let any pre-attached systems mount now
@@ -158,8 +162,14 @@ export function createPixiCustomLayer(opts: PixiAtmoOptions = {}): CustomLayerWi
     onRemove() {
       try {
         for (const s of systems) s.onRemove()
-        stage.destroy({ children: true })
+        if (!stage.destroyed) {
+          stage.destroy({ children: true })
+        }
         renderer?.destroy(true)
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[PixiCustomLayer] Error during cleanup:', error)
+        }
       } finally {
         systems.length = 0
         mapRef = null
