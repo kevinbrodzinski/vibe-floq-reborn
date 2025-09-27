@@ -33,7 +33,6 @@
     "noFallthroughCasesInSwitch": false,
 
     /* Paths */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
