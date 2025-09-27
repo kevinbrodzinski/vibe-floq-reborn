@@ -29,7 +29,7 @@ export const AtmosphereLayer = forwardRef<PixiLayerHandle, { weatherCells?: any[
     })
     layer.attach(new BreathingSystem({ colorHex: brand.primary }))
     layer.attach(new LightningSystem({ colorHex: brand.accent }))
-    layer.attach(new TimeCrystal({ tier: 'mid' }))
+    layer.attach(new TimeCrystal())
 
     try {
       map.addLayer(layer)
@@ -44,7 +44,7 @@ export const AtmosphereLayer = forwardRef<PixiLayerHandle, { weatherCells?: any[
           const repl = createPixiCustomLayer({ id: 'pixi-atmosphere', colorHex: brand.accent, deviceTier: 'mid' })
           repl.attach(new BreathingSystem({ colorHex: brand.primary }))
           repl.attach(new LightningSystem({ colorHex: brand.accent }))
-          repl.attach(new TimeCrystal({ tier: 'mid' }))
+          repl.attach(new TimeCrystal())
           map.addLayer(repl)
           layerRef.current = repl
           

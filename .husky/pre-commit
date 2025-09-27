@@ -1,4 +1,15 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Run linting and typecheck
 pnpm lint && pnpm typecheck
+
+# Check for Mapbox filter regressions (expression-style filters)
+echo "🔍 Checking for expression-style Mapbox filters..."
+if grep -r --include="*.ts" --include="*.tsx" "\['(==|!=|>|>=|<|<=|in|!in|has|!has)'\s*,\s*\['get'," src/; then
+  echo "❌ Found expression-style property in Mapbox filter"
+  echo "💡 Use literal property keys instead: ['==', 'propertyName', value]"
+  exit 1
+fi
+
+echo "✅ Mapbox filter check passed"

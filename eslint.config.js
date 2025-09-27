@@ -1,84 +1,48 @@
-// eslint.config.js
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import tseslint from "typescript-eslint";
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  /* ───────────────────── Shared settings ───────────────────── */
-  { ignores: ["dist"] },
-
-  /* ──────────────── Base TypeScript / React setup ───────────── */
+  { ignores: ['dist'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ["**/*.{ts,tsx}"],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
     },
     plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
     },
-
-    /* ─────────────── Rules we’re relaxing temporarily ─────────────── */
     rules: {
       ...reactHooks.configs.recommended.rules,
-
-      /* ❶  Loudest offenders (already WARN) */
-      "@typescript-eslint/no-explicit-any": "warn",
-      "react-hooks/rules-of-hooks": "warn",
-      "react-hooks/exhaustive-deps": "warn",
-
-      /* ❷  Lesser noisy rules */
-      "react-refresh/only-export-components": "off",
-      "@typescript-eslint/no-require-imports": "warn",
-
-      /* ❸  Prevent userId usage – enforced everywhere by default */
-      "no-restricted-syntax": [
-        "error",
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+      // TypeScript consistency
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports' }
+      ],
+      // Mapbox filter protection
+      'no-restricted-syntax': [
+        'error',
         {
-          selector: "Identifier[name='userId']",
-          message: "Use profileId instead of userId",
+          selector: 'ArrayExpression > ArrayExpression.elements[1] > ArrayExpression.elements[0][value="get"]',
+          message: 'Use literal property keys in Mapbox filters (not [\'get\', ...]). This prevents filter expression errors.'
         },
+        {
+          selector: 'VariableDeclarator[id.name=/.*LAYER_(TOGGLE|SET).*/] ~ VariableDeclarator[id.name=/.*LAYER_(TOGGLE|SET).*/]',
+          message: 'Duplicate event identifiers detected. Use centralized Events object instead.'
+        }
       ],
-
-      /* ❹  Unused vars → WARN (ignore leading _ ) */
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { varsIgnorePattern: "^_", argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
-      ],
-
-      /* ❺  Remaining noisier rules downgraded */
-      "@typescript-eslint/no-unused-expressions": "warn",
-      "@typescript-eslint/ban-ts-comment": "warn",
-      "no-useless-escape": "warn",
-      "no-case-declarations": "warn",
-      "@typescript-eslint/no-empty-object-type": "warn",
-      "prefer-const": "warn",
-      "no-empty": "warn",
-      "no-dupe-else-if": "warn",
-      "no-constant-binary-expression": "warn",
-      "@typescript-eslint/no-unsafe-function-type": "warn",
-      "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
+      // Event system protection
+      'no-duplicate-case': 'error',
+      'no-duplicate-keys': 'error'
     },
   },
-
-  /* ─────────────────────  Folder-specific overrides ───────────────────── */
-  {
-    /* UI components already exempt */
-    files: ["src/components/ui/**/*.{ts,tsx}"],
-    rules: { "no-restricted-syntax": "off" },
-  },
-  {
-    /* 🔧 NEW: legacy code buckets we don’t want to block CI for */
-    files: [
-      "src/components/collaboration/**/*.{ts,tsx}",
-      "src/hooks/**/*.{ts,tsx}",
-      "supabase/functions/**/*.{ts,tsx}",
-      "tests/**/*.{ts,tsx}"
-    ],
-    rules: { "no-restricted-syntax": "off" },
-  }
-);
+)

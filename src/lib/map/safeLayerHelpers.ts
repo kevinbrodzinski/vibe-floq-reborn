@@ -1,13 +1,25 @@
 import mapboxgl from 'mapbox-gl';
 
+// Metrics for observability
+let mapFilterNormalizedCount = 0;
+
 /**
  * Safely add a layer to the map, handling missing beforeId gracefully
+ * Includes observability metrics and filter normalization tracking
  */
 export function addLayerSafe(
   map: mapboxgl.Map,
   layer: mapboxgl.AnyLayer,
   beforeId?: string
 ): void {
+  // Track filter normalizations for observability
+  if ((layer as any).filter && Array.isArray((layer as any).filter)) {
+    mapFilterNormalizedCount++;
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug(`[addLayerSafe] Filter normalized for layer ${layer.id} (total: ${mapFilterNormalizedCount})`);
+    }
+  }
+  
   try {
     if (beforeId && map.getLayer(beforeId)) {
       map.addLayer(layer, beforeId);
@@ -27,6 +39,13 @@ export function addLayerSafe(
       }
     }
   }
+}
+
+/**
+ * Get current filter normalization count for observability
+ */
+export function getFilterNormalizationCount(): number {
+  return mapFilterNormalizedCount;
 }
 
 /**

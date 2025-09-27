@@ -1,21 +1,21 @@
-import * as PIXI from 'pixi.js'
-import type { PressureCell } from '@/lib/api/mapContracts'
-import { getVibeToken } from '@/lib/tokens/vibeTokens'
+import * as PIXI from 'pixi.js';
+import mapboxgl from 'mapbox-gl';
 
-type Tier = 'low' | 'mid' | 'high'
-type Horizon = 'now' | 'p30' | 'p120'
-type CellRec = {
+type Horizon = 'now' | 'p30' | 'p60' | 'p120'
+
+interface PressureCell {
+  id?: string
+  center: [number, number]
+  pressure?: number
+  color?: string
+  opacity?: number
+  radius?: number
+}
+
+interface CellRec {
+  cell: PressureCell
   mesh: PIXI.Graphics
-  centerLngLat: [number, number]
-  radius: number
-  coreCol: Float32Array
-  edgeCol: Float32Array
-  specCol: Float32Array
-  opacity: number
-  facets: number
-  shimmer: number
-  mode: number // 0 now, 1 p30, 2 p120
-  confidence?: number // NEW: 0..1 confidence from forecast
+  lastZoom: number
 }
 
 export class TimeCrystal {
@@ -26,13 +26,21 @@ export class TimeCrystal {
   private time = 0
   private segs: number
   private maxCells: number
-  private data: { now: CellRec[]; p30: CellRec[]; p120: CellRec[] } = { now: [], p30: [], p120: [] }
   private active: Horizon | null = null
+  private data: { [k in Horizon]: CellRec[] } = {
+    now: [],
+    p30: [],
+    p60: [],
+    p120: []
+  }
+  
+  // Metrics for observability
+  private queueDepth = 0
+  private drawCount = 0
 
-  constructor(opts?: { tier?: Tier; segs?: number; maxCells?: number }) {
-    const tier = opts?.tier ?? 'mid'
-    this.segs     = opts?.segs     ?? (tier === 'high' ? 18 : tier === 'mid' ? 14 : 10)
-    this.maxCells = opts?.maxCells ?? (tier === 'high' ? 60 : tier === 'mid' ? 36 : 20)
+  constructor() {
+    this.segs = 8
+    this.maxCells = 40
   }
 
   onAdd(stage: PIXI.Container, map: mapboxgl.Map) { 
@@ -40,19 +48,51 @@ export class TimeCrystal {
     this.map = map 
     this.ready = true
     
+    // Emit observability metric
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[TimeCrystal] pixi_timecrystal_ready=1');
+    }
+    
     // Process any queued events
     if (this.pending.length) {
+      this.queueDepth = this.pending.length;
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug(`[TimeCrystal] pixi_timecrystal_queue_depth=${this.queueDepth}`);
+      }
+      
       for (const event of this.pending) {
         this.processMessage(event.type, event.payload)
       }
       this.pending = []
+      this.queueDepth = 0;
     }
   }
   
   onRemove() {
-    const all = [...this.data.now, ...this.data.p30, ...this.data.p120]
-    for (const r of all) r.mesh.destroy()
-    this.data = { now: [], p30: [], p120: [] }
+    this.destroy();
+  }
+  
+  destroy() {
+    if (!this.stage) return;
+    
+    // Clean up all mesh resources
+    for (const h in this.data) {
+      for (const r of this.data[h as Horizon]) {
+        if (r.mesh) r.mesh.destroy({ children: true });
+      }
+    }
+    
+    // Clean up stage children
+    if (this.stage.children) {
+      this.stage.children.forEach((c) => c.destroy?.({ children: true } as any));
+    }
+    this.stage.destroy({ children: true });
+    
+    // Reset state
+    this.stage = undefined;
+    this.map = undefined;
+    this.ready = false;
+    this.pending.length = 0;
   }
 
   onMessage(type: string, payload: any) {
@@ -74,13 +114,10 @@ export class TimeCrystal {
       if (payload.now)  this.data.now  = this.build(payload.now as PressureCell[], 'now', payload.confidence)
       if (payload.p30)  this.data.p30  = this.build(payload.p30 as PressureCell[], 'p30', payload.confidence)
       if (payload.p120) this.data.p120 = this.build(payload.p120 as PressureCell[], 'p120', payload.confidence)
-      if (!this.active) this.active = 'p30'
-      return
     }
-    if (payload?.horizon && payload?.cells) {
-      const h = payload.horizon as Horizon
-      this.data[h] = this.build(payload.cells as PressureCell[], h, payload.confidence)
-      this.active ??= h
+
+    if (payload?.activated) {
+      this.active = payload.activated
     }
   }
 
@@ -91,13 +128,14 @@ export class TimeCrystal {
 
     const activeList = this.active ? this.data[this.active] : []
     for (const rec of activeList) {
-      const p = project(rec.centerLngLat[0], rec.centerLngLat[1])
-      
-      // Update crystal position and visual effects
-      rec.mesh.position.set(p.x, p.y)
-      
-      // Redraw crystal with enhanced effects
-      this.drawEnhancedCrystal(rec, zoom)
+      const { x, y } = project(rec.cell.center[0], rec.cell.center[1])
+      rec.mesh.position.set(x, y)
+
+      // Only redraw if zoom changed significantly
+      if (Math.abs(zoom - rec.lastZoom) > 0.1) {
+        this.drawEnhancedCrystal(rec, zoom)
+        rec.lastZoom = zoom
+      }
     }
   }
 
@@ -111,140 +149,154 @@ export class TimeCrystal {
       }
       return []
     }
-
-    // clear old horizon
-    for (const r of this.data[h]) r.mesh.destroy()
-
-    const out: CellRec[] = []
-    const list = cells.slice(0, this.maxCells)
-    const conf = confidence ?? 0.7 // default confidence if not provided
     
-    for (const c of list) {
-      const radius = 10 + (c.pressure ?? 0.5) * 28 // px baseline
-      const { coreCol, edgeCol, specCol } = this.paletteFor(h)
-      const baseOpacity = h === 'now' ? 1.0 : h === 'p30' ? 0.78 : 0.5
-      const opacity = baseOpacity * (0.5 + 0.5 * conf) // scale by confidence
-      const facets  = h === 'now' ? 14 : h === 'p30' ? 10 : 7
-      const shimmer = h === 'p30' ? 1.0 : (h === 'p120' ? 0.6 : 0.0)
-      const mode = h === 'now' ? 0 : h === 'p30' ? 1 : 2
+    // Track draw performance
+    const drawStart = performance.now();
 
-      const mesh = new PIXI.Graphics()
-      mesh.blendMode = 'add'
-      this.stage.addChild(mesh)
-
-      out.push({
-        mesh,
-        centerLngLat: c.center as [number, number],
-        radius, coreCol, edgeCol, specCol,
-        opacity, facets, shimmer, mode,
-        confidence: conf
-      })
-    }
-    return out
-  }
-
-  private drawEnhancedCrystal(rec: CellRec, zoom: number) {
-    const g = rec.mesh
-    g.clear()
-
-    // Enhanced confidence gating
-    const conf = Math.max(0, Math.min(1, rec.confidence ?? 0.7))
-    
-    // Create faceted crystal shape with enhanced effects
-    const step = (Math.PI * 2) / this.segs
-    const points: { x: number; y: number }[] = []
-    
-    for (let i = 0; i < this.segs; i++) {
-      const a = i * step
-      // facet jag: harmonic mix → crystalline look
-      const jag = 1.0
-        + 0.22 * Math.cos(a * rec.facets)
-        + 0.12 * Math.sin(a * (rec.facets * 0.5 + 1.0))
-      // horizon shimmer for +30m; subtle for +2h
-      const shimAmp = rec.mode === 1 ? 0.05 : rec.mode === 2 ? 0.025 : 0.0
-      const shim = 1.0 + rec.shimmer * (shimAmp * Math.sin(a*3.0 + this.time*0.005))
-      const r = rec.radius * jag * shim
-
-      points.push({
-        x: Math.cos(a) * r,
-        y: Math.sin(a) * r
-      })
-    }
-
-    // Draw core with primary color
-    const coreColor = this.vec4ToHex(rec.coreCol)
-    const edgeColor = this.vec4ToHex(rec.edgeCol)
-    const specColor = this.vec4ToHex(rec.specCol)
-    
-    // Apply confidence modulation to all effects
-    const confScale = 0.5 + 0.5 * conf
-    const specScale = 0.6 + 0.4 * conf
-    const edgeScale = 0.5 + 0.5 * conf
-
-    // Core fill (confidence affects opacity)
-    g.beginFill(coreColor, rec.opacity * 0.6 * confScale)
-    g.drawPolygon(points.flatMap(p => [p.x, p.y]))
-    g.endFill()
-
-    // Edge highlight (confidence affects intensity)
-    g.lineStyle(2, edgeColor, rec.opacity * 0.8 * edgeScale)
-    g.drawPolygon(points.flatMap(p => [p.x, p.y]))
-    g.lineStyle()
-
-    // Specular glints at vertices (confidence gates sparkle)
-    if (conf > 0.3) { // Only show sparkles above low confidence
-      for (let i = 0; i < points.length; i += 3) { // Every 3rd vertex
-        const p = points[i]
-        const glintAlpha = rec.opacity * 0.4 * specScale * (0.7 + 0.3 * Math.sin(this.time * 0.003 + i))
-        g.beginFill(specColor, glintAlpha)
-        g.drawCircle(p.x, p.y, 2)
-        g.endFill()
+    // clear old horizon - reuse existing meshes to avoid per-frame allocations
+    for (const r of this.data[h]) {
+      if (r.mesh && r.mesh instanceof PIXI.Graphics) {
+        (r.mesh as PIXI.Graphics).clear();
+      } else if (r.mesh) {
+        r.mesh.destroy();
+        r.mesh = new PIXI.Graphics();
       }
     }
 
-    // Rim lighting effect (confidence affects edge definition)
-    g.lineStyle(1, edgeColor, rec.opacity * 0.3 * edgeScale)
-    const rimRadius = rec.radius * 1.1
-    g.drawCircle(0, 0, rimRadius)
-    g.lineStyle()
+    this.data[h] = []
+    const list = cells.slice(0, this.maxCells)
+    
+    for (let i = 0; i < list.length; i++) {
+      const cell = list[i];
+      
+      // Reuse existing mesh or create new one
+      let mesh = this.data[h][i]?.mesh;
+      if (!mesh) {
+        mesh = new PIXI.Graphics();
+        this.stage!.addChild(mesh);
+      }
+      
+      const rec: CellRec = { 
+        cell, 
+        mesh, 
+        lastZoom: -1 
+      };
+      
+      // Draw the crystal content
+      this.drawEnhancedCrystal(rec, h as Horizon, confidence);
 
-    // fade slightly with high zoom to reduce bloom blowout
-    g.alpha = zoom >= 15 ? 0.95 : 0.85
+      this.data[h].push(rec)
+    }
+
+    // Emit draw performance metric
+    const drawTime = performance.now() - drawStart;
+    this.drawCount++;
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug(`[TimeCrystal] pixi_timecrystal_draw_ms=${drawTime.toFixed(2)} (draw #${this.drawCount})`);
+    }
+    
+    return this.data[h]
+  }
+
+  private drawEnhancedCrystal(rec: CellRec, h: Horizon | string | number, confidence = 1.0): void {
+    const g = rec.mesh as PIXI.Graphics;
+    const cell = rec.cell;
+    g.clear(); // Reuse existing graphics object
+    
+    // physical location + size
+    const radius = 6 + (cell.pressure ?? 0.5) * 22 // px baseline
+    const { coreCol, edgeCol, specCol } = this.paletteFor(h as Horizon)
+    const baseOpacity = h === 'now' ? 1.0 : h === 'p30' ? 0.78 : 0.5
+    const opacity = baseOpacity * (0.5 + 0.5 * confidence) // scale by confidence
+    const facets  = h === 'now' ? 14 : h === 'p30' ? 10 : 7
+    const shimmer = h === 'p30' ? 1.0 : (h === 'p120' ? 0.6 : 0.0)
+
+    // Enhanced confidence gating
+    if (confidence < 0.3) return // skip very low confidence crystals
+    
+    // Confidence-based visual enhancement
+    const confRadius = radius * (0.7 + 0.3 * confidence)
+    const confOpacity = opacity * confidence
+    
+    // base geometry
+    g.lineStyle(1.5, edgeCol, confOpacity * 0.7)
+    g.beginFill(coreCol, confOpacity * 0.4)
+    
+    // Draw enhanced crystal shape based on confidence
+    if (confidence > 0.8) {
+      // High confidence: complex multi-layer crystal
+      this.drawComplexCrystal(g, confRadius, facets, shimmer)
+    } else if (confidence > 0.5) {
+      // Medium confidence: standard faceted crystal
+      this.drawFacetedCrystal(g, confRadius, facets)
+    } else {
+      // Low confidence: simple circle
+      g.drawCircle(0, 0, confRadius * 0.8)
+    }
+    
+    g.endFill()
+
+    // enhanced specular highlights for high confidence
+    if (confidence > 0.6 && shimmer > 0) {
+      g.lineStyle(0.8, specCol, (confOpacity * shimmer) * 0.9)
+      g.moveTo(-confRadius * 0.3, -confRadius * 0.7)
+      g.lineTo(confRadius * 0.2, -confRadius * 0.4)
+    }
+  }
+
+  private drawComplexCrystal(g: PIXI.Graphics, radius: number, facets: number, shimmer: number) {
+    // Multi-layer crystal for high confidence
+    const outerRadius = radius;
+    const midRadius = radius * 0.7;
+    const innerRadius = radius * 0.4;
+    
+    // Outer layer
+    this.drawPolygon(g, 0, 0, outerRadius, facets);
+    
+    // Middle layer with offset
+    const midFacets = Math.max(6, facets - 2);
+    this.drawPolygon(g, 0, 0, midRadius, midFacets, Math.PI / midFacets);
+    
+    // Inner core
+    g.drawCircle(0, 0, innerRadius);
+  }
+
+  private drawFacetedCrystal(g: PIXI.Graphics, radius: number, facets: number) {
+    this.drawPolygon(g, 0, 0, radius, facets);
+  }
+
+  private drawPolygon(g: PIXI.Graphics, cx: number, cy: number, radius: number, sides: number, rotation = 0) {
+    const angleStep = (2 * Math.PI) / sides;
+    let firstPoint = true;
+    
+    for (let i = 0; i <= sides; i++) {
+      const angle = i * angleStep + rotation;
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
+      
+      if (firstPoint) {
+        g.moveTo(x, y);
+        firstPoint = false;
+      } else {
+        g.lineTo(x, y);
+      }
+    }
   }
 
   private paletteFor(h: Horizon) {
-    // Choose vibe-driven colors; you can wire to current vibe later.
-    const tv = h === 'now' ? getVibeToken('hype' as any)
-         : h === 'p30' ? getVibeToken('romance' as any)
-         : getVibeToken('focus' as any)
-    // core = glow, edge = ring, spec = base (for highlights)
-    return {
-      coreCol: this.cssToVec4(tv.glow),
-      edgeCol: this.cssToVec4(tv.ring),
-      specCol: this.cssToVec4(tv.base),
+    switch (h) {
+      case 'now':  return { coreCol: 0x10b981, edgeCol: 0x34d399, specCol: 0xffffff }
+      case 'p30':  return { coreCol: 0x3b82f6, edgeCol: 0x60a5fa, specCol: 0xe0f2fe }
+      case 'p60':  return { coreCol: 0x8b5cf6, edgeCol: 0xa78bfa, specCol: 0xf3e8ff }
+      case 'p120': return { coreCol: 0xf59e0b, edgeCol: 0xfbbf24, specCol: 0xfef3c7 }
+      default:     return { coreCol: 0x6b7280, edgeCol: 0x9ca3af, specCol: 0xf9fafb }
     }
   }
 
-  private cssToVec4(c: string) {
-    if (c.startsWith('#')) {
-      let r=0,g=0,b=0
-      if (c.length === 7) { r = parseInt(c.slice(1,3),16); g = parseInt(c.slice(3,5),16); b = parseInt(c.slice(5,7),16) }
-      else if (c.length === 4) { r = parseInt(c[1]+c[1],16); g = parseInt(c[2]+c[2],16); b = parseInt(c[3]+c[3],16) }
-      return new Float32Array([r/255,g/255,b/255,1])
-    }
-    const m = c.match(/rgba?\(([^)]+)\)/i)
-    if (m) {
-      const parts = m[1].split(',').map(s => +s.trim())
-      const [r,g,b,a=1] = parts
-      return new Float32Array([r/255,g/255,b/255,Math.max(0, Math.min(1,a))])
-    }
-    return new Float32Array([1,1,1,1])
-  }
-
-  private vec4ToHex(vec: Float32Array): number {
-    const r = Math.round(vec[0] * 255)
-    const g = Math.round(vec[1] * 255)
-    const b = Math.round(vec[2] * 255)
+  private rgbToHex(r: number, g: number, b: number): number {
+    r = Math.max(0, Math.min(255, Math.round(r)))
+    g = Math.max(0, Math.min(255, Math.round(g)))
+    b = Math.max(0, Math.min(255, Math.round(b)))
     return (r << 16) | (g << 8) | b
   }
 }
