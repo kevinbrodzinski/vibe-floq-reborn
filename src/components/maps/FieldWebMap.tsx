@@ -480,13 +480,34 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         map.on('error', (e) => {
           const msg: string | undefined = (e as any)?.error?.message || (e as any)?.message;
           
-          // Ignore benign "layer does not exist" styling races
-          if (msg && msg.includes('does not exist in the map\'s style and cannot be styled')) {
-            return;
-          }
+          // Filter out benign WebGL warnings and layer reference errors that don't affect functionality
+          const benignPatterns = [
+            /WebGL warning/i,
+            /Error: WebGL warning/i,
+            /WEBGL_/i,
+            /texture/i,
+            /shader/i,
+            /Unable to get/i,
+            /sprite/i,
+            /canvas/i,
+            /Invalid array buffer/i,
+            /user-aura-(outer|inner|dot)/i, // Aura layer reference errors during style transitions
+            /Layer.*does not exist/i,
+            /Cannot read properties.*getLayer/i,
+            /does not exist in the map's style and cannot be styled/i
+          ];
           
-          // Log but do NOT block rendering for minor 4xx tile/style errors
-          console.warn('[Mapbox warning]', msg);
+          const isBenign = benignPatterns.some(pattern => pattern.test(msg || ''));
+          
+          if (!isBenign) {
+            console.error('🗺️ Map error (critical):', e);
+            if(dead) return;
+            setErr(`Map error: ${msg || 'Unknown error'}`);
+            setStatus('error');
+          } else {
+            // Just log benign errors without breaking the map
+            console.warn('🗺️ Map warning (non-critical):', msg);
+          }
         });
 
         // Add user location source and layer

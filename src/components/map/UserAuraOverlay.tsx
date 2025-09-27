@@ -56,26 +56,42 @@ export function UserAuraOverlay({
     layerManager.register(spec);
     incrAura('mounts');
 
-    // Style reload resilience
+    // Style reload resilience with enhanced safety
     const reapply = () => {
       if (!map.isStyleLoaded()) { 
         map.once('idle', reapply); 
         return; 
       }
-      spec.mount(map);
-      // Always keep aura on top after mount
-      try {
-        const auraLayerIds = ['user-aura-outer', 'user-aura-inner', 'user-aura-dot'];
-        const layers = map.getStyle()?.layers ?? [];
-        const topId = layers[layers.length - 1]?.id;
-        if (topId) {
-          auraLayerIds.forEach(id => {
-            if (map.getLayer(id)) {
-              try { map.moveLayer(id, topId); } catch {}
-            }
-          });
+      
+      // Wait for any pending style operations to complete
+      setTimeout(() => {
+        if (!map.isStyleLoaded()) return;
+        
+        try {
+          spec.mount(map);
+          // Always keep aura on top after mount, with existence checks
+          const auraLayerIds = ['user-aura-outer', 'user-aura-inner', 'user-aura-dot'];
+          const layers = map.getStyle()?.layers ?? [];
+          const topId = layers[layers.length - 1]?.id;
+          
+          if (topId) {
+            auraLayerIds.forEach(id => {
+              // Double-check layer exists before moving
+              if (map.getLayer(id)) {
+                try { 
+                  map.moveLayer(id, topId); 
+                } catch (e) {
+                  // Silently handle layer ordering conflicts
+                  console.debug(`[UserAuraOverlay] Layer ordering skipped for ${id}:`, e);
+                }
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('[UserAuraOverlay] Reapply failed:', e);
         }
-      } catch {}
+      }, 50); // Small delay to ensure style is fully settled
+      
       incrAura('reapplies');
       // update will run on next tick when data arrives
     };

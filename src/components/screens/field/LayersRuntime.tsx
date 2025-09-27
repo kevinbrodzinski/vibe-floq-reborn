@@ -125,7 +125,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
 
     const spec = createPresenceClusterOverlay({
       id: 'presence',
-      beforeId: 'user-aura-outer',
+      beforeId: map.getLayer('user-aura-outer') ? 'user-aura-outer' : undefined,
       initial: { type: 'FeatureCollection', features: [] },
       includeSelfHit: false, // aura owns it
     });
