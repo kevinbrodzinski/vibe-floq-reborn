@@ -10,7 +10,7 @@ import {
   LYR_USER_AURA_INNER, 
   LYR_USER_AURA_DOT, 
   LYR_USER_AURA_HIT,
-  BEFORE_SYMBOLS 
+  AURA_BEFORE 
 } from '../ids';
 import { ensureLayer, ensureSource, removeLayerSafe, removeSourceSafe } from '../ensure';
 
@@ -49,7 +49,7 @@ export function upsertUserAura(
   });
 
   // Ensure all aura layers exist (outer, inner, dot, hit)
-  const beforeId = map.getLayer(BEFORE_SYMBOLS) ? BEFORE_SYMBOLS : undefined;
+  const beforeId = map.getLayer(AURA_BEFORE) ? AURA_BEFORE : undefined;
   
   // Outer aura (largest, most transparent)
   ensureLayer(map, {

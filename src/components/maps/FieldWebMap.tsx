@@ -491,8 +491,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
             /sprite/i,
             /canvas/i,
             /Invalid array buffer/i,
-            /user-aura-(outer|inner|dot)/i, // Aura layer reference errors during style transitions
-            /Layer.*does not exist/i,
+            /Layer "user-aura-(outer|inner|dot)".*does not exist/i, // Specific to aura layers only
             /Cannot read properties.*getLayer/i,
             /does not exist in the map's style and cannot be styled/i
           ];

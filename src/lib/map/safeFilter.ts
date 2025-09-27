@@ -3,21 +3,37 @@
  * Prevents filter expression errors
  */
 
-export function normalizeFilter(filter: any): any {
-  if (!filter) return filter;
-  
-  // Handle array-based filters (most common case)
-  if (Array.isArray(filter)) {
-    return filter.map(item => {
-      if (Array.isArray(item)) {
-        return normalizeFilter(item);
-      }
-      return item;
-    });
+export function normalizeFilter(f: any): any {
+  if (!Array.isArray(f) || f.length === 0) return f;
+
+  const [op, a, ...rest] = f;
+
+  // Compound logical ops
+  if (op === 'all' || op === 'any' || op === 'none') {
+    return [op, ...f.slice(1).map(normalizeFilter)];
   }
-  
-  // Return as-is for other types
-  return filter;
+
+  // has / !has
+  if (op === 'has' || op === '!has') {
+    if (Array.isArray(a) && a[0] === 'get') return [op, a[1]];
+    return f;
+  }
+
+  // Comparators & membership that reference a property on the LHS
+  const binaryOps = new Set(['==', '!=', '>', '>=', '<', '<=']);
+  const membershipOps = new Set(['in', '!in']);
+
+  // Allow $type literal (style-spec)
+  const isTypeLiteral = a === '$type';
+
+  if ((binaryOps.has(op) || membershipOps.has(op)) && (isTypeLiteral ||
+      (Array.isArray(a) && a[0] === 'get'))) {
+    const prop = isTypeLiteral ? '$type' : a[1];
+    return [op, prop, ...rest];
+  }
+
+  // Unknown / already-normalized
+  return f;
 }
 
 /**
@@ -39,13 +55,15 @@ export function safeSetFilter(map: any, layerId: string, filter: any): boolean {
 /**
  * Set filter when layer is ready (waits for layer to exist)
  */
-export function setFilterWhenReady(map: any, layerId: string, filter: any): void {
+export function setFilterWhenReady(map: any, layerId: string, filter: any, maxTries = 40, intervalMs = 50): void {
+  let tries = 0;
   const trySet = () => {
-    if (safeSetFilter(map, layerId, filter)) {
-      return; // Success
+    if (safeSetFilter(map, layerId, filter)) return;
+    if (++tries >= maxTries) {
+      if (import.meta.env.DEV) console.warn(`[setFilterWhenReady] gave up on ${layerId}`);
+      return;
     }
-    // Retry after a short delay
-    setTimeout(trySet, 50);
+    setTimeout(trySet, intervalMs);
   };
   trySet();
 }

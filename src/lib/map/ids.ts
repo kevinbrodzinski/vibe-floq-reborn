@@ -13,3 +13,4 @@ export const LYR_USER_AURA_HIT   = 'user-aura-hit';
 // Standard before layers for consistent ordering
 export const BEFORE_SYMBOLS  = 'road-label'; // Mapbox default symbol layer
 export const BEFORE_POI      = 'poi-label';  // POI labels layer
+export const AURA_BEFORE     = 'poi-label';  // Stable anchor for aura layers
