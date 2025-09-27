@@ -501,7 +501,12 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
           
           if (!isBenign) {
             console.error('🗺️ Map error (critical):', e);
-            if(dead) return;
+        // Bootstrap map event handlers for style reload protection
+        import('@/lib/map/mapEvents').then(({ setupMapEventHandlers }) => {
+          setupMapEventHandlers(map);
+        });
+
+        if(dead) return;
             setErr(`Map error: ${msg || 'Unknown error'}`);
             setStatus('error');
           } else {

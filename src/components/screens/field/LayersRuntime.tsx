@@ -16,6 +16,7 @@ import type { Friend } from '@/types/presence';
 import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
+import { LYR_USER_AURA_OUTER } from '@/lib/map/ids';
 import '@/styles/map-popups.css';
 
 interface LayersRuntimeProps {
@@ -125,7 +126,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
 
     const spec = createPresenceClusterOverlay({
       id: 'presence',
-      beforeId: map.getLayer('user-aura-outer') ? 'user-aura-outer' : undefined,
+      beforeId: map.getLayer(LYR_USER_AURA_OUTER) ? LYR_USER_AURA_OUTER : undefined,
       initial: { type: 'FeatureCollection', features: [] },
       includeSelfHit: false, // aura owns it
     });
