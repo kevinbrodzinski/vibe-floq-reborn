@@ -7,6 +7,7 @@
     "moduleResolution": "bundler",
     "moduleDetection": "force",
     "customConditions": ["react-native"],
+    "preserveValueImports": true,
 
     "jsx": "react-jsx",
     "types": ["node", "react", "react-dom", "react-native"],
