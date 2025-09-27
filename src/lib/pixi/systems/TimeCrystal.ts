@@ -19,8 +19,10 @@ type CellRec = {
 }
 
 export class TimeCrystal {
-  private stage!: PIXI.Container
-  private map!: mapboxgl.Map
+  private stage?: PIXI.Container
+  private map?: mapboxgl.Map
+  private ready = false
+  private pending: any[] = []
   private time = 0
   private segs: number
   private maxCells: number
@@ -36,6 +38,15 @@ export class TimeCrystal {
   onAdd(stage: PIXI.Container, map: mapboxgl.Map) { 
     this.stage = stage
     this.map = map 
+    this.ready = true
+    
+    // Process any queued events
+    if (this.pending.length) {
+      for (const event of this.pending) {
+        this.processMessage(event.type, event.payload)
+      }
+      this.pending = []
+    }
   }
   
   onRemove() {
@@ -45,6 +56,19 @@ export class TimeCrystal {
   }
 
   onMessage(type: string, payload: any) {
+    if (!this.ready) {
+      // Queue events until system is ready
+      this.pending.push({ type, payload })
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[TimeCrystal] onMessage before onAdd; queuing event:', type)
+      }
+      return
+    }
+    
+    this.processMessage(type, payload)
+  }
+
+  private processMessage(type: string, payload: any) {
     if (type !== 'temporal') return
     if (payload?.now || payload?.p30 || payload?.p120) {
       if (payload.now)  this.data.now  = this.build(payload.now as PressureCell[], 'now', payload.confidence)
@@ -61,6 +85,8 @@ export class TimeCrystal {
   }
 
   onFrame(dt: number, project: (lng:number,lat:number)=>{x:number;y:number}, zoom: number) {
+    if (!this.ready || !this.stage) return
+    
     this.time += dt
 
     const activeList = this.active ? this.data[this.active] : []
@@ -78,6 +104,14 @@ export class TimeCrystal {
   // ---------- build ----------
 
   private build(cells: PressureCell[], h: Horizon, confidence?: number): CellRec[] {
+    // Safety check: ensure stage exists
+    if (!this.stage) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[TimeCrystal] build() called before onAdd; stage not available')
+      }
+      return []
+    }
+
     // clear old horizon
     for (const r of this.data[h]) r.mesh.destroy()
 

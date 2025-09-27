@@ -262,15 +262,6 @@ export interface EventPayloads {
     velocity?: [number, number] 
   };
   
-  // Generic layer toggle payloads (updated for specific layer types)
-  [Events.FLOQ_LAYER_TOGGLE]: { 
-    id: 'predicted-meet' | 'flow-route' | 'breadcrumb-trail'; 
-    enabled?: boolean 
-  };
-  [Events.FLOQ_LAYER_SET]: { 
-    id: 'predicted-meet' | 'flow-route' | 'breadcrumb-trail'; 
-    enabled: boolean 
-  };
   
   // Converge System
   [Events.FLOQ_CONVERGE_REQUEST]: {
