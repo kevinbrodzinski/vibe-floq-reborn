@@ -33,7 +33,7 @@ export function createFlowRouteSpec() {
       if (!map.getLayer(LYR_PATH)) {
         map.addLayer({
           id: LYR_PATH, type: 'line', source: SRC_ID,
-          filter: ['==', ['get','type'], 'path'],
+          filter: ['==', 'type', 'path'],
           layout: { 'line-join':'round', 'line-cap':'round' },
           paint: { 'line-color':'#fff', 'line-opacity':0.25, 'line-width':2, 'line-dasharray':[1,2] }
         });
@@ -43,7 +43,7 @@ export function createFlowRouteSpec() {
       if (!map.getLayer(LYR_LINE)) {
         map.addLayer({
           id: LYR_LINE, type: 'line', source: SRC_ID,
-          filter: ['==', ['get','type'], 'flow'],
+          filter: ['==', 'type', 'flow'],
           layout: { 'line-join':'round', 'line-cap':'round' },
           paint: {
             'line-color': '#A855F7',
@@ -69,7 +69,7 @@ export function createFlowRouteSpec() {
       if (!map.getLayer(LYR_ANIM)) {
         map.addLayer({
           id: LYR_ANIM, type: 'line', source: SRC_ID,
-          filter: ['==', ['get','type'], 'flow'],
+          filter: ['==', 'type', 'flow'],
           layout: { 'line-join':'round', 'line-cap':'round' },
           paint: { 'line-color':'#EC4899', 'line-opacity':0, 'line-width':10, 'line-blur':3 }
         });
@@ -79,7 +79,7 @@ export function createFlowRouteSpec() {
       if (!map.getLayer(LYR_VENUES)) {
         map.addLayer({
           id: LYR_VENUES, type: 'circle', source: SRC_ID,
-          filter: ['==', ['get','type'], 'venue'],
+          filter: ['==', 'type', 'venue'],
           paint: {
             'circle-radius':['interpolate',['linear'],['zoom'],12,6,16,10,20,14],
             'circle-color':['coalesce',['get','color'], '#A855F7'],
@@ -94,7 +94,7 @@ export function createFlowRouteSpec() {
       if (!map.getLayer(LYR_LABELS)) {
         map.addLayer({
           id: LYR_LABELS, type: 'symbol', source: SRC_ID,
-          filter: ['==', ['get','type'], 'venue'],
+          filter: ['==', 'type', 'venue'],
           layout: { 'text-field':['to-string',['get','index']], 'text-size':10, 'text-anchor':'center' },
           paint: {
             'text-color':'#fff',

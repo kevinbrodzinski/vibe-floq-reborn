@@ -14,7 +14,7 @@ export function createPredictedMeetSpec(){
       if (!map.getLayer(DOT)){
         map.addLayer({
           id:DOT, type:'circle', source:SRC,
-          filter:['==',['get','kind'],'dot'],
+          filter:['==','kind','dot'],
           paint:{
             'circle-radius': 4,
             'circle-color': ['coalesce',['get','color'],'#EC4899'],
@@ -28,7 +28,7 @@ export function createPredictedMeetSpec(){
       if (!map.getLayer(RING_A)){
         map.addLayer({
           id:RING_A, type:'circle', source:SRC,
-          filter:['==',['get','kind'],'ringA'],
+          filter:['==','kind','ringA'],
           paint:{
             'circle-radius': ['get','r'],
             'circle-color': ['coalesce',['get','color'],'#EC4899'],
@@ -40,7 +40,7 @@ export function createPredictedMeetSpec(){
       if (!map.getLayer(RING_B)){
         map.addLayer({
           id:RING_B, type:'circle', source:SRC,
-          filter:['==',['get','kind'],'ringB'],
+          filter:['==','kind','ringB'],
           paint:{
             'circle-radius': ['get','r'],
             'circle-color': ['coalesce',['get','color'],'#EC4899'],

@@ -115,7 +115,7 @@ function addLayers(map: mapboxgl.Map, id: string, color: string, clusterColor: s
       source: sid,
       filter: ['all',
         ['!', ['has','point_count']], 
-        ['==',['get','kind'],'friend'],
+        ['==','kind','friend'],
         ['has','iconId']
       ],
       layout: {

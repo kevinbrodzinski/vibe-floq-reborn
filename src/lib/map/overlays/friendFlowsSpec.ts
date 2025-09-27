@@ -24,7 +24,7 @@ export function createFriendFlowsSpec(beforeId?: string): OverlaySpec {
           id: LYR_LINE,
           type: 'line',
           source: SRC,
-          filter: ['==', ['get', 'type'], 'line'],
+          filter: ['==', 'type', 'line'],
           layout: { 'line-join': 'round', 'line-cap': 'round' },
           paint: {
             'line-color': ['coalesce', ['get', 'color'], 'rgba(147, 197, 253, 0.85)'], // sky-300-ish
@@ -39,7 +39,7 @@ export function createFriendFlowsSpec(beforeId?: string): OverlaySpec {
           id: LYR_HEAD,
           type: 'circle',
           source: SRC,
-          filter: ['==', ['get', 'type'], 'head'],
+          filter: ['==', 'type', 'head'],
           paint: {
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 16, 7],
             'circle-color': ['coalesce', ['get', 'color'], 'white'],

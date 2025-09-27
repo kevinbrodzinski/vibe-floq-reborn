@@ -49,7 +49,7 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
           id: LINE_LYR,
           type: 'line',
           source: SRC,
-          filter: ['==', ['get', 'type'], 'path'],
+          filter: ['==', 'type', 'path'],
           paint: {
             'line-color': lineColor,
             'line-width': 3,
@@ -70,7 +70,7 @@ export function createBreadcrumbSpec(beforeId?: string): OverlaySpec {
           id: VENUES_LYR,
           type: 'circle',
           source: SRC,
-          filter: ['==', ['get', 'type'], 'venue'],
+          filter: ['==', 'type', 'venue'],
           paint: {
             'circle-radius': [
               'interpolate', ['linear'], ['zoom'],

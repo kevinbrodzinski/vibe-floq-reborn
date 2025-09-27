@@ -6,8 +6,8 @@ export const friendsLayer: AnyLayer = {
   type: 'circle',
   source: 'people', // Same source as self layer
   filter: ['all',
-    ['==', ['get', 'friend'], true], // Only show friends
-    ['!=', ['get', 'me'], true]      // Exclude self (handled by separate layer)
+    ['==', 'friend', true], // Only show friends
+    ['!=', 'me', true]      // Exclude self (handled by separate layer)
   ],
   paint: {
     'circle-radius': [

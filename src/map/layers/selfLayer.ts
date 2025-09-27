@@ -5,7 +5,7 @@ export const selfLayer: AnyLayer = {
   id     : 'me-pin',
   type   : 'circle',
   source : 'people',                // same source as other Person dots
-  filter : ['==', ['get', 'self'], true],
+  filter : ['==', 'self', true],
   paint  : {
     'circle-radius'       : 6,
     'circle-color'        : '#3683FF',

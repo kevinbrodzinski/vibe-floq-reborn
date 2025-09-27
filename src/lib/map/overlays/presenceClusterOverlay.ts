@@ -112,15 +112,15 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
 
   // venues (circle)
   if (!map.getLayer(PT_VENUE)) {
-    map.addLayer({
+    addLayerSafe(map, {
       id: PT_VENUE, type:'circle', source: SID,
-      filter:['all', ['!has','point_count'], ['==',['get','kind'],'venue']],
+      filter:['all', ['!has','point_count'], ['==','kind','venue']],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,6, 16,9],
         'circle-color':['coalesce',['get','vibeHex'],'#22c55e'],
         'circle-stroke-color':'#fff', 'circle-stroke-width':2
       }
-    }, CL_NUM);
+    } as any, CL_NUM);
   }
 
   // friends (symbol avatar)
@@ -150,16 +150,16 @@ function addLayers(map: mapboxgl.Map, id: string, includeSelfHit = false) {
 
   // self (invisible hit target – aura stays in its own overlay)
   if (includeSelfHit && !map.getLayer(PT_SELF_HIT)) {
-    map.addLayer({
+    addLayerSafe(map, {
       id: PT_SELF_HIT, type:'circle', source: SID,
-      filter:['all',['!has','point_count'],['==',['get','kind'],'self']],
+      filter:['all',['!has','point_count'],['==','kind','self']],
       paint:{
         'circle-radius':['interpolate',['linear'],['zoom'], 10,12, 16,16],
         'circle-color':'rgba(0,0,0,0)',
         'circle-stroke-color':'rgba(0,0,0,0)',
         'circle-pitch-scale':'viewport'
       }
-    }, PT_FRIEND_FALL);
+    } as any, PT_FRIEND_FALL);
   }
 
   // keep on top
