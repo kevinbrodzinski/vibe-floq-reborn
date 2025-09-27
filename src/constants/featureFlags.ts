@@ -17,6 +17,12 @@ export const FEATURE_FLAGS = {
   OPTIMIZED_QUERIES: true,
   CACHING_ENABLED: true,
   
+  // Privacy & Security Flags - OFF by default (privacy-last approach)
+  PRIVACY_GATES_ENABLED: false,
+  EPSILON_TRACKING_ENABLED: false,
+  RECOMMENDATION_PRIVACY_ENABLED: false,
+  REALTIME_PRIVACY_ENABLED: false,
+  
   // Development Flags
   DEBUG_MODE: process.env.NODE_ENV === 'development',
   SHOW_PERFORMANCE_METRICS: process.env.NODE_ENV === 'development',
