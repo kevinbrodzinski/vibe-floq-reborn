@@ -172,6 +172,15 @@ export const Events = {
   FLOQ_CONVERGE_REJECT: 'converge:reject',
 } as const;
 
+export type EventName = typeof Events[keyof typeof Events];
+
+// Compile-time guard against unknown events
+export function assertEventName(name: string): asserts name is EventName {
+  if (!Object.values(Events).includes(name as EventName)) {
+    throw new Error(`Unknown event: ${name}`);
+  }
+}
+
 // Type definitions for common event payloads
 export interface EventPayloads {
   [Events.UI_MAP_FLY_TO]: { lng: number; lat: number; zoom?: number; duration?: number };
