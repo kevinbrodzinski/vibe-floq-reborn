@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { MapContainerManager } from '@/lib/map/MapContainerManager';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
+import { getMapboxStyle } from '@/lib/geo/mapboxConfig';
 import { setMapInstance } from '@/lib/geo/project';
 import { createMapSafely, cleanupMapSingleton } from '@/lib/geo/mapSingleton';
 // REMOVED: Old user location system - replaced by UserAuraOverlay
@@ -458,7 +459,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         const initialZoom = savedZoom ? parseFloat(savedZoom) : 11;
 
         const map = createMapSafely(mapContainerRef.current!, {
-          style: 'mapbox://styles/mapbox/dark-v11',
+          style: getMapboxStyle(),
           center: initialCenter,
           zoom: initialZoom,
           preserveDrawingBuffer: true,

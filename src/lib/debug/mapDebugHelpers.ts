@@ -1,4 +1,5 @@
 // 🔧 MAP DEBUG HELPERS - Auto-loaded in development mode
+import { MAPBOX_CONFIG } from '@/lib/geo/mapboxConfig';
 
 // Extend window interface for TypeScript
 declare global {
@@ -55,7 +56,7 @@ async function realityCheckMapbox() {
     const mapboxModule = await import('mapbox-gl');
     const mapboxgl = mapboxModule.default;
     
-    mapboxgl.accessToken = 'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
+    mapboxgl.accessToken = MAPBOX_CONFIG.PUBLIC_TOKEN;
     
     const testDiv = document.createElement('div');
     testDiv.style.cssText = 'position:fixed;inset:0 0 50% 0;z-index:9999;background:rgba(255,0,0,0.1);';
@@ -64,7 +65,7 @@ async function realityCheckMapbox() {
     
     const map = new mapboxgl.Map({
       container: testDiv,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: MAPBOX_CONFIG.STYLE_URL,
       center: [-122.4194, 37.7749],
       zoom: 10
     });

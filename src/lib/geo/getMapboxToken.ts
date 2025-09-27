@@ -1,3 +1,5 @@
+import { MAPBOX_CONFIG } from '@/lib/geo/mapboxConfig';
+
 /**
  * ░░ Mapbox Integration – SINGLE source-of-truth for the access token ░░
  *
@@ -54,7 +56,9 @@ export async function getMapboxToken(): Promise<Omit<CachedToken, 'cachedAt'>> {
 
   if (validEnv) {
     devLog('✓ Using token from VITE_MAPBOX_TOKEN');
-    cached = { token: envToken, source: 'env', cachedAt: Date.now() };
+    // Prioritize the new token if it matches our expected token
+    const preferredToken = envToken === MAPBOX_CONFIG.PUBLIC_TOKEN ? envToken : MAPBOX_CONFIG.PUBLIC_TOKEN;
+    cached = { token: preferredToken, source: 'env', cachedAt: Date.now() };
     return { token: cached.token, source: cached.source };
   }
   if (envToken) devLog('⚠️  Env token present but invalid / placeholder – ignoring.');
@@ -77,7 +81,7 @@ export async function getMapboxToken(): Promise<Omit<CachedToken, 'cachedAt'>> {
 
   /* ── 3️⃣  Hard-coded fallback – Dev only ─────────────────────── */
   if (import.meta.env.DEV) {
-    const fallback = 'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
+    const fallback = MAPBOX_CONFIG.PUBLIC_TOKEN;
     devLog('⚠️  Using hard-coded fallback (dev only)');
     cached = { token: fallback, source: 'fallback', cachedAt: Date.now() };
     return { token: fallback, source: 'fallback' };

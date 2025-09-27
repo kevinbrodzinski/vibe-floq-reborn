@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { getMapboxStyle } from '@/lib/geo/mapboxConfig';
 
 export type HalfCandidate = {
   id: string;
@@ -27,9 +29,10 @@ type Props = {
   height?: number; // px
 };
 
-// Set the default token if available
-if (typeof window !== 'undefined' && import.meta.env.VITE_MAPBOX_TOKEN) {
-  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+// Set the default token if available - use new FLOQ Labs token
+if (typeof window !== 'undefined') {
+  const newToken = 'pk.eyJ1IjoiZmxvcWxhYnMiLCJhIjoiY21kZ3ZubTNiMHBrOTJyb3BoaG44a2tlbyJ9.fkkKFF_o-bjpgcVJav1pzw';
+  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || newToken;
 }
 
 export default function SmartMap({
@@ -66,7 +69,7 @@ export default function SmartMap({
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: getMapboxStyle(),
       bounds,
       fitBoundsOptions: { padding: 36 },
       dragRotate: false,

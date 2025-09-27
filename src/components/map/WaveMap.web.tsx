@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { getMapboxToken } from '@/lib/geo/getMapboxToken';
+import { getMapboxStyle } from '@/lib/geo/mapboxConfig';
 
 export type WaveMarker = { id: string; lat: number; lng: number; size: number; friends: number; venueName?: string };
 
@@ -29,7 +30,7 @@ export default function WaveMapWeb({ lat, lng, markers, onSelect }: {
     
     mapRef.current = new mapboxgl.Map({
       container: ref.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: getMapboxStyle(),
       center: [lng, lat],
       zoom: 12.5,
     });

@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { getMapboxToken }       from '@/lib/geo/getMapboxToken';
+import { getMapboxStyle }       from '@/lib/geo/mapboxConfig';
 import { setMapInstance }       from '@/lib/geo/project';
 
 interface Props {
@@ -40,7 +41,7 @@ export const WebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         /* map - require location */
         const map = new mapboxgl.Map({
           container: container.current!,
-          style    : 'mapbox://styles/mapbox/dark-v11',
+          style    : getMapboxStyle(),
           center   : [0, 0], // Will be set when location is available
           zoom     : 11
         });

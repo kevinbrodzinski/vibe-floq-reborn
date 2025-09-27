@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
+import { getMapboxStyle } from '@/lib/geo/mapboxConfig';
 import { setMapInstance } from '@/lib/geo/project';
 
 // Remove registerMapboxWorker() for Mapbox v3
@@ -57,7 +58,7 @@ export const VibeDensityWebMap = memo(function VibeDensityWebMap ({
         /* map - require location before creating */
         const map = new mapboxgl.Map({
           container: container.current,
-          style:     'mapbox://styles/mapbox/dark-v11',
+          style:     getMapboxStyle(),
           center:    [0, 0], // Will be set when location is available
           zoom:      11,
         });

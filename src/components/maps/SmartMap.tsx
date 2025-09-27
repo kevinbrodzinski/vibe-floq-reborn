@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
+import { getMapboxStyle } from '@/lib/geo/mapboxConfig';
 
 export type MapMember = { id: string; lat: number; lng: number; label?: string };
 export type MemberETA = { id: string; lat: number; lng: number; eta_min: number };
@@ -50,7 +51,7 @@ export default function SmartMap({
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: getMapboxStyle(),
       center: data?.centroid ? [data.centroid.lng, data.centroid.lat] : [-118.4695, 33.9925],
       zoom: 13.2,
       interactive: true,

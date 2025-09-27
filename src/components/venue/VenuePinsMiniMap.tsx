@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import mapboxgl from 'mapbox-gl'
+import { getMapboxStyle } from '@/lib/geo/mapboxConfig'
 
 type Pin = { id: string; loc?: { lng: number; lat: number } }
 
@@ -13,7 +14,7 @@ async function getMapboxToken() {
 export function VenuePinsMiniMap({ 
   pins, 
   height = 200, 
-  style = 'mapbox://styles/mapbox/dark-v11' 
+  style = getMapboxStyle()
 }: {
   pins: Pin[]
   height?: number
