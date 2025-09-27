@@ -11,6 +11,8 @@ import { calculateDistance as calculateDistanceMeters } from '@/lib/location/sta
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { incrAura } from '@/lib/telemetry';
 import type { LayerManager } from '@/lib/map/LayerManager';
+import { moveLayerSafe } from '@/lib/map/layers/utils';
+import { AURA_BEFORE } from '@/lib/map/ids';
 
 type Props = {
   map: mapboxgl.Map | null;
@@ -27,7 +29,7 @@ const TICK_MS = 500;               // throttle updates
 export function UserAuraOverlay({ 
   map, 
   layerManager, 
-  beforeId = 'poi-label', // safe default, fallback applies if missing 
+  beforeId = AURA_BEFORE, // Use stable anchor from ids.ts
   position, 
   enabled = true 
 }: Props) {
@@ -56,44 +58,33 @@ export function UserAuraOverlay({
     layerManager.register(spec);
     incrAura('mounts');
 
-    // Style reload resilience with enhanced safety
+    // Style reload resilience - defer until style is idle
+    let pending = false;
     const reapply = () => {
+      if (pending) return;
+      pending = true;
+      
       if (!map.isStyleLoaded()) { 
-        map.once('idle', reapply); 
+        map.once('idle', () => {
+          pending = false;
+          reapply();
+        }); 
         return; 
       }
       
-      // Wait for any pending style operations to complete
-      setTimeout(() => {
-        if (!map.isStyleLoaded()) return;
-        
-        try {
-          spec.mount(map);
-          // Always keep aura on top after mount, with existence checks
-          const auraLayerIds = ['user-aura-outer', 'user-aura-inner', 'user-aura-dot'];
-          const layers = map.getStyle()?.layers ?? [];
-          const topId = layers[layers.length - 1]?.id;
-          
-          if (topId) {
-            auraLayerIds.forEach(id => {
-              // Double-check layer exists before moving
-              if (map.getLayer(id)) {
-                try { 
-                  map.moveLayer(id, topId); 
-                } catch (e) {
-                  // Silently handle layer ordering conflicts
-                  console.debug(`[UserAuraOverlay] Layer ordering skipped for ${id}:`, e);
-                }
-              }
-            });
-          }
-        } catch (e) {
-          console.warn('[UserAuraOverlay] Reapply failed:', e);
-        }
-      }, 50); // Small delay to ensure style is fully settled
+      pending = false;
       
-      incrAura('reapplies');
-      // update will run on next tick when data arrives
+      try {
+        spec.mount(map);
+        // Use safe layer movement with stable anchor
+        const auraLayerIds = ['user-aura-outer', 'user-aura-inner', 'user-aura-dot'];
+        auraLayerIds.forEach(id => {
+          moveLayerSafe(map, id, beforeId);
+        });
+        incrAura('reapplies');
+      } catch (e) {
+        console.warn('[UserAuraOverlay] Reapply failed:', e);
+      }
     };
     
     map.on('styledata', reapply);

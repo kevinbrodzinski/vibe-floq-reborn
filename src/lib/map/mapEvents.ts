@@ -1,26 +1,12 @@
 import type mapboxgl from 'mapbox-gl';
-import { rebuildUserAura } from '@/lib/map/layers/userAura';
 
-// Bootstrap map event handlers for style reload protection
-export function setupMapEventHandlers(map: mapboxgl.Map) {
-  // Rebuild custom layers after style changes
-  const onStyleData = () => {
-    if (map.isStyleLoaded()) {
-      rebuildUserAura(map);
-      // Add other custom layer rebuilds here as needed
-    }
-  };
-
-  map.on('styledata', onStyleData);
-  
-  // Store cleanup function
-  (map as any)._cleanupEventHandlers = () => {
-    map.off('styledata', onStyleData);
-  };
+// Bootstrap map event handlers for style reload protection  
+// Note: UserAuraOverlay now handles its own style reload resilience
+export function setupMapEventHandlers(_map: mapboxgl.Map) {
+  // No-op: custom layer rebuilds are handled by individual overlay components
 }
 
 // Call this in map cleanup
-export function cleanupMapEventHandlers(map: mapboxgl.Map) {
-  const cleanup = (map as any)._cleanupEventHandlers;
-  if (cleanup) cleanup();
+export function cleanupMapEventHandlers(_map: mapboxgl.Map) {
+  // No-op: individual overlay components handle their own cleanup
 }
