@@ -20,6 +20,22 @@ import {
 } from '@/lib/map/layers/utils';
 import { setFilterWhenReady } from '@/lib/map/safeFilter';
 
+/** Resolve a safe 'before' layer id if the requested one doesn't exist */
+function resolveBefore(map: mapboxgl.Map, requested?: string): string | undefined {
+  // If requested exists, use it
+  if (requested && map.getLayer(requested)) return requested;
+  // Prefer inserting beneath labels if possible
+  const preferred = ['poi-label', 'road-label', 'place-label', 'poi'];
+  for (const id of preferred) if (map.getLayer(id)) return id;
+  // Else, find the topmost symbol layer as anchor
+  const layers = map.getStyle()?.layers ?? [];
+  for (let i = layers.length - 1; i >= 0; i--) {
+    if (layers[i].type === 'symbol') return layers[i].id;
+  }
+  // Fallback: undefined (adds to top)
+  return undefined;
+}
+
 export type AuraData = {
   lng: number;
   lat: number;
@@ -50,17 +66,10 @@ function ensureSource(map: mapboxgl.Map) {
   }
 }
 
-function moveAuraNearAnchor(map: mapboxgl.Map) {
-  // Use safe layer movement with stable anchor
-  moveLayerSafe(map, LYR_USER_AURA_OUTER, AURA_BEFORE);
-  moveLayerSafe(map, LYR_USER_AURA_INNER, AURA_BEFORE);
-  moveLayerSafe(map, LYR_USER_AURA_DOT, AURA_BEFORE);
-  moveLayerSafe(map, LYR_USER_AURA_HIT, AURA_BEFORE);
-}
 
 function addLayers(map: mapboxgl.Map, onMouseEnter: () => void, onMouseLeave: () => void, dragging: () => boolean, beforeId?: string) {
-  // Use stable anchor for all layers
-  const anchor = beforeId || AURA_BEFORE;
+  // Use dynamic layer resolution for stable anchoring
+  const anchor = resolveBefore(map, beforeId);
   
   // Outer soft aura
   if (!map.getLayer(LYR_USER_AURA_OUTER)) {
@@ -244,7 +253,7 @@ export function createUserAuraSpec(beforeId?: string) {
           dot:   !!map.getLayer(LYR_USER_AURA_DOT),
           inner: !!map.getLayer(LYR_USER_AURA_INNER),
           outer: !!map.getLayer(LYR_USER_AURA_OUTER),
-          before: AURA_BEFORE
+          before: resolveBefore(map, beforeId)
         });
       }
     },
