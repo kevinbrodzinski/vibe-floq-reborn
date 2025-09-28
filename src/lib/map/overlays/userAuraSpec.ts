@@ -20,21 +20,7 @@ import {
 } from '@/lib/map/layers/utils';
 import { setFilterWhenReady } from '@/lib/map/safeFilter';
 
-/** Resolve a safe 'before' layer id if the requested one doesn't exist */
-function resolveBefore(map: mapboxgl.Map, requested?: string): string | undefined {
-  // If requested exists, use it
-  if (requested && map.getLayer(requested)) return requested;
-  // Prefer inserting beneath labels if possible
-  const preferred = ['poi-label', 'road-label', 'place-label', 'poi'];
-  for (const id of preferred) if (map.getLayer(id)) return id;
-  // Else, find the topmost symbol layer as anchor
-  const layers = map.getStyle()?.layers ?? [];
-  for (let i = layers.length - 1; i >= 0; i--) {
-    if (layers[i].type === 'symbol') return layers[i].id;
-  }
-  // Fallback: undefined (adds to top)
-  return undefined;
-}
+import { resolveBeforeId } from '@/lib/map/layerOrdering';
 
 export type AuraData = {
   lng: number;
@@ -69,7 +55,7 @@ function ensureSource(map: mapboxgl.Map) {
 
 function addLayers(map: mapboxgl.Map, onMouseEnter: () => void, onMouseLeave: () => void, dragging: () => boolean, beforeId?: string) {
   // Use dynamic layer resolution for stable anchoring
-  const anchor = resolveBefore(map, beforeId);
+  const anchor = resolveBeforeId(map, beforeId ? [beforeId] : []);
   
   // Outer soft aura
   if (!map.getLayer(LYR_USER_AURA_OUTER)) {
@@ -253,7 +239,7 @@ export function createUserAuraSpec(beforeId?: string) {
           dot:   !!map.getLayer(LYR_USER_AURA_DOT),
           inner: !!map.getLayer(LYR_USER_AURA_INNER),
           outer: !!map.getLayer(LYR_USER_AURA_OUTER),
-          before: resolveBefore(map, beforeId)
+          before: resolveBeforeId(map, beforeId ? [beforeId] : [])
         });
       }
     },

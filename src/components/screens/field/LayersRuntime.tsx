@@ -17,6 +17,7 @@ import { useAvatarSprites } from '@/lib/map/hooks/useAvatarSprites';
 import { buildPresenceFC, createPresenceClusterOverlay } from '@/lib/map/overlays/presenceClusterOverlay';
 import type { FieldData } from './FieldDataProvider';
 import { LYR_USER_AURA_OUTER } from '@/lib/map/ids';
+import { resolveBeforeId } from '@/lib/map/layerOrdering';
 import '@/styles/map-popups.css';
 
 interface LayersRuntimeProps {
@@ -120,33 +121,51 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     return buildPresenceFC({ self, friends, venues });
   }, [nearbyVenues, friendsList, iconIds]);
 
+  // Utility – run fn when the map's style is actually usable
+  function withStyleReady(map: mapboxgl.Map, fn: () => void) {
+    if (map.isStyleLoaded()) return void fn();
+    const onLoad = () => { map.off("styledata", onLoad); fn(); };
+    map.on("styledata", onLoad);
+  }
+
+  // single debounce per component instance to avoid thrash
+  let styleTimer: ReturnType<typeof setTimeout> | undefined;
+
   // ---------- Register and apply unified presence overlay ----------
   useEffect(() => {
     if (!map || !layerManager) return;
 
-    const spec = createPresenceClusterOverlay({
-      id: 'presence',
-      beforeId: map.getLayer(LYR_USER_AURA_OUTER) ? LYR_USER_AURA_OUTER : undefined,
-      initial: { type: 'FeatureCollection', features: [] },
-      includeSelfHit: false, // aura owns it
+    const reinject = () => withStyleReady(map, () => {
+      // Compute preferred anchor:
+      // 1) if our aura outer exists, use it (keeps presence just above aura)
+      // 2) otherwise resolve to the first reasonable label layer
+      const preferredAnchor = map.getLayer?.(LYR_USER_AURA_OUTER) ? LYR_USER_AURA_OUTER : undefined;
+      const beforeId = preferredAnchor ?? resolveBeforeId(map);
+
+      const spec = createPresenceClusterOverlay({
+        id: 'presence',
+        beforeId,
+        initial: { type: 'FeatureCollection', features: [] },
+        includeSelfHit: false, // aura owns it
+      });
+
+      layerManager.register(spec);
+      spec.mount(map);
     });
 
-    layerManager.register(spec);
+    // Initial injection
+    reinject();
 
-    const reapply = () => {
-      if (!map.isStyleLoaded()) { 
-        map.once('idle', reapply); 
-        return; 
-      }
-      spec.mount(map);
+    // Re-run after style changes with a short debounce
+    const onStyleData = () => {
+      clearTimeout(styleTimer);
+      styleTimer = setTimeout(reinject, 16);
     };
-    
-    map.on('styledata', reapply);
-    map.on('load', reapply);
+    map.on("styledata", onStyleData);
 
     return () => {
-      map.off('styledata', reapply);
-      map.off('load', reapply);
+      map.off("styledata", onStyleData);
+      clearTimeout(styleTimer);
       layerManager.unregister('presence');
     };
   }, [map, layerManager]);
