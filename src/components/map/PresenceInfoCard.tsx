@@ -48,10 +48,10 @@ export const PresenceInfoCard: React.FC<Props> = ({ data, onClose }) => {
     if (!computed) return;
     
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onClose?.();
       if (e.key === 'Enter') { 
         computed.primaryExec(); 
-        onClose(); 
+        onClose?.(); 
       }
     };
     window.addEventListener('keydown', onKey);
