@@ -308,11 +308,11 @@ export const FieldLayout = () => {
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
 
-          {/* Lens System - z-600 */}
+          {/* Lens System - z-700 */}
                 <LensHotkeys />
                 {/* Centered, immune to clipping */}
                 <div
-                  className="fixed z-[600] pointer-events-none"
+                  className="fixed z-[700] pointer-events-none"
                   style={{
                     top: `calc(16px + env(safe-area-inset-top, 0px))`,
                     left: '50%',
@@ -324,7 +324,7 @@ export const FieldLayout = () => {
                     <LensSwitcher />
                   </div>
                 </div>
-                <div className="fixed top-4 left-4 z-[560] pointer-events-none">
+                <div className="fixed top-[calc(80px+env(safe-area-inset-top))] left-4 z-[560] pointer-events-none">
                   <LensStatusHUD />
                 </div>
 

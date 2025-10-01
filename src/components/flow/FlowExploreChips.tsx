@@ -16,9 +16,9 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
     d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
 
   return (
-    <div className="fixed left-0 right-0 top-[calc(64px+env(safe-area-inset-top))] z-[590]">
+    <div className="fixed left-0 right-0 top-[calc(16px+env(safe-area-inset-top))] z-[660] pointer-events-none">
       <div className="mx-4 overflow-x-auto scrollbar-none">
-        <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2">
+        <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2 pointer-events-auto">
           <button
             onClick={() => set({ friendFlows: !value.friendFlows })}
             aria-pressed={!!value.friendFlows}

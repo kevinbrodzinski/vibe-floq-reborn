@@ -70,7 +70,7 @@ export function PatternLearningIndicator() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="fixed top-20 right-4 z-50 pointer-events-none"
+      className="fixed top-[calc(140px+env(safe-area-inset-top))] right-4 z-[50] pointer-events-none"
     >
       <div className="bg-card/95 backdrop-blur-xl rounded-lg border border-border/30 p-3 min-w-[280px] shadow-lg">
         <div className="flex items-center gap-2 mb-2">

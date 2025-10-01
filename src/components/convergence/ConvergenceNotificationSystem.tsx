@@ -54,7 +54,7 @@ export function ConvergenceNotificationSystem() {
 
   return (
     <div
-      className="fixed left-1/2 -translate-x-1/2 top-[calc(16px+env(safe-area-inset-top))] z-[605]
+      className="fixed left-1/2 -translate-x-1/2 top-[calc(80px+env(safe-area-inset-top))] z-[610]
                  pointer-events-none w-[min(560px,calc(100vw-24px))]"
       aria-live="polite"
     >
