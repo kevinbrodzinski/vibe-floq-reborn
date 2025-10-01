@@ -12,7 +12,6 @@ import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useVenueSync } from '@/hooks/useVenueSync';
 import { LayersRuntime } from './LayersRuntime';
-import { TemporalController } from '@/components/Temporal/TemporalController';
 import { AtmosphereLayer, type PixiLayerHandle } from './AtmosphereLayer';
 import type { FieldData } from '../field/FieldDataProvider';
 
