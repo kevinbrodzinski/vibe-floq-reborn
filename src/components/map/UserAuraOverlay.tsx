@@ -54,8 +54,25 @@ export function UserAuraOverlay({
     if (!map || !layerManager || !enabled) return;
 
     const spec = createUserAuraSpec(beforeId);
-    layerManager.register(spec); // LayerManager handles mounting
+    layerManager.register(spec);
     incrAura('mounts');
+
+    // Ensure mounting when style is ready
+    const ensureMount = () => {
+      if (!map.isStyleLoaded()) return;
+      try {
+        spec.mount(map);
+      } catch (e) {
+        console.warn('[UserAuraOverlay] Mount failed:', e);
+      }
+    };
+
+    // Mount immediately if style is ready, otherwise wait for style.load
+    if (map.isStyleLoaded()) {
+      ensureMount();
+    } else {
+      map.once('style.load', ensureMount);
+    }
 
     return () => {
       layerManager.unregister('user-aura');
