@@ -56,6 +56,14 @@ import '@/dev/emit';
 import '@/dev/vibeQA';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 import { IntelligenceWidgets } from './IntelligenceWidgets';
+import { FlowFiltersProvider } from '@/contexts/FlowFiltersContext';
+import { useFlowFilters } from '@/hooks/useFlowFilters';
+import { useSunOpportunity } from '@/hooks/useSunOpportunity';
+import { useFlowExplore } from '@/hooks/useFlowExplore';
+import { FlowExploreChips } from '@/components/flow/FlowExploreChips';
+import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary';
+import { useFieldLens } from '@/components/field/FieldLensProvider';
+import { USE_TOPBAR_STACK } from '@/features/field/config';
 
 interface FieldLayoutProps {
 }
@@ -71,6 +79,20 @@ export const FieldLayout = () => {
   }, []);
   
   const data = useFieldData();
+  const { lens } = useFieldLens();
+  const map = getCurrentMap();
+  
+  // Flow filters for TopBarStack integration
+  const { filters, setFilters, loaded: filtersLoaded } = useFlowFilters();
+  const sunEnabled = filters.weatherPref?.[0] === 'sun';
+  const { score: sunScore } = useSunOpportunity(lens === 'explore' && sunEnabled);
+  const [lastMs, setLastMs] = React.useState<number|undefined>();
+  const { clusterRes, loading } = useFlowExplore({ 
+    lens, 
+    map, 
+    filters, 
+    onLatencyMs: setLastMs 
+  });
   const { 
     location, 
     isLocationReady, 
@@ -311,14 +333,33 @@ export const FieldLayout = () => {
 
           {/* Lens System - z-700 with TopBarStack */}
                 <LensHotkeys />
-                <TopBarStack>
-                  <div className="flex items-center justify-center">
-                    <LensSwitcher inline />
+                {USE_TOPBAR_STACK && (
+                  <TopBarStack>
+                    <div className="flex items-center justify-center">
+                      <LensSwitcher inline />
+                    </div>
+                    {lens === 'explore' && filtersLoaded && (
+                      <div className="flex items-center justify-center">
+                        <FlowErrorBoundary>
+                          <FlowExploreChips 
+                            inline
+                            value={filters} 
+                            onChange={setFilters} 
+                            clusterRes={clusterRes}
+                            loading={loading}
+                            sunScore={sunScore ?? undefined}
+                          />
+                        </FlowErrorBoundary>
+                      </div>
+                    )}
+                  </TopBarStack>
+                )}
+                
+                {!USE_TOPBAR_STACK && (
+                  <div className="fixed left-1/2 -translate-x-1/2 z-[700] top-[calc(env(safe-area-inset-top,0px)+16px)]">
+                    <LensSwitcher />
                   </div>
-                  <div className="flex items-center justify-center">
-                    {/* FlowExploreChips will be added here when needed */}
-                  </div>
-                </TopBarStack>
+                )}
                 
                 <div className="fixed left-4 z-[560] pointer-events-none top-after-topbar">
                   <LensStatusHUD />

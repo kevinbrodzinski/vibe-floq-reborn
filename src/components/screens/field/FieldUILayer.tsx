@@ -24,6 +24,7 @@ import { useFlowExplore } from '@/hooks/useFlowExplore'
 import { useSunOpportunity } from '@/hooks/useSunOpportunity'
 import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary'
 import { FlowDebugBadge } from '@/components/flow/FlowDebugBadge'
+import { USE_TOPBAR_STACK } from '@/features/field/config'
 
 // Flow recording imports
 import { useFlowSampler } from '@/hooks/flow/useFlowSampler'
@@ -189,8 +190,8 @@ export function FieldUILayer() {
 
   return (
     <>
-      {/* Flow explore chips - only show in explore lens */}
-      {lens === 'explore' && filtersLoaded && (
+      {/* Flow explore chips - legacy render path (disabled when TopBarStack is active) */}
+      {!USE_TOPBAR_STACK && lens === 'explore' && filtersLoaded && (
         <FlowErrorBoundary>
           <FlowExploreChips 
             value={filters} 
