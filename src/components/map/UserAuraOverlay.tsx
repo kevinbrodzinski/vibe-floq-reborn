@@ -10,12 +10,12 @@ import { vibeToHex } from '@/lib/vibe/color';
 import { calculateDistance as calculateDistanceMeters } from '@/lib/location/standardGeo';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { incrAura } from '@/lib/telemetry';
-import type { LayerManagerFacade } from '@/lib/map/LayerManager';
+import type { LayerManager } from '@/lib/map/LayerManager';
 import { AURA_BEFORE } from '@/lib/map/ids';
 
 type Props = {
   map: mapboxgl.Map | null;
-  layerManager: LayerManagerFacade | null;
+  layerManager: LayerManager | null;
   beforeId?: string;               // layer insert anchor (safe fallback applied)
   position?: { lat: number; lng: number } | null;  // optional external position
   enabled?: boolean;
@@ -57,7 +57,36 @@ export function UserAuraOverlay({
     layerManager.register(spec);
     incrAura('mounts');
 
+    // Style reload resilience - defer until style is idle
+    let pending = false;
+    const reapply = () => {
+      if (pending) return;
+      pending = true;
+      
+      if (!map.isStyleLoaded()) { 
+        map.once('idle', () => {
+          pending = false;
+          reapply();
+        }); 
+        return; 
+      }
+      
+      pending = false;
+      
+      try {
+        spec.mount(map);
+        incrAura('reapplies');
+      } catch (e) {
+        console.warn('[UserAuraOverlay] Reapply failed:', e);
+      }
+    };
+    
+    map.on('styledata', reapply);
+    map.on('load', reapply);
+
     return () => {
+      map.off('styledata', reapply);
+      map.off('load', reapply);
       layerManager.unregister('user-aura');
       incrAura('unmounts');
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -71,9 +100,6 @@ export function UserAuraOverlay({
   // Throttled updates when position or vibe changes
   React.useEffect(() => {
     if (!map || !layerManager || !enabled || !pos) return;
-
-    // Guard: ensure spec is registered before applying data
-    if (!layerManager.has('user-aura')) return;
 
     // Don't render if permission explicitly denied
     if (userLocation.permission === 'denied') return;

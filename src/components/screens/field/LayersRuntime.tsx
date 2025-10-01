@@ -1,5 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
-import type mapboxgl from 'mapbox-gl';
+import React, { useMemo, useEffect } from 'react';
 import { getCurrentMap } from '@/lib/geo/mapSingleton';
 import { useLayerManager } from '@/hooks/useLayerManager';
 import { useNavDestination } from '@/hooks/useNavDestination';
@@ -92,9 +91,12 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     { size: 64, concurrency: 3 }
   );
 
-  // Memoize friend points separately to reduce presenceFC churn
-  const friendPoints = useMemo(() => {
-    return friendsList
+  // Build unified presence data safely
+  const presenceFC = useMemo(() => {
+    // self tap is handled by aura overlay → don't inject here
+    const self = undefined;
+
+    const friends = friendsList
       .map((f: any) => ({
         id: String(f.id ?? ''),
         name: f.display_name ?? f.name ?? '',
@@ -102,15 +104,9 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
         lat: Number(f.lat),
         lng: Number(f.lng),
         vibe: f.vibe ?? f.currentVibe ?? undefined,
-        iconId: iconIds[String(f.id ?? '')],
+        iconId: iconIds[String(f.id ?? '')] ?? undefined,
       }))
       .filter((f: any) => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.id);
-  }, [friendsList, iconIds]);
-
-  // Build unified presence data safely
-  const presenceFC = useMemo(() => {
-    // self tap is handled by aura overlay → don't inject here
-    const self = undefined;
 
     const venues = nearbyVenues
       .map((v: any) => ({
@@ -122,21 +118,24 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       }))
       .filter((v: any) => Number.isFinite(v.lat) && Number.isFinite(v.lng) && v.id);
 
-    return buildPresenceFC({ self, friends: friendPoints, venues });
-  }, [friendPoints, nearbyVenues]);
+    return buildPresenceFC({ self, friends, venues });
+  }, [nearbyVenues, friendsList, iconIds]);
 
+  // Utility – run fn when the map's style is actually usable
+  function withStyleReady(map: mapboxgl.Map, fn: () => void) {
+    if (map.isStyleLoaded()) return void fn();
+    const onLoad = () => { map.off("styledata", onLoad); fn(); };
+    map.on("styledata", onLoad);
+  }
 
-  // single debounce per component instance to avoid thrash (survives renders)
-  const styleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // single debounce per component instance to avoid thrash
+  let styleTimer: ReturnType<typeof setTimeout> | undefined;
 
   // ---------- Register and apply unified presence overlay ----------
   useEffect(() => {
     if (!map || !layerManager) return;
-    let disposed = false;
 
-    const reinject = () => {
-      if (disposed) return;
-      
+    const reinject = () => withStyleReady(map, () => {
       // Compute preferred anchor:
       // 1) if our aura outer exists, use it (keeps presence just above aura)
       // 2) otherwise resolve to the first reasonable label layer
@@ -150,34 +149,23 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
         includeSelfHit: false, // aura owns it
       });
 
-      // Use registerOrReplace for atomic replacement
-      layerManager.registerOrReplace(spec); // manager mounts when style is ready
-    };
+      layerManager.register(spec);
+      spec.mount(map);
+    });
 
-    // Use style.load for first mount, then styledata for subsequent changes
-    if (map.isStyleLoaded()) {
-      reinject();
-    } else {
-      map.once('style.load', reinject);
-    }
+    // Initial injection
+    reinject();
 
-    // Re-run after style changes with a debounce (safer than 16ms under style churn)
+    // Re-run after style changes with a short debounce
     const onStyleData = () => {
-      if (styleTimerRef.current) {
-        clearTimeout(styleTimerRef.current);
-        styleTimerRef.current = null;
-      }
-      styleTimerRef.current = setTimeout(reinject, 50);
+      clearTimeout(styleTimer);
+      styleTimer = setTimeout(reinject, 16);
     };
     map.on("styledata", onStyleData);
 
     return () => {
-      disposed = true;
       map.off("styledata", onStyleData);
-      if (styleTimerRef.current) {
-        clearTimeout(styleTimerRef.current);
-        styleTimerRef.current = null;
-      }
+      clearTimeout(styleTimer);
       layerManager.unregister('presence');
     };
   }, [map, layerManager]);
@@ -185,67 +173,62 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   // Apply feature collection when it changes
   useEffect(() => {
     if (!map || !layerManager) return;
-    
-    // Only apply if the layer is registered
-    if (!layerManager.has('presence')) return;
     layerManager.apply('presence', presenceFC);
     
-    // Expose global state for convergence ranking (SSR-safe)
-    if (typeof window !== 'undefined') {
-      (window as any).floq ??= {};
-      (window as any).floq.nearbyVenues = nearbyVenues;
-      (window as any).floq.myLocation = location.coords ? { 
-        lng: location.coords.lng, 
-        lat: location.coords.lat 
-      } : undefined;
+    // Expose global state for convergence ranking
+    (window as any).floq ??= {};
+    (window as any).floq.nearbyVenues = nearbyVenues;
+    (window as any).floq.myLocation = location.coords ? { 
+      lng: location.coords.lng, 
+      lat: location.coords.lat 
+    } : undefined;
 
-      // Build friendsIndex from presence FeatureCollection
-      try {
-        const idx: Record<string, {
-          lngLat?: { lng:number; lat:number };
-          energy01?: number;
-          direction?: 'up'|'down'|'flat';
-          name?: string;
-          venue?: { id?: string; name?: string; lat?: number; lng?: number; category?: string; openNow?: boolean };
-        }> = {};
+    // Build friendsIndex from presence FeatureCollection
+    try {
+      const idx: Record<string, {
+        lngLat?: { lng:number; lat:number };
+        energy01?: number;
+        direction?: 'up'|'down'|'flat';
+        name?: string;
+        venue?: { id?: string; name?: string; lat?: number; lng?: number; category?: string; openNow?: boolean };
+      }> = {};
 
-        const feats = (presenceFC as any)?.features ?? [];
-        for (const f of feats) {
-          if (f?.properties?.kind !== 'friend') continue;
+      const feats = (presenceFC as any)?.features ?? [];
+      for (const f of feats) {
+        if (f?.properties?.kind !== 'friend') continue;
 
-          const p = f.properties ?? {};
-          const id = String(p.id ?? '');
-          if (!id) continue;
+        const p = f.properties ?? {};
+        const id = String(p.id ?? '');
+        if (!id) continue;
 
-          // friend lng/lat
-          const coords = Array.isArray(f?.geometry?.coordinates) ? f.geometry.coordinates : null;
-          const lngLat = (coords && Number.isFinite(coords[0]) && Number.isFinite(coords[1]))
-            ? { lng: coords[0], lat: coords[1] } : undefined;
+        // friend lng/lat
+        const coords = Array.isArray(f?.geometry?.coordinates) ? f.geometry.coordinates : null;
+        const lngLat = (coords && Number.isFinite(coords[0]) && Number.isFinite(coords[1]))
+          ? { lng: coords[0], lat: coords[1] } : undefined;
 
-          // optional current venue (try multiple common keys)
-          const vlat = Number(p.venue_lat ?? p.venueLat ?? p.v_lat ?? p?.venue?.lat);
-          const vlng = Number(p.venue_lng ?? p.venueLng ?? p.v_lng ?? p?.venue?.lng);
-          const venue = Number.isFinite(vlat) && Number.isFinite(vlng) ? {
-            id: p.venue_id ?? p.venueId ?? p?.venue?.id,
-            name: p.venue_name ?? p.venueName ?? p?.venue?.name,
-            lat: vlat,
-            lng: vlng,
-            category: p.venue_category ?? p.venueCategory ?? p?.venue?.category,
-            openNow: (p.venue_open_now ?? p.venueOpenNow ?? p?.venue?.open_now ?? p?.venue?.openNow) ?? undefined
-          } : undefined;
+        // optional current venue (try multiple common keys)
+        const vlat = Number(p.venue_lat ?? p.venueLat ?? p.v_lat ?? p?.venue?.lat);
+        const vlng = Number(p.venue_lng ?? p.venueLng ?? p.v_lng ?? p?.venue?.lng);
+        const venue = Number.isFinite(vlat) && Number.isFinite(vlng) ? {
+          id: p.venue_id ?? p.venueId ?? p?.venue?.id,
+          name: p.venue_name ?? p.venueName ?? p?.venue?.name,
+          lat: vlat,
+          lng: vlng,
+          category: p.venue_category ?? p.venueCategory ?? p?.venue?.category,
+          openNow: (p.venue_open_now ?? p.venueOpenNow ?? p?.venue?.open_now ?? p?.venue?.openNow) ?? undefined
+        } : undefined;
 
-          idx[id] = {
-            lngLat,
-            energy01: typeof p.energy01 === 'number' ? p.energy01 : undefined,
-            direction: p.direction,
-            name: p.name,
-            venue
-          };
-        }
-        (window as any).floq.friendsIndex = Object.freeze(idx);
-      } catch {
-        // keep UI resilient
+        idx[id] = {
+          lngLat,
+          energy01: typeof p.energy01 === 'number' ? p.energy01 : undefined,
+          direction: p.direction,
+          name: p.name,
+          venue
+        };
       }
+      (window as any).floq.friendsIndex = idx;
+    } catch {
+      // keep UI resilient
     }
   }, [map, layerManager, presenceFC, nearbyVenues, location.coords]);
 

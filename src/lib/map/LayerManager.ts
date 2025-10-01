@@ -93,27 +93,12 @@ export class LayerManager {
     if (this.map && typeof window !== 'undefined') this.tryMount(spec.id);
   }
 
-  /** Check if an overlay is registered */
-  has(id: string): boolean {
-    return this.overlays.has(id);
-  }
-
-  /** Atomically replace an overlay: unregister if exists, then register */
-  registerOrReplace(spec: OverlaySpec) {
-    if (this.has(spec.id)) {
-      this.unregister(spec.id);
-    }
-    this.register(spec);
-  }
-
   unregister(id: string) {
     const ent = this.overlays.get(id);
-    if (ent && this.map) this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
+    if (!ent || !this.map) { this.overlays.delete(id); return; }
+    this.safe(() => ent.mounted && ent.spec.unmount(this.map!));
     this.overlays.delete(id);
     this.pending.delete(id);
-    // Remove from order to avoid useless iterations
-    const i = this.order.indexOf(id);
-    if (i !== -1) this.order.splice(i, 1);
   }
 
   // Alias for backward compatibility
@@ -153,64 +138,39 @@ export class LayerManager {
     if (!ent || !this.map || typeof window === 'undefined') return;
     if (ent.mounted || !this.map.isStyleLoaded?.()) return;
     
-    // Only mark mounted if mount succeeds
-    let ok = true;
-    try { ent.spec.mount(this.map!); }
-    catch (e) { ok = false; console.warn('[LayerManager] mount failed:', e); }
-    ent.mounted = ok;
+    this.safe(() => ent.spec.mount(this.map!));
+    ent.mounted = true;
   }
 
   private flush() {
     this.raf = 0;
     if (!this.map || !this.map.isStyleLoaded?.()) return;
-
-    if (this.lowPower) {
-      // Process just one entry; keep the rest
-      const it = this.pending.entries().next();
-      if (!it.done) {
-        const [id, data] = it.value;
-        this.pending.delete(id);
-        this.applyOne(id, data);
-      }
-      // Schedule another frame if more remain
-      if (this.pending.size && !this.raf) {
-        this.raf = requestAnimationFrame(() => this.flush());
-      }
-      return;
-    }
-
-    // Normal mode: flush all at once
-    const all = [...this.pending.entries()];
+    const batch = this.lowPower ? [...this.pending.entries()].slice(0, 1) : [...this.pending.entries()];
     this.pending.clear();
-    for (const [id, data] of all) {
-      this.applyOne(id, data);
+    for (const [id, data] of batch) {
+      const ent = this.overlays.get(id); if (!ent) continue;
+      if (!ent.mounted) this.tryMount(id);
+      if (!ent.mounted) continue;
+      
+      const t0 = performance.now();
+      const json = hashJSON(data);
+      const skipped = json === ent.prevHash;
+      
+      if (!skipped) {
+        ent.prevHash = json;
+        this.safe(() => { ent.spec.update(this.map!, data); ent.setDataCount++; });
+      }
+      
+      const dt = performance.now() - t0;
+      this.emitApply({
+        id,
+        bytes: json.length,
+        features: Array.isArray(data?.features) ? data.features.length : 0,
+        dt: Math.round(dt),
+        skipped,
+        ts: t0
+      });
     }
-  }
-
-  private applyOne(id: string, data: any) {
-    const ent = this.overlays.get(id);
-    if (!ent) return;
-
-    if (!ent.mounted) this.tryMount(id);
-    if (!ent.mounted) return;
-
-    const t0 = performance.now();
-    const json = hashJSON(data);
-    const skipped = json === ent.prevHash;
-
-    if (!skipped) {
-      ent.prevHash = json;
-      this.safe(() => { ent.spec.update(this.map!, data); ent.setDataCount++; });
-    }
-
-    this.emitApply({
-      id,
-      bytes: json.length,
-      features: Array.isArray(data?.features) ? data.features.length : 0,
-      dt: Math.round(performance.now() - t0),
-      skipped,
-      ts: t0,
-    });
   }
 
   private unmountAll() {
@@ -234,18 +194,3 @@ export class LayerManager {
 }
 
 export const layerManager = new LayerManager();
-
-/**
- * LayerManager facade type - exposes safe public API
- * Use this type instead of LayerManager in component props
- */
-export type LayerManagerFacade = {
-  register: (spec: OverlaySpec) => void;
-  unregister: (id: string) => void;
-  apply: (id: string, data: any) => void;
-  has: (id: string) => boolean;
-  registerOrReplace: (spec: OverlaySpec) => void;
-  onApply: (listener: (ev: ApplyEvent) => void) => () => void;
-  getStats: () => Record<string, number>;
-  setLowPower: (enabled: boolean) => void;
-};
