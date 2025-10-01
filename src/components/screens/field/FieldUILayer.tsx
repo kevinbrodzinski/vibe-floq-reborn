@@ -203,6 +203,23 @@ export function FieldUILayer() {
         </FlowErrorBoundary>
       )}
 
+      {/* Flow recording FAB - always visible on explore lens */}
+      {lens === 'explore' && (
+        <FlowRecorderFAB
+          state={samplerState}
+          onStart={() => begin('owner')}
+          onPause={pauseSampler}
+          onResume={resumeSampler}
+          onStop={(flowId?: string) => {
+            stopSampler();
+            if (flowId) {
+              // Navigate to reflection page after flow stops
+              window.location.href = `/flow/${flowId}/reflection`;
+            }
+          }}
+        />
+      )}
+
       {/* Explore lens */}
       {lens === 'explore' && displayVenues.length > 0 && (
         <div id="lens-panel-explore" role="tabpanel" aria-labelledby="tab-explore">
@@ -219,21 +236,6 @@ export function FieldUILayer() {
           <FlowMapOverlay 
             points={convergence}
             onPointTap={(p) => setConvCard(p)}   // opens card
-          />
-
-          {/* Flow recording FAB */}
-          <FlowRecorderFAB
-            state={samplerState}
-            onStart={() => begin('owner')}
-            onPause={pauseSampler}
-            onResume={resumeSampler}
-            onStop={(flowId?: string) => {
-              stopSampler();
-              if (flowId) {
-                // Navigate to reflection page after flow stops
-                window.location.href = `/flow/${flowId}/reflection`;
-              }
-            }}
           />
 
           {/* Flow HUD */}

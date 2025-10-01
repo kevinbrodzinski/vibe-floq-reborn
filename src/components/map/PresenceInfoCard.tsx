@@ -5,12 +5,13 @@ type Props = { data: PresencePayload | null; onClose: () => void };
 
 export const PresenceInfoCard: React.FC<Props> = ({ data, onClose }) => {
   const rootRef = React.useRef<HTMLDivElement | null>(null);
-  if (!data) return null;
-
-  const { kind, id, name, lngLat } = data;
+  
+  // Extract data properties early (before conditional return)
+  const { kind, id, name, lngLat } = data || {};
 
   // Primary CTA mapping (Enter triggers this)
   const primary = React.useMemo(() => {
+    if (!data) return { label: 'Close', exec: () => {} };
     if (kind === 'friend') {
       return { label: 'Ping', exec: () => window.dispatchEvent(new CustomEvent('floq:ping', { detail: { id } })) };
     }
@@ -21,17 +22,21 @@ export const PresenceInfoCard: React.FC<Props> = ({ data, onClose }) => {
       };
     }
     return { label: 'Recenter', exec: () => window.dispatchEvent(new CustomEvent('floq:geolocate')) };
-  }, [kind, id, lngLat]);
+  }, [data, kind, id, lngLat]);
 
   // Keyboard a11y
   React.useEffect(() => {
+    if (!data) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'Enter') { primary.exec(); onClose(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [primary, onClose]);
+  }, [data, primary, onClose]);
+
+  // Early return AFTER all hooks
+  if (!data) return null;
 
   // Token-safe color
   const ringStyle = { background: data.color ?? 'var(--vibe-ring, rgb(128,128,128))' };

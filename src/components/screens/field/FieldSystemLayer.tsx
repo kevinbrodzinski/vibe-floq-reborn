@@ -41,11 +41,6 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
           onOpenChange={setExploreOpen}
         />
       )}
-
-      {/* FAB lives here; hidden while the drawer is open */}
-      {!isExploreOpen && (
-        <RecorderControlsFab className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[650]" />
-      )}
     </>
   )
 }
