@@ -20,7 +20,7 @@ export function SocialWeatherStatus({ phrase }: { phrase?: SocialWeatherPhrase |
   return (
     <div
       onClick={() => p.detail && setShowDetail(v => !v)}
-      className="fixed left-1/2 -translate-x-1/2 top-[calc(72px+env(safe-area-inset-top))] z-[560] 
+      className="fixed left-1/2 -translate-x-1/2 top-[calc(80px+env(safe-area-inset-top))] z-[560] 
                  flex items-center gap-2.5 px-3 py-2 rounded-xl backdrop-blur-md
                  text-white select-none"
       style={{

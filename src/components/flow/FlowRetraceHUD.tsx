@@ -18,7 +18,7 @@ export function FlowRetraceHUD(){
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed left-1/2 top-[calc(72px+env(safe-area-inset-top))] z-[610] -translate-x-1/2"
+      className="pointer-events-none fixed left-1/2 top-[calc(80px+env(safe-area-inset-top))] z-[610] -translate-x-1/2"
     >
       <div className="relative overflow-hidden rounded-full border border-white/10 bg-black/80 px-3 py-1.5 text-white/90 shadow-lg backdrop-blur-md">
         <div className="relative flex items-center gap-2 text-xs font-medium">

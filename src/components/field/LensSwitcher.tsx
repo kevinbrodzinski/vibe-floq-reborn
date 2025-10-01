@@ -24,7 +24,8 @@ export function LensSwitcher() {
     <div
       role="tablist"
       aria-label="Lens mode"
-      className="flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl pointer-events-auto"
+      className="flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl"
+      style={{ pointerEvents: 'auto' }}
     >
       {LENSES.map((k, i) => {
         const active = lens === k;
