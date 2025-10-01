@@ -101,6 +101,23 @@ export class LayerManager {
     this.pending.delete(id);
   }
 
+  /** Register or replace an existing overlay spec (useful for style reloads) */
+  registerOrReplace(spec: OverlaySpec) {
+    const existing = this.overlays.get(spec.id);
+    if (existing) {
+      // Unmount old version if mounted
+      if (existing.mounted && this.map) {
+        this.safe(() => existing.spec.unmount(this.map!));
+      }
+      // Replace with new spec
+      this.overlays.set(spec.id, { spec, mounted: false, setDataCount: 0 });
+      if (this.map && typeof window !== 'undefined') this.tryMount(spec.id);
+    } else {
+      // Fresh registration
+      this.register(spec);
+    }
+  }
+
   // Alias for backward compatibility
   remove(id: string) {
     this.unregister(id);

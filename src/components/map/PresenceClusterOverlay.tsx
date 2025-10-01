@@ -81,7 +81,7 @@ export function PresenceClusterOverlay({ data, enabled = true, beforeId }: Props
 
     const reapply = () => {
       if (!map.isStyleLoaded()) { map.once('idle', reapply); return; }
-      spec.mount(map);
+      layerManager.registerOrReplace(spec);
       // Reapply data after style change to restore avatar sprites
       layerManager.apply('presence', featureCollection);
 

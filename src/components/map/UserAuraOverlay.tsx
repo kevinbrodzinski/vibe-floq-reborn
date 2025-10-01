@@ -74,7 +74,7 @@ export function UserAuraOverlay({
       pending = false;
       
       try {
-        spec.mount(map);
+        layerManager.registerOrReplace(spec);
         incrAura('reapplies');
       } catch (e) {
         console.warn('[UserAuraOverlay] Reapply failed:', e);

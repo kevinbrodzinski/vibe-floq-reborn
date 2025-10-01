@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useBreadcrumbTrail } from '@/hooks/useBreadcrumbTrail';
+import { layerManager } from '@/lib/map/LayerManager';
 // Map instance will be passed as prop for now
 import { createBreadcrumbSpec, installBreadcrumbThemeWatcher } from '@/lib/map/overlays/breadcrumbSpec';
 
@@ -70,8 +71,8 @@ export function BreadcrumbTrailOverlay({ map }: BreadcrumbTrailOverlayProps) {
 
     const spec = createBreadcrumbSpec(); // safe resolver handles placement
     
-    // Mount overlay
-    spec.mount(map);
+    // LayerManager will mount automatically when style is ready
+    layerManager.registerOrReplace(spec);
     
     // Update with current data
     spec.update(map, geoJson);
@@ -85,7 +86,7 @@ export function BreadcrumbTrailOverlay({ map }: BreadcrumbTrailOverlayProps) {
         map.once('idle', reapply); // idle fires after sources/layers loaded
         return;
       }
-      spec.mount(map);
+      layerManager.registerOrReplace(spec);
       if (geoJson) spec.update(map, geoJson);
       // Theme watcher will reapply colors automatically
     };

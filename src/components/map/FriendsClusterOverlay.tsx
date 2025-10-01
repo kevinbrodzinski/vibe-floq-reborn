@@ -31,7 +31,7 @@ export function FriendsClusterOverlay({ data, enabled = true, beforeId }: Props)
     layerManager.register(spec);
     layerManager.apply('friends', data);
 
-    const reapply = () => { if (map.isStyleLoaded()) spec.mount(map); };
+    const reapply = () => { if (map.isStyleLoaded()) layerManager.registerOrReplace(spec); };
     map.on('styledata', reapply);
     map.on('load', reapply);
 

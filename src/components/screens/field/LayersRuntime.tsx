@@ -150,7 +150,6 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       });
 
       layerManager.register(spec);
-      spec.mount(map);
     });
 
     // Initial injection

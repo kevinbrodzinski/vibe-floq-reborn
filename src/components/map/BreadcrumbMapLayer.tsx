@@ -102,7 +102,7 @@ export function BreadcrumbMapLayer({ map }: BreadcrumbMapLayerProps) {
           map.once('idle', reapply); // idle fires after sources/layers loaded
           return;
         }
-        spec.mount(map);
+        layerManager.registerOrReplace(spec);
         if (geoJson) spec.update(map, geoJson);
         // Theme watcher will reapply colors automatically
       };

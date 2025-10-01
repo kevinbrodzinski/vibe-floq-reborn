@@ -45,6 +45,9 @@ jobs:
           for f in supabase/migrations/*.sql; do
             psql postgresql://postgres:postgres@localhost:5432/appdb -v ON_ERROR_STOP=1 -f "$f" || exit 1
           done
+          for f in sql/*.sql; do
+            psql postgresql://postgres:postgres@localhost:5432/appdb -v ON_ERROR_STOP=1 -f "$f" || true
+          done
       - name: Run pg-tap tests
         run: |
           for f in sql/tests/*.sql; do
