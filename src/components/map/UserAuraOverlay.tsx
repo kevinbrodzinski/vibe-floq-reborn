@@ -51,30 +51,27 @@ export function UserAuraOverlay({
 
   // Register overlay spec with LayerManager
   React.useEffect(() => {
+    console.log('[UserAuraOverlay] Effect triggered:', {
+      hasMap: !!map,
+      hasLayerManager: !!layerManager,
+      enabled,
+      styleLoaded: map?.isStyleLoaded()
+    });
+
     if (!map || !layerManager || !enabled) return;
 
     const spec = createUserAuraSpec(beforeId);
+    
+    // LayerManager handles all mounting logic
+    // - Calls tryMount() which checks isStyleLoaded()
+    // - Has style.load listener that remounts all specs
+    // - Spec's mount() has its own idle deferral if needed
+    console.log('[UserAuraOverlay] Registering spec with LayerManager');
     layerManager.register(spec);
     incrAura('mounts');
 
-    // Ensure mounting when style is ready
-    const ensureMount = () => {
-      if (!map.isStyleLoaded()) return;
-      try {
-        spec.mount(map);
-      } catch (e) {
-        console.warn('[UserAuraOverlay] Mount failed:', e);
-      }
-    };
-
-    // Mount immediately if style is ready, otherwise wait for style.load
-    if (map.isStyleLoaded()) {
-      ensureMount();
-    } else {
-      map.once('style.load', ensureMount);
-    }
-
     return () => {
+      console.log('[UserAuraOverlay] Cleanup - unregistering');
       layerManager.unregister('user-aura');
       incrAura('unmounts');
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
