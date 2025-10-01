@@ -77,7 +77,7 @@ export function useFlowExplore({
     } finally {
       if (rid === requestIdRef.current) setLoading(false)
     }
-  }, [map, lens, filters, zoom, clusterRes, bboxOrNull, onLatencyMs])
+  }, [map, lens, filters, clusterRes, bboxOrNull, onLatencyMs])
 
   // Debounced moveend/zoomend + react to chip changes
   React.useEffect(() => {
