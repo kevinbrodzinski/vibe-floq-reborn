@@ -170,7 +170,10 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
 
     // Re-run after style changes with a debounce (safer than 16ms under style churn)
     const onStyleData = () => {
-      if (styleTimerRef.current) clearTimeout(styleTimerRef.current);
+      if (styleTimerRef.current) {
+        clearTimeout(styleTimerRef.current);
+        styleTimerRef.current = null;
+      }
       styleTimerRef.current = setTimeout(reinject, 50);
     };
     map.on("styledata", onStyleData);
@@ -178,7 +181,10 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     return () => {
       disposed = true;
       map.off("styledata", onStyleData);
-      if (styleTimerRef.current) clearTimeout(styleTimerRef.current);
+      if (styleTimerRef.current) {
+        clearTimeout(styleTimerRef.current);
+        styleTimerRef.current = null;
+      }
       layerManager.unregister('presence');
     };
   }, [map, layerManager]);
