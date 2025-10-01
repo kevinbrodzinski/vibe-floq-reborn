@@ -14,8 +14,18 @@ export function FlowRecorderFAB({
   const isRec   = state === 'recording'
   const isPause = state === 'paused'
 
+  // Prevent map from hijacking touch
+  const stop = (e: React.MouseEvent | React.TouchEvent) => e.stopPropagation()
+
   return (
-    <div className={cn('pointer-events-auto fixed right-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-[720]', className)}>
+    <div
+      className={cn(
+        "fixed right-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] z-[720] pointer-events-auto",
+        className
+      )}
+      onMouseDown={stop}
+      onTouchStart={stop}
+    >
       {state === 'idle' || state === 'ended' ? (
         <button
           onClick={onStart}

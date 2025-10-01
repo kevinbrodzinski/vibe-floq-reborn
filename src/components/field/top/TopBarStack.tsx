@@ -28,13 +28,18 @@ export default function TopBarStack({ children, className, rowGap = 10 }: Props)
   return (
     <div
       className={clsx(
-        "pointer-events-none fixed left-0 right-0 z-[700] isolate",
+        "fixed left-0 right-0",
         "top-[calc(env(safe-area-inset-top,0px)+16px)]",
+        "z-[700] pointer-events-none isolate",
         className
       )}
       aria-label="field-top-ui"
     >
-      <div ref={ref} className="pointer-events-auto mx-auto flex max-w-screen-xl flex-col px-4" style={style}>
+      <div
+        ref={ref}
+        className="pointer-events-auto mx-auto flex max-w-screen-xl flex-col px-4"
+        style={style}
+      >
         {children}
       </div>
     </div>

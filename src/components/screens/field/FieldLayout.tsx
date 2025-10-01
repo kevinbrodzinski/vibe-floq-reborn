@@ -64,6 +64,7 @@ import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary';
 import { useFieldLens } from '@/components/field/FieldLensProvider';
 import { USE_TOPBAR_STACK } from '@/features/field/config';
 import { TemporalController } from '@/components/Temporal/TemporalController';
+import { AvatarDropdown } from '@/components/AvatarDropdown';
 
 interface FieldLayoutProps {
 }
@@ -333,6 +334,12 @@ export const FieldLayout = () => {
 
           {/* Lens System - z-700 with TopBarStack */}
                 <LensHotkeys />
+                
+                {/* Profile Avatar - Top right */}
+                <div className="fixed top-[calc(env(safe-area-inset-top,0px)+16px)] right-4 z-[700] pointer-events-auto">
+                  <AvatarDropdown />
+                </div>
+
                 {USE_TOPBAR_STACK && (
                   <TopBarStack>
                     <div className="pointer-events-auto flex items-center justify-center">
