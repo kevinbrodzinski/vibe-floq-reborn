@@ -71,10 +71,53 @@ export const PlanSummarySchema = z.object({
   mode: z.enum(["finalized", "afterglow"]).default("finalized")
 });
 
+// nearby_people
+export const NearbyPeopleSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  limit: z.number().int().min(1).max(100).default(12),
+  metres: z.number().int().min(1).max(5000).default(1000)
+});
+
+// relationship-tracker
+export const RelationshipTrackerSchema = z.object({
+  profile_id: z.string().uuid(),
+  nearby_users: z.array(z.object({
+    profile_id: z.string().uuid(),
+    distance_meters: z.number().min(0).max(100000),
+    vibe: z.string().max(64).optional()
+  })).max(500),
+  current_vibe: z.string().max(64).optional(),
+  venue_id: z.string().uuid().nullable().optional(),
+  timestamp: z.string().datetime().optional()
+});
+
+// activity-score-processor
+export const ActivityEventsSchema = z.object({
+  events: z.array(z.object({
+    floq_id: z.string().uuid(),
+    event_type: z.enum(['proximity_update','join','leave','vibe_change']),
+    user_id: z.string().uuid(),
+    proximity_users: z.number().int().min(0).max(5000).optional(),
+    vibe: z.string().max(64).optional(),
+    timestamp: z.string().datetime().optional()
+  })).min(1).max(200)
+});
+
+// ripple-share
+export const RippleShareSchema = z.object({
+  afterglow_id: z.string().uuid(),
+  user_id: z.string().uuid().optional()
+});
+
 /* Types */
-export type FieldTilesReq    = z.infer<typeof FieldTilesSchema>;
-export type VenueIntelReq    = z.infer<typeof VenueIntelSchema>;
-export type SearchThreadsReq = z.infer<typeof SearchThreadsSchema>;
-export type PlanSummaryReq   = z.infer<typeof PlanSummarySchema>;
-export type PresenceUpsert   = z.infer<typeof PresenceUpsertSchema>;
-export type InviteCreate     = z.infer<typeof InviteCreateSchema>;
+export type FieldTilesReq       = z.infer<typeof FieldTilesSchema>;
+export type VenueIntelReq       = z.infer<typeof VenueIntelSchema>;
+export type SearchThreadsReq    = z.infer<typeof SearchThreadsSchema>;
+export type PlanSummaryReq      = z.infer<typeof PlanSummarySchema>;
+export type PresenceUpsert      = z.infer<typeof PresenceUpsertSchema>;
+export type InviteCreate        = z.infer<typeof InviteCreateSchema>;
+export type NearbyPeopleReq     = z.infer<typeof NearbyPeopleSchema>;
+export type RelationshipTracker = z.infer<typeof RelationshipTrackerSchema>;
+export type ActivityEvents      = z.infer<typeof ActivityEventsSchema>;
+export type RippleShare         = z.infer<typeof RippleShareSchema>;

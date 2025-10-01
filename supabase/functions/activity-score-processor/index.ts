@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
+import { ActivityEventsSchema, parseJson } from "../_shared/zod.ts";
 import { logInvocation, EdgeLogStatus, withTimeout } from "../_shared/edge-logger.ts";
 
 const corsHeaders = {
@@ -7,22 +8,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ActivityEvent {
-  floq_id: string;
-  event_type: 'join' | 'leave' | 'vibe_change' | 'proximity_update';
-  user_id: string;
-  proximity_users?: number;
-  vibe?: string;
-}
+const jsonRes = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
 
+// Use service-role for bulk activity scoring (system operation)
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return jsonRes(405, { error: 'Method not allowed' });
   }
 
   const startTime = Date.now();
@@ -37,20 +41,14 @@ serve(async (req) => {
     if ((err as Error).message === 'function timed out') {
       status = 'timeout';
       errorMessage = 'Function execution timed out';
-      return new Response(JSON.stringify({ error: "Request timeout" }), {
-        status: 504,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return jsonRes(504, { error: 'Request timeout' });
     }
     
     status = 'error';
     errorMessage = (err as Error).message;
-    console.error("Activity score processor error:", err);
+    console.error("[activity-score-processor] Error:", err);
     
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return jsonRes(500, { error: (err as Error).message });
   } finally {
     await logInvocation({
       functionName: 'activity-score-processor',
@@ -62,36 +60,38 @@ serve(async (req) => {
   }
 
   async function doWork() {
-    const body = await req.json();
-    const { events } = body;
+    // Parse and validate request body
+    const body = await req.json().catch(() => null);
+    const parsed = parseJson(ActivityEventsSchema, body, corsHeaders);
+    if (parsed.error) return parsed.error;
 
-    if (!Array.isArray(events)) {
-      return new Response(JSON.stringify({ error: "Events must be an array" }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    const { events } = parsed.data;
 
-    console.log(`Processing ${events.length} activity events`);
+    console.log(`[activity-score-processor] Processing ${events.length} activity events`);
 
     const results = [];
 
     // Process events in batches
-    for (const event of events as ActivityEvent[]) {
+    for (const event of events) {
       try {
-        // Calculate activity score using our SQL function
+        // Calculate activity score using SQL function
         const { data: scoreData, error: scoreError } = await supabase.rpc('calculate_floq_activity_score', {
           p_floq_id: event.floq_id,
-          p_event_type: event.event_type as 'join' | 'leave' | 'vibe_change' | 'proximity_update',
+          p_event_type: event.event_type,
           p_proximity_boost: event.proximity_users || 0
         });
 
         if (scoreError) {
-          console.error(`Score calculation error for floq ${event.floq_id}:`, scoreError);
+          console.error(`[activity-score-processor] Score error for floq ${event.floq_id}:`, scoreError);
+          results.push({
+            floq_id: event.floq_id,
+            processed: false,
+            error: scoreError.message
+          });
           continue;
         }
 
-        // Log the activity in history
+        // Log activity in history
         const { error: historyError } = await supabase
           .from('flock_history')
           .insert({
@@ -101,12 +101,12 @@ serve(async (req) => {
             new_vibe: event.vibe,
             metadata: {
               proximity_users: event.proximity_users,
-              timestamp: new Date().toISOString()
+              timestamp: event.timestamp || new Date().toISOString()
             }
           });
 
         if (historyError) {
-          console.error(`History logging error for floq ${event.floq_id}:`, historyError);
+          console.error(`[activity-score-processor] History error for floq ${event.floq_id}:`, historyError);
         }
 
         results.push({
@@ -116,7 +116,7 @@ serve(async (req) => {
         });
 
       } catch (eventError) {
-        console.error(`Error processing event for floq ${event.floq_id}:`, eventError);
+        console.error(`[activity-score-processor] Event error for floq ${event.floq_id}:`, eventError);
         results.push({
           floq_id: event.floq_id,
           processed: false,
@@ -125,32 +125,27 @@ serve(async (req) => {
       }
     }
 
-    // Clean up expired floqs (activity score = 0 and ended)
+    // Clean up expired floqs
     const { data: cleanupData, error: cleanupError } = await supabase.rpc('cleanup_inactive_floqs');
     
     if (cleanupError) {
-      console.error("Cleanup error:", cleanupError);
+      console.error("[activity-score-processor] Cleanup error:", cleanupError);
     }
 
-    console.log(`Processed ${results.length} events, cleaned up ${cleanupData || 0} inactive floqs`);
+    console.log(`[activity-score-processor] Processed ${results.length} events, cleaned ${cleanupData || 0} inactive floqs`);
 
-    // Set metadata for logging with size guards
+    // Set metadata for logging
     metadata = {
       events_processed: events.length,
       successful_events: results.filter(r => r.processed).length,
       failed_events: results.filter(r => !r.processed).length,
-      cleanup_count: cleanupData || 0,
-      // Sample of results for debugging (first 5 only)
-      results_sample: results.slice(0, 5),
-      results_total_count: results.length
+      cleanup_count: cleanupData || 0
     };
 
-    return new Response(JSON.stringify({ 
+    return jsonRes(200, { 
       results,
       cleanup_count: cleanupData || 0,
       total_processed: results.filter(r => r.processed).length
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-  } // End of doWork function
+  }
 });
