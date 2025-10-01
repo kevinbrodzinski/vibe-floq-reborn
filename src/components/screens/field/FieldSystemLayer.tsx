@@ -7,7 +7,6 @@ import { useVibeNow } from '@/hooks/useVibeNow'
 import { useToast } from '@/hooks/use-toast'
 import { ExploreDrawerWithFlow } from '@/components/field/ExploreDrawerWithFlow'
 import { useFlowRecorder } from '@/hooks/useFlowRecorder'
-import { RecorderControlsFab } from '@/components/flow/RecorderControlsFab' // NEW
 import { useExploreDrawer } from '@/contexts/ExploreDrawerContext'
 
 type FieldSystemLayerProps = { data: any }
