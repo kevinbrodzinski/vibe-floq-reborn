@@ -10,12 +10,12 @@ import { vibeToHex } from '@/lib/vibe/color';
 import { calculateDistance as calculateDistanceMeters } from '@/lib/location/standardGeo';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { incrAura } from '@/lib/telemetry';
-import type { LayerManager } from '@/lib/map/LayerManager';
+import type { LayerManagerFacade } from '@/lib/map/LayerManager';
 import { AURA_BEFORE } from '@/lib/map/ids';
 
 type Props = {
   map: mapboxgl.Map | null;
-  layerManager: LayerManager | null;
+  layerManager: LayerManagerFacade | null;
   beforeId?: string;               // layer insert anchor (safe fallback applied)
   position?: { lat: number; lng: number } | null;  // optional external position
   enabled?: boolean;

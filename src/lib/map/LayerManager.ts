@@ -93,6 +93,19 @@ export class LayerManager {
     if (this.map && typeof window !== 'undefined') this.tryMount(spec.id);
   }
 
+  /** Check if an overlay is registered */
+  has(id: string): boolean {
+    return this.overlays.has(id);
+  }
+
+  /** Atomically replace an overlay: unregister if exists, then register */
+  registerOrReplace(spec: OverlaySpec) {
+    if (this.has(spec.id)) {
+      this.unregister(spec.id);
+    }
+    this.register(spec);
+  }
+
   unregister(id: string) {
     const ent = this.overlays.get(id);
     if (!ent || !this.map) { this.overlays.delete(id); return; }
@@ -194,3 +207,18 @@ export class LayerManager {
 }
 
 export const layerManager = new LayerManager();
+
+/**
+ * LayerManager facade type - exposes safe public API
+ * Use this type instead of LayerManager in component props
+ */
+export type LayerManagerFacade = {
+  register: (spec: OverlaySpec) => void;
+  unregister: (id: string) => void;
+  apply: (id: string, data: any) => void;
+  has: (id: string) => boolean;
+  registerOrReplace: (spec: OverlaySpec) => void;
+  onApply: (listener: (ev: ApplyEvent) => void) => () => void;
+  getStats: () => Record<string, number>;
+  setLowPower: (enabled: boolean) => void;
+};

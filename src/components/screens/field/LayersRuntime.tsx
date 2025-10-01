@@ -92,12 +92,9 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     { size: 64, concurrency: 3 }
   );
 
-  // Build unified presence data safely
-  const presenceFC = useMemo(() => {
-    // self tap is handled by aura overlay → don't inject here
-    const self = undefined;
-
-    const friends = friendsList
+  // Memoize friend points separately to reduce presenceFC churn
+  const friendPoints = useMemo(() => {
+    return friendsList
       .map((f: any) => ({
         id: String(f.id ?? ''),
         name: f.display_name ?? f.name ?? '',
@@ -105,9 +102,15 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
         lat: Number(f.lat),
         lng: Number(f.lng),
         vibe: f.vibe ?? f.currentVibe ?? undefined,
-        iconId: iconIds[String(f.id ?? '')] ?? undefined,
+        iconId: iconIds[String(f.id ?? '')],
       }))
       .filter((f: any) => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.id);
+  }, [friendsList, iconIds]);
+
+  // Build unified presence data safely
+  const presenceFC = useMemo(() => {
+    // self tap is handled by aura overlay → don't inject here
+    const self = undefined;
 
     const venues = nearbyVenues
       .map((v: any) => ({
@@ -119,8 +122,8 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       }))
       .filter((v: any) => Number.isFinite(v.lat) && Number.isFinite(v.lng) && v.id);
 
-    return buildPresenceFC({ self, friends, venues });
-  }, [nearbyVenues, friendsList, iconIds]);
+    return buildPresenceFC({ self, friends: friendPoints, venues });
+  }, [friendPoints, nearbyVenues]);
 
   // Utility – run fn when the map's style is actually usable
   function withStyleReady(map: mapboxgl.Map, fn: () => void) {
@@ -135,11 +138,11 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   // ---------- Register and apply unified presence overlay ----------
   useEffect(() => {
     if (!map || !layerManager) return;
+    let disposed = false;
 
-    const reinject = () => withStyleReady(map, () => {
-      // Clean any previous instance to avoid duplicate registration
-      layerManager.unregister('presence');
-
+    const reinject = () => {
+      if (disposed) return;
+      
       // Compute preferred anchor:
       // 1) if our aura outer exists, use it (keeps presence just above aura)
       // 2) otherwise resolve to the first reasonable label layer
@@ -153,12 +156,17 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
         includeSelfHit: false, // aura owns it
       });
 
-      layerManager.register(spec);
+      // Use registerOrReplace for atomic replacement
+      layerManager.registerOrReplace(spec);
       spec.mount(map);
-    });
+    };
 
-    // Initial injection
-    reinject();
+    // Use style.load for first mount, then styledata for subsequent changes
+    if (map.isStyleLoaded()) {
+      reinject();
+    } else {
+      map.once('style.load', reinject);
+    }
 
     // Re-run after style changes with a debounce (safer than 16ms under style churn)
     const onStyleData = () => {
@@ -168,6 +176,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     map.on("styledata", onStyleData);
 
     return () => {
+      disposed = true;
       map.off("styledata", onStyleData);
       if (styleTimerRef.current) clearTimeout(styleTimerRef.current);
       layerManager.unregister('presence');
@@ -177,6 +186,9 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
   // Apply feature collection when it changes
   useEffect(() => {
     if (!map || !layerManager) return;
+    
+    // Only apply if the layer is registered
+    if (!layerManager.has('presence')) return;
     layerManager.apply('presence', presenceFC);
     
     // Expose global state for convergence ranking (SSR-safe)
@@ -231,7 +243,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
             venue
           };
         }
-        (window as any).floq.friendsIndex = idx;
+        (window as any).floq.friendsIndex = Object.freeze(idx);
       } catch {
         // keep UI resilient
       }
