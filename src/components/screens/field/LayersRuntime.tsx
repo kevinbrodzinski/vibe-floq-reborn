@@ -125,12 +125,6 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
     return buildPresenceFC({ self, friends: friendPoints, venues });
   }, [friendPoints, nearbyVenues]);
 
-  // Utility – run fn when the map's style is actually usable
-  function withStyleReady(map: mapboxgl.Map, fn: () => void) {
-    if (map.isStyleLoaded()) return void fn();
-    const onLoad = () => { map.off("styledata", onLoad); fn(); };
-    map.on("styledata", onLoad);
-  }
 
   // single debounce per component instance to avoid thrash (survives renders)
   const styleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -157,8 +151,7 @@ export function LayersRuntime({ data }: LayersRuntimeProps) {
       });
 
       // Use registerOrReplace for atomic replacement
-      layerManager.registerOrReplace(spec);
-      spec.mount(map);
+      layerManager.registerOrReplace(spec); // manager mounts when style is ready
     };
 
     // Use style.load for first mount, then styledata for subsequent changes

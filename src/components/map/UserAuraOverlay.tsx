@@ -54,39 +54,10 @@ export function UserAuraOverlay({
     if (!map || !layerManager || !enabled) return;
 
     const spec = createUserAuraSpec(beforeId);
-    layerManager.register(spec);
+    layerManager.register(spec); // LayerManager handles mounting
     incrAura('mounts');
 
-    // Style reload resilience - defer until style is idle
-    let pending = false;
-    const reapply = () => {
-      if (pending) return;
-      pending = true;
-      
-      if (!map.isStyleLoaded()) { 
-        map.once('idle', () => {
-          pending = false;
-          reapply();
-        }); 
-        return; 
-      }
-      
-      pending = false;
-      
-      try {
-        spec.mount(map);
-        incrAura('reapplies');
-      } catch (e) {
-        console.warn('[UserAuraOverlay] Reapply failed:', e);
-      }
-    };
-    
-    map.on('styledata', reapply);
-    map.on('load', reapply);
-
     return () => {
-      map.off('styledata', reapply);
-      map.off('load', reapply);
       layerManager.unregister('user-aura');
       incrAura('unmounts');
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
