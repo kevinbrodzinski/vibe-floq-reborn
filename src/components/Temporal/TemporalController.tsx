@@ -9,10 +9,11 @@ import { TemporalConfidenceHUD } from './TemporalConfidenceHUD';
 
 type Horizon = 'now'|'p30'|'p120'|'historic';
 
-export function TemporalController({ map, onInsight, pixiLayerRef }: { 
+export function TemporalController({ map, onInsight, pixiLayerRef, inline = false }: { 
   map?: any; 
   onInsight?: (s?:string)=>void;
   pixiLayerRef?: React.MutableRefObject<any | null>;
+  inline?: boolean;
 }) {
   const currentMap = map || getCurrentMap();
   const { viewport, viewportKey } = useViewportInput({ defaultRadius: 900 });
@@ -50,8 +51,12 @@ export function TemporalController({ map, onInsight, pixiLayerRef }: {
     return h === 'p30' ? '+30m' : h === 'p120' ? '+2h' : h === 'now' ? 'Now' : 'Historic'
   }
 
+  const containerClass = inline
+    ? "pointer-events-auto flex items-center gap-3 bg-background/90 backdrop-blur px-3 py-2 rounded-xl border border-border shadow-sm"
+    : "fixed left-1/2 -translate-x-1/2 top-6 z-[580] flex items-center gap-3 bg-black/35 backdrop-blur px-3 py-2 rounded-xl";
+
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 top-6 z-[580] flex items-center gap-3 bg-black/35 backdrop-blur px-3 py-2 rounded-xl">
+    <div className={containerClass}>
       {(['now','p30','p120','historic'] as Horizon[]).map(x => (
         <button
           key={x}

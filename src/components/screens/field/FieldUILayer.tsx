@@ -350,8 +350,8 @@ export function FieldUILayer() {
         </div>
       )}
 
-      {/* Temporal lens */}
-      {lens === 'temporal' && (
+      {/* Temporal lens - legacy render path (disabled when TopBarStack is active) */}
+      {!USE_TOPBAR_STACK && lens === 'temporal' && (
         <div id="lens-panel-temporal" role="tabpanel" aria-labelledby="tab-temporal" className="fixed top-20 left-1/2 -translate-x-1/2 z-[580] pointer-events-auto">
           <TemporalController map={map} pixiLayerRef={pixiRef} />
         </div>

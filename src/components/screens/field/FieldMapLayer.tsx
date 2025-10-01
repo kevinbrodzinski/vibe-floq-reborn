@@ -18,21 +18,13 @@ import type { FieldData } from '../field/FieldDataProvider';
 
 // Fixed wrapper that uses proper React patterns
 function LayersRuntimeWrapper({ data }: { data: FieldData }) {
-  const pixiRef = React.useRef<PixiLayerHandle>(null);
-  
   return (
     <>
       {/* Standard map layers */}
       <LayersRuntime data={data} />
       
       {/* Pixi Atmospherics */}
-      <AtmosphereLayer ref={pixiRef} weatherCells={data.weatherCells} />
-      
-      {/* Temporal controller (can emit to Pixi via ref) */}
-      <TemporalController 
-        map={null} // Will get map from singleton
-        pixiLayerRef={pixiRef}
-      />
+      <AtmosphereLayer weatherCells={data.weatherCells} />
     </>
   );
 }

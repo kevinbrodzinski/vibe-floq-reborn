@@ -63,6 +63,7 @@ import { FlowExploreChips } from '@/components/flow/FlowExploreChips';
 import { FlowErrorBoundary } from '@/components/flow/FlowErrorBoundary';
 import { useFieldLens } from '@/components/field/FieldLensProvider';
 import { USE_TOPBAR_STACK } from '@/features/field/config';
+import { TemporalController } from '@/components/Temporal/TemporalController';
 
 interface FieldLayoutProps {
 }
@@ -349,6 +350,11 @@ export const FieldLayout = () => {
                             sunScore={sunScore ?? undefined}
                           />
                         </FlowErrorBoundary>
+                      </div>
+                    )}
+                    {lens === 'temporal' && (
+                      <div className="flex items-center justify-center">
+                        <TemporalController inline map={map} />
                       </div>
                     )}
                   </TopBarStack>
