@@ -1,7 +1,16 @@
 /**
  * Z-Index hierarchy for FLOQ overlay elements
  * 
- * Top to bottom layering:
+ * Vertical Layout (top to bottom):
+ * - 16px: LensSwitcher (z-700) - primary navigation, always visible
+ * - 72px: FlowExploreChips (z-660) - only in explore mode
+ * - 72px: FlowRetraceHUD (z-610) - only during retrace
+ * - 72px: SocialWeatherStatus (z-560) - conditional weather info
+ * - 72px: ConvergenceNotificationSystem (z-610) - convergence alerts
+ * - 120px: LensStatusHUD (z-560, left) - lens context info
+ * - 120px: PatternLearningIndicator (z-50, right) - learning feedback
+ * 
+ * Z-Index layers (top to bottom):
  * - critical (9999): NetworkStatusBanner - critical system alerts
  * - lens (700): LensSwitcher - primary navigation control
  * - chips (660): FlowExploreChips - contextual filter controls

@@ -1,5 +1,6 @@
 import React from 'react'
 import type { FlowFilters } from '@/lib/flow/types'
+import { useFieldLens } from '@/components/field/FieldLensProvider'
 
 interface Props {
   value: FlowFilters
@@ -11,12 +12,16 @@ interface Props {
 }
 
 export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScore }: Props) {
+  const { lens } = useFieldLens()
   const set = (patch: Partial<FlowFilters>) => onChange({ ...value, ...patch })
   const nextDensity = (d?: 'loose'|'normal'|'tight'): 'loose'|'normal'|'tight' =>
     d === 'loose' ? 'normal' : d === 'normal' ? 'tight' : 'loose'
 
+  // Only show in explore mode
+  if (lens !== 'explore') return null
+
   return (
-    <div className="fixed left-0 right-0 top-[calc(16px+env(safe-area-inset-top))] z-[660] pointer-events-none">
+    <div className="fixed left-0 right-0 top-[calc(72px+env(safe-area-inset-top))] z-[660] pointer-events-none">
       <div className="mx-4 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2 pointer-events-auto">
           <button
