@@ -34,7 +34,7 @@ export default function TopBarStack({ children, className, rowGap = 10 }: Props)
       )}
       aria-label="field-top-ui"
     >
-      <div ref={ref} className="mx-auto flex max-w-screen-xl flex-col px-4" style={style}>
+      <div ref={ref} className="pointer-events-auto mx-auto flex max-w-screen-xl flex-col px-4" style={style}>
         {children}
       </div>
     </div>

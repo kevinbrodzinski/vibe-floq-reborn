@@ -335,25 +335,25 @@ export const FieldLayout = () => {
                 <LensHotkeys />
                 {USE_TOPBAR_STACK && (
                   <TopBarStack>
-                    <div className="flex items-center justify-center">
+                    <div className="pointer-events-auto flex items-center justify-center">
                       <LensSwitcher inline />
                     </div>
-                    {lens === 'explore' && filtersLoaded && (
-                      <div className="flex items-center justify-center">
+                    {lens === 'explore' && (
+                      <div className="pointer-events-auto flex items-center justify-center">
                         <FlowErrorBoundary>
                           <FlowExploreChips 
                             inline
                             value={filters} 
                             onChange={setFilters} 
                             clusterRes={clusterRes}
-                            loading={loading}
+                            loading={loading || !filtersLoaded}
                             sunScore={sunScore ?? undefined}
                           />
                         </FlowErrorBoundary>
                       </div>
                     )}
                     {lens === 'temporal' && (
-                      <div className="flex items-center justify-center">
+                      <div className="pointer-events-auto flex items-center justify-center">
                         <TemporalController inline map={map} />
                       </div>
                     )}
