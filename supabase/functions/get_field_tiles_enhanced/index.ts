@@ -2,6 +2,7 @@
 // Privacy-aware field tiles fetch with k-anon, optional history, and friendship-scoped ids.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { FieldTilesSchema, parseJson } from '../_shared/zod.ts'
 
 // ── Configs ─────────────────────────────────────────────────────────────────────
 const MAX_TILE_IDS = 250
@@ -67,11 +68,12 @@ Deno.serve(async (req) => {
     const { data: viewerRes } = await supabase.auth.getUser()
     const viewerId: string | null = viewerRes?.user?.id ?? null
 
-    // body
-    const body = await req.json().catch(() => ({}))
-    const tile_ids: string[] = Array.isArray(body.tile_ids) ? body.tile_ids.slice(0, MAX_TILE_IDS) : []
-    const include_history: boolean = !!body.include_history
-    const time_window_seconds: number = Number.isFinite(body.time_window_seconds) ? body.time_window_seconds : 300
+    // body - validate with Zod
+    const json = await req.json().catch(() => null)
+    const parsed = parseJson(FieldTilesSchema, json)
+    if (parsed.error) return parsed.error
+    
+    const { tile_ids, include_history, time_window_seconds } = parsed.data
 
     if (tile_ids.length === 0) {
       return new Response(JSON.stringify({ tiles: [] }), { headers, status: 200 })

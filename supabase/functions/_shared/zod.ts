@@ -32,5 +32,48 @@ export const InviteCreateSchema = z.object({
   message: z.string().max(500).optional()
 });
 
+/* ---------- Common primitives ---------- */
+export const UUID = () => z.string().uuid();
+export const ISODate = () => z.string().datetime().optional();
+export const NonEmpty = () => z.string().min(1);
+export const Pagination = z.object({
+  limit: z.number().int().min(1).max(200).default(50),
+  cursor: z.string().optional()
+});
+
+/* ---------- Edge-specific schemas ---------- */
+
+// get_field_tiles_enhanced
+export const FieldTilesSchema = z.object({
+  tile_ids: z.array(z.string()).max(250),
+  include_history: z.boolean().default(false),
+  time_window_seconds: z.number().int().min(0).max(3600).default(300)
+});
+
+// venue-intelligence (get-venue-intelligence)
+export const VenueIntelSchema = z.object({
+  mode: z.enum(["social-suggestions", "people", "posts", "energy"]),
+  venue_id: z.string().uuid().optional(),
+  user_id: z.string().uuid().optional(),
+  limit: z.number().int().min(1).max(100).default(10)
+});
+
+// search-threads
+export const SearchThreadsSchema = z.object({
+  query: z.string().min(1).max(200),
+  limit: z.number().int().min(1).max(50).default(20)
+});
+
+// generate-plan-summary
+export const PlanSummarySchema = z.object({
+  plan_id: z.string().uuid(),
+  mode: z.enum(["finalized", "afterglow"]).default("finalized")
+});
+
+/* Types */
+export type FieldTilesReq = z.infer<typeof FieldTilesSchema>;
+export type VenueIntelReq = z.infer<typeof VenueIntelSchema>;
+export type SearchThreadsReq = z.infer<typeof SearchThreadsSchema>;
+export type PlanSummaryReq = z.infer<typeof PlanSummarySchema>;
 export type PresenceUpsert = z.infer<typeof PresenceUpsertSchema>;
 export type InviteCreate = z.infer<typeof InviteCreateSchema>;

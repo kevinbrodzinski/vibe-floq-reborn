@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0'
 import { getUserId } from '../_shared/getUserId.ts'
+import { SearchThreadsSchema, parseJson } from '../_shared/zod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,14 +36,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Parse request body
-    const { query, limit = 20 } = await req.json()
-    if (!query || typeof query !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'Query parameter is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Parse request body with Zod validation
+    const json = await req.json().catch(() => null)
+    const parsed = parseJson(SearchThreadsSchema, json)
+    if (parsed.error) return parsed.error
+    
+    const { query, limit } = parsed.data
 
     console.log(`[search-threads] Searching for: "${query}" (profile_id: ${profileId})`)
 

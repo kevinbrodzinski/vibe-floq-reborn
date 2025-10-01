@@ -3,20 +3,11 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 import { corsHeaders } from "../_shared/cors.ts";
+import { VenueIntelSchema, parseJson } from "../_shared/zod.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-const VenueQuerySchema = {
-  safeParse: (data: any) => {
-    const validModes = ['social-suggestions', 'people', 'posts', 'energy'];
-    if (!data.mode || !validModes.includes(data.mode)) {
-      return { success: false, error: { format: () => 'Invalid mode' } };
-    }
-    return { success: true, data };
-  }
-};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,20 +16,11 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const input = VenueQuerySchema.safeParse(body);
+    const json = await req.json().catch(() => null);
+    const parsed = parseJson(VenueIntelSchema, json);
+    if (parsed.error) return parsed.error;
 
-    if (!input.success) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid payload', 
-        details: input.error.format() 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { mode, venue_id, user_id, limit = 10 } = input.data;
+    const { mode, venue_id, user_id, limit } = parsed.data;
 
     switch (mode) {
       case 'social-suggestions': {

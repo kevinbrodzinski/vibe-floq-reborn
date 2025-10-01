@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { PlanSummarySchema, parseJson } from '../_shared/zod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,21 +15,12 @@ serve(async (req) => {
   }
 
   try {
-    const { plan_id, mode = 'finalized' } = await req.json();
-
-    if (!plan_id) {
-      return new Response(JSON.stringify({ error: 'Missing plan_id' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!['finalized', 'afterglow'].includes(mode)) {
-      return new Response(JSON.stringify({ error: 'Invalid mode. Must be "finalized" or "afterglow"' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Validate request with Zod
+    const json = await req.json().catch(() => null);
+    const parsed = parseJson(PlanSummarySchema, json);
+    if (parsed.error) return parsed.error;
+    
+    const { plan_id, mode } = parsed.data;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
