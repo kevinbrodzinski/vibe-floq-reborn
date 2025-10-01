@@ -54,7 +54,7 @@ serve(async (req) => {
           stop_order
         ),
         plan_participants (
-          profiles:user_id (
+          profiles:profile_id (
             display_name,
             username
           )

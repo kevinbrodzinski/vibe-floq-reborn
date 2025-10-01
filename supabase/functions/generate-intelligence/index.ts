@@ -235,7 +235,7 @@ Write a compelling one-sentence summary that captures the essence of this day in
               stop_order
             ),
             plan_participants (
-              profiles:user_id (
+              profiles:profile_id (
                 display_name,
                 username
               )
