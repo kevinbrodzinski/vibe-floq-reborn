@@ -334,17 +334,21 @@ export const FieldLayout = () => {
 
           {/* Lens System - z-700 with TopBarStack */}
                 <LensHotkeys />
-                
-                {/* Profile Avatar - Top right */}
-                <div className="fixed top-[calc(env(safe-area-inset-top,0px)+16px)] right-4 z-[700] pointer-events-auto">
-                  <AvatarDropdown />
-                </div>
 
                 {USE_TOPBAR_STACK && (
                   <TopBarStack>
-                    <div className="pointer-events-auto flex items-center justify-center">
-                      <LensSwitcher inline />
+                    {/* Row 1: center lens, avatar on the right */}
+                    <div className="pointer-events-auto relative mx-auto w-full max-w-screen-xl">
+                      <div className="flex items-center justify-center">
+                        <LensSwitcher inline />
+                      </div>
+                      {/* Avatar pinned to top-right inside the same stack context */}
+                      <div className="absolute right-0 top-0 z-10">
+                        <AvatarDropdown />
+                      </div>
                     </div>
+
+                    {/* Row 2: per-lens secondary controls */}
                     {lens === 'explore' && (
                       <div className="pointer-events-auto flex items-center justify-center">
                         <FlowErrorBoundary>
