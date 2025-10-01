@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Events, onEvent, emitEvent } from '@/services/eventBridge';
 import { useEnhancedHaptics } from '@/hooks/useEnhancedHaptics';
+import clsx from 'clsx';
 
 type Payload = {
   predictedLocation: { lng:number; lat:number; venueName?:string }
@@ -11,7 +12,12 @@ type Payload = {
   confidence: number;
 };
 
-export function ConvergenceNotificationSystem() {
+type Props = {
+  inline?: boolean;
+  className?: string;
+};
+
+export function ConvergenceNotificationSystem({ inline = false, className }: Props) {
   const [evt, setEvt] = React.useState<Payload | null>(null);
   const [busy, setBusy] = React.useState(false);
   const { success } = useEnhancedHaptics();
@@ -52,14 +58,8 @@ export function ConvergenceNotificationSystem() {
   const minutes = Math.max(1, Math.ceil(Math.min(180, evt.timeToMeet) / 60));
   const probPct = Math.round(evt.probability * 100);
 
-  return (
-    <div
-      className="fixed left-1/2 -translate-x-1/2 top-[calc(72px+env(safe-area-inset-top))] z-[610]
-                 pointer-events-none w-[min(560px,calc(100vw-24px))]"
-      aria-live="polite"
-    >
-      <div className="pointer-events-auto bg-card/90 border border-border rounded-xl shadow-xl
-                      px-3 py-2 flex items-center gap-3">
+  const notificationContent = (
+    <div className="pointer-events-auto bg-card/90 border border-border rounded-xl shadow-xl px-3 py-2 flex items-center gap-3">
         <div className="text-lg">⚡</div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate">
@@ -89,6 +89,25 @@ export function ConvergenceNotificationSystem() {
           </button>
         </div>
       </div>
+  );
+
+  if (inline) {
+    return (
+      <div aria-live="polite" className={clsx("w-[min(560px,calc(100vw-24px))]", className)}>
+        {notificationContent}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={clsx(
+        "fixed left-1/2 -translate-x-1/2 z-[610] pointer-events-none w-[min(560px,calc(100vw-24px))] top-after-topbar",
+        className
+      )}
+      aria-live="polite"
+    >
+      {notificationContent}
     </div>
   );
 }

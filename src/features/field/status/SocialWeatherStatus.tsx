@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { SocialWeatherPhrase } from './SocialWeatherComposer';
+import clsx from 'clsx';
 
 const COLORS: Record<SocialWeatherPhrase['type'], string> = {
   storm_front: '#4f46e5', // indigo-600
@@ -9,7 +10,13 @@ const COLORS: Record<SocialWeatherPhrase['type'], string> = {
   clearing: '#22c55e'      // emerald-500
 };
 
-export function SocialWeatherStatus({ phrase }: { phrase?: SocialWeatherPhrase | null }) {
+type Props = {
+  phrase?: SocialWeatherPhrase | null;
+  inline?: boolean;
+  className?: string;
+};
+
+export function SocialWeatherStatus({ phrase, inline = false, className }: Props) {
   const [showDetail, setShowDetail] = useState(false);
   const p = phrase;
   if (!p) return null;
@@ -17,18 +24,15 @@ export function SocialWeatherStatus({ phrase }: { phrase?: SocialWeatherPhrase |
   const bg = useMemo(() => `${COLORS[p.type]}1A`, [p.type]); // ~10% alpha
   const border = useMemo(() => COLORS[p.type], [p.type]);
 
-  return (
-    <div
-      onClick={() => p.detail && setShowDetail(v => !v)}
-      className="fixed left-1/2 -translate-x-1/2 top-[calc(72px+env(safe-area-inset-top))] z-[560] 
-                 flex items-center gap-2.5 px-3 py-2 rounded-xl backdrop-blur-md
-                 text-white select-none"
-      style={{
-        background: bg,
-        border: `1px solid ${border}`,
-        cursor: p.detail ? 'pointer' : 'default',
-      }}
-    >
+  const baseClasses = "flex items-center gap-2.5 px-3 py-2 rounded-xl backdrop-blur-md text-white select-none";
+  const style = {
+    background: bg,
+    border: `1px solid ${border}`,
+    cursor: p.detail ? 'pointer' : 'default',
+  };
+
+  const content = (
+    <>
       <motion.div
         animate={p.intensity > 0.75 ? { scale: [1, 1.08, 1] } : { scale: 1 }}
         transition={{ duration: 2, repeat: p.intensity > 0.75 ? Infinity : 0 }}
@@ -50,6 +54,32 @@ export function SocialWeatherStatus({ phrase }: { phrase?: SocialWeatherPhrase |
           {p.detail}
         </div>
       )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <div
+        onClick={() => p.detail && setShowDetail(v => !v)}
+        className={clsx(baseClasses, "pointer-events-auto", className)}
+        style={style}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={() => p.detail && setShowDetail(v => !v)}
+      className={clsx(
+        baseClasses,
+        "fixed left-1/2 -translate-x-1/2 z-[560] top-after-topbar pointer-events-auto",
+        className
+      )}
+      style={style}
+    >
+      {content}
     </div>
   );
 }

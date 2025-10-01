@@ -2,6 +2,7 @@
 import React from 'react';
 import { useFieldLens } from './FieldLensProvider';
 import type { Lens } from '@/features/field/lens';
+import clsx from 'clsx';
 
 const LABELS: Record<Lens, string> = {
   explore: 'Explore',
@@ -11,7 +12,12 @@ const LABELS: Record<Lens, string> = {
 
 const LENSES: readonly Lens[] = ['explore', 'constellation', 'temporal'];
 
-export function LensSwitcher() {
+type Props = {
+  inline?: boolean;
+  className?: string;
+};
+
+export function LensSwitcher({ inline = false, className }: Props) {
   const { lens, setLens } = useFieldLens();
   
   const nextLens = (currentIndex: number) => 
@@ -20,11 +26,54 @@ export function LensSwitcher() {
   const prevLens = (currentIndex: number) => 
     LENSES[(currentIndex - 1 + LENSES.length) % LENSES.length];
 
+  const baseClasses = "flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl";
+  
+  if (inline) {
+    return (
+      <div
+        role="tablist"
+        aria-label="Lens mode"
+        className={clsx(baseClasses, "pointer-events-auto", className)}
+      >
+      {LENSES.map((k, i) => {
+        const active = lens === k;
+        return (
+          <button
+            key={k}
+            id={`tab-${k}`}
+            role="tab"
+            aria-selected={active}
+            aria-controls={`lens-panel-${k}`}
+            tabIndex={active ? 0 : -1}
+            onClick={() => setLens(k)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') { e.preventDefault(); setLens(nextLens(i)); }
+              if (e.key === 'ArrowLeft')  { e.preventDefault(); setLens(prevLens(i)); }
+              if (e.key === 'Home')       { e.preventDefault(); setLens('explore'); }
+              if (e.key === 'End')        { e.preventDefault(); setLens('temporal'); }
+            }}
+            className={`px-3 py-2 rounded-lg text-sm ${
+              active ? 'bg-white/25 text-white' : 'bg-white/10 text-white/80'
+            } focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60`}
+          >
+            {LABELS[k]}
+          </button>
+        );
+      })}
+      </div>
+    );
+  }
+
+  // Legacy fixed mode
   return (
     <div
       role="tablist"
       aria-label="Lens mode"
-      className="flex items-center gap-2 bg-black/35 backdrop-blur px-2 py-2 rounded-xl pointer-events-auto"
+      className={clsx(
+        baseClasses,
+        "pointer-events-auto fixed left-1/2 -translate-x-1/2 z-[700] top-after-topbar",
+        className
+      )}
     >
       {LENSES.map((k, i) => {
         const active = lens === k;

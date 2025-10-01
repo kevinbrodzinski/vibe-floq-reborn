@@ -1,7 +1,13 @@
 import * as React from 'react';
 import { onEvent, Events } from '@/services/eventBridge';
+import clsx from 'clsx';
 
-export function FlowRetraceHUD(){
+type Props = {
+  inline?: boolean;
+  className?: string;
+};
+
+export function FlowRetraceHUD({ inline = false, className }: Props){
   const [visible,setVisible]=React.useState(false);
   const [total,setTotal]=React.useState(0);
   const [idx,setIdx]=React.useState<number|null>(null);
@@ -15,26 +21,45 @@ export function FlowRetraceHUD(){
 
   if (!visible || total<=1 || idx===null) return null;
   const step = Math.max(1,total-idx);
+
+  const hudContent = (
+    <div className="relative overflow-hidden rounded-full border border-white/10 bg-black/80 px-3 py-1.5 text-white/90 shadow-lg backdrop-blur-md">
+      <div className="relative flex items-center gap-2 text-xs font-medium">
+        <span>Retrace</span>
+        <span aria-label={`Step ${step} of ${total}`}>{step} / {total}</span>
+        <span className="ml-2 inline-block h-[2px] w-24 overflow-hidden rounded bg-white/10">
+          <span
+            className="block h-full w-1/2 bg-gradient-to-r from-pink-500 to-violet-500"
+            style={{
+              animation:'flowHudShimmer 3s ease-in-out infinite',
+              transformOrigin:'left'
+            }}
+          />
+        </span>
+      </div>
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <div aria-live="polite" className={clsx("pointer-events-auto", className)}>
+        {hudContent}
+        <style>{`
+          @keyframes flowHudShimmer { 0%{ transform: translateX(-100%);} 100%{ transform: translateX(200%);} }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed left-1/2 top-[calc(72px+env(safe-area-inset-top))] z-[610] -translate-x-1/2"
+      className={clsx(
+        "pointer-events-none fixed left-1/2 -translate-x-1/2 z-[610] top-after-topbar",
+        className
+      )}
     >
-      <div className="relative overflow-hidden rounded-full border border-white/10 bg-black/80 px-3 py-1.5 text-white/90 shadow-lg backdrop-blur-md">
-        <div className="relative flex items-center gap-2 text-xs font-medium">
-          <span>Retrace</span>
-          <span aria-label={`Step ${step} of ${total}`}>{step} / {total}</span>
-          <span className="ml-2 inline-block h-[2px] w-24 overflow-hidden rounded bg-white/10">
-            <span
-              className="block h-full w-1/2 bg-gradient-to-r from-pink-500 to-violet-500"
-              style={{
-                animation:'flowHudShimmer 3s ease-in-out infinite',
-                transformOrigin:'left'
-              }}
-            />
-          </span>
-        </div>
-      </div>
+      {hudContent}
       <style>{`
         @keyframes flowHudShimmer { 0%{ transform: translateX(-100%);} 100%{ transform: translateX(200%);} }
       `}</style>

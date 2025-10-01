@@ -434,6 +434,9 @@
   --safe-top: max(env(safe-area-inset-top, 0px), 8px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   
+  /* ===== Top Bar Layout System ===== */
+  --topbar-h: 0px;
+  
   /* ===== Z-Index System ===== */
   --z-map: 0;
   --z-canvas: 20;
@@ -498,6 +501,11 @@ html, body, #root {
 
 /* UI overlays */
 .hud, .drawer, .lens-switcher { z-index: 600; pointer-events: auto; }
+
+/* Top bar layout utility */
+.top-after-topbar { 
+  top: calc(var(--topbar-h, 0px) + 8px + env(safe-area-inset-top, 0px)); 
+}
 
 /* Bottom spacing utility for venue sheets */
 .field-bottom-pad {

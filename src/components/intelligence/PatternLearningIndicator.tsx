@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Brain, MapPin, Users, Clock, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChartErrorBoundary } from '@/components/ui/ChartErrorBoundary';
+import clsx from 'clsx';
 
 interface LearningEvent {
   type: 'gps' | 'social' | 'temporal' | 'venue';
@@ -10,10 +11,15 @@ interface LearningEvent {
   confidence?: number;
 }
 
+type Props = {
+  inline?: boolean;
+  className?: string;
+};
+
 /**
  * Shows real-time feedback when patterns are being learned
  */
-export function PatternLearningIndicator() {
+export function PatternLearningIndicator({ inline = false, className }: Props) {
   const [events, setEvents] = useState<LearningEvent[]>([]);
   const [showIndicator, setShowIndicator] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
@@ -65,14 +71,8 @@ export function PatternLearningIndicator() {
 
   if (!showIndicator || events.length === 0) return null;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="fixed top-[calc(120px+env(safe-area-inset-top))] right-4 z-[50] pointer-events-none"
-    >
-      <div className="bg-card/95 backdrop-blur-xl rounded-lg border border-border/30 p-3 min-w-[280px] shadow-lg">
+  const content = (
+    <div className="bg-card/95 backdrop-blur-xl rounded-lg border border-border/30 p-3 min-w-[280px] shadow-lg pointer-events-auto">
         <div className="flex items-center gap-2 mb-2">
           <Brain className="w-4 h-4 text-accent" />
           <span className="text-sm font-medium text-foreground">Learning from you</span>
@@ -107,6 +107,29 @@ export function PatternLearningIndicator() {
           </div>
         )}
       </div>
+  );
+
+  if (inline) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className={clsx("z-[50]", className)}
+      >
+        {content}
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className={clsx("fixed right-4 z-[50] pointer-events-none top-after-topbar", className)}
+    >
+      {content}
     </motion.div>
   );
 }

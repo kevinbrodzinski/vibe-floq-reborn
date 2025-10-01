@@ -1,6 +1,7 @@
 import React from 'react'
 import type { FlowFilters } from '@/lib/flow/types'
 import { useFieldLens } from '@/components/field/FieldLensProvider'
+import clsx from 'clsx'
 
 interface Props {
   value: FlowFilters
@@ -9,9 +10,11 @@ interface Props {
   loading?: boolean
   /** 0..1 sun opportunity */
   sunScore?: number
+  inline?: boolean
+  className?: string
 }
 
-export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScore }: Props) {
+export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScore, inline = false, className }: Props) {
   const { lens } = useFieldLens()
   const set = (patch: Partial<FlowFilters>) => onChange({ ...value, ...patch })
   const nextDensity = (d?: 'loose'|'normal'|'tight'): 'loose'|'normal'|'tight' =>
@@ -20,10 +23,8 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
   // Only show in explore mode
   if (lens !== 'explore') return null
 
-  return (
-    <div className="fixed left-0 right-0 top-[calc(72px+env(safe-area-inset-top))] z-[660] pointer-events-none">
-      <div className="mx-4 overflow-x-auto scrollbar-none">
-        <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2 pointer-events-auto">
+  const chipsContent = (
+    <div className="flex items-center gap-2 min-w-fit bg-[color:var(--bg-alt)]/80 backdrop-blur-sm border border-[color:var(--border)] rounded-kit-lg px-3 py-2 pointer-events-auto">
           <button
             onClick={() => set({ friendFlows: !value.friendFlows })}
             aria-pressed={!!value.friendFlows}
@@ -96,6 +97,20 @@ export function FlowExploreChips({ value, onChange, clusterRes, loading, sunScor
             Density: {value.clusterDensity ?? 'normal'}{clusterRes != null ? ` (r${clusterRes})` : ''}
           </button>
         </div>
+  );
+
+  if (inline) {
+    return (
+      <div className={clsx("overflow-x-auto scrollbar-none", className)}>
+        {chipsContent}
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed left-0 right-0 top-after-topbar z-[660] pointer-events-none">
+      <div className="mx-4 overflow-x-auto scrollbar-none">
+        {chipsContent}
       </div>
     </div>
   )

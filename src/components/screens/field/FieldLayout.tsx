@@ -36,6 +36,7 @@ import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast"
 import { LensSwitcher } from "@/components/field/LensSwitcher";
 import { LensStatusHUD } from "@/components/field/LensStatusHUD";
 import { LensHotkeys } from "@/components/field/LensHotkeys";
+import TopBarStack from "@/components/field/top/TopBarStack";
 // NEW
 import { ExploreDrawerProvider } from "@/contexts/ExploreDrawerContext";
 import { RallyInboxUIProvider } from '@/contexts/RallyInboxUIContext';
@@ -308,22 +309,18 @@ export const FieldLayout = () => {
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
 
-          {/* Lens System - z-700 */}
+          {/* Lens System - z-700 with TopBarStack */}
                 <LensHotkeys />
-                <div
-                  className="fixed z-[700] pointer-events-none"
-                  style={{
-                    top: `calc(16px + env(safe-area-inset-top, 0px))`,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                  }}
-                >
-                  <div className="pointer-events-auto">
-                    <LensSwitcher />
+                <TopBarStack>
+                  <div className="flex items-center justify-center">
+                    <LensSwitcher inline />
                   </div>
-                </div>
+                  <div className="flex items-center justify-center">
+                    {/* FlowExploreChips will be added here when needed */}
+                  </div>
+                </TopBarStack>
                 
-                <div className="fixed top-[calc(120px+env(safe-area-inset-top))] left-4 z-[560] pointer-events-none">
+                <div className="fixed left-4 z-[560] pointer-events-none top-after-topbar">
                   <LensStatusHUD />
                 </div>
 
