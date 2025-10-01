@@ -7,6 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, range, range-unit',
 }
 
+const jsonRes = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
 interface ThreadSearchResult {
   thread_id: string;
   friend_profile_id: string;
@@ -30,15 +36,12 @@ Deno.serve(async (req) => {
     // Get user ID from auth
     const profileId = await getUserId(req)
     if (!profileId) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return jsonRes(401, { error: 'Authentication required' })
     }
 
     // Parse request body with Zod validation
     const json = await req.json().catch(() => null)
-    const parsed = parseJson(SearchThreadsSchema, json)
+    const parsed = parseJson(SearchThreadsSchema, json, corsHeaders)
     if (parsed.error) return parsed.error
     
     const { query, limit } = parsed.data

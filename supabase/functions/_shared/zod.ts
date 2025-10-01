@@ -4,14 +4,15 @@ export { z };
 
 export function parseJson<T extends z.ZodTypeAny>(
   schema: T,
-  json: unknown
+  json: unknown,
+  extraHeaders?: HeadersInit
 ): { data?: z.infer<T>; error?: Response } {
   const res = schema.safeParse(json);
   if (!res.success) {
     return {
       error: new Response(JSON.stringify({ error: "Invalid request", issues: res.error.issues }), {
         status: 400,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...(extraHeaders ?? {}) }
       })
     };
   }
@@ -71,9 +72,9 @@ export const PlanSummarySchema = z.object({
 });
 
 /* Types */
-export type FieldTilesReq = z.infer<typeof FieldTilesSchema>;
-export type VenueIntelReq = z.infer<typeof VenueIntelSchema>;
+export type FieldTilesReq    = z.infer<typeof FieldTilesSchema>;
+export type VenueIntelReq    = z.infer<typeof VenueIntelSchema>;
 export type SearchThreadsReq = z.infer<typeof SearchThreadsSchema>;
-export type PlanSummaryReq = z.infer<typeof PlanSummarySchema>;
-export type PresenceUpsert = z.infer<typeof PresenceUpsertSchema>;
-export type InviteCreate = z.infer<typeof InviteCreateSchema>;
+export type PlanSummaryReq   = z.infer<typeof PlanSummarySchema>;
+export type PresenceUpsert   = z.infer<typeof PresenceUpsertSchema>;
+export type InviteCreate     = z.infer<typeof InviteCreateSchema>;

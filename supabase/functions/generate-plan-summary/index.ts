@@ -32,7 +32,7 @@ serve(async (req) => {
 
     // Validate request
     const json = await req.json().catch(() => null);
-    const parsed = parseJson(PlanSummarySchema, json);
+    const parsed = parseJson(PlanSummarySchema, json, corsHeaders);
     if (parsed.error) return parsed.error;
     
     const { plan_id, mode } = parsed.data;

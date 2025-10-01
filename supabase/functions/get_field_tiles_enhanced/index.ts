@@ -27,6 +27,12 @@ function handlePreflight(req: Request) {
   return null
 }
 
+const jsonRes = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_BASE, 'Content-Type': 'application/json' }
+  })
+
 // ── Friendship cache (lightweight) ─────────────────────────────────────────────
 async function getFriendSets(supa: any, viewerId: string) {
   // Adjust to your friendships schema; this assumes:
@@ -70,7 +76,7 @@ Deno.serve(async (req) => {
 
     // body - validate with Zod
     const json = await req.json().catch(() => null)
-    const parsed = parseJson(FieldTilesSchema, json)
+    const parsed = parseJson(FieldTilesSchema, json, corsHeadersFor(req))
     if (parsed.error) return parsed.error
     
     const { tile_ids, include_history, time_window_seconds } = parsed.data
