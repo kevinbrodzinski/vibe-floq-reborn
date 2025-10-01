@@ -51,27 +51,13 @@ export function UserAuraOverlay({
 
   // Register overlay spec with LayerManager
   React.useEffect(() => {
-    console.log('[UserAuraOverlay] Effect triggered:', {
-      hasMap: !!map,
-      hasLayerManager: !!layerManager,
-      enabled,
-      styleLoaded: map?.isStyleLoaded()
-    });
-
     if (!map || !layerManager || !enabled) return;
 
     const spec = createUserAuraSpec(beforeId);
-    
-    // LayerManager handles all mounting logic
-    // - Calls tryMount() which checks isStyleLoaded()
-    // - Has style.load listener that remounts all specs
-    // - Spec's mount() has its own idle deferral if needed
-    console.log('[UserAuraOverlay] Registering spec with LayerManager');
     layerManager.register(spec);
     incrAura('mounts');
 
     return () => {
-      console.log('[UserAuraOverlay] Cleanup - unregistering');
       layerManager.unregister('user-aura');
       incrAura('unmounts');
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -85,6 +71,9 @@ export function UserAuraOverlay({
   // Throttled updates when position or vibe changes
   React.useEffect(() => {
     if (!map || !layerManager || !enabled || !pos) return;
+
+    // Guard: ensure spec is registered before applying data
+    if (!layerManager.has('user-aura')) return;
 
     // Don't render if permission explicitly denied
     if (userLocation.permission === 'denied') return;
