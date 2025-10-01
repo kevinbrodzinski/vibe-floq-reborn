@@ -8,24 +8,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const jsonRes = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), { 
+    status, 
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+  });
+
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method !== 'POST') return jsonRes(405, { error: 'Method not allowed' });
 
   try {
-    // Validate request with Zod
+    // Auth check
+    const auth = req.headers.get('Authorization');
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: auth ? { Authorization: auth } : {} } }
+    );
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return jsonRes(401, { error: 'Unauthorized' });
+
+    // Validate request
     const json = await req.json().catch(() => null);
     const parsed = parseJson(PlanSummarySchema, json);
     if (parsed.error) return parsed.error;
     
     const { plan_id, mode } = parsed.data;
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Fetch plan with stops and participants
     const { data: plan, error: planError } = await supabase
@@ -54,11 +64,8 @@ serve(async (req) => {
       .single();
 
     if (planError || !plan) {
-      console.error('Plan fetch error:', planError);
-      return new Response(JSON.stringify({ error: 'Plan not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[plan-summary] Plan fetch error:', planError);
+      return jsonRes(404, { error: 'Plan not found' });
     }
 
     const participantCount = plan.plan_participants?.length || 0;
@@ -125,29 +132,18 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
       clearTimeout(timeoutId);
 
       if (!openAIResponse.ok) {
-        console.error('OpenAI API error:', await openAIResponse.text());
-        return new Response(JSON.stringify({ error: 'Failed to generate summary' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        console.error('[plan-summary] OpenAI API error:', await openAIResponse.text());
+        return jsonRes(500, { error: 'Failed to generate summary' });
       }
 
       const aiData = await openAIResponse.json();
       summary = aiData.choices?.[0]?.message?.content?.trim();
 
-      if (!summary) {
-        return new Response(JSON.stringify({ error: 'No summary generated' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      if (!summary) return jsonRes(500, { error: 'No summary generated' });
     } catch (fetchError) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        return new Response(JSON.stringify({ error: 'Request timeout - please try again' }), {
-          status: 408,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return jsonRes(408, { error: 'Request timeout - please try again' });
       }
       throw fetchError;
     }
@@ -163,11 +159,8 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
       });
 
     if (insertError) {
-      console.error('Insert error:', insertError);
-      return new Response(JSON.stringify({ error: 'Failed to save summary' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[plan-summary] Insert error:', insertError);
+      return jsonRes(500, { error: 'Failed to save summary' });
     }
 
     return new Response(JSON.stringify({ 
@@ -179,10 +172,7 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
     });
 
   } catch (error) {
-    console.error('Edge function error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[plan-summary]', error);
+    return jsonRes(500, { error: error.message });
   }
 });
