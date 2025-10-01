@@ -171,10 +171,10 @@ Deno.serve(async (req) => {
       }
     }).filter(Boolean)
 
-    return new Response(JSON.stringify({ tiles }), { headers, status: 200 })
+    return jsonRes(200, { tiles })
   } catch (e) {
     console.error('[get_field_tiles_enhanced]', e)
-    return new Response(JSON.stringify({ tiles: [], error: 'internal' }), { headers, status: 500 })
+    return jsonRes(500, { tiles: [], error: 'internal' })
   }
 })
 

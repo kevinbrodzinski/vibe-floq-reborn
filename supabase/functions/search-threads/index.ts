@@ -48,10 +48,12 @@ Deno.serve(async (req) => {
 
     console.log(`[search-threads] Searching for: "${query}" (profile_id: ${profileId})`)
 
-    // Create Supabase client
+    // Create Supabase client with user auth
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } }
+    })
 
     // Use the enhanced RPC function for thread search
     const { data: searchResults, error: rpcError } = await supabase

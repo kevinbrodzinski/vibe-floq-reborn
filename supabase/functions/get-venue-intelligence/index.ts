@@ -48,12 +48,10 @@ serve(async (req) => {
 
         if (suggestionsError) return jsonRes(500, { error: 'Failed to get social suggestions' });
 
-        return new Response(JSON.stringify({ 
+        return jsonRes(200, { 
           success: true, 
           suggestions: suggestions || [],
           mode 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
@@ -79,13 +77,11 @@ serve(async (req) => {
 
         if (peopleError) return jsonRes(500, { error: 'Failed to get venue people' });
 
-        return new Response(JSON.stringify({ 
+        return jsonRes(200, { 
           success: true, 
           people: people || [],
           venue_id,
           mode 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
@@ -99,7 +95,7 @@ serve(async (req) => {
             content,
             created_at,
             vibe_tag,
-            profiles:user_id (
+            profiles:profile_id (
               username,
               display_name,
               avatar_url
@@ -112,13 +108,11 @@ serve(async (req) => {
 
         if (postsError) return jsonRes(500, { error: 'Failed to get venue posts' });
 
-        return new Response(JSON.stringify({ 
+        return jsonRes(200, { 
           success: true, 
           posts: posts || [],
           venue_id,
           mode 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
@@ -172,7 +166,7 @@ serve(async (req) => {
 
         const energyScore = Math.min(100, totalPeople * 10); // Simple energy calculation
 
-        return new Response(JSON.stringify({ 
+        return jsonRes(200, { 
           success: true, 
           energy: {
             total_people: totalPeople,
@@ -182,8 +176,6 @@ serve(async (req) => {
             venue_id
           },
           mode 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 

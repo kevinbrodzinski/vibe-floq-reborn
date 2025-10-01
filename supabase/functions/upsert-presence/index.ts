@@ -33,7 +33,7 @@ serve(async (req) => {
     }
 
     const json = await req.json().catch(() => ({}));
-    const parsed = parseJson(PresenceUpsertSchema, json);
+    const parsed = parseJson(PresenceUpsertSchema, json, corsHeaders);
     if (parsed.error) return parsed.error;
     const body = parsed.data;
 
