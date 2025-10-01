@@ -15,7 +15,7 @@ export function FlowRecorderFAB({
   const isPause = state === 'paused'
 
   return (
-    <div className={cn('fixed right-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-[640]', className)}>
+    <div className={cn('pointer-events-auto fixed right-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-[720]', className)}>
       {state === 'idle' || state === 'ended' ? (
         <button
           onClick={onStart}
