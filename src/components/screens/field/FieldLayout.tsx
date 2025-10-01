@@ -56,7 +56,6 @@ import '@/dev/emit';
 import '@/dev/vibeQA';
 // import { AutoDiscoveryManager } from "@/components/field/AutoDiscoveryManager"; // Disabled for now
 import { IntelligenceWidgets } from './IntelligenceWidgets';
-import { FlowFiltersProvider } from '@/contexts/FlowFiltersContext';
 import { useFlowFilters } from '@/hooks/useFlowFilters';
 import { useSunOpportunity } from '@/hooks/useSunOpportunity';
 import { useFlowExplore } from '@/hooks/useFlowExplore';
