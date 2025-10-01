@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
 import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { PresenceUpsertSchema, parseJson } from "../_shared/zod.ts";
 
 serve(async (req) => {
   const preflight = handleOptions(req);
@@ -31,16 +32,12 @@ serve(async (req) => {
       return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
-    const body = await req.json().catch(() => ({}));
-    const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
+    const json = await req.json().catch(() => ({}));
+    const parsed = parseJson(PresenceUpsertSchema, json);
+    if (parsed.error) return parsed.error;
+    const body = parsed.data;
 
-    // Validate required parameters
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      return new Response(JSON.stringify({ error: "Valid lat/lng numbers required" }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
 
     // Calculate H3 index for the location
     const h3_7 = geoToH3(lat, lng, 7);

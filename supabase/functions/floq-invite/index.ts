@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
+import { InviteCreateSchema, parseJson } from "../_shared/zod.ts";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -16,8 +17,12 @@ serve(async (req) => {
     const userId = auth.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const { floq_id, invitee_profile_id } = await req.json();
-    if (!floq_id || !invitee_profile_id) throw new Error("Missing floq_id or invitee_profile_id");
+    const json = await req.json().catch(() => ({}));
+    const parsed = parseJson(InviteCreateSchema, json);
+    if (parsed.error) return parsed.error;
+    const body = parsed.data;
+
+    const { floq_id, invitee_profile_id } = body;
 
     // Confirm inviter is member with admin/member privileges
     const { data: inviter } = await admin

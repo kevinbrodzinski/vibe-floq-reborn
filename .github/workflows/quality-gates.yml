@@ -1,0 +1,53 @@
+name: quality-gates
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  size-limit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - run: npx size-limit
+        env:
+          CI: true
+
+  pgtap:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        ports: [ "5432:5432" ]
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: appdb
+        options: >-
+          --health-cmd="pg_isready -U postgres -d appdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pgtap
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16-pgtap
+      - name: Enable pgtap
+        run: psql postgresql://postgres:postgres@localhost:5432/appdb -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
+      - name: Run SQL migrations (light)
+        run: |
+          for f in supabase/migrations/*.sql; do
+            psql postgresql://postgres:postgres@localhost:5432/appdb -v ON_ERROR_STOP=1 -f "$f" || exit 1
+          done
+      - name: Run pg-tap tests
+        run: |
+          for f in sql/tests/*.sql; do
+            echo ">>> $f"
+            psql postgresql://postgres:postgres@localhost:5432/appdb -v ON_ERROR_STOP=1 -f "$f" || exit 1
+          done
