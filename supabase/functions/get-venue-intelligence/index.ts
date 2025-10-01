@@ -29,7 +29,7 @@ serve(async (req) => {
 
     // Validate input
     const json = await req.json().catch(() => null);
-    const parsed = parseJson(VenueIntelSchema, json);
+    const parsed = parseJson(VenueIntelSchema, json, corsHeaders);
     if (parsed.error) return parsed.error;
 
     const { mode, venue_id, user_id, limit } = parsed.data;
