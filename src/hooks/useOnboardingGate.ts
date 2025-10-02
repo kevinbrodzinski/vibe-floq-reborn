@@ -1,26 +1,32 @@
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
-import { CURRENT_ONBOARDING_VERSION } from '@/constants/onboarding';
+import { CURRENT_ONBOARDING_VERSION, FINAL_STEP_INDEX } from '@/constants/onboarding';
 
-export interface OnboardingGateStatus {
+type GateRow = { version: string; step_index: number; permissions: Record<string, unknown> | null };
+
+export type OnboardingGateStatus = {
   needsOnboarding: boolean;
   isLoading: boolean;
-  currentVersion: string;
+  currentVersion: typeof CURRENT_ONBOARDING_VERSION;
   stepIndex: number;
-  permissions: Record<string, boolean>;
-}
+  permissions: Record<string, unknown>;
+};
 
-/**
- * Server-authoritative onboarding gate check (v3)
- * Replaces old useOnboardingStatus with cleaner schema
- */
 export function useOnboardingGate(): OnboardingGateStatus {
   const { user } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ['onboarding-gate-v3', user?.id],
-    queryFn: async () => {
+    enabled: !!user?.id,
+    staleTime: 30_000,
+    retry: (count, error: any) => {
+      const code = error?.code;
+      // Don't hammer if relation/function is missing
+      if (code === '42P01' || code === '42883') return false;
+      return count < 1;
+    },
+    queryFn: async (): Promise<GateRow | null> => {
       if (!user) return null;
 
       const { data, error } = await supabase
@@ -30,24 +36,35 @@ export function useOnboardingGate(): OnboardingGateStatus {
         .maybeSingle();
 
       if (error) {
-        console.error('[OnboardingGate] Query error:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[OnboardingGate] query error:', error);
+        }
+        // Tolerate missing table: treat as no progress
+        // PGRST116 ("Results contain 0 rows") is already handled by maybeSingle
         return null;
       }
 
-      return data;
+      return (data as GateRow) ?? null;
     },
-    enabled: !!user,
-    staleTime: 30000,
   });
 
-  // User needs onboarding if no progress record or version mismatch
-  const needsOnboarding = !data || data.version !== CURRENT_ONBOARDING_VERSION;
+  const serverStep = data?.step_index ?? 0;
+  const serverVersion = data?.version ?? 'v0';
+
+  // Needs onboarding if:
+  // 1) No row, OR
+  // 2) Version mismatch, OR
+  // 3) Version ok but step not at final
+  const versionMismatch = serverVersion !== CURRENT_ONBOARDING_VERSION;
+  const incomplete = serverStep < FINAL_STEP_INDEX;
+
+  const needsOnboarding = !data || versionMismatch || incomplete;
 
   return {
     needsOnboarding,
-    isLoading,
+    isLoading: !!user?.id && isLoading,
     currentVersion: CURRENT_ONBOARDING_VERSION,
-    stepIndex: data?.step_index ?? 0,
-    permissions: (data?.permissions as Record<string, boolean>) ?? {},
+    stepIndex: serverStep,
+    permissions: (data?.permissions as Record<string, unknown>) ?? {},
   };
 }

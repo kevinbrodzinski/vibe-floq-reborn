@@ -1,102 +1,85 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CURRENT_ONBOARDING_VERSION } from '@/constants/onboarding';
+import { CURRENT_ONBOARDING_VERSION, STEP_SEQUENCE, FINAL_STEP_INDEX, type StepId } from '@/constants/onboarding';
 
-export type OnboardingStep = 'welcome' | 'profile' | 'vibe' | 'permissions' | 'privacy' | 'nudges' | 'complete';
-
-const STEP_SEQUENCE: OnboardingStep[] = [
-  'welcome',    // 0
-  'profile',    // 1
-  'vibe',       // 2
-  'permissions',// 3
-  'privacy',    // 4
-  'nudges',     // 5
-  'complete',   // 6
-];
+type Perms = Partial<{
+  location: 'granted' | 'denied' | 'limited';
+  notifications: 'granted' | 'denied' | 'provisional';
+  motion: 'granted' | 'denied';
+}>;
 
 export interface OnboardingMachineState {
-  currentStep: OnboardingStep;
+  currentStep: StepId;
   stepIndex: number;
   canGoBack: boolean;
   canGoNext: boolean;
-  permissions: Record<string, boolean>;
+  permissions: Perms;
   isAdvancing: boolean;
 }
 
 export interface OnboardingMachine extends OnboardingMachineState {
-  goNext: () => Promise<void>;
+  goNext: (perms?: Perms) => Promise<void>;
   goBack: () => void;
-  updatePermissions: (key: string, value: boolean) => void;
-  markComplete: () => Promise<void>;
+  markComplete: (perms?: Perms) => Promise<void>;
 }
 
-/**
- * State machine for onboarding v3 flow
- * Syncs with server on every NEXT via advance_onboarding RPC
- */
-export function useOnboardingMachine(initialStepIndex: number = 0): OnboardingMachine {
-  const [stepIndex, setStepIndex] = useState(initialStepIndex);
-  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
+export function useOnboardingMachine(initialServerIndex = 0): OnboardingMachine {
+  // Clamp to a valid step (resume safety)
+  const initialIndex = Math.min(Math.max(initialServerIndex, 0), FINAL_STEP_INDEX);
+
+  const [stepIndex, setStepIndex] = useState<number>(initialIndex);
+  const [permissions, setPermissions] = useState<Perms>({});
   const [isAdvancing, setIsAdvancing] = useState(false);
 
   const currentStep = STEP_SEQUENCE[stepIndex] ?? 'welcome';
   const canGoBack = stepIndex > 0;
-  const canGoNext = stepIndex < STEP_SEQUENCE.length - 1;
+  const canGoNext = stepIndex < FINAL_STEP_INDEX;
 
-  const goNext = useCallback(async () => {
-    if (!canGoNext || isAdvancing) return;
-    
-    setIsAdvancing(true);
-    const nextIndex = stepIndex + 1;
-
+  const persist = useCallback(async (nextIdx: number, perms?: Perms) => {
     try {
       const { error } = await supabase.rpc('advance_onboarding', {
-        p_step_index: nextIndex,
+        p_step_index: nextIdx,
         p_version: CURRENT_ONBOARDING_VERSION,
-        p_permissions: permissions as any,
+        p_permissions: perms ?? permissions,
       });
-
-      if (error) {
-        console.error('[OnboardingMachine] Failed to advance:', error);
-        // Allow client-side advance even if server fails (graceful degradation)
+      if (error && process.env.NODE_ENV === 'development') {
+        console.warn('[OnboardingMachine] advance_onboarding error:', error);
       }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.warn('[OnboardingMachine] RPC failed:', e);
+    }
+  }, [permissions]);
 
+  const goNext = useCallback(async (perms?: Perms) => {
+    if (!canGoNext || isAdvancing) return;
+    setIsAdvancing(true);
+    const nextIndex = Math.min(stepIndex + 1, FINAL_STEP_INDEX);
+    const merged = { ...permissions, ...(perms ?? {}) } as Perms;
+    try {
+      await persist(nextIndex, merged);
+      setPermissions(merged);
       setStepIndex(nextIndex);
     } finally {
       setIsAdvancing(false);
     }
-  }, [canGoNext, stepIndex, permissions, isAdvancing]);
+  }, [canGoNext, isAdvancing, stepIndex, permissions, persist]);
 
   const goBack = useCallback(() => {
-    if (canGoBack) {
-      setStepIndex((prev) => prev - 1);
-    }
+    if (!canGoBack) return;
+    setStepIndex(i => Math.max(i - 1, 0));
   }, [canGoBack]);
 
-  const updatePermissions = useCallback((key: string, value: boolean) => {
-    setPermissions((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  const markComplete = useCallback(async () => {
+  const markComplete = useCallback(async (perms?: Perms) => {
     setIsAdvancing(true);
+    const merged = { ...permissions, ...(perms ?? {}) } as Perms;
     try {
-      // Advance to final step (6 = complete)
-      const { error } = await supabase.rpc('advance_onboarding', {
-        p_step_index: 6,
-        p_version: CURRENT_ONBOARDING_VERSION,
-        p_permissions: permissions as any,
-      });
-
-      if (error) {
-        console.error('[OnboardingMachine] Failed to mark complete:', error);
-        throw error;
-      }
-
-      setStepIndex(6);
+      await persist(FINAL_STEP_INDEX, merged);
+      setPermissions(merged);
+      setStepIndex(FINAL_STEP_INDEX);
     } finally {
       setIsAdvancing(false);
     }
-  }, [permissions]);
+  }, [permissions, persist]);
 
   return {
     currentStep,
@@ -107,7 +90,6 @@ export function useOnboardingMachine(initialStepIndex: number = 0): OnboardingMa
     isAdvancing,
     goNext,
     goBack,
-    updatePermissions,
     markComplete,
   };
 }

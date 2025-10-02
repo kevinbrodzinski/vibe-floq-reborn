@@ -215,8 +215,8 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
             // Use startTransition for state updates
             startTransition(() => {
               // Invalidate queries to refresh state
-              queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
-              queryClient.invalidateQueries({ queryKey: ['onboarding-gate-v3'] });
+              queryClient.invalidateQueries({ queryKey: ['user-preferences', user?.id] });
+              queryClient.invalidateQueries({ queryKey: ['onboarding-gate-v3', user?.id] });
             });
             
             // Handle redirect
