@@ -1,35 +1,55 @@
-import { useEffect, useState } from 'react';
-import { Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
- * Live Counter - Real-time fluctuating user count
- * Creates FOMO with variable reward schedule
+ * Live Counter - Real-time fluctuating user count with visibility & reduced-motion support
  */
-export function LiveCounter() {
-  const [count, setCount] = useState(23);
+export function LiveCounter({ min = 22, max = 50, periodMs = 3500 }: { min?: number; max?: number; periodMs?: number }) {
+  const [value, setValue] = useState(min);
+  const timer = useRef<number | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Fluctuate between 23-50 users
-      setCount(prev => {
-        const change = Math.random() > 0.5 ? 1 : -1;
-        const newCount = prev + change;
-        return Math.max(23, Math.min(50, newCount));
+    const reduced = typeof window !== 'undefined'
+      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    function tick() {
+      setValue(prev => {
+        const next = prev + (Math.random() > 0.5 ? 1 : -1);
+        return Math.max(min, Math.min(max, next));
       });
-    }, 4000);
+    }
 
-    return () => clearInterval(interval);
-  }, []);
+    function start() {
+      if (reduced) return;
+      stop();
+      timer.current = window.setInterval(tick, periodMs);
+    }
+    
+    function stop() {
+      if (timer.current) { 
+        clearInterval(timer.current); 
+        timer.current = null; 
+      }
+    }
 
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <div className="relative flex items-center">
-        <Users className="h-4 w-4" />
-        <div className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-      </div>
-      <span className="transition-all duration-500">
-        <span className="font-medium text-foreground">{count}</span> people joining now
-      </span>
-    </div>
-  );
+    function onVisibility() {
+      if (typeof document !== 'undefined') {
+        if (document.visibilityState === 'visible') start();
+        else stop();
+      }
+    }
+
+    start();
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility);
+    }
+    
+    return () => {
+      stop();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
+    };
+  }, [min, max, periodMs]);
+
+  return <span className="tabular-nums">{value}</span>;
 }

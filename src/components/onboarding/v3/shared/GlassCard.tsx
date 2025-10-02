@@ -7,6 +7,8 @@ type GlassCardProps = {
   variant?: 'default' | 'elevated' | 'subtle';
   animate?: boolean;
   style?: React.CSSProperties;
+  role?: string;
+  'aria-live'?: 'polite' | 'assertive' | 'off';
 };
 
 export function GlassCard({ 
@@ -14,7 +16,9 @@ export function GlassCard({
   className, 
   variant = 'default',
   animate = true,
-  style
+  style,
+  role,
+  'aria-live': ariaLive,
 }: GlassCardProps) {
   const variants = {
     default: 'bg-background/40 backdrop-blur-xl border border-white/10',
@@ -31,6 +35,8 @@ export function GlassCard({
         className
       )}
       style={style}
+      role={role}
+      aria-live={ariaLive}
     >
       {children}
     </div>

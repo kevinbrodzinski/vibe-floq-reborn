@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OnboardingShell } from '../OnboardingShell';
 import { GlassCard } from '../shared/GlassCard';
 import { Button } from '@/components/ui/button';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
+import { devFriendsAdapter, type Friend } from '@/lib/friends/adapter';
 
 type Mode = 'friends' | 'pattern';
-
-type Friend = { id: string; name: string; initials: string };
 
 function AvatarRow({ friends }: { friends: Friend[] }) {
   return (
@@ -47,7 +46,9 @@ function PatternCard({
       <div className="text-sm text-white/80">{description}</div>
       {highlight && <div className="text-sm text-rose-400 mt-1">{highlight}</div>}
       <div className="mt-3">
-        <Button size="sm" className="bg-violet-700" onClick={onAction}>{actionText}</Button>
+        <Button size="sm" className="bg-violet-700" onClick={onAction} aria-label={actionText}>
+          {actionText}
+        </Button>
       </div>
     </GlassCard>
   );
@@ -59,16 +60,11 @@ type Props = {
 
 export function NudgesStep({ machine }: Props) {
   const [mode, setMode] = useState<Mode>('friends');
-  const friends = useMemo<Friend[]>(() => ([
-    { id: '1', name: 'Sarah', initials: 'S' },
-    { id: '2', name: 'Tom',   initials: 'T' },
-    { id: '3', name: 'Alex',  initials: 'A' },
-    { id: '4', name: 'Kai',   initials: 'K' },
-    { id: '5', name: 'Maya',  initials: 'M' },
-    { id: '6', name: 'Zoe',   initials: 'Z' },
-    { id: '7', name: 'Leo',   initials: 'L' },
-    { id: '8', name: 'Noa',   initials: 'N' },
-  ]), []);
+  const [friends, setFriends] = useState<Friend[]>([]);
+
+  useEffect(() => {
+    void devFriendsAdapter.findExisting().then(setFriends);
+  }, []);
 
   function handleFriendsDone() {
     setMode('pattern');
@@ -111,7 +107,7 @@ export function NudgesStep({ machine }: Props) {
     >
       <div className="space-y-4">
         {/* Alert banner */}
-        <GlassCard className="p-3 bg-rose-500/10 border-rose-300/20">
+        <GlassCard className="p-3 bg-rose-500/10 border-rose-300/20" role="status" aria-live="polite">
           <div className="text-sm font-medium text-rose-300">PATTERN DETECTED</div>
         </GlassCard>
 
@@ -134,7 +130,7 @@ export function NudgesStep({ machine }: Props) {
           highlight="Last week they stayed until 2am."
           actionText="Join tonight"
           tone="purple"
-          onAction={() => machine.goNext()}
+          onAction={() => void machine.goNext()}
         />
         <PatternCard
           title="Weekend Beach Pattern"
@@ -142,7 +138,7 @@ export function NudgesStep({ machine }: Props) {
           description="6 of your friends converge at Tower 26"
           actionText="Enable alerts"
           tone="blue"
-          onAction={() => machine.goNext()}
+          onAction={() => void machine.goNext()}
         />
 
         <div className="text-center text-sm text-white/70">
