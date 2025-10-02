@@ -4,6 +4,52 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Aurora animation keyframes for onboarding */
+@keyframes aurora-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+    opacity: 0.4;
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+    opacity: 0.35;
+  }
+}
+
+@keyframes aurora-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  33% {
+    transform: translate(-40px, 30px) scale(1.15);
+    opacity: 0.25;
+  }
+  66% {
+    transform: translate(25px, -25px) scale(0.95);
+    opacity: 0.22;
+  }
+}
+
+@keyframes aurora-3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.25;
+  }
+  33% {
+    transform: translate(20px, 40px) scale(0.9);
+    opacity: 0.3;
+  }
+  66% {
+    transform: translate(-30px, -20px) scale(1.1);
+    opacity: 0.27;
+  }
+}
+
 @layer utilities {
   /* === CREATE FLOQ PAGE SCOPED STYLES === */
   .create-floq-page {
