@@ -49,9 +49,9 @@ export function WelcomeStep({ machine }: Props) {
 
         {/* Bottom: centered CTA ABOVE sign-in */}
         <footer className="space-y-4">
-          <div className="flex justify-center">
+          <div className="flex justify-center mt-8">
             <Button
-              className="rounded-full h-14 px-7 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)] before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] relative"
+              className="rounded-full h-11 px-12 w-full max-w-xs text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)] before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] relative"
               onClick={handleNext}
             >
               Get Started
