@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { OnboardingShell } from '../OnboardingShell';
 import { GlassCard } from '../shared/GlassCard';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useOnboardingAchievements } from '@/hooks/useOnboardingAchievements';
+import { useToast } from '@/hooks/use-toast';
+import { haptic } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const;
@@ -17,12 +21,45 @@ export function ProfileVibeStep({ machine }: Props) {
   const [year, setYear] = useState<string>();
   const [vibes, setVibes] = useState<string[]>([]);
   const [crew, setCrew] = useState<string>();
+  const startTime = useRef(performance.now());
+  const { toast } = useToast();
+  const achievements = useOnboardingAchievements();
 
   const canNext = !!month && !!year && vibes.length > 0;
 
+  const handleNext = async () => {
+    // Check achievements
+    const duration = performance.now() - startTime.current;
+    if (duration < 120000) {
+      achievements.maybeUnlock('speed_runner', (t, d) => toast({ title: t, description: d }));
+    }
+    
+    if (crew === 'Solo') {
+      achievements.maybeUnlock('lone_wolf', (t, d) => toast({ title: t, description: d }));
+    }
+    
+    const hiEnergy = vibes.filter(v => ['Party', 'Active', 'Social'].includes(v)).length;
+    if (hiEnergy >= 3) {
+      achievements.maybeUnlock('party_animal', (t, d) => toast({ title: t, description: d }));
+    }
+
+    haptic('medium');
+    await machine.goNext();
+  };
+
+  const toggleVibe = (vibe: string) => {
+    haptic('light');
+    setVibes(prev => prev.includes(vibe) ? prev.filter(v => v !== vibe) : [...prev, vibe]);
+  };
+
+  const selectCrew = (size: string) => {
+    haptic('light');
+    setCrew(size);
+  };
+
   return (
     <OnboardingShell 
-      machine={{ ...machine, canGoNext: canNext }}
+      machine={{ ...machine, canGoNext: canNext, goNext: handleNext }}
       title="QUICK SETUP"
       headerVariant="section"
       showProgress={true}
@@ -74,12 +111,14 @@ export function ProfileVibeStep({ machine }: Props) {
               return (
                 <button
                   key={v}
-                  onClick={() => setVibes(prev => on ? prev.filter(x=>x!==v) : [...prev, v])}
-                  className={[
+                  onClick={() => toggleVibe(v)}
+                  className={cn(
                     "h-10 rounded-2xl border px-4 text-sm transition-all",
                     "border-[var(--glass-border)] bg-[var(--glass-bg)]",
-                    on ? "ring-1 ring-[var(--accent-violet-400)] bg-[var(--accent-violet-400)]/15" : "hover:bg-white/10"
-                  ].join(" ")}
+                    on 
+                      ? "ring-1 ring-[var(--accent-violet-400)] bg-[var(--accent-violet-400)]/15 scale-[1.02]" 
+                      : "hover:bg-white/10"
+                  )}
                 >
                   {v}
                 </button>
@@ -96,12 +135,14 @@ export function ProfileVibeStep({ machine }: Props) {
               return (
                 <button
                   key={c}
-                  onClick={() => setCrew(c)}
-                  className={[
+                  onClick={() => selectCrew(c)}
+                  className={cn(
                     "h-10 rounded-2xl border px-4 text-sm transition-all",
                     "border-[var(--glass-border)] bg-[var(--glass-bg)]",
-                    on ? "ring-1 ring-[var(--accent-violet-400)] bg-[var(--accent-violet-400)]/15" : "hover:bg-white/10"
-                  ].join(" ")}
+                    on 
+                      ? "ring-1 ring-[var(--accent-violet-400)] bg-[var(--accent-violet-400)]/15 scale-[1.02]" 
+                      : "hover:bg-white/10"
+                  )}
                 >
                   {c}
                 </button>

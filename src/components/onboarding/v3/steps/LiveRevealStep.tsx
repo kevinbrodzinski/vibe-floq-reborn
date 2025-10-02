@@ -1,6 +1,9 @@
 import { OnboardingShell } from '../OnboardingShell';
 import { FieldPreview } from '../partials/FieldPreview';
 import { GlassCard } from '../shared/GlassCard';
+import { SoundToggle } from '../components/SoundToggle';
+import { haptic } from '@/lib/haptics';
+import { useToast } from '@/hooks/use-toast';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
 
 function StatCard({ label, value }: { label: string; value: number }) {
@@ -19,16 +22,33 @@ type Props = {
 };
 
 export function LiveRevealStep({ machine }: Props) {
+  const { toast } = useToast();
+
+  const handleNext = async () => {
+    haptic('medium');
+    await machine.goNext();
+  };
+
+  const handleExploreSolo = () => {
+    toast({
+      title: 'Solo mode activated',
+      description: "You can always add friends later",
+    });
+    haptic('light');
+    machine.goNext();
+  };
+
   return (
     <OnboardingShell
-      machine={machine}
-      title="YOUR CITY RIGHT NOW"
+      machine={{ ...machine, goNext: handleNext }}
+      title="THIS IS LIVE"
+      subtitle="Real people, real time"
       headerVariant="section"
       showProgress={true}
       pager={{ index: 2, count: 7 }}
       nextLabel="Find Friends"
     >
-      <div className="mx-auto w-full max-w-md space-y-6">
+      <div className="relative mx-auto w-full max-w-md space-y-6">
         <GlassCard className="p-3 rounded-3xl">
           <div className="mb-2 flex items-center justify-between px-1">
             {/* LIVE left */}
@@ -59,9 +79,16 @@ export function LiveRevealStep({ machine }: Props) {
           <StatCard label="Convergences forming" value={2} />
         </div>
 
-        <div className="text-center text-sm text-white/60">
-          Even without friends, you can see the social pulse
+        <div className="text-center text-sm pt-2">
+          <button 
+            onClick={handleExploreSolo}
+            className="text-white/60 hover:text-white/80 underline decoration-white/30 underline-offset-4"
+          >
+            Explore solo first
+          </button>
         </div>
+
+        <SoundToggle />
       </div>
     </OnboardingShell>
   );

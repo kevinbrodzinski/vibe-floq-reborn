@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FINAL_STEP_INDEX } from '@/constants/onboarding';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
@@ -45,6 +45,17 @@ export function OnboardingShell({
     }
   }
 
+  // Keyboard navigation (Enter to advance)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !isAdvancing && canGoNext) {
+        handleNext();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isAdvancing, canGoNext]);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <div className="mx-auto w-full max-w-xl px-6 pt-8 flex-1">
@@ -69,8 +80,8 @@ export function OnboardingShell({
             )}
             {title && (
               <h1 className={headerVariant === 'hero'
-                ? 'text-[44px] md:text-6xl font-light tracking-[0.05em] leading-[1.08]'
-                : 'text-2xl font-semibold'}>
+                ? 'text-[44px] md:text-6xl font-light tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(240,240,255,0.95))]'
+                : 'text-2xl font-semibold text-white'}>
                 {title}
               </h1>
             )}
@@ -108,7 +119,7 @@ export function OnboardingShell({
               onClick={handleNext} 
               disabled={isAdvancing} 
               className={[
-                'rounded-full',
+                'relative rounded-full before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]',
                 headerVariant === 'hero' 
                   ? 'px-7 h-14 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)]' 
                   : 'px-6 shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
