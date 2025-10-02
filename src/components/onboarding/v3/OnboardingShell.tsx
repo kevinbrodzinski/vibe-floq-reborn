@@ -63,7 +63,7 @@ export function OnboardingShell({
 
         {/* Header */}
         {(overline || title || subtitle) && (
-          <header className={headerVariant === 'hero' ? 'mb-8 text-center' : 'mb-6'}>
+          <header className={headerVariant === 'hero' ? 'mb-10 text-center' : 'mb-6'}>
             {overline && (
               <div className="text-xs tracking-[0.22em] text-white/60 mb-2">{overline}</div>
             )}
@@ -75,7 +75,7 @@ export function OnboardingShell({
               </h1>
             )}
             {subtitle && (
-              <p className={headerVariant === 'hero' ? 'text-lg text-white/70 mt-3' : 'text-sm text-white/70 mt-1'}>
+              <p className={headerVariant === 'hero' ? 'text-lg text-white/70 mt-4' : 'text-sm text-white/70 mt-1'}>
                 {subtitle}
               </p>
             )}
@@ -109,7 +109,7 @@ export function OnboardingShell({
               disabled={isAdvancing} 
               className={[
                 'rounded-full px-6',
-                headerVariant === 'hero' ? 'shadow-[0_12px_40px_rgba(124,103,234,0.35)]' : ''
+                headerVariant === 'hero' ? 'shadow-[0_14px_44px_rgba(124,103,234,0.40)]' : ''
               ].join(' ')}
             >
               {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}

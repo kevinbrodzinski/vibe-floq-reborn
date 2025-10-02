@@ -29,7 +29,7 @@ export function ProfileVibeStep({ machine }: Props) {
       pager={{ index: 1, count: 7 }}
       nextLabel="Continue"
     >
-      <div className="mx-auto w-full max-w-md space-y-7">
+      <div className="mx-auto w-full max-w-md space-y-8">
         <GlassCard className="p-4 rounded-3xl">
           <div className="flex items-center justify-between">
             <div>
@@ -44,7 +44,7 @@ export function ProfileVibeStep({ machine }: Props) {
 
         <section>
           <div className="text-sm text-white/80 mb-1">When's your birthday?</div>
-          <div className="text-xs text-white/50 mb-3">For age-appropriate experiences</div>
+          <div className="text-xs text-white/50 mb-4">For age-appropriate experiences</div>
           <div className="flex gap-3">
             <Select onValueChange={setMonth}>
               <SelectTrigger className="h-10 w-40 rounded-xl bg-[var(--glass-bg)] border-[var(--glass-border)]">
