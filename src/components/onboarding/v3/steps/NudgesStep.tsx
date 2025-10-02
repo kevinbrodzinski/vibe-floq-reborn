@@ -66,6 +66,7 @@ export function NudgesStep({ machine }: Props) {
         showProgress={true}
         pager={{ index: 4, count: 7 }}
         nextLabel="Skip for now"
+        verticalAlign="center"
       >
         <div className="mx-auto w-full max-w-md space-y-4">
           <p className="text-white/70">We'll check who's already here</p>
@@ -105,6 +106,7 @@ export function NudgesStep({ machine }: Props) {
       showProgress={true}
       pager={{ index: 4, count: 7 }}
       disableNav
+      verticalAlign="center"
     >
       <div className="mx-auto w-full max-w-md space-y-6">
         {/* Checkmark circle */}

@@ -47,6 +47,7 @@ export function LiveRevealStep({ machine }: Props) {
       showProgress={true}
       pager={{ index: 2, count: 7 }}
       nextLabel="Find Friends"
+      verticalAlign="center"
     >
       <div className="relative mx-auto w-full max-w-md space-y-6">
         <GlassCard className="p-3 rounded-3xl">

@@ -65,6 +65,7 @@ export function ProfileVibeStep({ machine }: Props) {
       showProgress={true}
       pager={{ index: 1, count: 7 }}
       nextLabel="Continue"
+      verticalAlign="center"
     >
       <div className="mx-auto w-full max-w-md space-y-8">
         <GlassCard className="p-4 rounded-3xl">

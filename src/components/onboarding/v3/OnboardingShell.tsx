@@ -16,6 +16,7 @@ type Props = {
   nextLabel?: string;
   backLabel?: string;
   disableNav?: boolean;
+  verticalAlign?: 'top' | 'center' | 'distribute';
 };
 
 export function OnboardingShell({ 
@@ -30,7 +31,8 @@ export function OnboardingShell({
   onComplete, 
   nextLabel, 
   backLabel,
-  disableNav = false
+  disableNav = false,
+  verticalAlign = 'center'
 }: Props) {
   const { stepIndex, canGoBack, canGoNext, isAdvancing, goNext, goBack, markComplete } = machine;
   const atFinal = stepIndex === FINAL_STEP_INDEX;
@@ -58,12 +60,29 @@ export function OnboardingShell({
     return () => window.removeEventListener('keydown', onKey);
   }, [isAdvancing, canGoNext]);
 
+  // Layout classes derived from verticalAlign prop
+  const layout =
+    verticalAlign === 'top'
+      ? 'grid-rows-[auto,1fr,auto]'
+      : verticalAlign === 'distribute'
+      ? 'grid-rows-[1fr,auto,1fr]'
+      : 'grid-rows-[auto,1fr,auto]'; // center
+
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="mx-auto w-full max-w-xl px-6 pt-8 flex-1">
-        {/* Progress */}
+    <div
+      className={[
+        // Use "svh" to avoid URL bar shrinking vh on mobile
+        'min-h-[100svh] bg-background text-foreground',
+        // Grid: header / main / footer slots
+        'grid', layout,
+        // Safe-area padding on iOS
+        'pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]',
+      ].join(' ')}
+    >
+      {/* HEADER (progress + titles) */}
+      <div className="mx-auto w-full max-w-xl px-6">
         {showProgress && (
-          <div className="mb-5">
+          <div className="mb-5 mt-8">
             <div className="h-1 bg-muted rounded-full overflow-hidden">
               <div 
                 className="h-full bg-primary transition-all duration-300 ease-out"
@@ -73,16 +92,12 @@ export function OnboardingShell({
             </div>
           </div>
         )}
-
-        {/* Header */}
         {(overline || title || subtitle) && (
           <header className={headerVariant === 'hero' ? 'mb-10 text-center' : 'mb-6'}>
-            {overline && (
-              <div className="text-xs tracking-[0.22em] text-white/60 mb-2">{overline}</div>
-            )}
+            {overline && <div className="text-xs tracking-[0.22em] text-white/60 mb-2">{overline}</div>}
             {title && (
               <h1 className={headerVariant === 'hero'
-                ? 'text-[44px] md:text-6xl font-extralight tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(90deg,var(--accent-violet-400),#D16FFF)]'
+                ? 'text-[44px] font-extralight tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(90deg,var(--accent-violet-400),#D16FFF)]'
                 : 'text-2xl font-semibold text-white'}>
                 {title}
               </h1>
@@ -99,60 +114,44 @@ export function OnboardingShell({
             )}
           </header>
         )}
-
-        {/* Content */}
-        <div className={headerVariant === 'hero' ? 'mx-auto w-full max-w-md' : ''}>
-          {children}
-        </div>
       </div>
 
-      {/* Sticky nav */}
-      {!disableNav && (
-        <div className="px-6 pb-6">
-          <div className="mx-auto w-full max-w-xl flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              onClick={goBack} 
-              disabled={!canGoBack || isAdvancing}
-            >
+      {/* MAIN (content) */}
+      <main className={[
+        'mx-auto w-full max-w-xl px-6',
+        // When centered or distributed, center the payload block
+        verticalAlign !== 'top' ? 'grid place-content-center' : '',
+      ].join(' ')}>
+        {children}
+      </main>
+
+      {/* FOOTER (pager + sticky nav if enabled) */}
+      <footer className="mx-auto w-full max-w-xl px-6 pb-4">
+        {!disableNav && (
+          <div className="mb-2 flex items-center justify-between">
+            <Button variant="ghost" onClick={goBack} disabled={!canGoBack || isAdvancing}>
               {backLabel ?? 'Back'}
             </Button>
             {!atFinal && canGoNext && (
-              <Button 
-                onClick={handleNext} 
-                disabled={isAdvancing} 
-                className={[
-                  'relative rounded-full before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]',
-                  headerVariant === 'hero' 
-                    ? 'px-7 h-14 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)]' 
-                    : 'px-6 shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
-                ].join(' ')}
-              >
+              <Button onClick={handleNext} disabled={isAdvancing} className="rounded-full px-6">
                 {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}
               </Button>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Pager dots (optional) */}
-      {pager && (
-        <div className="pb-3">
-          <div className="mx-auto w-full max-w-xl flex items-center justify-center gap-2">
+        )}
+        {pager && (
+          <div className="flex items-center justify-center gap-2">
             {Array.from({ length: pager.count }).map((_, i) => (
               <div
                 key={i}
-                className={[
-                  'h-2 rounded-full transition-all',
-                  i === pager.index 
-                    ? 'w-9 bg-[var(--accent-violet-400)] shadow-[0_0_14px_rgba(124,103,234,0.65)]'
-                    : 'w-2 bg-white/18'
-                ].join(' ')}
+                className={i === pager.index
+                  ? 'h-2 w-9 rounded-full bg-[var(--accent-violet-400)] shadow-[0_0_14px_rgba(124,103,234,0.65)]'
+                  : 'h-2 w-2 rounded-full bg-white/18'}
               />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </footer>
 
       {/* Debug info (dev only) */}
       {process.env.NODE_ENV === 'development' && (

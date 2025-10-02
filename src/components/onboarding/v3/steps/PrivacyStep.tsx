@@ -70,6 +70,7 @@ export function PrivacyStep({ machine, onComplete }: Props) {
       showProgress={true}
       pager={{ index: 3, count: 7 }}
       nextLabel="Perfect"
+      verticalAlign="center"
     >
       <div className="mx-auto w-full max-w-md space-y-4">
         {/* Inner Circle */}

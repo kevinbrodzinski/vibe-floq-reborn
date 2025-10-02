@@ -29,9 +29,10 @@ export function WelcomeStep({ machine }: Props) {
       showProgress={false}
       pager={{ index: 0, count: 7 }}
       disableNav
+      verticalAlign="distribute"
     >
-      {/* Full-height layout with even distribution */}
-      <div className="min-h-[calc(100vh-140px)] mx-auto w-full max-w-md px-2 flex flex-col justify-between gap-8">
+      {/* Content with consistent spacing */}
+      <div className="mx-auto w-full max-w-md space-y-12">
 
         {/* Live chip + open canvas */}
         <div className="space-y-6">
