@@ -22,6 +22,9 @@ export function WelcomeStep({ machine }: Props) {
   return (
     <OnboardingShell
       machine={machine}
+      overline="BETA"
+      title="FLOQ"
+      subtitle={tagline}
       headerVariant="hero"
       showProgress={false}
       pager={{ index: 0, count: 7 }}
@@ -29,21 +32,9 @@ export function WelcomeStep({ machine }: Props) {
     >
       {/* Full-height layout with even distribution */}
       <div className="min-h-[calc(100vh-140px)] mx-auto w-full max-w-md px-2 flex flex-col justify-between gap-8">
-        
-        {/* Top stack: overline + FLOQ + subtitle */}
-        <header className="text-center space-y-3">
-          <div className="text-xs tracking-[0.22em] text-white/60">BETA</div>
-          
-          {/* Gradient, thinner FLOQ */}
-          <h1 className="text-[44px] font-extralight tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(90deg,var(--accent-violet-400),#D16FFF)]">
-            FLOQ
-          </h1>
-          
-          <p className="text-lg text-white/70">{tagline}</p>
-        </header>
 
-        {/* Middle: live chip + open canvas */}
-        <section className="space-y-6">
+        {/* Live chip + open canvas */}
+        <div className="space-y-6">
           <div className="mx-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/[0.10]">
             <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
             <span className="text-sm text-white/90">
@@ -53,7 +44,7 @@ export function WelcomeStep({ machine }: Props) {
 
           {/* Open canvas – no frame */}
           <FieldPreview />
-        </section>
+        </div>
 
         {/* Bottom: centered CTA ABOVE sign-in */}
         <footer className="space-y-4">

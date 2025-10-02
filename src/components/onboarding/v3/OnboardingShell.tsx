@@ -82,7 +82,7 @@ export function OnboardingShell({
             )}
             {title && (
               <h1 className={headerVariant === 'hero'
-                ? 'text-[44px] md:text-6xl font-light tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(240,240,255,0.95))]'
+                ? 'text-[44px] md:text-6xl font-extralight tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(90deg,var(--accent-violet-400),#D16FFF)]'
                 : 'text-2xl font-semibold text-white'}>
                 {title}
               </h1>
