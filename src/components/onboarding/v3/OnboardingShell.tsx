@@ -108,8 +108,10 @@ export function OnboardingShell({
               onClick={handleNext} 
               disabled={isAdvancing} 
               className={[
-                'rounded-full px-6',
-                headerVariant === 'hero' ? 'shadow-[0_16px_48px_rgba(124,103,234,0.45)]' : 'shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
+                'rounded-full',
+                headerVariant === 'hero' 
+                  ? 'px-7 h-14 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)]' 
+                  : 'px-6 shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
               ].join(' ')}
             >
               {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}

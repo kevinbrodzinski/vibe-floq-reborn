@@ -23,18 +23,20 @@ export function WelcomeStep({ machine }: Props) {
       backLabel=""
     >
       <div className="space-y-7">
-        <div className="flex justify-center">
-          <GlassCard className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--glass-border)]">
-            <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
-            <span className="text-sm text-white/90">
-              <LiveCounter /> people joining now
-            </span>
-          </GlassCard>
+        {/* Live counter chip */}
+        <div className="mx-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/[0.10]">
+          <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
+          <span className="text-sm text-white/90">
+            <LiveCounter /> people joining now
+          </span>
         </div>
 
-        <FieldPreview />
+        {/* OPEN canvas (no card) */}
+        <div className="mt-2">
+          <FieldPreview />
+        </div>
 
-        <div className="text-center text-sm text-white/60 pt-2">
+        <div className="text-center text-sm text-white/65 pt-2">
           Already have an account?{' '}
           <a href="/auth" className="underline decoration-white/30 underline-offset-4">
             Sign in
