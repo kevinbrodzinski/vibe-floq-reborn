@@ -12,6 +12,8 @@ import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
+import { useOnboardingGate } from '@/hooks/useOnboardingGate';
+import { CURRENT_ONBOARDING_VERSION } from '@/constants/onboarding';
 
 const ONBOARDING_KEY = 'floq_onboarding_complete';
 const SPLASH_SEEN_KEY = 'floq_splash_seen';
@@ -36,6 +38,9 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
   const { getRedirectPath, clearRedirectPath } = useDeepLinkRedirect();
   const { getItem, setItem } = useSafeStorage();
   const location = useLocation();
+  
+  // V3 onboarding gate (replaces old check)
+  const onboardingGate = useOnboardingGate();
 
   // Check if user is visiting a shared plan route (bypass onboarding and splash)
   const isSharedPlanRoute = location.pathname.startsWith('/share/');
@@ -136,35 +141,27 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
   // Debug logging optimized to prevent infinite loops
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[AppAccessGuard Debug]', {
+      console.log('[AppAccessGuard Debug v3]', {
         user: !!user,
         profileId: user?.id,
-        preferences: !!preferences,
-        preferencesVersion: preferences?.onboarding_version,
-        onboardingVersion: ONBOARDING_VERSION,
-        onboardingComplete,
-        onboardingError,
+        needsOnboarding: onboardingGate.needsOnboarding,
+        stepIndex: onboardingGate.stepIndex,
+        gateVersion: onboardingGate.currentVersion,
         isSharedRoute: isSharedPlanRoute,
         isDirectRoute: isDirectPlanRoute,
         currentPath: location.pathname
       });
     }
-  }, [user?.id, preferences?.onboarding_version, onboardingComplete, onboardingError, isSharedPlanRoute, isDirectPlanRoute, location.pathname]);
+  }, [user?.id, onboardingGate.needsOnboarding, onboardingGate.stepIndex, isSharedPlanRoute, isDirectPlanRoute, location.pathname]);
 
   // Show loading state with proper error handling
-  if (loading || (user && loadingPrefs) || onboardingLoading || showSplash === null) {
+  if (loading || (user && loadingPrefs) || (user && onboardingGate.isLoading) || showSplash === null) {
     return <AppLoadingFallback message={
       loading ? "Authenticating..." :
       loadingPrefs ? "Loading preferences..." :
-      onboardingLoading ? "Loading your progress..." :
+      onboardingGate.isLoading ? "Loading your progress..." :
       "Initializing..."
     } />;
-  }
-
-  // Handle onboarding query errors gracefully
-  if (onboardingError) {
-    console.error('Onboarding check error:', onboardingError);
-    // Fallback to assuming onboarding is not complete
   }
 
   // Allow access to shared routes without authentication
@@ -201,9 +198,8 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
     return <AuthScreen />;
   }
 
-  // Skip onboarding for shared plan routes or if already completed
-  // Use fallback to false if there was an error checking onboarding status
-  const shouldShowOnboarding = !onboardingComplete && !onboardingError && !isSharedPlanRoute && !isDirectPlanRoute;
+  // V3 onboarding gate: use server-authoritative check
+  const shouldShowOnboarding = onboardingGate.needsOnboarding && !isSharedPlanRoute && !isDirectPlanRoute;
   
   if (shouldShowOnboarding) {
     console.log('📝 Showing onboarding screen');
@@ -220,7 +216,7 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
             startTransition(() => {
               // Invalidate queries to refresh state
               queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
-              queryClient.invalidateQueries({ queryKey: ['onboarding-complete', user?.id] });
+              queryClient.invalidateQueries({ queryKey: ['onboarding-gate-v3'] });
             });
             
             // Handle redirect
