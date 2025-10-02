@@ -15,6 +15,7 @@ type Props = {
   onComplete?: () => void;
   nextLabel?: string;
   backLabel?: string;
+  disableNav?: boolean;
 };
 
 export function OnboardingShell({ 
@@ -28,7 +29,8 @@ export function OnboardingShell({
   pager = null,
   onComplete, 
   nextLabel, 
-  backLabel 
+  backLabel,
+  disableNav = false
 }: Props) {
   const { stepIndex, canGoBack, canGoNext, isAdvancing, goNext, goBack, markComplete } = machine;
   const atFinal = stepIndex === FINAL_STEP_INDEX;
@@ -105,31 +107,33 @@ export function OnboardingShell({
       </div>
 
       {/* Sticky nav */}
-      <div className="px-6 pb-6">
-        <div className="mx-auto w-full max-w-xl flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            onClick={goBack} 
-            disabled={!canGoBack || isAdvancing}
-          >
-            {backLabel ?? 'Back'}
-          </Button>
-          {!atFinal && canGoNext && (
+      {!disableNav && (
+        <div className="px-6 pb-6">
+          <div className="mx-auto w-full max-w-xl flex items-center justify-between">
             <Button 
-              onClick={handleNext} 
-              disabled={isAdvancing} 
-              className={[
-                'relative rounded-full before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]',
-                headerVariant === 'hero' 
-                  ? 'px-7 h-14 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)]' 
-                  : 'px-6 shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
-              ].join(' ')}
+              variant="ghost" 
+              onClick={goBack} 
+              disabled={!canGoBack || isAdvancing}
             >
-              {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}
+              {backLabel ?? 'Back'}
             </Button>
-          )}
+            {!atFinal && canGoNext && (
+              <Button 
+                onClick={handleNext} 
+                disabled={isAdvancing} 
+                className={[
+                  'relative rounded-full before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]',
+                  headerVariant === 'hero' 
+                    ? 'px-7 h-14 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)]' 
+                    : 'px-6 shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
+                ].join(' ')}
+              >
+                {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Pager dots (optional) */}
       {pager && (

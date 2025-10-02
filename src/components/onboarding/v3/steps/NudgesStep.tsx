@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { OnboardingShell } from '../OnboardingShell';
 import { GlassCard } from '../shared/GlassCard';
 import { Button } from '@/components/ui/button';
+import { haptic } from '@/lib/haptics';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
 import type { Friend } from '@/lib/friends/adapter';
 
-type Mode = 'friends' | 'pattern';
+type Mode = 'idle' | 'success';
 
 function AvatarRow({ friends }: { friends: Friend[] }) {
   return (
-    <div className="flex -space-x-2">
+    <div className="flex justify-center -space-x-2">
       {friends.slice(0, 6).map((f) => (
         <div key={f.id} className="h-9 w-9 rounded-full bg-white/10 border border-white/15 grid place-items-center text-sm">
           {f.initials}
@@ -24,42 +25,12 @@ function AvatarRow({ friends }: { friends: Friend[] }) {
   );
 }
 
-function PatternCard({
-  title, badge, description, highlight, actionText, tone = 'purple', onAction,
-}: {
-  title: string;
-  badge?: string;
-  description: string;
-  highlight?: string;
-  actionText: string;
-  tone?: 'purple' | 'blue';
-  onAction: () => void;
-}) {
-  return (
-    <GlassCard className="p-4 border-l-4"
-      style={{ borderLeftColor: tone === 'purple' ? 'rgba(168,85,247,0.7)' : 'rgba(59,130,246,0.7)' }}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <div className="font-medium text-white">{title}</div>
-        {badge && <div className="text-xs text-emerald-400">{badge}</div>}
-      </div>
-      <div className="text-sm text-white/80">{description}</div>
-      {highlight && <div className="text-sm text-rose-400 mt-1">{highlight}</div>}
-      <div className="mt-3">
-        <Button size="sm" className="bg-violet-700" onClick={onAction} aria-label={actionText}>
-          {actionText}
-        </Button>
-      </div>
-    </GlassCard>
-  );
-}
-
 type Props = {
   machine: OnboardingMachine;
 };
 
 export function NudgesStep({ machine }: Props) {
-  const [mode, setMode] = useState<Mode>('friends');
+  const [mode, setMode] = useState<Mode>('idle');
   const [friends, setFriends] = useState<Friend[]>([]);
 
   useEffect(() => {
@@ -67,34 +38,57 @@ export function NudgesStep({ machine }: Props) {
     void import('@/lib/friends/adapter').then(m => m.devFriendsAdapter.findExisting().then(setFriends));
   }, []);
 
-  function handleFriendsDone() {
-    setMode('pattern');
-  }
+  const doInstagram = async () => {
+    haptic('medium');
+    // In dev, use fixtures; in prod, would call real import
+    if (process.env.NODE_ENV === 'development') {
+      setFriends(await import('@/lib/friends/adapter').then(m => m.devFriendsAdapter.findExisting()));
+    }
+    setMode('success');
+  };
 
-  if (mode === 'friends') {
+  const skip = () => {
+    machine.goNext();
+  };
+
+  const addAll = () => {
+    haptic('medium');
+    // Future: upsert friend links
+    machine.goNext();
+  };
+
+  if (mode === 'idle') {
     return (
       <OnboardingShell
         machine={machine}
+        title="FIND YOUR PEOPLE"
+        headerVariant="section"
+        showProgress={true}
+        pager={{ index: 4, count: 7 }}
         nextLabel="Skip for now"
       >
-        <div className="space-y-4">
-          <div className="text-white/70">We'll check who's already here</div>
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <p className="text-white/70">We'll check who's already here</p>
 
-          <GlassCard className="p-4">
-            <div className="mb-3 font-medium text-white">Phone Contacts</div>
-            <div className="flex items-center justify-between">
-              <AvatarRow friends={friends} />
-              <Button className="bg-emerald-600" onClick={handleFriendsDone} aria-label="Add all friends">
-                Add all friends
+          {/* Instagram card (PRIMARY) */}
+          <GlassCard className="p-5 rounded-3xl border border-[var(--accent-violet-400)]/40">
+            <div className="text-white font-medium">Instagram</div>
+            <div className="text-sm text-white/70 mt-1">Import your social graph</div>
+            <div className="mt-4">
+              <Button className="rounded-full" onClick={doInstagram}>
+                Connect
               </Button>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-4">
-            <div className="mb-1 font-medium text-white">Instagram</div>
-            <div className="text-sm text-white/70">Import your social graph</div>
-            <div className="mt-3">
-              <Button variant="ghost" className="text-white/80">Connect</Button>
+          {/* Skip for now card (SECONDARY) */}
+          <GlassCard className="p-5 rounded-3xl border border-white/10">
+            <div className="text-white font-medium">Skip for now</div>
+            <div className="text-sm text-white/70 mt-1">Add friends later</div>
+            <div className="mt-4">
+              <Button variant="ghost" onClick={skip} className="text-white/80">
+                Continue
+              </Button>
             </div>
           </GlassCard>
         </div>
@@ -102,50 +96,39 @@ export function NudgesStep({ machine }: Props) {
     );
   }
 
-  // mode === 'pattern'
+  // mode === 'success'
   return (
     <OnboardingShell
       machine={machine}
-      nextLabel="Fix this now"
+      title="FIND YOUR PEOPLE"
+      headerVariant="section"
+      showProgress={true}
+      pager={{ index: 4, count: 7 }}
+      disableNav
     >
-      <div className="space-y-4">
-        {/* Alert banner */}
-        <GlassCard className="p-3 bg-rose-500/10 border-rose-300/20" role="status" aria-live="polite">
-          <div className="text-sm font-medium text-rose-300">PATTERN DETECTED</div>
-        </GlassCard>
+      <div className="mx-auto w-full max-w-md space-y-6">
+        {/* Checkmark circle */}
+        <div className="mx-auto h-16 w-16 rounded-full border border-[var(--accent-violet-400)]/40 grid place-items-center">
+          <div className="h-6 w-6 rounded-full bg-[var(--accent-violet-400)]" />
+        </div>
 
-        {/* Missed Thursdays row of dots */}
-        <GlassCard className="p-4">
-          <div className="text-sm text-white/80 mb-2">YOUR MISSED THURSDAYS</div>
-          <div className="flex gap-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-3 w-3 rounded-full bg-rose-400" />
-            ))}
+        <div className="text-center">
+          <div className="text-white/90 text-lg">
+            Found {Math.max(friends.length, 12)} friends!
           </div>
-          <div className="text-xs text-white/60 mt-2">8 weeks straight without you</div>
-        </GlassCard>
+        </div>
 
-        {/* Cards */}
-        <PatternCard
-          title="Your Thursday Crew"
-          badge="Tonight 7:30pm"
-          description="Sarah, Tom, and Alex at Gran Blanco • Every Thursday. Same time. Same booth."
-          highlight="Last week they stayed until 2am."
-          actionText="Join tonight"
-          tone="purple"
-          onAction={() => void machine.goNext()}
-        />
-        <PatternCard
-          title="Weekend Beach Pattern"
-          badge="LIVE"
-          description="6 of your friends converge at Tower 26"
-          actionText="Enable alerts"
-          tone="blue"
-          onAction={() => void machine.goNext()}
-        />
+        {/* Avatars row */}
+        <AvatarRow friends={friends} />
 
-        <div className="text-center text-sm text-white/70">
-          Your social life is happening. Ready to join?
+        {/* Big green CTA */}
+        <div className="pt-2">
+          <Button
+            className="w-full rounded-full h-12 bg-emerald-600 shadow-[0_12px_40px_rgba(16,185,129,0.35)]"
+            onClick={addAll}
+          >
+            Add All Friends
+          </Button>
         </div>
       </div>
     </OnboardingShell>
