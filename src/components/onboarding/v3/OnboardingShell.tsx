@@ -80,7 +80,10 @@ export function OnboardingShell({
       ].join(' ')}
     >
       {/* HEADER (progress + titles) */}
-      <div className="mx-auto w-full max-w-xl px-6">
+      <div className={[
+        'mx-auto w-full max-w-xl px-6',
+        verticalAlign === 'distribute' ? 'flex flex-col justify-end pb-8' : '',
+      ].join(' ')}>
         {showProgress && (
           <div className="mb-5 mt-8">
             <div className="h-1 bg-muted rounded-full overflow-hidden">
@@ -97,7 +100,7 @@ export function OnboardingShell({
             {overline && <div className="text-xs tracking-[0.22em] text-white/60 mb-2">{overline}</div>}
             {title && (
               <h1 className={headerVariant === 'hero'
-                ? 'text-[44px] font-extralight tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-[linear-gradient(90deg,var(--accent-violet-400),#D16FFF)]'
+                ? 'text-[44px] font-extralight tracking-[0.05em] leading-[1.08] bg-clip-text text-transparent bg-gradient-to-r from-[rgb(124,103,234)] to-[#D16FFF]'
                 : 'text-2xl font-semibold text-white'}>
                 {title}
               </h1>
@@ -109,7 +112,7 @@ export function OnboardingShell({
             )}
             {headerVariant === 'section' && (
               <div className="mt-3 h-1 w-20 rounded-full bg-white/10">
-                <div className="h-1 w-10 rounded-full bg-[var(--accent-violet-400)]" />
+                <div className="h-1 w-10 rounded-full bg-[rgb(124,103,234)]" />
               </div>
             )}
           </header>
@@ -145,7 +148,7 @@ export function OnboardingShell({
               <div
                 key={i}
                 className={i === pager.index
-                  ? 'h-2 w-9 rounded-full bg-[var(--accent-violet-400)] shadow-[0_0_14px_rgba(124,103,234,0.65)]'
+                  ? 'h-2 w-9 rounded-full bg-[rgb(124,103,234)] shadow-[0_0_14px_rgba(124,103,234,0.65)]'
                   : 'h-2 w-2 rounded-full bg-white/18'}
               />
             ))}

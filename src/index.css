@@ -12,6 +12,11 @@
     --field-glow-outer: rgba(140,120,255,0.00);
     --field-dot-fill: rgba(170,150,255,0.55);
     --field-line-glint: rgba(180,160,255,0.20);
+    
+    /* Accent colors for onboarding */
+    --accent-violet-400: 124 103 234;  /* rgb values for use with rgb() */
+    --glass-bg: rgba(255,255,255,0.055);
+    --glass-border: rgba(255,255,255,0.10);
   }
 }
 
