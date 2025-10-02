@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { OnboardingShell } from '../OnboardingShell';
 import { GlassCard } from '../shared/GlassCard';
-import { Button } from '@/components/ui/button';
 import { updatePrivacySettings, type PrivacyPreset, type PrivacyMatrix, type Precision } from '@/lib/preferences/updateUserPreferences';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
 
@@ -18,23 +17,29 @@ function Tier({
   options: { key: Precision; label: string }[]; onChange: (v: Precision) => void;
 }) {
   return (
-    <GlassCard className="p-4">
+    <GlassCard className="p-4 rounded-3xl">
       <div className="mb-3 flex items-center justify-between">
-        <div className="font-medium text-white">{title}</div>
-        <div className="text-xs text-white/60">{people}</div>
+        <div className="text-base font-medium text-white">{title}</div>
+        <div className="text-sm text-white/50">{people}</div>
       </div>
-      <div className="flex gap-2 flex-wrap">
-        {options.map(o => (
-          <Button
-            key={o.key}
-            size="sm"
-            variant={value === o.key ? 'default' : 'ghost'}
-            className={value === o.key ? 'bg-violet-600' : 'text-white/70'}
-            onClick={() => onChange(o.key)}
-          >
-            {o.label}
-          </Button>
-        ))}
+      <div className="flex gap-3">
+        {options.map(o => {
+          const isSelected = value === o.key;
+          return (
+            <button
+              key={o.key}
+              onClick={() => onChange(o.key)}
+              className={[
+                'flex-1 h-11 rounded-full text-sm font-medium transition-all',
+                isSelected 
+                  ? 'bg-[var(--accent-violet-400)] text-white shadow-[0_4px_16px_rgba(124,103,234,0.4)]'
+                  : 'bg-white/[0.08] text-white/70 hover:bg-white/[0.12] border border-white/[0.08]'
+              ].join(' ')}
+            >
+              {o.label}
+            </button>
+          );
+        })}
       </div>
     </GlassCard>
   );
@@ -46,13 +51,8 @@ type Props = {
 };
 
 export function PrivacyStep({ machine, onComplete }: Props) {
-  const [preset, setPreset] = useState<PrivacyPreset>('balanced');
+  const [preset] = useState<PrivacyPreset>('balanced');
   const [matrix, setMatrix] = useState<PrivacyMatrix>(PRESETS['balanced']);
-
-  const applyPreset = (p: PrivacyPreset) => {
-    setPreset(p);
-    setMatrix(PRESETS[p]);
-  };
 
   const handleNext = async () => {
     // Fire-and-forget; do not block UX
@@ -64,25 +64,15 @@ export function PrivacyStep({ machine, onComplete }: Props) {
   return (
     <OnboardingShell
       machine={{ ...machine, goNext: handleNext }}
+      title="YOUR PRIVACY MATTERS"
+      subtitle="You control who sees what, always"
+      headerVariant="section"
+      showProgress={true}
+      pager={{ index: 3, count: 7 }}
       nextLabel="Perfect"
     >
-      <div className="space-y-4">
-        {/* Preset pills */}
-        <div className="flex gap-2">
-          {(['strict','balanced','open'] as PrivacyPreset[]).map(p => (
-            <Button
-              key={p}
-              size="sm"
-              variant={preset === p ? 'default' : 'ghost'}
-              className={preset === p ? 'bg-violet-600' : 'text-white/70'}
-              onClick={() => applyPreset(p)}
-            >
-              {p === 'strict' ? 'Strict' : p === 'balanced' ? 'Balanced' : 'Open'}
-            </Button>
-          ))}
-        </div>
-
-        {/* Matrix */}
+      <div className="mx-auto w-full max-w-md space-y-4">
+        {/* Inner Circle */}
         <Tier
           title="Inner Circle"
           people="0 friends"
@@ -94,6 +84,8 @@ export function PrivacyStep({ machine, onComplete }: Props) {
           ]}
           onChange={(v) => setMatrix(m => ({ ...m, circle: v }))}
         />
+
+        {/* Friends */}
         <Tier
           title="Friends"
           people="12 friends"
@@ -105,6 +97,8 @@ export function PrivacyStep({ machine, onComplete }: Props) {
           ]}
           onChange={(v) => setMatrix(m => ({ ...m, friends: v }))}
         />
+
+        {/* Everyone else */}
         <Tier
           title="Everyone else"
           people="Strangers"
@@ -117,8 +111,12 @@ export function PrivacyStep({ machine, onComplete }: Props) {
           onChange={(v) => setMatrix(m => ({ ...m, others: v }))}
         />
 
-        <GlassCard className="p-4">
-          <div className="text-sm text-emerald-400">✓ You always contribute anonymously to city patterns</div>
+        {/* Anonymous contribution message */}
+        <GlassCard className="p-4 rounded-2xl bg-emerald-500/10 border-emerald-400/20">
+          <div className="flex items-start gap-2 text-sm text-emerald-400">
+            <span className="text-emerald-400">✓</span>
+            <span>You always contribute anonymously to city patterns</span>
+          </div>
         </GlassCard>
       </div>
     </OnboardingShell>
