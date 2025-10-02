@@ -5,15 +5,12 @@ import { AuthScreen } from '@/components/auth/AuthScreen';
 import { EnhancedOnboardingScreen } from '@/components/onboarding/EnhancedOnboardingScreen';
 import { SplashScreen } from '@/components/visual/SplashScreen';
 import { useQueryClient } from '@tanstack/react-query';
-import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState, startTransition, Suspense } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
 import { useOnboardingGate } from '@/hooks/useOnboardingGate';
-import { CURRENT_ONBOARDING_VERSION } from '@/constants/onboarding';
 
 const ONBOARDING_KEY = 'floq_onboarding_complete';
 const SPLASH_SEEN_KEY = 'floq_splash_seen';
@@ -71,72 +68,6 @@ function AppAccessGuardContent({ children }: { children: React.ReactNode }) {
     
     checkSplashSeen();
   }, [getItem, isSharedPlanRoute, isDirectPlanRoute]);
-
-  // Enhanced onboarding completion check with proper error handling
-  const { data: onboardingComplete, isLoading: onboardingLoading, error: onboardingError } = useQuery<boolean>({
-    queryKey: ['onboarding-complete', user?.id ?? 'anon'],
-    queryFn: async () => {
-      if (!user) {
-        console.log('🔍 No user found, onboarding incomplete');
-        return false;
-      }
-
-      console.log('🔍 Checking onboarding completion for user:', user.id);
-
-      try {
-        // Check database first - look for completed onboarding progress
-        const { data: progressData, error: progressError } = await supabase
-          .from('user_onboarding_progress')
-          .select('completed_at, onboarding_version')
-          .eq('profile_id', user.id as any)
-          .eq('onboarding_version', ONBOARDING_VERSION as any)
-          .maybeSingle();
-
-        if (progressError) {
-          console.error('❌ Error checking onboarding progress:', progressError);
-        } else {
-          console.log('📊 Onboarding progress data:', progressData);
-        }
-
-        // Check if onboarding is marked as completed in progress table
-        if ((progressData as any)?.completed_at) {
-          console.log('✅ Onboarding completed in progress table at:', (progressData as any).completed_at);
-          await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-          return true;
-        }
-
-        // Fallback to preferences table check
-        const hasCompletedPreferences = preferences?.onboarding_version === ONBOARDING_VERSION;
-        if (hasCompletedPreferences) {
-          console.log('✅ Onboarding completed in preferences table');
-          await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-          return true;
-        }
-
-        // Final fallback to localStorage
-        const stored = await getItem(ONBOARDING_KEY);
-        const localStorageComplete = stored === ONBOARDING_VERSION;
-        
-        console.log('💾 Local storage onboarding status:', localStorageComplete);
-        
-        return localStorageComplete;
-      } catch (error) {
-        console.error('💥 Error checking onboarding status:', error);
-        
-        // Fallback to localStorage only on error
-        const stored = await getItem(ONBOARDING_KEY);
-        const fallbackComplete = stored === ONBOARDING_VERSION;
-        console.log('🆘 Fallback check result:', fallbackComplete);
-        return fallbackComplete;
-      }
-    },
-    enabled: !!user,
-    staleTime: 30000, // 30 seconds - reduced for more responsive updates
-    gcTime: 60000, // 1 minute
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    throwOnError: false
-  });
 
   // Debug logging optimized to prevent infinite loops
   useEffect(() => {

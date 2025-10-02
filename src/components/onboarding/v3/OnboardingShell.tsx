@@ -16,7 +16,8 @@ export function OnboardingShell({ machine, children, onComplete, nextLabel, back
   const { stepIndex, canGoBack, canGoNext, isAdvancing, goNext, goBack, markComplete } = machine;
   const atFinal = stepIndex === FINAL_STEP_INDEX;
   const lastBeforeFinal = stepIndex === FINAL_STEP_INDEX - 1;
-  const progressPercent = Math.round((stepIndex / FINAL_STEP_INDEX) * 100);
+  const denom = Math.max(FINAL_STEP_INDEX, 1);
+  const progressPercent = Math.round((stepIndex / denom) * 100);
 
   async function handleNext() {
     if (lastBeforeFinal) {

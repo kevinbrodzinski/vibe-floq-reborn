@@ -20,12 +20,7 @@ export function useOnboardingGate(): OnboardingGateStatus {
     queryKey: ['onboarding-gate-v3', user?.id],
     enabled: !!user?.id,
     staleTime: 30_000,
-    retry: (count, error: any) => {
-      const code = error?.code;
-      // Don't hammer if relation/function is missing
-      if (code === '42P01' || code === '42883') return false;
-      return count < 1;
-    },
+    retry: (count, error: any) => (['42P01','42883'].includes(error?.code) ? false : count < 1),
     queryFn: async (): Promise<GateRow | null> => {
       if (!user) return null;
 
