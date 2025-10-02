@@ -32,7 +32,7 @@ function PatternCard({
   description: string;
   highlight?: string;
   actionText: string;
-  tone?: 'purple'|'blue';
+  tone?: 'purple' | 'blue';
   onAction: () => void;
 }) {
   return (

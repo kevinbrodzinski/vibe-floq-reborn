@@ -45,16 +45,19 @@ export function ProfileVibeStep({ machine }: Props) {
               <SelectTrigger className="w-40 rounded-xl bg-white/[0.05] border-white/[0.08]">
                 <SelectValue placeholder="Month" />
               </SelectTrigger>
-              <SelectContent>{MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
             </Select>
             <Select onValueChange={setYear}>
               <SelectTrigger className="w-32 rounded-xl bg-white/[0.05] border-white/[0.08]">
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({length: 60}, (_, i) => String(2025 - i)).map(y =>
-                  <SelectItem key={y} value={y}>{y}</SelectItem>
-                )}
+                {Array.from({length: 60}, (_, i) => {
+                  const year = String(new Date().getFullYear() - 18 - i);
+                  return <SelectItem key={year} value={year}>{year}</SelectItem>;
+                })}
               </SelectContent>
             </Select>
           </div>

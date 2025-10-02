@@ -29,7 +29,7 @@ export function WelcomeStep({ machine }: Props) {
       </div>
 
       <div className="mt-8 text-center text-sm text-white/50">
-        Already have an account? <span className="underline decoration-white/30 underline-offset-4 cursor-pointer">Sign in</span>
+        Already have an account? <a href="/auth" className="underline decoration-white/30 underline-offset-4 cursor-pointer">Sign in</a>
       </div>
     </OnboardingShell>
   );

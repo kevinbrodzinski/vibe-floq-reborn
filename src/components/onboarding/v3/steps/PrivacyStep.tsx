@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { OnboardingShell } from '../OnboardingShell';
 import { GlassCard } from '../shared/GlassCard';
 import { Button } from '@/components/ui/button';
-import { updatePrivacySettings, type PrivacyPreset, type PrivacyMatrix } from '@/lib/preferences/updateUserPreferences';
+import { updatePrivacySettings, type PrivacyPreset, type PrivacyMatrix, type Precision } from '@/lib/preferences/updateUserPreferences';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
 
 const PRESETS: Record<PrivacyPreset, PrivacyMatrix> = {
@@ -15,7 +15,7 @@ function Tier({
   title, people, value, options, onChange,
 }: {
   title: string; people: string; value: string;
-  options: { key: any; label: string }[]; onChange: (v: any)=>void;
+  options: { key: Precision; label: string }[]; onChange: (v: Precision) => void;
 }) {
   return (
     <GlassCard className="p-4">

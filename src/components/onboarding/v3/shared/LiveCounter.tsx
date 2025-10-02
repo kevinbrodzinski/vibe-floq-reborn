@@ -5,11 +5,12 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function LiveCounter({ min = 22, max = 50, periodMs = 3500 }: { min?: number; max?: number; periodMs?: number }) {
   const [value, setValue] = useState(min);
-  const timer = useRef<number | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const reduced = typeof window !== 'undefined'
-      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window === 'undefined') return;
+    
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
     function tick() {
       setValue(prev => {
@@ -19,35 +20,28 @@ export function LiveCounter({ min = 22, max = 50, periodMs = 3500 }: { min?: num
     }
 
     function start() {
-      if (reduced) return;
-      stop();
-      timer.current = window.setInterval(tick, periodMs);
+      if (reduced || timerRef.current) return;
+      timerRef.current = window.setInterval(tick, periodMs);
     }
     
     function stop() {
-      if (timer.current) { 
-        clearInterval(timer.current); 
-        timer.current = null; 
+      if (timerRef.current) { 
+        clearInterval(timerRef.current); 
+        timerRef.current = null; 
       }
     }
 
     function onVisibility() {
-      if (typeof document !== 'undefined') {
-        if (document.visibilityState === 'visible') start();
-        else stop();
-      }
+      if (document.visibilityState === 'visible') start();
+      else stop();
     }
 
     start();
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', onVisibility);
-    }
+    document.addEventListener('visibilitychange', onVisibility);
     
     return () => {
       stop();
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisibility);
-      }
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [min, max, periodMs]);
 

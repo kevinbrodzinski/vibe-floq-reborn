@@ -1,10 +1,16 @@
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useMemo } from 'react';
 
 type Cluster = { x: number; y: number; r: number };
 
 export const FieldPreview = memo(function FieldPreview() {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
+
+  const clusters = useMemo<Cluster[]>(() => ([
+    { x: 90,  y: 120, r: 18 },
+    { x: 210, y: 80,  r: 26 },
+    { x: 160, y: 180, r: 14 },
+  ]), []);
 
   function drawFrame(ctx: CanvasRenderingContext2D, t: number, clusters: Cluster[]) {
     const { width: w, height: h } = ctx.canvas;
@@ -44,20 +50,14 @@ export const FieldPreview = memo(function FieldPreview() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resize();
-    
-    const clusters: Cluster[] = [
-      { x: 90,  y: 120, r: 18 },
-      { x: 210, y: 80,  r: 26 },
-      { x: 160, y: 180, r: 14 },
-    ];
 
     const media = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
     const reduced = !!media?.matches;
 
-    function loop(t: number) {
+    const loop = (t: number) => {
       drawFrame(ctx, t, clusters);
       if (!reduced) rafRef.current = requestAnimationFrame(loop);
-    }
+    };
     rafRef.current = requestAnimationFrame(loop);
 
     const onResize = () => resize();
@@ -73,7 +73,7 @@ export const FieldPreview = memo(function FieldPreview() {
         media?.removeEventListener('change', onResize);
       }
     };
-  }, []);
+  }, [clusters]);
 
   return (
     <div className="relative rounded-2xl border border-white/10 bg-black/30 backdrop-blur-xl overflow-hidden">

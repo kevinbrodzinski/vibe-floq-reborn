@@ -14,15 +14,16 @@ export async function updatePrivacySettings(
   data: { share_precision_preset: PrivacyPreset; privacy_matrix: PrivacyMatrix; privacy_receipts?: boolean }
 ): Promise<boolean> {
   try {
-    // Try JSONB upsert into user_preferences scoped by auth.uid()
-    // If table/columns are missing, swallow error to avoid blocking onboarding.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    
     const { error } = await supabase
       .from('user_preferences')
       .upsert(
         {
-          profile_id: (await supabase.auth.getUser()).data.user?.id,
+          profile_id: user.id,
           share_precision_preset: data.share_precision_preset,
-          privacy_settings: data.privacy_matrix,    // if you named it privacy_settings/jsonb
+          privacy_settings: data.privacy_matrix,
           privacy_receipts: data.privacy_receipts ?? true,
           updated_at: new Date().toISOString(),
         },
