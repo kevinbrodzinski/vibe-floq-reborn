@@ -17,10 +17,12 @@ export function WelcomeStep({ machine }: Props) {
       title="FLOQ"
       subtitle="Your afternoon awaits"
       headerVariant="hero"
+      showProgress={false}
+      pager={{ index: 0, count: 7 }}
       nextLabel="Get Started"
       backLabel=""
     >
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div className="flex justify-center">
           <GlassCard className="inline-flex items-center gap-2 px-3 py-2 rounded-full">
             <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
@@ -30,11 +32,9 @@ export function WelcomeStep({ machine }: Props) {
           </GlassCard>
         </div>
 
-        <div className="mt-2">
-          <FieldPreview />
-        </div>
+        <FieldPreview />
 
-        <div className="text-center text-sm text-white/60">
+        <div className="text-center text-sm text-white/60 pt-2">
           Already have an account?{' '}
           <a href="/auth" className="underline decoration-white/30 underline-offset-4">
             Sign in

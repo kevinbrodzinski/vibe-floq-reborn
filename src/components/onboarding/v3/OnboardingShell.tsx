@@ -10,6 +10,8 @@ type Props = {
   subtitle?: string;
   overline?: string;
   headerVariant?: 'hero' | 'section';
+  showProgress?: boolean;
+  pager?: { index: number; count: number } | null;
   onComplete?: () => void;
   nextLabel?: string;
   backLabel?: string;
@@ -22,6 +24,8 @@ export function OnboardingShell({
   subtitle,
   overline,
   headerVariant = 'section',
+  showProgress = true,
+  pager = null,
   onComplete, 
   nextLabel, 
   backLabel 
@@ -43,17 +47,19 @@ export function OnboardingShell({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="mx-auto w-full max-w-xl px-6 pt-6 flex-1">
+      <div className="mx-auto w-full max-w-xl px-6 pt-8 flex-1">
         {/* Progress */}
-        <div className="mb-5">
-          <div className="h-1 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-300 ease-out"
-              style={{ width: `${progressPercent}%` }}
-              aria-label="Onboarding progress"
-            />
+        {showProgress && (
+          <div className="mb-5">
+            <div className="h-1 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300 ease-out"
+                style={{ width: `${progressPercent}%` }}
+                aria-label="Onboarding progress"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Header */}
         {(overline || title || subtitle) && (
@@ -63,7 +69,7 @@ export function OnboardingShell({
             )}
             {title && (
               <h1 className={headerVariant === 'hero'
-                ? 'text-6xl font-semibold tracking-[0.02em] leading-[1.08]'
+                ? 'text-[44px] md:text-6xl font-semibold tracking-[0.02em] leading-[1.08]'
                 : 'text-2xl font-semibold'}>
                 {title}
               </h1>
@@ -101,13 +107,35 @@ export function OnboardingShell({
             <Button 
               onClick={handleNext} 
               disabled={isAdvancing} 
-              className="rounded-full px-6"
+              className={[
+                'rounded-full px-6',
+                headerVariant === 'hero' ? 'shadow-[0_12px_40px_rgba(124,103,234,0.35)]' : ''
+              ].join(' ')}
             >
               {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Pager dots (optional) */}
+      {pager && (
+        <div className="pb-3">
+          <div className="mx-auto w-full max-w-xl flex items-center justify-center gap-2">
+            {Array.from({ length: pager.count }).map((_, i) => (
+              <div
+                key={i}
+                className={[
+                  'h-2 rounded-full transition-all',
+                  i === pager.index 
+                    ? 'w-8 bg-[var(--accent-violet-400)] shadow-[0_0_12px_rgba(124,103,234,0.65)]'
+                    : 'w-2 bg-white/15'
+                ].join(' ')}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Debug info (dev only) */}
       {process.env.NODE_ENV === 'development' && (

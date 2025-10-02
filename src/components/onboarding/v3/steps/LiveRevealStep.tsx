@@ -33,6 +33,8 @@ export function LiveRevealStep({ machine }: Props) {
       machine={machine}
       title="YOUR CITY RIGHT NOW"
       headerVariant="section"
+      showProgress={true}
+      pager={{ index: 2, count: 7 }}
       nextLabel="Find Friends"
     >
       <div className="mx-auto w-full max-w-md space-y-6">
@@ -40,7 +42,9 @@ export function LiveRevealStep({ machine }: Props) {
           <div className="mb-2">
             <LiveBadge />
           </div>
-          <FieldPreview />
+          <div className="rounded-2xl overflow-hidden">
+            <FieldPreview />
+          </div>
         </GlassCard>
 
         <div className="space-y-3">

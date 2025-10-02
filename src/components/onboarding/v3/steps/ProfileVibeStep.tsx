@@ -25,10 +25,12 @@ export function ProfileVibeStep({ machine }: Props) {
       machine={{ ...machine, canGoNext: canNext }}
       title="QUICK SETUP"
       headerVariant="section"
+      showProgress={true}
+      pager={{ index: 1, count: 7 }}
       nextLabel="Continue"
     >
       <div className="mx-auto w-full max-w-md space-y-7">
-        <GlassCard className="p-4">
+        <GlassCard className="p-4 rounded-3xl">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-base font-medium text-white">Venice Beach</div>
