@@ -11,25 +11,35 @@ type Props = {
 
 export function WelcomeStep({ machine }: Props) {
   return (
-    <OnboardingShell machine={machine} nextLabel="Get Started">
-      <div className="relative mt-2 rounded-2xl">
-        <AuroraBackground />
-        <div className="relative space-y-6">
-          <div className="flex justify-start">
-            <GlassCard className="inline-flex items-center gap-2 px-3 py-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-violet-400" />
-              <span className="text-sm text-white/90">
-                <LiveCounter /> people joining now
-              </span>
-            </GlassCard>
-          </div>
+    <OnboardingShell
+      machine={machine}
+      overline="BETA"
+      title="FLOQ"
+      subtitle="Your afternoon awaits"
+      headerVariant="hero"
+      nextLabel="Get Started"
+      backLabel=""
+    >
+      <div className="space-y-6">
+        <div className="flex justify-center">
+          <GlassCard className="inline-flex items-center gap-2 px-3 py-2 rounded-full">
+            <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
+            <span className="text-sm text-white/90">
+              <LiveCounter /> people joining now
+            </span>
+          </GlassCard>
+        </div>
 
+        <div className="mt-2">
           <FieldPreview />
         </div>
-      </div>
 
-      <div className="mt-8 text-center text-sm text-white/50">
-        Already have an account? <a href="/auth" className="underline decoration-white/30 underline-offset-4 cursor-pointer">Sign in</a>
+        <div className="text-center text-sm text-white/60">
+          Already have an account?{' '}
+          <a href="/auth" className="underline decoration-white/30 underline-offset-4">
+            Sign in
+          </a>
+        </div>
       </div>
     </OnboardingShell>
   );

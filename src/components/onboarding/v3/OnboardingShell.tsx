@@ -1,18 +1,31 @@
 import { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { FINAL_STEP_INDEX } from '@/constants/onboarding';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
 
 type Props = {
   machine: OnboardingMachine;
   children: ReactNode;
+  title?: string;
+  subtitle?: string;
+  overline?: string;
+  headerVariant?: 'hero' | 'section';
   onComplete?: () => void;
   nextLabel?: string;
   backLabel?: string;
 };
 
-export function OnboardingShell({ machine, children, onComplete, nextLabel, backLabel }: Props) {
+export function OnboardingShell({ 
+  machine, 
+  children, 
+  title,
+  subtitle,
+  overline,
+  headerVariant = 'section',
+  onComplete, 
+  nextLabel, 
+  backLabel 
+}: Props) {
   const { stepIndex, canGoBack, canGoNext, isAdvancing, goNext, goBack, markComplete } = machine;
   const atFinal = stepIndex === FINAL_STEP_INDEX;
   const lastBeforeFinal = stepIndex === FINAL_STEP_INDEX - 1;
@@ -29,47 +42,68 @@ export function OnboardingShell({ machine, children, onComplete, nextLabel, back
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Progress bar */}
-      <div className="h-1 bg-muted">
-        <div 
-          className="h-full bg-primary transition-all duration-300 ease-out"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="mx-auto w-full max-w-xl px-6 pt-6 flex-1">
+        {/* Progress */}
+        <div className="mb-5">
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-300 ease-out"
+              style={{ width: `${progressPercent}%` }}
+              aria-label="Onboarding progress"
+            />
+          </div>
+        </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-lg">
+        {/* Header */}
+        {(overline || title || subtitle) && (
+          <header className={headerVariant === 'hero' ? 'mb-8 text-center' : 'mb-6'}>
+            {overline && (
+              <div className="text-xs tracking-[0.22em] text-white/60 mb-2">{overline}</div>
+            )}
+            {title && (
+              <h1 className={headerVariant === 'hero'
+                ? 'text-6xl font-semibold tracking-[0.02em] leading-[1.08]'
+                : 'text-2xl font-semibold'}>
+                {title}
+              </h1>
+            )}
+            {subtitle && (
+              <p className={headerVariant === 'hero' ? 'text-lg text-white/70 mt-3' : 'text-sm text-white/70 mt-1'}>
+                {subtitle}
+              </p>
+            )}
+            {headerVariant === 'section' && (
+              <div className="mt-3 h-1 w-20 rounded-full bg-white/10">
+                <div className="h-1 w-10 rounded-full bg-[var(--accent-violet-400)]" />
+              </div>
+            )}
+          </header>
+        )}
+
+        {/* Content */}
+        <div className={headerVariant === 'hero' ? 'mx-auto w-full max-w-md' : ''}>
           {children}
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="p-6 border-t border-border">
-        <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
-          {canGoBack ? (
-            <Button
-              variant="ghost"
-              onClick={goBack}
-              disabled={isAdvancing}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {backLabel ?? 'Back'}
-            </Button>
-          ) : (
-            <div />
-          )}
-
+      {/* Sticky nav */}
+      <div className="px-6 pb-6">
+        <div className="mx-auto w-full max-w-xl flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            onClick={goBack} 
+            disabled={!canGoBack || isAdvancing}
+          >
+            {backLabel ?? 'Back'}
+          </Button>
           {!atFinal && canGoNext && (
-            <Button
-              onClick={handleNext}
-              disabled={isAdvancing}
-              className="gap-2"
+            <Button 
+              onClick={handleNext} 
+              disabled={isAdvancing} 
+              className="rounded-full px-6"
             >
               {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}
-              <ArrowRight className="h-4 w-4" />
             </Button>
           )}
         </div>
