@@ -30,8 +30,10 @@ export function WelcomeStep({ machine }: Props) {
       pager={{ index: 0, count: 7 }}
       disableNav
     >
-      <div className="mx-auto w-full max-w-md space-y-12">
-        {/* Live chip + preview */}
+      {/* Full-height layout with even distribution */}
+      <div className="min-h-[calc(100vh-140px)] mx-auto w-full max-w-md px-2 flex flex-col justify-between gap-8">
+
+        {/* Live chip + open canvas */}
         <div className="space-y-6">
           <div className="mx-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/[0.10]">
             <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
@@ -40,11 +42,12 @@ export function WelcomeStep({ machine }: Props) {
             </span>
           </div>
 
+          {/* Open canvas – no frame */}
           <FieldPreview />
         </div>
 
-        {/* CTA + sign-in */}
-        <div className="space-y-4">
+        {/* Bottom: centered CTA ABOVE sign-in */}
+        <footer className="space-y-4">
           <div className="flex justify-center">
             <Button
               className="rounded-full h-14 px-7 text-base shadow-[0_18px_54px_rgba(124,103,234,0.48)] before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] relative"
@@ -60,7 +63,7 @@ export function WelcomeStep({ machine }: Props) {
               Sign in
             </a>
           </div>
-        </div>
+        </footer>
       </div>
 
       <SoundToggle />
