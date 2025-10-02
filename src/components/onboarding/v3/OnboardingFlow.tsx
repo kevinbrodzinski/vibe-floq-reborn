@@ -1,14 +1,10 @@
 import { useOnboardingMachine } from '@/hooks/useOnboardingMachine';
-import { OnboardingShell } from './OnboardingShell';
-import {
-  WelcomeScreen,
-  SetupScreen,
-  FieldRevealScreen,
-  FriendImportScreen,
-  PatternScreen,
-  PrivacyScreen,
-  ArchetypeScreen,
-} from './screens';
+import { WelcomeStep } from './steps/WelcomeStep';
+import { ProfileVibeStep } from './steps/ProfileVibeStep';
+import { LiveRevealStep } from './steps/LiveRevealStep';
+import { PrivacyStep } from './steps/PrivacyStep';
+import { NudgesStep } from './steps/NudgesStep';
+import { CompleteStep } from './steps/CompleteStep';
 
 type OnboardingFlowProps = {
   onComplete: () => void;
@@ -21,35 +17,29 @@ type OnboardingFlowProps = {
  */
 export function OnboardingFlow({ onComplete, initialStep = 0 }: OnboardingFlowProps) {
   const machine = useOnboardingMachine(initialStep);
+  const { currentStep } = machine;
 
-  const renderScreen = () => {
-    switch (machine.currentStep) {
-      case 'welcome':
-        return <WelcomeScreen />;
-      case 'profile':
-        return <SetupScreen />;
-      case 'vibe':
-        return <FieldRevealScreen />;
-      case 'permissions':
-        return <FriendImportScreen />;
-      case 'privacy':
-        return <PatternScreen />;
-      case 'nudges':
-        return <PrivacyScreen />;
-      case 'complete':
-        return <ArchetypeScreen />;
-      default:
-        return <WelcomeScreen />;
-    }
-  };
-
-  return (
-    <OnboardingShell 
-      machine={machine} 
-      onComplete={onComplete}
-      nextLabel={machine.stepIndex === 6 ? 'Start My Journey' : undefined}
-    >
-      {renderScreen()}
-    </OnboardingShell>
-  );
+  switch (currentStep) {
+    case 'welcome':
+      return <WelcomeStep machine={machine} />;
+      
+    case 'profile':
+    case 'vibe':
+      return <ProfileVibeStep machine={machine} />;
+      
+    case 'permissions':
+      return <LiveRevealStep machine={machine} />;
+      
+    case 'privacy':
+      return <PrivacyStep machine={machine} />;
+      
+    case 'nudges':
+      return <NudgesStep machine={machine} />;
+      
+    case 'complete':
+      return <CompleteStep machine={machine} onComplete={onComplete} />;
+      
+    default:
+      return <WelcomeStep machine={machine} />;
+  }
 }
