@@ -3,7 +3,7 @@ import { OnboardingShell } from '../OnboardingShell';
 import { GlassCard } from '../shared/GlassCard';
 import { Button } from '@/components/ui/button';
 import type { OnboardingMachine } from '@/hooks/useOnboardingMachine';
-import { devFriendsAdapter, type Friend } from '@/lib/friends/adapter';
+import type { Friend } from '@/lib/friends/adapter';
 
 type Mode = 'friends' | 'pattern';
 
@@ -63,7 +63,8 @@ export function NudgesStep({ machine }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
 
   useEffect(() => {
-    void devFriendsAdapter.findExisting().then(setFriends);
+    if (process.env.NODE_ENV !== 'development') return;
+    void import('@/lib/friends/adapter').then(m => m.devFriendsAdapter.findExisting().then(setFriends));
   }, []);
 
   function handleFriendsDone() {
@@ -83,7 +84,9 @@ export function NudgesStep({ machine }: Props) {
             <div className="mb-3 font-medium text-white">Phone Contacts</div>
             <div className="flex items-center justify-between">
               <AvatarRow friends={friends} />
-              <Button className="bg-emerald-600" onClick={handleFriendsDone}>Add all friends</Button>
+              <Button className="bg-emerald-600" onClick={handleFriendsDone} aria-label="Add all friends">
+                Add all friends
+              </Button>
             </div>
           </GlassCard>
 

@@ -2,6 +2,11 @@ import { memo, useEffect, useRef, useMemo } from 'react';
 
 type Cluster = { x: number; y: number; r: number };
 
+const GLOW_INNER = 'rgba(160,140,255,0.85)';
+const GLOW_OUTER = 'rgba(160,140,255,0.00)';
+const DOT_FILL = 'rgba(200,180,255,0.9)';
+const GRID_LINE = 'rgba(255,255,255,0.04)';
+
 export const FieldPreview = memo(function FieldPreview() {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -16,7 +21,7 @@ export const FieldPreview = memo(function FieldPreview() {
     const { width: w, height: h } = ctx.canvas;
     ctx.clearRect(0, 0, w, h);
     // faint grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = GRID_LINE;
     ctx.lineWidth = 1;
     const step = 36;
     for (let x = step; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
@@ -26,11 +31,11 @@ export const FieldPreview = memo(function FieldPreview() {
       const pulse = 0.85 + 0.15 * Math.sin((t / 1000) + i);
       const r = c.r * pulse;
       const g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, r * 3);
-      g.addColorStop(0, 'rgba(160,140,255,0.85)');
-      g.addColorStop(1, 'rgba(160,140,255,0.00)');
+      g.addColorStop(0, GLOW_INNER);
+      g.addColorStop(1, GLOW_OUTER);
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(c.x, c.y, r * 3, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(200,180,255,0.9)';
+      ctx.fillStyle = DOT_FILL;
       ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI * 2); ctx.fill();
     });
   }
