@@ -69,7 +69,7 @@ export function OnboardingShell({
             )}
             {title && (
               <h1 className={headerVariant === 'hero'
-                ? 'text-[44px] md:text-6xl font-semibold tracking-[0.02em] leading-[1.08]'
+                ? 'text-[44px] md:text-6xl font-light tracking-[0.05em] leading-[1.08]'
                 : 'text-2xl font-semibold'}>
                 {title}
               </h1>
@@ -109,7 +109,7 @@ export function OnboardingShell({
               disabled={isAdvancing} 
               className={[
                 'rounded-full px-6',
-                headerVariant === 'hero' ? 'shadow-[0_14px_44px_rgba(124,103,234,0.40)]' : ''
+                headerVariant === 'hero' ? 'shadow-[0_16px_48px_rgba(124,103,234,0.45)]' : 'shadow-[0_12px_40px_rgba(124,103,234,0.35)]'
               ].join(' ')}
             >
               {lastBeforeFinal ? (nextLabel ?? 'Complete') : (nextLabel ?? 'Next')}
@@ -128,8 +128,8 @@ export function OnboardingShell({
                 className={[
                   'h-2 rounded-full transition-all',
                   i === pager.index 
-                    ? 'w-8 bg-[var(--accent-violet-400)] shadow-[0_0_12px_rgba(124,103,234,0.65)]'
-                    : 'w-2 bg-white/15'
+                    ? 'w-9 bg-[var(--accent-violet-400)] shadow-[0_0_14px_rgba(124,103,234,0.65)]'
+                    : 'w-2 bg-white/18'
                 ].join(' ')}
               />
             ))}

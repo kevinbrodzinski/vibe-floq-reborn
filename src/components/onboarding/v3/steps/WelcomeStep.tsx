@@ -24,7 +24,7 @@ export function WelcomeStep({ machine }: Props) {
     >
       <div className="space-y-7">
         <div className="flex justify-center">
-          <GlassCard className="inline-flex items-center gap-2 px-3 py-2 rounded-full">
+          <GlassCard className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--glass-border)]">
             <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent-violet-400)]" />
             <span className="text-sm text-white/90">
               <LiveCounter /> people joining now

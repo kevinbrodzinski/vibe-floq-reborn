@@ -6,7 +6,7 @@ type Cluster = { x: number; y: number; r: number };
 const getCanvasColors = () => {
   if (typeof document === 'undefined') {
     return {
-      GRID_LINE: 'rgba(255,255,255,0.04)',
+      GRID_LINE: 'rgba(255,255,255,0.03)',
       GLOW_INNER: 'rgba(160,140,255,0.85)',
       GLOW_OUTER: 'rgba(160,140,255,0.00)',
       DOT_FILL: 'rgba(200,180,255,0.9)'
@@ -14,7 +14,7 @@ const getCanvasColors = () => {
   }
   const css = getComputedStyle(document.documentElement);
   return {
-    GRID_LINE: css.getPropertyValue('--grid-line').trim() || 'rgba(255,255,255,0.04)',
+    GRID_LINE: css.getPropertyValue('--grid-line').trim() || 'rgba(255,255,255,0.03)',
     GLOW_INNER: css.getPropertyValue('--field-glow-inner').trim() || 'rgba(160,140,255,0.85)',
     GLOW_OUTER: css.getPropertyValue('--field-glow-outer').trim() || 'rgba(160,140,255,0.00)',
     DOT_FILL: css.getPropertyValue('--field-dot-fill').trim() || 'rgba(200,180,255,0.9)'
@@ -37,7 +37,7 @@ export const FieldPreview = memo(function FieldPreview() {
     ctx.clearRect(0, 0, w, h);
     // faint grid
     ctx.strokeStyle = colors.GRID_LINE;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.5;
     const step = 36;
     for (let x = step; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
     for (let y = step; y < h; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
@@ -96,7 +96,7 @@ export const FieldPreview = memo(function FieldPreview() {
   }, [clusters]);
 
   return (
-    <div className="relative rounded-2xl border border-white/10 bg-black/30 backdrop-blur-xl overflow-hidden">
+    <div className="relative rounded-[28px] border border-white/10 bg-black/30 backdrop-blur-xl overflow-hidden">
       <canvas ref={ref} className="w-full h-[220px]" />
     </div>
   );

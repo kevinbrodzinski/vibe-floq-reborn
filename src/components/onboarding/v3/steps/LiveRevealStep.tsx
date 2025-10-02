@@ -39,8 +39,8 @@ export function LiveRevealStep({ machine }: Props) {
             {/* 3 dots right (carousel indicator) */}
             <div className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-[var(--accent-violet-400)]/70" />
-              <span className="h-2 w-2 rounded-full bg-white/20" />
-              <span className="h-2 w-2 rounded-full bg-white/20" />
+              <span className="h-2 w-2 rounded-full bg-white/22" />
+              <span className="h-2 w-2 rounded-full bg-white/22" />
             </div>
           </div>
 

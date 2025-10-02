@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Field preview canvas colors */
-    --grid-line: rgba(255,255,255,0.04);
+    --grid-line: rgba(255,255,255,0.03);
     --field-glow-inner: rgba(160,140,255,0.85);
     --field-glow-outer: rgba(160,140,255,0.00);
     --field-dot-fill: rgba(200,180,255,0.90);
