@@ -13,7 +13,10 @@ interface MockPerson {
   isFriend?: boolean;
   velocity: { lat: number; lng: number };
   targetIndex: number;
+  patternPhase: number; // For figure-8, spiral patterns
 }
+
+type MovementPattern = 'convergence' | 'figure-8' | 'spiral' | 'random-walk';
 
 // Convergence patterns to trigger effects
 const CONVERGENCE_POINTS = [
@@ -40,15 +43,85 @@ function createMockPerson(index: number): MockPerson {
       lat: (Math.random() - 0.5) * 0.0001, 
       lng: (Math.random() - 0.5) * 0.0001 
     },
-    targetIndex: Math.floor(Math.random() * CONVERGENCE_POINTS.length)
+    targetIndex: Math.floor(Math.random() * CONVERGENCE_POINTS.length),
+    patternPhase: Math.random() * Math.PI * 2 // Random starting phase
   };
+}
+
+// Pattern movement functions
+function moveFigure8(person: MockPerson, time: number): Partial<MockPerson> {
+  const center = { lat: 37.7749, lng: -122.4194 };
+  const radius = 0.0015;
+  const speed = 0.001;
+  
+  const phase = person.patternPhase + time * speed;
+  const lat = center.lat + radius * Math.sin(phase);
+  const lng = center.lng + radius * Math.sin(2 * phase) / 2;
+  
+  return { lat, lng, patternPhase: phase };
+}
+
+function moveSpiral(person: MockPerson, time: number): Partial<MockPerson> {
+  const center = { lat: 37.7749, lng: -122.4194 };
+  const speed = 0.0008;
+  
+  const phase = person.patternPhase + time * speed;
+  const radius = 0.0005 + (phase % (Math.PI * 4)) * 0.0002;
+  const lat = center.lat + radius * Math.cos(phase);
+  const lng = center.lng + radius * Math.sin(phase);
+  
+  return { lat, lng, patternPhase: phase };
+}
+
+function moveRandomWalk(person: MockPerson): Partial<MockPerson> {
+  const step = 0.0002;
+  const randomAngle = Math.random() * Math.PI * 2;
+  
+  const lat = person.lat + Math.cos(randomAngle) * step;
+  const lng = person.lng + Math.sin(randomAngle) * step;
+  
+  // Keep within bounds
+  const bounds = {
+    minLat: 37.7730,
+    maxLat: 37.7770,
+    minLng: -122.4210,
+    maxLng: -122.4180
+  };
+  
+  return {
+    lat: Math.max(bounds.minLat, Math.min(bounds.maxLat, lat)),
+    lng: Math.max(bounds.minLng, Math.min(bounds.maxLng, lng))
+  };
+}
+
+function moveConvergence(person: MockPerson): Partial<MockPerson> {
+  const target = CONVERGENCE_POINTS[person.targetIndex];
+  const dx = target.lng - person.lng;
+  const dy = target.lat - person.lat;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  // If close to target, pick a new one
+  if (distance < 0.0005) {
+    const newTargetIndex = Math.floor(Math.random() * CONVERGENCE_POINTS.length);
+    return { targetIndex: newTargetIndex };
+  }
+
+  // Move towards target with some randomness
+  const speed = 0.00008;
+  const randomness = 0.00003;
+  const newLat = person.lat + (dy / distance) * speed + (Math.random() - 0.5) * randomness;
+  const newLng = person.lng + (dx / distance) * speed + (Math.random() - 0.5) * randomness;
+
+  return { lat: newLat, lng: newLng };
 }
 
 export const AnimationDemoPage: React.FC = () => {
   const [people, setPeople] = useState<MockPerson[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [personCount, setPersonCount] = useState(3);
+  const [pattern, setPattern] = useState<MovementPattern>('convergence');
   const animationRef = useRef<number>();
+  const timeRef = useRef(0);
 
   // Initialize people
   const initializePeople = () => {
@@ -61,29 +134,28 @@ export const AnimationDemoPage: React.FC = () => {
     if (!isRunning || people.length === 0) return;
 
     const animate = () => {
+      timeRef.current += 0.016; // ~60fps
+      
       setPeople(prev => prev.map(person => {
-        const target = CONVERGENCE_POINTS[person.targetIndex];
-        const dx = target.lng - person.lng;
-        const dy = target.lat - person.lat;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // If close to target, pick a new one
-        if (distance < 0.0005) {
-          const newTargetIndex = Math.floor(Math.random() * CONVERGENCE_POINTS.length);
-          return { ...person, targetIndex: newTargetIndex };
+        let updates: Partial<MockPerson> = {};
+        
+        switch (pattern) {
+          case 'figure-8':
+            updates = moveFigure8(person, timeRef.current);
+            break;
+          case 'spiral':
+            updates = moveSpiral(person, timeRef.current);
+            break;
+          case 'random-walk':
+            updates = moveRandomWalk(person);
+            break;
+          case 'convergence':
+          default:
+            updates = moveConvergence(person);
+            break;
         }
 
-        // Move towards target with some randomness
-        const speed = 0.00008;
-        const randomness = 0.00003;
-        const newLat = person.lat + (dy / distance) * speed + (Math.random() - 0.5) * randomness;
-        const newLng = person.lng + (dx / distance) * speed + (Math.random() - 0.5) * randomness;
-
-        return {
-          ...person,
-          lat: newLat,
-          lng: newLng,
-        };
+        return { ...person, ...updates };
       }));
 
       animationRef.current = requestAnimationFrame(animate);
@@ -96,7 +168,7 @@ export const AnimationDemoPage: React.FC = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isRunning, people.length]);
+  }, [isRunning, people.length, pattern]);
 
   // Convert to format expected by map
   const mockFloqs = people.map(p => ({
@@ -122,6 +194,30 @@ export const AnimationDemoPage: React.FC = () => {
       <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm border rounded-lg p-4 shadow-lg max-w-sm z-50">
         <h2 className="text-lg font-semibold mb-3">Animation Demo Controls</h2>
         
+        {/* Movement Pattern */}
+        <div className="mb-4">
+          <label className="text-sm font-medium mb-2 block">
+            Movement Pattern
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['convergence', 'figure-8', 'spiral', 'random-walk'] as MovementPattern[]).map((p) => (
+              <Button
+                key={p}
+                onClick={() => setPattern(p)}
+                variant={pattern === p ? 'default' : 'outline'}
+                size="sm"
+                disabled={isRunning}
+                className="text-xs"
+              >
+                {p === 'figure-8' ? '∞ Figure-8' :
+                 p === 'spiral' ? '🌀 Spiral' :
+                 p === 'random-walk' ? '🎲 Random' :
+                 '🎯 Converge'}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Person Count */}
         <div className="mb-4">
           <label className="text-sm font-medium mb-2 block">
