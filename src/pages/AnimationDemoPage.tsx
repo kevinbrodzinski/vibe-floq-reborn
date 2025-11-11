@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FieldMapBase } from '@/components/maps/FieldMapBase';
+import { FieldLocationProvider } from '@/components/field/contexts/FieldLocationContext';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 
@@ -108,13 +109,14 @@ export const AnimationDemoPage: React.FC = () => {
   }));
 
   return (
-    <div className="relative h-screen w-full">
-      {/* Map */}
-      <FieldMapBase 
-        visible={true}
-        floqs={mockFloqs}
-        realtime={true}
-      />
+    <FieldLocationProvider friendIds={[]}>
+      <div className="relative h-screen w-full">
+        {/* Map */}
+        <FieldMapBase 
+          visible={true}
+          floqs={mockFloqs}
+          realtime={true}
+        />
 
       {/* Control Panel */}
       <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm border rounded-lg p-4 shadow-lg max-w-sm z-50">
@@ -197,6 +199,7 @@ export const AnimationDemoPage: React.FC = () => {
           💡 Zoom to 12-14 to see aurora & compass effects
         </div>
       )}
-    </div>
+      </div>
+    </FieldLocationProvider>
   );
 };
