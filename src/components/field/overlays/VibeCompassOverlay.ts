@@ -90,7 +90,7 @@ export class VibeCompassOverlay {
     userPos: { x: number; y: number },
     zoom: number
   ): FlowVector | null {
-    if (clusters.length < 3) return null; // Need minimum clusters for flow
+    if (clusters.length < 1) return null; // Need minimum clusters for flow
     
     const maxRadius = 300; // Max influence radius in pixels
     const flows: FlowVector[] = [];
@@ -173,8 +173,8 @@ export class VibeCompassOverlay {
   }
 
   private shouldShowCompass(clusters: SocialCluster[], zoom: number): boolean {
-    return clusters.length >= 5 && 
-           zoom >= 15 && 
+    return clusters.length >= 1 && 
+           zoom >= 12 && 
            this.currentFlow !== null && 
            this.currentFlow.magnitude > 0.02;
   }

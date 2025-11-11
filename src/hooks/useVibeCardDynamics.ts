@@ -12,7 +12,7 @@ export const useVibeCardDynamics = (
   const nearest = useNearestCluster(clusters, userLoc, currentVibe)
 
   // Performance guard: static values for too many clusters or far distances
-  if (!nearest || clusters.length > 300 || nearest.distance > 2000) {
+  if (!nearest || clusters.length > 1000 || nearest.distance > 10000) {
     return {
       pulseScale: 1,
       pulseOpacity: 0.3,
@@ -21,8 +21,8 @@ export const useVibeCardDynamics = (
     }
   }
 
-  // Proximity factor: 0→1 as distance goes 200m→0m  
-  const prox = Math.max(0, 1 - nearest.distance / 200)
+  // Proximity factor: 0→1 as distance goes 1000m→0m  
+  const prox = Math.max(0, 1 - nearest.distance / 1000)
   
   // Density factor: 0→1 as total goes 0→15 people
   const dens = Math.min(1, nearest.total / 15)
@@ -40,7 +40,7 @@ export const useVibeCardDynamics = (
   const tintColor = `rgb(${clusterRgb.join(', ')})`
 
   // Soft glow when close and dense
-  const showGlow = nearest.distance < 200 && nearest.total >= 3
+  const showGlow = nearest.distance < 1000 && nearest.total >= 1
 
   return {
     pulseScale,

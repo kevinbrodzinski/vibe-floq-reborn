@@ -1,6 +1,6 @@
 export const FIELD_LOD = {
-  TRAILS_MIN_ZOOM: 16,
-  K_MIN: 5,
+  TRAILS_MIN_ZOOM: 12,
+  K_MIN: 1,
   MIN_SPEED: 0.02,       // screen units per ms after scale normalization
   AFTERGLOW_MIN_MS: 2000,
   AFTERGLOW_MAX_MS: 60000,
@@ -22,8 +22,8 @@ export const PHASE2 = {
     MAX_DIST_PX: 140,            // distance at t* must be under this
     MIN_APPROACH_SPEED: 0.015,   // screen units/ms
     MIN_COHESION: 0.25,          // cluster cohesion floor
-    ZOOM_MIN: 14,                // LOD gate for showing signals
-    K_MIN: 5,                    // k-anon
+    ZOOM_MIN: 12,                // LOD gate for showing signals
+    K_MIN: 1,                    // k-anon
     COOL_MS: 2_000,              // hysteresis to avoid flicker
   },
   DEBUG: { VECTORS_MAX: 600 },
@@ -31,9 +31,9 @@ export const PHASE2 = {
 
 // Atmosphere and animation constants - thresholds and timing only
 export const ATMO = {
-  BREATH_ZOOM_MIN: 14,           // Unified LOD gate for all Phase 2 effects
+  BREATH_ZOOM_MIN: 12,           // Unified LOD gate for all Phase 2 effects
   BREATHING: {
-    MIN_ZOOM: 14,                // Same as BREATH_ZOOM_MIN for consistency
+    MIN_ZOOM: 12,                // Same as BREATH_ZOOM_MIN for consistency
     GRID_PX: 150,                // Pixel-space grid for phase sync
   },
   PARTICLE_CAP: 200,             // Max particles across all systems
@@ -45,9 +45,9 @@ export const ATMO = {
 
 // Phase 3 constants (perf/privacy thresholds only) - canary caps for performance
 export const P3 = {
-  FLOW: { MIN_ZOOM: 13, MAX_ARROWS: 500, UPDATE_HZ: 6, SMOOTH: 0.65 }, // reduced from 900/8
-  LANES: { MIN_ZOOM: 15, K_MIN: 5, PROB_MIN: 0.45, ETA_MAX_MS: 300000, MAX_LANES: 32, MAX_DIST_PX: 140 }, // reduced from 64
-  MOMENTUM: { MIN_ZOOM: 16, SPEED_MIN: 0.16 }, // raised from 0.12 - fewer badges
+  FLOW: { MIN_ZOOM: 11, MAX_ARROWS: 500, UPDATE_HZ: 6, SMOOTH: 0.65 }, // reduced from 900/8
+  LANES: { MIN_ZOOM: 12, K_MIN: 1, PROB_MIN: 0.3, ETA_MAX_MS: 300000, MAX_LANES: 32, MAX_DIST_PX: 300 }, // reduced from 64
+  MOMENTUM: { MIN_ZOOM: 12, SPEED_MIN: 0.16 }, // raised from 0.12 - fewer badges
 } as const;
 
 // Performance budgets (enforced)
@@ -70,26 +70,26 @@ export const PERF_BUDGETS = {
 // Phase 3B constants (atmospheric effects) - canary caps for performance  
 export const P3B = {
   PRESSURE: {
-    MIN_ZOOM: 13,
+    MIN_ZOOM: 11,
     GRID_PX: 72,         // coarse sampling in pixels
     SMOOTH: 0.6,         // EMA smoothing (0..1, higher = stickier)
     MAX_CELLS: 400,      // reduced from 800 for performance
     UPDATE_HZ: 5,        // reduced from 6, throttle worker
   },
   STORMS: {
-    MIN_ZOOM: 15,
-    K_MIN: 5,
+    MIN_ZOOM: 12,
+    K_MIN: 1,
     ETA_MAX_MS: 300000,  // 5m horizon
     GROUP_RADIUS_PX: 120,// meeting point radius for grouping lanes
-    CONF_MIN: 0.55,      // min confidence to contribute
+    CONF_MIN: 0.3,       // min confidence to contribute
     MAX_GROUPS: 24,      // cap per frame
   },
 } as const;
 
 // Phase 4 constants (atmospheric memory and mood)
 export const P4 = {
-  WINDS: { MIN_ZOOM: 13, MAX_PATHS: 24, UPDATE_HZ: 2 },
-  AURORA: { MIN_ZOOM: 15, INTENSITY_MIN: 0.70, MAX_CONCURRENT: 3, UPDATE_HZ: 4 },
+  WINDS: { MIN_ZOOM: 11, MAX_PATHS: 24, UPDATE_HZ: 2 },
+  AURORA: { MIN_ZOOM: 12, INTENSITY_MIN: 0.30, MAX_CONCURRENT: 3, UPDATE_HZ: 4 },
   TINT: { UPDATE_MS: 60_000 },
   WEATHER: {
     CACHE_MIN: 15,        // minutes

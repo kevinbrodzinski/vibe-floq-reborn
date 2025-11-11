@@ -73,9 +73,9 @@ export class LightningOverlay {
       if (triggered >= maxPerFrameForTier) break;
       
       // Lightning conditions: high confidence, short ETA, close approach
-      if (conv.confidence >= 0.6 && 
-          conv.etaMs < 60_000 && 
-          conv.dStar < 100) {
+      if (conv.confidence >= 0.3 && 
+          conv.etaMs < 300_000 && 
+          conv.dStar < 300) {
         
         // Check cooldown and existing bolts
         if (this.cooldown.has(conv.id) || this.bolts.some(b => b.id === conv.id)) continue;
