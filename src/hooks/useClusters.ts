@@ -39,6 +39,16 @@ export const useClusters = (
   /* ----------------------------- fetch ----------------------------- */
   const fetchClusters = useCallback(
     async (box: [number, number, number, number]) => {
+      // 🔧 DEV: Check for mock clusters override
+      if (import.meta.env.DEV && typeof window !== 'undefined' && (window as any).__mockClusters) {
+        const mockClusters = (window as any).__mockClusters;
+        console.log('[useClusters] 🎭 Using mock clusters:', mockClusters.length);
+        setClusters(mockClusters);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+      
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;

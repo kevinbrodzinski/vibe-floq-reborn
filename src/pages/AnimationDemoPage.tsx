@@ -3,6 +3,7 @@ import { FieldMapBase } from '@/components/maps/FieldMapBase';
 import { FieldLocationProvider } from '@/components/field/contexts/FieldLocationContext';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw } from 'lucide-react';
+import { generateMockClusters, injectMockClusters, clearMockClusters } from '@/lib/demo/mockClusterGenerator';
 
 // Mock person data generator
 interface MockPerson {
@@ -128,6 +129,26 @@ export const AnimationDemoPage: React.FC = () => {
     const newPeople = Array.from({ length: personCount }, (_, i) => createMockPerson(i));
     setPeople(newPeople);
   };
+
+  // Generate and inject mock clusters whenever people positions change
+  useEffect(() => {
+    if (people.length === 0) {
+      clearMockClusters();
+      return;
+    }
+    
+    const clusters = generateMockClusters(people, 6);
+    injectMockClusters(clusters);
+    
+    console.log('[AnimationDemo] 🎭 Injected mock clusters:', clusters.length);
+    
+    return () => {
+      // Only clear on unmount if not running
+      if (!isRunning) {
+        clearMockClusters();
+      }
+    };
+  }, [people, isRunning]);
 
   // Animation loop
   useEffect(() => {
@@ -284,7 +305,7 @@ export const AnimationDemoPage: React.FC = () => {
             <li>🌊 <strong>Flow:</strong> Movement trails at zoom 11+</li>
           </ul>
           <p className="mt-2 pt-2 border-t">
-            <strong>Active:</strong> {people.length} people moving
+            <strong>Active:</strong> {people.length} people, {(typeof window !== 'undefined' && (window as any).__mockClusters?.length) || 0} clusters
           </p>
         </div>
       </div>
