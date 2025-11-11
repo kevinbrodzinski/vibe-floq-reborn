@@ -46,6 +46,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import FlowReflectionPage from "./pages/FlowReflectionPage";
 import VibeEngineTestPage from "./pages/VibeEngineTestPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { AnimationDemoPage } from "./pages/AnimationDemoPage";
 import { VibeDevTools } from "./components/vibe/VibeDevTools";
 import { DevGate } from "./components/vibe/DevGate";
 
@@ -145,6 +146,7 @@ const App = () => {
                         <Route path="/flow/:flowId/reflection" element={<FlowReflectionPage />} />
                         <Route path="/vibe-engine-test" element={<VibeEngineTestPage />} />
                         <Route path="/onboarding" element={<OnboardingPage />} />
+                        <Route path="/animation-demo" element={<AnimationDemoPage />} />
 
                         <Route path="/*" element={<Index />} />
                       </Routes>
