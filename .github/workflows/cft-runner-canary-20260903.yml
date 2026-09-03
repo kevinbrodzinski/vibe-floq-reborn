@@ -1,0 +1,21 @@
+name: CFT Runner Canary 20260903
+
+on:
+  push:
+    paths:
+      - '.github/workflows/cft-runner-canary-20260903.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm hosted runner allocation
+        run: |
+          echo 'CFT_RUNNER_CANARY=ALLOCATED'
+          uname -a
+          python3 --version
